@@ -1,0 +1,59 @@
+// =================================================================
+// 페이지 설정 컨트롤 패널 (이 파일만 수정하여 사용하세요)
+// =================================================================
+const siteConfig = {
+    // 1. 기본 사이트 정보 (거의 변경 안 함)
+    // -----------------------------------------------------------------
+    siteURL: "https://blog.pebblous.ai", // 커스텀 도메인 주소 (맨 뒤에 / 없음)
+    logoImage: "https://www.pebblous.ai/_next/static/media/Group.cdc35593.svg", // 로고 이미지 주소
+
+    // 2. 이 페이지의 고유 정보 (새 페이지마다 수정)
+    // -----------------------------------------------------------------
+    pagePath: "/ko/investor-analysis/", // 사이트 URL 뒤에 붙는 이 페이지의 경로 (시작과 끝에 / 포함)
+    pageTitle: "페블러스(Pebblous) 최적 글로벌 투자사 분석", // <title> 태그 및 h1 태그에 들어갈 제목
+    
+    // 3. SEO 및 소셜 미디어 설정 (새 페이지마다 수정)
+    // -----------------------------------------------------------------
+    seoDescription: "페블러스(Pebblous)의 Series A 라운드에 가장 적합한 글로벌 투자사 Top 10을 분석합니다. AI 데이터 품질, B2B SaaS, 자율주행, 딥테크 분야의 최적 투자 파트너를 확인하세요.", // 구글 검색 및 링크 공유 시 보일 설명
+    seoKeywords: ["Pebblous", "페블러스", "투자사", "글로벌 투자", "VC", "벤처캐피탈", "AI", "B2B SaaS", "데이터 품질", "자율주행", "딥테크", "Series A", "투자 유치", "스타트업"], // SEO 키워드 목록
+    socialImage: "https://pebblous.github.io/event/2025/InvestKoreaSummit/image/PBLS-IKS-2025-01.001.png", // 링크 공유 시 보일 대표 이미지
+
+    // 4. 페이지 스타일 및 메타 정보 (필요시 수정)
+    // -----------------------------------------------------------------
+theme: { background: "#111827"
+	cardBackground: "#1F2937"
+	footerBackground: "#000000"
+	textColor: "#9CA3AF"
+	headingColor: "#FFFFFF"
+	accentColor: "#F86825"
+	borderColor: "#374151" },
+
+//    theme: { 
+//    background: "#272726", 
+//    cardBackground: "#373736", 
+//    footerBackground: "#272726", 
+//    textColor: "#9CA3AF", 
+//    headingColor: "#FFFFFF", 
+//    accentColor: "#F86825", 
+//    borderColor: "#575757" 
+//},
+
+    publishDate: "2025년 10월 11일", // 발행일
+    publisher: "페블러스 경영지원실" // 출처
+};
+
+//### 새로운 시스템의 장점
+//
+//이제 `config.js`의 `theme` 객체에 있는 색상 코드만 변경하면, 페이지 전체의 배경색뿐만 아니라 카드, 글자, 포인트 색상까지 **모든 시각적 요소가 한 번에 변경됩니다.**
+//
+//예를 들어, `config.js`에서 아래와 같이 **라이트 테마**로 값을 바꾸면, 코드 수정 없이 즉시 밝은 테마의 페이지를 만들 수 있습니다.
+//
+//```javascript
+//// 예시: 라이트 테마
+//theme: {
+//    background: "#F9FAFB",      // 밝은 회색 배경
+//    cardBackground: "#FFFFFF", // 흰색 카드
+//    textColor: "#4B5563",       // 진한 회색 텍스트
+//    headingColor: "#111827",     // 검은색 제목
+//    accentColor: "#F86825"       // 브랜드 컬러
+//},
