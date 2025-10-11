@@ -20,23 +20,17 @@ const siteConfig = {
 
     // 4. 페이지 스타일 및 메타 정보 (필요시 수정)
     // -----------------------------------------------------------------
-theme: { background: "#111827"
-	cardBackground: "#1F2937"
-	footerBackground: "#000000"
-	textColor: "#9CA3AF"
-	headingColor: "#FFFFFF"
-	accentColor: "#F86825"
-	borderColor: "#374151" },
-
-//    theme: { 
-//    background: "#272726", 
-//    cardBackground: "#373736", 
-//    footerBackground: "#272726", 
-//    textColor: "#9CA3AF", 
-//    headingColor: "#FFFFFF", 
-//    accentColor: "#F86825", 
-//    borderColor: "#575757" 
-//},
+    //themeColor: "#111827", // 페이지 전체 배경색 (CSS 색상 코드)
+    // -----------------------------------------------------------------
+    theme: { 
+        background: "#272726", 
+        cardBackground: "#373736", 
+        footerBackground: "#272726", 
+        textColor: "#9CA3AF", 
+        headingColor: "#FFFFFF", 
+        accentColor: "#F86825", 
+        borderColor: "#575757" 
+    },
 
     publishDate: "2025년 10월 11일", // 발행일
     publisher: "페블러스 경영지원실" // 출처
