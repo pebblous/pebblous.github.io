@@ -37,10 +37,22 @@
     <link rel="icon" href="https://www.pebblous.ai/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="https://www.pebblous.ai/apple-touch-icon.png">
 
+    <!-- RSS Feed -->
+    <link rel="alternate" type="application/rss+xml" title="Pebblous Blog RSS Feed" href="https://blog.pebblous.ai/rss.xml">
+
     <!-- Preconnect for Performance -->
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-44LQ2ZLX78"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-44LQ2ZLX78');
+    </script>
 
     <!-- Styles -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -111,6 +123,18 @@
         .mobile-menu.is-open {
             display: block;
         }
+        /* Search */
+        .search-highlight {
+            background-color: rgba(248, 104, 37, 0.3);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        #search-results {
+            display: none;
+        }
+        #search-results.has-results {
+            display: block;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -145,6 +169,32 @@
     </header>
 
     <main class="pt-24">
+        <!-- Search Section -->
+        <section class="container mx-auto px-6 pt-12 pb-6">
+            <div class="max-w-2xl mx-auto">
+                <div class="relative">
+                    <input
+                        type="search"
+                        id="search-input"
+                        placeholder="기사 검색... (제목, 설명, 태그)"
+                        class="w-full px-6 py-4 pr-12 text-base bg-slate-800/50 border border-slate-700 rounded-full text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 backdrop-blur-sm"
+                    >
+                    <div class="absolute top-0 right-0 mt-4 mr-5 text-slate-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <!-- Search Results -->
+            <div id="search-results" class="max-w-4xl mx-auto mt-6">
+                <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-white mb-4">검색 결과 (<span id="search-count">0</span>개)</h3>
+                    <div id="search-results-list" class="space-y-4"></div>
+                </div>
+            </div>
+        </section>
+
         <!-- Hero Section -->
         <section class="text-center py-20 lg:py-32 px-6 relative overflow-hidden">
             <div class="absolute inset-0 bg-grid-slate-800/40 [mask-image:linear-gradient(to_bottom,white_5%,transparent_80%)]"></div>
@@ -221,6 +271,7 @@
                 <a href="https://www.linkedin.com/company/pebblous/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors" aria-label="LinkedIn">LinkedIn</a>
                 <a href="https://www.facebook.com/Pebblous" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors" aria-label="Facebook">Facebook</a>
                 <a href="https://www.instagram.com/pebblous/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors" aria-label="Instagram">Instagram</a>
+                <a href="/rss.xml" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors" aria-label="RSS Feed">RSS</a>
              </div>
              <p class="mt-8 text-xs text-slate-500">© 2025 Pebblous Inc. All rights reserved.</p>
         </div>
@@ -486,6 +537,133 @@
                     `;
                 }
             }).join('');
+        }
+
+        // ============================================================
+        // Search Functionality
+        // ============================================================
+
+        let allArticles = [];
+
+        async function loadArticles() {
+            try {
+                const response = await fetch('articles.json');
+                const data = await response.json();
+
+                // Store all articles for search
+                allArticles = data.articles.filter(a => a.published);
+
+                // Filter and group articles by category
+                const artArticles = allArticles.filter(a => a.category === 'art');
+                const techArticles = allArticles.filter(a => a.category === 'tech');
+                const storyArticles = allArticles.filter(a => a.category === 'story');
+
+                // Render articles
+                renderArticles('art-articles', artArticles);
+                renderArticles('tech-articles', techArticles);
+                renderArticles('story-articles', storyArticles);
+
+                // Setup search
+                setupSearch();
+            } catch (error) {
+                console.error('Failed to load articles:', error);
+                ['art-articles', 'tech-articles', 'story-articles'].forEach(id => {
+                    document.getElementById(id).innerHTML = '<p class="text-slate-400 text-center py-10">기사를 불러오는데 실패했습니다.</p>';
+                });
+            }
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            const searchResultsList = document.getElementById('search-results-list');
+            const searchCount = document.getElementById('search-count');
+
+            let debounceTimer;
+
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(debounceTimer);
+                const query = e.target.value.trim().toLowerCase();
+
+                if (query.length < 2) {
+                    searchResults.classList.remove('has-results');
+                    return;
+                }
+
+                debounceTimer = setTimeout(() => {
+                    performSearch(query, searchResultsList, searchCount, searchResults);
+                }, 300);
+            });
+
+            // Clear search on escape
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    searchResults.classList.remove('has-results');
+                }
+            });
+        }
+
+        function performSearch(query, resultsContainer, countElement, resultsSection) {
+            const results = allArticles.filter(article => {
+                const searchText = [
+                    article.title,
+                    article.description,
+                    ...article.tags,
+                    article.category
+                ].join(' ').toLowerCase();
+
+                return searchText.includes(query);
+            });
+
+            countElement.textContent = results.length;
+
+            if (results.length === 0) {
+                resultsContainer.innerHTML = '<p class="text-slate-400 text-center py-6">검색 결과가 없습니다.</p>';
+                resultsSection.classList.add('has-results');
+                return;
+            }
+
+            resultsContainer.innerHTML = results.map(article => {
+                const categoryName = {
+                    'art': 'Data Art',
+                    'tech': 'Tech Insights',
+                    'story': 'Data Stories'
+                }[article.category];
+
+                const tagsHtml = article.tags.map(tag => {
+                    const highlighted = tag.toLowerCase().includes(query)
+                        ? `<span class="search-highlight">${tag}</span>`
+                        : tag;
+                    return `<span class="tag">${highlighted}</span>`;
+                }).join('');
+
+                const highlightText = (text) => {
+                    const regex = new RegExp(`(${query})`, 'gi');
+                    return text.replace(regex, '<span class="search-highlight">$1</span>');
+                };
+
+                return `
+                    <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 hover:border-orange-500 transition-colors">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-grow">
+                                <div class="flex items-center gap-2 mb-2">
+                                    ${tagsHtml}
+                                    <span class="text-xs text-slate-500">${article.date}</span>
+                                    <span class="text-xs text-slate-500">• ${categoryName}</span>
+                                </div>
+                                <h4 class="text-lg font-bold text-white mb-2">${highlightText(article.title)}</h4>
+                                <p class="text-sm text-slate-400">${highlightText(article.description)}</p>
+                            </div>
+                            <a href="${article.path}" ${article.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="flex-shrink-0 accent-bg text-white text-sm font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity whitespace-nowrap">
+                                자세히 보기 →
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            resultsSection.classList.add('has-results');
         }
 
         // Load articles when DOM is ready
