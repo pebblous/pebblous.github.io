@@ -151,6 +151,46 @@
                 <button onclick="showAddArticleForm()" class="btn-primary">+ 새 기사 추가</button>
                 <button onclick="refreshData()" class="btn-secondary">⟳ 새로고침</button>
                 <button onclick="exportJSON()" class="btn-secondary">↓ JSON 다운로드</button>
+                <button onclick="showUnregisteredFiles()" class="btn-secondary">📋 미등록 파일 보기</button>
+            </div>
+        </div>
+
+        <!-- Filters & Search -->
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-8">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Filter & Search</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">검색</label>
+                    <input type="text" id="search-articles" placeholder="제목, ID로 검색..." class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">카테고리</label>
+                    <select id="filter-category" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <option value="all">전체</option>
+                        <option value="art">Data Art</option>
+                        <option value="tech">Tech Insights</option>
+                        <option value="story">Data Stories</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">상태</label>
+                    <select id="filter-status" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <option value="all">전체</option>
+                        <option value="published">Published</option>
+                        <option value="draft">Draft</option>
+                        <option value="featured">Featured</option>
+                        <option value="unregistered">미등록 파일</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">정렬</label>
+                    <select id="sort-by" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <option value="date-desc">날짜 (최신순)</option>
+                        <option value="date-asc">날짜 (오래된순)</option>
+                        <option value="title-asc">제목 (A-Z)</option>
+                        <option value="title-desc">제목 (Z-A)</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -224,7 +264,7 @@
                 <table class="w-full">
                     <thead class="bg-slate-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">제목</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">제목 & 경로</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">카테고리</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">날짜</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">상태</th>
@@ -249,12 +289,18 @@
     <script>
         let articlesData = { articles: [], categories: {} };
         let hasUnsavedChanges = false;
+        let unregisteredFiles = [];
+        let htmlMetadataCache = {};
 
-        // Load articles.json
+        // Load articles.json and files-index.json
         async function loadArticles() {
             try {
                 const response = await fetch('articles.json');
                 articlesData = await response.json();
+
+                // Load unregistered files
+                await loadUnregisteredFiles();
+
                 renderTable();
                 updateStats();
             } catch (error) {
@@ -263,13 +309,67 @@
             }
         }
 
+        async function loadUnregisteredFiles() {
+            try {
+                const response = await fetch('files-index.json');
+                const data = await response.json();
+                unregisteredFiles = data.files.filter(f => !f.registered);
+
+                // Extract metadata from HTML files
+                for (const file of unregisteredFiles) {
+                    await extractHTMLMetadata(file.path);
+                }
+            } catch (error) {
+                console.warn('files-index.json not found. Run: python3 scan-html-files.py');
+                unregisteredFiles = [];
+            }
+        }
+
+        async function extractHTMLMetadata(path) {
+            if (htmlMetadataCache[path]) return htmlMetadataCache[path];
+
+            try {
+                const response = await fetch('/' + path);
+                const html = await response.text();
+
+                // Parse HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Extract metadata
+                const metadata = {
+                    title: doc.querySelector('title')?.textContent ||
+                           doc.querySelector('meta[property="og:title"]')?.content ||
+                           path.split('/').pop(),
+                    description: doc.querySelector('meta[name="description"]')?.content ||
+                                doc.querySelector('meta[property="og:description"]')?.content ||
+                                '',
+                    keywords: doc.querySelector('meta[name="keywords"]')?.content || '',
+                    image: doc.querySelector('meta[property="og:image"]')?.content ||
+                           doc.querySelector('meta[name="twitter:image"]')?.content ||
+                           ''
+                };
+
+                htmlMetadataCache[path] = metadata;
+                return metadata;
+            } catch (error) {
+                console.warn(`Failed to fetch metadata for ${path}:`, error);
+                return {
+                    title: path.split('/').pop(),
+                    description: '',
+                    keywords: '',
+                    image: ''
+                };
+            }
+        }
+
         function updateStats() {
-            const total = articlesData.articles.length;
+            const total = articlesData.articles.length + unregisteredFiles.length;
             const published = articlesData.articles.filter(a => a.published).length;
-            const drafts = total - published;
+            const drafts = articlesData.articles.filter(a => !a.published).length + unregisteredFiles.length;
             const featured = articlesData.articles.filter(a => a.featured).length;
 
-            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-total').textContent = `${articlesData.articles.length} + ${unregisteredFiles.length} 미등록`;
             document.getElementById('stat-published').textContent = published;
             document.getElementById('stat-drafts').textContent = drafts;
             document.getElementById('stat-featured').textContent = featured;
@@ -277,80 +377,295 @@
 
         function renderTable() {
             const tbody = document.getElementById('articles-table-body');
+            let items = getFilteredAndSortedArticles();
 
-            if (articlesData.articles.length === 0) {
+            if (items.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-slate-500">No articles found.</td></tr>';
                 return;
             }
 
-            // Sort by date descending
-            const sortedArticles = [...articlesData.articles].sort((a, b) => new Date(b.date) - new Date(a.date));
+            tbody.innerHTML = items.map((item, displayIndex) => {
+                // Check if this is an unregistered file
+                const isUnregistered = item.isUnregistered;
 
-            tbody.innerHTML = sortedArticles.map((article, index) => {
+                if (isUnregistered) {
+                    // Render unregistered file row
+                    const metadata = htmlMetadataCache[item.path] || {};
+                    const pathParts = item.path.split('/');
+                    const filename = pathParts[pathParts.length - 1];
+                    const folder = pathParts.slice(0, -1).join('/');
+
+                    return `
+                        <tr class="hover:bg-orange-50 bg-orange-50/30">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="badge bg-orange-500 text-white text-xs px-2 py-1 rounded">미등록</span>
+                                    <div class="font-medium text-slate-900">${metadata.title || filename}</div>
+                                </div>
+                                <div class="text-xs text-slate-600 mt-1">${metadata.description || '설명 없음'}</div>
+                                ${metadata.keywords ? `<div class="text-xs text-slate-500 mt-1">키워드: ${metadata.keywords}</div>` : ''}
+                                <div class="text-xs text-slate-600 mt-2 flex items-center gap-2">
+                                    <span class="text-slate-400">${folder}/</span>
+                                    <span class="font-semibold">${filename}</span>
+                                    <button onclick="copyPath('${item.path}')" class="text-blue-500 hover:text-blue-700" title="경로 복사">
+                                        📋
+                                    </button>
+                                    <a href="/${item.path}" target="_blank" class="text-green-500 hover:text-green-700" title="미리보기">
+                                        👁️
+                                    </a>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-500">-</td>
+                            <td class="px-6 py-4 text-sm text-slate-500">-</td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-draft">Unregistered</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <button onclick="registerFile('${item.path}')" class="text-xs bg-orange-500 text-white px-3 py-2 rounded hover:bg-orange-600">
+                                    📝 등록하기
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                // Render registered article row
+                const originalIndex = articlesData.articles.findIndex(a => a.id === item.id);
+
                 const categoryBadge = {
                     'art': 'Data Art',
                     'tech': 'Tech Insights',
                     'story': 'Data Stories'
-                }[article.category] || article.category;
+                }[item.category] || item.category;
 
                 const statusBadges = [
-                    article.published ? '<span class="badge badge-published">Published</span>' : '<span class="badge badge-draft">Draft</span>',
-                    article.featured ? '<span class="badge badge-featured ml-1">Featured</span>' : ''
+                    item.published ? '<span class="badge badge-published">Published</span>' : '<span class="badge badge-draft">Draft</span>',
+                    item.featured ? '<span class="badge badge-featured ml-1">Featured</span>' : ''
                 ].join('');
+
+                // Get filename from path
+                const pathParts = item.path.split('/');
+                const filename = pathParts[pathParts.length - 1];
+                const folder = pathParts.slice(0, -1).join('/');
 
                 return `
                     <tr class="hover:bg-slate-50">
                         <td class="px-6 py-4">
-                            <div class="font-medium text-slate-900">${article.title}</div>
-                            <div class="text-sm text-slate-500">${article.id}</div>
+                            <div class="font-medium text-slate-900">${item.title}</div>
+                            <div class="text-xs text-slate-500 mt-1">
+                                <span class="font-mono bg-slate-100 px-2 py-1 rounded">ID: ${item.id}</span>
+                            </div>
+                            <div class="text-xs text-slate-600 mt-2 flex items-center gap-2">
+                                <span class="text-slate-400">${folder}/</span>
+                                <span class="font-semibold">${filename}</span>
+                                <button onclick="copyPath('${item.path}')" class="text-blue-500 hover:text-blue-700" title="경로 복사">
+                                    📋
+                                </button>
+                                <a href="/${item.path}" target="_blank" class="text-green-500 hover:text-green-700" title="미리보기">
+                                    👁️
+                                </a>
+                            </div>
                         </td>
                         <td class="px-6 py-4 text-sm text-slate-700">${categoryBadge}</td>
-                        <td class="px-6 py-4 text-sm text-slate-700">${article.date}</td>
+                        <td class="px-6 py-4 text-sm text-slate-700">${item.date}</td>
                         <td class="px-6 py-4">${statusBadges}</td>
-                        <td class="px-6 py-4 text-sm">
-                            <button onclick="togglePublish(${index})" class="text-blue-600 hover:text-blue-800 mr-3">
-                                ${article.published ? '비공개' : '발간'}
-                            </button>
-                            <button onclick="toggleFeatured(${index})" class="text-purple-600 hover:text-purple-800 mr-3">
-                                ${article.featured ? 'Unfeature' : 'Feature'}
-                            </button>
-                            <button onclick="deleteArticle(${index})" class="text-red-600 hover:text-red-800">삭제</button>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col gap-2">
+                                <div class="flex gap-2">
+                                    <button onclick="togglePublish(${originalIndex})" class="text-xs text-blue-600 hover:text-blue-800">
+                                        ${item.published ? '비공개' : '발간'}
+                                    </button>
+                                    <button onclick="toggleFeatured(${originalIndex})" class="text-xs text-purple-600 hover:text-purple-800">
+                                        ${item.featured ? 'Unfeature' : 'Feature'}
+                                    </button>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="duplicateArticle(${originalIndex})" class="text-xs text-green-600 hover:text-green-800">
+                                        복제
+                                    </button>
+                                    <button onclick="deleteArticle(${originalIndex})" class="text-xs text-red-600 hover:text-red-800">
+                                        삭제
+                                    </button>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        function togglePublish(index) {
-            const sortedArticles = [...articlesData.articles].sort((a, b) => new Date(b.date) - new Date(a.date));
-            const article = sortedArticles[index];
-            const originalIndex = articlesData.articles.findIndex(a => a.id === article.id);
+        function getFilteredAndSortedArticles() {
+            // Combine registered articles and unregistered files
+            let items = [...articlesData.articles];
 
-            articlesData.articles[originalIndex].published = !articlesData.articles[originalIndex].published;
+            // Add unregistered files with a flag
+            const unregisteredItems = unregisteredFiles.map(file => {
+                const metadata = htmlMetadataCache[file.path] || {};
+                return {
+                    isUnregistered: true,
+                    path: file.path,
+                    title: metadata.title || file.path.split('/').pop(),
+                    description: metadata.description || '',
+                    keywords: metadata.keywords || '',
+                    image: metadata.image || '',
+                    date: '', // No date for unregistered
+                    category: '',
+                    published: false,
+                    featured: false
+                };
+            });
+
+            items = [...items, ...unregisteredItems];
+
+            // Apply search filter
+            const searchTerm = document.getElementById('search-articles')?.value.toLowerCase() || '';
+            if (searchTerm) {
+                items = items.filter(item => {
+                    if (item.isUnregistered) {
+                        return item.title.toLowerCase().includes(searchTerm) ||
+                               item.path.toLowerCase().includes(searchTerm) ||
+                               (item.description && item.description.toLowerCase().includes(searchTerm)) ||
+                               (item.keywords && item.keywords.toLowerCase().includes(searchTerm));
+                    } else {
+                        return item.title.toLowerCase().includes(searchTerm) ||
+                               item.id.toLowerCase().includes(searchTerm) ||
+                               item.path.toLowerCase().includes(searchTerm);
+                    }
+                });
+            }
+
+            // Apply category filter (only for registered articles)
+            const categoryFilter = document.getElementById('filter-category')?.value || 'all';
+            if (categoryFilter !== 'all') {
+                items = items.filter(item => !item.isUnregistered && item.category === categoryFilter);
+            }
+
+            // Apply status filter
+            const statusFilter = document.getElementById('filter-status')?.value || 'all';
+            if (statusFilter === 'published') {
+                items = items.filter(item => !item.isUnregistered && item.published);
+            } else if (statusFilter === 'draft') {
+                items = items.filter(item => item.isUnregistered || !item.published);
+            } else if (statusFilter === 'featured') {
+                items = items.filter(item => !item.isUnregistered && item.featured);
+            } else if (statusFilter === 'unregistered') {
+                items = items.filter(item => item.isUnregistered);
+            }
+
+            // Apply sorting
+            const sortBy = document.getElementById('sort-by')?.value || 'date-desc';
+            switch (sortBy) {
+                case 'date-desc':
+                    items.sort((a, b) => {
+                        if (a.isUnregistered && b.isUnregistered) return 0;
+                        if (a.isUnregistered) return 1; // Push unregistered to end
+                        if (b.isUnregistered) return -1;
+                        return new Date(b.date) - new Date(a.date);
+                    });
+                    break;
+                case 'date-asc':
+                    items.sort((a, b) => {
+                        if (a.isUnregistered && b.isUnregistered) return 0;
+                        if (a.isUnregistered) return 1;
+                        if (b.isUnregistered) return -1;
+                        return new Date(a.date) - new Date(b.date);
+                    });
+                    break;
+                case 'title-asc':
+                    items.sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+                case 'title-desc':
+                    items.sort((a, b) => b.title.localeCompare(a.title));
+                    break;
+            }
+
+            return items;
+        }
+
+        function togglePublish(index) {
+            articlesData.articles[index].published = !articlesData.articles[index].published;
             hasUnsavedChanges = true;
             renderTable();
             updateStats();
         }
 
         function toggleFeatured(index) {
-            const sortedArticles = [...articlesData.articles].sort((a, b) => new Date(b.date) - new Date(a.date));
-            const article = sortedArticles[index];
-            const originalIndex = articlesData.articles.findIndex(a => a.id === article.id);
-
-            articlesData.articles[originalIndex].featured = !articlesData.articles[originalIndex].featured;
+            articlesData.articles[index].featured = !articlesData.articles[index].featured;
             hasUnsavedChanges = true;
             renderTable();
             updateStats();
         }
 
+        function copyPath(path) {
+            navigator.clipboard.writeText(path).then(() => {
+                alert(`경로가 클립보드에 복사되었습니다:\n${path}`);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('복사 실패');
+            });
+        }
+
+        function duplicateArticle(index) {
+            const original = articlesData.articles[index];
+            const newArticle = {
+                ...original,
+                id: `${original.id}-copy-${Date.now()}`,
+                title: `${original.title} (복사본)`,
+                published: false,
+                featured: false
+            };
+
+            articlesData.articles.push(newArticle);
+            hasUnsavedChanges = true;
+            renderTable();
+            updateStats();
+            alert(`기사가 복제되었습니다:\n새 ID: ${newArticle.id}`);
+        }
+
+        async function showUnregisteredFiles() {
+            try {
+                const response = await fetch('files-index.json');
+                const data = await response.json();
+
+                const unregistered = data.files.filter(f => !f.registered);
+
+                if (unregistered.length === 0) {
+                    alert('모든 HTML 파일이 등록되었습니다!');
+                    return;
+                }
+
+                let message = `미등록 HTML 파일 (${unregistered.length}개):\n\n`;
+                unregistered.forEach(f => {
+                    message += `• ${f.path}\n`;
+                });
+                message += '\n이 파일들을 articles.json에 등록하시겠습니까?';
+
+                if (confirm(message)) {
+                    // TODO: Auto-populate form with first unregistered file
+                    showAddArticleForm();
+                    alert('새 기사 추가 폼이 열렸습니다. 미등록 파일 정보를 입력하세요.');
+                }
+            } catch (error) {
+                console.error('Failed to load files-index.json:', error);
+                alert('files-index.json을 불러올 수 없습니다.\n먼저 "python3 scan-html-files.py"를 실행하세요.');
+            }
+        }
+
+        // Setup filter/search event listeners
+        function setupFilters() {
+            ['search-articles', 'filter-category', 'filter-status', 'sort-by'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', renderTable);
+                    el.addEventListener('input', renderTable);
+                }
+            });
+        }
+
         function deleteArticle(index) {
             if (!confirm('정말 이 기사를 삭제하시겠습니까?')) return;
 
-            const sortedArticles = [...articlesData.articles].sort((a, b) => new Date(b.date) - new Date(a.date));
-            const article = sortedArticles[index];
-            const originalIndex = articlesData.articles.findIndex(a => a.id === article.id);
-
-            articlesData.articles.splice(originalIndex, 1);
+            articlesData.articles.splice(index, 1);
             hasUnsavedChanges = true;
             renderTable();
             updateStats();
@@ -406,6 +721,35 @@
             updateStats();
             hideAddArticleForm();
             alert('새 기사가 추가되었습니다. "변경사항 저장" 버튼을 눌러 저장하세요.');
+        }
+
+        function registerFile(path) {
+            // Get metadata from cache
+            const metadata = htmlMetadataCache[path] || {};
+
+            // Pre-fill the form with extracted metadata
+            showAddArticleForm();
+
+            // Generate ID from path
+            const filename = path.split('/').pop().replace('.html', '');
+            const suggestedId = filename.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
+
+            document.getElementById('new-id').value = suggestedId;
+            document.getElementById('new-title').value = metadata.title || '';
+            document.getElementById('new-description').value = metadata.description || '';
+            document.getElementById('new-path').value = path;
+            document.getElementById('new-image').value = metadata.image || 'https://blog.pebblous.ai/image/Pebblous_BM_Orange_RGB.png';
+            document.getElementById('new-date').valueAsDate = new Date();
+            document.getElementById('new-published').checked = false; // Default to unpublished
+            document.getElementById('new-featured').checked = false;
+
+            // Parse keywords as tags if available
+            if (metadata.keywords) {
+                document.getElementById('new-tags').value = metadata.keywords;
+            }
+
+            // Scroll to form
+            document.getElementById('add-article-form').scrollIntoView({ behavior: 'smooth' });
         }
 
         function saveChanges() {
@@ -537,6 +881,7 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('admin-content').classList.add('authenticated');
             loadArticles();
+            setupFilters();
         }
 
         function logout() {
