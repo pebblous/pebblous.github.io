@@ -45,9 +45,66 @@
         .badge-published { background-color: #10b981; color: white; }
         .badge-draft { background-color: #f59e0b; color: white; }
         .badge-featured { background-color: #8b5cf6; color: white; }
+
+        /* Login Screen */
+        #login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #020617 0%, #1e293b 100%);
+        }
+        #admin-content {
+            display: none;
+        }
+        #admin-content.authenticated {
+            display: block;
+        }
+        .login-box {
+            background: white;
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 100%;
+        }
     </style>
 </head>
 <body class="min-h-screen">
+
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="login-box">
+            <div class="text-center mb-8">
+                <img src="https://pebblous.github.io/image/Pebblous_BM_Orange_RGB.png" alt="Pebblous Logo" class="h-12 mx-auto mb-4">
+                <h1 class="text-2xl font-bold text-slate-800">Admin Login</h1>
+                <p class="text-sm text-slate-600 mt-2">관리자 권한이 필요합니다</p>
+            </div>
+            <form id="login-form" onsubmit="return handleLogin(event)">
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-slate-700 mb-2">비밀번호</label>
+                    <input
+                        type="password"
+                        id="password"
+                        autocomplete="current-password"
+                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="비밀번호를 입력하세요"
+                        required
+                    >
+                </div>
+                <button type="submit" class="w-full btn-primary py-3 text-lg">로그인</button>
+                <p id="login-error" class="text-red-600 text-sm mt-3 hidden">잘못된 비밀번호입니다.</p>
+            </form>
+            <div class="mt-6 pt-6 border-t border-slate-200">
+                <p class="text-xs text-slate-500 text-center">
+                    세션은 24시간 유지됩니다
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Content (Hidden until authenticated) -->
+    <div id="admin-content">
 
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-slate-200">
@@ -59,6 +116,7 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <a href="/" target="_blank" class="text-sm text-slate-600 hover:text-slate-900">블로그 보기 →</a>
+                    <button onclick="logout()" class="text-sm text-slate-600 hover:text-slate-900">로그아웃</button>
                     <button onclick="saveChanges()" class="btn-primary">변경사항 저장</button>
                 </div>
             </div>
@@ -184,6 +242,9 @@
             </div>
         </div>
     </main>
+
+    </div>
+    <!-- End Admin Content -->
 
     <script>
         let articlesData = { articles: [], categories: {} };
@@ -399,8 +460,101 @@
             }
         });
 
-        // Load on page load
-        document.addEventListener('DOMContentLoaded', loadArticles);
+        // ============================================================
+        // Authentication System
+        // ============================================================
+
+        const SESSION_KEY = 'pebblous_admin_session';
+        const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+        // SHA-256 hash of your password
+        // You can change this by generating a new hash at https://emn178.github.io/online-tools/sha256.html
+        const PASSWORD_HASH = '29b3c035e215d144ade00c46a4a08ca21fc1e4d3ffa2387d228eef1e005afb57';
+
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const passwordInput = document.getElementById('password');
+            const password = passwordInput.value;
+            const errorEl = document.getElementById('login-error');
+
+            const hash = await sha256(password);
+
+            if (hash === PASSWORD_HASH) {
+                // Store session with timestamp
+                const session = {
+                    timestamp: Date.now(),
+                    authenticated: true
+                };
+                localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+
+                // Show admin content
+                showAdminContent();
+                errorEl.classList.add('hidden');
+            } else {
+                errorEl.classList.remove('hidden');
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+
+            return false;
+        }
+
+        function checkSession() {
+            const sessionData = localStorage.getItem(SESSION_KEY);
+
+            if (!sessionData) {
+                return false;
+            }
+
+            try {
+                const session = JSON.parse(sessionData);
+                const now = Date.now();
+                const elapsed = now - session.timestamp;
+
+                // Check if session is still valid (within 24 hours)
+                if (elapsed < SESSION_DURATION && session.authenticated) {
+                    return true;
+                }
+
+                // Session expired
+                localStorage.removeItem(SESSION_KEY);
+                return false;
+            } catch (e) {
+                localStorage.removeItem(SESSION_KEY);
+                return false;
+            }
+        }
+
+        function showAdminContent() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('admin-content').classList.add('authenticated');
+            loadArticles();
+        }
+
+        function logout() {
+            if (hasUnsavedChanges) {
+                if (!confirm('저장되지 않은 변경사항이 있습니다. 로그아웃하시겠습니까?')) {
+                    return;
+                }
+            }
+            localStorage.removeItem(SESSION_KEY);
+            window.location.reload();
+        }
+
+        // Check session on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (checkSession()) {
+                showAdminContent();
+            }
+        });
     </script>
 </body>
 </html>
