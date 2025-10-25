@@ -295,7 +295,7 @@
         // Load articles.json and files-index.json
         async function loadArticles() {
             try {
-                const response = await fetch('articles.json');
+                const response = await fetch('articles.json', { cache: 'no-store' });
                 articlesData = await response.json();
 
                 // Load unregistered files
@@ -311,9 +311,18 @@
 
         async function loadUnregisteredFiles() {
             try {
-                const response = await fetch('files-index.json');
+                const response = await fetch('files-index.json', { cache: 'no-store' });
                 const data = await response.json();
-                unregisteredFiles = data.files.filter(f => !f.registered);
+
+                // Get all registered paths from articles.json
+                const registeredPaths = new Set(
+                    articlesData.articles.map(a => a.path.trim())
+                );
+
+                // Filter out files that are already registered
+                unregisteredFiles = data.files.filter(f => {
+                    return !f.registered && !registeredPaths.has(f.path.trim());
+                });
 
                 // Extract metadata from HTML files
                 for (const file of unregisteredFiles) {
@@ -717,8 +726,13 @@
 
             articlesData.articles.push(newArticle);
             hasUnsavedChanges = true;
-            renderTable();
-            updateStats();
+
+            // Reload unregistered files to remove the newly registered one
+            loadUnregisteredFiles().then(() => {
+                renderTable();
+                updateStats();
+            });
+
             hideAddArticleForm();
             alert('새 기사가 추가되었습니다. "변경사항 저장" 버튼을 눌러 저장하세요.');
         }
