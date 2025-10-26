@@ -6,7 +6,9 @@
 
 ### 사용법
 
-모든 블로그 페이지에서 Footer를 로드하려면 `</body>` 태그 직전에 다음 2줄을 추가하세요:
+#### 1. Footer HTML 추가
+
+`</body>` 태그 직전에 다음 2줄을 추가:
 
 ```html
 <!-- Footer Component (loaded dynamically) -->
@@ -14,6 +16,80 @@
 <script src="/components/footer-loader.js"></script>
 </body>
 </html>
+```
+
+#### 2. Footer 스타일 정의 (필수!)
+
+**중요**: Footer HTML에는 색상이 없습니다. 각 페이지의 `<style>` 태그에서 색상을 정의해야 합니다.
+
+**다크 테마** (index.html용):
+```css
+/* Footer Styles - Dark Theme */
+.pebblous-footer {
+    background-color: #0f172a;
+    color: #94a3b8;
+}
+.footer-border {
+    border-top: 1px solid #1e293b;
+}
+.footer-heading {
+    color: #e2e8f0;
+}
+.footer-text {
+    color: #94a3b8;
+}
+.footer-link {
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+.footer-link:hover {
+    color: #F86825;
+}
+.footer-divider {
+    border-top: 1px solid #1e293b;
+}
+.footer-social-icon {
+    color: #64748b;
+    transition: color 0.2s;
+}
+.footer-social-icon:hover {
+    color: #e2e8f0;
+}
+```
+
+**라이트 테마** (블로그 페이지용):
+```css
+/* Footer Styles - Light Theme */
+.pebblous-footer {
+    background-color: #ffffff;
+    color: #57534e;
+}
+.footer-border {
+    border-top: 1px solid #e7e5e4;
+}
+.footer-heading {
+    color: #1c1917;
+}
+.footer-text {
+    color: #57534e;
+}
+.footer-link {
+    color: #57534e;
+    transition: color 0.2s;
+}
+.footer-link:hover {
+    color: #F86825;
+}
+.footer-divider {
+    border-top: 1px solid #e7e5e4;
+}
+.footer-social-icon {
+    color: #9ca3af;
+    transition: color 0.2s;
+}
+.footer-social-icon:hover {
+    color: #1c1917;
+}
 ```
 
 ### 파일 구조
