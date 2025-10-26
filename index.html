@@ -504,15 +504,26 @@
                 const response = await fetch('articles.json', { cache: 'no-store' });
                 const data = await response.json();
 
+                // Sort function: featured first, then by date
+                const sortArticles = (articles) => {
+                    return articles.sort((a, b) => {
+                        // Featured articles come first
+                        if (a.featured && !b.featured) return -1;
+                        if (!a.featured && b.featured) return 1;
+                        // Then sort by date (newest first)
+                        return new Date(b.date) - new Date(a.date);
+                    });
+                };
+
                 // Filter and group articles by category
-                const artArticles = data.articles.filter(a => a.published && a.category === 'art');
-                const techArticles = data.articles.filter(a => a.published && a.category === 'tech');
-                const storyArticles = data.articles.filter(a => a.published && a.category === 'story');
+                const artArticles = sortArticles(data.articles.filter(a => a.published && a.category === 'art'));
+                const techArticles = sortArticles(data.articles.filter(a => a.published && a.category === 'tech'));
+                const storyArticles = sortArticles(data.articles.filter(a => a.published && a.category === 'story'));
 
                 // Render articles
-                renderArticles('art-articles', artArticles);
-                renderArticles('tech-articles', techArticles);
-                renderArticles('story-articles', storyArticles);
+                renderArticles('art-articles', artArticles, 'art');
+                renderArticles('tech-articles', techArticles, 'tech');
+                renderArticles('story-articles', storyArticles, 'story');
             } catch (error) {
                 console.error('Failed to load articles:', error);
                 ['art-articles', 'tech-articles', 'story-articles'].forEach(id => {
@@ -521,7 +532,7 @@
             }
         }
 
-        function renderArticles(containerId, articles) {
+        function renderArticles(containerId, articles, category) {
             const container = document.getElementById(containerId);
 
             if (articles.length === 0) {
@@ -529,85 +540,113 @@
                 return;
             }
 
-            container.innerHTML = articles.map((article, index) => {
-                const isExternal = article.external || false;
-                const hasModal = article.hasModal || false;
+            // Initial display limit
+            const initialLimit = 6;
+            let displayedArticles = articles.slice(0, initialLimit);
 
-                // Check if image is Pebblous logo (default image)
-                const isPebblousLogo = article.image && article.image.includes('Pebblous_BM');
+            const renderCards = () => {
+                return displayedArticles.map((article, index) => {
+                    const isExternal = article.external || false;
+                    const hasModal = article.hasModal || false;
+                    const isFeatured = article.featured || false;
 
-                const imageTag = article.image
-                    ? isPebblousLogo
-                        ? `<div class="relative w-full h-48 overflow-hidden bg-slate-800/30 flex items-end justify-end p-4">
-                            <img src="${article.image}" alt="${article.title}"
-                                 class="w-auto h-6 object-contain"
-                                 loading="lazy">
-                           </div>`
-                        : `<div class="relative w-full h-48 overflow-hidden bg-slate-900/30 group/img">
-                            <img src="${article.image}" alt="${article.title}"
-                                 class="w-full h-48 object-cover object-bottom transition-all duration-500 group-hover/img:object-contain group-hover/img:scale-90"
-                                 loading="lazy">
-                           </div>`
-                    : '';
+                    // Check if image is Pebblous logo (default image)
+                    const isPebblousLogo = article.image && article.image.includes('Pebblous_BM');
 
-                const tagsHtml = article.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
-                const tagsScrollHtml = `
-                    <div class="tags-container mb-3">
-                        <div class="tags-scroll">
-                            ${tagsHtml}
+                    // Featured badge
+                    const featuredBadge = isFeatured
+                        ? `<span class="inline-block px-2 py-1 text-xs font-semibold bg-orange-500/20 text-orange-500 rounded mb-2">FEATURED</span>`
+                        : '';
+
+                    const imageTag = article.image
+                        ? isPebblousLogo
+                            ? `<div class="relative w-full h-48 overflow-hidden bg-slate-800/30 flex items-end justify-end p-4">
+                                <img src="${article.image}" alt="${article.title}"
+                                     class="w-auto h-6 object-contain"
+                                     loading="lazy">
+                               </div>`
+                            : `<div class="relative w-full h-48 overflow-hidden bg-slate-900/30 group/img">
+                                <img src="${article.image}" alt="${article.title}"
+                                     class="w-full h-48 object-cover object-bottom transition-all duration-500 group-hover/img:object-contain group-hover/img:scale-90"
+                                     loading="lazy">
+                               </div>`
+                        : '';
+
+                    const tagsHtml = article.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+                    const tagsScrollHtml = `
+                        <div class="tags-container mb-3">
+                            <div class="tags-scroll">
+                                ${tagsHtml}
+                            </div>
                         </div>
-                    </div>
+                    `;
+
+                    // For external links, wrap the entire card
+                    if (isExternal) {
+                        return `
+                            <a href="${article.path}" target="_blank" rel="noopener noreferrer" class="card rounded-lg overflow-hidden group flex flex-col fade-in" style="animation-delay: ${index * 0.1}s;">
+                                <div class="p-6 flex-grow">
+                                    ${featuredBadge}
+                                    <div class="text-xs text-slate-500 mb-2">${article.date}</div>
+                                    ${tagsScrollHtml}
+                                    <h3 class="text-xl font-bold text-white group-hover:accent-color transition-colors">${article.title}</h3>
+                                    <p class="mt-3 text-sm text-slate-400">${article.description}</p>
+                                </div>
+                                ${imageTag}
+                            </a>
+                        `;
+                    } else if (hasModal) {
+                        return `
+                            <div class="card rounded-lg overflow-hidden flex flex-col group fade-in" style="animation-delay: ${index * 0.1}s;">
+                                <div class="p-6 flex-grow">
+                                    ${featuredBadge}
+                                    <div class="text-xs text-slate-500 mb-2">${article.date}</div>
+                                    ${tagsScrollHtml}
+                                    <h3 class="text-xl font-bold text-white mb-3">${article.title}</h3>
+                                    <p class="text-sm text-slate-400 mb-4">${article.description}</p>
+                                    <button onclick="openModal('${article.modalId}')" class="w-full text-center accent-bg text-white font-semibold py-2 rounded-md hover:opacity-90 transition-opacity">자세히 보기</button>
+                                </div>
+                                ${imageTag}
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <a href="${article.path}" class="card rounded-lg overflow-hidden group flex flex-col fade-in" style="animation-delay: ${index * 0.1}s;">
+                                <div class="p-6 flex-grow">
+                                    ${featuredBadge}
+                                    <div class="text-xs text-slate-500 mb-2">${article.date}</div>
+                                    ${tagsScrollHtml}
+                                    <h3 class="text-xl font-bold text-white group-hover:accent-color transition-colors">${article.title}</h3>
+                                    <p class="mt-3 text-sm text-slate-400">${article.description}</p>
+                                </div>
+                                ${imageTag}
+                            </a>
+                        `;
+                    }
+                }).join('');
+            };
+
+            // Render initial cards
+            container.innerHTML = renderCards();
+
+            // Add "Load More" button if needed
+            if (articles.length > initialLimit) {
+                const loadMoreBtn = document.createElement('div');
+                loadMoreBtn.className = 'col-span-full flex justify-center mt-8';
+                loadMoreBtn.innerHTML = `
+                    <button id="loadmore-${category}" class="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-md transition-colors">
+                        더 보기 (${articles.length - initialLimit}개 남음)
+                    </button>
                 `;
+                container.appendChild(loadMoreBtn);
 
-                let linkOrButton = '';
-                if (hasModal && article.modalId) {
-                    linkOrButton = `<button onclick="openModal('${article.modalId}')" class="w-full text-center accent-bg text-white font-semibold py-2 rounded-md hover:opacity-90 transition-opacity">자세히 보기</button>`;
-                } else if (isExternal) {
-                    linkOrButton = `<a href="${article.path}" target="_blank" rel="noopener noreferrer" class="block"></a>`;
-                } else {
-                    linkOrButton = `<a href="${article.path}" class="block"></a>`;
-                }
-
-                // For external links, wrap the entire card
-                if (isExternal) {
-                    return `
-                        <a href="${article.path}" target="_blank" rel="noopener noreferrer" class="card rounded-lg overflow-hidden group flex flex-col fade-in" style="animation-delay: ${index * 0.1}s;">
-                            <div class="p-6 flex-grow">
-                                <div class="text-xs text-slate-500 mb-2">${article.date}</div>
-                                ${tagsScrollHtml}
-                                <h3 class="text-xl font-bold text-white group-hover:accent-color transition-colors">${article.title}</h3>
-                                <p class="mt-3 text-sm text-slate-400">${article.description}</p>
-                            </div>
-                            ${imageTag}
-                        </a>
-                    `;
-                } else if (hasModal) {
-                    return `
-                        <div class="card rounded-lg overflow-hidden flex flex-col group fade-in" style="animation-delay: ${index * 0.1}s;">
-                            <div class="p-6 flex-grow">
-                                <div class="text-xs text-slate-500 mb-2">${article.date}</div>
-                                ${tagsScrollHtml}
-                                <h3 class="text-xl font-bold text-white mb-3">${article.title}</h3>
-                                <p class="text-sm text-slate-400 mb-4">${article.description}</p>
-                                ${linkOrButton}
-                            </div>
-                            ${imageTag}
-                        </div>
-                    `;
-                } else {
-                    return `
-                        <a href="${article.path}" class="card rounded-lg overflow-hidden group flex flex-col fade-in" style="animation-delay: ${index * 0.1}s;">
-                            <div class="p-6 flex-grow">
-                                <div class="text-xs text-slate-500 mb-2">${article.date}</div>
-                                ${tagsScrollHtml}
-                                <h3 class="text-xl font-bold text-white group-hover:accent-color transition-colors">${article.title}</h3>
-                                <p class="mt-3 text-sm text-slate-400">${article.description}</p>
-                            </div>
-                            ${imageTag}
-                        </a>
-                    `;
-                }
-            }).join('');
+                // Load more functionality
+                document.getElementById(`loadmore-${category}`).addEventListener('click', function() {
+                    displayedArticles = articles;
+                    container.innerHTML = renderCards();
+                    initTagsScroll();
+                });
+            }
         }
 
         // ============================================================
