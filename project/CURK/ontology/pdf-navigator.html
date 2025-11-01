@@ -171,6 +171,7 @@
 
         #tab-graph.active {
             display: flex;
+            flex-direction: column;
         }
 
         /* Tree View Styles */
@@ -261,12 +262,12 @@
         }
 
         .textLayer span.highlight {
-            background-color: rgba(248, 104, 37, 0.3);
+            background-color: rgba(248, 104, 37, 0.8);
             color: transparent !important;
         }
 
         .textLayer span.highlight-context {
-            background-color: rgba(255, 255, 0, 0.2);
+            background-color: rgba(255, 255, 0, 0.15);
             color: transparent !important;
         }
 
@@ -332,7 +333,7 @@
                     <!-- Tab Contents -->
                     <div class="flex-1 overflow-hidden">
                         <!-- Graph View Tab -->
-                        <div id="tab-graph" class="tab-content-top active h-full flex flex-col p-4">
+                        <div id="tab-graph" class="tab-content-top active h-full p-4">
                             <div id="cy" class="flex-1"></div>
 
                             <!-- Graph Controls -->
@@ -474,11 +475,16 @@
                 return;
             }
 
+            console.log('✓ Tree container found:', treeContainer);
+            console.log('✓ Container current HTML:', treeContainer.innerHTML);
+
             if (!state.ontologyData) {
                 console.warn('⚠️ Ontology data not loaded yet');
                 treeContainer.innerHTML = '<p class="text-sm text-red-400">데이터 로딩 실패</p>';
                 return;
             }
+
+            console.log('✓ Ontology data loaded:', state.ontologyData.metadata);
 
             // Define ontology hierarchy
             const treeData = {
@@ -524,7 +530,14 @@
                 ]
             };
 
-            treeContainer.innerHTML = buildTreeHTML(treeData);
+            const treeHTML = buildTreeHTML(treeData);
+            console.log('✓ Generated tree HTML length:', treeHTML.length);
+            console.log('✓ First 200 chars of HTML:', treeHTML.substring(0, 200));
+
+            treeContainer.innerHTML = treeHTML;
+            console.log('✓ HTML inserted into container');
+            console.log('✓ Container now has', treeContainer.querySelectorAll('.tree-item').length, 'tree items');
+
             attachTreeEventListeners();
 
             console.log('✅ Tree view initialized');
@@ -732,6 +745,9 @@
                     selectClass(className);
                 }
             });
+
+            // Fit graph to show all nodes initially
+            state.cy.fit();
 
             console.log('✅ Graph initialized with data');
         }
@@ -953,6 +969,7 @@
             document.querySelectorAll('.tab-btn-top').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const targetTab = this.getAttribute('data-tab');
+                    console.log('🔀 Switching to tab:', targetTab);
 
                     // Remove active from all tabs
                     document.querySelectorAll('.tab-btn-top').forEach(b => b.classList.remove('active'));
@@ -960,7 +977,11 @@
 
                     // Add active to clicked tab
                     this.classList.add('active');
-                    document.getElementById('tab-' + targetTab).classList.add('active');
+                    const targetElement = document.getElementById('tab-' + targetTab);
+                    targetElement.classList.add('active');
+
+                    console.log('✓ Target tab element:', targetElement);
+                    console.log('✓ Tab is now visible:', targetElement.style.display || 'CSS-controlled');
 
                     // Resize graph if switching to graph tab
                     if (targetTab === 'graph' && state.cy) {
@@ -1009,6 +1030,116 @@
             document.getElementById('reset-graph').addEventListener('click', () => {
                 state.cy.reset();
             });
+
+            // PDF text selection -> Ontology (bidirectional)
+            document.addEventListener('selectionchange', () => {
+                handleTextSelection();
+            });
+        }
+
+        // Handle PDF text selection and find matching ontology class
+        function handleTextSelection() {
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+
+            // Ignore empty or very short selections
+            if (!selectedText || selectedText.length < 3) {
+                return;
+            }
+
+            // Check if selection is within PDF text layer
+            const textLayer = document.getElementById('text-layer');
+            if (!textLayer || !textLayer.contains(selection.anchorNode)) {
+                return;
+            }
+
+            console.log('📝 Selected text in PDF:', selectedText);
+
+            // Find matching ontology class
+            const matchedClass = findMatchingClass(selectedText);
+
+            if (matchedClass) {
+                console.log('✅ Found matching class:', matchedClass);
+
+                // Highlight in ontology views
+                selectClass(matchedClass);
+
+                // Show notification
+                showSelectionNotification(selectedText, matchedClass);
+            }
+        }
+
+        // Find ontology class that matches selected text
+        function findMatchingClass(selectedText) {
+            if (!state.ontologyData) return null;
+
+            const lowerText = selectedText.toLowerCase();
+
+            // Search through all ontology classes
+            for (const classData of state.ontologyData.ontologyIndex) {
+                // Check English label
+                if (classData.labelEn && lowerText.includes(classData.labelEn.toLowerCase())) {
+                    return classData.className;
+                }
+
+                // Check Korean label
+                if (classData.labelKo && lowerText.includes(classData.labelKo)) {
+                    return classData.className;
+                }
+
+                // Check class name itself
+                if (lowerText.includes(classData.className.toLowerCase())) {
+                    return classData.className;
+                }
+
+                // Check mentions (any previously indexed occurrence)
+                if (classData.mentions) {
+                    for (const mention of classData.mentions) {
+                        if (mention.text && lowerText.includes(mention.text.toLowerCase())) {
+                            return classData.className;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        // Show notification when text selection matches ontology class
+        function showSelectionNotification(selectedText, className) {
+            const pdfContainer = document.getElementById('pdf-container');
+
+            // Remove any existing selection notifications
+            const existingNotifications = pdfContainer.querySelectorAll('.selection-notification');
+            existingNotifications.forEach(n => n.remove());
+
+            // Get class data for Korean label
+            const classData = state.ontologyData.ontologyIndex.find(c => c.className === className);
+            const label = classData ? (classData.labelKo || className) : className;
+
+            // Create notification
+            const notification = document.createElement('div');
+            notification.className = 'selection-notification absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 bg-teal-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2';
+            notification.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span>"<strong>${selectedText.substring(0, 30)}${selectedText.length > 30 ? '...' : ''}</strong>" → <strong>${label}</strong></span>
+            `;
+
+            pdfContainer.style.position = 'relative';
+            pdfContainer.appendChild(notification);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.transition = 'opacity 0.5s';
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 500);
+            }, 3000);
         }
 
         // Start

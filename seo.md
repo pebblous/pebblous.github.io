@@ -114,15 +114,18 @@
 ```
 
 ### 7. Twitter Cards
+
+**중요**: Twitter 카드 태그는 **`name` 속성을 사용**해야 합니다 (`property`가 아님!)
+
 ```html
-<meta id="twitter-url" property="twitter:url" content="https://blog.pebblous.ai/{경로}">
-<meta id="twitter-title" property="twitter:title" content="{제목}">
-<meta id="twitter-description" property="twitter:description" content="{요약}">
-<meta id="twitter-image" property="twitter:image" content="https://blog.pebblous.ai/{이미지}">
-<meta name="twitter:image:alt" content="{이미지 설명}">
-<meta property="twitter:card" content="summary_large_image">
+<!-- 필수: 카드 타입을 맨 먼저 정의 -->
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@pebblous">
 <meta name="twitter:creator" content="@pebblous">
+<meta name="twitter:title" content="{제목}">
+<meta name="twitter:description" content="{요약}">
+<meta name="twitter:image" content="https://blog.pebblous.ai/{이미지}">
+<meta name="twitter:image:alt" content="{이미지 설명}">
 
 <!-- 추가 레이블 (선택) -->
 <meta name="twitter:label1" content="읽는 시간">
@@ -130,6 +133,26 @@
 <meta name="twitter:label2" content="난이도">
 <meta name="twitter:data2" content="초급|중급|고급">
 ```
+
+**주의 사항**:
+- ❌ **피해야 할 패턴**: `<meta property="twitter:*">` (동작하지 않음)
+- ✅ **올바른 패턴**: `<meta name="twitter:*">`
+- `twitter:url` 태그는 **불필요** (Open Graph의 `og:url`로 충분)
+- 이미지 크기: **1200x630px 권장** (최소 300x157px, 최대 5MB)
+- 카드 타입은 반드시 **맨 먼저 선언**
+
+**이미지 요구사항**:
+- 형식: PNG, JPG, GIF, WebP
+- 최대 크기: 5MB
+- 비율: 1.91:1 (summary_large_image), 1:1 (summary)
+- 절대 URL 필수 (상대 경로 불가)
+
+**검증 방법** (2023년 8월 이후):
+- ⚠️ Twitter Card Validator는 2023년 8월부터 미리보기 제거됨 ([공지](https://devcommunity.x.com/t/card-validator-preview-removal/175006))
+- ✅ **대안 1**: [OpenGraph.xyz](https://www.opengraph.xyz/) - 트위터 카드 미리보기 제공
+- ✅ **대안 2**: [Meta Tags](https://metatags.io/) - 모든 소셜 미디어 미리보기
+- ✅ **대안 3**: 실제 트윗 게시 후 확인 (가장 확실)
+- ✅ **대안 4**: 브라우저 개발자 도구로 메타 태그 존재 여부 확인
 
 ### 8. Favicon
 ```html
@@ -381,11 +404,14 @@ const pathToBreadcrumb = (url) => {
     <meta property="og:type" content="article">
     <meta property="article:published_time" content="{{PUBLISHED_DATE}}">
 
-    <!-- Twitter -->
+    <!-- Twitter (주의: name 속성 사용, property 아님!) -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous">
+    <meta name="twitter:creator" content="@pebblous">
     <meta name="twitter:title" content="{{TITLE}}">
     <meta name="twitter:description" content="{{DESCRIPTION}}">
     <meta name="twitter:image" content="https://blog.pebblous.ai/{{IMAGE}}">
+    <meta name="twitter:image:alt" content="{{IMAGE_ALT}}">
 
     <!-- JSON-LD: TechArticle -->
     <script type="application/ld+json">
@@ -561,7 +587,9 @@ jobs:
 - **Google Rich Results Test**: https://search.google.com/test/rich-results
 - **Schema Markup Validator**: https://validator.schema.org/
 - **Facebook Sharing Debugger**: https://developers.facebook.com/tools/debug/
-- **Twitter Card Validator**: https://cards-dev.twitter.com/validator
+- **OpenGraph.xyz**: https://www.opengraph.xyz/ (트위터 카드 미리보기)
+- **Meta Tags**: https://metatags.io/ (모든 소셜 미디어 미리보기)
+- ~~**Twitter Card Validator**~~ (2023년 8월 미리보기 제거됨)
 
 ### 3. 핵심 지표 (KPI)
 - **평균 검색 순위**: 상위 10개 키워드
@@ -625,7 +653,7 @@ jobs:
 - [ ] Google Rich Results Test 통과
 - [ ] Schema Validator 통과
 - [ ] Facebook Debugger 미리보기 확인
-- [ ] Twitter Card 미리보기 확인
+- [ ] OpenGraph.xyz 또는 MetaTags.io로 트위터 카드 미리보기 확인
 - [ ] 모바일 반응형 테스트
 
 ### 배포 후
@@ -650,6 +678,8 @@ jobs:
 - [Schema Markup Validator](https://validator.schema.org/)
 - [Facebook Debugger](https://developers.facebook.com/tools/debug/)
 - [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/)
+- [OpenGraph.xyz](https://www.opengraph.xyz/) - 트위터 카드 미리보기
+- [Meta Tags](https://metatags.io/) - 모든 소셜 미디어 미리보기
 
 ### 성능 분석
 - [Google PageSpeed Insights](https://pagespeed.web.dev/)
