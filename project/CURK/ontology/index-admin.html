@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ontology Index Admin - ISO 5259-2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        body {
+            font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">Ontology Index Admin</h1>
+            <p class="text-xl text-slate-400">ISO/IEC 5259-2 PDF 인덱싱 결과 확인</p>
+        </header>
+
+        <!-- Metadata Card -->
+        <div class="bg-slate-900 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-white mb-4">📊 인덱싱 통계</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="bg-slate-800 rounded-lg p-4">
+                    <div class="text-3xl font-bold text-teal-400" id="total-classes">-</div>
+                    <div class="text-sm text-slate-400">Total Classes</div>
+                </div>
+                <div class="bg-slate-800 rounded-lg p-4">
+                    <div class="text-3xl font-bold text-orange-400" id="total-mentions">-</div>
+                    <div class="text-sm text-slate-400">Total Mentions</div>
+                </div>
+                <div class="bg-slate-800 rounded-lg p-4">
+                    <div class="text-3xl font-bold text-cyan-400" id="total-pages">46</div>
+                    <div class="text-sm text-slate-400">PDF Pages</div>
+                </div>
+                <div class="bg-slate-800 rounded-lg p-4">
+                    <div class="text-3xl font-bold text-purple-400" id="avg-mentions">-</div>
+                    <div class="text-sm text-slate-400">Avg per Class</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="bg-slate-900 rounded-lg p-6 mb-8">
+            <div class="flex gap-4">
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="클래스 이름 검색..."
+                    class="flex-1 bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-700 focus:border-teal-500 focus:outline-none"
+                />
+                <select id="sort-select" class="bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-700">
+                    <option value="name">이름순</option>
+                    <option value="mentions-desc" selected>언급 많은순</option>
+                    <option value="mentions-asc">언급 적은순</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Classes List -->
+        <div id="classes-container" class="space-y-4">
+            <div class="text-center py-12">
+                <div class="animate-spin inline-block w-8 h-8 border-4 border-current border-t-transparent rounded-full mb-2" role="status"></div>
+                <p>로딩 중...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ontologyData = null;
+
+        // Load data
+        async function loadData() {
+            try {
+                const response = await fetch('./example/ontology-index.json');
+                ontologyData = await response.json();
+                displayMetadata();
+                displayClasses();
+            } catch (error) {
+                document.getElementById('classes-container').innerHTML = `
+                    <div class="bg-red-900/20 border border-red-500 rounded-lg p-6 text-center">
+                        <p class="text-red-400 text-lg">❌ 데이터를 불러올 수 없습니다</p>
+                        <p class="text-sm text-slate-400 mt-2">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display metadata
+        function displayMetadata() {
+            const { metadata } = ontologyData;
+            document.getElementById('total-classes').textContent = metadata.totalClasses;
+            document.getElementById('total-mentions').textContent = metadata.totalMentions.toLocaleString();
+            document.getElementById('avg-mentions').textContent = Math.round(metadata.totalMentions / metadata.totalClasses);
+        }
+
+        // Display classes
+        function displayClasses(filterText = '', sortBy = 'mentions-desc') {
+            const container = document.getElementById('classes-container');
+            let classes = [...ontologyData.ontologyIndex];
+
+            // Filter
+            if (filterText) {
+                classes = classes.filter(c =>
+                    c.className.toLowerCase().includes(filterText.toLowerCase()) ||
+                    (c.labelKo && c.labelKo.includes(filterText)) ||
+                    (c.labelEn && c.labelEn.toLowerCase().includes(filterText.toLowerCase()))
+                );
+            }
+
+            // Sort
+            if (sortBy === 'mentions-desc') {
+                classes.sort((a, b) => b.mentionCount - a.mentionCount);
+            } else if (sortBy === 'mentions-asc') {
+                classes.sort((a, b) => a.mentionCount - b.mentionCount);
+            } else {
+                classes.sort((a, b) => a.className.localeCompare(b.className));
+            }
+
+            // Render
+            container.innerHTML = classes.map((cls, index) => `
+                <div class="bg-slate-900 rounded-lg p-6 hover:bg-slate-800 transition-colors">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <h3 class="text-xl font-bold text-white">${cls.className}</h3>
+                                <span class="px-3 py-1 bg-teal-500/20 text-teal-400 rounded-full text-sm">
+                                    ${cls.mentionCount} mentions
+                                </span>
+                            </div>
+                            <div class="flex gap-4 text-sm">
+                                ${cls.labelKo ? `<span class="text-slate-400">🇰🇷 ${cls.labelKo}</span>` : ''}
+                                ${cls.labelEn ? `<span class="text-slate-400">🇬🇧 ${cls.labelEn}</span>` : ''}
+                            </div>
+                        </div>
+                        <button
+                            onclick="toggleDetails(${index})"
+                            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                        >
+                            상세보기
+                        </button>
+                    </div>
+                    <div id="details-${index}" class="hidden mt-4 pt-4 border-t border-slate-700">
+                        <h4 class="text-lg font-semibold text-white mb-3">📍 Mentions</h4>
+                        <div class="space-y-2 max-h-96 overflow-y-auto">
+                            ${cls.mentions.slice(0, 20).map((mention, mIdx) => `
+                                <div class="bg-slate-800 rounded p-3">
+                                    <div class="flex gap-2 mb-2">
+                                        <span class="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs">
+                                            Page ${mention.page}
+                                        </span>
+                                        ${mention.section ? `
+                                            <span class="px-2 py-1 bg-cyan-500/20 text-cyan-400 rounded text-xs">
+                                                ${mention.section}
+                                            </span>
+                                        ` : ''}
+                                        <span class="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">
+                                            "${mention.searchTerm}"
+                                        </span>
+                                    </div>
+                                    <div class="text-sm text-slate-300">
+                                        ${highlightTerm(mention.context, mention.text)}
+                                    </div>
+                                </div>
+                            `).join('')}
+                            ${cls.mentions.length > 20 ? `
+                                <div class="text-center text-slate-400 text-sm py-2">
+                                    ... 외 ${cls.mentions.length - 20}개 mentions
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Toggle details
+        function toggleDetails(index) {
+            const details = document.getElementById(`details-${index}`);
+            details.classList.toggle('hidden');
+        }
+
+        // Highlight search term in context
+        function highlightTerm(context, term) {
+            const regex = new RegExp(`(${escapeRegex(term)})`, 'gi');
+            return context.replace(regex, '<mark class="bg-yellow-500/30 text-yellow-200">$1</mark>');
+        }
+
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Event listeners
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            displayClasses(e.target.value, document.getElementById('sort-select').value);
+        });
+
+        document.getElementById('sort-select').addEventListener('change', (e) => {
+            displayClasses(document.getElementById('search-input').value, e.target.value);
+        });
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>

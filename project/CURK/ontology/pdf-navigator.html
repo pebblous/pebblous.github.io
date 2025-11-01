@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>온톨로지 기반 PDF 탐색기 - ISO/IEC 5259-2</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="ISO/IEC 5259-2 표준 문서를 온톨로지 기반으로 탐색하는 인터랙티브 도구. 지식 그래프와 PDF 문서가 양방향으로 연동됩니다.">
+    <meta name="keywords" content="Ontology, PDF, Navigator, ISO 5259, Knowledge Graph, Interactive, RDF">
+    <meta name="author" content="Pebblous Data Communication Team">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Cytoscape.js for graph visualization -->
+    <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css" />
+
+    <style>
+        body {
+            font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        /* Layout Grid */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 0;
+            height: calc(100vh - 80px);
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Ontology Panel */
+        .ontology-panel {
+            border-right: 1px solid #334155;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ontology-panel.collapsed {
+            width: 0;
+            min-width: 0;
+            border: none;
+            overflow: hidden;
+        }
+
+        /* PDF Panel */
+        .pdf-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Graph Container */
+        #cy {
+            width: 100%;
+            background: #0f172a;
+            border-radius: 0.5rem;
+            min-height: 300px;
+        }
+
+        /* PDF Canvas */
+        #pdf-canvas {
+            max-width: 100%;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Toggle Button */
+        .panel-toggle {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 32px;
+            height: 64px;
+            background: #F86825;
+            border: none;
+            border-radius: 0 0.5rem 0.5rem 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .panel-toggle:hover {
+            background: #e05a1a;
+            width: 36px;
+        }
+
+        .panel-toggle.left {
+            left: 0;
+        }
+
+        /* Mention Badge */
+        .mention-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: rgba(20, 184, 166, 0.2);
+            color: #14b8a6;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        /* PDF Highlight */
+        .pdf-highlight {
+            background: rgba(248, 104, 37, 0.3);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.125rem;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #F86825;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Top Tab Styles (Graph / Tree) */
+        .tab-btn-top {
+            color: #94a3b8;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .tab-btn-top:hover {
+            color: #14b8a6;
+            background: rgba(20, 184, 166, 0.05);
+        }
+
+        .tab-btn-top.active {
+            color: #F86825;
+            border-bottom-color: #F86825;
+            background: rgba(248, 104, 37, 0.05);
+        }
+
+        .tab-content-top {
+            display: none;
+        }
+
+        .tab-content-top.active {
+            display: block;
+        }
+
+        #tab-graph.active {
+            display: flex;
+        }
+
+        /* Tree View Styles */
+        .tree-node {
+            margin-left: 0;
+            user-select: none;
+        }
+
+        .tree-item {
+            padding: 0.375rem 0.75rem;
+            margin: 0.125rem 0;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tree-item:hover {
+            background: rgba(20, 184, 166, 0.1);
+            color: #14b8a6;
+        }
+
+        .tree-item.selected {
+            background: rgba(248, 104, 37, 0.1);
+            color: #F86825;
+            border-left: 3px solid #F86825;
+        }
+
+        .tree-toggle {
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            transition: transform 0.2s;
+        }
+
+        .tree-toggle.expanded {
+            transform: rotate(90deg);
+        }
+
+        .tree-children {
+            margin-left: 1.25rem;
+            border-left: 1px solid #334155;
+            padding-left: 0.5rem;
+        }
+
+        .tree-children.collapsed {
+            display: none;
+        }
+
+        .mention-count {
+            font-size: 0.75rem;
+            padding: 0.125rem 0.375rem;
+            background: rgba(20, 184, 166, 0.2);
+            color: #14b8a6;
+            border-radius: 0.25rem;
+            margin-left: auto;
+        }
+
+        /* PDF Text Layer */
+        #pdf-page-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .textLayer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            opacity: 0.2;
+            line-height: 1.0;
+        }
+
+        .textLayer span {
+            color: transparent;
+            position: absolute;
+            white-space: pre;
+            cursor: text;
+            transform-origin: 0% 0%;
+        }
+
+        .textLayer span.highlight {
+            background-color: rgba(248, 104, 37, 0.3);
+            color: transparent !important;
+        }
+
+        .textLayer span.highlight-context {
+            background-color: rgba(255, 255, 0, 0.2);
+            color: transparent !important;
+        }
+
+        .textLayer ::selection {
+            background: rgba(20, 184, 166, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300">
+    <!-- Fixed Header -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <a href="https://pebblous.ai" target="_blank" rel="noopener noreferrer">
+                    <img src="/image/Pebblous_BM_Orange_RGB.png" alt="Pebblous Logo" class="h-6 w-auto object-contain">
+                </a>
+                <div class="flex items-center gap-4">
+                    <a href="./index-admin.html" class="text-sm text-slate-400 hover:text-white transition-colors">
+                        Admin
+                    </a>
+                    <a href="/index.html" class="text-sm text-slate-400 hover:text-white transition-colors">
+                        ← 블로그 홈
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="pt-20">
+        <!-- Title Section -->
+        <div class="container mx-auto px-4 py-6 border-b border-slate-800">
+            <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">
+                온톨로지 기반 PDF 탐색기
+            </h1>
+            <p class="text-lg text-slate-400">
+                ISO/IEC 5259-2 데이터 품질 표준 - 인터랙티브 문서 네비게이션
+            </p>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Left Panel: Ontology -->
+            <div id="ontology-panel" class="ontology-panel bg-slate-900/50">
+                <!-- Panel Header -->
+                <div class="p-4 border-b border-slate-700">
+                    <h2 class="text-xl font-bold text-white mb-2">온톨로지 탐색</h2>
+                    <p class="text-sm text-slate-400">클래스를 클릭하여 문서 위치 확인</p>
+                </div>
+
+                <!-- Top Tabs: Graph / Tree -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <!-- Tab Buttons -->
+                    <div class="flex border-b border-slate-700">
+                        <button class="tab-btn-top active px-4 py-2 text-sm font-medium transition-colors" data-tab="graph">
+                            📊 그래프 뷰
+                        </button>
+                        <button class="tab-btn-top px-4 py-2 text-sm font-medium transition-colors" data-tab="tree">
+                            🌳 트리 뷰
+                        </button>
+                    </div>
+
+                    <!-- Tab Contents -->
+                    <div class="flex-1 overflow-hidden">
+                        <!-- Graph View Tab -->
+                        <div id="tab-graph" class="tab-content-top active h-full flex flex-col p-4">
+                            <div id="cy" class="flex-1"></div>
+
+                            <!-- Graph Controls -->
+                            <div class="mt-4 flex gap-2">
+                                <button id="fit-graph" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-sm rounded transition-colors">
+                                    전체 보기
+                                </button>
+                                <button id="reset-graph" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-sm rounded transition-colors">
+                                    초기화
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tree View Tab -->
+                        <div id="tab-tree" class="tab-content-top h-full overflow-y-auto p-4">
+                            <div id="tree-container" class="space-y-1">
+                                <p class="text-sm text-slate-400">트리 뷰 준비 중...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Panel: Location List -->
+                <div class="border-t border-slate-700" style="height: 280px;">
+                    <div class="p-3 border-b border-slate-700 bg-slate-800/30">
+                        <h3 class="text-sm font-semibold text-white">📍 문서 위치</h3>
+                    </div>
+                    <div class="overflow-y-auto p-4" style="height: calc(280px - 40px);">
+                        <div id="location-list" class="space-y-2">
+                            <p class="text-sm text-slate-400">클래스를 선택하면 해당 위치가 표시됩니다</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: PDF Viewer -->
+            <div class="pdf-panel relative">
+                <!-- Toggle Button -->
+                <button id="toggle-ontology" class="panel-toggle left">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+
+                <!-- PDF Controls -->
+                <div class="p-4 border-b border-slate-800 bg-slate-900/50">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <button id="prev-page" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded transition-colors disabled:opacity-50">
+                                ←
+                            </button>
+                            <span class="text-sm">
+                                <span id="current-page">1</span> / <span id="total-pages">-</span>
+                            </span>
+                            <button id="next-page" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded transition-colors disabled:opacity-50">
+                                →
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="zoom-out" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded transition-colors">
+                                -
+                            </button>
+                            <span id="zoom-level" class="text-sm">100%</span>
+                            <button id="zoom-in" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded transition-colors">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PDF Canvas Container -->
+                <div id="pdf-container" class="flex-1 overflow-auto bg-slate-800 p-4">
+                    <div id="loading" class="flex flex-col items-center justify-center h-full">
+                        <div class="spinner mb-4"></div>
+                        <p class="text-slate-400">PDF 로딩 중...</p>
+                    </div>
+                    <div id="pdf-page-wrapper" class="hidden">
+                        <canvas id="pdf-canvas"></canvas>
+                        <div id="text-layer" class="textLayer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global State
+        const state = {
+            pdfDoc: null,
+            currentPage: 1,
+            totalPages: 0,
+            scale: 1.5,
+            ontologyData: null,
+            selectedClass: null,
+            cy: null,
+            viewMode: 'graph' // 'graph' or 'tree'
+        };
+
+        // Initialize
+        async function init() {
+            console.log('🚀 Initializing PDF Navigator...');
+
+            // Load ontology index
+            await loadOntologyIndex();
+
+            // Initialize graph
+            initializeGraph();
+
+            // Initialize tree view
+            initializeTreeView();
+
+            // Load PDF
+            await loadPDF();
+
+            // Setup event listeners
+            setupEventListeners();
+
+            console.log('✅ Initialization complete');
+        }
+
+        // Load ontology index data
+        async function loadOntologyIndex() {
+            try {
+                const response = await fetch('./example/ontology-index.json');
+                state.ontologyData = await response.json();
+                console.log(`✅ Loaded ${state.ontologyData.metadata.totalClasses} classes`);
+            } catch (error) {
+                console.error('❌ Failed to load ontology index:', error);
+            }
+        }
+
+        // Initialize Tree View
+        function initializeTreeView() {
+            console.log('🌳 Initializing tree view...');
+            const treeContainer = document.getElementById('tree-container');
+
+            if (!treeContainer) {
+                console.error('❌ Tree container not found');
+                return;
+            }
+
+            if (!state.ontologyData) {
+                console.warn('⚠️ Ontology data not loaded yet');
+                treeContainer.innerHTML = '<p class="text-sm text-red-400">데이터 로딩 실패</p>';
+                return;
+            }
+
+            // Define ontology hierarchy
+            const treeData = {
+                label: '데이터 품질 모델',
+                className: 'DataQualityModel',
+                children: [
+                    {
+                        label: '데이터 품질 특성',
+                        className: 'DataQualityCharacteristic',
+                        children: [
+                            {
+                                label: '고유 특성',
+                                className: 'InherentCharacteristic',
+                                children: [
+                                    { label: '정확성', className: 'Accuracy' },
+                                    { label: '완전성', className: 'Completeness' },
+                                    { label: '일관성', className: 'Consistency' },
+                                    { label: '신뢰성', className: 'Credibility' },
+                                    { label: '최신성', className: 'Currentness' }
+                                ]
+                            },
+                            {
+                                label: '시스템 의존 특성',
+                                className: 'SystemDependentCharacteristic',
+                                children: [
+                                    { label: '접근성', className: 'Accessibility' },
+                                    { label: '준수성', className: 'Compliance' },
+                                    { label: '효율성', className: 'Efficiency' },
+                                    { label: '정밀성', className: 'Precision' },
+                                    { label: '추적성', className: 'Traceability' }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        label: '데이터 구조',
+                        className: null,
+                        children: [
+                            { label: '데이터셋', className: 'DataSet' },
+                            { label: '데이터 항목', className: 'DataItem' }
+                        ]
+                    }
+                ]
+            };
+
+            treeContainer.innerHTML = buildTreeHTML(treeData);
+            attachTreeEventListeners();
+
+            console.log('✅ Tree view initialized');
+        }
+
+        // Build tree HTML recursively
+        function buildTreeHTML(node, level = 0) {
+            const hasChildren = node.children && node.children.length > 0;
+            const mentionCount = node.className ? getMentionCount(node.className) : 0;
+
+            let html = '<div class="tree-node">';
+
+            // Tree item
+            html += `<div class="tree-item" data-classname="${node.className || ''}" data-level="${level}">`;
+
+            // Toggle icon (only if has children)
+            if (hasChildren) {
+                html += '<span class="tree-toggle expanded">▶</span>';
+            } else {
+                html += '<span class="tree-toggle" style="visibility: hidden;">▶</span>';
+            }
+
+            // Label
+            html += `<span class="flex-1">${node.label}</span>`;
+
+            // Mention count badge
+            if (mentionCount > 0) {
+                html += `<span class="mention-count">${mentionCount}</span>`;
+            }
+
+            html += '</div>';
+
+            // Children
+            if (hasChildren) {
+                html += '<div class="tree-children">';
+                node.children.forEach(child => {
+                    html += buildTreeHTML(child, level + 1);
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+
+            return html;
+        }
+
+        // Get mention count for a class
+        function getMentionCount(className) {
+            if (!className || !state.ontologyData) return 0;
+            const classData = state.ontologyData.ontologyIndex.find(c => c.className === className);
+            return classData ? classData.mentionCount : 0;
+        }
+
+        // Attach event listeners to tree items
+        function attachTreeEventListeners() {
+            // Toggle expand/collapse
+            document.querySelectorAll('.tree-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const treeNode = this.closest('.tree-node');
+                    const children = treeNode.querySelector('.tree-children');
+
+                    if (children) {
+                        children.classList.toggle('collapsed');
+                        this.classList.toggle('expanded');
+                    }
+                });
+            });
+
+            // Select class
+            document.querySelectorAll('.tree-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const className = this.getAttribute('data-classname');
+
+                    if (className) {
+                        // Remove previous selection
+                        document.querySelectorAll('.tree-item').forEach(i => i.classList.remove('selected'));
+
+                        // Add selection
+                        this.classList.add('selected');
+
+                        // Select class
+                        selectClass(className);
+                    }
+                });
+            });
+        }
+
+        // Initialize Cytoscape graph
+        function initializeGraph() {
+            // Minimal color palette
+            const colors = {
+                primary: '#F86825',    // Orange
+                secondary: '#14b8a6',  // Teal
+                neutral: '#475569',    // Slate
+                accent: '#06b6d4'      // Cyan
+            };
+
+            // Ontology structure (from previous project)
+            const elements = [
+                // Nodes
+                { data: { id: 'DQModel', label: '품질 모델', className: 'DataQualityModel', type: 'model' } },
+                { data: { id: 'DQChar', label: '품질 특성', className: 'DataQualityCharacteristic', type: 'root' } },
+                { data: { id: 'Inherent', label: '고유 특성', className: 'InherentCharacteristic', type: 'category' } },
+                { data: { id: 'System', label: '시스템 의존', className: 'SystemDependentCharacteristic', type: 'category' } },
+                { data: { id: 'Accuracy', label: '정확성', className: 'Accuracy', type: 'inherent' } },
+                { data: { id: 'Completeness', label: '완전성', className: 'Completeness', type: 'inherent' } },
+                { data: { id: 'Consistency', label: '일관성', className: 'Consistency', type: 'inherent' } },
+                { data: { id: 'Credibility', label: '신뢰성', className: 'Credibility', type: 'inherent' } },
+                { data: { id: 'Currentness', label: '최신성', className: 'Currentness', type: 'inherent' } },
+                { data: { id: 'Accessibility', label: '접근성', className: 'Accessibility', type: 'system' } },
+                { data: { id: 'Compliance', label: '준수성', className: 'Compliance', type: 'system' } },
+                { data: { id: 'Efficiency', label: '효율성', className: 'Efficiency', type: 'system' } },
+                { data: { id: 'Precision', label: '정밀성', className: 'Precision', type: 'system' } },
+                { data: { id: 'Traceability', label: '추적성', className: 'Traceability', type: 'system' } },
+                { data: { id: 'DataSet', label: '데이터셋', className: 'DataSet', type: 'dataset' } },
+                { data: { id: 'DataItem', label: '데이터 항목', className: 'DataItem', type: 'dataset' } },
+
+                // Edges
+                { data: { source: 'DQChar', target: 'Inherent' } },
+                { data: { source: 'DQChar', target: 'System' } },
+                { data: { source: 'Inherent', target: 'Accuracy' } },
+                { data: { source: 'Inherent', target: 'Completeness' } },
+                { data: { source: 'Inherent', target: 'Consistency' } },
+                { data: { source: 'Inherent', target: 'Credibility' } },
+                { data: { source: 'Inherent', target: 'Currentness' } },
+                { data: { source: 'System', target: 'Accessibility' } },
+                { data: { source: 'System', target: 'Compliance' } },
+                { data: { source: 'System', target: 'Efficiency' } },
+                { data: { source: 'System', target: 'Precision' } },
+                { data: { source: 'System', target: 'Traceability' } }
+            ];
+
+            state.cy = cytoscape({
+                container: document.getElementById('cy'),
+                elements: elements,
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'label': 'data(label)',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'background-color': colors.secondary,
+                            'color': '#fff',
+                            'font-size': '10px',
+                            'width': '50px',
+                            'height': '50px',
+                            'text-wrap': 'wrap',
+                            'text-max-width': '60px'
+                        }
+                    },
+                    {
+                        selector: 'node[type="inherent"]',
+                        style: {
+                            'background-color': colors.primary
+                        }
+                    },
+                    {
+                        selector: 'node[type="system"]',
+                        style: {
+                            'background-color': colors.accent
+                        }
+                    },
+                    {
+                        selector: 'node[type="dataset"]',
+                        style: {
+                            'background-color': colors.accent,
+                            'shape': 'rectangle'
+                        }
+                    },
+                    {
+                        selector: 'node:selected',
+                        style: {
+                            'border-width': 3,
+                            'border-color': '#fff'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'line-color': colors.neutral,
+                            'target-arrow-color': colors.primary,
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier'
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'breadthfirst',
+                    directed: true,
+                    spacingFactor: 1.5,
+                    animate: true,
+                    animationDuration: 500
+                }
+            });
+
+            // Add click handler for nodes
+            state.cy.on('tap', 'node', function(evt) {
+                const node = evt.target;
+                const className = node.data('className');
+
+                if (className) {
+                    selectClass(className);
+                }
+            });
+
+            console.log('✅ Graph initialized with data');
+        }
+
+        // Load PDF document
+        async function loadPDF() {
+            const loadingEl = document.getElementById('loading');
+            const pageWrapper = document.getElementById('pdf-page-wrapper');
+
+            try {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+                const loadingTask = pdfjsLib.getDocument('./example/ISO_IEC5259-2_2024_EN.pdf');
+                state.pdfDoc = await loadingTask.promise;
+                state.totalPages = state.pdfDoc.numPages;
+
+                document.getElementById('total-pages').textContent = state.totalPages;
+
+                // Render first page
+                await renderPage(1);
+
+                loadingEl.classList.add('hidden');
+                pageWrapper.classList.remove('hidden');
+
+                console.log(`✅ PDF loaded (${state.totalPages} pages)`);
+            } catch (error) {
+                console.error('❌ Failed to load PDF:', error);
+                loadingEl.innerHTML = `
+                    <div class="text-red-400">
+                        <p>PDF 로딩 실패</p>
+                        <p class="text-sm">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Render PDF page
+        async function renderPage(pageNum, highlightTerm = null) {
+            const page = await state.pdfDoc.getPage(pageNum);
+            const canvas = document.getElementById('pdf-canvas');
+            const context = canvas.getContext('2d');
+            const textLayerDiv = document.getElementById('text-layer');
+
+            const viewport = page.getViewport({ scale: state.scale });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            // Clear text layer
+            textLayerDiv.innerHTML = '';
+            textLayerDiv.style.width = viewport.width + 'px';
+            textLayerDiv.style.height = viewport.height + 'px';
+
+            // Render canvas
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
+
+            // Render text layer using PDF.js renderTextLayer
+            const textContent = await page.getTextContent();
+
+            // Use PDF.js built-in text layer rendering
+            pdfjsLib.renderTextLayer({
+                textContentSource: textContent,
+                container: textLayerDiv,
+                viewport: viewport,
+                textDivs: []
+            });
+
+            // Wait a bit for text layer to render, then add highlights
+            if (highlightTerm) {
+                setTimeout(() => {
+                    const spans = textLayerDiv.querySelectorAll('span');
+                    spans.forEach(span => {
+                        if (span.textContent && span.textContent.toLowerCase().includes(highlightTerm.toLowerCase())) {
+                            span.classList.add('highlight');
+                        }
+                    });
+                }, 100);
+            }
+
+            state.currentPage = pageNum;
+            document.getElementById('current-page').textContent = pageNum;
+
+            updatePageControls();
+        }
+
+        // Update page control buttons
+        function updatePageControls() {
+            document.getElementById('prev-page').disabled = state.currentPage <= 1;
+            document.getElementById('next-page').disabled = state.currentPage >= state.totalPages;
+        }
+
+        // Select a class and show locations
+        function selectClass(className) {
+            console.log('📌 Selected class:', className);
+            state.selectedClass = className;
+
+            // Find class in ontology index
+            const classData = state.ontologyData.ontologyIndex.find(c => c.className === className);
+
+            if (!classData) {
+                console.warn('Class not found in index:', className);
+                return;
+            }
+
+            // Update location list
+            const locationList = document.getElementById('location-list');
+            const mentions = classData.mentions || [];
+
+            if (mentions.length === 0) {
+                locationList.innerHTML = '<p class="text-sm text-slate-400">이 클래스에 대한 언급이 없습니다</p>';
+                return;
+            }
+
+            locationList.innerHTML = `
+                <div class="mb-3 flex items-center justify-between">
+                    <div class="text-sm text-white">
+                        <strong>${classData.labelKo || classData.className}</strong> - ${mentions.length}개 위치
+                    </div>
+                </div>
+            ` + mentions.map((mention, idx) => `
+                <div class="bg-slate-800 rounded p-3 cursor-pointer hover:bg-slate-700 transition-colors border border-transparent hover:border-teal-500/40"
+                     onclick="goToPageWithHighlight(${mention.page}, '${escapeHtml(mention.text)}')">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs font-mono">
+                            Page ${mention.page}
+                        </span>
+                        ${mention.section ? `
+                            <span class="px-2 py-1 bg-cyan-500/20 text-cyan-400 rounded text-xs">
+                                §${mention.section}
+                            </span>
+                        ` : ''}
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">${highlightText(mention.context, mention.text)}</p>
+                </div>
+            `).join('');
+
+            console.log(`✅ Showing ${mentions.length} locations for ${className}`);
+        }
+
+        // Highlight matching text in context
+        function highlightText(context, searchTerm) {
+            if (!searchTerm) return escapeHtml(context);
+
+            const escapedContext = escapeHtml(context);
+            const escapedTerm = escapeHtml(searchTerm);
+
+            // Case-insensitive replacement
+            const regex = new RegExp(`(${escapedTerm})`, 'gi');
+            return escapedContext.replace(regex, '<mark class="bg-orange-500/30 text-orange-200 px-1 rounded">$1</mark>');
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Go to specific PDF page
+        function goToPage(pageNum) {
+            if (pageNum >= 1 && pageNum <= state.totalPages) {
+                renderPage(pageNum);
+            }
+        }
+
+        // Go to page with highlight effect
+        async function goToPageWithHighlight(pageNum, searchTerm) {
+            if (pageNum >= 1 && pageNum <= state.totalPages) {
+                // Navigate to page with highlight
+                await renderPage(pageNum, searchTerm);
+
+                // Add visual feedback
+                showHighlightNotification(pageNum, searchTerm);
+
+                // Scroll to PDF viewer
+                document.getElementById('pdf-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Show temporary notification about highlighted term
+        function showHighlightNotification(pageNum, searchTerm) {
+            const pdfContainer = document.getElementById('pdf-container');
+
+            // Remove any existing notifications
+            const existingNotifications = pdfContainer.querySelectorAll('.highlight-notification');
+            existingNotifications.forEach(n => n.remove());
+
+            // Create notification
+            const notification = document.createElement('div');
+            notification.className = 'highlight-notification absolute top-4 left-1/2 transform -translate-x-1/2 z-10 bg-orange-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2';
+            notification.style.animation = 'bounce 1s ease-in-out 2';
+            notification.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <span>Page ${pageNum}에서 "<strong>${searchTerm}</strong>" 검색</span>
+            `;
+
+            pdfContainer.style.position = 'relative';
+            pdfContainer.appendChild(notification);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.transition = 'opacity 0.5s';
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 500);
+            }, 3000);
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Top tab switching (Graph / Tree)
+            document.querySelectorAll('.tab-btn-top').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+
+                    // Remove active from all tabs
+                    document.querySelectorAll('.tab-btn-top').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content-top').forEach(c => c.classList.remove('active'));
+
+                    // Add active to clicked tab
+                    this.classList.add('active');
+                    document.getElementById('tab-' + targetTab).classList.add('active');
+
+                    // Resize graph if switching to graph tab
+                    if (targetTab === 'graph' && state.cy) {
+                        setTimeout(() => state.cy.resize(), 100);
+                    }
+                });
+            });
+
+            // PDF navigation
+            document.getElementById('prev-page').addEventListener('click', () => {
+                if (state.currentPage > 1) {
+                    renderPage(state.currentPage - 1);
+                }
+            });
+
+            document.getElementById('next-page').addEventListener('click', () => {
+                if (state.currentPage < state.totalPages) {
+                    renderPage(state.currentPage + 1);
+                }
+            });
+
+            // Zoom controls
+            document.getElementById('zoom-in').addEventListener('click', () => {
+                state.scale += 0.2;
+                document.getElementById('zoom-level').textContent = Math.round(state.scale * 100) + '%';
+                renderPage(state.currentPage);
+            });
+
+            document.getElementById('zoom-out').addEventListener('click', () => {
+                state.scale = Math.max(0.5, state.scale - 0.2);
+                document.getElementById('zoom-level').textContent = Math.round(state.scale * 100) + '%';
+                renderPage(state.currentPage);
+            });
+
+            // Panel toggle
+            document.getElementById('toggle-ontology').addEventListener('click', () => {
+                const panel = document.getElementById('ontology-panel');
+                panel.classList.toggle('collapsed');
+            });
+
+            // Graph controls
+            document.getElementById('fit-graph').addEventListener('click', () => {
+                state.cy.fit();
+            });
+
+            document.getElementById('reset-graph').addEventListener('click', () => {
+                state.cy.reset();
+            });
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
