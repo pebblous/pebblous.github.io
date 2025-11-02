@@ -147,6 +147,14 @@
 - 비율: 1.91:1 (summary_large_image), 1:1 (summary)
 - 절대 URL 필수 (상대 경로 불가)
 
+**이미지 경로 규칙** (Pebblous Blog 표준):
+- 기사 경로: `{블로그_경로}/article.html`
+- 이미지 경로: `{블로그_경로}/image/article.png`
+- 예시:
+  - 기사: `project/CURK/ontology/iso5259-ontology-extraction.html`
+  - 이미지: `project/CURK/ontology/image/iso5259-ontology-extraction.png`
+  - 전체 URL: `https://blog.pebblous.ai/project/CURK/ontology/image/iso5259-ontology-extraction.png`
+
 **검증 방법** (2023년 8월 이후):
 - ⚠️ Twitter Card Validator는 2023년 8월부터 미리보기 제거됨 ([공지](https://devcommunity.x.com/t/card-validator-preview-removal/175006))
 - ✅ **대안 1**: [OpenGraph.xyz](https://www.opengraph.xyz/) - 트위터 카드 미리보기 제공
