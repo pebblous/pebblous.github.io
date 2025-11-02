@@ -2113,7 +2113,8 @@
             currentLocationIndex: 0,
             cy: null,
             viewMode: 'graph', // 'graph' or 'tree'
-            currentLayer: 'quality' // 'quality', 'structure', or 'concepts'
+            currentLayer: 'quality', // 'quality', 'structure', or 'concepts'
+            uploadedPdfData: null // Store uploaded PDF file data
         };
 
         // Initialize
@@ -2723,14 +2724,41 @@
         }
 
         // Load PDF document
-        async function loadPDF() {
+        async function loadPDF(pdfData = null) {
             const loadingEl = document.getElementById('loading');
             const pageWrapper = document.getElementById('pdf-page-wrapper');
 
             try {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-                const loadingTask = pdfjsLib.getDocument('./example/ISO_IEC5259-2_2024_EN.pdf');
+                let loadingTask;
+
+                if (pdfData) {
+                    // Load from uploaded file data
+                    console.log('📤 Loading PDF from uploaded file...');
+                    loadingTask = pdfjsLib.getDocument({ data: pdfData });
+                } else if (state.uploadedPdfData) {
+                    // Load from previously uploaded file stored in state
+                    console.log('📤 Loading PDF from stored uploaded data...');
+                    loadingTask = pdfjsLib.getDocument({ data: state.uploadedPdfData });
+                } else {
+                    // Try to load from default path
+                    console.log('📄 Attempting to load PDF from default path...');
+                    try {
+                        loadingTask = pdfjsLib.getDocument('./example/ISO_IEC5259-2_2024_EN.pdf');
+                    } catch (e) {
+                        // Show disclaimer modal if default PDF not found
+                        console.log('⚠️ Default PDF not found, showing upload modal...');
+                        document.getElementById('disclaimer-modal').classList.remove('hidden');
+                        loadingEl.innerHTML = `
+                            <div class="text-yellow-400">
+                                <p>PDF 파일을 업로드해주세요</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                }
+
                 state.pdfDoc = await loadingTask.promise;
                 state.totalPages = state.pdfDoc.numPages;
 
@@ -2745,12 +2773,24 @@
                 console.log(`✅ PDF loaded (${state.totalPages} pages)`);
             } catch (error) {
                 console.error('❌ Failed to load PDF:', error);
-                loadingEl.innerHTML = `
-                    <div class="text-red-400">
-                        <p>PDF 로딩 실패</p>
-                        <p class="text-sm">${error.message}</p>
-                    </div>
-                `;
+
+                // If error is about missing file, show disclaimer modal
+                if (error.message && (error.message.includes('404') || error.message.includes('fetch'))) {
+                    console.log('⚠️ PDF file not found, showing upload modal...');
+                    document.getElementById('disclaimer-modal').classList.remove('hidden');
+                    loadingEl.innerHTML = `
+                        <div class="text-yellow-400">
+                            <p>PDF 파일을 업로드해주세요</p>
+                        </div>
+                    `;
+                } else {
+                    loadingEl.innerHTML = `
+                        <div class="text-red-400">
+                            <p>PDF 로딩 실패</p>
+                            <p class="text-sm">${error.message}</p>
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -3516,6 +3556,103 @@
 
             // Modal: Download button
             document.getElementById('modal-download-btn')?.addEventListener('click', downloadSource);
+
+            // PDF Upload handlers
+            setupPdfUploadHandlers();
+        }
+
+        // Setup PDF upload event handlers
+        function setupPdfUploadHandlers() {
+            const uploadZone = document.getElementById('upload-zone');
+            const fileInput = document.getElementById('pdf-file-input');
+            const uploadButton = document.getElementById('upload-button');
+            const disclaimerModal = document.getElementById('disclaimer-modal');
+
+            if (!uploadZone || !fileInput || !uploadButton) {
+                console.log('⚠️ PDF upload elements not found');
+                return;
+            }
+
+            // Click upload zone to trigger file input
+            uploadZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Handle file selection
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file && file.type === 'application/pdf') {
+                    const fileSizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+                    console.log(`📄 PDF file selected: ${file.name} (${fileSizeInMB} MB)`);
+
+                    // Check file size (max 10MB)
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('파일 크기가 너무 큽니다. 10MB 이하의 파일을 선택해주세요.');
+                        return;
+                    }
+
+                    // Read file as ArrayBuffer
+                    const arrayBuffer = await file.arrayBuffer();
+                    state.uploadedPdfData = new Uint8Array(arrayBuffer);
+
+                    // Update button state
+                    uploadButton.disabled = false;
+                    uploadButton.textContent = `✓ ${file.name} 선택됨 - 클릭하여 로드`;
+                    uploadButton.classList.add('bg-teal-500', 'hover:bg-teal-600');
+                    uploadButton.classList.remove('bg-slate-600');
+                } else if (file) {
+                    alert('PDF 파일만 업로드 가능합니다.');
+                }
+            });
+
+            // Handle upload button click
+            uploadButton.addEventListener('click', async () => {
+                if (state.uploadedPdfData) {
+                    console.log('🚀 Loading uploaded PDF...');
+                    disclaimerModal.classList.add('hidden');
+
+                    // Show loading message
+                    const loadingEl = document.getElementById('loading');
+                    loadingEl.classList.remove('hidden');
+                    loadingEl.innerHTML = '<p class="text-slate-400">PDF를 로딩 중입니다...</p>';
+
+                    // Load PDF from uploaded data
+                    await loadPDF(state.uploadedPdfData);
+                }
+            });
+
+            // Drag and drop support
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.remove('dragover');
+
+                const file = e.dataTransfer.files[0];
+                if (file && file.type === 'application/pdf') {
+                    // Trigger file input change event
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInput.files = dataTransfer.files;
+
+                    // Manually trigger the change event
+                    const event = new Event('change', { bubbles: true });
+                    fileInput.dispatchEvent(event);
+                }
+            });
+
+            console.log('✅ PDF upload handlers initialized');
         }
 
         // Handle PDF text selection and find matching ontology class
