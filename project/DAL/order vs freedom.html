@@ -16,7 +16,6 @@
         }
         canvas {
             display: block;
-            background-color: #0a0a0a;
         }
 
         /* Intro Screen */
@@ -54,20 +53,28 @@
             text-align: center;
             color: rgba(240, 240, 240, 0.8);
             font-weight: 700;
+        }
+        .intro-text .highlight {
             opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 1.5s ease-out, transform 1.5s ease-out;
+            transition: opacity 2s ease-out;
         }
-        .intro-text.show {
+        .intro-text .highlight.show {
             opacity: 1;
-            transform: translateY(0);
         }
-        .intro-text.dim {
+        .intro-text .rest {
+            opacity: 0;
+            transition: opacity 1.5s ease-out;
+        }
+        .intro-text .rest.show {
+            opacity: 0.8;
+        }
+        .intro-text.dim .highlight,
+        .intro-text.dim .rest {
             opacity: 0.25;
         }
-        .intro-text.hide {
+        .intro-text.hide .highlight,
+        .intro-text.hide .rest {
             opacity: 0;
-            transform: translateY(-10px);
         }
 
         /* Title Screen - on black background */
@@ -154,9 +161,18 @@
     <!-- Intro Screen -->
     <div id="intro-screen">
         <div id="intro-container">
-            <p class="intro-text" id="line1">문명은 에너지를 투입하여 질서를 유지하고 엔트로피를 낮춥니다.</p>
-            <p class="intro-text" id="line2">하지만 무질서 속에도 아름다움이 있고, 때로 이것이 더 자연스럽습니다.</p>
-            <p class="intro-text" id="line3">질서와 무질서 사이, 당신의 손끝으로 탐험해 보세요.</p>
+            <p class="intro-text" id="line1">
+                <span class="highlight" id="line1-highlight">문명은</span>
+                <span class="rest" id="line1-rest"> 에너지를 투입하여 질서를 유지하고 엔트로피를 낮춥니다.</span>
+            </p>
+            <p class="intro-text" id="line2">
+                <span class="highlight" id="line2-highlight">하지만</span>
+                <span class="rest" id="line2-rest"> 무질서 속에도 아름다움이 있고, 때로 이것이 더 자연스럽습니다.</span>
+            </p>
+            <p class="intro-text" id="line3">
+                <span class="highlight" id="line3-highlight">질서와 무질서 사이,</span>
+                <span class="rest" id="line3-rest"> 당신의 손끝으로 탐험해 보세요.</span>
+            </p>
         </div>
     </div>
 
@@ -180,41 +196,100 @@
         const line1 = document.getElementById('line1');
         const line2 = document.getElementById('line2');
         const line3 = document.getElementById('line3');
+        const line1Highlight = document.getElementById('line1-highlight');
+        const line1Rest = document.getElementById('line1-rest');
+        const line2Highlight = document.getElementById('line2-highlight');
+        const line2Rest = document.getElementById('line2-rest');
+        const line3Highlight = document.getElementById('line3-highlight');
+        const line3Rest = document.getElementById('line3-rest');
+
+        let introTimeline = [];
+        let introPaused = false;
+        let introStartTime = 0;
+        let introPausedTime = 0;
+        let introElapsedBeforePause = 0;
 
         function startIntro() {
-            // Phase 1: Intro text sequence (0-11s)
-            setTimeout(() => line1.classList.add('show'), 500);
-            setTimeout(() => line1.classList.add('dim'), 3500);
+            introStartTime = Date.now();
 
-            setTimeout(() => line2.classList.add('show'), 4000);
-            setTimeout(() => line2.classList.add('dim'), 7000);
+            // Store all timeline events - 6 phases for text
+            introTimeline = [
+                // Phase 1: "문명은" appears slowly (after 1.5s black screen)
+                { time: 1500, action: () => line1Highlight.classList.add('show'), executed: false },
+                { time: 3000, action: () => line1Rest.classList.add('show'), executed: false },
 
-            setTimeout(() => line3.classList.add('show'), 7500);
+                // Phase 2: "하지만" appears
+                { time: 5500, action: () => {
+                    line1.classList.add('dim');
+                    line2Highlight.classList.add('show');
+                }, executed: false },
+                { time: 7000, action: () => line2Rest.classList.add('show'), executed: false },
 
-            // Phase 2: All text fades out completely (10.5-12s)
-            setTimeout(() => {
-                line1.classList.add('hide');
-                line2.classList.add('hide');
-                line3.classList.add('hide');
-            }, 10500);
+                // Phase 3: "질서와 무질서 사이," appears
+                { time: 9500, action: () => {
+                    line2.classList.add('dim');
+                    line3Highlight.classList.add('show');
+                }, executed: false },
+                { time: 11000, action: () => line3Rest.classList.add('show'), executed: false },
 
-            // Phase 3: Fade in title on black background (12-14.5s)
-            setTimeout(() => {
-                introScreen.style.display = 'none';
-                titleScreen.classList.add('show');
-            }, 12000);
+                // All text fades out
+                { time: 13500, action: () => {
+                    line1.classList.add('hide');
+                    line2.classList.add('hide');
+                    line3.classList.add('hide');
+                }, executed: false },
 
-            // Phase 4: Cross-dissolve title and canvas (17-19.5s)
-            setTimeout(() => {
-                titleScreen.classList.add('fade-out');
-                canvas.classList.add('show');
-                init();
-                animate();
-            }, 17000);
+                // Title screen appears
+                { time: 15000, action: () => {
+                    introScreen.style.display = 'none';
+                    titleScreen.classList.add('show');
+                }, executed: false },
 
-            setTimeout(() => {
-                titleScreen.style.display = 'none';
-            }, 19500);
+                // Canvas animation starts
+                { time: 20000, action: () => {
+                    titleScreen.classList.add('fade-out');
+                    canvas.classList.add('show');
+                    init();
+                    animate();
+                }, executed: false },
+
+                { time: 22500, action: () => {
+                    titleScreen.style.display = 'none';
+                }, executed: false }
+            ];
+
+            checkIntroTimeline();
+        }
+
+        function checkIntroTimeline() {
+            if (!introPaused) {
+                const elapsed = introElapsedBeforePause + (Date.now() - introStartTime);
+
+                introTimeline.forEach(event => {
+                    if (!event.executed && elapsed >= event.time) {
+                        event.action();
+                        event.executed = true;
+                    }
+                });
+            }
+
+            // Continue checking if not all events are executed
+            if (introTimeline.some(e => !e.executed)) {
+                requestAnimationFrame(checkIntroTimeline);
+            }
+        }
+
+        function toggleIntroPause() {
+            if (introPaused) {
+                // Resume
+                introPaused = false;
+                introStartTime = Date.now();
+                checkIntroTimeline();
+            } else {
+                // Pause
+                introPaused = true;
+                introElapsedBeforePause += (Date.now() - introStartTime);
+            }
         }
 
         // Start intro on page load
@@ -223,12 +298,13 @@
         // === Main Canvas Animation ===
         const ctx = canvas.getContext('2d');
         let pebbles = [];
-        let stars = [];
         let freedom = 0;
         let targetFreedom = 0;
-        let opacityFactor = 0.5; // 0 = transparent, 1 = opaque
-        let targetOpacityFactor = 0.5;
+        let sizeFactor = 1; // 0 = small, 1 = large
+        let targetSizeFactor = 1;
         const pebbleGridSize = 25;
+        let isPaused = false;
+        let animationId = null;
 
         class Pebble {
             constructor(x, y, radius) {
@@ -238,7 +314,7 @@
                 this.y = y;
                 this.originRadius = radius;
                 this.radius = radius;
-                this.alpha = 0; // Start invisible
+                this.alpha = 1; // Fully visible
             }
 
             update() {
@@ -250,33 +326,44 @@
                 this.x = this.originX + Math.cos(angle) * displacement;
                 this.y = this.originY + Math.sin(angle) * displacement;
 
-                // Radius
-                const radiusVariation = (Math.random() - 0.5) * freedomFactor * (this.originRadius * 0.8);
-                this.radius = Math.max(2, this.originRadius + radiusVariation);
-
-                // Fade in gradually
-                if (this.alpha < 1) {
-                    this.alpha += 0.005;
-                }
+                // Radius - affected by sizeFactor only (all disks same size)
+                this.radius = Math.max(2, this.originRadius * sizeFactor);
             }
 
             draw() {
                 ctx.save();
 
-                // Combine fade-in alpha with opacity factor
-                const finalAlpha = this.alpha * opacityFactor;
-                ctx.globalAlpha = finalAlpha;
-
-                // Color gradient based on X position (original gradient)
+                // Color gradient based on X position: Enhanced vivid colors for dark background
                 const normalizedX = this.originX / canvas.width;
-                const hue = 200 + (normalizedX * 40); // Blue to teal gradient
+
+                // Three colors - enhanced for dark background
+                const color1 = { r: 102, g: 255, b: 217 }; // #66FFD9 - Brighter cyan (left)
+                const color2 = { r: 138, g: 92, b: 255 }; // #8A5CFF - More vibrant purple (center)
+                const color3 = { r: 255, g: 102, b: 255 }; // #FF66FF - Brighter magenta (right)
+
+                let r, g, b;
+                if (normalizedX < 0.5) {
+                    // Interpolate between color1 and color2 (left to center)
+                    const t = normalizedX * 2; // 0 to 1
+                    r = Math.round(color1.r + (color2.r - color1.r) * t);
+                    g = Math.round(color1.g + (color2.g - color1.g) * t);
+                    b = Math.round(color1.b + (color2.b - color1.b) * t);
+                } else {
+                    // Interpolate between color2 and color3 (center to right)
+                    const t = (normalizedX - 0.5) * 2; // 0 to 1
+                    r = Math.round(color2.r + (color3.r - color2.r) * t);
+                    g = Math.round(color2.g + (color3.g - color2.g) * t);
+                    b = Math.round(color2.b + (color3.b - color2.b) * t);
+                }
 
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
                 ctx.fill();
-                ctx.strokeStyle = `hsla(${hue}, 70%, 40%, 0.5)`;
-                ctx.lineWidth = 1;
+
+                // Thin dark border matching background
+                ctx.strokeStyle = '#0a0a0a';
+                ctx.lineWidth = 0.5;
                 ctx.stroke();
                 ctx.restore();
             }
@@ -286,18 +373,6 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             pebbles = [];
-            stars = [];
-
-            // Create background stars
-            const starCount = 150;
-            for (let i = 0; i < starCount; i++) {
-                stars.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    radius: Math.random() * 1.5 + 0.5,
-                    opacity: Math.random() * 0.3 + 0.1
-                });
-            }
 
             // Create pebbles
             const pebbleCountX = Math.floor(canvas.width / pebbleGridSize);
@@ -316,24 +391,15 @@
         }
 
         function animate() {
-            // Background
+            if (isPaused) return;
+
+            // Background - dark
             ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw stars
-            stars.forEach(star => {
-                ctx.save();
-                ctx.globalAlpha = star.opacity;
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            });
-
             // Smooth transitions
             freedom += (targetFreedom - freedom) * 0.1;
-            opacityFactor += (targetOpacityFactor - opacityFactor) * 0.1;
+            sizeFactor += (targetSizeFactor - sizeFactor) * 0.1;
 
             // Draw pebbles
             pebbles.forEach(pebble => {
@@ -341,7 +407,7 @@
                 pebble.draw();
             });
 
-            requestAnimationFrame(animate);
+            animationId = requestAnimationFrame(animate);
         }
 
         // Mouse movement interaction
@@ -349,16 +415,121 @@
             // X position: freedom (entropy) - left to right = 0 to 100
             targetFreedom = (e.clientX / window.innerWidth) * 100;
 
-            // Y position: opacity - top = opaque (1), bottom = transparent (0)
-            targetOpacityFactor = 1 - (e.clientY / window.innerHeight);
+            // Y position: size - top = large (1.5), bottom = small (0.3)
+            targetSizeFactor = 0.3 + (1 - (e.clientY / window.innerHeight)) * 1.2;
         });
 
         // Touch support
         window.addEventListener('touchmove', (e) => {
             const touch = e.touches[0];
             targetFreedom = (touch.clientX / window.innerWidth) * 100;
-            targetOpacityFactor = 1 - (touch.clientY / window.innerHeight);
+            targetSizeFactor = 0.3 + (1 - (touch.clientY / window.innerHeight)) * 1.2;
         });
+
+        // Click to pause/resume
+        let clickTimeout = null;
+        window.addEventListener('click', (e) => {
+            if (clickTimeout !== null) {
+                // Double click detected
+                clearTimeout(clickTimeout);
+                clickTimeout = null;
+                captureScreen();
+            } else {
+                // Single click - wait to see if it's a double click
+                clickTimeout = setTimeout(() => {
+                    clickTimeout = null;
+
+                    // Check if intro/title is still showing
+                    if (introScreen.style.display !== 'none' || titleScreen.style.display !== 'none') {
+                        toggleIntroPause();
+                    } else {
+                        // Main canvas animation
+                        isPaused = !isPaused;
+                        if (!isPaused) {
+                            animate();
+                        }
+                    }
+                }, 250);
+            }
+        });
+
+        // Capture screen to clipboard (works for both HTML and canvas)
+        async function captureScreen() {
+            try {
+                // If canvas is visible, capture canvas
+                if (canvas.classList.contains('show') && titleScreen.style.display === 'none') {
+                    canvas.toBlob(async (blob) => {
+                        if (blob) {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            console.log('Canvas captured to clipboard!');
+                        }
+                    });
+                } else {
+                    // Capture intro/title screen using html2canvas-like approach
+                    // For simplicity, we'll use canvas to render the current view
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = window.innerWidth;
+                    tempCanvas.height = window.innerHeight;
+                    const tempCtx = tempCanvas.getContext('2d');
+
+                    // Fill background
+                    tempCtx.fillStyle = '#0a0a0a';
+                    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+                    // Draw text (simplified - just capture what's visible)
+                    tempCtx.fillStyle = 'rgba(240, 240, 240, 0.8)';
+                    tempCtx.font = '700 36px Pretendard, sans-serif';
+                    tempCtx.textAlign = 'center';
+
+                    if (introScreen.style.display !== 'none') {
+                        const lines = [
+                            { highlight: line1Highlight, rest: line1Rest, line: line1 },
+                            { highlight: line2Highlight, rest: line2Rest, line: line2 },
+                            { highlight: line3Highlight, rest: line3Rest, line: line3 }
+                        ];
+                        let yPos = window.innerHeight / 2 - 100;
+
+                        lines.forEach(({ highlight, rest, line }) => {
+                            const highlightVisible = highlight.classList.contains('show');
+                            const restVisible = rest.classList.contains('show');
+                            const isDim = line.classList.contains('dim');
+                            const isHide = line.classList.contains('hide');
+
+                            if (!isHide && (highlightVisible || restVisible)) {
+                                let text = '';
+                                if (highlightVisible) text += highlight.textContent;
+                                if (restVisible) text += rest.textContent;
+
+                                const opacity = isDim ? 0.25 : 0.8;
+                                tempCtx.globalAlpha = opacity;
+                                tempCtx.fillText(text, tempCanvas.width / 2, yPos);
+                                yPos += 80;
+                            }
+                        });
+                    } else if (titleScreen.classList.contains('show')) {
+                        tempCtx.globalAlpha = 0.8;
+                        tempCtx.font = '700 56px Pretendard, sans-serif';
+                        tempCtx.fillText('질서와 자유의 변주곡', tempCanvas.width / 2, window.innerHeight / 2 - 40);
+                        tempCtx.font = '500 24px Pretendard, sans-serif';
+                        tempCtx.fillStyle = 'rgba(204, 204, 204, 0.8)';
+                        tempCtx.fillText('엔트로피, 예술, 그리고 당신', tempCanvas.width / 2, window.innerHeight / 2 + 20);
+                    }
+
+                    tempCanvas.toBlob(async (blob) => {
+                        if (blob) {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            console.log('Screen captured to clipboard!');
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to copy to clipboard:', err);
+            }
+        }
 
         // Window resize
         let resizeTimer;
