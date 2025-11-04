@@ -79,6 +79,7 @@
 
 **키워드 전략**:
 - **브랜드 키워드**: Pebblous, 페블러스, 데이터클리닉, 페블로스코프, CURK, AADS
+- **데이터 아트 필수 키워드** (DAL 섹션): Code Painting, 코드 페인팅, Data Art Lab, DAL, mr_lix, 데이터 아트, Data Art, Generative Art, 생성 예술
 - **핵심 키워드**: 3-5개 (예: Ontology, Palantir, Knowledge Graph)
 - **롱테일 키워드**: 10-20개 (예: "운영 온톨로지", "Operational Ontology")
 - **관련 기술**: 5-10개 (예: OWL, RDF, SPARQL, AI, Machine Learning)
