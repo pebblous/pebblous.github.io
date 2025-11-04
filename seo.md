@@ -149,7 +149,7 @@
 
 **이미지 경로 규칙** (Pebblous Blog Convention):
 - HTML 파일: `https://blog.pebblous.ai/{경로}/{파일명}.html`
-- SNS 이미지: `https://blog.pebblous.ai/{경로}/img/{파일명}.png` (또는 `/image/` 폴더)
+- SNS 이미지: `https://blog.pebblous.ai/{경로}/image/{파일명}.png` (또는 `/image/` 폴더)
 - **규칙**: HTML 파일이 있는 동일 디렉토리의 `img/` 또는 `image/` 서브폴더에 같은 이름의 PNG 파일 배치
 - 예시:
   - HTML: `https://blog.pebblous.ai/project/ISO5259/5259_text_qa.html`
