@@ -147,13 +147,15 @@
 - 비율: 1.91:1 (summary_large_image), 1:1 (summary)
 - 절대 URL 필수 (상대 경로 불가)
 
-**이미지 경로 규칙** (Pebblous Blog 표준):
-- 기사 경로: `{블로그_경로}/article.html`
-- 이미지 경로: `{블로그_경로}/image/article.png`
+**이미지 경로 규칙** (Pebblous Blog Convention):
+- HTML 파일: `https://blog.pebblous.ai/{경로}/{파일명}.html`
+- SNS 이미지: `https://blog.pebblous.ai/{경로}/img/{파일명}.png` (또는 `/image/` 폴더)
+- **규칙**: HTML 파일이 있는 동일 디렉토리의 `img/` 또는 `image/` 서브폴더에 같은 이름의 PNG 파일 배치
 - 예시:
-  - 기사: `project/CURK/ontology/iso5259-ontology-extraction.html`
-  - 이미지: `project/CURK/ontology/image/iso5259-ontology-extraction.png`
-  - 전체 URL: `https://blog.pebblous.ai/project/CURK/ontology/image/iso5259-ontology-extraction.png`
+  - HTML: `https://blog.pebblous.ai/project/ISO5259/5259_text_qa.html`
+  - Image: `https://blog.pebblous.ai/project/ISO5259/img/5259_text_qa.png`
+  - HTML: `https://blog.pebblous.ai/project/CURK/ontology/palantir-vs-classic-ontology.html`
+  - Image: `https://blog.pebblous.ai/project/CURK/ontology/image/palantir-vs-classic-ontology.png`
 
 **검증 방법** (2023년 8월 이후):
 - ⚠️ Twitter Card Validator는 2023년 8월부터 미리보기 제거됨 ([공지](https://devcommunity.x.com/t/card-validator-preview-removal/175006))
