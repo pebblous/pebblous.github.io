@@ -70,16 +70,18 @@
         .accent-bg { background-color: #F86825; }
         .accent-border { border-color: #F86825; }
         .card {
-            background: linear-gradient(135deg, rgb(30, 41, 59) 0%, rgb(15, 23, 42) 100%);
+            background: linear-gradient(135deg, rgb(30, 41, 59) 0%, rgb(15, 23, 42) 100%) !important;
             border: 1px solid #1e293b;
             padding-bottom: 0.375rem;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+            opacity: 0.7 !important;
         }
         .card:hover {
             transform: translateY(-8px);
             box-shadow: 0 0 40px rgba(248, 104, 37, 0.15);
             background: linear-gradient(135deg, rgb(30, 41, 59) 0%, rgb(15, 23, 42) 100%);
             border-color: rgba(71, 85, 105, 0.6);
+            opacity: 1 !important;
         }
         .fade-in {
             opacity: 0;
@@ -88,9 +90,13 @@
         }
         @keyframes fadeInAnimation {
             to {
-                opacity: 1;
+                opacity: 1 !important;
                 transform: translateY(0);
             }
+        }
+        .fade-in.animate,
+        .card.fade-in {
+            animation-fill-mode: forwards;
         }
         .tag {
             background-color: rgba(248, 104, 37, 0.1);
@@ -239,7 +245,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1;
+            z-index: -1;
             opacity: 0.6;
             pointer-events: none;
         }
@@ -721,12 +727,12 @@
 
                 const imageTag = article.image
                     ? isPebblousLogo
-                        ? `<div class="relative w-full h-48 overflow-hidden bg-slate-800/30 flex items-end justify-end p-4">
+                        ? `<div class="relative w-full h-48 overflow-hidden bg-slate-800 flex items-end justify-end p-4">
                             <img src="${article.image}" alt="${article.title}"
                                  class="w-auto h-6 object-contain"
                                  loading="lazy">
                            </div>`
-                        : `<div class="relative w-full h-48 overflow-hidden bg-slate-900/30 group/img">
+                        : `<div class="relative w-full h-48 overflow-hidden bg-slate-900 group/img">
                             <img src="${article.image}" alt="${article.title}"
                                  class="w-full h-48 object-cover object-bottom transition-all duration-500 group-hover/img:object-contain group-hover/img:scale-90 rounded-md"
                                  ${article.imageAnimated ? `data-static="${article.image}" data-animated="${article.imageAnimated}"` : ''}
@@ -1204,6 +1210,10 @@
             const particleCount = 150;
             const maxDistance = 150;
 
+            // Fixed virtual canvas size for particle sampling
+            const VIRTUAL_WIDTH = 1920;
+            const VIRTUAL_HEIGHT = 1080;
+
             function setCanvasSize() {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
@@ -1211,49 +1221,68 @@
 
             class Particle {
                 constructor() {
-                    this.x = Math.random() * canvas.width;
-                    this.y = Math.random() * canvas.height;
+                    // Position in virtual space (fixed 1920x1080)
+                    this.virtualX = Math.random() * VIRTUAL_WIDTH;
+                    this.virtualY = Math.random() * VIRTUAL_HEIGHT;
                     this.radius = Math.random() * 2 + 1;
                     this.vx = (Math.random() - 0.5) * 0.3;
                     this.vy = (Math.random() - 0.5) * 0.3;
                 }
 
+                getScreenPosition() {
+                    // Scale virtual position to actual screen size
+                    const scaleX = canvas.width / VIRTUAL_WIDTH;
+                    const scaleY = canvas.height / VIRTUAL_HEIGHT;
+                    return {
+                        x: this.virtualX * scaleX,
+                        y: this.virtualY * scaleY
+                    };
+                }
+
                 draw() {
+                    const pos = this.getScreenPosition();
                     ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.arc(pos.x, pos.y, this.radius, 0, Math.PI * 2);
                     ctx.fillStyle = 'rgba(248, 104, 37, 1)';
                     ctx.fill();
                 }
 
                 update() {
-                    this.x += this.vx;
-                    this.y += this.vy;
+                    // Update position in virtual space
+                    this.virtualX += this.vx;
+                    this.virtualY += this.vy;
 
-                    if (this.x < 0) this.x = canvas.width;
-                    if (this.x > canvas.width) this.x = 0;
-                    if (this.y < 0) this.y = canvas.height;
-                    if (this.y > canvas.height) this.y = 0;
+                    // Wrap around edges in virtual space
+                    if (this.virtualX < 0) this.virtualX = VIRTUAL_WIDTH;
+                    if (this.virtualX > VIRTUAL_WIDTH) this.virtualX = 0;
+                    if (this.virtualY < 0) this.virtualY = VIRTUAL_HEIGHT;
+                    if (this.virtualY > VIRTUAL_HEIGHT) this.virtualY = 0;
                 }
             }
 
             function initParticles() {
-                particles = [];
-                for (let i = 0; i < particleCount; i++) {
-                    particles.push(new Particle());
+                if (particles.length === 0) {
+                    // Create particles only once
+                    for (let i = 0; i < particleCount; i++) {
+                        particles.push(new Particle());
+                    }
                 }
+                // On resize, particles keep their virtual positions
             }
 
             function connectParticles() {
                 for (let i = 0; i < particles.length; i++) {
                     for (let j = i + 1; j < particles.length; j++) {
-                        const dx = particles[i].x - particles[j].x;
-                        const dy = particles[i].y - particles[j].y;
+                        const pos1 = particles[i].getScreenPosition();
+                        const pos2 = particles[j].getScreenPosition();
+                        const dx = pos1.x - pos2.x;
+                        const dy = pos1.y - pos2.y;
                         const distance = Math.sqrt(dx * dx + dy * dy);
 
                         if (distance < maxDistance) {
                             ctx.beginPath();
-                            ctx.moveTo(particles[i].x, particles[i].y);
-                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.moveTo(pos1.x, pos1.y);
+                            ctx.lineTo(pos2.x, pos2.y);
                             ctx.strokeStyle = `rgba(248, 104, 37, ${(1 - distance / maxDistance) * 0.8})`;
                             ctx.lineWidth = 1.5;
                             ctx.stroke();
