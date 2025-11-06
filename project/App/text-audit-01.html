@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM 학습용 데이터셋 뷰어 | Pebblous</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="https://www.pebblous.ai/favicon.ico" sizes="any">
+    <link rel="icon" href="https://www.pebblous.ai/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="https://www.pebblous.ai/apple-touch-icon.png">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PapaParse CSV Parser CDN (jsdelivr) -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <!-- SheetJS (XLSX) Parser CDN (jsdelivr) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Pretendard Font -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        /* Pebblous Theme Variables */
+        :root {
+            /* Dark Theme (default) */
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.95);
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: rgba(71, 85, 105, 0.3);
+            --accent-color: #F86825;
+            --accent-hover: #e55a1a;
+            --teal-color: #14b8a6;
+            --teal-hover: #0d9488;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-card: rgba(248, 250, 252, 0.95);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --border-color: rgba(226, 232, 241, 0.8);
+        }
+
+        [data-theme="beige"] {
+            --bg-primary: #f5f1e8;
+            --bg-secondary: #ebe3d5;
+            --bg-card: rgba(235, 227, 213, 0.95);
+            --text-primary: #2d2a26;
+            --text-secondary: #5a534a;
+            --text-muted: #8a7f6f;
+            --border-color: rgba(141, 127, 105, 0.3);
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .themeable-card {
+            background-color: var(--bg-card);
+            border-color: var(--border-color);
+        }
+
+        .themeable-text {
+            color: var(--text-primary);
+        }
+
+        .themeable-text-secondary {
+            color: var(--text-secondary);
+        }
+
+        .themeable-text-muted {
+            color: var(--text-muted);
+        }
+
+        .themeable-border {
+            border-color: var(--border-color);
+        }
+
+        .accent-bg {
+            background-color: var(--accent-color);
+        }
+
+        .accent-text {
+            color: var(--accent-color);
+        }
+
+        .accent-hover:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .teal-bg {
+            background-color: var(--teal-color);
+        }
+
+        .teal-hover:hover {
+            background-color: var(--teal-hover);
+        }
+        /* 기본 테이블 스타일 */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        /* 메인 테이블 th, td */
+        #data-table > tbody > tr > th,
+        #data-table > tbody > tr > td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        /* 메인 테이블 th (Key) */
+        #data-table > tbody > tr > th {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-weight: 600;
+            width: 20%;
+        }
+        /* 메인 테이블 td (Value) */
+        #data-table > tbody > tr > td {
+            width: 80%;
+            background-color: var(--bg-card);
+            color: var(--text-secondary);
+        }
+
+        /* (v4) 서브 테이블/리스트 스타일 */
+        .sub-table, .sub-grid, .sub-list {
+            margin: 0;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            overflow: hidden;
+            width: 100%;
+            background-color: var(--bg-card);
+        }
+        .sub-table th, .sub-table td,
+        .sub-grid th, .sub-grid td {
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            vertical-align: top;
+            text-align: left;
+        }
+        .sub-table tr:last-child th,
+        .sub-table tr:last-child td,
+        .sub-grid tr:last-child th,
+        .sub-grid tr:last-child td {
+            border-bottom: none;
+        }
+        .sub-table th {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            width: 30%;
+            font-weight: 500;
+        }
+        .sub-grid th {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        .sub-list ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            padding: 8px 12px;
+        }
+        .sub-list li {
+            padding: 4px 0;
+        }
+
+        /* 로딩 스피너 */
+        .loader {
+            border: 4px solid var(--bg-secondary);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* 모달 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header Component Placeholder -->
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div class="themeable-card border themeable-border rounded-xl shadow-2xl p-6 md:p-10 max-w-6xl mx-auto">
+
+            <header class="mb-8 text-center">
+                <h1 class="text-3xl md:text-4xl font-bold themeable-text mb-3">LLM 학습용 데이터셋 뷰어</h1>
+                <p class="themeable-text-muted text-lg">CSV, Excel 또는 JSON 파일을 업로드하여 데이터를 확인하세요.</p>
+            </header>
+
+        <!-- 파일 업로드 영역 -->
+        <div id="upload-container" class="mb-6">
+            <label for="file-upload" class="w-full h-32 px-4 py-6 themeable-card rounded-lg border-2 border-dashed themeable-border cursor-pointer flex flex-col items-center justify-center hover:border-[var(--accent-color)] transition-all">
+                <svg class="w-10 h-10 accent-text" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <span class="mt-2 text-base font-medium themeable-text" id="file-name-display">파일을 드래그하거나 클릭하여 업로드하세요</span>
+                <span class="text-sm themeable-text-muted">(CSV, XLS, XLSX, JSON)</span>
+            </label>
+            <input id="file-upload" type="file" class="hidden" accept=".csv, .xls, .xlsx, .json, text/csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json" />
+        </div>
+
+        <!-- 로딩 및 에러 메시지 -->
+        <div id="message-container" class="text-center my-4">
+            <div id="loader" class="loader mx-auto hidden"></div>
+            <p id="error-message" class="text-red-500 font-medium hidden"></p>
+        </div>
+
+        <!-- 데이터 뷰어 영역 (초기 숨김) -->
+        <div id="viewer-container" class="hidden">
+            
+            <!-- 네비게이션 및 인덱스 -->
+            <div class="flex items-center justify-between mb-4">
+                <button id="prev-btn-top" class="nav-btn-prev p-3 rounded-full accent-bg text-white accent-hover focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-opacity-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+
+                <div class="text-center">
+                    <span id="current-index" class="text-xl font-semibold themeable-text">1</span>
+                    <span class="text-lg themeable-text-muted"> / </span>
+                    <span id="total-count" class="text-lg themeable-text-muted">0</span>
+                </div>
+
+                <button id="next-btn-top" class="nav-btn-next p-3 rounded-full accent-bg text-white accent-hover focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-opacity-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+
+            <!-- 데이터 테이블 -->
+            <div class="border themeable-border rounded-lg overflow-hidden shadow-sm themeable-card mb-6">
+                <table id="data-table" class="min-w-full">
+                    <!-- 데이터가 여기에 동적으로 삽입됩니다. -->
+                </table>
+            </div>
+
+            <!-- 검수 영역 -->
+            <div id="review-section" class="space-y-4 mb-6">
+                <div>
+                    <label for="review-checkbox" class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="review-checkbox" class="w-5 h-5 accent-text rounded themeable-border focus:ring-[var(--accent-color)]">
+                        <span class="text-lg font-medium themeable-text">검수 완료</span>
+                    </label>
+                </div>
+                <div>
+                    <label for="review-comment" class="block text-sm font-medium themeable-text-secondary mb-1">코멘트</label>
+                    <textarea id="review-comment" rows="4" class="w-full p-3 border themeable-border themeable-card themeable-text rounded-lg focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)]" placeholder="이 데이터에 대한 코멘트를 입력하세요..."></textarea>
+                </div>
+            </div>
+
+            <!-- 하단 네비게이션 -->
+            <div class="flex items-center justify-between my-6">
+                <button id="prev-btn-bottom" class="nav-btn-prev p-3 rounded-full accent-bg text-white accent-hover focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-opacity-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+
+                <div class="text-center">
+                    <span class="text-lg themeable-text-muted">Navigation</span>
+                </div>
+
+                <button id="next-btn-bottom" class="nav-btn-next p-3 rounded-full accent-bg text-white accent-hover focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-opacity-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+
+            <!-- 저장 버튼 -->
+            <div class="flex flex-col md:flex-row md:justify-center md:space-x-4 space-y-2 md:space-y-0">
+                <button id="save-btn" class="w-full md:w-auto px-8 py-3 teal-bg text-white teal-hover focus:outline-none focus:ring-2 focus:ring-[var(--teal-color)] focus:ring-opacity-50 transition-all shadow-md font-bold rounded-lg">
+                    검수 내용 저장
+                </button>
+                <button id="load-new-file-btn" class="w-full md:w-auto px-8 py-3 themeable-card themeable-text border themeable-border font-bold rounded-lg hover:border-[var(--accent-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-opacity-50 transition-all shadow-md">
+                    새 파일 로드
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 검수자 이름 입력 모달 (초기 숨김) -->
+    <div id="reviewer-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4 themeable-text">검수자 이름 입력</h2>
+            <p class="themeable-text-secondary mb-4">검수 작업을 시작하기 전에 이름을 입력해주세요. 저장되는 파일명에 사용됩니다.</p>
+            <div>
+                <label for="reviewer-name-input" class="block text-sm font-medium themeable-text-secondary mb-1">검수자명</label>
+                <input type="text" id="reviewer-name-input" class="w-full p-3 border themeable-border themeable-card themeable-text rounded-lg focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)]" placeholder="예: 홍길동">
+            </div>
+            <p id="reviewer-error" class="text-red-500 text-sm mt-2 hidden"></p>
+            <button id="start-review-btn" class="w-full mt-6 px-6 py-3 accent-bg text-white font-bold rounded-lg accent-hover focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-opacity-50 transition-all">
+                검수 시작
+            </button>
+        </div>
+    </div>
+
+    <!-- 저장 확인 모달 -->
+    <div id="save-confirm-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4 themeable-text">저장 확인</h2>
+            <p id="save-confirm-message" class="themeable-text-secondary mb-6">검수 완료된 항목 0개를 포함하여 저장하시겠습니까?</p>
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-save-btn" class="px-6 py-2 themeable-card themeable-text border themeable-border font-medium rounded-lg hover:border-[var(--accent-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] transition-all">
+                    취소
+                </button>
+                <button id="confirm-save-btn" class="px-6 py-2 teal-bg text-white font-bold rounded-lg teal-hover focus:outline-none focus:ring-2 focus:ring-[var(--teal-color)] transition-all">
+                    저장
+                </button>
+            </div>
+        </div>
+    </div>
+
+    </div> <!-- Close main container -->
+
+    <script>
+        // Load Header Component and Theme Switcher
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize theme from localStorage first (before header loads)
+            const savedTheme = localStorage.getItem('selectedTheme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            // Theme configurations
+            const themes = {
+                dark: {
+                    logoImage: 'https://pebblous.github.io/image/Pebblous_BM_Orange_RGB.png',
+                    icon: 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z'
+                },
+                light: {
+                    logoImage: 'https://pebblous.github.io/image/Pebblous_BM_Black_RGB.png',
+                    icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z'
+                },
+                beige: {
+                    logoImage: 'https://pebblous.github.io/image/Pebblous_BM_Orange_RGB.png',
+                    icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01'
+                }
+            };
+
+            function setupThemeSwitcher() {
+                const themeSwitcher = document.getElementById('theme-switcher');
+                if (!themeSwitcher) return;
+
+                // Clear existing buttons
+                themeSwitcher.innerHTML = '';
+
+                // Create icon buttons for each theme
+                Object.keys(themes).forEach(themeName => {
+                    const btn = document.createElement('button');
+                    btn.dataset.theme = themeName;
+                    btn.className = 'p-1 rounded-full transition-colors duration-300';
+                    btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${themes[themeName].icon}"></path></svg>`;
+                    btn.onclick = () => applyTheme(themeName, btn);
+                    themeSwitcher.appendChild(btn);
+                });
+
+                // Apply initial theme
+                const initialBtn = themeSwitcher.querySelector(`[data-theme="${savedTheme}"]`);
+                if (initialBtn) {
+                    applyTheme(savedTheme, initialBtn);
+                }
+            }
+
+            function applyTheme(themeName, activeBtn) {
+                // Update data-theme attribute
+                document.documentElement.setAttribute('data-theme', themeName);
+                localStorage.setItem('selectedTheme', themeName);
+
+                // Update logo
+                const pageLogo = document.getElementById('page-logo');
+                if (pageLogo && themes[themeName]) {
+                    pageLogo.src = themes[themeName].logoImage;
+                }
+
+                // Update button styles
+                const themeSwitcher = document.getElementById('theme-switcher');
+                if (themeSwitcher) {
+                    themeSwitcher.querySelectorAll('button').forEach(btn => {
+                        btn.style.backgroundColor = 'transparent';
+                        btn.style.color = 'var(--text-primary)';
+                    });
+                    if (activeBtn) {
+                        activeBtn.style.backgroundColor = 'var(--accent-color)';
+                        activeBtn.style.color = 'white';
+                    }
+                }
+            }
+
+            // Load header component
+            fetch('/components/header.html')
+                .then(response => {
+                    if (!response.ok) throw new Error('Header not found');
+                    return response.text();
+                })
+                .then(data => {
+                    document.getElementById('header-placeholder').innerHTML = data;
+
+                    // Set initial logo
+                    const pageLogo = document.getElementById('page-logo');
+                    if (pageLogo && themes[savedTheme]) {
+                        pageLogo.src = themes[savedTheme].logoImage;
+                    }
+
+                    // Set up theme switcher with icons
+                    setupThemeSwitcher();
+                })
+                .catch(err => {
+                    console.error('Failed to load header:', err);
+                    // Fallback: create header manually if component fails to load
+                    const headerHTML = `
+                        <nav id="sticky-header" class="themeable-card border-b themeable-border sticky top-0 z-50 backdrop-blur-lg">
+                            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                                <div class="flex justify-between items-center">
+                                    <a href="https://blog.pebblous.ai" class="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+                                        <img id="page-logo" src="${themes[savedTheme].logoImage}" alt="Pebblous Logo" class="h-8 md:h-10 w-auto object-contain max-w-full">
+                                    </a>
+                                    <div class="flex items-center space-x-3">
+                                        <a href="https://blog.pebblous.ai" class="p-2 rounded-full hover:bg-opacity-10 hover:bg-gray-500 transition-all" title="홈으로 이동">
+                                            <svg class="w-5 h-5 themeable-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                            </svg>
+                                        </a>
+                                        <div id="theme-switcher" class="flex items-center space-x-1 border themeable-border rounded-full p-1">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </nav>
+                    `;
+                    document.getElementById('header-placeholder').innerHTML = headerHTML;
+
+                    // Set up theme switcher for fallback
+                    setupThemeSwitcher();
+                });
+        });
+    </script>
+
+    <script>
+        // --- 1. 전역 변수 및 DOM 요소 ---
+        const fileUpload = document.getElementById('file-upload');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const uploadContainer = document.getElementById('upload-container');
+        const viewerContainer = document.getElementById('viewer-container');
+        const dataTable = document.getElementById('data-table');
+        const prevBtns = document.querySelectorAll('.nav-btn-prev');
+        const nextBtns = document.querySelectorAll('.nav-btn-next');
+        const currentIndexEl = document.getElementById('current-index');
+        const totalCountEl = document.getElementById('total-count');
+        const loader = document.getElementById('loader');
+        const errorMessage = document.getElementById('error-message');
+        const messageContainer = document.getElementById('message-container');
+        const reviewerModal = document.getElementById('reviewer-modal');
+        const reviewerNameInput = document.getElementById('reviewer-name-input');
+        const startReviewBtn = document.getElementById('start-review-btn');
+        const reviewerError = document.getElementById('reviewer-error');
+        const reviewCheckbox = document.getElementById('review-checkbox');
+        const reviewComment = document.getElementById('review-comment');
+        const saveBtn = document.getElementById('save-btn');
+        const loadNewFileBtn = document.getElementById('load-new-file-btn');
+        const saveConfirmModal = document.getElementById('save-confirm-modal');
+        const saveConfirmMessage = document.getElementById('save-confirm-message');
+        const confirmSaveBtn = document.getElementById('confirm-save-btn');
+        const cancelSaveBtn = document.getElementById('cancel-save-btn');
+
+        let csvData = [];
+        let headers = [];
+        let currentIndex = 0;
+        let reviewerName = '';
+        let originalFileName = '';
+        let originalFileExtension = ''; // (v5) 원본 파일 확장자 저장
+
+        // --- 2. 초기화 및 라이브러리 검사 ---
+        (function checkLibraries() {
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof Papa === 'undefined' || typeof XLSX === 'undefined') {
+                    console.error('Core libraries (PapaParse or SheetJS) not loaded.');
+                    uploadContainer.innerHTML = `<div class="text-red-500 text-center font-medium p-4 border border-red-300 rounded-lg bg-red-50">
+                        <p class="font-bold">오류: 필수 라이브러리를 불러오지 못했습니다.</p>
+                        <p class="text-sm mt-1">인터넷 연결을 확인하고 페이지를 새로고침해주세요. (광고 차단기 등이 CDN을 막고 있을 수 있습니다)</p>
+                    </div>`;
+                    fileUpload.disabled = true;
+                    messageContainer.classList.add('hidden');
+                } else {
+                    console.log("Libraries (PapaParse, SheetJS) loaded successfully.");
+                }
+            });
+        })();
+
+        // --- 3. 파일 업로드 (이벤트 바인딩) ---
+        fileUpload.addEventListener('change', handleFile);
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadContainer.addEventListener(eventName, preventDefaults, false);
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadContainer.addEventListener(eventName, () => uploadContainer.classList.add('bg-blue-50'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadContainer.addEventListener(eventName, () => uploadContainer.classList.remove('bg-blue-50'), false);
+        });
+        uploadContainer.addEventListener('drop', handleDrop, false);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                fileUpload.files = files;
+                handleFile({ target: fileUpload });
+            }
+        }
+
+        // --- 4. 파일 처리 (파싱) ---
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            resetViewer();
+            showLoader();
+            fileNameDisplay.textContent = file.name;
+            originalFileName = file.name;
+            
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            originalFileExtension = fileExtension; // (v5) 확장자 저장
+
+            try {
+                if (fileExtension === 'csv') {
+                    parseCSV(file);
+                } else if (fileExtension === 'xls' || fileExtension === 'xlsx') {
+                    parseExcel(file);
+                } else if (fileExtension === 'json') {
+                    parseJSON(file);
+                } else {
+                    throw new Error("지원하지 않는 파일 형식입니다. CSV, XLS, XLSX, JSON 파일을 업로드해주세요.");
+                }
+            } catch (err) {
+                showError(err.message);
+                hideLoader();
+            }
+        }
+
+        function parseCSV(file) {
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                encoding: "UTF-8",
+                complete: (results) => {
+                    if (results.errors.length > 0) {
+                        retryParsingWithEncoding(file, "euc-kr"); // UTF-8 실패 시 EUC-KR 시도
+                    } else if (results.data && results.data.length > 0) {
+                        onFileParsed(results.meta.fields, results.data);
+                    } else {
+                        throw new Error("파일을 파싱할 수 없거나 데이터가 비어있습니다.");
+                    }
+                },
+                error: (err) => showError(`파일 파싱 중 오류가 발생했습니다: ${err.message}`)
+            });
+        }
+        
+        function retryParsingWithEncoding(file, encoding) {
+            console.log(`UTF-8 파싱 실패. ${encoding}(으)로 재시도...`);
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                encoding: encoding,
+                complete: (results) => {
+                    if (results.errors.length > 0 || !results.data || results.data.length === 0) {
+                        showError("파일 인코딩 형식을 인식할 수 없습니다. UTF-8 또는 EUC-KR로 저장된 CSV 파일을 사용해주세요.");
+                    } else {
+                        onFileParsed(results.meta.fields, results.data);
+                    }
+                },
+                error: (err) => showError(`파일 파싱 중 오류가 발생했습니다: ${err.message}`)
+            });
+        }
+
+        function parseExcel(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (jsonData.length > 0) {
+                        onFileParsed(Object.keys(jsonData[0]), jsonData);
+                    } else {
+                        throw new Error("엑셀 파일이 비어있거나 데이터를 읽을 수 없습니다.");
+                    }
+                } catch (err) {
+                    showError(`엑셀 파일 처리 중 오류가 발생했습니다: ${err.message}`);
+                }
+            };
+            reader.onerror = () => showError("파일을 읽는 중 오류가 발생했습니다.");
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parseJSON(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+                    if (Array.isArray(jsonData) && jsonData.length > 0) {
+                        // JSON 데이터의 모든 키를 헤더로 사용 (첫 번째 객체 기준)
+                        onFileParsed(Object.keys(jsonData[0]), jsonData);
+                    } else {
+                        throw new Error("JSON 파일이 비어있거나, 객체 배열(Array of Objects) 형식이 아닙니다.");
+                    }
+                } catch (err) {
+                    showError(`JSON 파일 처리 중 오류가 발생했습니다: ${err.message}`);
+                }
+            };
+            reader.onerror = () => showError("파일을 읽는 중 오류가 발생했습니다.");
+            reader.readAsText(file, "UTF-8");
+        }
+
+        // 파싱 성공 시 공통 콜백
+        function onFileParsed(parsedHeaders, parsedData) {
+            headers = parsedHeaders;
+            csvData = parsedData;
+            initializeReviewData();
+            hideLoader();
+            showReviewerModal();
+        }
+
+        // --- 5. 검수자 모달 ---
+        function showReviewerModal() {
+            reviewerModal.classList.remove('hidden');
+            reviewerError.classList.add('hidden');
+            reviewerNameInput.focus();
+        }
+
+        startReviewBtn.addEventListener('click', () => {
+            const name = reviewerNameInput.value.trim();
+            if (name === '') {
+                reviewerError.textContent = '검수자 이름을 입력해주세요.';
+                reviewerError.classList.remove('hidden');
+                return;
+            }
+            reviewerName = name;
+            reviewerModal.classList.add('hidden');
+            setupViewer(); // 뷰어 설정 시작
+        });
+
+        reviewerNameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') startReviewBtn.click();
+        });
+
+        function initializeReviewData() {
+            csvData.forEach(row => {
+                row.review_complete = row.review_complete === 'true' || row.review_complete === true;
+                row.review_comment = row.review_comment || '';
+            });
+        }
+
+        // --- 6. 뷰어 렌더링 ---
+        function setupViewer() {
+            if (csvData.length === 0) {
+                showError("데이터가 없습니다.");
+                return;
+            }
+            currentIndex = 0;
+            totalCountEl.textContent = csvData.length;
+            uploadContainer.classList.add('hidden');
+            viewerContainer.classList.remove('hidden');
+            
+            // (v5) 저장 버튼 텍스트 설정
+            const saveBtnText = (originalFileExtension === 'json') ? '검수 내용 저장 (JSON)' : '검수 내용 저장 (CSV)';
+            saveBtn.textContent = saveBtnText;
+
+            displayData(currentIndex);
+            updateNavButtons();
+        }
+
+        // (v4) HTML 이스케이프 함수
+        function escapeHTML(str) {
+            if (typeof str !== 'string') {
+                return str;
+            }
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // (v4) JSON 하위 객체 렌더링 함수
+        function renderValue(value) {
+            // 1. null 또는 undefined
+            if (value === undefined || value === null) {
+                return '';
+            }
+            
+            // 2. 배열 (Array)
+            if (Array.isArray(value)) {
+                if (value.length === 0) return '[]'; // 빈 배열
+
+                // 2a. 단순 배열 (string, number)
+                if (typeof value[0] === 'string' || typeof value[0] === 'number' || typeof value[0] === 'boolean') {
+                    let listHtml = '<div class="sub-list"><ul>';
+                    value.forEach(item => {
+                        listHtml += `<li>${escapeHTML(String(item))}</li>`;
+                    });
+                    listHtml += '</ul></div>';
+                    return listHtml;
+                }
+                
+                // 2b. 객체 배열 (Array of Objects) -> Grid 테이블
+                if (typeof value[0] === 'object' && value[0] !== null) {
+                    let gridHtml = '<table class="sub-grid"><thead><tr>';
+                    const subHeaders = Object.keys(value[0]);
+                    subHeaders.forEach(subH => {
+                        gridHtml += `<th>${escapeHTML(subH)}</th>`;
+                    });
+                    gridHtml += '</tr></thead><tbody>';
+
+                    value.forEach(subRow => {
+                        gridHtml += '<tr>';
+                        subHeaders.forEach(subH => {
+                            // 재귀 호출: 셀 안의 값도 객체일 수 있음
+                            gridHtml += `<td>${renderValue(subRow[subH])}</td>`; 
+                        });
+                        gridHtml += '</tr>';
+                    });
+                    gridHtml += '</tbody></table>';
+                    return gridHtml;
+                }
+            }
+
+            // 3. 객체 (Object) -> Key-Value 테이블
+            if (typeof value === 'object' && value !== null) {
+                let tableHtml = '<table class="sub-table"><tbody>';
+                Object.keys(value).forEach(key => {
+                    tableHtml += `
+                        <tr>
+                            <th>${escapeHTML(key)}</th>
+                            <td>${renderValue(value[key])}</td> <!-- 재귀 호출 -->
+                        </tr>
+                    `;
+                });
+                tableHtml += '</tbody></table>';
+                return tableHtml;
+            }
+
+            // 4. 그 외 (string, number, boolean)
+            return escapeHTML(String(value));
+        }
+
+        // (v4) 데이터 표시 함수 - renderValue 사용
+        function displayData(index) {
+            const rowData = csvData[index];
+            if (!rowData) return;
+
+            let tableHtml = '<tbody>';
+            headers.forEach(header => {
+                // 검수용 컬럼은 테이블에 표시하지 않음
+                if (header === 'review_complete' || header === 'review_comment') {
+                    return;
+                }
+                
+                const value = rowData[header];
+                
+                tableHtml += `
+                    <tr>
+                        <th>${escapeHTML(header)}</th>
+                        <td>${renderValue(value)}</td> <!-- renderValue 사용 -->
+                    </tr>
+                `;
+            });
+            tableHtml += '</tbody>';
+
+            dataTable.innerHTML = tableHtml;
+            currentIndexEl.textContent = index + 1;
+
+            // 검수 UI 업데이트
+            reviewCheckbox.checked = rowData.review_complete;
+            reviewComment.value = rowData.review_comment;
+        }
+
+
+        // --- 7. 네비게이션 및 UI 상호작용 ---
+        function updateNavButtons() {
+            const isFirst = (currentIndex === 0);
+            const isLast = (currentIndex === csvData.length - 1);
+            prevBtns.forEach(btn => btn.disabled = isFirst);
+            nextBtns.forEach(btn => btn.disabled = isLast);
+        }
+
+        prevBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    displayData(currentIndex);
+                    updateNavButtons();
+                }
+            });
+        });
+
+        nextBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (currentIndex < csvData.length - 1) {
+                    currentIndex++;
+                    displayData(currentIndex);
+                    updateNavButtons();
+                }
+            });
+        });
+
+        reviewCheckbox.addEventListener('change', (e) => {
+            if (csvData[currentIndex]) {
+                csvData[currentIndex].review_complete = e.target.checked;
+            }
+        });
+
+        reviewComment.addEventListener('input', (e) => {
+            if (csvData[currentIndex]) {
+                csvData[currentIndex].review_comment = e.target.value;
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (viewerContainer.classList.contains('hidden')) return;
+            if (e.key === 'ArrowLeft') prevBtns[0].click();
+            else if (e.key === 'ArrowRight') nextBtns[0].click();
+        });
+
+        // --- 8. 저장 로직 ---
+        saveBtn.addEventListener('click', () => {
+            if (csvData.length === 0) {
+                showError("저장할 데이터가 없습니다.");
+                return;
+            }
+            const completedCount = csvData.filter(row => row.review_complete === true).length;
+            saveConfirmMessage.textContent = `총 ${csvData.length}개 중 ${completedCount}개 검수 완료. 저장하시겠습니까?`;
+            saveConfirmModal.classList.remove('hidden');
+        });
+
+        cancelSaveBtn.addEventListener('click', () => {
+            saveConfirmModal.classList.add('hidden');
+        });
+
+        confirmSaveBtn.addEventListener('click', () => {
+            handleSaveConfirmation();
+            saveConfirmModal.classList.add('hidden');
+        });
+
+        // (v5) 저장 처리 함수 - JSON/CSV 분기
+        function handleSaveConfirmation() {
+            const completedCount = csvData.filter(row => row.review_complete === true).length;
+            
+            // 코멘트에 타임스탬프 추가
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
+            const timestamp = `(${reviewerName}, ${dateStr} ${timeStr})`;
+
+            const escapedReviewerName = reviewerName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const timestampRegex = new RegExp(`\\(${escapedReviewerName},\\s\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\)$`);
+
+            // 데이터 복사본 생성 (원본 데이터 변경 방지)
+            const dataToSave = csvData.map(row => {
+                const newRow = { ...row }; // 얕은 복사
+                
+                // 타임스탬프 로직
+                const comment = (newRow.review_comment || '').trim();
+                if (comment !== '') {
+                    if (!timestampRegex.test(comment)) {
+                        newRow.review_comment = `${comment}\n${timestamp}`;
+                    }
+                }
+                return newRow;
+            });
+
+            // 현재 화면 코멘트 업데이트 (복사본이 아닌 원본 데이터에 반영)
+            if (csvData[currentIndex]) {
+                const currentComment = (csvData[currentIndex].review_comment || '').trim();
+                if (currentComment !== '' && !timestampRegex.test(currentComment)) {
+                    csvData[currentIndex].review_comment = `${currentComment}\n${timestamp}`;
+                    reviewComment.value = csvData[currentIndex].review_comment;
+                }
+            }
+
+            // 파일명 생성
+            const fileTimeStr = timeStr.replace(/:/g, '-'); // HH-MM-SS
+            const dateTimeForFile = `${dateStr}_${fileTimeStr}`;
+            const baseName = originalFileName.replace(/\.(csv|xls|xlsx|json)$/i, '');
+            
+            let newFileName = '';
+            let blob;
+            let mimeType = '';
+            
+            try {
+                // (v5) 원본 파일 확장자에 따라 저장 포맷 결정
+                if (originalFileExtension === 'json') {
+                    // JSON으로 저장
+                    newFileName = `${baseName}_${reviewerName}_${dateTimeForFile}.json`;
+                    mimeType = 'application/json;charset=utf-8;';
+                    
+                    const jsonString = JSON.stringify(dataToSave, null, 2); // 예쁘게 포맷팅
+                    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // BOM 추가
+                    blob = new Blob([bom, jsonString], { type: mimeType });
+
+                } else {
+                    // CSV로 저장 (기존 로직)
+                    newFileName = `${baseName}_${reviewerName}_${dateTimeForFile}.csv`;
+                    mimeType = 'text/csv;charset=utf-8;';
+
+                    // CSV 헤더 (검수 필드 포함)
+                    const exportHeaders = [...headers];
+                    if (exportHeaders.indexOf('review_complete') === -1) exportHeaders.push('review_complete');
+                    if (exportHeaders.indexOf('review_comment') === -1) exportHeaders.push('review_comment');
+
+                    // CSV 변환 시 객체/배열을 JSON 문자열로 변환
+                    const dataForCsv = dataToSave.map(row => {
+                        const newRow = {};
+                        for (const key in row) {
+                            const value = row[key];
+                            if (typeof value === 'object' && value !== null) {
+                                newRow[key] = JSON.stringify(value);
+                            } else {
+                                newRow[key] = value;
+                            }
+                        }
+                        return newRow;
+                    });
+                    
+                    if (typeof Papa === 'undefined') {
+                        throw new Error("CSV 저장 라이브러리(PapaParse) 로딩에 실패했습니다.");
+                    }
+                    
+                    const csvString = Papa.unparse(dataForCsv, {
+                        columns: exportHeaders,
+                        header: true,
+                    });
+
+                    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+                    blob = new Blob([bom, csvString], { type: mimeType });
+                }
+
+                // 파일 다운로드
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', newFileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                showSuccess(`저장 완료! 총 ${csvData.length}개 중 ${completedCount}개 검수 완료.`);
+
+            } catch (err) {
+                console.error("파일 저장 오류:", err);
+                showError(err.message);
+            }
+        }
+
+        // --- 9. 유틸리티 함수 (UI, 초기화) ---
+        loadNewFileBtn.addEventListener('click', () => {
+            resetViewer();
+            fileUpload.click(); // 파일 선택창 바로 띄우기
+        });
+        
+        function resetViewer() {
+            csvData = [];
+            headers = [];
+            currentIndex = 0;
+            reviewerName = '';
+            originalFileName = '';
+            originalFileExtension = ''; // (v5) 초기화
+            reviewerNameInput.value = '';
+            reviewerModal.classList.add('hidden');
+            viewerContainer.classList.add('hidden');
+            uploadContainer.classList.remove('hidden');
+            dataTable.innerHTML = '';
+            hideLoader();
+            hideError();
+            fileNameDisplay.textContent = '파일을 드래그하거나 클릭하여 업로드하세요';
+            fileUpload.value = ''; // 파일 입력값 초기화
+        }
+
+        function showLoader() {
+            loader.classList.remove('hidden');
+            messageContainer.classList.remove('hidden');
+            hideError();
+        }
+        function hideLoader() {
+            loader.classList.add('hidden');
+            if (errorMessage.classList.contains('hidden')) {
+                messageContainer.classList.add('hidden');
+            }
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden', 'text-green-600');
+            errorMessage.classList.add('text-red-500');
+            messageContainer.classList.remove('hidden');
+            hideLoader();
+            fileUpload.value = ''; // 오류 시 파일 입력 초기화
+            originalFileName = '';
+            originalFileExtension = '';
+            fileNameDisplay.textContent = '파일을 드래그하거나 클릭하여 업로드하세요';
+        }
+        function hideError() {
+            errorMessage.textContent = '';
+            errorMessage.classList.add('hidden');
+            errorMessage.classList.remove('text-green-600');
+            errorMessage.classList.add('text-red-500');
+            if (loader.classList.contains('hidden')) {
+                messageContainer.classList.add('hidden');
+            }
+        }
+        
+        function showSuccess(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden', 'text-red-500');
+            errorMessage.classList.add('text-green-600');
+            messageContainer.classList.remove('hidden');
+            hideLoader();
+
+            setTimeout(() => {
+                hideError();
+            }, 3000);
+        }
+
+    </script>
+</body>
+</html>
+
