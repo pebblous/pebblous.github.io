@@ -51,9 +51,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Prism.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-turtle.min.js"></script>
 
     <!-- Common Styles -->
     <link rel="stylesheet" href="/styles/common-styles.css">
@@ -271,6 +277,81 @@
             padding: 0.5rem;
             border-radius: 0.5rem;
         }
+
+        /* Summary Section with Vector Background */
+        .summary-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vector-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0.12;
+            pointer-events: none;
+            color: var(--text-muted);
+        }
+
+        .summary-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .icon-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #F86825, #FF8C42);
+            color: white;
+            flex-shrink: 0;
+        }
+
+        /* Cytoscape Graph Container */
+        #cy-container, #cy-simple-container {
+            width: 100%;
+            height: 400px;
+            background-color: var(--diagram-accent-bg);
+            border-radius: 0.5rem;
+            border: 1px solid var(--diagram-border);
+        }
+
+        #cy-container {
+            height: 500px;
+        }
+
+        /* Knowledge Graph Tabs */
+        .kg-tab-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+        }
+
+        .kg-tab-btn:hover {
+            color: var(--accent-color);
+        }
+
+        .kg-tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .kg-content-panel {
+            display: none;
+        }
+
+        .kg-content-panel.active {
+            display: block;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -288,38 +369,159 @@
         <nav class="hidden lg:block lg:col-span-1 sticky top-20 self-start h-auto pr-4">
             <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
             <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
-                <li><a href="#intro" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">소개</a></li>
-                <li><a href="#concepts" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">핵심 개념</a></li>
-                <li><a href="#methods" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">주요 방법론</a></li>
-                <li><a href="#comparison" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">성능 비교</a></li>
-                <li><a href="#applications" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">적용 분야</a></li>
-                <li><a href="#reports" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">AI 분석 보고서</a></li>
-                <li><a href="#conclusion" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">결론 및 전망</a></li>
+                <li><a href="#intro" class="block pl-4 -ml-px border-l-2 themeable-toc-link">소개</a></li>
+                <li><a href="#concepts" class="block pl-4 -ml-px border-l-2 themeable-toc-link">핵심 개념</a></li>
+                <li><a href="#methods" class="block pl-4 -ml-px border-l-2 themeable-toc-link">주요 방법론</a></li>
+                <li><a href="#comparison" class="block pl-4 -ml-px border-l-2 themeable-toc-link">성능 비교</a></li>
+                <li><a href="#applications" class="block pl-4 -ml-px border-l-2 themeable-toc-link">적용 분야</a></li>
+                <li><a href="#reports" class="block pl-4 -ml-px border-l-2 themeable-toc-link">AI 분석 보고서</a></li>
+                <li><a href="#conclusion" class="block pl-4 -ml-px border-l-2 themeable-toc-link">결론 및 전망</a></li>
             </ul>
         </nav>
 
         <!-- Main Content -->
         <main class="lg:col-span-3">
             <!-- Title Section -->
-            <section id="intro" class="mb-12 text-center">
-                <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4 themeable-heading">벡터 임베딩과 지식 그래프의 만남</h1>
-                <div class="text-sm mb-6 themeable-subtitle">
+            <section id="intro" class="mb-16 text-center">
+                <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-6 themeable-heading">벡터 임베딩과 지식 그래프의 만남</h1>
+                <div class="text-sm mb-8 themeable-subtitle">
                     <span>2025년 9월 29일</span>
                     <span class="mx-2">|</span>
                     <span>페블러스 데이터 커뮤니케이션 팀</span>
                 </div>
-                <div class="themeable-card p-8 rounded-xl shadow-lg border relative">
-                    <div class="flex items-center justify-center mb-4">
-                        <div class="flex items-center space-x-2">
-                            <svg class="w-5 h-5 themeable-accent" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
-                            </svg>
-                            <span class="text-sm font-bold tracking-wider uppercase themeable-accent">요약</span>
+            </section>
+
+            <!-- Executive Summary -->
+            <section id="summary" class="mb-16">
+                <div class="themeable-card rounded-xl p-8 md:p-10 summary-card">
+                    <!-- Vector Background -->
+                    <svg class="vector-background" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Dense network of vector points and connections -->
+
+                        <!-- Filled circles (disks) - various sizes -->
+                        <circle cx="50" cy="50" r="3" fill="currentColor"/>
+                        <circle cx="120" cy="80" r="5" fill="currentColor"/>
+                        <circle cx="200" cy="60" r="2" fill="currentColor"/>
+                        <circle cx="280" cy="90" r="4" fill="currentColor"/>
+                        <circle cx="350" cy="70" r="3" fill="currentColor"/>
+                        <circle cx="420" cy="100" r="6" fill="currentColor"/>
+                        <circle cx="500" cy="50" r="2" fill="currentColor"/>
+                        <circle cx="580" cy="80" r="4" fill="currentColor"/>
+                        <circle cx="650" cy="60" r="5" fill="currentColor"/>
+                        <circle cx="720" cy="90" r="3" fill="currentColor"/>
+
+                        <circle cx="80" cy="150" r="4" fill="currentColor"/>
+                        <circle cx="160" cy="180" r="2" fill="currentColor"/>
+                        <circle cx="240" cy="160" r="5" fill="currentColor"/>
+                        <circle cx="320" cy="190" r="3" fill="currentColor"/>
+                        <circle cx="400" cy="170" r="4" fill="currentColor"/>
+                        <circle cx="480" cy="200" r="2" fill="currentColor"/>
+                        <circle cx="560" cy="150" r="6" fill="currentColor"/>
+                        <circle cx="640" cy="180" r="3" fill="currentColor"/>
+                        <circle cx="710" cy="160" r="4" fill="currentColor"/>
+
+                        <!-- Hollow circles (rings) - various sizes -->
+                        <circle cx="100" cy="240" r="4" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="180" cy="270" r="6" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="260" cy="250" r="3" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="340" cy="280" r="5" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="420" cy="260" r="2" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="500" cy="290" r="4" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="580" cy="240" r="6" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="660" cy="270" r="3" fill="none" stroke="currentColor" stroke-width="1"/>
+
+                        <circle cx="60" cy="330" r="5" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="140" cy="360" r="3" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="220" cy="340" r="4" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="300" cy="370" r="2" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="380" cy="350" r="6" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="460" cy="380" r="3" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="540" cy="330" r="5" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="620" cy="360" r="4" fill="none" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="700" cy="340" r="3" fill="none" stroke="currentColor" stroke-width="1"/>
+
+                        <!-- Many thin connection lines -->
+                        <line x1="50" y1="50" x2="120" y2="80" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="120" y1="80" x2="200" y2="60" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="200" y1="60" x2="280" y2="90" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="280" y1="90" x2="350" y2="70" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="350" y1="70" x2="420" y2="100" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="420" y1="100" x2="500" y2="50" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="500" y1="50" x2="580" y2="80" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="580" y1="80" x2="650" y2="60" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="650" y1="60" x2="720" y2="90" stroke="currentColor" stroke-width="0.5"/>
+
+                        <line x1="80" y1="150" x2="160" y2="180" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="160" y1="180" x2="240" y2="160" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="240" y1="160" x2="320" y2="190" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="320" y1="190" x2="400" y2="170" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="400" y1="170" x2="480" y2="200" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="480" y1="200" x2="560" y2="150" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="560" y1="150" x2="640" y2="180" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="640" y1="180" x2="710" y2="160" stroke="currentColor" stroke-width="0.5"/>
+
+                        <line x1="100" y1="240" x2="180" y2="270" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="180" y1="270" x2="260" y2="250" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="260" y1="250" x2="340" y2="280" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="340" y1="280" x2="420" y2="260" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="420" y1="260" x2="500" y2="290" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="500" y1="290" x2="580" y2="240" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="580" y1="240" x2="660" y2="270" stroke="currentColor" stroke-width="0.5"/>
+
+                        <line x1="60" y1="330" x2="140" y2="360" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="140" y1="360" x2="220" y2="340" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="220" y1="340" x2="300" y2="370" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="300" y1="370" x2="380" y2="350" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="380" y1="350" x2="460" y2="380" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="460" y1="380" x2="540" y2="330" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="540" y1="330" x2="620" y2="360" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="620" y1="360" x2="700" y2="340" stroke="currentColor" stroke-width="0.5"/>
+
+                        <!-- Cross-layer connections -->
+                        <line x1="120" y1="80" x2="80" y2="150" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="280" y1="90" x2="240" y2="160" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="420" y1="100" x2="400" y2="170" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="580" y1="80" x2="560" y2="150" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="80" y1="150" x2="100" y2="240" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="240" y1="160" x2="260" y2="250" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="400" y1="170" x2="420" y2="260" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="560" y1="150" x2="580" y2="240" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="100" y1="240" x2="60" y2="330" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="260" y1="250" x2="220" y2="340" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="420" y1="260" x2="380" y2="350" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="580" y1="240" x2="540" y2="330" stroke="currentColor" stroke-width="0.5"/>
+
+                        <!-- Some diagonal connections -->
+                        <line x1="50" y1="50" x2="160" y2="180" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="200" y1="60" x2="320" y2="190" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="350" y1="70" x2="480" y2="200" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="500" y1="50" x2="640" y2="180" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="120" y1="80" x2="260" y2="250" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="420" y1="100" x2="580" y2="240" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="160" y1="180" x2="300" y2="370" stroke="currentColor" stroke-width="0.5"/>
+                        <line x1="400" y1="170" x2="540" y2="330" stroke="currentColor" stroke-width="0.5"/>
+                    </svg>
+
+                    <div class="summary-content">
+                        <h2 class="text-3xl font-bold themeable-heading mb-6 flex items-center gap-3">
+                            <div class="icon-wrapper">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            초록 (Executive Summary)
+                        </h2>
+
+                        <div class="space-y-6 themeable-text leading-relaxed">
+                            <p>
+                                AI가 데이터를 더 깊이 이해하고 인간처럼 추론하게 하려면 어떻게 해야 할까요? AI의 생각의 과정을 인간이 더 잘 이해하려면 어떻게 해야할까요? 이 보고서는 두 가지 강력한 지식 표현 기술, 즉 데이터의 '의미'를 포착하는 벡터 임베딩과 데이터 간의 '관계'를 정의하는 지식 그래프를 결합하는 최신 방법론을 탐구합니다.
+                            </p>
+
+                            <p>
+                                연속적이고 비정형적인 벡터 임베딩과 이산적이고 정형에 가까운 지식 그래프, 이 둘의 시너지는 온톨로지와 더불어 차세대 AI를 위한 데이터와 지식 표현의 핵심이며, Agentic AI의 기초가 될 것입니다.
+                            </p>
                         </div>
                     </div>
-                    <p class="text-lg leading-relaxed themeable-subtitle max-w-3xl mx-auto">
-                        AI가 데이터를 더 깊이 이해하고 인간처럼 추론하게 하려면 어떻게 해야 할까요? AI의 생각의 과정을 인간이 더 잘 이해하려면 어떻게 해야할까요? 이 보고서는 두 가지 강력한 지식 표현 기술, 즉 데이터의 '의미'를 포착하는 벡터 임베딩과 데이터 간의 '관계'를 정의하는 지식 그래프를 결합하는 최신 방법론을 탐구합니다. 연속적이고 비정형적인 벡터 임베딩과 이산적이고 정형에 가까운 지식 그래프, 이 둘의 시너지는 온톨로지와 더불어 차세대 AI를 위한 데이터와 지식 표현의 핵심이며, Agentic AI의 기초가 될 것입니다.
-                    </p>
                 </div>
             </section>
 
@@ -335,22 +537,202 @@
                             <li><strong>강점:</strong> 미묘한 의미 차이 포착, 유사도 계산, 기계 학습 모델 입력으로 활용 용이</li>
                             <li><strong>약점:</strong> 명시적인 관계 표현 부재, 추론 과정의 설명 어려움</li>
                         </ul>
-                        <div class="mt-6 p-4 rounded-md" style="background-color: var(--diagram-bg);">
-                            <p class="text-sm font-mono themeable-subtitle break-words">"왕" - "남자" + "여자" ≈ "여왕"</p>
-                            <p class="text-xs text-center mt-2" style="color: var(--text-muted);">벡터 연산을 통한 의미 추론 예시</p>
+
+                        <!-- Vector Operation Examples Card -->
+                        <div class="mt-6 p-5 rounded-md border relative" style="background-color: var(--diagram-bg); border-color: var(--diagram-border);">
+                            <div class="space-y-4">
+                                <!-- Example 1 -->
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex-shrink-0 w-2 h-2 rounded-full" style="background-color: #3b82f6;"></div>
+                                    <p class="text-sm font-mono themeable-subtitle flex-1">
+                                        <span style="color: #3b82f6; font-weight: 600;">"왕"</span>
+                                        <span style="color: #ef4444;"> - </span>
+                                        <span style="color: #f59e0b; font-weight: 600;">"남자"</span>
+                                        <span style="color: #10b981;"> + </span>
+                                        <span style="color: #8b5cf6; font-weight: 600;">"여자"</span>
+                                        <span> ≈ </span>
+                                        <span style="color: #ec4899; font-weight: 700;">"여왕"</span>
+                                    </p>
+                                </div>
+
+                                <!-- Example 2 -->
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex-shrink-0 w-2 h-2 rounded-full" style="background-color: #14b8a6;"></div>
+                                    <p class="text-sm font-mono themeable-subtitle flex-1">
+                                        <span style="color: #3b82f6; font-weight: 600;">"파리"</span>
+                                        <span style="color: #ef4444;"> - </span>
+                                        <span style="color: #f59e0b; font-weight: 600;">"프랑스"</span>
+                                        <span style="color: #10b981;"> + </span>
+                                        <span style="color: #8b5cf6; font-weight: 600;">"한국"</span>
+                                        <span> ≈ </span>
+                                        <span style="color: #ec4899; font-weight: 700;">"서울"</span>
+                                    </p>
+                                </div>
+
+                                <!-- Example 3 -->
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex-shrink-0 w-2 h-2 rounded-full" style="background-color: #f59e0b;"></div>
+                                    <p class="text-sm font-mono themeable-subtitle flex-1">
+                                        <span style="color: #3b82f6; font-weight: 600;">"ChatGPT"</span>
+                                        <span style="color: #ef4444;"> - </span>
+                                        <span style="color: #f59e0b; font-weight: 600;">"텍스트"</span>
+                                        <span style="color: #10b981;"> + </span>
+                                        <span style="color: #8b5cf6; font-weight: 600;">"이미지"</span>
+                                        <span> ≈ </span>
+                                        <span style="color: #ec4899; font-weight: 700;">"DALL-E"</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <p class="text-xs mt-4" style="color: var(--text-muted);">&lt;벡터 연산을 통한 의미 추론 예시&gt;</p>
+                        </div>
+
+                        <!-- Point Cloud and Vector Addition Visualization -->
+                        <div class="mt-6 p-5 rounded-md border" style="background-color: var(--diagram-bg); border-color: var(--diagram-border);">
+                            <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg" class="w-full">
+                                <!-- Point Cloud Background -->
+                                <g opacity="0.3">
+                                    <circle cx="50" cy="100" r="2" fill="currentColor"/>
+                                    <circle cx="80" cy="120" r="2" fill="currentColor"/>
+                                    <circle cx="110" cy="90" r="2" fill="currentColor"/>
+                                    <circle cx="140" cy="110" r="2" fill="currentColor"/>
+                                    <circle cx="90" cy="140" r="2" fill="currentColor"/>
+                                    <circle cx="120" cy="70" r="2" fill="currentColor"/>
+                                    <circle cx="60" cy="80" r="2" fill="currentColor"/>
+                                    <circle cx="100" cy="160" r="2" fill="currentColor"/>
+                                    <circle cx="130" cy="130" r="2" fill="currentColor"/>
+
+                                    <circle cx="200" cy="80" r="2" fill="currentColor"/>
+                                    <circle cx="230" cy="100" r="2" fill="currentColor"/>
+                                    <circle cx="260" cy="70" r="2" fill="currentColor"/>
+                                    <circle cx="210" cy="110" r="2" fill="currentColor"/>
+                                    <circle cx="240" cy="90" r="2" fill="currentColor"/>
+
+                                    <circle cx="310" cy="50" r="2" fill="currentColor"/>
+                                    <circle cx="340" cy="70" r="2" fill="currentColor"/>
+                                    <circle cx="370" cy="60" r="2" fill="currentColor"/>
+                                    <circle cx="320" cy="80" r="2" fill="currentColor"/>
+                                    <circle cx="350" cy="50" r="2" fill="currentColor"/>
+                                </g>
+
+                                <!-- Vector A (blue) -->
+                                <defs>
+                                    <marker id="arrowblue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                                        <path d="M0,0 L0,6 L9,3 z" fill="#3b82f6" />
+                                    </marker>
+                                    <marker id="arrowteal" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                                        <path d="M0,0 L0,6 L9,3 z" fill="#14b8a6" />
+                                    </marker>
+                                    <marker id="arroworange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                                        <path d="M0,0 L0,6 L9,3 z" fill="#F86825" />
+                                    </marker>
+                                </defs>
+
+                                <line x1="50" y1="150" x2="150" y2="100" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arrowblue)"/>
+                                <text x="100" y="115" fill="currentColor" font-size="12" font-weight="bold">A</text>
+
+                                <!-- Vector B (teal) -->
+                                <line x1="50" y1="150" x2="100" y2="80" stroke="#14b8a6" stroke-width="2.5" marker-end="url(#arrowteal)"/>
+                                <text x="60" y="110" fill="currentColor" font-size="12" font-weight="bold">B</text>
+
+                                <!-- Plus sign -->
+                                <text x="175" y="105" fill="currentColor" font-size="20" font-weight="bold">+</text>
+
+                                <!-- Vector B shifted (teal dashed) -->
+                                <line x1="150" y1="100" x2="200" y2="30" stroke="#14b8a6" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrowteal)"/>
+
+                                <!-- Result Vector A+B (orange) -->
+                                <line x1="50" y1="150" x2="200" y2="30" stroke="#F86825" stroke-width="3" marker-end="url(#arroworange)"/>
+                                <text x="130" y="80" fill="#F86825" font-size="12" font-weight="bold">A + B</text>
+
+                                <!-- Origin point -->
+                                <circle cx="50" cy="150" r="3" fill="currentColor"/>
+                                <text x="30" y="165" fill="currentColor" font-size="11">원점</text>
+                            </svg>
+                            <p class="text-xs mt-3" style="color: var(--text-muted);">&lt;벡터 공간에서의 덧셈 연산 시각화&gt;</p>
                         </div>
                     </div>
                     <div class="themeable-card p-8 rounded-lg shadow-md border">
                         <h3 class="text-2xl font-bold mb-4 themeable-teal">지식 그래프 (Knowledge Graph)</h3>
-                        <p class="mb-4 themeable-subtitle">개체(Entity)들을 노드(Node)로, 개체 간의 관계(Relation)를 엣지(Edge)로 표현한 그래프 형태의 데이터베이스입니다. 세상의 지식을 구조화하여 저장합니다.</p>
-                        <ul class="space-y-2 list-disc list-inside themeable-subtitle">
+                        <p class="mb-6 themeable-subtitle">개체(Entity)들을 노드(Node)로, 개체 간의 관계(Relation)를 엣지(Edge)로 표현한 그래프 형태의 데이터베이스입니다. 세상의 지식을 구조화하여 저장합니다.</p>
+                        <ul class="space-y-2 list-disc list-inside themeable-subtitle mb-6">
                             <li><strong>목표:</strong> 개체와 관계에 대한 사실(Fact)을 명시적으로 구조화</li>
                             <li><strong>강점:</strong> 정확하고 설명 가능한 관계 추론, 복잡한 질의응답, 데이터 통합</li>
                             <li><strong>약점:</strong> 새로운 관계 추론의 어려움, 구축 및 확장에 많은 비용 소요</li>
                         </ul>
-                        <div class="mt-6 p-4 rounded-md" style="background-color: var(--diagram-accent-bg);">
-                            <p class="text-sm font-mono text-center" style="color: var(--diagram-accent-text);">[서울] --(수도)--&gt; [대한민국]</p>
-                            <p class="text-xs text-center mt-2" style="color: var(--diagram-accent-text);">(개체) - (관계) -> (개체) 구조 예시</p>
+
+                        <!-- Knowledge Graph Tabs -->
+                        <div class="flex justify-center border-b themeable-border mb-6 space-x-2">
+                            <button class="kg-tab-btn active" data-kg-tab="simple">단순 그래프</button>
+                            <button class="kg-tab-btn" data-kg-tab="complex">복잡한 그래프</button>
+                            <button class="kg-tab-btn" data-kg-tab="ontology">온톨로지 표현</button>
+                        </div>
+
+                        <!-- Tab Content -->
+                        <div id="kg-tab-content">
+                            <!-- Simple Knowledge Graph -->
+                            <div id="kg-simple" class="kg-content-panel active">
+                                <div class="p-5 rounded-md border" style="background-color: var(--diagram-accent-bg); border-color: var(--diagram-border);">
+                                    <div id="cy-simple-container"></div>
+                                    <p class="text-xs mt-3" style="color: var(--diagram-accent-text);">&lt;단순 지식 그래프 구조 예시&gt;</p>
+                                </div>
+                            </div>
+
+                            <!-- Complex Knowledge Graph -->
+                            <div id="kg-complex" class="kg-content-panel">
+                                <div class="p-5 rounded-md border mb-4" style="background-color: var(--diagram-accent-bg); border-color: var(--diagram-border);">
+                                    <div id="cy-container"></div>
+                                    <p class="text-xs mt-3" style="color: var(--diagram-accent-text);">&lt;인터랙티브 지식 그래프: ChatGPT 생태계 (드래그하여 탐색 가능)&gt;</p>
+                                </div>
+                            </div>
+
+                            <!-- Ontology Representation -->
+                            <div id="kg-ontology" class="kg-content-panel">
+                                <div class="p-5 rounded-md border" style="background-color: var(--diagram-accent-bg); border-color: var(--diagram-border);">
+                                    <p class="text-sm themeable-subtitle mb-4">지식 그래프를 OWL(Web Ontology Language) 온톨로지로 표현하면 클래스, 속성, 관계를 형식적으로 정의하여 기계가 추론할 수 있게 됩니다.</p>
+                                    <pre class="rounded overflow-x-auto" style="margin: 0; max-height: 400px; overflow-y: auto;"><code class="language-turtle" style="font-size: 11px;">@prefix : &lt;http://example.org/ai#&gt; .
+@prefix owl: &lt;http://www.w3.org/2002/07/owl#&gt; .
+@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; .
+
+# 클래스 정의
+:AIModel rdf:type owl:Class .
+:Company rdf:type owl:Class .
+:Application rdf:type owl:Class .
+:Technology rdf:type owl:Class .
+
+# 속성 정의
+:developedBy rdf:type owl:ObjectProperty ;
+    rdfs:domain :AIModel ;
+    rdfs:range :Company .
+
+:basedOn rdf:type owl:ObjectProperty ;
+    rdfs:domain :AIModel ;
+    rdfs:range :AIModel .
+
+:hasType rdf:type owl:ObjectProperty ;
+    rdfs:domain :AIModel ;
+    rdfs:range :Technology .
+
+:usedFor rdf:type owl:ObjectProperty ;
+    rdfs:domain :AIModel ;
+    rdfs:range :Application .
+
+# 인스턴스 정의
+:ChatGPT rdf:type :AIModel ;
+    :developedBy :OpenAI ;
+    :basedOn :GPT-4 ;
+    :hasType :LLM ;
+    :usedFor :NaturalLanguageProcessing ;
+    :usedFor :AIAssistant .
+
+:OpenAI rdf:type :Company .
+:GPT-4 rdf:type :AIModel .
+:LLM rdf:type :Technology .
+:NaturalLanguageProcessing rdf:type :Application .
+:AIAssistant rdf:type :Application .</code></pre>
+                                    <p class="text-xs mt-3" style="color: var(--diagram-accent-text);">&lt;OWL/RDF Turtle 형식의 온톨로지 표현&gt;</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -359,7 +741,7 @@
             <!-- Methods Section -->
             <section id="methods" class="mb-20 scroll-mt-20">
                 <h2 class="text-3xl font-bold mb-10 themeable-heading">주요 연계 방법론</h2>
-                <p class="themeable-subtitle max-w-3xl mx-auto mb-8">벡터 임베딩과 지식 그래프를 결합하는 방법은 크게 세 가지 접근 방식으로 나눌 수 있습니다. 각 탭을 클릭하여 각 방법론의 특징과 작동 방식을 확인해보세요.</p>
+                <p class="themeable-subtitle max-w-3xl mx-auto mb-8">인공지능에서 벡터 임베딩과 지식 그래프의 결합을 통해 새로운 가능성을 찾고 있습니다. 결합 방법은 크게 다음의 세 가지 접근 방식으로 나눌 수 있습니다. 각 탭을 클릭하여 각 방법론의 특징과 작동 방식을 확인해보세요.</p>
                 <div class="flex justify-center border-b themeable-border mb-8 space-x-2 md:space-x-4">
                     <button class="tab-btn px-4 py-2 text-sm md:text-base border-b-2 border-transparent active" data-tab="1">1. 동시 학습 모델</button>
                     <button class="tab-btn px-4 py-2 text-sm md:text-base border-b-2 border-transparent" data-tab="2">2. 지식 그래프 강화 임베딩</button>
@@ -591,7 +973,7 @@
             };
 
             // =================================================================
-            // Tab Switching Logic
+            // Tab Switching Logic (Methods Section)
             // =================================================================
             const tabs = document.querySelectorAll('.tab-btn');
             const contentPanels = document.querySelectorAll('.content-panel');
@@ -611,6 +993,219 @@
                     });
                 });
             });
+
+            // =================================================================
+            // Knowledge Graph Tab Switching Logic
+            // =================================================================
+            const kgTabs = document.querySelectorAll('.kg-tab-btn');
+            const kgContentPanels = document.querySelectorAll('.kg-content-panel');
+            let cyInstance = null;
+            let cySimpleInstance = null;
+
+            // Initialize simple graph on page load
+            initSimpleCytoscape();
+
+            kgTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    kgTabs.forEach(item => item.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    const targetTab = tab.getAttribute('data-kg-tab');
+                    kgContentPanels.forEach(panel => {
+                        if (panel.id === `kg-${targetTab}`) {
+                            panel.classList.add('active');
+                            // Initialize Cytoscape when complex graph tab is shown
+                            if (targetTab === 'complex' && !cyInstance) {
+                                initCytoscape();
+                            }
+                        } else {
+                            panel.classList.remove('active');
+                        }
+                    });
+                });
+            });
+
+            // =================================================================
+            // Simple Cytoscape Graph
+            // =================================================================
+            function initSimpleCytoscape() {
+                const container = document.getElementById('cy-simple-container');
+                if (!container || cySimpleInstance) return;
+
+                cySimpleInstance = cytoscape({
+                    container: container,
+                    elements: [
+                        // Nodes
+                        { data: { id: 'seoul', label: '서울' } },
+                        { data: { id: 'korea', label: '대한민국' } },
+
+                        // Edge
+                        { data: { source: 'seoul', target: 'korea', label: '수도' } }
+                    ],
+                    style: [
+                        {
+                            selector: 'node',
+                            style: {
+                                'background-color': '#14b8a6',
+                                'label': 'data(label)',
+                                'color': '#ffffff',
+                                'text-valign': 'center',
+                                'text-halign': 'center',
+                                'font-size': '16px',
+                                'font-weight': '700',
+                                'width': 'label',
+                                'height': 'label',
+                                'padding': '30px',
+                                'shape': 'roundrectangle',
+                                'border-width': '3px',
+                                'border-color': '#0d9488'
+                            }
+                        },
+                        {
+                            selector: 'edge',
+                            style: {
+                                'width': 4,
+                                'line-color': '#14b8a6',
+                                'target-arrow-color': '#14b8a6',
+                                'target-arrow-shape': 'triangle',
+                                'curve-style': 'bezier',
+                                'arrow-scale': 2,
+                                'label': 'data(label)',
+                                'font-size': '18px',
+                                'font-weight': '700',
+                                'color': '#ffffff',
+                                'text-background-color': '#14b8a6',
+                                'text-background-opacity': 1,
+                                'text-background-padding': '8px',
+                                'text-background-shape': 'roundrectangle'
+                            }
+                        }
+                    ],
+                    layout: {
+                        name: 'preset',
+                        positions: {
+                            'seoul': { x: 150, y: 200 },
+                            'korea': { x: 450, y: 200 }
+                        },
+                        fit: true,
+                        padding: 50
+                    },
+                    userZoomingEnabled: false,
+                    userPanningEnabled: false,
+                    boxSelectionEnabled: false
+                });
+            }
+
+            // =================================================================
+            // Complex Cytoscape Graph
+            // =================================================================
+            function initCytoscape() {
+                const container = document.getElementById('cy-container');
+                if (!container || cyInstance) return;
+
+                cyInstance = cytoscape({
+                    container: container,
+                    elements: [
+                        // Nodes
+                        { data: { id: 'chatgpt', label: 'ChatGPT', type: 'central' } },
+                        { data: { id: 'openai', label: 'OpenAI', type: 'company' } },
+                        { data: { id: 'gpt4', label: 'GPT-4', type: 'model' } },
+                        { data: { id: 'llm', label: 'LLM', type: 'category' } },
+                        { data: { id: 'nlp', label: '자연어처리', type: 'application' } },
+                        { data: { id: 'assistant', label: 'AI Assistant', type: 'application' } },
+
+                        // Edges
+                        { data: { source: 'openai', target: 'chatgpt', label: '개발자' } },
+                        { data: { source: 'gpt4', target: 'chatgpt', label: '기반모델' } },
+                        { data: { source: 'chatgpt', target: 'llm', label: '유형' } },
+                        { data: { source: 'chatgpt', target: 'nlp', label: '응용분야' } },
+                        { data: { source: 'chatgpt', target: 'assistant', label: '용도' } }
+                    ],
+                    style: [
+                        {
+                            selector: 'node',
+                            style: {
+                                'background-color': '#14b8a6',
+                                'label': 'data(label)',
+                                'color': '#ffffff',
+                                'text-valign': 'center',
+                                'text-halign': 'center',
+                                'font-size': '13px',
+                                'font-weight': '600',
+                                'width': 'label',
+                                'height': 'label',
+                                'padding': '20px',
+                                'shape': 'roundrectangle',
+                                'text-wrap': 'wrap',
+                                'text-max-width': '100px'
+                            }
+                        },
+                        {
+                            selector: 'node[type="central"]',
+                            style: {
+                                'background-color': '#14b8a6',
+                                'shape': 'ellipse',
+                                'padding': '28px',
+                                'font-size': '16px',
+                                'font-weight': '700'
+                            }
+                        },
+                        {
+                            selector: 'node[type="company"]',
+                            style: {
+                                'background-color': '#0d9488'
+                            }
+                        },
+                        {
+                            selector: 'node[type="model"]',
+                            style: {
+                                'background-color': '#0f766e'
+                            }
+                        },
+                        {
+                            selector: 'node[type="category"]',
+                            style: {
+                                'background-color': '#0d9488'
+                            }
+                        },
+                        {
+                            selector: 'node[type="application"]',
+                            style: {
+                                'background-color': '#0f766e'
+                            }
+                        },
+                        {
+                            selector: 'edge',
+                            style: {
+                                'width': 3,
+                                'line-color': '#14b8a6',
+                                'target-arrow-color': '#14b8a6',
+                                'target-arrow-shape': 'triangle',
+                                'curve-style': 'bezier',
+                                'arrow-scale': 1.5,
+                                'label': 'data(label)',
+                                'font-size': '13px',
+                                'font-weight': '600',
+                                'color': '#ffffff',
+                                'text-background-color': '#14b8a6',
+                                'text-background-opacity': 1,
+                                'text-background-padding': '6px',
+                                'text-background-shape': 'roundrectangle'
+                            }
+                        }
+                    ],
+                    layout: {
+                        name: 'cose',
+                        animate: true,
+                        animationDuration: 1000,
+                        padding: 50,
+                        nodeRepulsion: 4000,
+                        idealEdgeLength: 120,
+                        edgeElasticity: 100,
+                        gravity: 0.1
+                    }
+                });
+            }
 
             // =================================================================
             // Chart.js with Theme-Aware Colors
@@ -886,6 +1481,45 @@
             // =================================================================
             PebblousUI.initScrollToTop();
             PebblousUI.initMobileTOC();
+
+            // =================================================================
+            // TOC Active State on Scroll
+            // =================================================================
+            const sections = document.querySelectorAll('main section[id]');
+            const tocLinks = document.querySelectorAll('#toc-links a[href^="#"]');
+
+            function updateActiveSection() {
+                let currentSection = '';
+                const scrollPosition = window.scrollY + 150; // Offset for header
+
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        currentSection = section.getAttribute('id');
+                    }
+                });
+
+                tocLinks.forEach(link => {
+                    link.classList.remove('themeable-toc-link-active');
+                    if (link.getAttribute('href') === `#${currentSection}`) {
+                        link.classList.add('themeable-toc-link-active');
+                    }
+                });
+            }
+
+            // Update on scroll
+            window.addEventListener('scroll', updateActiveSection);
+            // Initial update
+            updateActiveSection();
+
+            // =================================================================
+            // Initialize Prism.js for Syntax Highlighting
+            // =================================================================
+            if (typeof Prism !== 'undefined') {
+                Prism.highlightAll();
+            }
         });
     </script>
 </body>
