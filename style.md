@@ -202,6 +202,131 @@
 
 ---
 
+## 가독성 개선 가이드 (2025-11-08 추가)
+
+### 원칙: 내용을 줄이지 말고 시각적 여유 공간 확보
+
+텍스트가 많은 기술 문서의 경우, 내용을 압축하기보다는 **타이포그래피와 간격**을 조정하여 가독성을 높인다.
+
+### 적용 방법 (common-styles.css 기준)
+
+#### 1. 타이포그래피 강화
+```css
+/* 제목 계층 강화 */
+main h2 {
+    font-size: 1.75rem;        /* 크기 증가 */
+    line-height: 2.25rem;
+    margin-top: 3rem;          /* 상단 여백 확대 */
+    margin-bottom: 2rem;       /* 하단 여백 확대 */
+    padding-top: 1rem;
+    border-bottom: 2px solid;  /* 시각적 구분 */
+}
+
+main h3 {
+    font-size: 1.35rem;
+    margin-top: 2.5rem;
+    margin-bottom: 1.25rem;
+}
+
+/* 본문 */
+main p {
+    margin-bottom: 1.5rem;     /* 단락 간 여백 증가 */
+    line-height: 1.8;          /* 줄 간격 증가 */
+}
+```
+
+#### 2. 목록 가독성
+```css
+/* 들여쓰기 개선 */
+main ul, main ol {
+    list-style-position: outside;  /* 마커를 밖으로 */
+    margin-left: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+main li {
+    margin-bottom: 0.75rem;        /* 항목 간 간격 */
+    line-height: 1.7;
+    padding-left: 0.5rem;
+}
+
+/* 중첩 리스트 */
+main li ul, main li ol {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+```
+
+#### 3. 테이블 개선
+```css
+/* 통일된 padding */
+main table th,
+main table td {
+    padding: 1rem;              /* Tailwind p-3 대신 CSS로 통일 */
+}
+
+/* hover 효과 */
+main table tbody tr:hover {
+    background-color: rgba(248, 104, 37, 0.05);  /* 주황색 5% */
+}
+```
+
+#### 4. 섹션 간격
+```css
+main section {
+    margin-bottom: 4rem;        /* 섹션 간 충분한 여백 */
+}
+```
+
+### HTML에서 주의사항
+
+#### ❌ 피해야 할 패턴
+```html
+<!-- Tailwind p-3를 개별 셀에 적용 -->
+<td class="p-3">내용</td>
+<td class="p-3">내용</td>
+<!-- 반복적이고 유지보수 어려움 -->
+
+<!-- 테이블 간격 부족 -->
+<div class="my-6">
+    <table>...</table>
+</div>
+```
+
+#### ✅ 권장 패턴
+```html
+<!-- CSS로 테이블 padding 통일 -->
+<td>내용</td>
+<td>내용</td>
+<!-- common-styles.css에서 일괄 관리 -->
+
+<!-- 테이블 간격 확대 -->
+<div class="my-8">  <!-- my-6 → my-8 -->
+    <table>...</table>
+</div>
+```
+
+### 적용 결과
+
+**Before** (ISO 5259 기사):
+- 텍스트 밀집, 테이블 셀 padding 불균일
+- 섹션 간 구분 약함
+- 목록 들여쓰기 부족
+
+**After**:
+- 단락 간 여백 1.5rem (기존 1rem)
+- 테이블 padding 1rem 통일 + hover 효과
+- 제목 크기 및 여백 증가
+- 목록 outside positioning
+
+### 재사용 팁
+
+1. **모든 기술 문서에 적용**: `common-styles.css`에 정의된 스타일은 `main` 태그 내 모든 콘텐츠에 자동 적용
+2. **HTML에서 Tailwind 제거**: 테이블 `p-3` 같은 반복 클래스 제거, CSS로 통일
+3. **일관성 유지**: 모든 페이지가 동일한 가독성 기준 적용
+
+---
+
 ## 체크리스트
 
 새로운 페이지/컴포넌트 만들 때:
@@ -213,9 +338,12 @@
 - [ ] 타이포그래피 계층이 명확한가?
 - [ ] 반응형 디자인이 적용되었는가?
 - [ ] 브랜드 컬러(Orange)가 과하게 사용되지 않았는가?
+- [ ] 텍스트가 많은 경우 충분한 여백과 줄 간격이 있는가? (2025-11-08 추가)
+- [ ] 테이블 셀 padding이 CSS로 통일되어 있는가? (2025-11-08 추가)
 
 ---
 
 ## 업데이트 로그
 
+- **2025-11-08**: 가독성 개선 가이드 추가 (타이포그래피, 목록, 테이블)
 - **2025-11-01**: 초기 생성, ISO 5259 프로젝트 리팩토링 기반
