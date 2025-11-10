@@ -331,6 +331,11 @@ const PebblousPage = {
         // Initialize UI features
         PebblousUI.initAll();
 
+        // Initialize comments if enabled
+        if (config.enableComments !== false) {
+            PebblousComments.init();
+        }
+
         // Render math if KaTeX is available
         if (window.renderMathInElement) {
             renderMathInElement(document.body, {
@@ -343,8 +348,65 @@ const PebblousPage = {
     }
 };
 
+// ========================================
+// Comments System (giscus)
+// ========================================
+const PebblousComments = {
+    /**
+     * Initialize giscus comments
+     * Purpose: Commercial - User engagement, question collection, contact point gathering
+     */
+    init() {
+        const commentsContainer = document.getElementById('comments-section');
+        if (!commentsContainer) {
+            console.warn('Comments container not found');
+            return;
+        }
+
+        // Create giscus script
+        const script = document.createElement('script');
+        script.src = 'https://giscus.app/client.js';
+        script.setAttribute('data-repo', 'pebblous/pebblous.github.io');
+        script.setAttribute('data-repo-id', 'R_kgDONZ8Qcw'); // Will be updated after GitHub setup
+        script.setAttribute('data-category', 'Blog Comments');
+        script.setAttribute('data-category-id', 'DIC_kwDONZ8Qc84ClVXq'); // Will be updated after GitHub setup
+        script.setAttribute('data-mapping', 'pathname');
+        script.setAttribute('data-strict', '0');
+        script.setAttribute('data-reactions-enabled', '1');
+        script.setAttribute('data-emit-metadata', '1'); // Enable metadata for contact collection
+        script.setAttribute('data-input-position', 'top');
+        script.setAttribute('data-theme', 'dark'); // Match Pebblous dark theme
+        script.setAttribute('data-lang', 'ko');
+        script.setAttribute('data-loading', 'lazy');
+        script.crossOrigin = 'anonymous';
+        script.async = true;
+
+        commentsContainer.appendChild(script);
+
+        // Listen for giscus events (for commercial tracking)
+        window.addEventListener('message', (event) => {
+            if (event.origin !== 'https://giscus.app') return;
+
+            const giscusData = event.data?.giscus;
+            if (!giscusData) return;
+
+            // Track user engagement
+            if (giscusData.discussion) {
+                console.log('📊 Comment engagement:', {
+                    discussion: giscusData.discussion,
+                    reactions: giscusData.discussion.reactions
+                });
+
+                // Future: Send to analytics for contact point collection
+                // Analytics tracking can be added here
+            }
+        });
+    }
+};
+
 // Export to global scope
 window.PebblousTheme = PebblousTheme;
 window.PebblousComponents = PebblousComponents;
 window.PebblousUI = PebblousUI;
 window.PebblousPage = PebblousPage;
+window.PebblousComments = PebblousComments;
