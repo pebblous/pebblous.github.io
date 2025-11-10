@@ -283,8 +283,8 @@ const PebblousPage = {
             const h1Element = document.getElementById('page-h1-title');
             if (h1Element) {
                 h1Element.innerHTML = `
-                    <span class="block text-4xl md:text-5xl font-bold themeable-heading" style="font-size: 3rem !important; font-weight: 700 !important;">${config.mainTitle}</span>
-                    <span class="block mt-4 text-2xl md:text-3xl themeable-text-muted font-normal" style="font-size: 1.875rem !important; font-weight: 400 !important; margin-top: 1rem !important;">${config.subtitle}</span>
+                    <span class="block text-4xl md:text-5xl font-bold themeable-heading" style="font-size: 3rem !important; font-weight: 700 !important; line-height: 1.3 !important;">${config.mainTitle}</span>
+                    <span class="block mt-4 text-2xl md:text-3xl themeable-text-muted font-normal" style="font-size: 1.875rem !important; font-weight: 400 !important; margin-top: 1rem !important; line-height: 1.5 !important;">${config.subtitle}</span>
                 `;
             }
         }
