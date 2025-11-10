@@ -358,35 +358,25 @@ const PebblousComments = {
      * @param {string} customMessage - Optional custom message for this article (e.g., "데이터 품질에 대한 질문이나 의견이 있으신가요?")
      */
     init(customMessage = null) {
-        console.log('🔧 [PebblousComments] Initializing comments...', {
-            customMessage,
-            pathname: window.location.pathname
-        });
-
         let commentsContainer = document.getElementById('comments-section');
 
         // Auto-create comments section if it doesn't exist
         if (!commentsContainer) {
-            console.log('📝 [PebblousComments] No existing comments section found, creating one...');
             commentsContainer = this.createCommentsSection(customMessage);
             if (!commentsContainer) {
-                console.warn('❌ [PebblousComments] Failed to create comments section');
+                console.warn('Failed to create comments section');
                 return;
             }
-            console.log('✅ [PebblousComments] Comments section created successfully');
-        } else {
-            console.log('✅ [PebblousComments] Found existing comments section');
         }
 
         // Find the actual container for giscus (inside the card)
         const giscusContainer = commentsContainer.querySelector('.themeable-card');
         if (!giscusContainer) {
-            console.warn('❌ [PebblousComments] Comments card container not found');
+            console.warn('Comments card container not found');
             return;
         }
 
         // Create giscus script
-        console.log('🚀 [PebblousComments] Loading giscus script...');
         const script = document.createElement('script');
         script.src = 'https://giscus.app/client.js';
         script.setAttribute('data-repo', 'pebblous/pebblous.github.io');
@@ -404,11 +394,7 @@ const PebblousComments = {
         script.crossOrigin = 'anonymous';
         script.async = true;
 
-        script.onload = () => console.log('✅ [PebblousComments] giscus script loaded');
-        script.onerror = () => console.error('❌ [PebblousComments] Failed to load giscus script');
-
         giscusContainer.appendChild(script);
-        console.log('📌 [PebblousComments] giscus script appended to DOM');
 
         // Listen for giscus events (for commercial tracking)
         window.addEventListener('message', (event) => {
@@ -436,15 +422,12 @@ const PebblousComments = {
      * @returns {HTMLElement} The created comments section
      */
     createCommentsSection(customMessage) {
-        console.log('🏗️ [PebblousComments] Creating comments section...', { customMessage });
-
         // Find main element to append to
         const mainElement = document.querySelector('main');
         if (!mainElement) {
-            console.warn('❌ [PebblousComments] Main element not found');
+            console.warn('Main element not found');
             return null;
         }
-        console.log('✅ [PebblousComments] Found main element');
 
         // Create section element
         const section = document.createElement('section');
@@ -475,7 +458,6 @@ const PebblousComments = {
 
         // Append to main element
         mainElement.appendChild(section);
-        console.log('✅ [PebblousComments] Comments section appended to main element');
 
         return section;
     }
