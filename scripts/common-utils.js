@@ -367,9 +367,9 @@ const PebblousComments = {
         const script = document.createElement('script');
         script.src = 'https://giscus.app/client.js';
         script.setAttribute('data-repo', 'pebblous/pebblous.github.io');
-        script.setAttribute('data-repo-id', 'R_kgDONZ8Qcw'); // Will be updated after GitHub setup
+        script.setAttribute('data-repo-id', 'R_kgDOP3KO9Q'); // Will be updated after GitHub setup
         script.setAttribute('data-category', 'Blog Comments');
-        script.setAttribute('data-category-id', 'DIC_kwDONZ8Qc84ClVXq'); // Will be updated after GitHub setup
+        script.setAttribute('data-category-id', 'DIC_kwDOP3KO9c4Cxo0P'); // Will be updated after GitHub setup
         script.setAttribute('data-mapping', 'pathname');
         script.setAttribute('data-strict', '0');
         script.setAttribute('data-reactions-enabled', '1');
