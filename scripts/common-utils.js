@@ -333,7 +333,7 @@ const PebblousPage = {
 
         // Initialize comments if enabled
         if (config.enableComments !== false) {
-            PebblousComments.init();
+            PebblousComments.init(config.commentsMessage);
         }
 
         // Render math if KaTeX is available
@@ -353,13 +353,26 @@ const PebblousPage = {
 // ========================================
 const PebblousComments = {
     /**
-     * Initialize giscus comments
+     * Initialize giscus comments with auto-injection
      * Purpose: Commercial - User engagement, question collection, contact point gathering
+     * @param {string} customMessage - Optional custom message for this article (e.g., "데이터 품질에 대한 질문이나 의견이 있으신가요?")
      */
-    init() {
-        const commentsContainer = document.getElementById('comments-section');
+    init(customMessage = null) {
+        let commentsContainer = document.getElementById('comments-section');
+
+        // Auto-create comments section if it doesn't exist
         if (!commentsContainer) {
-            console.warn('Comments container not found');
+            commentsContainer = this.createCommentsSection(customMessage);
+            if (!commentsContainer) {
+                console.warn('Failed to create comments section');
+                return;
+            }
+        }
+
+        // Find the actual container for giscus (inside the card)
+        const giscusContainer = commentsContainer.querySelector('.themeable-card');
+        if (!giscusContainer) {
+            console.warn('Comments card container not found');
             return;
         }
 
@@ -381,7 +394,7 @@ const PebblousComments = {
         script.crossOrigin = 'anonymous';
         script.async = true;
 
-        commentsContainer.appendChild(script);
+        giscusContainer.appendChild(script);
 
         // Listen for giscus events (for commercial tracking)
         window.addEventListener('message', (event) => {
@@ -401,6 +414,52 @@ const PebblousComments = {
                 // Analytics tracking can be added here
             }
         });
+    },
+
+    /**
+     * Create comments section HTML dynamically
+     * @param {string} customMessage - Optional custom message
+     * @returns {HTMLElement} The created comments section
+     */
+    createCommentsSection(customMessage) {
+        // Find main element to append to
+        const mainElement = document.querySelector('main');
+        if (!mainElement) {
+            console.warn('Main element not found');
+            return null;
+        }
+
+        // Create section element
+        const section = document.createElement('section');
+        section.id = 'comments-section';
+        section.className = 'mb-16 fade-in-card';
+
+        // Build intro message
+        const introMessage = customMessage
+            ? `<p class="mt-2">${customMessage} GitHub 계정으로 로그인하여 댓글을 남겨주세요. 여러분의 소중한 의견은 더 나은 콘텐츠를 만드는 데 큰 도움이 됩니다.</p>`
+            : `<p class="mt-2">GitHub 계정으로 로그인하여 댓글을 남겨주세요. 여러분의 소중한 의견은 더 나은 콘텐츠를 만드는 데 큰 도움이 됩니다.</p>`;
+
+        // Build section HTML
+        section.innerHTML = `
+            <h2 class="text-2xl font-bold themeable-heading mb-6">💬 의견 나누기</h2>
+            <div class="themeable-card rounded-xl p-8">
+                <div class="comments-info">
+                    <strong>독자 여러분의 의견을 듣고 싶습니다!</strong>
+                    ${introMessage}
+                    <p class="mt-2 text-xs opacity-75">
+                        💼 <strong>비즈니스 문의:</strong> 페블러스 DataClinic에 대한 상담이 필요하시다면
+                        <a href="https://dataclinic.ai/ko/contact" class="text-orange-500 hover:underline" target="_blank">여기</a>를
+                        클릭하거나, GitHub 프로필에 LinkedIn을 연결하여 댓글로 문의해 주세요.
+                    </p>
+                </div>
+                <!-- giscus comments will be loaded here -->
+            </div>
+        `;
+
+        // Append to main element
+        mainElement.appendChild(section);
+
+        return section;
     }
 };
 

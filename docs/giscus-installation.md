@@ -48,9 +48,10 @@ script.setAttribute('data-category-id', 'YOUR_CATEGORY_ID'); // 3단계에서 �
 
 ## 구현 세부사항
 
-### 자동 로딩
+### 자동 주입 (Auto-Injection)
 - `common-utils.js`의 `PebblousPage.init()`에서 자동으로 댓글 시스템 초기화
-- 모든 article 페이지에 `id="comments-section"` 섹션만 추가하면 자동 작동
+- `#comments-section`이 없으면 자동으로 생성하여 main 태그 끝에 추가
+- **더 이상 수동으로 HTML을 추가할 필요 없음** - config만 설정하면 자동 작동
 
 ### 테마 설정
 - 다크 테마 기본 설정 (Pebblous 브랜드 컬러와 매치)
@@ -89,32 +90,49 @@ giscus는 GitHub 계정을 사용하므로:
 }
 ```
 
-## Article 페이지 템플릿
+## Article 페이지 설정
 
-새 article 페이지에 다음 HTML 추가:
+### 방법 1: 기본 댓글 (Generic 메시지)
 
-```html
-<!-- Comments Section (giscus) -->
-<section id="comments-section" class="mb-16 fade-in-card">
-    <h2 class="text-2xl font-bold themeable-heading mb-6">💬 의견 나누기</h2>
-    <div class="themeable-card rounded-xl p-8">
-        <div class="comments-info">
-            <strong>독자 여러분의 의견을 듣고 싶습니다!</strong>
-            <p class="mt-2">
-                [주제]에 대한 질문이나 의견이 있으신가요?
-                GitHub 계정으로 로그인하여 댓글을 남겨주세요.
-                여러분의 소중한 의견은 더 나은 콘텐츠를 만드는 데 큰 도움이 됩니다.
-            </p>
-            <p class="mt-2 text-xs opacity-75">
-                💼 <strong>비즈니스 문의:</strong> 페블러스 DataClinic에 대한 상담이 필요하시다면
-                <a href="https://dataclinic.ai/ko/contact" class="text-orange-500 hover:underline" target="_blank">여기</a>를
-                클릭하거나, GitHub 프로필에 LinkedIn을 연결하여 댓글로 문의해 주세요.
-            </p>
-        </div>
-        <!-- giscus comments will be loaded here by common-utils.js -->
-    </div>
-</section>
+아무것도 추가하지 않고 config만 설정:
+
+```javascript
+const config = {
+    mainTitle: "...",
+    subtitle: "...",
+    publishDate: "...",
+    publisher: "...",
+    pageTitle: "...",
+    defaultTheme: "dark"
+    // commentsMessage를 설정하지 않으면 기본 메시지 사용
+};
+await PebblousPage.init(config);
 ```
+
+기본 메시지:
+> 독자 여러분의 의견을 듣고 싶습니다! GitHub 계정으로 로그인하여 댓글을 남겨주세요.
+
+### 방법 2: 커스텀 메시지
+
+article에 맞는 질문을 추가:
+
+```javascript
+const config = {
+    mainTitle: "...",
+    subtitle: "...",
+    publishDate: "...",
+    publisher: "...",
+    pageTitle: "...",
+    defaultTheme: "dark",
+    commentsMessage: "합성데이터 가격 정책에 대한 질문이나 의견이 있으신가요?" // 커스텀 메시지
+};
+await PebblousPage.init(config);
+```
+
+표시 메시지:
+> 독자 여러분의 의견을 듣고 싶습니다! 합성데이터 가격 정책에 대한 질문이나 의견이 있으신가요? GitHub 계정으로 로그인하여 댓글을 남겨주세요.
+
+**참고:** 비즈니스 CTA는 항상 자동으로 추가됩니다.
 
 ## 비활성화 방법
 
