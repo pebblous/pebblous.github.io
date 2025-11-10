@@ -448,7 +448,7 @@ const PebblousComments = {
                     ${introMessage}
                     <p class="mt-2 text-xs opacity-75">
                         💼 <strong>비즈니스 문의:</strong> 페블러스 DataClinic에 대한 상담이 필요하시다면
-                        <a href="https://dataclinic.ai/ko/contact" class="text-orange-500 hover:underline" target="_blank">여기</a>를
+                        <a href="https://pebblous.ai/en/request" class="text-orange-500 hover:underline" target="_blank">여기</a>를
                         클릭하거나, GitHub 프로필에 LinkedIn을 연결하여 댓글로 문의해 주세요.
                     </p>
                 </div>
