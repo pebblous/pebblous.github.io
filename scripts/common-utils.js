@@ -449,7 +449,7 @@ const PebblousComments = {
         // Create section element
         const section = document.createElement('section');
         section.id = 'comments-section';
-        section.className = 'mb-16 fade-in-card';
+        section.className = 'mb-16 fade-in-card is-visible';
 
         // Build intro message
         const introMessage = customMessage
