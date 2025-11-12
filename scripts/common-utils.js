@@ -331,6 +331,20 @@ const PebblousPage = {
         // Initialize UI features
         PebblousUI.initAll();
 
+        // SEO: Inject Article Schema
+        PebblousSchema.injectArticleSchema(config);
+
+        // SEO: Inject Author Schema (always for article pages)
+        if (config.mainTitle && config.subtitle) {
+            PebblousSchema.injectAuthorSchema(config.publisher);
+        }
+
+        // SEO: Initialize Breadcrumbs with Schema
+        PebblousBreadcrumbs.init(config);
+
+        // SEO: Initialize Related Posts
+        await PebblousRelatedPosts.init(config);
+
         // Initialize comments if enabled
         if (config.enableComments !== false) {
             PebblousComments.init(config.commentsMessage);
@@ -345,9 +359,6 @@ const PebblousPage = {
                 ]
             });
         }
-
-        // Inject Article Schema for SEO
-        PebblousSchema.injectArticleSchema(config);
     }
 };
 
@@ -467,6 +478,235 @@ const PebblousComments = {
 };
 
 // ========================================
+// Related Posts (Tag-based Recommendations)
+// ========================================
+const PebblousRelatedPosts = {
+    /**
+     * Calculate similarity score between two articles based on common tags
+     * @param {array} tags1 - Tags of first article
+     * @param {array} tags2 - Tags of second article
+     * @returns {number} Similarity score (number of common tags)
+     */
+    calculateSimilarity(tags1, tags2) {
+        if (!tags1 || !tags2) return 0;
+        const commonTags = tags1.filter(tag => tags2.includes(tag));
+        return commonTags.length;
+    },
+
+    /**
+     * Find related articles based on tag similarity
+     * @param {string} currentPath - Current article path
+     * @param {array} currentTags - Current article tags
+     * @param {number} limit - Maximum number of related posts to return (default: 3)
+     * @returns {Promise<array>} Array of related articles
+     */
+    async findRelatedArticles(currentPath, currentTags, limit = 3) {
+        try {
+            // Fetch articles.json
+            const response = await fetch('/articles.json');
+            const data = await response.json();
+
+            // Filter out current article and unpublished articles
+            const candidates = data.articles.filter(article =>
+                article.published &&
+                article.path !== currentPath &&
+                article.tags && article.tags.length > 0
+            );
+
+            // Calculate similarity scores
+            const scored = candidates.map(article => ({
+                ...article,
+                score: this.calculateSimilarity(currentTags, article.tags)
+            }));
+
+            // Sort by score (descending), then by date (newest first)
+            scored.sort((a, b) => {
+                if (b.score !== a.score) {
+                    return b.score - a.score;
+                }
+                return new Date(b.date) - new Date(a.date);
+            });
+
+            // Return top N articles with score > 0
+            return scored.filter(article => article.score > 0).slice(0, limit);
+        } catch (error) {
+            console.error('Error fetching related articles:', error);
+            return [];
+        }
+    },
+
+    /**
+     * Render related posts component
+     * @param {array} relatedArticles - Array of related articles
+     * @returns {HTMLElement} Related posts section element
+     */
+    renderRelatedPosts(relatedArticles) {
+        if (relatedArticles.length === 0) return null;
+
+        const section = document.createElement('section');
+        section.className = 'mb-16 fade-in-card is-visible';
+
+        let cardsHTML = '';
+        relatedArticles.forEach(article => {
+            const categoryEmoji = article.category === 'art' ? '🎨' :
+                                 article.category === 'tech' ? '⚙️' : '📊';
+
+            cardsHTML += `
+                <a href="/${article.path}" class="card block rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
+                    <div class="aspect-video bg-slate-800 flex items-center justify-center overflow-hidden">
+                        ${article.cardImage
+                            ? `<img src="${article.cardImage}" alt="${article.title}" class="w-full h-full object-cover">`
+                            : article.image && !article.image.includes('Pebblous_BM_Orange_RGB.png')
+                            ? `<img src="${article.image}" alt="${article.title}" class="w-full h-full object-cover">`
+                            : `<img src="${article.image || 'https://blog.pebblous.ai/image/Pebblous_BM_Orange_RGB.png'}" alt="${article.title}" class="default-logo">`
+                        }
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="category-badge">${categoryEmoji} ${article.category.toUpperCase()}</span>
+                            <span class="text-slate-500 text-sm">${article.date}</span>
+                        </div>
+                        <h3 class="text-xl font-bold themeable-heading mb-2 line-clamp-2">${article.title}</h3>
+                        <p class="text-slate-400 text-sm mb-4 line-clamp-2">${article.description}</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${article.tags.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                </a>
+            `;
+        });
+
+        section.innerHTML = `
+            <h2 class="text-2xl font-bold themeable-heading mb-6">🔗 관련 글</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${cardsHTML}
+            </div>
+        `;
+
+        return section;
+    },
+
+    /**
+     * Initialize related posts component
+     * @param {object} config - Page configuration with path and tags
+     */
+    async init(config) {
+        // Only show on article pages
+        if (!config.articlePath || !config.tags || config.tags.length === 0) {
+            return;
+        }
+
+        // Find related articles
+        const relatedArticles = await this.findRelatedArticles(config.articlePath, config.tags, 3);
+
+        if (relatedArticles.length === 0) {
+            console.log('📊 No related articles found');
+            return;
+        }
+
+        // Render and inject into page
+        const relatedSection = this.renderRelatedPosts(relatedArticles);
+        if (relatedSection) {
+            const mainElement = document.querySelector('main');
+            const commentsSection = document.getElementById('comments-section');
+
+            if (mainElement) {
+                // Insert before comments section if it exists, otherwise append to main
+                if (commentsSection) {
+                    mainElement.insertBefore(relatedSection, commentsSection);
+                } else {
+                    mainElement.appendChild(relatedSection);
+                }
+
+                console.log(`🔗 Related Posts injected: ${relatedArticles.length} articles`);
+            }
+        }
+    }
+};
+
+// ========================================
+// Breadcrumbs Component
+// ========================================
+const PebblousBreadcrumbs = {
+    /**
+     * Get category display name
+     * @param {string} category - Category ID (art, tech, story)
+     * @returns {string} Display name
+     */
+    getCategoryName(category) {
+        const categoryNames = {
+            'art': 'Data Art',
+            'tech': 'Tech Insights',
+            'story': 'Data Stories'
+        };
+        return categoryNames[category] || category;
+    },
+
+    /**
+     * Render breadcrumb navigation
+     * @param {string} category - Article category
+     * @param {string} title - Article title
+     * @returns {HTMLElement} Breadcrumb navigation element
+     */
+    renderBreadcrumbs(category, title) {
+        const nav = document.createElement('nav');
+        nav.className = 'mb-8';
+        nav.setAttribute('aria-label', 'Breadcrumb');
+
+        const categoryName = this.getCategoryName(category);
+
+        nav.innerHTML = `
+            <ol class="flex items-center space-x-2 text-sm themeable-text-muted">
+                <li>
+                    <a href="/" class="hover:text-orange-500 transition-colors">🏠 Home</a>
+                </li>
+                <li>
+                    <span class="mx-2">/</span>
+                </li>
+                <li>
+                    <a href="/#${category}" class="hover:text-orange-500 transition-colors">${categoryName}</a>
+                </li>
+                <li>
+                    <span class="mx-2">/</span>
+                </li>
+                <li class="themeable-text truncate max-w-md" aria-current="page">
+                    ${title}
+                </li>
+            </ol>
+        `;
+
+        return nav;
+    },
+
+    /**
+     * Initialize breadcrumbs component
+     * @param {object} config - Page configuration
+     */
+    init(config) {
+        // Only show on article pages
+        if (!config.category || !config.mainTitle) {
+            return;
+        }
+
+        // Find the title element to insert breadcrumbs before it
+        const titleElement = document.getElementById('page-h1-title');
+        if (!titleElement) {
+            console.warn('Title element not found for breadcrumbs');
+            return;
+        }
+
+        // Render and inject breadcrumbs
+        const breadcrumbs = this.renderBreadcrumbs(config.category, config.mainTitle);
+        titleElement.parentNode.insertBefore(breadcrumbs, titleElement);
+
+        // Inject Breadcrumb Schema
+        PebblousSchema.injectBreadcrumbSchema(this.getCategoryName(config.category), config.mainTitle);
+
+        console.log('🍞 Breadcrumbs injected');
+    }
+};
+
+// ========================================
 // Schema.org Structured Data (SEO)
 // ========================================
 const PebblousSchema = {
@@ -578,6 +818,46 @@ const PebblousSchema = {
         script.setAttribute('data-schema', 'breadcrumb');
         script.textContent = JSON.stringify(schema, null, 2);
         document.head.appendChild(script);
+    },
+
+    /**
+     * Inject Author (Person) Schema
+     * @param {string} authorName - Author name (default: "이주행")
+     */
+    injectAuthorSchema(authorName = "이주행") {
+        const existingSchema = document.querySelector('script[type="application/ld+json"][data-schema="person"]');
+        if (existingSchema) return;
+
+        const schema = {
+            "@context": "https://schema.org",
+            "@type": "Person",
+            "name": authorName,
+            "url": "https://blog.pebblous.ai/",
+            "jobTitle": "CEO & Co-founder",
+            "worksFor": {
+                "@type": "Organization",
+                "name": "Pebblous Inc.",
+                "url": "https://www.pebblous.ai",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://blog.pebblous.ai/image/Pebblous_BM_Orange_RGB.png",
+                    "width": 600,
+                    "height": 60
+                }
+            },
+            "sameAs": [
+                "https://www.linkedin.com/company/pebblous",
+                "https://github.com/pebblous"
+            ]
+        };
+
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.setAttribute('data-schema', 'person');
+        script.textContent = JSON.stringify(schema, null, 2);
+        document.head.appendChild(script);
+
+        console.log('👤 Author Schema injected');
     }
 };
 
@@ -587,4 +867,6 @@ window.PebblousComponents = PebblousComponents;
 window.PebblousUI = PebblousUI;
 window.PebblousPage = PebblousPage;
 window.PebblousComments = PebblousComments;
+window.PebblousRelatedPosts = PebblousRelatedPosts;
+window.PebblousBreadcrumbs = PebblousBreadcrumbs;
 window.PebblousSchema = PebblousSchema;
