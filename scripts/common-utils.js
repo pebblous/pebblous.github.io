@@ -345,6 +345,9 @@ const PebblousPage = {
                 ]
             });
         }
+
+        // Inject Article Schema for SEO
+        PebblousSchema.injectArticleSchema(config);
     }
 };
 
@@ -463,9 +466,125 @@ const PebblousComments = {
     }
 };
 
+// ========================================
+// Schema.org Structured Data (SEO)
+// ========================================
+const PebblousSchema = {
+    /**
+     * Inject Article Schema for SEO and AI agent citation
+     * @param {object} config - Page configuration
+     */
+    injectArticleSchema(config) {
+        // Only inject on article pages (not main index)
+        if (!config.mainTitle || !config.subtitle) return;
+
+        // Check if schema already exists
+        const existingSchema = document.querySelector('script[type="application/ld+json"][data-schema="article"]');
+        if (existingSchema) return;
+
+        // Build schema object
+        const schema = {
+            "@context": "https://schema.org",
+            "@type": "TechArticle",
+            "headline": config.mainTitle,
+            "description": config.subtitle,
+            "author": {
+                "@type": "Person",
+                "name": config.publisher || "이주행",
+                "url": "https://blog.pebblous.ai/",
+                "jobTitle": "CEO & Co-founder",
+                "worksFor": {
+                    "@type": "Organization",
+                    "name": "Pebblous Inc.",
+                    "url": "https://www.pebblous.ai"
+                }
+            },
+            "publisher": {
+                "@type": "Organization",
+                "name": "Pebblous Inc.",
+                "url": "https://www.pebblous.ai",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://blog.pebblous.ai/image/Pebblous_BM_Orange_RGB.png",
+                    "width": 600,
+                    "height": 60
+                }
+            },
+            "datePublished": config.publishDate || new Date().toISOString().split('T')[0],
+            "dateModified": config.publishDate || new Date().toISOString().split('T')[0],
+            "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": window.location.href
+            }
+        };
+
+        // Add image if available in config
+        if (config.image) {
+            schema.image = config.image;
+        }
+
+        // Add keywords if available in config
+        if (config.keywords && Array.isArray(config.keywords)) {
+            schema.keywords = config.keywords.join(', ');
+        }
+
+        // Create script element
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.setAttribute('data-schema', 'article');
+        script.textContent = JSON.stringify(schema, null, 2);
+
+        // Inject into head
+        document.head.appendChild(script);
+
+        console.log('📊 Article Schema injected for SEO');
+    },
+
+    /**
+     * Inject Breadcrumb Schema
+     * @param {string} category - Category name
+     * @param {string} title - Article title
+     */
+    injectBreadcrumbSchema(category, title) {
+        const existingSchema = document.querySelector('script[type="application/ld+json"][data-schema="breadcrumb"]');
+        if (existingSchema) return;
+
+        const schema = {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": "https://blog.pebblous.ai/"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": category,
+                    "item": `https://blog.pebblous.ai/#${category.toLowerCase()}`
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": title
+                }
+            ]
+        };
+
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.setAttribute('data-schema', 'breadcrumb');
+        script.textContent = JSON.stringify(schema, null, 2);
+        document.head.appendChild(script);
+    }
+};
+
 // Export to global scope
 window.PebblousTheme = PebblousTheme;
 window.PebblousComponents = PebblousComponents;
 window.PebblousUI = PebblousUI;
 window.PebblousPage = PebblousPage;
 window.PebblousComments = PebblousComments;
+window.PebblousSchema = PebblousSchema;
