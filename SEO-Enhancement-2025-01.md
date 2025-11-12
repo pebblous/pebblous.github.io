@@ -304,11 +304,99 @@ await PebblousPage.init(config);
 
 ---
 
-## 향후 계획 (Phase 3)
+## Phase 3: FAQ Schema & Rich Results
 
-### FAQ Schema 추가
-- 자주 묻는 질문 섹션 스키마화
-- Google 검색 결과에 FAQ 직접 표시
+**구현 일자**: 2025년 1월 12일
+**커밋**: TBD
+
+### 3.1 FAQ Schema (Google Rich Results)
+
+**구현 위치**: `scripts/common-utils.js` (lines 623-656)
+
+#### 기능
+- Schema.org **FAQPage** 타입 사용
+- Google Rich Results에 FAQ 직접 표시 → CTR 대폭 증가
+- Position 0 (Featured Snippet) 후보
+- `PebblousPage.init(config)` 호출 시 자동 작동
+
+#### FAQ Schema 구조
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "질문 내용",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "답변 내용"
+      }
+    }
+  ]
+}
+```
+
+#### 사용 방법
+```javascript
+const config = {
+    mainTitle: "글 제목",
+    subtitle: "부제목",
+    publishDate: "2025년 1월 12일",
+    publisher: "(주)페블러스",
+    pageTitle: "글 제목 | Pebblous Blog",
+    defaultTheme: "dark",
+
+    // Phase 3: FAQ 배열 추가
+    faqs: [
+        {
+            question: "질문 1",
+            answer: "답변 1"
+        },
+        {
+            question: "질문 2",
+            answer: "답변 2"
+        }
+    ]
+};
+
+await PebblousPage.init(config);
+```
+
+#### SEO 효과
+- **Google Rich Results**: 검색 결과에 FAQ 드롭다운 직접 표시
+- **CTR 증가**: 사용자가 클릭 전 답변 확인 가능
+- **Featured Snippet**: Position 0 노출 기회
+- **Voice Search**: 음성 검색 최적화
+
+#### FAQ 작성 전략
+✅ **추천하는 글**:
+- How-to 가이드 및 튜토리얼
+- 가격 정책 및 비즈니스 모델 설명
+- 기술 표준 문서 (ISO/IEC 등)
+- 복잡한 개념 설명 글
+- 프레임워크/도구 비교 분석
+
+❌ **추천하지 않는 글**:
+- 데이터 아트 작품 소개
+- 단순 뉴스/공지사항
+- 짧은 업데이트
+
+#### 실제 적용 예시
+
+**예시 1**: 합성데이터 가격 정책 (`synthetic-data-pricing-01.html`)
+```javascript
+faqs: [
+    {
+        question: "합성데이터 가격은 어떻게 책정되나요?",
+        answer: "합성데이터 가격은 데이터 모달리티(정형, 텍스트, 이미지/비디오), 데이터 볼륨, 품질 수준, 공급 모델(SaaS, On-Premise, API) 등에 따라 결정됩니다..."
+    }
+]
+```
+
+---
+
+## 향후 계획 (Phase 3 추가 항목)
 
 ### Tailwind 빌드 버전 적용
 - CDN 대신 빌드된 Tailwind CSS 사용
