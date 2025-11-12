@@ -339,6 +339,11 @@ const PebblousPage = {
             PebblousSchema.injectAuthorSchema(config.publisher);
         }
 
+        // SEO: Inject FAQ Schema (if FAQs provided)
+        if (config.faqs) {
+            PebblousSchema.injectFAQSchema(config.faqs);
+        }
+
         // SEO: Initialize Breadcrumbs with Schema
         PebblousBreadcrumbs.init(config);
 
@@ -858,6 +863,41 @@ const PebblousSchema = {
         document.head.appendChild(script);
 
         console.log('👤 Author Schema injected');
+    },
+
+    /**
+     * Inject FAQ Schema for Google Rich Results
+     * @param {array} faqs - Array of FAQ objects with question and answer properties
+     */
+    injectFAQSchema(faqs) {
+        if (!faqs || !Array.isArray(faqs) || faqs.length === 0) return;
+
+        const existingSchema = document.querySelector('script[type="application/ld+json"][data-schema="faq"]');
+        if (existingSchema) return;
+
+        // Build FAQ entities
+        const mainEntity = faqs.map(faq => ({
+            "@type": "Question",
+            "name": faq.question,
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": faq.answer
+            }
+        }));
+
+        const schema = {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": mainEntity
+        };
+
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.setAttribute('data-schema', 'faq');
+        script.textContent = JSON.stringify(schema, null, 2);
+        document.head.appendChild(script);
+
+        console.log(`❓ FAQ Schema injected: ${faqs.length} questions`);
     }
 };
 
