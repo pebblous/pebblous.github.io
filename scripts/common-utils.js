@@ -133,9 +133,101 @@ const PebblousComponents = {
             const placeholder = document.getElementById('share-buttons-placeholder');
             if (placeholder) {
                 placeholder.innerHTML = html;
+                // Initialize share buttons after HTML is loaded
+                this.initShareButtons();
             }
         } catch (error) {
             console.error('Error loading share buttons:', error);
+        }
+    },
+
+    /**
+     * Initialize share buttons event listeners
+     */
+    initShareButtons() {
+        const pageUrl = window.location.href;
+
+        // Try multiple sources for page title
+        let pageTitle = document.title;
+        const h1Title = document.getElementById('page-h1-title');
+        const metaTitle = document.getElementById('page-title');
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+
+        if (h1Title && h1Title.textContent.trim()) {
+            pageTitle = h1Title.textContent.trim();
+        } else if (metaTitle && metaTitle.textContent.trim()) {
+            pageTitle = metaTitle.textContent.trim();
+        } else if (ogTitle && ogTitle.getAttribute('content')) {
+            pageTitle = ogTitle.getAttribute('content');
+        }
+
+        // URL 복사
+        const copyBtn = document.getElementById('copy-url-btn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', async function() {
+                try {
+                    await navigator.clipboard.writeText(pageUrl);
+                    const span = this.querySelector('span');
+                    if (span) {
+                        const originalText = span.textContent;
+                        span.textContent = '복사됨!';
+                        setTimeout(() => {
+                            span.textContent = originalText;
+                        }, 2000);
+                    }
+                } catch (err) {
+                    console.error('URL 복사 실패:', err);
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = pageUrl;
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        const span = this.querySelector('span');
+                        if (span) {
+                            const originalText = span.textContent;
+                            span.textContent = '복사됨!';
+                            setTimeout(() => {
+                                span.textContent = originalText;
+                            }, 2000);
+                        }
+                    } catch (err2) {
+                        console.error('Fallback 복사 실패:', err2);
+                        alert('URL 복사에 실패했습니다.');
+                    }
+                    document.body.removeChild(textArea);
+                }
+            });
+        }
+
+        // Twitter 공유
+        const twitterBtn = document.getElementById('share-twitter-btn');
+        if (twitterBtn) {
+            twitterBtn.addEventListener('click', function() {
+                const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(pageTitle)}`;
+                window.open(twitterUrl, '_blank', 'width=550,height=420');
+            });
+        }
+
+        // Facebook 공유
+        const facebookBtn = document.getElementById('share-facebook-btn');
+        if (facebookBtn) {
+            facebookBtn.addEventListener('click', function() {
+                const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
+                window.open(facebookUrl, '_blank', 'width=550,height=420');
+            });
+        }
+
+        // LinkedIn 공유
+        const linkedinBtn = document.getElementById('share-linkedin-btn');
+        if (linkedinBtn) {
+            linkedinBtn.addEventListener('click', function() {
+                const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(pageUrl)}`;
+                window.open(linkedinUrl, '_blank', 'width=550,height=420');
+            });
         }
     },
 
