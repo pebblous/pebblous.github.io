@@ -1,7 +1,7 @@
 # SEO 전략 & 체크리스트 (Pebblous Blog)
 
 > **목적**: 페블러스 블로그의 검색엔진 최적화 및 AI 에이전트 발견성 향상을 위한 통합 가이드
-> **최종 업데이트**: 2025-01-14
+> **최종 업데이트**: 2025-11-15
 > **원칙**: 완전 자동화 - 새 글 추가 시 수동 작업 없이 모든 SEO 기능 자동 작동
 
 ---
@@ -93,9 +93,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 **키워드 전략**:
 - **브랜드 키워드**: Pebblous, 페블러스, 데이터클리닉, 페블로스코프, CURK, AADS
 - **데이터 아트 필수**: Code Painting, 코드 페인팅, Data Art Lab, DAL, mr_lix
+- **Physical AI 전략 키워드** (2025-11-15 추가):
+  - **한영 병기**: "피지컬 AI (Physical AI)" - Google/네이버 동시 최적화
+  - **한글 단독**: "피지컬 AI" - 네이버/다음 검색 타겟
+  - **영문 단독**: "Physical AI" - 구글 Featured Snippet 타겟
+  - **적용 블로그**: data-startup-physical-ai-01.html, data-pipeline-for-physical-ai-01.html, PBLS-IR-Physical-AI-01.html
+  - **SEO 효과**: FAQ Schema + 한영 키워드 조합으로 검색 커버리지 극대화
 - **핵심 키워드**: 3-5개
 - **롱테일 키워드**: 10-20개
-- **관련 기술**: AI, ML, Physical AI, ISO 5259, Data Quality
+- **관련 기술**: AI, ML, Physical AI, 피지컬 AI, ISO 5259, Data Quality
 
 ### 6. Canonical & Hreflang
 ```html
@@ -231,6 +237,19 @@ const config = {
 **FAQ 작성 권장**:
 - ✅ How-to 가이드, 기술 표준 문서, 프레임워크 비교
 - ❌ 데이터 아트, 단순 뉴스, 짧은 업데이트
+
+**✅ Google Rich Results Test 검증 완료** (2025-11-15):
+- JavaScript `config.faqs` 방식으로 주입된 FAQ Schema도 [Google Rich Results Test](https://search.google.com/test/rich-results)에서 정상 인식 확인
+- Googlebot의 JavaScript 렌더링 엔진이 동적으로 생성된 FAQ Schema를 크롤링함
+- `PebblousPage.init(config)`로 런타임에 `<head>`에 주입되는 FAQ도 직접 HTML Schema와 동일하게 작동
+- **결론**: JavaScript 주입 방식과 직접 HTML Schema 방식 모두 SEO에 효과적 ✅
+
+**FAQ 구현 방식 비교**:
+
+| 방식 | 장점 | 사용 권장 |
+|------|------|----------|
+| **JavaScript Config** (`config.faqs`) | - PebblousPage 아키텍처 일관성<br>- 관리 편의성 (하나의 config 객체)<br>- Google Rich Results Test 통과 확인 | PebblousPage 사용 블로그<br>(data-startup-physical-ai-01.html 등) |
+| **직접 HTML Schema** (`<script type="application/ld+json">`) | - JavaScript 없이도 크롤링 보장<br>- 정적 페이지에 적합<br>- 디버깅 용이 | Standalone 페이지<br>(data-pipeline-for-physical-ai-01.html 등) |
 
 ### 3. BreadcrumbList Schema (자동 주입 - Phase 2)
 
@@ -548,6 +567,25 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 
 ---
 
+## 📝 최근 업데이트 로그
+
+### 2025-11-15: Physical AI SEO 전략 & FAQ Schema 검증
+- ✅ **Google Rich Results Test 검증 완료**: JavaScript `config.faqs` 방식이 Google에서 정상 인식됨을 확인
+- ✅ **Physical AI 한영 키워드 전략 수립**: "피지컬 AI (Physical AI)" 한영 병기로 Google/네이버 동시 최적화
+- ✅ **Physical AI 블로그 3개에 FAQ Schema 추가**:
+  - data-startup-physical-ai-01.html (JavaScript Config 방식, 6 FAQs)
+  - data-pipeline-for-physical-ai-01.html (직접 HTML Schema, 6 FAQs)
+  - PBLS-IR-Physical-AI-01.html (직접 HTML Schema, 6 FAQs)
+- ✅ **articles.json 태그 업데이트**: Physical AI 관련 블로그에 "피지컬 AI" 태그 추가
+- ✅ **SEO 문서화**: FAQ 구현 방식 비교표, Physical AI 키워드 전략 문서화
+
+### 2025-01-14: 초기 SEO 전략 수립
+- Phase 1-3 자동화 시스템 구축
+- Article Schema, BreadcrumbList, FAQPage 자동 주입
+- Google Tag Manager 통합
+
+---
+
 **이 문서는 실제 배포된 페이지의 SEO 성과를 기반으로 지속적으로 업데이트됩니다.**
-**최종 업데이트**: 2025-01-14
+**최종 업데이트**: 2025-11-15
 **작성자**: Pebblous Tech Team
