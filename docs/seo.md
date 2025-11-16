@@ -249,6 +249,33 @@ const config = {
 - ✅ How-to 가이드, 기술 표준 문서, 프레임워크 비교
 - ❌ 데이터 아트, 단순 뉴스, 짧은 업데이트
 
+**FAQ 한글 키워드 전략** (2025-11-16 업데이트):
+- **질문**: 한글 우선, 첫 질문에 한영 병기
+  - ✅ "피지컬 AI(Physical AI)란 무엇인가요?"
+  - ✅ "피지컬 AI가 제조업에 어떤 혁신을 가져오나요?"
+  - ❌ "Physical AI란 무엇인가요?" (영문 단독 사용 지양)
+- **답변**: 자연스럽게 한글 키워드 반복
+  - 첫 문장: "피지컬 AI(Physical AI)는..." (한영 병기)
+  - 본문: "피지컬 AI는...", "피지컬 AI의..." (한글 사용)
+  - 기술 용어/인용: "Physical AI" 유지 가능
+- **SEO 효과**:
+  - Google Featured Snippet: 한영 키워드 동시 타겟팅
+  - 네이버 지식인 스타일 검색: 한글 질문 최적화
+  - 음성 검색: 자연스러운 한국어 질문 패턴 반영
+- **예시** (Physical AI 블로그):
+  ```javascript
+  faqs: [
+      {
+          question: "피지컬 AI(Physical AI)란 무엇인가요?",
+          answer: "피지컬 AI(Physical AI)는 디지털 세계를 넘어 물리적 환경에서 작동하는 AI 시스템입니다. 피지컬 AI는 로봇, 자율주행차, 스마트 팩토리 등 실제 물리 세계와 상호작용합니다..."
+      },
+      {
+          question: "피지컬 AI가 제조업에 어떤 혁신을 가져오나요?",
+          answer: "피지컬 AI는 제조 현장의 3가지 핵심 영역을 혁신합니다..."
+      }
+  ]
+  ```
+
 **✅ Google Rich Results Test 검증 완료** (2025-11-15):
 - JavaScript `config.faqs` 방식으로 주입된 FAQ Schema도 [Google Rich Results Test](https://search.google.com/test/rich-results)에서 정상 인식 확인
 - Googlebot의 JavaScript 렌더링 엔진이 동적으로 생성된 FAQ Schema를 크롤링함
