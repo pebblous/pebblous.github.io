@@ -93,14 +93,25 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 **키워드 전략**:
 - **브랜드 키워드**: Pebblous, 페블러스, 데이터클리닉, 페블로스코프, CURK, AADS
 - **데이터 아트 필수**: Code Painting, 코드 페인팅, Data Art Lab, DAL, mr_lix
-- **Physical AI 전략 키워드** (2025-11-15 추가):
-  - **한영 병기**: "피지컬 AI (Physical AI)" - Google/네이버 동시 최적화
-  - **한글 단독**: "피지컬 AI" - 네이버/다음 검색 타겟
-  - **영문 단독**: "Physical AI" - 구글 Featured Snippet 타겟
-  - **적용 블로그**: data-startup-physical-ai-01.html, data-pipeline-for-physical-ai-01.html, PBLS-IR-Physical-AI-01.html
-  - **SEO 효과**: FAQ Schema + 한영 키워드 조합으로 검색 커버리지 극대화
-- **핵심 키워드**: 3-5개
-- **롱테일 키워드**: 10-20개
+- **Physical AI 전략 키워드** (2025-11-16 업데이트):
+  - **한영 병기**: "피지컬 AI(Physical AI)" - Google/네이버 동시 최적화
+  - **한글 우선 키워드**:
+    - 피지컬 AI, 피지컬 AI 데이터, 피지컬 AI 합성데이터
+    - 피지컬 AI 학습데이터, 피지컬 AI 데이터셋, 피지컬 AI 파이프라인
+  - **영문 키워드**:
+    - Physical AI, Physical AI Data, Physical AI Synthetic Data
+    - Physical AI Training Data, Physical AI Dataset, Physical AI Data Pipeline
+  - **적용 블로그**:
+    - data-startup-physical-ai-01.html
+    - data-pipeline-for-physical-ai-01.html
+    - PBLS-IR-Physical-AI-01.html
+  - **SEO 효과**:
+    - Meta keywords: 한글 키워드 우선 배치 → 영문 키워드 배치
+    - 본문: "피지컬 AI(Physical AI)" 병기로 키워드 밀도 확보
+    - FAQ Schema: 한글 질문/답변에 "피지컬 AI" 자연스럽게 포함
+    - 검색 커버리지: 구글(영문+한글), 네이버(한글), 다음(한글) 동시 최적화
+- **핵심 키워드**: 3-5개 (한글 우선)
+- **롱테일 키워드**: 10-20개 (한글/영문 혼합)
 - **관련 기술**: AI, ML, Physical AI, 피지컬 AI, ISO 5259, Data Quality
 
 ### 6. Canonical & Hreflang
