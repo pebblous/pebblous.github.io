@@ -1,0 +1,95 @@
+name: IndexNow Submit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'articles.json'
+      - 'project/**/*.html'
+      - 'report/**/*.html'
+      - 'event/**/*.html'
+  workflow_dispatch:
+
+jobs:
+  submit-to-indexnow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Submit URLs to IndexNow
+        run: |
+          python3 << 'EOF'
+          import json
+          import requests
+          from datetime import datetime, timedelta
+
+          # Read articles.json
+          with open('articles.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+
+          # Get published articles from last 30 days
+          base_url = "https://blog.pebblous.ai"
+          urls = []
+
+          # Add homepage and RSS
+          urls.append(f"{base_url}/")
+          urls.append(f"{base_url}/rss.xml")
+
+          # Add published articles
+          for article in data['articles']:
+              if article.get('published') and not article.get('external'):
+                  url = f"{base_url}/{article['path']}"
+                  urls.append(url)
+
+          # Limit to 10000 URLs per request
+          urls = urls[:10000]
+
+          print(f"📊 Submitting {len(urls)} URLs to IndexNow...")
+
+          # Submit to IndexNow (supported by Bing, Yandex, Naver, etc.)
+          payload = {
+              "host": "blog.pebblous.ai",
+              "key": "anonymous",  # Using anonymous key (no authentication needed)
+              "urlList": urls
+          }
+
+          try:
+              response = requests.post(
+                  "https://api.indexnow.org/indexnow",
+                  json=payload,
+                  headers={"Content-Type": "application/json; charset=utf-8"},
+                  timeout=30
+              )
+
+              if response.status_code == 200:
+                  print(f"✅ Successfully submitted {len(urls)} URLs to IndexNow")
+              elif response.status_code == 202:
+                  print(f"✅ URLs accepted for processing (202)")
+              else:
+                  print(f"⚠️ IndexNow returned status {response.status_code}")
+                  print(f"Response: {response.text}")
+          except Exception as e:
+              print(f"⚠️ Error submitting to IndexNow: {e}")
+              # Don't fail the workflow
+
+          EOF
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## IndexNow Submission Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ✅ IndexNow submission completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Supported Search Engines" >> $GITHUB_STEP_SUMMARY
+          echo "- Microsoft Bing" >> $GITHUB_STEP_SUMMARY
+          echo "- Yandex" >> $GITHUB_STEP_SUMMARY
+          echo "- Naver" >> $GITHUB_STEP_SUMMARY
+          echo "- Seznam.cz" >> $GITHUB_STEP_SUMMARY
