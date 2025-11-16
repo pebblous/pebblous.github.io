@@ -747,29 +747,17 @@ const PebblousBreadcrumbs = {
      */
     renderBreadcrumbs(category, title) {
         const nav = document.createElement('nav');
-        nav.className = 'mb-8';
+        nav.className = 'mb-6';
         nav.setAttribute('aria-label', 'Breadcrumb');
 
         const categoryName = this.getCategoryName(category);
 
         nav.innerHTML = `
-            <ol class="flex items-center space-x-2 text-sm themeable-text-muted">
-                <li>
-                    <a href="/" class="hover:text-orange-500 transition-colors">🏠 Home</a>
-                </li>
-                <li>
-                    <span class="mx-2">/</span>
-                </li>
-                <li>
-                    <a href="/#${category}" class="hover:text-orange-500 transition-colors">${categoryName}</a>
-                </li>
-                <li>
-                    <span class="mx-2">/</span>
-                </li>
-                <li class="themeable-text truncate max-w-md" aria-current="page">
-                    ${title}
-                </li>
-            </ol>
+            <div class="flex items-center gap-2 text-sm themeable-text-muted">
+                <a href="/" class="hover:text-orange-500 transition-colors">🏠 Home</a>
+                <span>/</span>
+                <a href="/#${category}" class="hover:text-orange-500 transition-colors">${categoryName}</a>
+            </div>
         `;
 
         return nav;
