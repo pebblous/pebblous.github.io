@@ -296,10 +296,11 @@ const config = {
 
 **FAQ 구현 방식 비교**:
 
-| 방식 | 장점 | 사용 권장 |
-|------|------|----------|
-| **JavaScript Config** (`config.faqs`) | - PebblousPage 아키텍처 일관성<br>- 관리 편의성 (하나의 config 객체)<br>- Google Rich Results Test 통과 확인 | PebblousPage 사용 블로그<br>(data-startup-physical-ai-01.html 등) |
-| **직접 HTML Schema** (`<script type="application/ld+json">`) | - JavaScript 없이도 크롤링 보장<br>- 정적 페이지에 적합<br>- 디버깅 용이 | Standalone 페이지<br>(data-pipeline-for-physical-ai-01.html 등) |
+| 방식 | 장점 | 단점 | 사용 권장 |
+|------|------|------|----------|
+| **⭐ 이중 구현** (본문 HTML + JSON-LD) | - **최고의 SEO 효과**<br>- 사용자 경험 최적화<br>- Rich Snippets 확보<br>- 키워드 밀도 증가<br>- 체류 시간 증가 | - 구현 시간 약간 증가<br>- HTML/Schema 중복 관리 | **신규 블로그 권장** ⭐<br>(data-pipeline-for-physical-ai-01.html) |
+| **JavaScript Config** (`config.faqs`) | - PebblousPage 아키텍처 일관성<br>- 관리 편의성 (하나의 config 객체)<br>- Google Rich Results Test 통과 확인 | - 본문에 FAQ 미표시<br>- UX 개선 효과 없음 | PebblousPage 사용 블로그<br>(data-startup-physical-ai-01.html 등) |
+| **JSON-LD Schema만** (`<script type="application/ld+json">`) | - JavaScript 없이도 크롤링 보장<br>- 정적 페이지에 적합<br>- 디버깅 용이 | - 본문에 FAQ 미표시<br>- UX 개선 효과 없음 | 기존 구현 페이지 유지 |
 
 ### 3. BreadcrumbList Schema (자동 주입 - Phase 2)
 
@@ -561,7 +562,11 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 - [ ] Open Graph 완전 구현 (14개 태그)
 - [ ] Twitter Cards 구현 (8개 이상 태그)
 - [ ] config 설정 (category, articlePath, tags 필수)
-- [ ] FAQ 추가 (권장)
+- [ ] **⭐ FAQ 이중 구현** (신규 블로그 필수):
+  - [ ] `<head>`에 FAQPage JSON-LD Schema 추가
+  - [ ] 본문에 FAQ HTML 섹션 추가 (6개 질문 권장)
+  - [ ] TOC에 FAQ 섹션 링크 추가
+  - [ ] FAQ 질문에 타겟 키워드 자연스럽게 포함
 
 ### 배포 전
 - [ ] Google Rich Results Test 통과
@@ -619,7 +624,7 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 
 ## 📝 최근 업데이트 로그
 
-### 2025-11-19: 피지컬 AI 데이터 파이프라인 블로그 SEO 개선
+### 2025-11-19: 피지컬 AI 데이터 파이프라인 블로그 SEO 개선 + FAQ 이중 구현 전략 수립
 - ✅ **타겟 키워드 최적화**: "피지컬 AI 데이터" 키워드로 구글 검색 1위 전략 수립 및 적용
 - ✅ **메타데이터 최적화**:
   - Title: "피지컬 AI 데이터 파이프라인: 제조 혁신을 위한 AI-Ready 데이터 솔루션"
@@ -629,14 +634,18 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
   - H1: "피지컬 AI 데이터 파이프라인"
   - H2 섹션별 키워드 자연스럽게 분산 배치
   - Executive Summary 첫 문단에 "피지컬 AI 데이터" 및 "피지컬 AI 데이터 파이프라인" 강조
-- ✅ **FAQ 섹션 추가 (6개 질문)**:
-  - "피지컬 AI 데이터란 무엇인가요?"
-  - "제조사가 피지컬 AI 데이터를 준비하는 단계는?"
-  - "피지컬 AI 데이터 파이프라인 구축에 얼마나 걸리나요?"
-  - "피지컬 AI 데이터와 일반 AI 데이터의 차이는?"
-  - "페블러스 DataClinic은 어떤 도움을 제공하나요?"
-  - "한국에서 피지컬 AI 데이터 관련 정부 지원이 있나요?"
-  - FAQPage JSON-LD 스키마 마크업으로 Google Rich Snippet 타겟팅
+- ✅ **⭐ FAQ 이중 구현 (본문 HTML + JSON-LD Schema)**:
+  - **6개 FAQ 질문**:
+    - "피지컬 AI 데이터란 무엇인가요?"
+    - "제조사가 피지컬 AI 데이터를 준비하는 단계는?"
+    - "피지컬 AI 데이터 파이프라인 구축에 얼마나 걸리나요?"
+    - "피지컬 AI 데이터와 일반 AI 데이터의 차이는?"
+    - "페블러스 DataClinic은 어떤 도움을 제공하나요?"
+    - "한국에서 피지컬 AI 데이터 관련 정부 지원이 있나요?"
+  - **이중 구현**:
+    - `<head>`에 FAQPage JSON-LD Schema → Google Rich Snippets
+    - 본문에 FAQ HTML 섹션 → 사용자 경험 향상, 체류 시간 증가
+  - **신규 블로그 표준 전략**: 앞으로 모든 신규 블로그에 FAQ 이중 구현 적용
 - ✅ **로컬 SEO 강화 - 한국 사례 추가**:
   - "한국의 피지컬 AI 데이터 전략" 섹션 추가
   - HD현대 스마트 조선소 (조선업)
@@ -651,11 +660,12 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
   - 섹션 번호 재정렬 (6. FAQ, 7. 결론)
 
 **예상 SEO 효과**:
-- 🎯 **키워드 밀도**: "피지컬 AI 데이터" 키워드가 title, meta, H1, H2, 본문 전반에 자연스럽게 분산
-- 🌟 **Rich Snippets**: FAQ 스키마로 검색 결과 페이지 점유율 증가, Position 0 (Featured Snippet) 후보
+- 🎯 **키워드 밀도**: "피지컬 AI 데이터" 키워드가 title, meta, H1, H2, FAQ, 본문 전반에 자연스럽게 분산
+- 🌟 **Rich Snippets**: FAQ Schema로 검색 결과 페이지 점유율 증가, Position 0 (Featured Snippet) 후보
 - 🇰🇷 **로컬 검색 최적화**: 한국 사례 추가로 국내 검색 의도 충족, 토픽 권위(Topical Authority) 강화
-- ⏱️ **사용자 경험**: FAQ를 통한 빠른 정보 접근, 체류 시간 증가, CTR 향상
+- ⏱️ **사용자 경험**: 본문 FAQ로 빠른 정보 접근, 체류 시간 증가, 이탈률 감소, CTR 향상
 - 🔍 **이미지 검색**: 상세한 alt 텍스트로 이미지 검색 유입 확보
+- 📈 **이중 구현 시너지**: Schema + HTML FAQ로 SEO와 UX 모두 최적화
 
 ### 2025-11-15: Physical AI SEO 전략 & FAQ Schema 검증
 - ✅ **Google Rich Results Test 검증 완료**: JavaScript `config.faqs` 방식이 Google에서 정상 인식됨을 확인
@@ -675,5 +685,5 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 ---
 
 **이 문서는 실제 배포된 페이지의 SEO 성과를 기반으로 지속적으로 업데이트됩니다.**
-**최종 업데이트**: 2025-11-15
+**최종 업데이트**: 2025-11-19
 **작성자**: Pebblous Tech Team
