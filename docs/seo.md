@@ -249,6 +249,18 @@ const config = {
 - ✅ How-to 가이드, 기술 표준 문서, 프레임워크 비교
 - ❌ 데이터 아트, 단순 뉴스, 짧은 업데이트
 
+**⭐ 신규 블로그 FAQ 전략 (2025-11-19 업데이트)**:
+- **이중 구현 방식**: 본문 HTML + JSON-LD Schema 동시 적용
+- **SEO 효과 극대화**:
+  - 본문 FAQ로 사용자 경험 향상 (체류 시간 증가, 빠른 정보 접근)
+  - JSON-LD Schema로 Google Rich Snippets 확보
+  - 키워드 밀도 자연스럽게 증가 (FAQ 질문/답변에 타겟 키워드 포함)
+- **구현 방법**:
+  1. `<head>`에 FAQPage JSON-LD Schema 추가
+  2. 본문에 FAQ HTML 섹션 추가 (6개 질문 권장)
+  3. TOC에 FAQ 섹션 링크 추가
+- **예시**: [data-pipeline-for-physical-ai-01.html](project/PhysicalAI/data-pipeline-for-physical-ai-01.html)
+
 **FAQ 한글 키워드 전략** (2025-11-16 업데이트):
 - **질문**: 한글 우선, 첫 질문에 한영 병기
   - ✅ "피지컬 AI(Physical AI)란 무엇인가요?"
