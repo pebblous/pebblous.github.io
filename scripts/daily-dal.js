@@ -141,10 +141,11 @@ class DailyDal {
     }
 }
 
-// Initialize on load - only if URL path is '/dal'
+// Initialize on load - only if URL path is '/dal' (not /dal.html)
+// Note: /dal.html is the gallery page, so we don't show the modal there
 window.addEventListener('DOMContentLoaded', () => {
-    // Check if current path is '/dal' or '/dal/'
     const currentPath = window.location.pathname;
+    // Only show modal on redirect page (/dal or /dal/), not on the gallery page (/dal.html)
     if (currentPath === '/dal' || currentPath === '/dal/' || currentPath === '/dal/index.html') {
         const dailyDal = new DailyDal();
         dailyDal.init();
