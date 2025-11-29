@@ -344,10 +344,22 @@ main table tbody tr:hover {
                 </section>
 
                 <!-- FAQ Section -->
+                <!-- ⚠️ 중요: FAQPage는 JSON-LD로만 생성! HTML Microdata 사용 금지 -->
                 <section id="faq" class="mt-12">
                     <h2>자주 묻는 질문 (FAQ)</h2>
-                    <div itemscope itemtype="https://schema.org/FAQPage">
-                        <!-- FAQ 항목들 -->
+                    <div class="space-y-4">
+                        <!-- FAQ 항목: Question/Answer만 사용 (FAQPage 제거!) -->
+                        <div itemscope itemtype="https://schema.org/Question" class="interactive-card border themeable-border rounded-lg p-6">
+                            <h3 itemprop="name" class="text-xl font-semibold themeable-heading mb-3">
+                                질문 제목
+                            </h3>
+                            <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                                <div itemprop="text" class="themeable-text-secondary">
+                                    <p>답변 내용</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 추가 FAQ 항목들... -->
                     </div>
                 </section>
 
@@ -418,9 +430,67 @@ main table tbody tr:hover {
 3. **✅ `await PebblousPage.init(config)` 필수 호출**
    - Header/Footer 자동 로드 (`PebblousComponents.loadAll()`)
    - BreadcrumbList Schema 자동 주입
-   - FAQ Schema 자동 주입
+   - FAQ Schema 자동 주입 (JSON-LD)
    - Related Posts 자동 생성
 ```
+
+---
+
+### ⚠️ FAQ Schema 패턴 (Google 중복 방지!)
+
+#### 문제: FAQPage 중복
+Google Search Console은 **페이지당 하나의 FAQPage만** 허용합니다. HTML Microdata와 JSON-LD 둘 다 사용하면 중복 오류가 발생합니다.
+
+#### ✅ 올바른 패턴 (반드시 지킬 것!)
+
+**HTML**: `FAQPage` 사용 금지, `Question`/`Answer`만 사용
+```html
+<section id="faq" class="mt-12">
+    <h2>자주 묻는 질문 (FAQ)</h2>
+    <!-- ❌ itemtype="https://schema.org/FAQPage" 사용 금지! -->
+    <div class="space-y-4">
+        <!-- ✅ Question/Answer만 사용 -->
+        <div itemscope itemtype="https://schema.org/Question" class="interactive-card border themeable-border rounded-lg p-6">
+            <h3 itemprop="name" class="text-xl font-semibold themeable-heading mb-3">
+                질문 제목
+            </h3>
+            <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                <div itemprop="text" class="themeable-text-secondary">
+                    <p>답변 내용</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+```
+
+**JavaScript**: `config.faqs`로 JSON-LD FAQPage Schema 자동 생성
+```javascript
+const config = {
+    faqs: [
+        {
+            question: "질문 1",
+            answer: "답변 1"
+        },
+        // 7개 권장
+    ]
+};
+
+// PebblousPage.init()이 자동으로 JSON-LD FAQPage Schema 주입
+await PebblousPage.init(config);
+```
+
+#### 필수 체크 포인트
+- [ ] ❌ HTML에 `itemtype="https://schema.org/FAQPage"` 사용 금지
+- [ ] ❌ HTML에 `itemprop="mainEntity"` 사용 금지 (FAQPage의 자식 속성)
+- [ ] ✅ HTML에는 `Question`/`Answer` Microdata만 사용
+- [ ] ✅ `config.faqs` 배열에 모든 FAQ 데이터 정의 (7개 권장)
+- [ ] ✅ `PebblousPage.init(config)`가 JSON-LD FAQPage Schema 자동 생성
+
+#### 결과
+- **HTML Microdata**: 사용자가 보는 UI + 각 질문의 구조화 (`Question`/`Answer`)
+- **JSON-LD FAQPage**: 검색 엔진이 읽는 전체 FAQ 구조 (자동 생성)
+- **중복 방지**: `common-utils.js`의 `injectFAQSchema()`가 기존 FAQPage 존재 여부 체크
 
 ---
 
@@ -785,7 +855,9 @@ main table tbody tr:hover {
 
 #### SEO
 - [ ] 메타 키워드 40-50개 (한글 + 영문)
-- [ ] FAQ Schema (HTML + JSON-LD 이중 구현)
+- [ ] ❌ HTML에 `itemtype="https://schema.org/FAQPage"` 사용 금지 (Google 중복 오류)
+- [ ] ✅ FAQ Schema: JSON-LD만 사용 (`config.faqs` → 자동 생성)
+- [ ] ✅ HTML FAQ: `Question`/`Answer` Microdata만 사용
 - [ ] 페이지 제목 70자 이내
 - [ ] 메타 설명 150자 이내
 - [ ] OG 이미지 1200x630px
