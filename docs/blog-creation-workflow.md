@@ -735,12 +735,95 @@ const faqSchema = {
 **필드 설명**:
 - `id`: URL-friendly 고유 식별자 (kebab-case)
 - `title`: 포스팅 제목 (한글, 80자 이내)
-- `category`: `"tech"` | `"case-study"` | `"insights"` | `"announcement"`
+- `category`: `"tech"` | `"case-study"` | `"insights"` | `"announcement"` | `"art"` | `"story"`
 - `date`: 발행일 (YYYY-MM-DD)
 - `path`: HTML 파일 경로 (루트 기준 상대 경로)
 - `published`: `true` (공개) | `false` (비공개)
 - `featured`: `true` (추천 포스팅으로 표시) | `false`
 - `tags`: 키워드 배열 (40-50개 권장)
+
+---
+
+### ⚠️ Featured 포스팅 정책 (필수 준수!)
+
+#### 카테고리별 Featured 개수 제한
+
+**원칙**: 각 카테고리당 **최대 3개**의 featured 포스팅만 허용
+
+**현재 상태 확인 명령어**:
+```bash
+cat articles.json | jq '[.articles[] | select(.featured == true)] | group_by(.category) | map({category: .[0].category, count: length})'
+```
+
+**카테고리별 제한**:
+| 카테고리 | 최대 Featured 개수 | 현재 개수 (2025-11-30 기준) |
+|---------|-------------------|--------------------------|
+| `tech` | 3개 | 7개 ⚠️ (초과!) |
+| `story` | 3개 | 4개 ⚠️ (초과!) |
+| `art` | 3개 | 2개 ✅ |
+| `case-study` | 3개 | 0개 ✅ |
+| `insights` | 3개 | 0개 ✅ |
+| `announcement` | 3개 | 0개 ✅ |
+
+#### Featured 설정 가이드라인
+
+**새 포스팅 추가 시 체크리스트**:
+
+1. **Featured 개수 확인**:
+   ```bash
+   # 해당 카테고리의 현재 featured 개수 확인
+   cat articles.json | jq '[.articles[] | select(.category == "tech" and .featured == true)] | length'
+   ```
+
+2. **3개 미만인 경우**: `"featured": true` 설정 가능
+3. **3개 이상인 경우**:
+   - 기존 featured 포스팅 중 **가장 오래된 것** 또는 **중요도가 낮은 것**을 `"featured": false`로 변경
+   - 새 포스팅을 `"featured": true`로 설정
+   - **변경 이유를 커밋 메시지에 명시**
+
+**예시 시나리오**:
+```json
+// 현재 tech 카테고리에 featured가 3개 이미 존재
+// 새 포스팅 "robot-qa-dataset-2.html"을 featured로 추가하려면:
+
+// 1단계: 기존 featured 중 하나를 false로 변경
+{
+  "id": "old-post",
+  "featured": false  // true → false 변경
+}
+
+// 2단계: 새 포스팅을 featured true로 추가
+{
+  "id": "robot-qa-dataset-2",
+  "featured": true
+}
+```
+
+#### Featured 선정 기준
+
+**우선순위** (높은 것부터):
+1. **최신성**: 최근 3개월 이내 발행된 포스팅
+2. **전략적 가치**: 페블러스 핵심 제품/서비스 (DataClinic, AADS, Data Synthesis) 관련
+3. **SEO 성과**: 조회수, 체류시간, CTR이 높은 포스팅
+4. **기술적 완성도**: FAQ Schema, 메타태그, 이미지 최적화가 완벽한 포스팅
+5. **내부 링크**: Related Posts 연결이 풍부한 포스팅
+
+**제외 기준**:
+- 6개월 이상 경과한 포스팅 (시의성 상실)
+- 임시 공지/이벤트성 포스팅
+- 초안 상태 또는 업데이트가 필요한 포스팅
+
+#### Featured 관리 주기
+
+**월간 리뷰 (매월 1일)**:
+1. 각 카테고리별 featured 개수 확인
+2. 3개 초과 시 오래된 포스팅 featured 해제
+3. 새로운 고품질 포스팅으로 교체
+4. `docs/featured-history.md`에 변경 이력 기록 (선택사항)
+
+**즉시 조치 필요**:
+- 현재 `tech` 카테고리: 7개 → 3개로 감축 필요 (4개 해제)
+- 현재 `story` 카테고리: 4개 → 3개로 감축 필요 (1개 해제)
 
 ---
 
