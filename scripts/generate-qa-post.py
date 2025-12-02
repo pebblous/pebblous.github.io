@@ -1,29 +1,73 @@
-<!DOCTYPE html>
+#!/usr/bin/env python3
+"""
+AADS QA Dataset Post Generator
+================================
+
+JSON 메타데이터에서 HTML 블로그 포스트를 자동 생성합니다.
+
+Usage:
+    python3 scripts/generate-qa-post.py /tmp/qa-metadata-{domain}.json
+
+Output:
+    project/AADS/{domain}-qa-dataset.html
+
+Requirements:
+    pip3 install jinja2
+"""
+
+import json
+import sys
+from pathlib import Path
+from datetime import datetime
+# from jinja2 import Template  # 향후 템플릿화 시 사용
+
+def load_json(json_path):
+    """JSON 파일 로드"""
+    with open(json_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def generate_html(metadata, template_path=None):
+    """Jinja2 템플릿으로 HTML 생성"""
+
+    # 현재는 regulation-governance HTML을 기반으로 직접 생성
+    # 향후 Jinja2 템플릿으로 전환 예정
+
+    domain = metadata['metadata']['domain']
+    domain_en = metadata['metadata']['domain_en']
+    dataset_count = metadata['metadata']['dataset_count']
+    qa_count = metadata['metadata']['qa_count']
+    date = metadata['metadata']['date']
+    author = metadata['metadata']['author']
+    datasets = metadata['datasets']
+    keywords = metadata['keywords']
+
+    # HTML 헤더 생성
+    html = f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="author" content="페블러스 데이터 커뮤니케이션팀">
+    <meta name="author" content="{author}">
 
     <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    <script>(function(w,d,s,l,i){{w[l]=w[l]||[];w[l].push({{'gtm.start':
+    new Date().getTime(),event:'gtm.js'}});var f=d.getElementsByTagName(s)[0],
     j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+    }})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
 
     <!-- Favicon -->
     <link rel="icon" href="/image/favicon.ico" sizes="any">
     <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
 
     <!-- SEO Meta Tags -->
-    <title id="page-title">규제와 거버넌스 분야 LLM 파인튜닝용 QA 데이터셋 구축: 데이터 품질 관점 | 페블러스</title>
-    <meta id="meta-description" name="description" content="8개 규제와 거버넌스 데이터셋에서 구축한 32개 QA 샘플">
-    <meta id="meta-keywords" name="keywords" content="AI 기본법, AI Basic Law, 데이터 산업법, Data Industry Promotion Law, 공공데이터, Public Data, 데이터 거버넌스, Data Governance, 규제, Regulation, AI 윤리, AI Ethics, 투명성, Transparency, 안전성, Safety, 저작권, Copyright, 생성형 AI, Generative AI, 데이터 품질, Data Quality, 데이터 표준, Data Standards, 이용자 보호, User Protection, 데이터 감시, Data Audit, 클라우드 컴퓨팅, Cloud Computing, 메타데이터, Metadata, 정보자원, Information Resources, 책임성, Accountability, 데이터안심구역, Data Trust Zone, 개방표준, Open Standards, 교육 AI, Educational AI, 편향성, Bias, 워터마크, Watermark, 편집저작물, Derivative Work, 창작성, Creativity, 데이터기반행정, Data-driven Administration, GEAP 포털, GEAP Portal, 의견 수렴, Stakeholder Engagement, 품질 관리, Quality Management, 역기능 방지, Prevent Misuse">
+    <title id="page-title">{domain} 분야 LLM 파인튜닝용 QA 데이터셋 구축: 데이터 품질 관점 | 페블러스</title>
+    <meta id="meta-description" name="description" content="{dataset_count}개 {domain} 데이터셋에서 구축한 {qa_count}개 QA 샘플">
+    <meta id="meta-keywords" name="keywords" content="{', '.join(keywords)}">
     <meta name="robots" content="index, follow">
 
     <!-- Canonical URL -->
-    <link id="canonical-url" rel="canonical" href="https://blog.pebblous.ai/project/AADS/regulation-governance-qa-dataset.html">
+    <link id="canonical-url" rel="canonical" href="https://blog.pebblous.ai/project/AADS/{domain_en}-qa-dataset.html">
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="/css/common-styles.css">
@@ -36,30 +80,30 @@
 
     <style>
         /* Card hover effect */
-        .card-hover {
+        .card-hover {{
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .card-hover:hover {
+        }}
+        .card-hover:hover {{
             transform: translateY(-4px);
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-        }
+        }}
 
         /* Interactive card with left border */
-        .interactive-card {
+        .interactive-card {{
             transition: all 0.3s ease;
             border-left: 4px solid transparent;
-        }
-        .interactive-card:hover {
+        }}
+        .interactive-card:hover {{
             transform: translateY(-2px);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
             border-left-color: #14b8a6;
-        }
+        }}
 
-        .stat-card {
+        .stat-card {{
             position: relative;
             padding-left: 1.5rem;
-        }
-        .stat-card::before {
+        }}
+        .stat-card::before {{
             content: '';
             position: absolute;
             left: 0;
@@ -68,29 +112,29 @@
             height: 100%;
             background: linear-gradient(180deg, #14b8a6, #F86825);
             border-radius: 2px;
-        }
+        }}
 
-        .teal-text {
+        .teal-text {{
             color: #14b8a6;
-        }
-        .orange-text {
+        }}
+        .orange-text {{
             color: #F86825;
-        }
+        }}
 
         /* Share Buttons */
-        .share-container {
+        .share-container {{
             display: flex;
             gap: 1rem;
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
-        }
-        .share-label {
+        }}
+        .share-label {{
             font-size: 0.875rem;
             color: #94a3b8;
             font-weight: 500;
-        }
-        .share-btn {
+        }}
+        .share-btn {{
             display: inline-flex;
             align-items: center;
             gap: 0.375rem;
@@ -101,18 +145,18 @@
             cursor: pointer;
             transition: color 0.2s;
             font-size: 0.875rem;
-        }
-        .share-btn svg {
+        }}
+        .share-btn svg {{
             width: 1.25rem;
             height: 1.25rem;
             transition: transform 0.2s;
-        }
-        .share-btn:hover {
+        }}
+        .share-btn:hover {{
             color: #F86825;
-        }
-        .share-btn:hover svg {
+        }}
+        .share-btn:hover svg {{
             transform: scale(1.1);
-        }
+        }}
     </style>
 </head>
 
@@ -134,7 +178,7 @@
                 <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border pl-4">
                     <li><a href="#intro" class="toc-link themeable-text-secondary hover:text-teal-500 transition-colors">서론 및 구축 목표</a></li>
                     <li><a href="#overview" class="toc-link themeable-text-secondary hover:text-teal-500 transition-colors">QA 데이터셋 개요</a></li>
-                    <li><a href="#datasets" class="toc-link themeable-text-secondary hover:text-teal-500 transition-colors">8개 규제와 거버넌스 도메인 데이터셋</a></li>
+                    <li><a href="#datasets" class="toc-link themeable-text-secondary hover:text-teal-500 transition-colors">{dataset_count}개 {domain} 도메인 데이터셋</a></li>
                     <li><a href="#statistics" class="toc-link themeable-text-secondary hover:text-teal-500 transition-colors">QA 유형 통계</a></li>
                     <li><a href="#prompt-template" class="toc-link themeable-text-secondary hover:text-teal-500 transition-colors">프롬프트 템플릿</a></li>
                     <li><a href="#pebblous-perspective" class="toc-link themeable-text-secondary hover:text-teal-500 transition-colors">페블러스 관점</a></li>
@@ -211,22 +255,66 @@
 
     <!-- Page Initialization Script -->
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            const config = {
-                mainTitle: "규제와 거버넌스 분야 LLM 파인튜닝용 QA 데이터셋 구축",
+        document.addEventListener('DOMContentLoaded', async function() {{
+            const config = {{
+                mainTitle: "{domain} 분야 LLM 파인튜닝용 QA 데이터셋 구축",
                 subtitle: "데이터 품질 관점",
-                pageTitle: "규제와 거버넌스 분야 LLM 파인튜닝용 QA 데이터셋 구축: 데이터 품질 관점 | 페블러스",
-                publishDate: "2025년 12년 01일",
-                publisher: "페블러스 데이터 커뮤니케이션팀",
+                pageTitle: "{domain} 분야 LLM 파인튜닝용 QA 데이터셋 구축: 데이터 품질 관점 | 페블러스",
+                publishDate: "{date.replace('-', '년 ').replace('-', '월 ')}일",
+                publisher: "{author}",
                 defaultTheme: "light",
                 category: "tech",
-                articlePath: "project/AADS/regulation-governance-qa-dataset.html",
-                tags: ["AI 기본법", "AI Basic Law", "데이터 산업법", "Data Industry Promotion Law", "공공데이터", "Public Data", "데이터 거버넌스", "Data Governance", "규제", "Regulation", "AI 윤리", "AI Ethics", "투명성", "Transparency", "안전성", "Safety", "저작권", "Copyright", "생성형 AI", "Generative AI", "데이터 품질", "Data Quality", "데이터 표준", "Data Standards", "이용자 보호", "User Protection", "데이터 감시", "Data Audit", "클라우드 컴퓨팅", "Cloud Computing", "메타데이터", "Metadata", "정보자원", "Information Resources", "책임성", "Accountability", "데이터안심구역", "Data Trust Zone", "개방표준", "Open Standards", "교육 AI", "Educational AI", "편향성", "Bias", "워터마크", "Watermark", "편집저작물", "Derivative Work", "창작성", "Creativity", "데이터기반행정", "Data-driven Administration", "GEAP 포털", "GEAP Portal", "의견 수렴", "Stakeholder Engagement", "품질 관리", "Quality Management", "역기능 방지", "Prevent Misuse"],
+                articlePath: "project/AADS/{domain_en}-qa-dataset.html",
+                tags: {json.dumps(keywords, ensure_ascii=False)},
                 faqs: []  // FAQ는 별도로 생성 필요
-            };
+            }};
 
             await PebblousPage.init(config);
-        });
+        }});
     </script>
 </body>
 </html>
+"""
+
+    return html
+
+def save_html(html, output_path):
+    """HTML 파일 저장"""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(html)
+    print(f"✅ HTML 생성 완료: {output_path}")
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python3 scripts/generate-qa-post.py /tmp/qa-metadata-{domain}.json")
+        sys.exit(1)
+
+    json_path = Path(sys.argv[1])
+
+    if not json_path.exists():
+        print(f"❌ JSON 파일을 찾을 수 없습니다: {json_path}")
+        sys.exit(1)
+
+    # JSON 로드
+    metadata = load_json(json_path)
+
+    # HTML 생성
+    html = generate_html(metadata)
+
+    # 출력 경로 설정
+    domain_en = metadata['metadata']['domain_en']
+    repo_root = Path(__file__).parent.parent
+    output_path = repo_root / f"project/AADS/{domain_en}-qa-dataset.html"
+
+    # HTML 저장
+    save_html(html, output_path)
+
+    print(f"\n🎉 자동 생성 완료!")
+    print(f"   Domain: {metadata['metadata']['domain']}")
+    print(f"   Datasets: {metadata['metadata']['dataset_count']}")
+    print(f"   QA Pairs: {metadata['metadata']['qa_count']}")
+    print(f"   Output: {output_path}")
+
+if __name__ == "__main__":
+    main()
