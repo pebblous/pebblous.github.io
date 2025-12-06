@@ -63,22 +63,32 @@ echo -e "${YELLOW}   Phase 2: HTML 생성 중...${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-python3 "$SCRIPT_DIR/generate-qa-post.py" "$JSON_PATH"
+# Activate virtual environment if it exists
+if [ -d "$SCRIPT_DIR/venv" ]; then
+    source "$SCRIPT_DIR/venv/bin/activate"
+    python3 "$SCRIPT_DIR/generate-qa-post.py" "$JSON_PATH"
+    EXIT_CODE=$?
+    deactivate
+else
+    echo -e "${YELLOW}⚠️  가상 환경이 없습니다. 시스템 Python을 사용합니다.${NC}"
+    python3 "$SCRIPT_DIR/generate-qa-post.py" "$JSON_PATH"
+    EXIT_CODE=$?
+fi
 
-if [ $? -ne 0 ]; then
+if [ $EXIT_CODE -ne 0 ]; then
     echo -e "${RED}❌ HTML 생성 실패${NC}"
     exit 1
 fi
 
 echo ""
 
-# Phase 3: FAQ 생성 (현재는 수동)
+# Phase 3: FAQ 생성 (자동)
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${YELLOW}   Phase 3: FAQ 생성 (현재는 수동)${NC}"
+echo -e "${YELLOW}   Phase 3: FAQ 자동 생성 완료 ✅${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo -e "${BLUE}ℹ️  FAQ는 수동으로 HTML 파일에 추가해주세요.${NC}"
-echo -e "${BLUE}   향후 버전에서 자동 생성 기능이 추가될 예정입니다.${NC}"
+echo -e "${GREEN}✅ 기본 FAQ 3개가 자동 생성되었습니다.${NC}"
+echo -e "${BLUE}ℹ️  필요시 HTML 파일에서 FAQ를 추가/수정할 수 있습니다.${NC}"
 echo ""
 
 # Phase 4: articles.json 업데이트
@@ -105,9 +115,7 @@ echo -e "${BLUE}다음 단계:${NC}"
 echo -e "  1. 브라우저에서 HTML 확인"
 echo -e "     ${YELLOW}http://localhost:8000/project/AADS/${DOMAIN_EN}-qa-dataset.html${NC}"
 echo ""
-echo -e "  2. FAQ 섹션 수동 추가 (현재)"
-echo ""
-echo -e "  3. Git commit & push"
+echo -e "  2. Git commit & push"
 echo -e "     ${YELLOW}git add project/AADS/${DOMAIN_EN}-qa-dataset.html articles.json${NC}"
 echo -e "     ${YELLOW}git commit -m \"Add ${DOMAIN_EN} QA dataset post\"${NC}"
 echo -e "     ${YELLOW}git push origin main${NC}"
