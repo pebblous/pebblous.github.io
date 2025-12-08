@@ -249,16 +249,25 @@ const config = {
 - ✅ How-to 가이드, 기술 표준 문서, 프레임워크 비교
 - ❌ 데이터 아트, 단순 뉴스, 짧은 업데이트
 
-**⭐ 신규 블로그 FAQ 전략 (2025-11-19 업데이트)**:
-- **이중 구현 방식**: 본문 HTML + JSON-LD Schema 동시 적용
+**⭐ 신규 블로그 FAQ 전략 (2025-12-08 업데이트)**:
+- **이중 구현 방식**: 본문 HTML (UX) + JSON-LD Schema (SEO) 동시 적용
 - **SEO 효과 극대화**:
   - 본문 FAQ로 사용자 경험 향상 (체류 시간 증가, 빠른 정보 접근)
   - JSON-LD Schema로 Google Rich Snippets 확보
   - 키워드 밀도 자연스럽게 증가 (FAQ 질문/답변에 타겟 키워드 포함)
-- **구현 방법**:
-  1. `<head>`에 FAQPage JSON-LD Schema 추가
-  2. 본문에 FAQ HTML 섹션 추가 (6개 질문 권장)
-  3. TOC에 FAQ 섹션 링크 추가
+
+**⚠️ 중요: FAQPage Schema 중복 방지**:
+- JSON-LD Schema는 **한 가지 방식만** 사용해야 함 (중복 시 Google Search Console 오류 발생)
+- **방식 A**: `config.faqs` 배열 사용 → `PebblousPage.init()`가 자동으로 FAQPage Schema 주입
+- **방식 B**: `<head>`에 직접 `<script type="application/ld+json">` FAQPage 작성
+- **절대 금지**: 방식 A + 방식 B 동시 사용 (FAQPage 중복 오류)
+
+**권장 구현 방법** (PebblousPage 사용 시):
+1. `config.faqs` 배열에 FAQ 데이터 작성 → Schema 자동 주입
+2. 본문에 FAQ HTML 섹션 추가 (6개 질문 권장) → UX 향상
+3. TOC에 FAQ 섹션 링크 추가
+4. `<head>`에 FAQPage JSON-LD **작성하지 않음** (중복 방지)
+
 - **예시**: [data-pipeline-for-physical-ai-01.html](project/PhysicalAI/data-pipeline-for-physical-ai-01.html)
 
 **FAQ 한글 키워드 전략** (2025-11-16 업데이트):
@@ -294,13 +303,17 @@ const config = {
 - `PebblousPage.init(config)`로 런타임에 `<head>`에 주입되는 FAQ도 직접 HTML Schema와 동일하게 작동
 - **결론**: JavaScript 주입 방식과 직접 HTML Schema 방식 모두 SEO에 효과적 ✅
 
-**FAQ 구현 방식 비교**:
+**FAQ 구현 방식 비교** (2025-12-08 업데이트):
 
-| 방식 | 장점 | 단점 | 사용 권장 |
-|------|------|------|----------|
-| **⭐ 이중 구현** (본문 HTML + JSON-LD) | - **최고의 SEO 효과**<br>- 사용자 경험 최적화<br>- Rich Snippets 확보<br>- 키워드 밀도 증가<br>- 체류 시간 증가 | - 구현 시간 약간 증가<br>- HTML/Schema 중복 관리 | **신규 블로그 권장** ⭐<br>(data-pipeline-for-physical-ai-01.html) |
-| **JavaScript Config** (`config.faqs`) | - PebblousPage 아키텍처 일관성<br>- 관리 편의성 (하나의 config 객체)<br>- Google Rich Results Test 통과 확인 | - 본문에 FAQ 미표시<br>- UX 개선 효과 없음 | PebblousPage 사용 블로그<br>(data-startup-physical-ai-01.html 등) |
-| **JSON-LD Schema만** (`<script type="application/ld+json">`) | - JavaScript 없이도 크롤링 보장<br>- 정적 페이지에 적합<br>- 디버깅 용이 | - 본문에 FAQ 미표시<br>- UX 개선 효과 없음 | 기존 구현 페이지 유지 |
+| 방식 | 구성 요소 | 장점 | 사용 권장 |
+|------|----------|------|----------|
+| **⭐ 권장: config.faqs + 본문 HTML** | `config.faqs` (Schema 자동주입) + 본문 FAQ 섹션 (UX) | - **최고의 SEO+UX 효과**<br>- Schema 자동 관리<br>- 중복 없음 | **PebblousPage 사용 블로그** ⭐ |
+| **config.faqs만** | `config.faqs` 배열만 | - 간편함<br>- Schema 자동 주입 | 본문 FAQ가 필요 없는 경우 |
+| **직접 JSON-LD + 본문 HTML** | `<head>` JSON-LD + 본문 FAQ 섹션 | - JavaScript 없이 작동<br>- 정적 페이지에 적합 | PebblousPage 미사용 페이지 |
+
+**⚠️ 금지 조합** (FAQPage 중복 오류 발생):
+- ❌ `config.faqs` + `<head>` JSON-LD FAQPage 동시 사용
+- ❌ 동일 페이지에 FAQPage Schema 2개 이상
 
 ### 3. BreadcrumbList Schema (자동 주입 - Phase 2)
 
@@ -562,11 +575,12 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 - [ ] Open Graph 완전 구현 (14개 태그)
 - [ ] Twitter Cards 구현 (8개 이상 태그)
 - [ ] config 설정 (category, articlePath, tags 필수)
-- [ ] **⭐ FAQ 이중 구현** (신규 블로그 필수):
-  - [ ] `<head>`에 FAQPage JSON-LD Schema 추가
-  - [ ] 본문에 FAQ HTML 섹션 추가 (6개 질문 권장)
+- [ ] **⭐ FAQ 구현** (신규 블로그 필수):
+  - [ ] `config.faqs` 배열에 FAQ 데이터 작성 (Schema 자동 주입)
+  - [ ] 본문에 FAQ HTML 섹션 추가 (6개 질문 권장, UX 향상)
   - [ ] TOC에 FAQ 섹션 링크 추가
   - [ ] FAQ 질문에 타겟 키워드 자연스럽게 포함
+  - [ ] **⚠️ `<head>`에 FAQPage JSON-LD 직접 작성 금지** (config.faqs와 중복됨)
 
 ### 배포 전
 - [ ] Google Rich Results Test 통과
@@ -623,6 +637,14 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 ---
 
 ## 📝 최근 업데이트 로그
+
+### 2025-12-08: FAQPage Schema 중복 오류 방지 가이드 추가
+- ⚠️ **문제 발견**: `config.faqs` + `<head>` JSON-LD FAQPage 동시 사용 시 Google Search Console에서 "FAQPage 중복" 오류 발생
+- ✅ **해결**: `config.faqs`는 `PebblousPage.init()`에서 자동으로 FAQPage Schema를 `<head>`에 주입하므로, 직접 JSON-LD 작성 불필요
+- ✅ **권장 구현**: `config.faqs` (Schema) + 본문 FAQ HTML (UX) 조합
+- ✅ **금지 조합 명시**: `config.faqs` + `<head>` JSON-LD FAQPage 동시 사용 금지
+- ✅ **체크리스트 업데이트**: FAQ 구현 시 중복 방지 주의사항 추가
+- ✅ **비교표 개선**: 구성 요소와 금지 조합 명확화
 
 ### 2025-11-19: 피지컬 AI 데이터 파이프라인 블로그 SEO 개선 + FAQ 이중 구현 전략 수립
 - ✅ **타겟 키워드 최적화**: "피지컬 AI 데이터" 키워드로 구글 검색 1위 전략 수립 및 적용
@@ -685,5 +707,5 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 ---
 
 **이 문서는 실제 배포된 페이지의 SEO 성과를 기반으로 지속적으로 업데이트됩니다.**
-**최종 업데이트**: 2025-11-19
+**최종 업데이트**: 2025-12-08
 **작성자**: Pebblous Tech Team
