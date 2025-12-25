@@ -631,7 +631,7 @@ const config = {
 
 **JSON-LD 스크립트** (자동 생성):
 ```javascript
-// article-page.js에서 config.faqs 기반으로 자동 생성
+// common-utils.js에서 config.faqs 기반으로 자동 생성
 const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -1036,7 +1036,7 @@ https://search.google.com/test/rich-results
 
 **확인 사항**:
 - [ ] FAQ Schema 인식 ✅
-- [ ] Article Schema 인식 ✅ (article-page.js 자동 생성)
+- [ ] Article Schema 인식 ✅ (common-utils.js 자동 생성)
 - [ ] 오류 0개
 - [ ] 경고 최소화
 
@@ -1243,7 +1243,7 @@ git push origin main
 
 **해결**:
 1. `articles.json`에서 현재 포스팅의 `tags` 배열 확인
-2. `<script src="/js/common-utils.js"></script>` 로드 순서 확인 (article-page.js 보다 먼저)
+2. `<script src="/scripts/common-utils.js"></script>` 로드 순서 확인
 3. 브라우저 Console에서 에러 확인
 
 ### 문제 4: FAQ Schema가 Google Rich Results Test에서 인식 안 됨
@@ -1261,7 +1261,7 @@ faqs: [
     }
 ]
 ```
-3. `article-page.js`에서 JSON-LD 생성 로직 확인
+3. `common-utils.js`에서 JSON-LD 생성 로직 확인
 
 ---
 
