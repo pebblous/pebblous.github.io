@@ -437,8 +437,41 @@ css/
 
 ---
 
+## articles.json 이미지 경로 규칙 (2025-12-28 추가)
+
+### 상대 경로 사용 권장
+
+`articles.json`에서 `image`와 `cardImage` 필드는 **상대 경로**를 사용해야 합니다.
+
+#### ❌ 피해야 할 패턴
+```json
+{
+  "image": "https://blog.pebblous.ai/report/blog-2025-review/image/index.png",
+  "cardImage": "https://blog.pebblous.ai/report/blog-2025-review/image/index.png"
+}
+```
+- 절대 URL은 로컬 개발 환경에서 이미지가 로드되지 않음
+- `localhost:8000`에서 `blog.pebblous.ai` 도메인 접근 불가
+
+#### ✅ 권장 패턴
+```json
+{
+  "image": "report/blog-2025-review/image/index.png",
+  "cardImage": "report/blog-2025-review/image/index.png"
+}
+```
+- 상대 경로는 로컬과 프로덕션 환경 모두에서 작동
+- `common-utils.js`의 카드 렌더링 로직이 자동으로 처리
+
+### cardImage 동기화
+
+- `image`에 실제 이미지가 있고 `cardImage`가 비어있으면, `cardImage`를 `image`와 동일하게 설정
+- 기본 로고(`Pebblous_BM_Orange_RGB.png`)를 사용하는 경우는 `cardImage`를 비워둠
+
+---
+
 ## 업데이트 로그
 
-- **2025-12-28**: CSS 파일 구조 통합 계획 추가, 관련글 로고 플레이스홀더 스타일 추가
+- **2025-12-28**: articles.json 이미지 경로 규칙 추가, CSS 파일 구조 통합 계획 추가, 관련글 로고 플레이스홀더 스타일 추가
 - **2025-11-08**: 가독성 개선 가이드 추가 (타이포그래피, 목록, 테이블)
 - **2025-11-01**: 초기 생성, ISO 5259 프로젝트 리팩토링 기반
