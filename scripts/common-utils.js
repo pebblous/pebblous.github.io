@@ -648,9 +648,11 @@ const PebblousRelatedPosts = {
             const categoryEmoji = article.category === 'art' ? '🎨' :
                                  article.category === 'tech' ? '⚙️' : '📊';
 
+            const hasRealImage = article.cardImage || (article.image && !article.image.includes('Pebblous_BM_Orange_RGB.png'));
+
             cardsHTML += `
                 <a href="/${article.path}" class="card block rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
-                    <div class="aspect-video bg-slate-800 flex items-center justify-center overflow-hidden">
+                    <div class="aspect-video flex items-center justify-center overflow-hidden ${hasRealImage ? '' : 'logo-placeholder'}">
                         ${article.cardImage
                             ? `<img src="${article.cardImage}" alt="${article.title}" class="w-full h-full object-cover">`
                             : article.image && !article.image.includes('Pebblous_BM_Orange_RGB.png')

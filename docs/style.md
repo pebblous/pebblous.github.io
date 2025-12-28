@@ -343,7 +343,102 @@ main section {
 
 ---
 
+---
+
+## CSS 파일 구조 및 통합 계획 (2025-12-28 추가)
+
+### 현재 구조 (문제점)
+
+```
+css/
+├── styles.css           # 메인 페이지 (index.html) 전용
+└── theme-variables.css  # 공통 테마 변수 (NEW)
+
+styles/
+└── common-styles.css    # 아티클 페이지 전용
+```
+
+**문제점**:
+- 테마 변수가 `styles.css`와 `common-styles.css`에 **중복 정의**
+- 새 스타일 추가 시 양쪽 모두 수정 필요
+- 변수 값 불일치 가능성
+
+### 목표 구조
+
+```
+css/
+├── theme-variables.css  # 공통 테마 변수 (Single Source of Truth)
+├── styles.css           # 메인 페이지 전용 (theme-variables.css import)
+└── common-styles.css    # 아티클 페이지 전용 (theme-variables.css import)
+```
+
+### 공통 테마 변수 (`theme-variables.css`)
+
+다음 CSS 변수들을 통합 관리:
+
+```css
+:root {
+    /* 배경 */
+    --bg-primary, --bg-secondary, --bg-card, --bg-card-start, --bg-card-end
+
+    /* 텍스트 */
+    --text-primary, --text-secondary, --text-muted, --heading-color
+
+    /* 브랜드 */
+    --accent-color: #F86825;
+    --teal-color: #14b8a6;
+
+    /* 컴포넌트 */
+    --border-color, --tag-bg, --logo-placeholder-bg
+    --header-bg, --footer-bg, --search-bg
+}
+```
+
+### 공통 컴포넌트 스타일
+
+`theme-variables.css`에 포함된 공통 컴포넌트:
+
+```css
+/* 관련글 로고 플레이스홀더 */
+.default-logo {
+    width: 37.5%;  /* 기존 50%에서 축소 (75%) */
+    object-fit: contain;
+}
+
+.logo-placeholder {
+    background-color: var(--logo-placeholder-bg);
+    /* 테마별 배경: Dark=#1e293b, Light=#f5f5f5, Beige=#FFF8E1 */
+}
+
+.card:hover .logo-placeholder {
+    transform: scale(1.02);
+}
+```
+
+### 마이그레이션 단계
+
+1. ✅ `css/theme-variables.css` 생성 완료
+2. ⬜ `css/styles.css`에서 중복 변수 제거, import 추가
+3. ⬜ `styles/common-styles.css`에서 중복 변수 제거, import 추가
+4. ⬜ 각 HTML 페이지에서 `theme-variables.css` 로드 확인
+
+### Import 방법
+
+```css
+/* styles.css 또는 common-styles.css 상단에 추가 */
+@import url('/css/theme-variables.css');
+```
+
+또는 HTML에서:
+```html
+<link rel="stylesheet" href="/css/theme-variables.css">
+<link rel="stylesheet" href="/css/styles.css">
+```
+
+---
+
 ## 업데이트 로그
 
+- **2025-12-28**: CSS 파일 구조 통합 계획 추가, 관련글 로고 플레이스홀더 스타일 추가
 - **2025-11-08**: 가독성 개선 가이드 추가 (타이포그래피, 목록, 테이블)
 - **2025-11-01**: 초기 생성, ISO 5259 프로젝트 리팩토링 기반
