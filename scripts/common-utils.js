@@ -954,8 +954,22 @@ const PebblousSchema = {
     injectFAQSchema(faqs) {
         if (!faqs || !Array.isArray(faqs) || faqs.length === 0) return;
 
-        const existingSchema = document.querySelector('script[type="application/ld+json"][data-schema="faq"]');
-        if (existingSchema) return;
+        // Check for dynamically injected FAQ schema
+        const existingDynamicSchema = document.querySelector('script[type="application/ld+json"][data-schema="faq"]');
+        if (existingDynamicSchema) return;
+
+        // Check for static FAQPage in any JSON-LD script (prevents Google duplicate error)
+        const allJsonLd = document.querySelectorAll('script[type="application/ld+json"]');
+        for (const script of allJsonLd) {
+            try {
+                const data = JSON.parse(script.textContent);
+                if (data['@type'] === 'FAQPage') {
+                    console.warn('⚠️ Static FAQPage already exists! Skipping dynamic injection to prevent Google duplicate error.');
+                    return;
+                }
+            } catch (e) { /* ignore parse errors */ }
+        }
+
 
         // Build FAQ entities
         const mainEntity = faqs.map(faq => ({
