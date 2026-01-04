@@ -279,7 +279,42 @@ PebblousTabs.switchTo('tab2');
 
 ---
 
+## 트러블슈팅
+
+### 관련글 썸네일이 안 보이는 문제
+
+**증상**: `PebblousRelatedPosts`에서 관련글 카드의 썸네일 이미지가 표시되지 않음
+
+**원인**: `articles.json`의 `cardImage` 경로가 상대 경로(`report/xxx/image.png`)인데, 현재 페이지 위치 기준으로 해석되어 잘못된 경로가 됨
+
+```
+예시:
+- 현재 페이지: /project/CURK/some-page.html
+- cardImage: "report/blog-2025-review/image/index.png"
+- 실제 요청: /project/CURK/report/blog-2025-review/image/index.png (잘못됨!)
+- 올바른 경로: /report/blog-2025-review/image/index.png
+```
+
+**해결책** (2026-01-04 수정됨):
+
+`PebblousRelatedPosts.renderRelatedPosts()`에 `toAbsolutePath()` 헬퍼 함수 추가:
+
+```javascript
+const toAbsolutePath = (path) => {
+    if (!path || path.startsWith('http') || path.startsWith('/')) return path;
+    return '/' + path;
+};
+
+// 사용
+<img src="${toAbsolutePath(article.cardImage)}" ...>
+```
+
+**참고**: `index.html`의 카드 렌더링에는 이미 절대 경로 변환 로직이 있음 (716-724행)
+
+---
+
 ## 버전 기록
 
+- **2026-01-04**: PebblousRelatedPosts 이미지 경로 버그 수정
 - **2025-01-04**: PebblousChart, PebblousTabs 모듈 추가
 - **2025-12-xx**: 기존 모듈들 (Theme, Components, UI 등)
