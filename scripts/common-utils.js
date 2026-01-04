@@ -997,6 +997,605 @@ const PebblousSchema = {
     }
 };
 
+// ========================================
+// Chart Utilities (Chart.js Wrapper)
+// ========================================
+const PebblousChart = {
+    // Default color palette (Pebblous brand colors)
+    colors: {
+        orange: '#F86825',
+        teal: '#14B8A6',
+        purple: '#A855F7',
+        blue: '#3B82F6',
+        emerald: '#10B981',
+        amber: '#F59E0B',
+        slate: '#64748B',
+        violet: '#7C3AED'
+    },
+
+    // Default palette array for datasets
+    palette: ['#F86825', '#14B8A6', '#A855F7', '#3B82F6', '#10B981', '#F59E0B', '#7C3AED', '#64748B'],
+
+    // Common Chart.js options
+    baseOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    usePointStyle: true,
+                    boxWidth: 8,
+                    font: { family: "'Noto Sans KR', 'Pretendard', sans-serif" }
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                padding: 12,
+                cornerRadius: 8,
+                titleFont: { family: "'Noto Sans KR', 'Pretendard', sans-serif" },
+                bodyFont: { family: "'Noto Sans KR', 'Pretendard', sans-serif" }
+            }
+        }
+    },
+
+    /**
+     * Split long labels for multi-line display
+     * @param {string} str - Label string
+     * @param {number} maxLen - Maximum characters per line
+     * @returns {string|array} - Original string or array of lines
+     */
+    splitLabel(str, maxLen = 16) {
+        if (!str || str.length <= maxLen) return str;
+        const words = str.split(' ');
+        const lines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            if ((currentLine + ' ' + words[i]).length < maxLen) {
+                currentLine += ' ' + words[i];
+            } else {
+                lines.push(currentLine);
+                currentLine = words[i];
+            }
+        }
+        lines.push(currentLine);
+        return lines;
+    },
+
+    /**
+     * Create a Bar Chart
+     * @param {string} canvasId - Canvas element ID
+     * @param {object} config - Chart configuration
+     * @returns {Chart} Chart.js instance
+     */
+    bar(canvasId, config) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) {
+            console.warn(`PebblousChart: Canvas #${canvasId} not found`);
+            return null;
+        }
+
+        const {
+            labels,
+            datasets,
+            data,           // Simple mode: single dataset
+            colors,         // Simple mode: colors for single dataset
+            horizontal = false,
+            stacked = false,
+            showLegend = true,
+            yMax = null,
+            yFormat = null, // 'percent' or custom callback
+            wrapLabels = false,
+            wrapLength = 16
+        } = config;
+
+        // Process labels
+        const processedLabels = wrapLabels
+            ? labels.map(l => this.splitLabel(l, wrapLength))
+            : labels;
+
+        // Build datasets
+        let chartDatasets;
+        if (datasets) {
+            // Multi-dataset mode
+            chartDatasets = datasets.map((ds, i) => ({
+                label: ds.label,
+                data: ds.data,
+                backgroundColor: ds.color || this.palette[i % this.palette.length],
+                borderColor: ds.borderColor || ds.color || this.palette[i % this.palette.length],
+                borderWidth: ds.borderWidth || 1,
+                borderRadius: ds.borderRadius || 4,
+                barPercentage: ds.barPercentage || 0.7
+            }));
+        } else {
+            // Simple single dataset mode
+            const bgColors = colors === 'auto'
+                ? data.map((v, i) => this._autoColor(v, data))
+                : (Array.isArray(colors) ? colors : this.palette.slice(0, data.length));
+
+            chartDatasets = [{
+                data: data,
+                backgroundColor: bgColors,
+                borderRadius: 4,
+                barPercentage: 0.7
+            }];
+        }
+
+        // Build scales
+        const scales = {
+            x: {
+                stacked: stacked,
+                grid: { display: horizontal },
+                ticks: { font: { family: "'Noto Sans KR', 'Pretendard', sans-serif" } }
+            },
+            y: {
+                stacked: stacked,
+                beginAtZero: true,
+                grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                ticks: { font: { family: "'Noto Sans KR', 'Pretendard', sans-serif" } }
+            }
+        };
+
+        if (yMax !== null) scales.y.max = yMax;
+        if (yFormat === 'percent') {
+            scales.y.ticks.callback = (value) => value + '%';
+        } else if (typeof yFormat === 'function') {
+            scales.y.ticks.callback = yFormat;
+        }
+
+        if (horizontal) {
+            scales.x.grid = { display: false };
+            scales.y.grid = { display: false };
+        }
+
+        return new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: processedLabels,
+                datasets: chartDatasets
+            },
+            options: {
+                ...this.baseOptions,
+                indexAxis: horizontal ? 'y' : 'x',
+                scales: scales,
+                plugins: {
+                    ...this.baseOptions.plugins,
+                    legend: { display: showLegend && (datasets?.length > 1 || false) }
+                }
+            }
+        });
+    },
+
+    /**
+     * Create a Stacked Bar Chart
+     * @param {string} canvasId - Canvas element ID
+     * @param {object} config - Chart configuration
+     * @returns {Chart} Chart.js instance
+     */
+    stackedBar(canvasId, config) {
+        return this.bar(canvasId, { ...config, stacked: true, showLegend: true });
+    },
+
+    /**
+     * Create a Doughnut/Pie Chart
+     * @param {string} canvasId - Canvas element ID
+     * @param {object} config - Chart configuration
+     * @returns {Chart} Chart.js instance
+     */
+    doughnut(canvasId, config) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) {
+            console.warn(`PebblousChart: Canvas #${canvasId} not found`);
+            return null;
+        }
+
+        const {
+            labels,
+            data,
+            colors = this.palette,
+            cutout = '65%',
+            legendPosition = 'bottom',
+            wrapLabels = false,
+            wrapLength = 16
+        } = config;
+
+        const processedLabels = wrapLabels
+            ? labels.map(l => this.splitLabel(l, wrapLength))
+            : labels;
+
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: processedLabels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors.slice(0, data.length),
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                ...this.baseOptions,
+                cutout: cutout,
+                plugins: {
+                    ...this.baseOptions.plugins,
+                    legend: {
+                        position: legendPosition,
+                        labels: { usePointStyle: true }
+                    }
+                }
+            }
+        });
+    },
+
+    /**
+     * Create a Pie Chart (alias for doughnut with cutout: 0)
+     */
+    pie(canvasId, config) {
+        return this.doughnut(canvasId, { ...config, cutout: '0%' });
+    },
+
+    /**
+     * Create a Bubble Chart
+     * @param {string} canvasId - Canvas element ID
+     * @param {object} config - Chart configuration
+     * @returns {Chart} Chart.js instance
+     */
+    bubble(canvasId, config) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) {
+            console.warn(`PebblousChart: Canvas #${canvasId} not found`);
+            return null;
+        }
+
+        const {
+            data,           // Array of { x, y, r, label, color? }
+            xTitle = '',
+            yTitle = '',
+            xMin = 0,
+            xMax = 10,
+            yMin = 0,
+            yMax = 10,
+            colorFn = null  // Function to determine color based on data point
+        } = config;
+
+        const defaultColorFn = (point) => {
+            const idx = Math.floor(point.x / 2) % this.palette.length;
+            return this.palette[idx] + 'B3'; // Add transparency
+        };
+
+        return new Chart(ctx, {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    label: 'Data',
+                    data: data,
+                    backgroundColor: (ctx) => {
+                        const fn = colorFn || defaultColorFn;
+                        return fn(ctx.raw || {});
+                    },
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                ...this.baseOptions,
+                scales: {
+                    x: {
+                        min: xMin, max: xMax,
+                        title: { display: !!xTitle, text: xTitle },
+                        grid: { display: false }
+                    },
+                    y: {
+                        min: yMin, max: yMax,
+                        title: { display: !!yTitle, text: yTitle },
+                        grid: { color: '#F3F4F6' }
+                    }
+                },
+                plugins: {
+                    ...this.baseOptions.plugins,
+                    legend: { display: false },
+                    tooltip: {
+                        ...this.baseOptions.plugins.tooltip,
+                        callbacks: {
+                            title: (items) => items[0]?.raw?.label || '',
+                            label: (ctx) => `(${ctx.raw.x}, ${ctx.raw.y}) Size: ${ctx.raw.r}`
+                        }
+                    }
+                }
+            }
+        });
+    },
+
+    /**
+     * Create a Line Chart
+     * @param {string} canvasId - Canvas element ID
+     * @param {object} config - Chart configuration
+     * @returns {Chart} Chart.js instance
+     */
+    line(canvasId, config) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) {
+            console.warn(`PebblousChart: Canvas #${canvasId} not found`);
+            return null;
+        }
+
+        const {
+            labels,
+            datasets,
+            data,           // Simple mode: single dataset
+            color = this.colors.teal,
+            fill = false,
+            tension = 0.3,
+            showPoints = true,
+            showLegend = false
+        } = config;
+
+        let chartDatasets;
+        if (datasets) {
+            chartDatasets = datasets.map((ds, i) => ({
+                label: ds.label,
+                data: ds.data,
+                borderColor: ds.color || this.palette[i % this.palette.length],
+                backgroundColor: ds.fill ? (ds.color || this.palette[i % this.palette.length]) + '33' : 'transparent',
+                fill: ds.fill || false,
+                tension: ds.tension || tension,
+                pointRadius: ds.showPoints !== false ? 4 : 0,
+                pointHoverRadius: 6
+            }));
+        } else {
+            chartDatasets = [{
+                data: data,
+                borderColor: color,
+                backgroundColor: fill ? color + '33' : 'transparent',
+                fill: fill,
+                tension: tension,
+                pointRadius: showPoints ? 4 : 0,
+                pointHoverRadius: 6
+            }];
+        }
+
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: chartDatasets
+            },
+            options: {
+                ...this.baseOptions,
+                plugins: {
+                    ...this.baseOptions.plugins,
+                    legend: { display: showLegend || datasets?.length > 1 }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: "'Noto Sans KR', 'Pretendard', sans-serif" } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                        ticks: { font: { family: "'Noto Sans KR', 'Pretendard', sans-serif" } }
+                    }
+                }
+            }
+        });
+    },
+
+    /**
+     * Create a Radar Chart
+     * @param {string} canvasId - Canvas element ID
+     * @param {object} config - Chart configuration
+     * @returns {Chart} Chart.js instance
+     */
+    radar(canvasId, config) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) {
+            console.warn(`PebblousChart: Canvas #${canvasId} not found`);
+            return null;
+        }
+
+        const {
+            labels,
+            datasets,
+            max = 5,
+            min = 0,
+            stepSize = 1,
+            legendPosition = 'bottom',
+            wrapLabels = false,
+            wrapLength = 16
+        } = config;
+
+        const processedLabels = wrapLabels
+            ? labels.map(l => this.splitLabel(l, wrapLength))
+            : labels;
+
+        const chartDatasets = datasets.map((ds, i) => ({
+            label: ds.label,
+            data: ds.data,
+            backgroundColor: (ds.color || this.palette[i % this.palette.length]) + '26',
+            borderColor: ds.color || this.palette[i % this.palette.length],
+            borderWidth: ds.borderWidth || 3,
+            pointBackgroundColor: ds.color || this.palette[i % this.palette.length],
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: ds.pointRadius || 5
+        }));
+
+        return new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: processedLabels,
+                datasets: chartDatasets
+            },
+            options: {
+                ...this.baseOptions,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(128, 128, 128, 0.2)' },
+                        grid: { color: 'rgba(128, 128, 128, 0.2)' },
+                        pointLabels: {
+                            font: { size: 13, weight: 'bold' },
+                            color: '#111827'
+                        },
+                        ticks: {
+                            display: true,
+                            showLabelBackdrop: false,
+                            color: '#4B5563',
+                            stepSize: stepSize,
+                            max: max,
+                            min: min,
+                            beginAtZero: true,
+                            font: { size: 11, weight: 'bold' }
+                        },
+                        suggestedMin: min,
+                        suggestedMax: max
+                    }
+                },
+                plugins: {
+                    ...this.baseOptions.plugins,
+                    legend: {
+                        position: legendPosition,
+                        labels: { font: { size: 14 } }
+                    },
+                    tooltip: {
+                        ...this.baseOptions.plugins.tooltip,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                const item = tooltipItems[0];
+                                let label = item.chart.data.labels[item.dataIndex];
+                                return Array.isArray(label) ? label.join(' ') : label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    },
+
+    /**
+     * Auto-color based on value thresholds (for single dataset bars)
+     * @private
+     */
+    _autoColor(value, allValues) {
+        const max = Math.max(...allValues);
+        const ratio = value / max;
+
+        if (ratio >= 0.8) return this.colors.orange;
+        if (ratio >= 0.5) return this.colors.teal;
+        if (ratio >= 0.3) return this.colors.blue;
+        return this.colors.slate;
+    }
+};
+
+// ========================================
+// Tab Component
+// ========================================
+const PebblousTabs = {
+    /**
+     * Initialize tab functionality
+     * @param {object} options - Configuration options
+     */
+    init(options = {}) {
+        const {
+            containerSelector = '[data-tabs]',
+            buttonSelector = '[data-tab-button]',
+            contentSelector = '[data-tab-content]',
+            activeClass = 'active',
+            hiddenClass = 'hidden',
+            onChange = null
+        } = options;
+
+        const containers = document.querySelectorAll(containerSelector);
+
+        containers.forEach(container => {
+            const buttons = container.querySelectorAll(buttonSelector);
+            const contents = container.querySelectorAll(contentSelector);
+
+            if (buttons.length === 0) {
+                // Fallback: look for common tab patterns
+                this._initLegacyTabs(container);
+                return;
+            }
+
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.dataset.tabButton || button.dataset.target;
+
+                    // Deactivate all
+                    buttons.forEach(b => b.classList.remove(activeClass));
+                    contents.forEach(c => c.classList.add(hiddenClass));
+
+                    // Activate selected
+                    button.classList.add(activeClass);
+                    const targetContent = container.querySelector(`[data-tab-content="${targetId}"]`)
+                        || document.getElementById(targetId);
+
+                    if (targetContent) {
+                        targetContent.classList.remove(hiddenClass);
+                    }
+
+                    // Callback
+                    if (typeof onChange === 'function') {
+                        onChange(targetId, button, targetContent);
+                    }
+                });
+            });
+        });
+
+        console.log(`🗂️ PebblousTabs: Initialized ${containers.length} tab container(s)`);
+    },
+
+    /**
+     * Initialize legacy tab patterns (for backward compatibility)
+     * @private
+     */
+    _initLegacyTabs(container) {
+        // Pattern 1: .tab-button + .tab-content
+        const tabButtons = container.querySelectorAll('.tab-button, .tab-btn');
+        const tabContents = container.querySelectorAll('.tab-content, .tab-panel');
+
+        if (tabButtons.length === 0) return;
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.dataset.target || button.dataset.tab;
+
+                // Deactivate all
+                tabButtons.forEach(b => {
+                    b.classList.remove('active', 'bg-orange-500', 'text-white');
+                    b.classList.add('bg-slate-700', 'text-slate-300');
+                });
+                tabContents.forEach(c => c.classList.add('hidden'));
+
+                // Activate selected
+                button.classList.add('active', 'bg-orange-500', 'text-white');
+                button.classList.remove('bg-slate-700', 'text-slate-300');
+
+                const target = document.getElementById(targetId);
+                if (target) {
+                    target.classList.remove('hidden');
+                }
+            });
+        });
+    },
+
+    /**
+     * Programmatically switch to a specific tab
+     * @param {string} tabId - Tab ID to activate
+     * @param {string} containerSelector - Container selector (optional)
+     */
+    switchTo(tabId, containerSelector = '[data-tabs]') {
+        const container = document.querySelector(containerSelector);
+        if (!container) return;
+
+        const button = container.querySelector(`[data-tab-button="${tabId}"], [data-target="${tabId}"]`);
+        if (button) {
+            button.click();
+        }
+    }
+};
+
 // Export to global scope
 window.PebblousTheme = PebblousTheme;
 window.PebblousComponents = PebblousComponents;
@@ -1006,3 +1605,5 @@ window.PebblousComments = PebblousComments;
 window.PebblousRelatedPosts = PebblousRelatedPosts;
 window.PebblousBreadcrumbs = PebblousBreadcrumbs;
 window.PebblousSchema = PebblousSchema;
+window.PebblousChart = PebblousChart;
+window.PebblousTabs = PebblousTabs;
