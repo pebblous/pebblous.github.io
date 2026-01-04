@@ -6,9 +6,12 @@
  *   node tools/generate-og-image.js "제목" "부제목" output.png
  *   node tools/generate-og-image.js "제목" output.png              # 부제목 없이
  *   node tools/generate-og-image.js --category business "제목" output.png
+ *   node tools/generate-og-image.js --from-html path/to/post.html  # HTML에서 자동 추출
  *
  * Options:
- *   --category  tech|business|story (default: tech)
+ *   --category   tech|business|story (default: tech)
+ *   --from-html  HTML 파일에서 제목/카테고리 자동 추출
+ *   --force      이미지가 이미 존재해도 재생성
  */
 
 const puppeteer = require('puppeteer');
@@ -267,9 +270,101 @@ async function generateOGImage(title, subtitle, outputPath, category, projectRoo
     }
 }
 
+// Extract info from HTML file
+function extractFromHTML(htmlPath, projectRoot) {
+    const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
+
+    // Extract og:title or <title>
+    let title = '';
+    const ogTitleMatch = htmlContent.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
+    if (ogTitleMatch) {
+        title = ogTitleMatch[1];
+    } else {
+        const titleMatch = htmlContent.match(/<title>([^<]+)<\/title>/i);
+        if (titleMatch) {
+            title = titleMatch[1];
+        }
+    }
+    // Clean up title: remove site name suffixes
+    title = title.replace(/\s*[|\-–—]\s*(Pebblous|Data Greenhouse|페블러스).*$/i, '').trim();
+
+    // Extract og:description for subtitle
+    let subtitle = '';
+    const ogDescMatch = htmlContent.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
+    if (ogDescMatch) {
+        subtitle = ogDescMatch[1];
+        // Truncate if too long
+        if (subtitle.length > 80) {
+            subtitle = subtitle.substring(0, 77) + '...';
+        }
+    }
+
+    // Determine category from articles.json or path
+    let category = 'tech';
+    const articlesPath = path.join(projectRoot, 'articles.json');
+    if (fs.existsSync(articlesPath)) {
+        const data = JSON.parse(fs.readFileSync(articlesPath, 'utf-8'));
+        const relativePath = path.relative(projectRoot, htmlPath);
+
+        // Search in articles array
+        const found = data.articles?.find(a => a.path === relativePath);
+        if (found && found.category) {
+            category = found.category;
+        }
+    }
+
+    // Fallback: detect from path
+    if (category === 'tech') {
+        if (htmlPath.includes('/report/') || htmlPath.includes('market') || htmlPath.includes('business')) {
+            category = 'business';
+        } else if (htmlPath.includes('/story/') || htmlPath.includes('review')) {
+            category = 'story';
+        }
+    }
+
+    // Determine output path: same folder as HTML, in image/ subfolder
+    const htmlDir = path.dirname(htmlPath);
+    const htmlName = path.basename(htmlPath, '.html');
+    const outputPath = path.join(htmlDir, 'image', `${htmlName}.png`);
+
+    return { title, subtitle, category, output: outputPath };
+}
+
 // Main
 const args = process.argv.slice(2);
-if (args.length < 2) {
+
+// Check for --from-html mode
+const fromHtmlIndex = args.indexOf('--from-html');
+const forceIndex = args.indexOf('--force');
+const force = forceIndex !== -1;
+
+if (fromHtmlIndex !== -1 && args[fromHtmlIndex + 1]) {
+    // --from-html mode
+    const htmlPath = path.resolve(args[fromHtmlIndex + 1]);
+    const projectRoot = path.resolve(__dirname, '..');
+
+    if (!fs.existsSync(htmlPath)) {
+        console.error(`❌ HTML file not found: ${htmlPath}`);
+        process.exit(1);
+    }
+
+    const { title, subtitle, category, output } = extractFromHTML(htmlPath, projectRoot);
+
+    if (!title) {
+        console.error('❌ Could not extract title from HTML');
+        process.exit(1);
+    }
+
+    // Check if image already exists
+    if (fs.existsSync(output) && !force) {
+        console.log(`⏭️  OG image already exists: ${output}`);
+        console.log('   Use --force to regenerate');
+        process.exit(0);
+    }
+
+    generateOGImage(title, subtitle, output, category, projectRoot).catch(console.error);
+
+} else if (args.length < 2) {
     console.log(`
 OG Image Generator for Pebblous Blog
 
@@ -277,19 +372,27 @@ Usage:
   node tools/generate-og-image.js "제목" output.png
   node tools/generate-og-image.js "제목" "부제목" output.png
   node tools/generate-og-image.js --category business "제목" output.png
+  node tools/generate-og-image.js --from-html path/to/post.html
+  node tools/generate-og-image.js --from-html path/to/post.html --force
 
 Categories:
   tech     - Blue theme (default)
   business - Orange theme
   story    - Teal theme
 
+Options:
+  --from-html  Extract title/category from HTML file automatically
+  --force      Regenerate even if image already exists
+
 Examples:
   node tools/generate-og-image.js "Data Greenhouse 전략" project/DataGreenhouse/image/og.png
   node tools/generate-og-image.js --category business "시장 분석" "가트너 AI 검증" output.png
+  node tools/generate-og-image.js --from-html project/DataGreenhouse/data-greenhouse-strategy.html
     `);
     process.exit(0);
+} else {
+    // Manual mode
+    const { category, title, subtitle, output } = parseArgs(args);
+    const projectRoot = path.resolve(__dirname, '..');
+    generateOGImage(title, subtitle, output, category, projectRoot).catch(console.error);
 }
-
-const { category, title, subtitle, output } = parseArgs(args);
-const projectRoot = path.resolve(__dirname, '..');
-generateOGImage(title, subtitle, output, category, projectRoot).catch(console.error);
