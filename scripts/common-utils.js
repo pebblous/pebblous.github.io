@@ -650,13 +650,19 @@ const PebblousRelatedPosts = {
 
             const hasRealImage = article.cardImage || (article.image && !article.image.includes('Pebblous_BM_Orange_RGB.png'));
 
+            // Helper to ensure absolute path for images
+            const toAbsolutePath = (path) => {
+                if (!path || path.startsWith('http') || path.startsWith('/')) return path;
+                return '/' + path;
+            };
+
             cardsHTML += `
                 <a href="/${article.path}" class="card block rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
                     <div class="aspect-video flex items-center justify-center overflow-hidden ${hasRealImage ? '' : 'logo-placeholder'}">
                         ${article.cardImage
-                            ? `<img src="${article.cardImage}" alt="${article.title}" class="w-full h-full object-cover">`
+                            ? `<img src="${toAbsolutePath(article.cardImage)}" alt="${article.title}" class="w-full h-full object-cover">`
                             : article.image && !article.image.includes('Pebblous_BM_Orange_RGB.png')
-                            ? `<img src="${article.image}" alt="${article.title}" class="w-full h-full object-cover">`
+                            ? `<img src="${toAbsolutePath(article.image)}" alt="${article.title}" class="w-full h-full object-cover">`
                             : `<img src="${article.image || 'https://blog.pebblous.ai/image/Pebblous_BM_Orange_RGB.png'}" alt="${article.title}" class="default-logo">`
                         }
                     </div>
