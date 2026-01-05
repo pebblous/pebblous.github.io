@@ -1,4 +1,4 @@
-# Pebblous Blog 작업 컨텍스트 (2025-11-10)
+# Pebblous Blog 작업 컨텍스트 (2026-01-05)
 
 ## 📋 프로젝트 개요
 - **사이트**: https://blog.pebblous.ai (GitHub Pages)
@@ -37,7 +37,60 @@
 
 ---
 
-## 🎯 최근 세션에서 완료한 작업 (2025-11-10)
+## 🎯 최근 세션에서 완료한 작업 (2026-01-05)
+
+### 1. **PebblousChart & PebblousTabs 모듈 구현**
+- **파일**: `scripts/common-utils.js`
+- **목적**: Chart.js 차트와 탭 UI를 간편하게 사용할 수 있는 재사용 가능한 모듈
+- **PebblousChart 기능**:
+  - `bar()` - 막대 차트 (가로/세로, 스택)
+  - `doughnut()` / `pie()` - 도넛/파이 차트
+  - `bubble()` - 버블 차트
+  - `line()` - 라인 차트
+  - `radar()` - 레이더 차트
+  - `colors: 'auto'` - 값 크기에 따라 자동 색상 지정
+  - 브랜드 컬러 팔레트 내장
+- **PebblousTabs 기능**:
+  - `data-tabs`, `data-tab-button`, `data-tab-content` 속성 기반
+  - 레거시 패턴 자동 지원 (`.tab-button`, `.tab-content`)
+  - 프로그래매틱 탭 전환 (`switchTo()`)
+- **적용 파일**:
+  - `report/blog-2025-review/index.html` (커밋 차트)
+  - `project/CURK/ontology/palantir-vs-classic-ontology.html` (레이더 차트)
+  - `project/SyntheticData/synthetic-data-pricing-01.html`
+  - `project/DataGreenhouse/data-greenhouse-strategy.html`
+- **문서**: `docs/pebblous-modules.md`
+- **코드 절감**: 65줄 → 10줄 (85% 절감)
+
+### 2. **giscus 테마 동기화 수정**
+- **문제**: 라이트 테마에서도 giscus 댓글이 검게 표시됨
+- **원인**: giscus 테마가 `'dark'`로 하드코딩
+- **해결**:
+  - 초기 로드 시 현재 테마에 맞춰 giscus 테마 설정
+  - 테마 전환 시 giscus iframe에 `postMessage`로 테마 업데이트
+- **파일**: `scripts/common-utils.js` (PebblousTheme.apply, PebblousComments.init)
+
+### 3. **Data Greenhouse Strategy 페이지 수정**
+- **파일**: `project/DataGreenhouse/data-greenhouse-strategy.html`
+- **문제**: 차트와 푸터가 첫 로드에서 표시되지 않음 (리로드 필요)
+- **원인**:
+  - `common-utils.js` 캐싱 문제 (버전 쿼리스트링 없음)
+  - `typeof PebblousPage !== 'undefined'` 체크 누락
+- **해결**:
+  - 버전 쿼리스트링 추가: `?v=20260105`
+  - `typeof` 체크 추가
+  - PebblousTabs 모듈 사용으로 전환
+  - CSS를 `.hidden` 클래스 기반으로 변경
+
+### 4. **PebblousRelatedPosts 이미지 경로 버그 수정**
+- **문제**: 관련글 썸네일 이미지가 표시되지 않음
+- **원인**: `articles.json`의 상대 경로가 현재 페이지 기준으로 해석됨
+- **해결**: `toAbsolutePath()` 헬퍼 함수 추가
+- **파일**: `scripts/common-utils.js`
+
+---
+
+## 🎯 이전 세션에서 완료한 작업 (2025-11-10)
 
 ### 1. **giscus 댓글 시스템 설치**
 - **목적** (상업적):
@@ -334,6 +387,48 @@ const modals = ['aadsModal', 'investorModal', 'orderVsFreedomModal'];
 <script src="/components/footer-loader.js"></script>
 ```
 
+### 5. PebblousChart 모듈
+```javascript
+// 막대 차트 (자동 색상)
+PebblousChart.bar('chartId', {
+    labels: ['A', 'B', 'C'],
+    data: [10, 20, 30],
+    colors: 'auto'  // 값 크기에 따라 자동 색상
+});
+
+// 도넛 차트
+PebblousChart.doughnut('chartId', {
+    labels: ['Cat1', 'Cat2'],
+    data: [60, 40],
+    colors: ['#F86825', '#14B8A6']
+});
+
+// 레이더 차트
+PebblousChart.radar('chartId', {
+    labels: ['항목1', '항목2', '항목3'],
+    datasets: [
+        { label: 'Dataset 1', data: [80, 70, 90] },
+        { label: 'Dataset 2', data: [60, 85, 75] }
+    ]
+});
+```
+
+### 6. PebblousTabs 모듈
+```html
+<div data-tabs>
+    <button data-tab-button="tab1" class="active">Tab 1</button>
+    <button data-tab-button="tab2">Tab 2</button>
+    <div data-tab-content="tab1">Content 1</div>
+    <div data-tab-content="tab2" class="hidden">Content 2</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    PebblousTabs.init();
+});
+</script>
+```
+
 ---
 
 ## 🚀 다른 컴퓨터에서 작업 시작하기
@@ -410,6 +505,15 @@ VSCode에서 Claude Code를 열고 이 컨텍스트 문서를 제공하면 됩�
   - JSON-LD 구조화 데이터
   - **이미지 경로 규칙**: `{경로}/img/{파일명}.png`
   - 재사용 가능한 템플릿
+
+### [pebblous-modules.md](./pebblous-modules.md)
+- **목적**: 재사용 가능한 JavaScript 모듈 가이드
+- **내용**:
+  - PebblousChart: Chart.js 래퍼 (bar, doughnut, pie, bubble, line, radar)
+  - PebblousTabs: 탭 UI 컴포넌트
+  - 브랜드 컬러 팔레트
+  - 트러블슈팅 가이드
+  - 코드 절감 효과
 
 **사용 방법**: 새로운 세션 시작 시 이 문서들을 참고하여 프로젝트 컨텍스트 파악
 

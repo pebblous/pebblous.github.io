@@ -84,6 +84,16 @@ const PebblousTheme = {
                 btn.classList.remove('active');
             }
         });
+
+        // Update giscus theme if present
+        const giscusFrame = document.querySelector('iframe.giscus-frame');
+        if (giscusFrame) {
+            const giscusTheme = themeName === 'light' ? 'light' : 'dark';
+            giscusFrame.contentWindow.postMessage(
+                { giscus: { setConfig: { theme: giscusTheme } } },
+                'https://giscus.app'
+            );
+        }
     }
 };
 
@@ -499,7 +509,10 @@ const PebblousComments = {
         script.setAttribute('data-reactions-enabled', '1');
         script.setAttribute('data-emit-metadata', '1'); // Enable metadata for contact collection
         script.setAttribute('data-input-position', 'top');
-        script.setAttribute('data-theme', 'dark'); // Match Pebblous dark theme
+        // Set giscus theme based on current page theme
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const giscusTheme = currentTheme === 'light' ? 'light' : 'dark';
+        script.setAttribute('data-theme', giscusTheme);
         script.setAttribute('data-lang', 'ko');
         script.setAttribute('data-loading', 'lazy');
         script.crossOrigin = 'anonymous';
