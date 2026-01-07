@@ -98,12 +98,23 @@
 
 #### 제목 계층
 ```html
-<h1 class="text-4xl md:text-5xl font-bold text-white">메인 타이틀</h1>
+<!-- Hero/Main Title: 섹션 제목보다 확실히 크고 굵게 -->
+<h1 class="text-4xl md:text-5xl font-extrabold" style="line-height: 1.3;">메인 타이틀</h1>
+<!-- 또는 common-styles.css 적용 시: -->
+<h1 class="hero-title">메인 타이틀</h1>
+
 <h2 class="text-3xl font-bold text-white">섹션 타이틀</h2>
 <h3 class="text-2xl font-semibold text-slate-200">서브섹션</h3>
 <h4 class="text-xl font-semibold text-slate-200">카드 제목</h4>
 <h5 class="text-lg font-semibold text-white">작은 제목</h5>
 ```
+
+**Hero Title 규칙** (2026-01-07 추가):
+- 모바일: `text-4xl` (2.25rem = 36px)
+- 데스크탑: `text-5xl` (3rem = 48px)
+- `font-extrabold` (800) 사용 - bold(700)보다 한 단계 굵게
+- `line-height: 1.3` - 기본값(1.4~1.5)보다 타이트하게
+- `common-styles.css`에 정의되어 자동 적용됨
 
 #### 본문 텍스트
 ```html
@@ -470,8 +481,44 @@ css/
 
 ---
 
+## CSS 버전 관리 (Cache Busting)
+
+### 문제
+브라우저가 CSS 파일을 캐시하여 수정 사항이 반영되지 않는 문제 발생.
+사용자가 **강제 새로고침(Ctrl+Shift+R)** 해야만 변경 사항이 보임.
+
+### 해결책
+CSS 파일 로드 시 버전 쿼리 스트링 추가:
+
+```html
+<!-- ❌ 잘못된 방식 -->
+<link rel="stylesheet" href="/styles/common-styles.css">
+
+<!-- ✅ 올바른 방식 -->
+<link rel="stylesheet" href="/styles/common-styles.css?v=20260107">
+```
+
+### 규칙
+1. **버전 포맷**: `?v=YYYYMMDD` (수정 날짜)
+2. **CSS 수정 시**: 모든 관련 HTML 파일의 버전 번호 업데이트
+3. **일괄 업데이트**: grep으로 찾아서 sed로 교체
+   ```bash
+   # 현재 버전 확인
+   grep -r "common-styles.css" --include="*.html" | head -5
+
+   # 버전 업데이트 (예: v=20260107 → v=20260108)
+   find . -name "*.html" -exec sed -i '' 's/common-styles.css?v=20260107/common-styles.css?v=20260108/g' {} \;
+   ```
+
+### 적용 대상
+- `/styles/common-styles.css` - 전역 스타일 (모든 페이지)
+- `/scripts/common-utils.js` - 공통 유틸리티 (이미 버전 적용됨)
+
+---
+
 ## 업데이트 로그
 
+- **2026-01-07**: CSS 버전 관리(Cache Busting) 규칙 추가, Hero Title 스타일 규칙 추가
 - **2025-12-28**: articles.json 이미지 경로 규칙 추가, CSS 파일 구조 통합 계획 추가, 관련글 로고 플레이스홀더 스타일 추가
 - **2025-11-08**: 가독성 개선 가이드 추가 (타이포그래피, 목록, 테이블)
 - **2025-11-01**: 초기 생성, ISO 5259 프로젝트 리팩토링 기반
