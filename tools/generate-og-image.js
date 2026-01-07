@@ -270,11 +270,20 @@ async function generateOGImage(title, subtitle, outputPath, category, projectRoo
     }
 }
 
-// Extract info from HTML file
+// Extract info from HTML file with articles.json fallback
 function extractFromHTML(htmlPath, projectRoot) {
     const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
+    const relativePath = path.relative(projectRoot, htmlPath);
 
-    // Extract og:title or <title>
+    // Load articles.json for fallback data
+    let articleData = null;
+    const articlesPath = path.join(projectRoot, 'articles.json');
+    if (fs.existsSync(articlesPath)) {
+        const data = JSON.parse(fs.readFileSync(articlesPath, 'utf-8'));
+        articleData = data.articles?.find(a => a.path === relativePath);
+    }
+
+    // Extract title: og:title → <title> → articles.json → <h1>
     let title = '';
     const ogTitleMatch = htmlContent.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
     if (ogTitleMatch) {
@@ -288,32 +297,48 @@ function extractFromHTML(htmlPath, projectRoot) {
     // Clean up title: remove site name suffixes
     title = title.replace(/\s*[|\-–—]\s*(Pebblous|Data Greenhouse|페블러스).*$/i, '').trim();
 
-    // Extract og:description for subtitle
+    // Fallback to articles.json title
+    if (!title && articleData?.title) {
+        title = articleData.title;
+        console.log(`  [fallback] Using title from articles.json`);
+    }
+
+    // Fallback to first <h1>
+    if (!title) {
+        const h1Match = htmlContent.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+        if (h1Match) {
+            title = h1Match[1].trim();
+            console.log(`  [fallback] Using title from <h1>`);
+        }
+    }
+
+    // Extract subtitle: og:description → meta description → articles.json
     let subtitle = '';
     const ogDescMatch = htmlContent.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
     if (ogDescMatch) {
         subtitle = ogDescMatch[1];
-        // Truncate if too long
-        if (subtitle.length > 80) {
-            subtitle = subtitle.substring(0, 77) + '...';
+    } else {
+        const metaDescMatch = htmlContent.match(/<meta\s+name="description"\s+content="([^"]+)"/i);
+        if (metaDescMatch) {
+            subtitle = metaDescMatch[1];
         }
+    }
+
+    // Fallback to articles.json description
+    if (!subtitle && articleData?.description) {
+        subtitle = articleData.description;
+        console.log(`  [fallback] Using description from articles.json`);
+    }
+
+    // Truncate if too long
+    if (subtitle && subtitle.length > 80) {
+        subtitle = subtitle.substring(0, 77) + '...';
     }
 
     // Determine category from articles.json or path
-    let category = 'tech';
-    const articlesPath = path.join(projectRoot, 'articles.json');
-    if (fs.existsSync(articlesPath)) {
-        const data = JSON.parse(fs.readFileSync(articlesPath, 'utf-8'));
-        const relativePath = path.relative(projectRoot, htmlPath);
+    let category = articleData?.category || 'tech';
 
-        // Search in articles array
-        const found = data.articles?.find(a => a.path === relativePath);
-        if (found && found.category) {
-            category = found.category;
-        }
-    }
-
-    // Fallback: detect from path
+    // Fallback: detect from path if still 'tech'
     if (category === 'tech') {
         if (htmlPath.includes('/report/') || htmlPath.includes('market') || htmlPath.includes('business')) {
             category = 'business';
