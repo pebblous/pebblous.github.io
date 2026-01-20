@@ -65,10 +65,12 @@ function parseArgs(args) {
 }
 
 function generateHTML(title, subtitle, theme, logoPath) {
-    // Split long titles
+    // Handle manual line breaks first
+    let displayTitle = title.replace(/\n/g, '<br>');
+
+    // Split long titles (only if no manual breaks)
     const maxCharsPerLine = 20;
-    let displayTitle = title;
-    if (title.length > maxCharsPerLine) {
+    if (!title.includes('\n') && title.length > maxCharsPerLine) {
         const words = title.split(' ');
         let lines = [];
         let currentLine = '';
