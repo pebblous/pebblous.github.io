@@ -516,8 +516,124 @@ CSS 파일 로드 시 버전 쿼리 스트링 추가:
 
 ---
 
+## 장문 아티클 타이포그래피 가이드 (2026-02-01 추가)
+
+### 원칙: 긴 한글 텍스트의 가독성 최우선
+
+학술적 내용이나 기술 문서처럼 텍스트가 긴 아티클에서는 **충분한 줄간격과 일관된 글꼴 크기**가 핵심입니다.
+
+### 권장 설정 값
+
+#### 본문 (body)
+```css
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 18px;           /* 기본 크기 - 16px보다 큼 */
+    letter-spacing: -0.01em;   /* 한글 자간 미세 조정 */
+}
+```
+
+#### 본문 단락 (main p)
+```css
+main p {
+    line-height: 2.1;          /* 충분한 줄간격 - 눈의 피로 감소 */
+    margin-bottom: 1.25rem;
+}
+```
+
+#### 리스트 항목 (main li)
+```css
+main li {
+    font-size: 1rem;           /* 본문과 동일 - 0.95rem 이하 지양 */
+    line-height: 2.0;          /* 본문에 준하는 줄간격 */
+    margin-bottom: 0.5rem;
+}
+```
+
+#### 카드/박스 내부 텍스트
+```css
+/* 카드 내부도 본문과 동일한 타이포그래피 적용 */
+.key-concept-box,
+.dialectic-card,
+.arch-card {
+    font-size: 1rem;
+    line-height: 2.0;
+}
+
+.key-concept-box p,
+.dialectic-card .card-desc,
+.arch-card .arch-desc {
+    font-size: 1rem;           /* 0.875rem → 1rem */
+    line-height: 2.0;          /* 줄간격 통일 */
+}
+```
+
+### ❌ 피해야 할 패턴
+
+```css
+/* ❌ 글꼴이 너무 작음 */
+.card-desc { font-size: 0.875rem; }  /* 14px - 가독성 저하 */
+.arch-example { font-size: 0.8rem; } /* 12.8px - 너무 작음 */
+
+/* ❌ 줄간격이 너무 좁음 */
+main p { line-height: 1.5; }         /* 한글 장문에 부적합 */
+main li { line-height: 1.5; }
+
+/* ❌ 카드마다 다른 글꼴 크기 */
+.card-a p { font-size: 0.9rem; }
+.card-b p { font-size: 0.85rem; }
+```
+
+### ✅ 권장 패턴
+
+```css
+/* ✅ 모든 카드 텍스트 통일 */
+.key-concept-box p,
+.dialectic-card .card-desc,
+.arch-card .arch-desc,
+.highlight-box p {
+    font-size: 1rem;
+    line-height: 2.0;
+}
+
+/* ✅ 본문 줄간격 충분히 */
+main p {
+    line-height: 2.0 ~ 2.1;    /* 2.0 이상 권장 */
+}
+
+/* ✅ 리스트도 본문 수준 */
+main li {
+    font-size: 1rem;
+    line-height: 2.0;
+}
+```
+
+### 적용 예시
+
+**Before** (가독성 낮음):
+- main p line-height: 1.85
+- main li font-size: 0.95rem, line-height: 1.75
+- .card-desc: 0.875rem
+
+**After** (가독성 높음):
+- main p line-height: 2.1
+- main li font-size: 1rem, line-height: 2.0
+- .card-desc: 1rem, line-height: 2.0
+
+### 체크리스트
+
+장문 아티클 작성 시:
+- [ ] body font-size가 18px인가?
+- [ ] main p line-height가 2.0 이상인가?
+- [ ] main li font-size가 1rem (본문과 동일)인가?
+- [ ] 카드/박스 내부 텍스트가 본문과 동일한 크기인가?
+- [ ] 모든 텍스트 요소의 줄간격이 2.0 이상인가?
+
+---
+
 ## 업데이트 로그
 
+- **2026-02-01**: 장문 아티클 타이포그래피 가이드 추가 (줄간격 2.0+, 카드 텍스트 1rem 통일)
 - **2026-01-07**: CSS 버전 관리(Cache Busting) 규칙 추가, Hero Title 스타일 규칙 추가
 - **2025-12-28**: articles.json 이미지 경로 규칙 추가, CSS 파일 구조 통합 계획 추가, 관련글 로고 플레이스홀더 스타일 추가
 - **2025-11-08**: 가독성 개선 가이드 추가 (타이포그래피, 목록, 테이블)
