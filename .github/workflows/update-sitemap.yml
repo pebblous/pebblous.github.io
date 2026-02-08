@@ -1,4 +1,4 @@
-name: Update Sitemap
+name: Update Sitemap & RSS
 
 on:
   push:
@@ -6,13 +6,14 @@ on:
     paths:
       - 'articles.json'
       - 'generate-sitemap.js'
+      - 'generate-rss.js'
   schedule:
     # Run daily at 00:00 UTC (09:00 KST)
     - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
-  update-sitemap:
+  update-sitemap-and-rss:
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Required for pushing changes
@@ -35,25 +36,53 @@ jobs:
           echo "Sitemap generation completed"
         continue-on-error: false
 
+      - name: Generate RSS feed
+        run: |
+          node generate-rss.js
+          echo "RSS feed generation completed"
+        continue-on-error: false
+
       - name: Check for changes
         id: check_changes
         run: |
-          # Normalize line endings and check for meaningful changes
-          git diff --exit-code --quiet sitemap.xml && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
-          if [ "$(git diff --numstat sitemap.xml | cut -f1)" != "0" ]; then
-            echo "📝 Sitemap has changes"
-            git diff --stat sitemap.xml
+          SITEMAP_CHANGED=false
+          RSS_CHANGED=false
+
+          git diff --exit-code --quiet sitemap.xml || SITEMAP_CHANGED=true
+          git diff --exit-code --quiet rss.xml || RSS_CHANGED=true
+
+          if [ "$SITEMAP_CHANGED" = "true" ] || [ "$RSS_CHANGED" = "true" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
           else
-            echo "✅ No changes in sitemap"
+            echo "changed=false" >> $GITHUB_OUTPUT
           fi
+
+          echo "sitemap_changed=$SITEMAP_CHANGED" >> $GITHUB_OUTPUT
+          echo "rss_changed=$RSS_CHANGED" >> $GITHUB_OUTPUT
+
+          [ "$SITEMAP_CHANGED" = "true" ] && echo "📝 Sitemap has changes" && git diff --stat sitemap.xml || echo "✅ No changes in sitemap"
+          [ "$RSS_CHANGED" = "true" ] && echo "📝 RSS feed has changes" && git diff --stat rss.xml || echo "✅ No changes in RSS feed"
 
       - name: Commit and push if changed
         if: steps.check_changes.outputs.changed == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add sitemap.xml
-          git commit -m "Auto-update sitemap.xml [skip ci]" || exit 0
+
+          COMMIT_FILES=""
+          COMMIT_MSG="Auto-update"
+
+          if [ "${{ steps.check_changes.outputs.sitemap_changed }}" = "true" ]; then
+            git add sitemap.xml
+            COMMIT_FILES="sitemap.xml"
+          fi
+
+          if [ "${{ steps.check_changes.outputs.rss_changed }}" = "true" ]; then
+            git add rss.xml
+            [ -n "$COMMIT_FILES" ] && COMMIT_FILES="$COMMIT_FILES, rss.xml" || COMMIT_FILES="rss.xml"
+          fi
+
+          git commit -m "Auto-update $COMMIT_FILES [skip ci]" || exit 0
 
           # Retry push up to 3 times in case of conflicts
           for i in {1..3}; do
@@ -61,7 +90,7 @@ jobs:
           done
 
       - name: Submit sitemap to Google
-        if: steps.check_changes.outputs.changed == 'true'
+        if: steps.check_changes.outputs.sitemap_changed == 'true'
         run: |
           echo "📡 Notifying Google about sitemap update..."
           RESPONSE=$(curl -s -w "\n%{http_code}" "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml")
@@ -76,11 +105,12 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "## Sitemap Update Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Changed**: ${{ steps.check_changes.outputs.changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "## Sitemap & RSS Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Sitemap changed**: ${{ steps.check_changes.outputs.sitemap_changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **RSS changed**: ${{ steps.check_changes.outputs.rss_changed }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.check_changes.outputs.changed }}" == "true" ]; then
-            echo "- **Status**: ✅ Sitemap updated and pushed" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: ✅ Updated and pushed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- **Status**: ℹ️ No changes needed" >> $GITHUB_STEP_SUMMARY
           fi
