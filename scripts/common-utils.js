@@ -361,6 +361,36 @@ const PebblousUI = {
     },
 
     /**
+     * Calculate and display reading time
+     * Korean reading speed: ~400 characters/minute
+     * @param {string} contentSelector - Selector for main content (default: 'main')
+     */
+    initReadingTime(contentSelector = 'main') {
+        const readingTimeEl = document.getElementById('reading-time');
+        if (!readingTimeEl) return;
+
+        const content = document.querySelector(contentSelector);
+        if (!content) return;
+
+        // Get text content, excluding scripts and styles
+        const text = content.innerText || content.textContent;
+
+        // Count characters (for Korean) and words (for English)
+        const koreanChars = (text.match(/[\uAC00-\uD7AF]/g) || []).length;
+        const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
+
+        // Korean: ~400 chars/min, English: ~200 words/min
+        const koreanMinutes = koreanChars / 400;
+        const englishMinutes = englishWords / 200;
+        const totalMinutes = Math.ceil(koreanMinutes + englishMinutes);
+
+        // Minimum 1 minute
+        const minutes = Math.max(1, totalMinutes);
+
+        readingTimeEl.textContent = `읽는 시간: 약 ${minutes}분`;
+    },
+
+    /**
      * Initialize all UI features
      */
     initAll() {
@@ -368,6 +398,7 @@ const PebblousUI = {
         this.initTOC();
         this.initMobileTOC();
         this.initFadeInCards();
+        this.initReadingTime();
     }
 };
 
