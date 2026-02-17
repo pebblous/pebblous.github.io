@@ -535,9 +535,11 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 - **인덱싱 속도**: 24시간 내
 - **OG 이미지 표시율**: > 95%
 
-### 4. Sitemap 자동 생성 시스템
+### 4. Sitemap & RSS 자동 생성 시스템
 - ✅ `sitemap.xml`: articles.json 기반 자동 생성
-- ✅ 매일 00:00 UTC 자동 업데이트
+- ✅ `rss.xml`: articles.json 기반 자동 생성
+- ✅ 매일 00:00 UTC 자동 업데이트 (sitemap + RSS 동시)
+- ✅ `articles.json` 변경 시 자동 업데이트
 - ✅ Google 자동 ping
 
 ---
@@ -592,6 +594,7 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 ### 배포 후
 - [ ] Google Search Console URL 제출
 - [ ] Sitemap 자동 갱신 확인
+- [ ] RSS 자동 갱신 확인
 - [ ] SNS 게시
 - [ ] 1주일 후 검색 순위 확인
 
@@ -637,6 +640,15 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 ---
 
 ## 📝 최근 업데이트 로그
+
+### 2026-02-08: RSS 자동 생성 시스템 구축
+- ✅ **문제 발견**: sitemap.xml은 GitHub Actions로 자동 업데이트되지만, rss.xml은 수동 실행 필요
+- ✅ **해결**: `update-sitemap.yml` 워크플로우를 `Update Sitemap & RSS`로 확장
+  - `generate-rss.js`도 동시 실행
+  - sitemap.xml과 rss.xml 변경 여부를 개별 감지
+  - 변경된 파일만 선택적 커밋
+- ✅ **트리거**: `articles.json`, `generate-sitemap.js`, `generate-rss.js` 변경 시 + 매일 00:00 UTC
+- ✅ **rss.xml 최신화**: 67개 published 아티클 반영
 
 ### 2025-12-08: FAQPage Schema 중복 오류 방지 가이드 추가
 - ⚠️ **문제 발견**: `config.faqs` + `<head>` JSON-LD FAQPage 동시 사용 시 Google Search Console에서 "FAQPage 중복" 오류 발생
