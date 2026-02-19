@@ -126,3 +126,18 @@
 - **검증**: Core Layout(19/19), Responsive(6/6), Dynamic JS(10/10), Bracket Notation(29/29) 모두 PASS
 - **결과**: CDN ~300KB JS → 빌드 CSS 69KB (gzip 11.4KB), 브라우저 JIT 컴파일 제거
 - **주의**: 새 Tailwind 클래스 추가 시 `npm run build:css` 재빌드 필요
+
+### 2026-02-19: P3-2 — JS 모듈 분리 ✅
+- **문제**: index.html에 1,300줄+ 인라인 `<script>` 블록 (테마, 모달, 기사 렌더링, 검색, 통계, 파티클 등 11개 기능 혼재)
+- **수정**:
+  - 7개 외부 모듈 파일로 분리 (`scripts/index/`)
+    - `theme.js`: 테마 시스템 (동기 로드, FOUC 방지)
+    - `modals.js`: Modal Factory + openModal/closeModal API
+    - `articles.js`: 기사 렌더링 + 카드 인터랙션
+    - `search.js`: 검색, 카테고리 타이틀, 키워드 필터
+    - `stats.js`: 통계 모달
+    - `particles.js`: 파티클 캔버스 애니메이션
+    - `init.js`: 오케스트레이터 (모바일 메뉴, Hero, 헤더 스크롤, SW, loadArticles)
+  - `window.IndexPage` 네임스페이스로 모듈 간 통신
+  - `theme.js`만 `<head>`에서 동기 로드, 나머지 `defer`로 순서 보장
+- **결과**: index.html 1,806줄 → 493줄 (인라인 JS 완전 제거), 7개 캐시 가능한 외부 JS 파일
