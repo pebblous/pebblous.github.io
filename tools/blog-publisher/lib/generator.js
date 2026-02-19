@@ -128,7 +128,7 @@ function generateStandardHTML(parsed, sections, config) {
 
     <!-- Styles -->
     <link rel="stylesheet" href="/styles/common-styles.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/styles/tailwind-build.css">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
     <style>
