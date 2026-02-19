@@ -451,6 +451,22 @@ const PebblousPage = {
      * Initialize page with config
      * @param {object} config - Page configuration
      */
+    /**
+     * Initialize collapsible summary toggle box
+     * HTML pattern: #summaryToggle (click target), #summaryContent (collapsible), #toggleIcon (arrow)
+     */
+    initSummaryToggle() {
+        const toggle = document.getElementById('summaryToggle');
+        const content = document.getElementById('summaryContent');
+        const icon = document.getElementById('toggleIcon');
+        if (toggle && content && icon) {
+            toggle.addEventListener('click', () => {
+                content.classList.toggle('collapsed');
+                icon.classList.toggle('collapsed');
+            });
+        }
+    },
+
     async init(config) {
         // Load components first
         await PebblousComponents.loadAll();
@@ -463,6 +479,9 @@ const PebblousPage = {
 
         // Initialize UI features
         PebblousUI.initAll();
+
+        // Initialize summary toggle (collapsible summary box)
+        this.initSummaryToggle();
 
         // SEO: Inject Article Schema
         PebblousSchema.injectArticleSchema(config);

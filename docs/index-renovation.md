@@ -113,3 +113,16 @@
   - `openModal()`: 최초 열 때 `data-src` → `src` 설정하여 지연 로딩
   - `closeModal()`: `src = ''`로 iframe 언로드하여 메모리 해제
 - **결과**: 페이지 초기 로딩 시 iframe 요청 0건, 모달 열 때만 해당 콘텐츠 로드
+
+### 2026-02-18: P2-2 — Tailwind CDN → Build CSS ✅
+- **문제**: 모든 HTML 파일이 `<script src="https://cdn.tailwindcss.com">` 로딩 (~300KB JS, 브라우저 JIT 컴파일)
+- **수정**:
+  - `tailwind.config.js` 업데이트: navy-900/800/700, pebblous-orange-text 색상 추가
+  - `npx tailwindcss -i styles/input.css -o styles/tailwind-build.css --minify` 빌드
+  - 77개 파일(82개 참조)에서 CDN `<script>` → `<link href="/styles/tailwind-build.css">` 교체
+  - 2개 파일의 인라인 `tailwind.config = {...}` 블록 제거 (InvestKorea, palantir-vs-classic-ontology)
+  - `package.json` 빌드 스크립트 출력 경로 업데이트
+  - 템플릿(`scripts/templates/`, `tools/blog-publisher/`) 동일 교체
+- **검증**: Core Layout(19/19), Responsive(6/6), Dynamic JS(10/10), Bracket Notation(29/29) 모두 PASS
+- **결과**: CDN ~300KB JS → 빌드 CSS 69KB (gzip 11.4KB), 브라우저 JIT 컴파일 제거
+- **주의**: 새 Tailwind 클래스 추가 시 `npm run build:css` 재빌드 필요
