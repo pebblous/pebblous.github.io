@@ -127,29 +127,144 @@ function initCardInteractions(cards) {
             }, { passive: true });
         }
 
-        // Default logo hover functionality
-        const defaultLogo = card.querySelector('.default-logo');
-        if (defaultLogo) {
-            const grayLogo = defaultLogo.dataset.grayLogo;
-            const orangeLogo = defaultLogo.dataset.orangeLogo;
-
-            defaultLogo.style.width = '50%';
-            defaultLogo.style.height = 'auto';
-            defaultLogo.style.objectFit = 'contain';
-
-            if (grayLogo && orangeLogo) {
-                card.addEventListener('mouseenter', function onLogoHover() {
-                    defaultLogo.src = orangeLogo;
-                    defaultLogo.style.width = '66.666%';
-                });
-
-                card.addEventListener('mouseleave', function onLogoLeave() {
-                    defaultLogo.src = grayLogo;
-                    defaultLogo.style.width = '50%';
-                });
-            }
+        // Card particle canvas
+        const particleCanvas = card.querySelector('.card-particles');
+        if (particleCanvas) {
+            initCardParticle(card, particleCanvas);
         }
     });
+}
+
+// Card Particle System — "데이터의 우주"
+function initCardParticle(card, canvas) {
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) return;
+
+    let width, height;
+    const dpr = window.devicePixelRatio || 1;
+    const particleCount = 22;
+    const maxDistance = 75;
+    const particles = [];
+    let isHovering = false;
+    let hoverIntensity = 0; // 0→1 smooth lerp
+    let animationId = null;
+
+    function sizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        if (width === 0 || height === 0) return false;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return true;
+    }
+
+    function createParticles() {
+        particles.length = 0;
+        for (let i = 0; i < particleCount; i++) {
+            const isTeal = i >= particleCount * 0.7;
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 0.15,
+                vy: (Math.random() - 0.5) * 0.15,
+                baseRadius: Math.random() * 2.5 + 0.5,
+                phase: Math.random() * Math.PI * 2,
+                color: isTeal
+                    ? { r: 20, g: 184, b: 166 }
+                    : { r: 248, g: 104, b: 37 }
+            });
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        const lineAlpha = 0.03 + hoverIntensity * 0.42;
+        const particleAlpha = 0.06 + hoverIntensity * 0.7;
+
+        // Connection lines
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < maxDistance) {
+                    const alpha = (1 - dist / maxDistance) * lineAlpha;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.strokeStyle = `rgba(248, 104, 37, ${alpha})`;
+                    ctx.lineWidth = 0.5 + hoverIntensity * 0.8;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Particles with gentle breathing
+        const time = Date.now() * 0.001;
+        particles.forEach(p => {
+            const breathe = 1 + Math.sin(time * 1.2 + p.phase) * 0.12 * hoverIntensity;
+            const r = p.baseRadius * (1 + hoverIntensity * 0.5) * breathe;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${particleAlpha})`;
+            ctx.fill();
+        });
+    }
+
+    function update() {
+        // Smooth hover transition (~1s fade)
+        const target = isHovering ? 1 : 0;
+        hoverIntensity += (target - hoverIntensity) * 0.035;
+        if (Math.abs(hoverIntensity - target) < 0.002) hoverIntensity = target;
+
+        particles.forEach(p => {
+            // Gentle random drift
+            p.vx += (Math.random() - 0.5) * 0.012;
+            p.vy += (Math.random() - 0.5) * 0.012;
+            p.vx *= 0.99;
+            p.vy *= 0.99;
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+        });
+    }
+
+    function animate() {
+        update();
+        draw();
+
+        // Auto-stop when fully settled
+        if (!isHovering && hoverIntensity < 0.002) {
+            animationId = null;
+            draw();
+            return;
+        }
+
+        animationId = requestAnimationFrame(animate);
+    }
+
+    card.addEventListener('mouseenter', () => {
+        isHovering = true;
+        if (!animationId) animate();
+    });
+
+    card.addEventListener('mouseleave', () => {
+        isHovering = false;
+    });
+
+    // Initialize
+    if (sizeCanvas()) {
+        createParticles();
+        draw();
+    }
 }
 
 // Article Rendering
@@ -191,8 +306,6 @@ function renderArticles(containerId, articles, category) {
                 : `${baseUrl}/${displayImage}`;
         }
 
-        const isPebblousLogo = displayImage && (displayImage.includes('Pebblous_BM_Orange_RGB') || displayImage.includes('Pebblous_BM_Black_RGB'));
-
         const featuredBadge = isFeatured
             ? `<span class="featured-badge">FEATURED</span>`
             : '';
@@ -202,41 +315,31 @@ function renderArticles(containerId, articles, category) {
             article.imageAnimated.toLowerCase().endsWith('.m4v')
         );
 
-        const imageTag = displayImage
-            ? isPebblousLogo
-                ? `<div class="relative w-full aspect-[1200/630] overflow-hidden bg-slate-800 flex items-end justify-end p-4">
+        const isArt = article.category === 'art';
+
+        const imageTag = isAnimatedVideo
+            ? `<div class="relative w-full aspect-[1200/630] overflow-hidden bg-slate-900 group/img">
+                <video class="w-full h-full object-cover rounded-md"
+                       data-animated muted loop playsinline preload="metadata">
+                    <source src="${article.imageAnimated}" type="${article.imageAnimated.toLowerCase().endsWith('.m4v') ? 'video/x-m4v' : 'video/mp4'}">
+                </video>
+               </div>`
+            : (article.imageAnimated && displayImage)
+                ? `<div class="relative w-full aspect-[1200/630] overflow-hidden bg-slate-900 group/img">
                     <img src="${displayImage}" alt="${article.title}"
-                         class="default-logo"
-                         style="transform-origin: right bottom; transition: width 800ms cubic-bezier(0.4, 0.0, 0.2, 1), transform 800ms cubic-bezier(0.4, 0.0, 0.2, 1);"
-                         data-gray-logo="https://pebblous.github.io/image/Pebblous_BM_Black_RGB.png"
-                         data-orange-logo="https://pebblous.github.io/image/Pebblous_BM_Orange_RGB.png"
+                         class="w-full h-full object-cover rounded-md"
+                         data-static="${displayImage}" data-animated="${article.imageAnimated}"
                          loading="lazy">
                    </div>`
-                : isAnimatedVideo
+                : (isArt && displayImage)
                     ? `<div class="relative w-full aspect-[1200/630] overflow-hidden bg-slate-900 group/img">
-                        <video class="w-full h-full object-cover rounded-md"
-                               data-animated
-                               muted
-                               loop
-                               playsinline
-                               preload="metadata">
-                            <source src="${article.imageAnimated}" type="${article.imageAnimated.toLowerCase().endsWith('.m4v') ? 'video/x-m4v' : 'video/mp4'}">
-                        </video>
-                       </div>`
-                    : `<div class="relative w-full aspect-[1200/630] overflow-hidden bg-slate-900 group/img">
                         <img src="${displayImage}" alt="${article.title}"
                              class="w-full h-full object-cover rounded-md"
-                             ${article.imageAnimated ? `data-static="${displayImage}" data-animated="${article.imageAnimated}"` : ''}
                              loading="lazy">
                        </div>`
-            : `<div class="relative w-full aspect-[1200/630] overflow-hidden bg-slate-800 flex items-end justify-end p-4">
-                <img src="https://pebblous.github.io/image/Pebblous_BM_Black_RGB.png" alt="Pebblous Logo"
-                     class="default-logo"
-                     style="transform-origin: right bottom; transition: width 800ms cubic-bezier(0.4, 0.0, 0.2, 1), transform 800ms cubic-bezier(0.4, 0.0, 0.2, 1);"
-                     data-gray-logo="https://pebblous.github.io/image/Pebblous_BM_Black_RGB.png"
-                     data-orange-logo="https://pebblous.github.io/image/Pebblous_BM_Orange_RGB.png"
-                     loading="lazy">
-               </div>`;
+                    : `<div class="relative w-full aspect-[1200/630] overflow-hidden card-particle-area">
+                        <canvas class="card-particles"></canvas>
+                       </div>`;
 
         const tagsHtml = article.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
         const tagsScrollHtml = `
@@ -363,7 +466,7 @@ function renderArticles(containerId, articles, category) {
             if (hasLess) {
                 const showLessBtn = document.createElement('button');
                 showLessBtn.id = `showless-${category}`;
-                showLessBtn.className = 'show-less-btn px-4 sm:px-8 py-3 text-white text-sm sm:text-base font-semibold rounded-md transition-colors whitespace-nowrap';
+                showLessBtn.className = 'show-less-btn px-4 sm:px-8 py-3 text-sm sm:text-base font-semibold rounded-md transition-colors whitespace-nowrap';
                 showLessBtn.textContent = '적게 보기';
                 showLessBtn.setAttribute('type', 'button');
 
@@ -431,7 +534,7 @@ function renderArticles(containerId, articles, category) {
 
         const loadMoreBtn = document.createElement('button');
         loadMoreBtn.id = `loadmore-${category}`;
-        loadMoreBtn.className = 'px-4 sm:px-8 py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-700 text-white text-sm sm:text-base font-semibold rounded-md transition-colors whitespace-nowrap';
+        loadMoreBtn.className = 'load-more-btn px-4 sm:px-8 py-3 text-sm sm:text-base font-semibold rounded-md transition-colors whitespace-nowrap';
         const remaining = articles.length - initialLimit;
         loadMoreBtn.textContent = `더 보기 (${remaining})`;
         loadMoreBtn.setAttribute('type', 'button');
