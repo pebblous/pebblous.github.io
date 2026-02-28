@@ -121,6 +121,24 @@ New HTML article
 - **Never use italic for Korean text** — use `font-weight: 600` instead
 - Headings: `<h2>` for sections, `<h3>` for subsections
 
+### Article Page Structure
+Every article/report page should include an **Executive Summary** section placed immediately after the hero (or PDF viewer, if present) and before Section 1. This is a standard component:
+
+```html
+<!-- TOC entry -->
+<li><a href="#executive-summary" class="...themeable-toc-link">Executive Summary</a></li>
+
+<!-- Section (between hero/PDF viewer and Section 1) -->
+<section id="executive-summary" class="mb-16 fade-in-card">
+    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+    <div class="key-insight">
+        <p class="themeable-text leading-relaxed"><!-- 3 paragraphs summarizing the article --></p>
+    </div>
+</section>
+```
+
+The `key-insight` box provides the teal-bordered highlight. Content should be 3 paragraphs: (1) core problem + solution, (2) technical approach + evidence, (3) business/regulatory urgency.
+
 ### Content Writing
 - **Text-First, Visual-Second**: Always place explanation paragraph before any chart/card/diagram
 - Source MD documents are the narrative backbone — preserve original sentences
