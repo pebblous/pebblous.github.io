@@ -387,7 +387,8 @@ const PebblousUI = {
         // Minimum 1 minute
         const minutes = Math.max(1, totalMinutes);
 
-        readingTimeEl.textContent = `읽는 시간: 약 ${minutes}분`;
+        const isEn = document.documentElement.lang === 'en';
+        readingTimeEl.textContent = isEn ? `Reading time: ~${minutes} min` : `읽는 시간: 약 ${minutes}분`;
     },
 
     /**
@@ -411,6 +412,8 @@ const PebblousPage = {
      * @param {object} config - Page configuration object
      */
     applyConfig(config) {
+        const isEn = document.documentElement.lang === 'en';
+
         // Set title
         if (config.mainTitle && config.subtitle) {
             const h1Element = document.getElementById('page-h1-title');
@@ -426,14 +429,14 @@ const PebblousPage = {
         if (config.publishDate) {
             const publishDate = document.getElementById('publish-date');
             if (publishDate) {
-                publishDate.textContent = `발행일: ${config.publishDate}`;
+                publishDate.textContent = isEn ? `Published: ${config.publishDate}` : `발행일: ${config.publishDate}`;
             }
         }
 
         if (config.publisher) {
             const publisher = document.getElementById('publisher');
             if (publisher) {
-                publisher.textContent = `기획: ${config.publisher}`;
+                publisher.textContent = isEn ? `By: ${config.publisher}` : `기획: ${config.publisher}`;
             }
         }
 
