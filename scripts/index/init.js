@@ -107,13 +107,32 @@ async function loadArticles() {
         const latestArticles = [...allArticles]
             .sort((a, b) => new Date(b.date) - new Date(a.date))
             .slice(0, 4);
+
+        // Store categorized articles for view toggle re-rendering
+        window.IndexPage._categorizedArticles = {
+            featured: latestArticles,
+            art: artArticles,
+            tech: techArticles,
+            business: businessArticles,
+            story: storyArticles
+        };
+
         window.IndexPage.renderArticles('featured-articles', latestArticles, 'featured');
 
         // Render category articles
-        window.IndexPage.renderArticles('art-articles', artArticles);
-        window.IndexPage.renderArticles('tech-articles', techArticles);
-        window.IndexPage.renderArticles('business-articles', businessArticles);
-        window.IndexPage.renderArticles('story-articles', storyArticles);
+        window.IndexPage.renderArticles('art-articles', artArticles, 'art');
+        window.IndexPage.renderArticles('tech-articles', techArticles, 'tech');
+        window.IndexPage.renderArticles('business-articles', businessArticles, 'business');
+        window.IndexPage.renderArticles('story-articles', storyArticles, 'story');
+
+        // Wire view toggle buttons
+        const savedMode = localStorage.getItem('pebblous-view-mode') || 'card';
+        window.IndexPage.updateToggleButtons(savedMode);
+
+        const cardBtn = document.getElementById('view-card-btn');
+        const listBtn = document.getElementById('view-list-btn');
+        if (cardBtn) cardBtn.addEventListener('click', () => window.IndexPage.setViewMode('card'));
+        if (listBtn) listBtn.addEventListener('click', () => window.IndexPage.setViewMode('list'));
 
         // Setup search
         window.IndexPage.setupSearch();

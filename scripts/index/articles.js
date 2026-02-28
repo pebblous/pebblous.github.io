@@ -4,6 +4,11 @@
 
 window.IndexPage = window.IndexPage || {};
 
+// View mode state
+let currentViewMode = localStorage.getItem('pebblous-view-mode') || 'card';
+
+const GRID_CLASS = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8';
+
 // Card Interaction Initialization (Optimized)
 function initCardInteractions(cards) {
     const fadeInObserver = new IntersectionObserver((entries) => {
@@ -267,6 +272,28 @@ function initCardParticle(card, canvas) {
     }
 }
 
+// List Item Rendering
+function renderListItem(article, index) {
+    const isExternal = article.external || false;
+    const hasModal = article.hasModal || false;
+    const isFeatured = article.featured || false;
+
+    const tagsHtml = article.tags.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('');
+    const delay = index < 20 ? `style="animation-delay: ${index * 0.03}s;"` : '';
+    const dateClass = isFeatured ? 'list-date featured' : 'list-date';
+
+    const inner = `
+        <span class="${dateClass}">${article.date}</span>
+        <h3 class="list-title">${article.title}</h3>
+        <div class="list-tags">${tagsHtml}</div>
+    `;
+
+    if (hasModal) {
+        return `<div class="list-item fade-in" ${delay} onclick="openModal('${article.modalId}')" role="button" tabindex="0">${inner}</div>`;
+    }
+    return `<a href="${article.path}" ${isExternal ? 'target="_blank" rel="noopener noreferrer"' : ''} class="list-item fade-in" ${delay}>${inner}</a>`;
+}
+
 // Article Rendering
 function renderArticles(containerId, articles, category) {
     const container = document.getElementById(containerId);
@@ -274,6 +301,31 @@ function renderArticles(containerId, articles, category) {
     if (articles.length === 0) {
         container.innerHTML = '<p class="text-slate-400 text-center py-10">게시된 기사가 없습니다.</p>';
         return;
+    }
+
+    // Featured section always card mode; others follow toggle
+    const effectiveMode = (category === 'featured') ? 'card' : currentViewMode;
+
+    // List mode: simple rendering, all items
+    if (effectiveMode === 'list') {
+        container.className = 'list-view-container';
+        container.innerHTML = articles.map((a, i) => renderListItem(a, i)).join('');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        container.querySelectorAll('.list-item').forEach(el => observer.observe(el));
+        return;
+    }
+
+    // Card mode: restore grid classes (skip featured — it has its own grid)
+    if (category !== 'featured') {
+        container.className = GRID_CLASS;
     }
 
     const getColumnsPerRow = () => {
@@ -554,6 +606,34 @@ function renderArticles(containerId, articles, category) {
     }
 }
 
+// View Mode Toggle
+function setViewMode(mode) {
+    currentViewMode = mode;
+    localStorage.setItem('pebblous-view-mode', mode);
+
+    const cats = window.IndexPage._categorizedArticles;
+    if (!cats) return;
+
+    renderArticles('featured-articles', cats.featured, 'featured');
+    renderArticles('tech-articles', cats.tech, 'tech');
+    renderArticles('business-articles', cats.business, 'business');
+    renderArticles('art-articles', cats.art, 'art');
+    renderArticles('story-articles', cats.story, 'story');
+
+    updateToggleButtons(mode);
+}
+
+function updateToggleButtons(mode) {
+    const cardBtn = document.getElementById('view-card-btn');
+    const listBtn = document.getElementById('view-list-btn');
+    if (!cardBtn || !listBtn) return;
+
+    cardBtn.classList.toggle('active', mode === 'card');
+    listBtn.classList.toggle('active', mode === 'list');
+}
+
 // Export to namespace
 window.IndexPage.renderArticles = renderArticles;
 window.IndexPage.initCardInteractions = initCardInteractions;
+window.IndexPage.setViewMode = setViewMode;
+window.IndexPage.updateToggleButtons = updateToggleButtons;
