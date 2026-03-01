@@ -124,9 +124,14 @@ New HTML article
 ## Key Conventions
 
 ### Layout
-- Flex layout: 240px sticky TOC sidebar + max-w-[800px] main content
-- Container max-w-[1400px], responsive breakpoint at lg (1024px)
-- Reference implementation: `project/DataClinic/data-quality.html`
+- **Reference implementation**: `report/blog-2026/index.html`
+- Container: `max-w-[1400px]` + `px-4 sm:px-6 lg:px-8`
+- Flex: `lg:flex lg:gap-8 lg:justify-center lg:items-start`
+- TOC sidebar: `lg:w-[240px] lg:shrink-0 sticky top-20 self-start`
+- Main content: `max-w-[800px] px-4 sm:px-6`
+- Header: `#header-inner` max-width 1136px (CSS, lg only) — aligns logo with TOC, Contact with content edge
+- TOC vertical alignment: JS `alignTOC()` in `common-utils.js` — "목차" starts at first section (Executive Summary)
+- Responsive breakpoint at lg (1024px): TOC hidden below lg
 
 ### SEO (4-Layer)
 1. `<meta>` tags (title, description, canonical)

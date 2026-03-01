@@ -527,6 +527,38 @@ const PebblousPage = {
                 ]
             });
         }
+
+        // Align TOC top with first content section (after hero)
+        this.alignTOC();
+    },
+
+    /**
+     * Align desktop TOC so "목차" starts at the same Y as the first section after hero
+     */
+    alignTOC() {
+        const tocNav = document.querySelector('#toc-links')?.closest('nav');
+        if (!tocNav) return;
+
+        // Find the first section after hero (executive-summary or first section[id])
+        const firstSection = document.querySelector('main section[id]');
+        if (!firstSection) return;
+
+        // Get hero header element (the <header> inside <main>)
+        const hero = document.querySelector('main > header');
+        if (!hero) return;
+
+        // Calculate: how far from flex container top to firstSection
+        const flexContainer = tocNav.parentElement;
+        if (!flexContainer) return;
+
+        const flexTop = flexContainer.getBoundingClientRect().top;
+        const sectionTop = firstSection.getBoundingClientRect().top;
+        const offset = sectionTop - flexTop;
+
+        // Apply margin-top to TOC nav so "목차" aligns with firstSection
+        if (offset > 0) {
+            tocNav.style.marginTop = offset + 'px';
+        }
     }
 };
 
