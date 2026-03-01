@@ -105,7 +105,21 @@ New HTML article
   → git push → GitHub Pages auto-deploy
 ```
 
-**articles.json schema**: `title`, `url` (relative), `date`, `category`, `featured` (bool), `description`, `image` (relative path, no leading `/`), `keywords[]`
+**articles.json structure** — MUST be a wrapper object, NEVER a bare array:
+```json
+{
+  "categories": {
+    "art":      { "name": "Data Art",      "description": "...", "icon": "🎨" },
+    "tech":     { "name": "Tech Insights", "description": "...", "icon": "⚙️" },
+    "business": { "name": "Business",      "description": "...", "icon": "💼" },
+    "story":    { "name": "Data Stories",   "description": "...", "icon": "📊" }
+  },
+  "articles": [ ... ]
+}
+```
+- **CRITICAL**: `init.js` reads `data.categories` and `data.articles`. A bare array `[...]` breaks the index page.
+- When editing `articles.json`, always preserve the `{ "categories": {...}, "articles": [...] }` wrapper.
+- Article fields: `id`, `title`, `path` (relative), `date`, `category`, `published` (bool), `featured` (bool), `description`, `image` (relative, no leading `/`), `tags[]`
 
 ## Key Conventions
 
