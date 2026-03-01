@@ -6,6 +6,7 @@ window.IndexPage = window.IndexPage || {};
 
 // Shared state
 window.IndexPage._allArticles = [];
+window.IndexPage._unfilteredArticles = [];
 window.IndexPage._categories = {};
 
 // ============================================================
@@ -75,6 +76,77 @@ window.addEventListener('DOMContentLoaded', () => {
 // Load Articles & Initialize
 // ============================================================
 
+// ============================================================
+// Language Filter
+// ============================================================
+
+function applyLanguageFilter(lang) {
+    const all = window.IndexPage._unfilteredArticles;
+    if (!all || all.length === 0) return;
+
+    // Filter by language
+    const filtered = all.filter(function(a) {
+        if (!a.language) return true;
+        return a.language === lang;
+    });
+
+    window.IndexPage._allArticles = filtered;
+
+    // Sort function: featured first, then by date
+    var sortArticles = function(articles) {
+        return articles.sort(function(a, b) {
+            if (a.featured && !b.featured) return -1;
+            if (!a.featured && b.featured) return 1;
+            return new Date(b.date) - new Date(a.date);
+        });
+    };
+
+    var artArticles = sortArticles(filtered.filter(function(a) { return a.category === 'art'; }));
+    var techArticles = sortArticles(filtered.filter(function(a) { return a.category === 'tech'; }));
+    var businessArticles = sortArticles(filtered.filter(function(a) { return a.category === 'business'; }));
+    var storyArticles = sortArticles(filtered.filter(function(a) { return a.category === 'story'; }));
+
+    var latestArticles = filtered.slice().sort(function(a, b) {
+        return new Date(b.date) - new Date(a.date);
+    }).slice(0, 4);
+
+    window.IndexPage._categorizedArticles = {
+        featured: latestArticles,
+        art: artArticles,
+        tech: techArticles,
+        business: businessArticles,
+        story: storyArticles
+    };
+
+    window.IndexPage.renderArticles('featured-articles', latestArticles, 'featured');
+    window.IndexPage.renderArticles('art-articles', artArticles, 'art');
+    window.IndexPage.renderArticles('tech-articles', techArticles, 'tech');
+    window.IndexPage.renderArticles('business-articles', businessArticles, 'business');
+    window.IndexPage.renderArticles('story-articles', storyArticles, 'story');
+
+    // Update stats modal
+    if (window.IndexPage.setupStatsModal) {
+        window.IndexPage.setupStatsModal(artArticles, techArticles, businessArticles, storyArticles);
+    }
+
+    // Re-trigger search if active
+    var searchInput = document.getElementById('search-input');
+    if (searchInput && searchInput.value.trim().length >= 2) {
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // Apply translations to any dynamically rendered elements
+    if (window.IndexPage.applyTranslations) {
+        window.IndexPage.applyTranslations();
+    }
+}
+
+window.IndexPage.applyLanguageFilter = applyLanguageFilter;
+
+// ============================================================
+// Load Articles & Initialize
+// ============================================================
+
 async function loadArticles() {
     try {
         const response = await fetch('articles.json', { cache: 'no-store' });
@@ -82,48 +154,16 @@ async function loadArticles() {
 
         // Store in shared state
         window.IndexPage._categories = data.categories;
-        window.IndexPage._allArticles = data.articles.filter(a => a.published);
-
-        const allArticles = window.IndexPage._allArticles;
+        window.IndexPage._unfilteredArticles = data.articles.filter(a => a.published);
 
         // Update category titles
         window.IndexPage.updateCategoryTitles();
 
-        // Sort function: featured first, then by date
-        const sortArticles = (articles) => {
-            return articles.sort((a, b) => {
-                if (a.featured && !b.featured) return -1;
-                if (!a.featured && b.featured) return 1;
-                return new Date(b.date) - new Date(a.date);
-            });
-        };
-
-        const artArticles = sortArticles(allArticles.filter(a => a.category === 'art'));
-        const techArticles = sortArticles(allArticles.filter(a => a.category === 'tech'));
-        const businessArticles = sortArticles(allArticles.filter(a => a.category === 'business'));
-        const storyArticles = sortArticles(allArticles.filter(a => a.category === 'story'));
-
-        // Render Latest section
-        const latestArticles = [...allArticles]
-            .sort((a, b) => new Date(b.date) - new Date(a.date))
-            .slice(0, 4);
-
-        // Store categorized articles for view toggle re-rendering
-        window.IndexPage._categorizedArticles = {
-            featured: latestArticles,
-            art: artArticles,
-            tech: techArticles,
-            business: businessArticles,
-            story: storyArticles
-        };
-
-        window.IndexPage.renderArticles('featured-articles', latestArticles, 'featured');
-
-        // Render category articles
-        window.IndexPage.renderArticles('art-articles', artArticles, 'art');
-        window.IndexPage.renderArticles('tech-articles', techArticles, 'tech');
-        window.IndexPage.renderArticles('business-articles', businessArticles, 'business');
-        window.IndexPage.renderArticles('story-articles', storyArticles, 'story');
+        // Apply language filter (handles categorization + rendering)
+        const currentLang = window.IndexPage.getCurrentLanguage
+            ? window.IndexPage.getCurrentLanguage()
+            : 'ko';
+        applyLanguageFilter(currentLang);
 
         // Wire view toggle buttons
         const savedMode = localStorage.getItem('pebblous-view-mode') || 'card';
@@ -136,13 +176,11 @@ async function loadArticles() {
 
         // Setup search
         window.IndexPage.setupSearch();
-
-        // Setup statistics modal
-        window.IndexPage.setupStatsModal(artArticles, techArticles, businessArticles, storyArticles);
     } catch (error) {
         console.error('Failed to load articles:', error);
         ['art-articles', 'tech-articles', 'business-articles', 'story-articles'].forEach(id => {
-            document.getElementById(id).innerHTML = '<p class="text-slate-400 text-center py-10">기사를 불러오는데 실패했습니다.</p>';
+            var t = window.IndexPage.t || function(k) { return k; };
+            document.getElementById(id).innerHTML = '<p class="text-slate-400 text-center py-10">' + t('articles.loadError') + '</p>';
         });
     }
 }

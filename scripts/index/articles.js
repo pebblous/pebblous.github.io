@@ -186,8 +186,8 @@ function initCardParticle(card, canvas) {
     function draw() {
         ctx.clearRect(0, 0, width, height);
 
-        const lineAlpha = 0.03 + hoverIntensity * 0.42;
-        const particleAlpha = 0.06 + hoverIntensity * 0.7;
+        const lineAlpha = 0.12 + hoverIntensity * 0.33;
+        const particleAlpha = 0.18 + hoverIntensity * 0.58;
 
         // Connection lines
         for (let i = 0; i < particles.length; i++) {
@@ -299,7 +299,8 @@ function renderArticles(containerId, articles, category) {
     const container = document.getElementById(containerId);
 
     if (articles.length === 0) {
-        container.innerHTML = '<p class="text-slate-400 text-center py-10">게시된 기사가 없습니다.</p>';
+        var t = window.IndexPage.t || function(k) { return k; };
+        container.innerHTML = '<p class="text-slate-400 text-center py-10">' + t('articles.empty') + '</p>';
         return;
     }
 
@@ -358,8 +359,9 @@ function renderArticles(containerId, articles, category) {
                 : `${baseUrl}/${displayImage}`;
         }
 
+        var t = window.IndexPage.t || function(k) { return k; };
         const featuredBadge = isFeatured
-            ? `<span class="featured-badge">FEATURED</span>`
+            ? `<span class="featured-badge">${t('articles.featured')}</span>`
             : '';
 
         const isAnimatedVideo = article.imageAnimated && (
@@ -519,7 +521,8 @@ function renderArticles(containerId, articles, category) {
                 const showLessBtn = document.createElement('button');
                 showLessBtn.id = `showless-${category}`;
                 showLessBtn.className = 'show-less-btn px-4 sm:px-8 py-3 text-sm sm:text-base font-semibold rounded-md transition-colors whitespace-nowrap';
-                showLessBtn.textContent = '적게 보기';
+                var t = window.IndexPage.t || function(k) { return k; };
+                showLessBtn.textContent = t('articles.showLess');
                 showLessBtn.setAttribute('type', 'button');
 
                 showLessBtn.addEventListener('click', function(e) {
@@ -540,8 +543,9 @@ function renderArticles(containerId, articles, category) {
                 const loadMoreBtn = document.createElement('button');
                 loadMoreBtn.id = `loadmore-${category}`;
                 loadMoreBtn.className = 'load-more-btn px-4 sm:px-8 py-3 text-sm sm:text-base font-semibold rounded-md transition-colors whitespace-nowrap';
+                var t2 = window.IndexPage.t || function(k) { return k; };
                 const remaining = articles.length - currentDisplayCount;
-                loadMoreBtn.textContent = `더 보기 (${remaining})`;
+                loadMoreBtn.textContent = t2('articles.showMore') + ` (${remaining})`;
                 loadMoreBtn.setAttribute('type', 'button');
 
                 loadMoreBtn.addEventListener('click', function(e) {
@@ -587,8 +591,9 @@ function renderArticles(containerId, articles, category) {
         const loadMoreBtn = document.createElement('button');
         loadMoreBtn.id = `loadmore-${category}`;
         loadMoreBtn.className = 'load-more-btn px-4 sm:px-8 py-3 text-sm sm:text-base font-semibold rounded-md transition-colors whitespace-nowrap';
+        var tInit = window.IndexPage.t || function(k) { return k; };
         const remaining = articles.length - initialLimit;
-        loadMoreBtn.textContent = `더 보기 (${remaining})`;
+        loadMoreBtn.textContent = tInit('articles.showMore') + ` (${remaining})`;
         loadMoreBtn.setAttribute('type', 'button');
 
         loadMoreBtn.addEventListener('click', function(e) {

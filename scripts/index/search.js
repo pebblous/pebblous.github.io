@@ -107,7 +107,8 @@ function performSearch(query, resultsContainer, countElement, resultsSection) {
     countElement.textContent = results.length;
 
     if (results.length === 0) {
-        resultsContainer.innerHTML = '<p class="no-results text-center py-6">검색 결과가 없습니다.</p>';
+        var t = window.IndexPage.t || function(k) { return k; };
+        resultsContainer.innerHTML = '<p class="no-results text-center py-6">' + t('search.noResults') + '</p>';
         resultsSection.classList.add('has-results');
         return;
     }
@@ -145,7 +146,7 @@ function performSearch(query, resultsContainer, countElement, resultsSection) {
                         <p class="text-sm">${highlightText(article.description)}</p>
                     </div>
                     <a href="${article.path}" ${article.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="flex-shrink-0 accent-bg text-white text-sm font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity whitespace-nowrap">
-                        자세히 보기 →
+                        ${(window.IndexPage.t || function(k){return k;})('search.readMore')}
                     </a>
                 </div>
             </div>

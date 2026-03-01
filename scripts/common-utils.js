@@ -848,29 +848,30 @@ const PebblousBreadcrumbs = {
         const categoryNames = {
             'art': 'Data Art',
             'tech': 'Tech Insights',
+            'business': 'Business',
             'story': 'Data Stories'
         };
         return categoryNames[category] || category;
     },
 
     /**
-     * Render breadcrumb navigation
+     * Render breadcrumb navigation as hero-badge style pill
      * @param {string} category - Article category
      * @param {string} title - Article title
      * @returns {HTMLElement} Breadcrumb navigation element
      */
     renderBreadcrumbs(category, title) {
         const nav = document.createElement('nav');
-        nav.className = 'mb-6';
+        nav.className = 'mb-4';
         nav.setAttribute('aria-label', 'Breadcrumb');
 
         const categoryName = this.getCategoryName(category);
 
         nav.innerHTML = `
-            <div class="flex items-center gap-2 text-sm themeable-text-muted">
-                <a href="/" class="hover:text-orange-500 transition-colors">🏠 Home</a>
-                <span>/</span>
-                <a href="/#${category}" class="hover:text-orange-500 transition-colors">${categoryName}</a>
+            <div class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest px-5 py-2 rounded-full" style="color: var(--accent-color, #F86825); background: rgba(248, 104, 37, 0.12);">
+                <a href="/" class="hover:opacity-70 transition-opacity" style="color: inherit; text-decoration: none;">Home</a>
+                <span style="opacity: 0.5;">/</span>
+                <a href="/#${category}" class="hover:opacity-70 transition-opacity" style="color: inherit; text-decoration: none;">${categoryName}</a>
             </div>
         `;
 

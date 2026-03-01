@@ -55,7 +55,18 @@ PebblousPage.init({
 This auto-loads: Header, Footer, BreadcrumbList Schema, FAQ Schema (JSON-LD), Related Posts, Hero Section (dynamic `<h1>`).
 
 **Critical rules:**
-- Hero `<h1 id="page-h1-title">` must be **empty** in HTML — filled dynamically by `PebblousPage.applyConfig()`
+- Hero `<h1 id="page-h1-title">` must exist in HTML — needed for breadcrumbs injection point
+- **Breadcrumbs = Hero badge**: `PebblousBreadcrumbs` renders a hero-badge-style pill (`Home / Category`) with navigation links + Google BreadcrumbList Schema. Do NOT add static `<span class="hero-badge">` — breadcrumbs replace it.
+- **Hero meta info** (below subtitle): 2-line compact format, centered, `text-sm themeable-muted`:
+  ```html
+  <!-- Korean -->
+  <p class="text-sm themeable-muted">2026.01 · (주)페블러스 데이터 커뮤니케이션팀</p>
+  <p class="text-sm themeable-muted mt-1">읽는 시간: ~15분 · <a href="../en/" class="text-orange-400 hover:text-orange-300 transition-colors">English</a></p>
+  <!-- English -->
+  <p class="text-sm themeable-muted">2026.01 · Pebblous Data Communication Team</p>
+  <p class="text-sm themeable-muted mt-1">Reading time: ~15 min · <a href="../ko/" class="text-orange-400 hover:text-orange-300 transition-colors">한국어</a></p>
+  ```
+  Line 1: `YYYY.MM · team name` / Line 2: `reading time · language switch link`
 - FAQ: use ONLY `config.faqs` — NEVER add FAQPage JSON-LD in `<head>` (causes Google duplication errors)
 - Always use `/scripts/common-utils.js` — never `/js/article-page.js` (deprecated)
 
