@@ -21,8 +21,16 @@ function updateCategoryTitles() {
         </svg>`
     };
 
-    const categories = window.IndexPage._categories;
-    if (!categories) return;
+    const defaultCategories = {
+        tech: { name: 'Tech Insights', description: '기술 혁신과 제품 소개' },
+        business: { name: 'Business', description: '투자, 특허, 시장 분석, 정책 전략' },
+        art: { name: 'Data Art', description: '데이터를 예술로 표현하는 작품들' },
+        story: { name: 'Data Stories', description: '튜토리얼, 가이드, 사례 연구' }
+    };
+
+    const categories = (window.IndexPage._categories && Object.keys(window.IndexPage._categories).length > 0)
+        ? window.IndexPage._categories
+        : defaultCategories;
 
     Object.keys(categories).forEach(categoryKey => {
         const category = categories[categoryKey];
