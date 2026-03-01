@@ -471,20 +471,28 @@ const PebblousPage = {
     },
 
     async init(config) {
-        // Load components first
-        await PebblousComponents.loadAll();
+        // Apply default theme immediately (before component fetch) to prevent FOUC
+        const defaultTheme = config.defaultTheme || 'dark';
+        document.documentElement.setAttribute('data-theme', defaultTheme);
 
-        // Initialize theme after header is loaded
-        PebblousTheme.init(config.defaultTheme || 'dark');
+        // Initialize DOM-ready UI features immediately (no component dependency)
+        PebblousUI.initFadeInCards();
+        PebblousUI.initScrollToTop();
+        PebblousUI.initTOC();
+        PebblousUI.initMobileTOC();
+        PebblousUI.initReadingTime();
 
-        // Apply page config
+        // Apply page config (hero section, metadata)
         this.applyConfig(config);
-
-        // Initialize UI features
-        PebblousUI.initAll();
 
         // Initialize summary toggle (collapsible summary box)
         this.initSummaryToggle();
+
+        // Load components (header, footer, share buttons) — async fetch
+        await PebblousComponents.loadAll();
+
+        // Initialize theme switcher UI (needs header to be loaded for #theme-switcher)
+        PebblousTheme.init(defaultTheme);
 
         // SEO: Inject Article Schema
         PebblousSchema.injectArticleSchema(config);

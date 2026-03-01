@@ -35,15 +35,22 @@ Every article page uses a single entry point in `scripts/common-utils.js`:
 
 ```javascript
 PebblousPage.init({
-  title: "페이지 제목",
-  subtitle: "부제목",
-  category: "tech",           // tech | business | art | story
+  mainTitle: "메인 제목",          // REQUIRED — h1에 렌더링 (3rem, bold)
+  subtitle: "부제목",              // REQUIRED — h1 아래 렌더링 (1.875rem, normal)
+  pageTitle: "제목 | 페블러스",    // <title> 태그용
+  category: "tech",               // tech | business | art | story
   publishDate: "2026-02-28",
-  faqs: [                     // FAQ Schema (JSON-LD only, auto-injected)
+  publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+  defaultTheme: "light",          // light | dark | beige
+  articlePath: "project/.../index.html",
+  tags: ["tag1", "tag2"],
+  faqs: [                         // FAQ Schema (JSON-LD only, auto-injected)
     { question: "Q?", answer: "A." }
   ]
 });
 ```
+
+**Key fields:** `mainTitle` + `subtitle` must both exist for Hero h1, Breadcrumbs, Article Schema to render. Do NOT use `title` — the field name is `mainTitle`.
 
 This auto-loads: Header, Footer, BreadcrumbList Schema, FAQ Schema (JSON-LD), Related Posts, Hero Section (dynamic `<h1>`).
 
