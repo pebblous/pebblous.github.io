@@ -196,6 +196,7 @@ The `key-insight` box provides the teal-bordered highlight. Content should be 3 
 ## Detailed Documentation
 
 For deeper reference, see `docs/`:
+- `docs/blog-html-checklist.md` — **Blog HTML 작성 전/중/후 검증 체크리스트** (필독)
 - `docs/blog-creation-workflow.md` — 10-step blog post creation process
 - `docs/seo.md` — Full SEO checklist and keyword strategy
 - `docs/style.md` — UX/UI design rules and CSS conventions
@@ -206,9 +207,33 @@ For deeper reference, see `docs/`:
 - `docs/sns-writing-tone.md` — SNS "Warm Expert Tone" with data-farming metaphors
 - `docs/index-renovation.md` — Index page renovation history (P0-P3)
 
-## Changelog (Post-Action Logging)
+## Skill Workflow Chain
 
-After completing **any task that modifies blog content** (whether via a skill or ad-hoc), append a JSON line to `history/changelog.jsonl`:
+콘텐츠 작업 후 반드시 아래 순서를 따른다. 스킬을 직접 호출하거나 수동으로 동일한 단계를 실행한다.
+
+### Content Task → Post-Task Chain
+
+```
+1. 콘텐츠 작업 (new-post, bilingual, text-reinforce, fix, feature 등)
+   ↓
+2. /seo-check [수정된 HTML 경로]   ← SEO 4계층 검증
+   ↓
+3. /changelog                       ← 변경 이력 기록
+   ↓
+4. /publish                         ← Tailwind 빌드 + commit 준비
+   ↓
+5. /commit                          ← 커밋 + push
+```
+
+**핵심 규칙:**
+- `/seo-check`은 새 페이지 생성 또는 메타태그 변경 시 **반드시** 실행
+- `/changelog`은 모든 콘텐츠 변경 후 **반드시** 실행 (수동 echo 대신 스킬 사용 권장)
+- `/publish`는 Tailwind 클래스 변경이 없어도 실행하면 안전 (빌드 + diff 확인)
+- 단순 텍스트 수정은 2-3을 생략하고 4-5만 해도 됨
+
+### Changelog (Post-Action Logging)
+
+After completing **any task that modifies blog content** (whether via a skill or ad-hoc), use `/changelog` skill or manually append a JSON line to `history/changelog.jsonl`:
 
 ```bash
 echo '{"timestamp":"...","post":"...","action":"...","summary":"..."}' >> history/changelog.jsonl
