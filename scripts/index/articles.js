@@ -1,5 +1,6 @@
 // ============================================================
-// Article Rendering + Card Interactions
+// Article Rendering — Index Page
+// Delegates card rendering/interactions to PebblousCardRenderer
 // ============================================================
 
 window.IndexPage = window.IndexPage || {};
@@ -7,140 +8,7 @@ window.IndexPage = window.IndexPage || {};
 // View mode state
 let currentViewMode = localStorage.getItem('pebblous-view-mode') || 'card';
 
-const GRID_CLASS = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8';
-
-// Card Interaction Initialization (Optimized)
-function initCardInteractions(cards) {
-    const fadeInObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting && !entry.target.classList.contains('visible')) {
-                entry.target.classList.add('visible');
-                fadeInObserver.unobserve(entry.target);
-            }
-        });
-    }, {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    });
-
-    cards.forEach(card => {
-        if (card.classList.contains('fade-in')) {
-            fadeInObserver.observe(card);
-        }
-
-        // Tags scroll functionality
-        const container = card.querySelector('.tags-container');
-        const scroll = card.querySelector('.tags-scroll');
-
-        if (container && scroll) {
-            const containerWidth = container.offsetWidth;
-            const scrollWidth = scroll.scrollWidth;
-            const scrollDistance = scrollWidth - containerWidth;
-
-            if (scrollDistance > 0) {
-                container.classList.add('scrollable');
-
-                const scrollSpeed = 50;
-                const scrollDuration = (scrollDistance / scrollSpeed) * 1000;
-
-                card.addEventListener('mouseenter', function onMouseEnter() {
-                    scroll.style.transform = `translateX(-${scrollDistance}px)`;
-                    scroll.style.transition = `transform ${scrollDuration}ms linear`;
-
-                    setTimeout(() => {
-                        if (scroll.style.transform.includes('-')) {
-                            container.classList.add('scrolled');
-                        }
-                    }, 300);
-                });
-
-                card.addEventListener('mouseleave', function onMouseLeave() {
-                    scroll.style.transform = 'translateX(0)';
-                    scroll.style.transition = `transform ${scrollDuration * 0.7}ms linear`;
-
-                    setTimeout(() => {
-                        container.classList.remove('scrolled');
-                    }, 300);
-                });
-            }
-        }
-
-        // Video hover functionality
-        const video = card.querySelector('video[data-animated]');
-
-        if (video) {
-            card.addEventListener('mouseenter', function onMouseEnter() {
-                video.play().catch(err => {
-                    console.log('Video autoplay prevented:', err);
-                });
-            });
-
-            card.addEventListener('mouseleave', function onMouseLeave() {
-                video.pause();
-                video.currentTime = 0;
-            });
-
-            card.addEventListener('touchstart', function onTouchStart(e) {
-                card.classList.add('touch-active');
-                video.play().catch(err => {
-                    console.log('Video autoplay prevented:', err);
-                });
-            }, { passive: true });
-
-            card.addEventListener('touchend', function onTouchEnd() {
-                card.classList.remove('touch-active');
-                video.pause();
-                video.currentTime = 0;
-            }, { passive: true });
-        }
-
-        // Image hover swap functionality
-        const img = card.querySelector('img[data-static][data-animated]');
-
-        if (img) {
-            const staticSrc = img.dataset.static;
-            const animatedSrc = img.dataset.animated;
-
-            let animatedLoaded = false;
-
-            const preloadImg = new Image();
-            preloadImg.onload = () => { animatedLoaded = true; };
-            preloadImg.src = animatedSrc;
-
-            card.addEventListener('mouseenter', function onMouseEnter() {
-                if (!animatedLoaded) return;
-                img.src = animatedSrc;
-            });
-
-            card.addEventListener('mouseleave', function onMouseLeave() {
-                if (img.src.includes(animatedSrc)) {
-                    img.src = staticSrc;
-                }
-            });
-
-            card.addEventListener('touchstart', function onTouchStart(e) {
-                if (!animatedLoaded) return;
-                card.classList.add('touch-active');
-                img.src = animatedSrc;
-            }, { passive: true });
-
-            card.addEventListener('touchend', function onTouchEnd() {
-                card.classList.remove('touch-active');
-                if (img.src.includes(animatedSrc)) {
-                    img.src = staticSrc;
-                }
-            }, { passive: true });
-        }
-
-        // Card particle canvas
-        const particleCanvas = card.querySelector('.card-particles');
-        if (particleCanvas) {
-            initCardParticle(card, particleCanvas);
-        }
-    });
-}
-
-// initCardParticle — moved to /scripts/card-particles.js (shared)
+const CR = window.PebblousCardRenderer;
 
 // List Item Rendering
 function renderListItem(article, index) {
@@ -196,148 +64,15 @@ function renderArticles(containerId, articles, category) {
 
     // Card mode: restore grid classes (skip featured — it has its own grid)
     if (category !== 'featured') {
-        container.className = GRID_CLASS;
+        container.className = CR.GRID_CLASS;
     }
 
-    const getColumnsPerRow = () => {
-        const width = window.innerWidth;
-        if (width < 640) return 1;
-        if (width < 1024) return 2;
-        if (width < 1280) return 3;
-        return 4;
-    };
-
-    const initialColumnsPerRow = getColumnsPerRow();
+    const initialColumnsPerRow = CR.getColumnsPerRow();
     const initialLimit = initialColumnsPerRow * 2;
     let currentDisplayCount = initialLimit;
     let previousDisplayCount = 0;
 
-    const renderCard = (article, startIndex) => {
-        const isExternal = article.external || false;
-        const hasModal = article.hasModal || false;
-        const isFeatured = article.featured || false;
-
-        const hasCardImage = article.cardImage && article.cardImage.trim() !== '';
-        let displayImage = hasCardImage ? article.cardImage : article.image;
-
-        if (displayImage && !displayImage.startsWith('http')) {
-            const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                ? window.location.origin
-                : 'https://blog.pebblous.ai';
-            displayImage = displayImage.startsWith('/')
-                ? `${baseUrl}${displayImage}`
-                : `${baseUrl}/${displayImage}`;
-        }
-
-        var t = window.IndexPage.t || function(k) { return k; };
-        const featuredBadge = isFeatured
-            ? `<span class="featured-badge">${t('articles.featured')}</span>`
-            : '';
-
-        const isAnimatedVideo = article.imageAnimated && (
-            article.imageAnimated.toLowerCase().endsWith('.mp4') ||
-            article.imageAnimated.toLowerCase().endsWith('.m4v')
-        );
-
-        const isArt = article.category === 'art';
-
-        const imageTag = isAnimatedVideo
-            ? `<div class="relative w-full aspect-[1200/630] overflow-hidden bg-slate-900 group/img">
-                <video class="w-full h-full object-cover rounded-md"
-                       data-animated muted loop playsinline preload="metadata">
-                    <source src="${article.imageAnimated}" type="${article.imageAnimated.toLowerCase().endsWith('.m4v') ? 'video/x-m4v' : 'video/mp4'}">
-                </video>
-               </div>`
-            : (article.imageAnimated && displayImage)
-                ? `<div class="relative w-full aspect-[1200/630] overflow-hidden bg-slate-900 group/img">
-                    <img src="${displayImage}" alt="${article.title}"
-                         class="w-full h-full object-cover rounded-md"
-                         data-static="${displayImage}" data-animated="${article.imageAnimated}"
-                         loading="lazy">
-                   </div>`
-                : (isArt && displayImage)
-                    ? `<div class="relative w-full aspect-[1200/630] overflow-hidden bg-slate-900 group/img">
-                        <img src="${displayImage}" alt="${article.title}"
-                             class="w-full h-full object-cover rounded-md"
-                             loading="lazy">
-                       </div>`
-                    : `<div class="relative w-full aspect-[1200/630] overflow-hidden card-particle-area">
-                        <canvas class="card-particles"></canvas>
-                       </div>`;
-
-        const tagsHtml = article.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
-        const tagsScrollHtml = `
-            <div class="tags-container mb-3">
-                <div class="tags-scroll">
-                    ${tagsHtml}
-                </div>
-            </div>
-        `;
-
-        const animationDelay = startIndex < initialLimit ? `style="animation-delay: ${startIndex * 0.1}s;"` : '';
-
-        if (isExternal) {
-            return `
-                <a href="${article.path}" target="_blank" rel="noopener noreferrer" class="card rounded-lg overflow-hidden group flex flex-col fade-in" ${animationDelay}>
-                    <div class="p-6 flex-grow">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-xs text-slate-500">${article.date}</span>
-                            ${featuredBadge}
-                        </div>
-                        ${tagsScrollHtml}
-                        <h3 class="text-2xl font-bold text-white group-hover:accent-color transition-colors">${article.title}</h3>
-                        <p class="mt-3 text-sm text-slate-400">${article.description}</p>
-                    </div>
-                    ${imageTag}
-                </a>
-            `;
-        } else if (hasModal) {
-            return `
-                <div class="card rounded-lg overflow-hidden flex flex-col group fade-in" ${animationDelay}>
-                    <div class="p-6 flex-grow">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-xs text-slate-500">${article.date}</span>
-                            ${featuredBadge}
-                        </div>
-                        ${tagsScrollHtml}
-                        <h3 class="text-2xl font-bold text-white mb-3">${article.title}</h3>
-                        <p class="text-sm text-slate-400">${article.description}</p>
-                    </div>
-                    <div class="pl-6 pr-3 pb-0 flex justify-end">
-                        <div class="icon-panel">
-                            <button onclick="openModal('${article.modalId}')" class="icon-button">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                            </button>
-                            <a href="${article.path}" target="_blank" rel="noopener noreferrer" class="icon-button">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                    ${imageTag}
-                </div>
-            `;
-        } else {
-            return `
-                <a href="${article.path}" class="card rounded-lg overflow-hidden group flex flex-col fade-in" ${animationDelay}>
-                    <div class="p-6 flex-grow">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-xs text-slate-500">${article.date}</span>
-                            ${featuredBadge}
-                        </div>
-                        ${tagsScrollHtml}
-                        <h3 class="text-2xl font-bold text-white group-hover:accent-color transition-colors">${article.title}</h3>
-                        <p class="mt-3 text-sm text-slate-400">${article.description}</p>
-                    </div>
-                    ${imageTag}
-                </a>
-            `;
-        }
-    };
+    var t = window.IndexPage.t || function(k) { return k; };
 
     const updateDisplay = (isIncreasing) => {
         const existingButtons = container.querySelectorAll('.col-span-full');
@@ -351,12 +86,12 @@ function renderArticles(containerId, articles, category) {
 
             newArticles.forEach((article, index) => {
                 const cardDiv = document.createElement('div');
-                cardDiv.innerHTML = renderCard(article, previousDisplayCount + index);
+                cardDiv.innerHTML = CR.renderCard(article, previousDisplayCount + index, { initialLimit: initialLimit, t: t });
                 container.appendChild(cardDiv.firstElementChild);
             });
 
             const newCards = Array.from(container.querySelectorAll('.card')).slice(-newArticles.length);
-            initCardInteractions(newCards);
+            CR.initCardInteractions(newCards);
         } else {
             const cardsToKeep = currentDisplayCount;
             const allCards = container.querySelectorAll('.card, .card-placeholder');
@@ -369,16 +104,7 @@ function renderArticles(containerId, articles, category) {
             oldPlaceholders.forEach(p => p.remove());
         }
 
-        const currentCards = container.querySelectorAll('.card').length;
-        const columnsPerRow = getColumnsPerRow();
-        const cardsInLastRow = currentCards % columnsPerRow;
-        const emptySlots = cardsInLastRow === 0 ? 0 : columnsPerRow - cardsInLastRow;
-
-        for (let i = 0; i < emptySlots; i++) {
-            const placeholder = document.createElement('div');
-            placeholder.className = 'card-placeholder';
-            container.appendChild(placeholder);
-        }
+        CR.fillPlaceholders(container);
 
         const hasMore = currentDisplayCount < articles.length;
         const hasLess = currentDisplayCount > initialLimit;
@@ -391,7 +117,6 @@ function renderArticles(containerId, articles, category) {
                 const showLessBtn = document.createElement('button');
                 showLessBtn.id = `showless-${category}`;
                 showLessBtn.className = 'show-less-btn px-4 sm:px-8 py-3 text-sm sm:text-base font-semibold rounded-md transition-colors whitespace-nowrap';
-                var t = window.IndexPage.t || function(k) { return k; };
                 showLessBtn.textContent = t('articles.showLess');
                 showLessBtn.setAttribute('type', 'button');
 
@@ -399,7 +124,7 @@ function renderArticles(containerId, articles, category) {
                     e.preventDefault();
                     e.stopPropagation();
                     previousDisplayCount = currentDisplayCount;
-                    const columnsPerRow = getColumnsPerRow();
+                    const columnsPerRow = CR.getColumnsPerRow();
                     const decrement = columnsPerRow * 2;
                     currentDisplayCount = Math.max(currentDisplayCount - decrement, initialLimit);
                     updateDisplay(false);
@@ -413,16 +138,15 @@ function renderArticles(containerId, articles, category) {
                 const loadMoreBtn = document.createElement('button');
                 loadMoreBtn.id = `loadmore-${category}`;
                 loadMoreBtn.className = 'load-more-btn px-4 sm:px-8 py-3 text-sm sm:text-base font-semibold rounded-md transition-colors whitespace-nowrap';
-                var t2 = window.IndexPage.t || function(k) { return k; };
                 const remaining = articles.length - currentDisplayCount;
-                loadMoreBtn.textContent = t2('articles.showMore') + ` (${remaining})`;
+                loadMoreBtn.textContent = t('articles.showMore') + ` (${remaining})`;
                 loadMoreBtn.setAttribute('type', 'button');
 
                 loadMoreBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     previousDisplayCount = currentDisplayCount;
-                    const columnsPerRow = getColumnsPerRow();
+                    const columnsPerRow = CR.getColumnsPerRow();
                     const increment = columnsPerRow * 2;
                     currentDisplayCount = Math.min(currentDisplayCount + increment, articles.length);
                     updateDisplay(true);
@@ -439,20 +163,13 @@ function renderArticles(containerId, articles, category) {
 
     // Initial render
     const initialArticles = articles.slice(0, initialLimit);
-    const cardsHtml = initialArticles.map((article, index) => renderCard(article, index)).join('');
+    const cardsHtml = initialArticles.map((article, index) => CR.renderCard(article, index, { initialLimit: initialLimit, t: t })).join('');
     container.innerHTML = cardsHtml;
 
-    const columnsPerRow = getColumnsPerRow();
-    const cardsInLastRow = initialLimit % columnsPerRow;
-    const emptySlots = cardsInLastRow === 0 ? 0 : columnsPerRow - cardsInLastRow;
-    for (let i = 0; i < emptySlots; i++) {
-        const placeholder = document.createElement('div');
-        placeholder.className = 'card-placeholder';
-        container.appendChild(placeholder);
-    }
+    CR.fillPlaceholders(container);
 
     const initialCards = container.querySelectorAll('.card');
-    initCardInteractions(Array.from(initialCards));
+    CR.initCardInteractions(Array.from(initialCards));
 
     if (articles.length > initialLimit) {
         const loadMoreWrapper = document.createElement('div');
@@ -461,16 +178,15 @@ function renderArticles(containerId, articles, category) {
         const loadMoreBtn = document.createElement('button');
         loadMoreBtn.id = `loadmore-${category}`;
         loadMoreBtn.className = 'load-more-btn px-4 sm:px-8 py-3 text-sm sm:text-base font-semibold rounded-md transition-colors whitespace-nowrap';
-        var tInit = window.IndexPage.t || function(k) { return k; };
         const remaining = articles.length - initialLimit;
-        loadMoreBtn.textContent = tInit('articles.showMore') + ` (${remaining})`;
+        loadMoreBtn.textContent = t('articles.showMore') + ` (${remaining})`;
         loadMoreBtn.setAttribute('type', 'button');
 
         loadMoreBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             previousDisplayCount = currentDisplayCount;
-            const columnsPerRow = getColumnsPerRow();
+            const columnsPerRow = CR.getColumnsPerRow();
             const increment = columnsPerRow * 2;
             currentDisplayCount = Math.min(currentDisplayCount + increment, articles.length);
             updateDisplay(true);
@@ -509,6 +225,6 @@ function updateToggleButtons(mode) {
 
 // Export to namespace
 window.IndexPage.renderArticles = renderArticles;
-window.IndexPage.initCardInteractions = initCardInteractions;
+window.IndexPage.initCardInteractions = CR.initCardInteractions;
 window.IndexPage.setViewMode = setViewMode;
 window.IndexPage.updateToggleButtons = updateToggleButtons;
