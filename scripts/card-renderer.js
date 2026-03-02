@@ -150,10 +150,16 @@ window.PebblousCardRenderer = (function() {
      * @param {Function} [options.t]            - Translation fn (default: identity)
      * @param {string} [options.cardType]       - 'link' | 'external' | 'modal' (default: auto-detect)
      */
+    // Default translations when no t() function is provided
+    var DEFAULT_LABELS = {
+        'articles.featured': 'Featured',
+        'articles.locked': 'Password required'
+    };
+
     function renderCard(article, index, options) {
         options = options || {};
         var initialLimit = options.initialLimit || 8;
-        var t = options.t || function(k) { return k; };
+        var t = options.t || function(k) { return DEFAULT_LABELS[k] || k; };
 
         var isFeatured = article.featured || false;
         var isExternal = article.external || false;
@@ -196,20 +202,38 @@ window.PebblousCardRenderer = (function() {
                 + '<canvas class="card-particles"></canvas></div>';
         }
 
+        var isLocked = article.locked || false;
+
         var tagsHtml = (article.tags || []).map(function(tag) { return '<span class="tag">' + tag + '</span>'; }).join('');
         var tagsScrollHtml = '<div class="tags-container mb-3"><div class="tags-scroll">' + tagsHtml + '</div></div>';
         var animationDelay = index < initialLimit ? 'style="animation-delay: ' + (index * 0.1) + 's;"' : '';
         var href = article.path ? (article.path.startsWith('/') ? article.path : '/' + article.path) : '#';
+
+        // Lock badge for password-protected posts
+        var lockBadge = isLocked
+            ? '<span class="card-lock-badge" title="' + t('articles.locked') + '">'
+                + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14">'
+                + '<path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clip-rule="evenodd" />'
+                + '</svg></span>'
+            : '';
+
+        // Append lock notice to description for locked posts
+        var descText = article.description || '';
+        if (isLocked && descText.indexOf('암호') === -1 && descText.indexOf('password') === -1 && descText.indexOf('Password') === -1) {
+            var lockNotice = (article.language === 'en') ? ' (Password required)' : ' (암호 필요)';
+            descText += lockNotice;
+        }
 
         // Content block (shared across all types)
         var contentBlock = '<div class="p-6 flex-grow">'
             + '<div class="flex items-center gap-2 mb-2">'
             + '<span class="text-xs text-slate-500">' + article.date + '</span>'
             + featuredBadge
+            + lockBadge
             + '</div>'
             + tagsScrollHtml
             + '<h3 class="text-2xl font-bold text-white group-hover:accent-color transition-colors">' + article.title + '</h3>'
-            + '<p class="mt-3 text-sm text-slate-400">' + article.description + '</p>'
+            + '<p class="mt-3 text-sm text-slate-400">' + descText + '</p>'
             + '</div>';
 
         if (cardType === 'modal') {
