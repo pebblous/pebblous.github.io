@@ -422,6 +422,16 @@ const PebblousPage = {
                     <span class="block text-4xl md:text-5xl font-bold themeable-heading" style="font-size: 3rem !important; font-weight: 700 !important; line-height: 1.3 !important;">${config.mainTitle}</span>
                     <span class="block mt-4 text-2xl md:text-3xl themeable-text-muted font-normal" style="font-size: 1.875rem !important; font-weight: 400 !important; margin-top: 1rem !important; line-height: 1.5 !important;">${config.subtitle}</span>
                 `;
+
+                // Ensure hero container has internal padding
+                const heroContainer = h1Element.closest('header');
+                if (heroContainer && !heroContainer.classList.contains('hero-section')) {
+                    heroContainer.style.paddingTop = heroContainer.style.paddingTop || '2.5rem';
+                    heroContainer.style.paddingBottom = heroContainer.style.paddingBottom || '2rem';
+                    heroContainer.style.paddingLeft = heroContainer.style.paddingLeft || '1.5rem';
+                    heroContainer.style.paddingRight = heroContainer.style.paddingRight || '1.5rem';
+                    heroContainer.style.borderRadius = heroContainer.style.borderRadius || '0.75rem';
+                }
             }
         }
 
