@@ -58,6 +58,7 @@ window.PebblousHubCards = (function() {
         var containerId = options.containerId;
         var pathFilter = options.pathFilter;
         var extraPaths = options.extraPaths || [];
+        var excludePaths = options.excludePaths || [];
         var language = options.language || 'ko';
         var maxCards = options.maxCards || 0;
 
@@ -67,8 +68,9 @@ window.PebblousHubCards = (function() {
 
             var articles = data.articles
                 .filter(function(a) {
-                    return a.path && a.published && (a.language || 'ko') === language &&
-                        (a.path.includes(pathFilter) || extraPaths.some(function(ep) { return a.path.includes(ep); }));
+                    if (!a.path || !a.published || (a.language || 'ko') !== language) return false;
+                    if (excludePaths.some(function(ep) { return a.path.includes(ep); })) return false;
+                    return a.path.includes(pathFilter) || extraPaths.some(function(ep) { return a.path.includes(ep); });
                 })
                 .sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
 
