@@ -13,7 +13,12 @@
 
     function getSavedTheme() {
         const saved = localStorage.getItem(THEME_STORAGE_KEY);
-        return THEMES.includes(saved) ? saved : 'light';
+        if (THEMES.includes(saved)) return saved;
+        // OS preference fallback (first visit, no saved theme)
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+        return 'light';
     }
 
     function updateLogo(theme) {

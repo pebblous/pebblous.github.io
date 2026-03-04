@@ -49,9 +49,16 @@ const PebblousTheme = {
             switcher.appendChild(btn);
         });
 
-        // Apply initial theme from URL or default
+        // Apply initial theme: URL param > OS preference > default
         const urlTheme = new URLSearchParams(window.location.search).get('theme');
-        const initialTheme = (urlTheme && this.themes[urlTheme]) ? urlTheme : defaultTheme;
+        let initialTheme = defaultTheme;
+        if (urlTheme && this.themes[urlTheme]) {
+            initialTheme = urlTheme;
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            initialTheme = 'dark';
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            initialTheme = 'light';
+        }
         this.apply(initialTheme);
     },
 
