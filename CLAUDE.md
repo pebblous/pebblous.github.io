@@ -84,6 +84,7 @@ This auto-loads: Header, Footer, BreadcrumbList Schema, FAQ Schema (JSON-LD), Re
 | `PebblousRelatedPosts` | Related posts from articles.json |
 | `PebblousBreadcrumbs` | Breadcrumb navigation |
 | `PebblousSchema` | JSON-LD schema injection |
+| `PebblousAuth` | Password protection (separate file: `scripts/pbls-auth.js`) |
 
 ### Index Page Modules (`scripts/index/`)
 
@@ -100,6 +101,35 @@ This auto-loads: Header, Footer, BreadcrumbList Schema, FAQ Schema (JSON-LD), Re
 | `styles/tailwind-build.css` | Built Tailwind (link, not CDN script) |
 
 Cache busting: `?v=YYYYMMDD` query string on CSS/JS references.
+
+### Password Protection (`scripts/pbls-auth.js`)
+
+Confidential IR pages use `PebblousAuth` for session-based password protection. CSS for the password modal lives in `styles/common-styles.css` (not inline).
+
+**For new password-protected pages**, add to HTML:
+```html
+<body class="antialiased content-locked">
+    <!-- Password overlay HTML (lock icon, form, error msg) -->
+    <div class="password-overlay" id="password-overlay">...</div>
+
+    <!-- At end of body: -->
+    <script src="/scripts/pbls-auth.js?v=YYYYMMDD"></script>
+    <script>
+        PebblousAuth.initPageProtection({
+            password: 'pageSpecificPassword',
+            sessionKey: 'page_specific_session_key',
+            pageName: 'Page Name for GTM'
+        });
+    </script>
+</body>
+```
+
+**Master access (IR Press Room)**: `PebblousAuth.initPressRoom()` — one password unlocks all protected pages for the browser session via `sessionStorage('pbls_pressroom_auth')`.
+
+**Key rules:**
+- Password modal CSS is in `common-styles.css` — do NOT duplicate inline
+- Master password works on any protected page (auto-grants session-wide access)
+- Press Room pages must have `<meta name="robots" content="noindex, nofollow">`
 
 ### Theme System
 
