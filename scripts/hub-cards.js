@@ -69,6 +69,7 @@ window.PebblousHubCards = (function() {
             var articles = data.articles
                 .filter(function(a) {
                     if (!a.path || !a.published || (a.language || 'ko') !== language) return false;
+                    if (a.type === 'hub') return false;
                     if (excludePaths.some(function(ep) { return a.path.includes(ep); })) return false;
                     return a.path.includes(pathFilter) || extraPaths.some(function(ep) { return a.path.includes(ep); });
                 })

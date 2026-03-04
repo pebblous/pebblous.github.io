@@ -1148,15 +1148,15 @@ const PebblousChart = {
                 labels: {
                     usePointStyle: true,
                     boxWidth: 8,
-                    font: { family: "'Noto Sans KR', 'Pretendard', sans-serif" }
+                    font: { family: "'Pretendard', sans-serif" }
                 }
             },
             tooltip: {
                 backgroundColor: 'rgba(17, 24, 39, 0.9)',
                 padding: 12,
                 cornerRadius: 8,
-                titleFont: { family: "'Noto Sans KR', 'Pretendard', sans-serif" },
-                bodyFont: { family: "'Noto Sans KR', 'Pretendard', sans-serif" }
+                titleFont: { family: "'Pretendard', sans-serif" },
+                bodyFont: { family: "'Pretendard', sans-serif" }
             }
         }
     },
@@ -1249,13 +1249,13 @@ const PebblousChart = {
             x: {
                 stacked: stacked,
                 grid: { display: horizontal },
-                ticks: { font: { family: "'Noto Sans KR', 'Pretendard', sans-serif" } }
+                ticks: { font: { family: "'Pretendard', sans-serif" } }
             },
             y: {
                 stacked: stacked,
                 beginAtZero: true,
                 grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                ticks: { font: { family: "'Noto Sans KR', 'Pretendard', sans-serif" } }
+                ticks: { font: { family: "'Pretendard', sans-serif" } }
             }
         };
 
@@ -1493,12 +1493,12 @@ const PebblousChart = {
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { font: { family: "'Noto Sans KR', 'Pretendard', sans-serif" } }
+                        ticks: { font: { family: "'Pretendard', sans-serif" } }
                     },
                     y: {
                         beginAtZero: true,
                         grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                        ticks: { font: { family: "'Noto Sans KR', 'Pretendard', sans-serif" } }
+                        ticks: { font: { family: "'Pretendard', sans-serif" } }
                     }
                 }
             }

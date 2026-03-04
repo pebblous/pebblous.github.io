@@ -130,7 +130,7 @@ New HTML article
 ```
 - **CRITICAL**: `init.js` reads `data.categories` and `data.articles`. A bare array `[...]` breaks the index page.
 - When editing `articles.json`, always preserve the `{ "categories": {...}, "articles": [...] }` wrapper.
-- Article fields: `id`, `title`, `path` (relative), `date`, `category`, `published` (bool), `featured` (bool), `description`, `image` (relative, no leading `/`), `tags[]`
+- Article fields: `id`, `title`, `path` (relative), `date`, `category`, `published` (bool), `featured` (bool), `description`, `image` (relative, no leading `/`), `tags[]`, `type` (optional, `"hub"` for hub pages — auto-excluded from hub card grids)
 
 ## Key Conventions
 

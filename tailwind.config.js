@@ -18,7 +18,7 @@ module.exports = {
         'navy-700': '#1e4d8b',
       },
       fontFamily: {
-        sans: ['Noto Sans KR', 'sans-serif'],
+        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
       },
     },
   },

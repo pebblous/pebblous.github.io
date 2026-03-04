@@ -201,6 +201,7 @@ Every hub page MUST follow this exact structure:
 
 6. **Register in `articles.json`**:
    - Add both KO and EN hub entries to the `"articles"` array
+   - **CRITICAL**: Set `"type": "hub"` — this auto-excludes the hub from other hubs' card grids (no `excludePaths` needed)
    - Hub articles typically use `"category": "tech"` or `"business"` depending on topic
    - Set `"published": true`
    - **CRITICAL**: Preserve `{ "categories": {...}, "articles": [...] }` wrapper
