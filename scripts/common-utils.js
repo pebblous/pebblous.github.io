@@ -32,6 +32,9 @@ const PebblousTheme = {
      * Initialize theme switcher
      * @param {string} defaultTheme - Default theme name (dark, light, beige)
      */
+    currentTheme: null,
+    themeOrder: ['dark', 'light', 'beige'],
+
     init(defaultTheme = 'dark') {
         const switcher = document.getElementById('theme-switcher');
         if (!switcher) {
@@ -39,15 +42,25 @@ const PebblousTheme = {
             return;
         }
 
-        // Create theme buttons
+        // Create desktop theme buttons
         Object.keys(this.themes).forEach(name => {
             const btn = document.createElement('button');
             btn.dataset.theme = name;
-            btn.className = 'p-1 rounded-full transition-colors duration-300';
+            btn.className = 'transition-colors duration-300';
             btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${this.icons[name]}"></path></svg>`;
             btn.onclick = () => this.apply(name);
             switcher.appendChild(btn);
         });
+
+        // Mobile cycle button
+        const cycleBtn = document.getElementById('theme-cycle-btn');
+        if (cycleBtn) {
+            cycleBtn.onclick = () => {
+                const idx = this.themeOrder.indexOf(this.currentTheme);
+                const next = this.themeOrder[(idx + 1) % this.themeOrder.length];
+                this.apply(next);
+            };
+        }
 
         // Apply initial theme: URL param > default (no OS preference override)
         const urlTheme = new URLSearchParams(window.location.search).get('theme');
@@ -69,6 +82,8 @@ const PebblousTheme = {
             return;
         }
 
+        this.currentTheme = themeName;
+
         // Update logo
         const pageLogo = document.getElementById('page-logo');
         if (pageLogo) {
@@ -78,7 +93,7 @@ const PebblousTheme = {
         // Update theme attribute
         document.documentElement.setAttribute('data-theme', themeName);
 
-        // Update active button
+        // Update desktop active button
         const buttons = document.querySelectorAll('#theme-switcher button');
         buttons.forEach(btn => {
             if (btn.dataset.theme === themeName) {
@@ -87,6 +102,12 @@ const PebblousTheme = {
                 btn.classList.remove('active');
             }
         });
+
+        // Update mobile cycle button icon
+        const cycleBtn = document.getElementById('theme-cycle-btn');
+        if (cycleBtn) {
+            cycleBtn.innerHTML = `<svg class="w-5 h-5 themeable-heading" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${this.icons[themeName]}"></path></svg>`;
+        }
 
         // Update giscus theme if present
         const giscusFrame = document.querySelector('iframe.giscus-frame');
