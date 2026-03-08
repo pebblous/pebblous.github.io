@@ -23,8 +23,9 @@ node scripts/generate-rss.js         # Regenerate RSS feed
 node scripts/generate-sitemap.js     # Regenerate sitemap.xml
 
 # OG image generation
-node tools/generate-og-image.js --from-html <path.html>  # Auto-extract title/subtitle
-node tools/generate-og-image.js --title "Title" --subtitle "Sub"
+node tools/generate-og-image.js --from-html <path.html>  # Auto-extract title/subtitle/theme
+node tools/generate-og-image.js --from-html <path.html> --force  # Regenerate existing
+node tools/generate-og-image.js --light "Title" "Sub" output.png  # Manual light mode
 ```
 
 ## Architecture

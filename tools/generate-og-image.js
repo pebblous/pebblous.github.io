@@ -12,33 +12,89 @@
  *   --category   tech|business|story (default: tech)
  *   --from-html  HTML 파일에서 제목/카테고리 자동 추출
  *   --force      이미지가 이미 존재해도 재생성
+ *   --light      밝은 배경 테마 사용 (기본: 다크)
  */
 
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
 
-// Category color themes
-const THEMES = {
+// Category color themes (dark variant)
+const THEMES_DARK = {
     tech: {
         gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
         accent: '#3B82F6',
-        badge: 'Tech'
+        badge: 'Tech',
+        titleColor: 'white',
+        subtitleColor: '#94a3b8',
+        logoTextColor: 'white',
+        urlColor: '#64748b',
+        decorationOpacity: '20'
     },
     business: {
         gradient: 'linear-gradient(135deg, #1a1a2e 0%, #2d1810 100%)',
         accent: '#F86825',
-        badge: 'Business'
+        badge: 'Business',
+        titleColor: 'white',
+        subtitleColor: '#94a3b8',
+        logoTextColor: 'white',
+        urlColor: '#64748b',
+        decorationOpacity: '20'
     },
     story: {
         gradient: 'linear-gradient(135deg, #1a1a2e 0%, #0d2818 100%)',
         accent: '#14B8A6',
-        badge: 'Story'
+        badge: 'Story',
+        titleColor: 'white',
+        subtitleColor: '#94a3b8',
+        logoTextColor: 'white',
+        urlColor: '#64748b',
+        decorationOpacity: '20'
     }
 };
 
+// Category color themes (light variant)
+const THEMES_LIGHT = {
+    tech: {
+        gradient: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+        accent: '#3B82F6',
+        badge: 'Tech',
+        titleColor: '#0f172a',
+        subtitleColor: '#475569',
+        logoTextColor: '#1e293b',
+        urlColor: '#94a3b8',
+        decorationOpacity: '15'
+    },
+    business: {
+        gradient: 'linear-gradient(135deg, #fffbf5 0%, #fed7aa40 100%)',
+        accent: '#F86825',
+        badge: 'Business',
+        titleColor: '#0f172a',
+        subtitleColor: '#475569',
+        logoTextColor: '#1e293b',
+        urlColor: '#94a3b8',
+        decorationOpacity: '15'
+    },
+    story: {
+        gradient: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
+        accent: '#14B8A6',
+        badge: 'Story',
+        titleColor: '#0f172a',
+        subtitleColor: '#475569',
+        logoTextColor: '#1e293b',
+        urlColor: '#94a3b8',
+        decorationOpacity: '15'
+    }
+};
+
+function getTheme(category, light) {
+    const themes = light ? THEMES_LIGHT : THEMES_DARK;
+    return themes[category] || themes.tech;
+}
+
 function parseArgs(args) {
     let category = 'tech';
+    let light = false;
     let title = '';
     let subtitle = '';
     let output = '';
@@ -47,6 +103,8 @@ function parseArgs(args) {
     for (let i = 0; i < args.length; i++) {
         if (args[i] === '--category' && args[i + 1]) {
             category = args[++i];
+        } else if (args[i] === '--light') {
+            light = true;
         } else {
             filtered.push(args[i]);
         }
@@ -57,11 +115,11 @@ function parseArgs(args) {
     } else if (filtered.length === 3) {
         [title, subtitle, output] = filtered;
     } else {
-        console.error('Usage: generate-og-image.js [--category tech|business|story] "제목" ["부제목"] output.png');
+        console.error('Usage: generate-og-image.js [--category tech|business|story] [--light] "제목" ["부제목"] output.png');
         process.exit(1);
     }
 
-    return { category, title, subtitle, output };
+    return { category, title, subtitle, output, light };
 }
 
 function generateHTML(title, subtitle, theme, logoPath) {
@@ -137,7 +195,7 @@ function generateHTML(title, subtitle, theme, logoPath) {
         }
 
         .title {
-            color: white;
+            color: ${theme.titleColor};
             font-size: 56px;
             font-weight: 800;
             line-height: 1.3;
@@ -149,7 +207,7 @@ function generateHTML(title, subtitle, theme, logoPath) {
         }
 
         .subtitle {
-            color: #94a3b8;
+            color: ${theme.subtitleColor};
             font-size: 28px;
             font-weight: 400;
             line-height: 1.5;
@@ -173,14 +231,14 @@ function generateHTML(title, subtitle, theme, logoPath) {
         }
 
         .logo-text {
-            color: white;
+            color: ${theme.logoTextColor};
             font-size: 28px;
             font-weight: 700;
             letter-spacing: -0.5px;
         }
 
         .url {
-            color: #64748b;
+            color: ${theme.urlColor};
             font-size: 20px;
         }
 
@@ -192,7 +250,7 @@ function generateHTML(title, subtitle, theme, logoPath) {
             transform: translateY(-50%);
             width: 300px;
             height: 300px;
-            background: radial-gradient(circle, ${theme.accent}20 0%, transparent 70%);
+            background: radial-gradient(circle, ${theme.accent}${theme.decorationOpacity} 0%, transparent 70%);
             border-radius: 50%;
         }
     </style>
@@ -220,8 +278,8 @@ function generateHTML(title, subtitle, theme, logoPath) {
     `;
 }
 
-async function generateOGImage(title, subtitle, outputPath, category, projectRoot) {
-    const theme = THEMES[category] || THEMES.tech;
+async function generateOGImage(title, subtitle, outputPath, category, projectRoot, light = false) {
+    const theme = getTheme(category, light);
 
     // Read logo as base64 to avoid file path issues
     const logoFile = path.join(projectRoot, 'image', 'Pebblous_BM_Orange_RGB.png');
@@ -234,6 +292,7 @@ async function generateOGImage(title, subtitle, outputPath, category, projectRoo
     console.log(`  Title: ${title}`);
     console.log(`  Subtitle: ${subtitle || '(none)'}`);
     console.log(`  Category: ${category}`);
+    console.log(`  Theme: ${light ? 'light' : 'dark'}`);
     console.log(`  Output: ${outputPath}`);
 
     const browser = await puppeteer.launch({
@@ -282,7 +341,13 @@ function extractFromHTML(htmlPath, projectRoot) {
     const articlesPath = path.join(projectRoot, 'articles.json');
     if (fs.existsSync(articlesPath)) {
         const data = JSON.parse(fs.readFileSync(articlesPath, 'utf-8'));
-        articleData = data.articles?.find(a => a.path === relativePath);
+        // Match by exact path, or path with/without index.html, or directory path
+        const relativeDir = path.dirname(relativePath) + '/';
+        articleData = data.articles?.find(a =>
+            a.path === relativePath ||
+            a.path === relativeDir ||
+            a.path + 'index.html' === relativePath
+        );
     }
 
     // Extract title: og:title → <title> → articles.json → <h1>
@@ -337,24 +402,30 @@ function extractFromHTML(htmlPath, projectRoot) {
         subtitle = subtitle.substring(0, 77) + '...';
     }
 
-    // Determine category from articles.json or path
-    let category = articleData?.category || 'tech';
-
-    // Fallback: detect from path if still 'tech'
-    if (category === 'tech') {
+    // Determine category: articles.json is authoritative, path-based is fallback only
+    let category = 'tech';
+    if (articleData?.category) {
+        category = articleData.category;
+    } else {
+        // Fallback: detect from path only when not in articles.json
         if (htmlPath.includes('/report/') || htmlPath.includes('market') || htmlPath.includes('business')) {
             category = 'business';
         } else if (htmlPath.includes('/story/') || htmlPath.includes('review')) {
             category = 'story';
         }
+        console.log(`  [fallback] Category detected from path: ${category}`);
     }
+
+    // Detect light theme from HTML data-theme attribute
+    const themeMatch = htmlContent.match(/data-theme="(\w+)"/);
+    const light = themeMatch ? themeMatch[1] === 'light' : false;
 
     // Determine output path: same folder as HTML, in image/ subfolder
     const htmlDir = path.dirname(htmlPath);
     const htmlName = path.basename(htmlPath, '.html');
     const outputPath = path.join(htmlDir, 'image', `${htmlName}.png`);
 
-    return { title, subtitle, category, output: outputPath };
+    return { title, subtitle, category, output: outputPath, light };
 }
 
 // Main
@@ -375,7 +446,9 @@ if (fromHtmlIndex !== -1 && args[fromHtmlIndex + 1]) {
         process.exit(1);
     }
 
-    const { title, subtitle, category, output } = extractFromHTML(htmlPath, projectRoot);
+    const lightFlag = args.indexOf('--light') !== -1;
+    const { title, subtitle, category, output, light: autoLight } = extractFromHTML(htmlPath, projectRoot);
+    const useLight = lightFlag || autoLight;
 
     if (!title) {
         console.error('❌ Could not extract title from HTML');
@@ -389,7 +462,7 @@ if (fromHtmlIndex !== -1 && args[fromHtmlIndex + 1]) {
         process.exit(0);
     }
 
-    generateOGImage(title, subtitle, output, category, projectRoot).catch(console.error);
+    generateOGImage(title, subtitle, output, category, projectRoot, useLight).catch(console.error);
 
 } else if (args.length < 2) {
     console.log(`
@@ -410,16 +483,18 @@ Categories:
 Options:
   --from-html  Extract title/category from HTML file automatically
   --force      Regenerate even if image already exists
+  --light      Use light background (auto-detected from data-theme="light" in --from-html mode)
 
 Examples:
   node tools/generate-og-image.js "Data Greenhouse 전략" project/DataGreenhouse/image/og.png
   node tools/generate-og-image.js --category business "시장 분석" "가트너 AI 검증" output.png
+  node tools/generate-og-image.js --light "제목" output.png
   node tools/generate-og-image.js --from-html project/DataGreenhouse/data-greenhouse-strategy.html
     `);
     process.exit(0);
 } else {
     // Manual mode
-    const { category, title, subtitle, output } = parseArgs(args);
+    const { category, title, subtitle, output, light } = parseArgs(args);
     const projectRoot = path.resolve(__dirname, '..');
-    generateOGImage(title, subtitle, output, category, projectRoot).catch(console.error);
+    generateOGImage(title, subtitle, output, category, projectRoot, light).catch(console.error);
 }
