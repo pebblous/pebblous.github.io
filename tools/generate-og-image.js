@@ -242,22 +242,51 @@ function generateHTML(title, subtitle, theme, logoPath) {
             font-size: 20px;
         }
 
-        /* Decorative elements */
-        .decoration {
+        /* Pebble decorative elements */
+        .pebble {
             position: absolute;
-            right: 60px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, ${theme.accent}${theme.decorationOpacity} 0%, transparent 70%);
             border-radius: 50%;
+            opacity: 0.12;
+        }
+        .pebble-1 {
+            right: 40px;
+            top: 60px;
+            width: 200px;
+            height: 200px;
+            background: ${theme.accent};
+        }
+        .pebble-2 {
+            right: 180px;
+            bottom: 80px;
+            width: 140px;
+            height: 140px;
+            background: ${theme.accent};
+            opacity: 0.08;
+        }
+        .pebble-3 {
+            right: -20px;
+            bottom: 120px;
+            width: 100px;
+            height: 100px;
+            background: ${theme.accent};
+            opacity: 0.15;
+        }
+        .pebble-4 {
+            right: 280px;
+            top: 40px;
+            width: 60px;
+            height: 60px;
+            background: ${theme.accent};
+            opacity: 0.10;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="decoration"></div>
+        <div class="pebble pebble-1"></div>
+        <div class="pebble pebble-2"></div>
+        <div class="pebble pebble-3"></div>
+        <div class="pebble pebble-4"></div>
 
         <div class="badge">${theme.badge}</div>
 
