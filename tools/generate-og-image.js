@@ -127,7 +127,7 @@ function generateHTML(title, subtitle, theme, logoPath) {
     let displayTitle = title.replace(/\n/g, '<br>');
 
     // Split long titles (only if no manual breaks)
-    const maxCharsPerLine = 20;
+    const maxCharsPerLine = 30;
     if (!title.includes('\n') && title.length > maxCharsPerLine) {
         const words = title.split(' ');
         let lines = [];
