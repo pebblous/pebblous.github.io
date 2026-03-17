@@ -23,10 +23,12 @@ const SITEMAP_FILE = path.join(__dirname, 'sitemap.xml');
 const articlesData = JSON.parse(fs.readFileSync(ARTICLES_FILE, 'utf8'));
 const articles = articlesData.articles || [];
 
-// Filter: only published, non-external articles
+// Filter: only published, non-external, non-locked articles
+// locked: true → password-protected/noindex pages (IR confidential, etc.)
 const publishedArticles = articles.filter(article =>
     article.published === true &&
-    article.external !== true
+    article.external !== true &&
+    article.locked !== true
 );
 
 // Sort by date (newest first)
