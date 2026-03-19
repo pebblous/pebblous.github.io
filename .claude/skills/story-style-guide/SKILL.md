@@ -159,3 +159,109 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 ```
+
+## 8. 이미지 컴포넌트 — 대표이미지 병행 (필수)
+
+### 대표이미지 API
+
+```javascript
+// 클래스별 대표이미지 URL 가져오기
+GET https://api.dataclinic.ai/report/classwise/chart/image
+  ?diagnosis_report_id={reportId}
+  &diagnosis_report_chart_id=6
+  &offset=0&limit=2000
+
+// CDN URL 패턴
+https://cdn.dataclinic.ai/{representativeImagePath}
+```
+
+### 8-1. L1 — class-card (실제 + 평균 이미지 1:1)
+
+```css
+.class-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.75rem; margin:1.5rem 0; }
+@media(min-width:640px){ .class-grid { grid-template-columns:repeat(3,1fr); } }
+.class-card { border-radius:.5rem; overflow:hidden; background-color:var(--bg-card); border:1px solid var(--border-color); }
+.class-card-images { display:grid; grid-template-columns:1fr 1fr; gap:1px; background-color:var(--border-color); }
+.class-card-img-wrap { position:relative; overflow:hidden; background-color:var(--bg-card); }
+.class-card-img-wrap img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
+.img-type-label {
+    position:absolute; bottom:2px; left:2px;
+    font-size:.5rem; font-weight:600;
+    background:rgba(0,0,0,.65); color:#fff;
+    padding:1px 3px; border-radius:2px; line-height:1.4;
+}
+.class-card .class-name { font-size:.75rem; text-align:center; padding:.3rem .25rem; color:var(--text-muted); line-height:1.3; }
+```
+
+```html
+<div class="class-grid mb-6">
+    <div class="class-card">
+        <div class="class-card-images">
+            <div class="class-card-img-wrap">
+                <img src="https://cdn.dataclinic.ai/datasets/{dataset}/train/{class}/{file}"
+                     alt="{class} 대표 이미지" loading="lazy">
+                <span class="img-type-label">실제</span>  <!-- EN: Actual -->
+            </div>
+            <div class="class-card-img-wrap">
+                <img src="https://cdn.dataclinic.ai/diagnosis_results/.../meanimage/{class}.png"
+                     alt="{class} 평균 이미지" loading="lazy">
+                <span class="img-type-label">평균</span>  <!-- EN: Mean -->
+            </div>
+        </div>
+        <div class="class-name">{클래스명}</div>
+    </div>
+    <!-- ... -->
+</div>
+<p class="text-xs themeable-muted text-center mb-6">▲ 각 카드 왼쪽: 클래스 대표 이미지(실제 샘플) / 오른쪽: 평균 이미지</p>
+```
+
+### 8-2. L2/L3 — density-card (밀도 차트 + 대표이미지 2:1)
+
+두 가지 구현 방식이 있음 (기존 포스트 구조에 따라 선택):
+
+**방식 A — 독립 CSS (industrialwaste #131 패턴)**:
+```css
+.density-grid { display:grid; grid-template-columns:1fr; gap:.75rem; margin:1.5rem 0; }
+@media(min-width:640px){ .density-grid { grid-template-columns:repeat(2,1fr); } }
+.density-card { border-radius:.5rem; overflow:hidden; background-color:var(--bg-card); border:1px solid var(--border-color); }
+.density-card-images { display:grid; grid-template-columns:2fr 1fr; gap:1px; background-color:var(--border-color); }
+/* class-card-img-wrap 재사용 */
+```
+
+**방식 B — 기존 density-card 확장 (military #225 패턴)**:
+```css
+/* 기존 density-card에 den-imgs 서브그리드 추가 */
+.density-card .den-imgs { display:grid; grid-template-columns:2fr 1fr; gap:1px; background-color:var(--border-color); }
+.density-card .den-imgs > div { position:relative; overflow:hidden; background-color:var(--bg-card); }
+.density-card .den-imgs .den-chart img { aspect-ratio:4/3; }
+.density-card .den-imgs .den-rep img { aspect-ratio:1; }
+.density-card .den-imgs .den-label { /* img-type-label과 동일 스타일 */ }
+```
+
+**공통 HTML 구조**:
+```html
+<div class="density-card">
+    <div class="den-imgs">
+        <div class="den-chart">
+            <img src="...densityPlot/{class}.png" alt="{class} L2 밀도" loading="lazy">
+            <span class="den-label">밀도</span>  <!-- EN: Density -->
+        </div>
+        <div class="den-rep">
+            <img src="https://cdn.dataclinic.ai/datasets/{dataset}/train/{class}/{file}"
+                 alt="{class} 대표 이미지" loading="lazy">
+            <span class="den-label">실제</span>  <!-- EN: Actual -->
+        </div>
+    </div>
+    <div class="den-info">  <!-- 텍스트 설명 (선택) -->
+        <div class="den-name">{클래스명}</div>
+        <div class="den-note">{밀도 특성 한 줄 설명}</div>
+    </div>
+</div>
+```
+
+### 참조 구현
+
+- **class-card**: `story/dataclinic-report-131-industrialwaste-story-pb/ko/`
+- **density-card 방식A**: `story/dataclinic-report-131-industrialwaste-story-pb/ko/`
+- **density-card 방식B**: `story/dataclinic-report-225-pbls-military3-story-pb/ko/`
+- **weapon-card (dual-img-row)**: `story/dataclinic-report-225-pbls-military3-story-pb/ko/` — 클래스 수가 적을 때(3종) 더 큰 카드

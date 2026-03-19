@@ -57,6 +57,8 @@ gh pr diff {PR-number}
 | C1 | **Collage 이미지 존재** | `cdn.dataclinic.ai/...collage.png` img 태그 확인 |
 | C2 | Collage 크기 제한 클래스 | `max-w-[560px] max-h-[480px] object-contain mx-auto` 포함 |
 | C3 | 데이터셋 출처 링크 | Kaggle/AIHub/기타 출처 `<a>` 태그. 자사 데이터(PBLS_*)는 면제 |
+| C4 | **L1 대표이미지 병행** | 평균 이미지(meanimage) 옆에 실제 샘플 이미지가 나란히 배치 (`class-card` 또는 `dual-img-row`). Issue #20 참조 |
+| C5 | **L2/L3 밀도+대표이미지 병행** | 밀도 차트 옆에 대표 이미지가 2:1 비율로 배치 (`density-card` with `den-imgs`). story-style-guide §8 참조 |
 
 ### D. CDN 이미지 규칙 (3항목)
 
@@ -146,3 +148,11 @@ L3 이미지 경로(`level-3.X`)가 있으면 실제 접근 가능한지 확인:
 - **Fail 0건**: "승인 권장" 멘트 포함
 - **Fail 1~3건**: "수정 후 재요청" + 구체적 수정 가이드
 - **Fail 4건+**: "전면 재작성 검토" + 근본 원인 분석
+
+### 5. Data Journalism 리뷰 (선택)
+
+기술 체크리스트 통과 후, 콘텐츠 품질을 심화 평가하려면:
+```
+/data-journalism-review <path>
+```
+임팩트 시나리오, 비교 프레임, 시각적 증거, 재현 가능성, 출처 투명성 5개 항목 평가.
