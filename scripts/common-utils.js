@@ -35,7 +35,7 @@ const PebblousTheme = {
     currentTheme: null,
     themeOrder: ['dark', 'light', 'beige'],
 
-    init(defaultTheme = 'dark') {
+    init(defaultTheme = 'light') {
         const switcher = document.getElementById('theme-switcher');
         if (!switcher) {
             console.warn('Theme switcher element not found');
@@ -506,7 +506,7 @@ const PebblousPage = {
 
     async init(config) {
         // Apply default theme immediately (before component fetch) to prevent FOUC
-        const defaultTheme = config.defaultTheme || 'dark';
+        const defaultTheme = config.defaultTheme || 'light';
         document.documentElement.setAttribute('data-theme', defaultTheme);
 
         // Initialize DOM-ready UI features immediately (no component dependency)
