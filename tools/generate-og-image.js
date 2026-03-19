@@ -379,12 +379,18 @@ function extractFromHTML(htmlPath, projectRoot) {
         );
     }
 
-    // Extract title: og:title → <title> → articles.json → <h1>
+    // Extract title: og-image-title (manual override) → og:title → <title> → articles.json → <h1>
     let title = '';
+    const ogImageTitleMatch = htmlContent.match(/<meta\s+name="og-image-title"\s+content="([^"]+)"/i);
+    if (ogImageTitleMatch) {
+        // Decode &#10; → \n for manual line break control
+        title = ogImageTitleMatch[1].replace(/&#10;/g, '\n');
+        console.log(`  [og-image-title] Using custom OG image title`);
+    }
     const ogTitleMatch = htmlContent.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
-    if (ogTitleMatch) {
+    if (!title && ogTitleMatch) {
         title = ogTitleMatch[1];
-    } else {
+    } else if (!title) {
         const titleMatch = htmlContent.match(/<title>([^<]+)<\/title>/i);
         if (titleMatch) {
             title = titleMatch[1];
