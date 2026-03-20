@@ -68,7 +68,7 @@ gh pr diff {PR-number}
 | D2 | L3 경로 버전 확인 | `level-3.X` 경로가 실제 CDN에서 접근 가능한지 확인. API 레포 `scripts/check_chart_images.md` 참조 |
 | D3 | 그리드 내 이미지 제외 | `grid-cols-*` 안의 이미지는 크기 제한 불필요 (셀 크기로 이미 제한됨) |
 
-### E. SEO & Meta (4항목)
+### E. SEO & Meta (7항목)
 
 | # | 항목 | 검증 방법 |
 |---|------|-----------|
@@ -76,6 +76,9 @@ gh pr diff {PR-number}
 | E2 | Hero 날짜: `YYYY.MM` | `2026.03` 형식. `2026년 3월` 등 한글 날짜 금지 |
 | E3 | OG image 크기 | `og:image:width` 1200, `og:image:height` 630 |
 | E4 | canonical URL 정확 | `https://blog.pebblous.ai/` + 파일 경로 |
+| E5 | **제목 일관성** | `config.mainTitle` = `og:title` 앞부분 = `<title>` 앞부분 = `articles.json title` 앞부분 = OG 이미지 제목. 모두 동일한 메인 제목이어야 함 |
+| E6 | **부제목 일관성** | `config.subtitle` = `og:title` 뒷부분(— 이후) = `articles.json title` 뒷부분. 부제목도 일관되어야 함 |
+| E7 | **OG 이미지 제목 일치** | OG 이미지에 렌더링된 제목/부제목이 og:title과 일치하는지 확인. `og-image-title` meta 사용 시 줄바꿈만 다르고 내용은 동일해야 함 |
 
 ### F. articles.json (3항목)
 

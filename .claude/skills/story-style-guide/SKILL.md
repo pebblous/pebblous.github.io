@@ -145,7 +145,31 @@ EN 버전:
 
 **금지:** `<div class="info-box">` → `key-insight` 사용
 
-## 7. PebblousPage.init
+## 7. 제목/부제목 일관성 (Title Consistency Rule)
+
+제목과 부제목은 **5곳에서 동일**해야 합니다:
+
+| 위치 | 제목 | 부제목 |
+|------|------|--------|
+| `config.mainTitle` | ✅ 원본 | |
+| `config.subtitle` | | ✅ 원본 |
+| `config.pageTitle` | `{mainTitle} — {subtitle} \| 페블러스` | |
+| `<title>` | `config.pageTitle`과 동일 | |
+| `og:title` | `{mainTitle} — {subtitle}` | |
+| `twitter:title` | `og:title`과 동일 | |
+| `articles.json title` | `{mainTitle} — {subtitle}` | |
+| OG 이미지 | `og:title`에서 렌더링 (줄바꿈만 다름) | |
+
+**변경 시 체크리스트:**
+1. `config.mainTitle` / `config.subtitle` 수정
+2. `config.pageTitle` 수정
+3. `<title>` 태그 수정
+4. `og:title` + `twitter:title` 수정
+5. `og:image:alt` + `twitter:image:alt` 수정
+6. `articles.json` title + description 수정
+7. OG 이미지 재생성 (`node tools/generate-og-image.js --from-html ... --force`)
+
+## 7-1. PebblousPage.init
 
 ```javascript
 // ✅ 올바른 방법
