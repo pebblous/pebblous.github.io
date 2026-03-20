@@ -283,9 +283,42 @@ https://cdn.dataclinic.ai/{representativeImagePath}
 </div>
 ```
 
+### 8-3. Pebbloscope 스냅샷 (L2/L3 섹션에 필수)
+
+DataClinic이 "무엇이 다른지" 보여준다면, Pebbloscope는 "왜 다른지" 보여줍니다.
+L2 또는 L3 밀도 플롯 다음에 Pebbloscope 시각화를 배치합니다.
+
+```html
+<div class="themeable-card rounded-xl p-6 mt-6">
+    <h3 class="text-lg font-bold themeable-heading mb-3">🔬 페블로스코프로 본 {클래스명} — {발견 요약}</h3>
+    <div class="themeable-text leading-relaxed prose prose-sm max-w-none mb-4">
+        <p>... <a href="https://pebbloscope.ai" class="text-orange-500 hover:text-orange-400 font-semibold" target="_blank" rel="noopener">페블로스코프</a>는 ...
+        <a href="https://pebbloscope.ai/snapshots/{snapshotId}" class="text-orange-500 hover:text-orange-400 font-semibold" target="_blank" rel="noopener">스냅샷</a>입니다.</p>
+    </div>
+    <a href="https://pebbloscope.ai/snapshots/{snapshotId}" target="_blank" rel="noopener">
+        <img src="https://pebbloscope-prod-public-bucket.s3.ap-northeast-2.amazonaws.com/snapshot/{snapshotId}.png"
+             alt="페블로스코프 — {클래스명} L2 임베딩 시각화"
+             class="w-full rounded-lg" loading="lazy">
+    </a>
+    <!-- 클러스터 설명 (색상 범례 + 텍스트) -->
+    <p class="text-sm themeable-text mt-4 leading-relaxed">
+        {클러스터 형성 원인 설명 — 배경 계절, 카메라 각도, 환경 조건 등}
+    </p>
+    <p class="text-xs themeable-muted mt-3">▲ <a href="https://pebbloscope.ai/snapshots/{snapshotId}" class="text-orange-400 hover:text-orange-300" target="_blank" rel="noopener">페블로스코프 스냅샷에서 직접 탐색하기 →</a> 각 노드를 클릭하면 실제 이미지를 확인하고, 동료에게 코멘트를 남길 수 있습니다.</p>
+</div>
+```
+
+**핵심 규칙:**
+- 스냅샷 이미지 URL: `https://pebbloscope-prod-public-bucket.s3.ap-northeast-2.amazonaws.com/snapshot/{snapshotId}.png`
+- 이미지를 `<a>` 태그로 감싸서 클릭 시 스냅샷 페이지로 이동
+- 클러스터 색상 범례가 있으면 `<span class="inline-block w-3 h-3 rounded-full">` + 색상으로 표시
+- "직접 탐색하기 →" 링크 필수
+
 ### 참조 구현
 
 - **class-card**: `story/dataclinic-report-131-industrialwaste-story-pb/ko/`
 - **density-card 방식A**: `story/dataclinic-report-131-industrialwaste-story-pb/ko/`
 - **density-card 방식B**: `story/dataclinic-report-225-pbls-military3-story-pb/ko/`
 - **weapon-card (dual-img-row)**: `story/dataclinic-report-225-pbls-military3-story-pb/ko/` — 클래스 수가 적을 때(3종) 더 큰 카드
+- **Pebbloscope (2클러스터)**: `story/dataclinic-report-225-pbls-military3-story-pb/ko/` — M35A2 무개형 화염/일반 배경 클러스터
+- **Pebbloscope (계절 클러스터)**: `story/dataclinic-report-224-pbls-military-story-pb/ko/` — K806 계절별 배경 클러스터

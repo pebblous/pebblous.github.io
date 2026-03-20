@@ -49,6 +49,7 @@ gh pr diff {PR-number}
 | B2 | TOC: `<ul id="toc-links">` 구조 | `<ul id="toc-links"><li><a>` 형태인지 확인. `<nav>` 직접 사용 금지 |
 | B3 | Executive Summary ID: `executive-summary` | `id="executive-summary"` 정확히 일치 |
 | B4 | Executive Summary에 DataClinic 리포트 URL | `dataclinic.ai/en/report/{reportId}` 링크 포함 |
+| B5 | **Pebbloscope 스냅샷** | L2 또는 L3 섹션에 `pebbloscope.ai/snapshots/{id}` 링크 + 스냅샷 이미지 포함. 클러스터 형성 원인 설명 필수 |
 
 ### C. 데이터셋 소개 섹션 (3항목)
 
