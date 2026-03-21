@@ -237,6 +237,7 @@ For deeper reference, see `docs/`:
 - `docs/content-guidelines.md` — Text-First writing rules
 - `docs/sns-writing-tone.md` — SNS "Warm Expert Tone" with data-farming metaphors
 - `docs/index-renovation.md` — Index page renovation history (P0-P3)
+- `docs/post-writing-lessons-for-pb.md` — pb(Pebblo Claw) 전용 포스팅 작성 가이드 (PR#23 리뷰 교훈)
 
 ## Skill Workflow Chain
 
