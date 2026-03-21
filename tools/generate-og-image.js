@@ -9,7 +9,7 @@
  *   node tools/generate-og-image.js --from-html path/to/post.html  # HTML에서 자동 추출
  *
  * Options:
- *   --category   tech|business|story (default: tech)
+ *   --category   tech|business|story|art (default: tech)
  *   --from-html  HTML 파일에서 제목/카테고리 자동 추출
  *   --force      이미지가 이미 존재해도 재생성
  *   --light      밝은 배경 테마 사용 (기본: 다크)
@@ -50,6 +50,16 @@ const THEMES_DARK = {
         logoTextColor: 'white',
         urlColor: '#64748b',
         decorationOpacity: '20'
+    },
+    art: {
+        gradient: 'linear-gradient(135deg, #1a1a2e 0%, #2e1a0e 100%)',
+        accent: '#F86825',
+        badge: 'Data Art Lab',
+        titleColor: 'white',
+        subtitleColor: '#94a3b8',
+        logoTextColor: 'white',
+        urlColor: '#64748b',
+        decorationOpacity: '20'
     }
 };
 
@@ -79,6 +89,16 @@ const THEMES_LIGHT = {
         gradient: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
         accent: '#14B8A6',
         badge: 'Story',
+        titleColor: '#0f172a',
+        subtitleColor: '#475569',
+        logoTextColor: '#1e293b',
+        urlColor: '#94a3b8',
+        decorationOpacity: '15'
+    },
+    art: {
+        gradient: 'linear-gradient(135deg, #fffbf5 0%, #ffedd5 100%)',
+        accent: '#F86825',
+        badge: 'Data Art Lab',
         titleColor: '#0f172a',
         subtitleColor: '#475569',
         logoTextColor: '#1e293b',
@@ -514,6 +534,7 @@ Categories:
   tech     - Blue theme (default)
   business - Orange theme
   story    - Teal theme
+  art      - Orange/warm theme (Data Art Lab)
 
 Options:
   --from-html  Extract title/category from HTML file automatically
