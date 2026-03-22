@@ -478,9 +478,9 @@ function extractFromHTML(htmlPath, projectRoot) {
         }
     }
 
-    // Detect light theme from HTML data-theme attribute
-    const themeMatch = htmlContent.match(/data-theme="(\w+)"/);
-    const light = themeMatch ? themeMatch[1] === 'light' : false;
+    // Detect theme from HTML data-theme attribute (default: light)
+    const themeMatch = htmlContent.match(/<html[^>]+data-theme="(\w+)"/);
+    const light = themeMatch ? themeMatch[1] !== 'dark' : true;
 
     // Determine output path: same folder as HTML, in image/ subfolder
     const htmlDir = path.dirname(htmlPath);
