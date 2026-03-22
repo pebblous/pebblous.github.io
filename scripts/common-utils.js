@@ -822,14 +822,23 @@ const PebblousRelatedPosts = {
         section.innerHTML = '<h2 class="text-2xl font-bold themeable-heading mb-6">' + heading + '</h2>'
             + '<div class="' + gridClass + '">' + cardsHTML + '</div>';
 
-        // Downsize card titles for related posts (narrower cards)
+        // Compact card styling for related posts
         section.querySelectorAll('.card h3').forEach(function(h3) {
             h3.classList.remove('text-2xl');
-            h3.classList.add('text-base');
+            h3.classList.add('text-lg');
         });
-        // Downsize description
         section.querySelectorAll('.card p.text-sm').forEach(function(p) {
-            p.classList.add('line-clamp-2');
+            p.classList.remove('text-sm');
+            p.classList.add('text-xs', 'line-clamp-2');
+        });
+        // Compact tags: smaller font + tighter padding + reduce gap above title
+        section.querySelectorAll('.card .tags-container').forEach(function(tc) {
+            tc.classList.remove('mb-3');
+            tc.classList.add('mb-1');
+        });
+        section.querySelectorAll('.card .tag').forEach(function(tag) {
+            tag.style.fontSize = '0.625rem';
+            tag.style.padding = '2px 8px';
         });
 
         // Initialize card interactions (particles, hover effects) if renderer available
