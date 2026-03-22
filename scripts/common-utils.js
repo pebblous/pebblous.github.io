@@ -743,12 +743,23 @@ const PebblousRelatedPosts = {
             const response = await fetch('/articles.json');
             const data = await response.json();
 
-            // Filter out current article and unpublished articles
-            const candidates = data.articles.filter(article =>
-                article.published &&
-                article.path !== currentPath &&
-                article.tags && article.tags.length > 0
-            );
+            // Detect current page language
+            const pageLang = document.documentElement.lang || 'ko';
+
+            // Derive base path (without /ko/ or /en/) to exclude self in any language
+            const basePath = currentPath.replace(/\/(ko|en)\/(index\.html)?$/, '').replace(/\/index\.html$/, '');
+
+            // Filter: published, not self (any language), same language, has tags
+            const candidates = data.articles.filter(article => {
+                if (!article.published || !article.tags || article.tags.length === 0) return false;
+                // Exclude self (compare base paths to catch ko/en variants)
+                const articleBase = (article.path || '').replace(/\/(ko|en)\/(index\.html)?$/, '').replace(/\/index\.html$/, '');
+                if (articleBase === basePath) return false;
+                // Match language: article.language field or detect from path
+                const articleLang = article.language || (article.path && article.path.includes('/en/') ? 'en' : 'ko');
+                if (articleLang !== pageLang) return false;
+                return true;
+            });
 
             // Calculate similarity scores
             const scored = candidates.map(article => ({
@@ -802,9 +813,8 @@ const PebblousRelatedPosts = {
             }
         });
 
-        const gridClass = useCardRenderer
-            ? PebblousCardRenderer.GRID_CLASS
-            : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+        // Related posts grid: 3 columns within 800px content area
+        const gridClass = 'grid grid-cols-1 sm:grid-cols-3 gap-4';
 
         const isKo = document.documentElement.lang !== 'en';
         const heading = isKo ? '관련 글' : 'Related Posts';
@@ -812,12 +822,21 @@ const PebblousRelatedPosts = {
         section.innerHTML = '<h2 class="text-2xl font-bold themeable-heading mb-6">' + heading + '</h2>'
             + '<div class="' + gridClass + '">' + cardsHTML + '</div>';
 
+        // Downsize card titles for related posts (narrower cards)
+        section.querySelectorAll('.card h3').forEach(function(h3) {
+            h3.classList.remove('text-2xl');
+            h3.classList.add('text-base');
+        });
+        // Downsize description
+        section.querySelectorAll('.card p.text-sm').forEach(function(p) {
+            p.classList.add('line-clamp-2');
+        });
+
         // Initialize card interactions (particles, hover effects) if renderer available
         if (useCardRenderer) {
             requestAnimationFrame(function() {
                 var cards = section.querySelectorAll('.card');
                 PebblousCardRenderer.initCardInteractions(cards);
-                PebblousCardRenderer.fillPlaceholders(section.querySelector('.' + gridClass.split(' ')[0]));
             });
         }
 
@@ -842,8 +861,16 @@ const PebblousRelatedPosts = {
             return;
         }
 
-        // Dynamically load card-renderer + card-particles if not already loaded
+        // Dynamically load card CSS + JS if not already loaded
         if (typeof PebblousCardRenderer === 'undefined') {
+            // Load card CSS
+            if (!document.querySelector('link[href*="card-styles"]')) {
+                const css = document.createElement('link');
+                css.rel = 'stylesheet';
+                css.href = '/css/card-styles.css';
+                document.head.appendChild(css);
+            }
+            // Load card JS
             await new Promise((resolve) => {
                 const s1 = document.createElement('script');
                 s1.src = '/scripts/card-particles.js';
