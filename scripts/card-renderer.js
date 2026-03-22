@@ -232,7 +232,7 @@ window.PebblousCardRenderer = (function() {
             + lockBadge
             + '</div>'
             + tagsScrollHtml
-            + '<h3 class="text-2xl font-bold text-white group-hover:accent-color transition-colors">' + article.title + '</h3>'
+            + '<h3 class="text-2xl font-bold text-white group-hover:accent-color transition-colors">' + (article.cardTitle || article.title) + '</h3>'
             + '<p class="mt-3 text-sm text-slate-400">' + descText + '</p>'
             + '</div>';
 
