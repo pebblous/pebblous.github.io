@@ -783,50 +783,43 @@ const PebblousRelatedPosts = {
         const section = document.createElement('section');
         section.className = 'mb-16 fade-in-card is-visible';
 
+        // Use PebblousCardRenderer if available (same style as main/hub pages)
+        const useCardRenderer = typeof PebblousCardRenderer !== 'undefined' && PebblousCardRenderer.renderCard;
+
         let cardsHTML = '';
-        relatedArticles.forEach(article => {
-            const categoryEmoji = article.category === 'art' ? '🎨' :
-                                 article.category === 'tech' ? '⚙️' : '📊';
-
-            const hasRealImage = article.cardImage || (article.image && !article.image.includes('Pebblous_BM_Orange_RGB.png'));
-
-            // Helper to ensure absolute path for images
-            const toAbsolutePath = (path) => {
-                if (!path || path.startsWith('http') || path.startsWith('/')) return path;
-                return '/' + path;
-            };
-
-            cardsHTML += `
-                <a href="/${article.path}" class="card block rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
-                    <div class="aspect-video flex items-center justify-center overflow-hidden ${hasRealImage ? '' : 'logo-placeholder'}">
-                        ${article.cardImage
-                            ? `<img src="${toAbsolutePath(article.cardImage)}" alt="${article.title}" class="w-full h-full object-cover">`
-                            : article.image && !article.image.includes('Pebblous_BM_Orange_RGB.png')
-                            ? `<img src="${toAbsolutePath(article.image)}" alt="${article.title}" class="w-full h-full object-cover">`
-                            : `<img src="${article.image || 'https://blog.pebblous.ai/image/Pebblous_BM_Orange_RGB.png'}" alt="${article.title}" class="default-logo">`
-                        }
-                    </div>
-                    <div class="p-6">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="category-badge">${categoryEmoji} ${article.category.toUpperCase()}</span>
-                            <span class="text-slate-500 text-sm">${article.date}</span>
-                        </div>
-                        <h3 class="text-xl font-bold themeable-heading mb-2 line-clamp-2">${article.title}</h3>
-                        <p class="text-slate-400 text-sm mb-4 line-clamp-2">${article.description}</p>
-                        <div class="flex flex-wrap gap-2">
-                            ${article.tags.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
-                        </div>
-                    </div>
-                </a>
-            `;
+        relatedArticles.forEach((article, index) => {
+            if (useCardRenderer) {
+                cardsHTML += PebblousCardRenderer.renderCard(article, index, { initialLimit: 3 });
+            } else {
+                // Fallback: simple card
+                var href = article.path ? (article.path.startsWith('/') ? article.path : '/' + article.path) : '#';
+                cardsHTML += '<a href="' + href + '" class="card rounded-lg overflow-hidden group flex flex-col fade-in">'
+                    + '<div class="p-6 flex-grow">'
+                    + '<span class="text-xs text-slate-500">' + article.date + '</span>'
+                    + '<h3 class="text-xl font-bold text-white mt-2">' + (article.cardTitle || article.title) + '</h3>'
+                    + '<p class="mt-2 text-sm text-slate-400">' + (article.description || '') + '</p>'
+                    + '</div></a>';
+            }
         });
 
-        section.innerHTML = `
-            <h2 class="text-2xl font-bold themeable-heading mb-6">🔗 관련 글</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                ${cardsHTML}
-            </div>
-        `;
+        const gridClass = useCardRenderer
+            ? PebblousCardRenderer.GRID_CLASS
+            : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+
+        const isKo = document.documentElement.lang !== 'en';
+        const heading = isKo ? '관련 글' : 'Related Posts';
+
+        section.innerHTML = '<h2 class="text-2xl font-bold themeable-heading mb-6">' + heading + '</h2>'
+            + '<div class="' + gridClass + '">' + cardsHTML + '</div>';
+
+        // Initialize card interactions (particles, hover effects) if renderer available
+        if (useCardRenderer) {
+            requestAnimationFrame(function() {
+                var cards = section.querySelectorAll('.card');
+                PebblousCardRenderer.initCardInteractions(cards);
+                PebblousCardRenderer.fillPlaceholders(section.querySelector('.' + gridClass.split(' ')[0]));
+            });
+        }
 
         return section;
     },
@@ -847,6 +840,21 @@ const PebblousRelatedPosts = {
         if (relatedArticles.length === 0) {
             console.log('📊 No related articles found');
             return;
+        }
+
+        // Dynamically load card-renderer + card-particles if not already loaded
+        if (typeof PebblousCardRenderer === 'undefined') {
+            await new Promise((resolve) => {
+                const s1 = document.createElement('script');
+                s1.src = '/scripts/card-particles.js';
+                s1.onload = () => {
+                    const s2 = document.createElement('script');
+                    s2.src = '/scripts/card-renderer.js';
+                    s2.onload = resolve;
+                    document.head.appendChild(s2);
+                };
+                document.head.appendChild(s1);
+            });
         }
 
         // Render and inject into page
