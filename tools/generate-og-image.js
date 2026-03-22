@@ -457,18 +457,25 @@ function extractFromHTML(htmlPath, projectRoot) {
         subtitle = subtitle.substring(0, 77) + '...';
     }
 
-    // Determine category: articles.json is authoritative, path-based is fallback only
+    // Determine category: articles.json → HTML config.category → path-based fallback
     let category = 'tech';
     if (articleData?.category) {
         category = articleData.category;
     } else {
-        // Fallback: detect from path only when not in articles.json
-        if (htmlPath.includes('/report/') || htmlPath.includes('market') || htmlPath.includes('business')) {
-            category = 'business';
-        } else if (htmlPath.includes('/story/') || htmlPath.includes('review')) {
-            category = 'story';
+        // Try HTML config.category first
+        const configCatMatch = htmlContent.match(/category:\s*['"](\w+)['"]/);
+        if (configCatMatch) {
+            category = configCatMatch[1];
+            console.log(`  [config] Category from HTML config: ${category}`);
+        } else {
+            // Final fallback: detect from path
+            if (htmlPath.includes('/report/') || htmlPath.includes('market') || htmlPath.includes('business')) {
+                category = 'business';
+            } else if (htmlPath.includes('/story/') || htmlPath.includes('review')) {
+                category = 'story';
+            }
+            console.log(`  [fallback] Category detected from path: ${category}`);
         }
-        console.log(`  [fallback] Category detected from path: ${category}`);
     }
 
     // Detect light theme from HTML data-theme attribute
