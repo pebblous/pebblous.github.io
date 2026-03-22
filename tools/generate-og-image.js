@@ -24,7 +24,7 @@ const THEMES_DARK = {
     tech: {
         gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
         accent: '#3B82F6',
-        badge: 'Tech',
+        badge: 'Tech Insight',
         titleColor: 'white',
         subtitleColor: '#94a3b8',
         logoTextColor: 'white',
@@ -34,7 +34,7 @@ const THEMES_DARK = {
     business: {
         gradient: 'linear-gradient(135deg, #1a1a2e 0%, #2d1810 100%)',
         accent: '#F86825',
-        badge: 'Business',
+        badge: 'Business Insight',
         titleColor: 'white',
         subtitleColor: '#94a3b8',
         logoTextColor: 'white',
@@ -44,7 +44,7 @@ const THEMES_DARK = {
     story: {
         gradient: 'linear-gradient(135deg, #1a1a2e 0%, #0d2818 100%)',
         accent: '#14B8A6',
-        badge: 'Story',
+        badge: 'Data Story',
         titleColor: 'white',
         subtitleColor: '#94a3b8',
         logoTextColor: 'white',
@@ -68,7 +68,7 @@ const THEMES_LIGHT = {
     tech: {
         gradient: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
         accent: '#3B82F6',
-        badge: 'Tech',
+        badge: 'Tech Insight',
         titleColor: '#0f172a',
         subtitleColor: '#475569',
         logoTextColor: '#1e293b',
@@ -76,19 +76,20 @@ const THEMES_LIGHT = {
         decorationOpacity: '15'
     },
     business: {
-        gradient: 'linear-gradient(135deg, #fffbf5 0%, #fed7aa40 100%)',
+        gradient: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
         accent: '#F86825',
-        badge: 'Business',
+        badge: 'Business Insight',
         titleColor: '#0f172a',
         subtitleColor: '#475569',
         logoTextColor: '#1e293b',
         urlColor: '#94a3b8',
-        decorationOpacity: '15'
+        decorationOpacity: '12',
+        sectionBar: true
     },
     story: {
         gradient: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
         accent: '#14B8A6',
-        badge: 'Story',
+        badge: 'Data Story',
         titleColor: '#0f172a',
         subtitleColor: '#475569',
         logoTextColor: '#1e293b',
@@ -142,6 +143,39 @@ function parseArgs(args) {
     return { category, title, subtitle, output, light };
 }
 
+function generatePebbles(title, accent, opacity) {
+    // Simple hash from title for consistent but "random" pebbles
+    let hash = 0;
+    for (let i = 0; i < title.length; i++) {
+        hash = ((hash << 5) - hash) + title.charCodeAt(i);
+        hash |= 0;
+    }
+    const seed = (n) => {
+        hash = (hash * 1103515245 + 12345) & 0x7fffffff;
+        return hash % n;
+    };
+
+    const pebbles = [];
+    const count = 4 + seed(3); // 4~6 pebbles
+    for (let i = 0; i < count; i++) {
+        const size = 50 + seed(180); // 50~230px
+        const right = -20 + seed(350); // -20~330px from right
+        const top = 20 + seed(500); // 20~520px from top
+        const op = (6 + seed(12)) / 100; // 0.06~0.18 opacity
+        // Irregular but convex border-radius (pebble-like)
+        const r1 = 40 + seed(20); // 40~60%
+        const r2 = 40 + seed(20);
+        const r3 = 40 + seed(20);
+        const r4 = 40 + seed(20);
+        const r5 = 40 + seed(20);
+        const r6 = 40 + seed(20);
+        const r7 = 40 + seed(20);
+        const r8 = 40 + seed(20);
+        pebbles.push(`<div style="position:absolute;right:${right}px;top:${top}px;width:${size}px;height:${size * (0.8 + seed(40)/100)}px;background:${accent};opacity:${op};border-radius:${r1}% ${r2}% ${r3}% ${r4}% / ${r5}% ${r6}% ${r7}% ${r8}%;"></div>`);
+    }
+    return pebbles.join('\n        ');
+}
+
 function generateHTML(title, subtitle, theme, logoPath) {
     // Handle manual line breaks first
     let displayTitle = title.replace(/\n/g, '<br>');
@@ -164,6 +198,11 @@ function generateHTML(title, subtitle, theme, logoPath) {
         if (currentLine) lines.push(currentLine);
         displayTitle = lines.join('<br>');
     }
+
+    const pebbleHTML = generatePebbles(title, theme.accent, theme.decorationOpacity);
+    const sectionBar = theme.sectionBar
+        ? `<div style="position:absolute;top:0;left:0;right:0;height:6px;background:${theme.accent};"></div>`
+        : '';
 
     return `
 <!DOCTYPE html>
@@ -194,6 +233,7 @@ function generateHTML(title, subtitle, theme, logoPath) {
             justify-content: space-between;
             padding: 60px;
             position: relative;
+            overflow: hidden;
         }
 
         .badge {
@@ -261,52 +301,12 @@ function generateHTML(title, subtitle, theme, logoPath) {
             color: ${theme.urlColor};
             font-size: 20px;
         }
-
-        /* Pebble decorative elements */
-        .pebble {
-            position: absolute;
-            border-radius: 50%;
-            opacity: 0.12;
-        }
-        .pebble-1 {
-            right: 40px;
-            top: 60px;
-            width: 200px;
-            height: 200px;
-            background: ${theme.accent};
-        }
-        .pebble-2 {
-            right: 180px;
-            bottom: 80px;
-            width: 140px;
-            height: 140px;
-            background: ${theme.accent};
-            opacity: 0.08;
-        }
-        .pebble-3 {
-            right: -20px;
-            bottom: 120px;
-            width: 100px;
-            height: 100px;
-            background: ${theme.accent};
-            opacity: 0.15;
-        }
-        .pebble-4 {
-            right: 280px;
-            top: 40px;
-            width: 60px;
-            height: 60px;
-            background: ${theme.accent};
-            opacity: 0.10;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="pebble pebble-1"></div>
-        <div class="pebble pebble-2"></div>
-        <div class="pebble pebble-3"></div>
-        <div class="pebble pebble-4"></div>
+        ${sectionBar}
+        ${pebbleHTML}
 
         <div class="badge">${theme.badge}</div>
 
