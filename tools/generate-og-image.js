@@ -524,7 +524,20 @@ if (fromHtmlIndex !== -1 && args[fromHtmlIndex + 1]) {
         process.exit(0);
     }
 
-    generateOGImage(title, subtitle, output, category, projectRoot, useLight).catch(console.error);
+    generateOGImage(title, subtitle, output, category, projectRoot, useLight).then(() => {
+        // After generating index.png, check for og-cover.* (special OG image override)
+        const imageDir = path.dirname(output);
+        const ogCoverPattern = ['og-cover.jpeg', 'og-cover.jpg', 'og-cover.png', 'og-cover.webp'];
+        const ogCover = ogCoverPattern.find(f => fs.existsSync(path.join(imageDir, f)));
+
+        if (ogCover) {
+            const ogCoverPath = path.join(imageDir, ogCover);
+            const relOgCover = path.relative(projectRoot, ogCoverPath);
+            console.log(`\n🎨 Special OG cover found: ${ogCover}`);
+            console.log(`   → og:image will use: ${relOgCover} (instead of index.png)`);
+            console.log(`   To revert to standard OG, delete ${ogCover}`);
+        }
+    }).catch(console.error);
 
 } else if (args.length < 2) {
     console.log(`

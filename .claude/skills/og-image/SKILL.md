@@ -76,9 +76,33 @@ node tools/generate-og-image.js --from-html "project/World Model/world-model-com
 
 ## OG 이미지 경로 규칙
 
-- **경로**: `{post}/ko/image/index.png` 또는 `{post}/en/image/index.png`
+- **표준 OG**: `{post}/ko/image/index.png` — `generate-og-image.js`가 자동 생성·관리
+- **스페셜 OG**: `{post}/ko/image/og-cover.*` (jpeg/png/webp) — 수동 배치, 표준보다 우선
 - **루트 `{post}/image/index.png` 사용 금지** — 구버전 잔재
 - EN 없으면 KO로 리디렉트
+
+### 스페셜 OG 이미지 (og-cover.*)
+
+커스텀 일러스트나 Gemini 생성 이미지 등 표준 OG 대신 사용할 특별 이미지:
+
+```
+image/
+├── index.png        ← 항상 존재. 시스템 자동 생성. 절대 삭제 안 함
+└── og-cover.jpeg    ← 있으면 index.png 대신 OG로 사용 (optional)
+```
+
+**동작 규칙:**
+- `generate-og-image.js`는 항상 `index.png`를 생성 (기존 동작 유지)
+- 생성 후 같은 `image/` 디렉토리에 `og-cover.*` 파일이 있는지 자동 확인
+- 있으면 → 콘솔에 "🎨 Special OG cover found" 메시지 출력
+- HTML의 `og:image`, `twitter:image`는 og-cover 파일을 가리켜야 함
+- `articles.json`의 `image` 필드도 og-cover 경로로 설정
+- 표준 OG로 되돌리려면 → `og-cover.*` 삭제 후 `og:image`를 `index.png`로 변경
+
+**스페셜 OG 적용 시 수동 작업:**
+1. 이미지를 `image/og-cover.jpeg`로 저장 (1200x630 권장)
+2. HTML의 `og:image`, `twitter:image` 경로를 `og-cover.jpeg`로 변경
+3. `articles.json`의 `image` 필드를 `og-cover.jpeg` 경로로 업데이트
 
 ## 제목 일관성 (story-style-guide §7 참조)
 
