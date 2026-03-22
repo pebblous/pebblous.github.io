@@ -37,15 +37,16 @@ Check for source materials:
 - Related project directories
 - The post's topic keywords for web image search
 
-**Image source priority:**
-1. Official product/project screenshots or diagrams (e.g., from the tool's own site)
-2. Open-license technical diagrams (architecture, workflow)
-3. High-quality concept images from reputable sources (Unsplash, official docs)
+**Image source priority (CRITICAL — 반드시 이 순서):**
+1. **대상 소스/연구/프로젝트/논문의 실제 이미지** — 논문 figure, 프로젝트 스크린샷, 데모 결과물. 출처 논문/프로젝트 링크 반드시 포함. arxiv HTML figure (`arxiv.org/html/{id}v{n}/x{n}.png`) 등 안정적 학술 URL 활용
+2. Official product/project screenshots or diagrams (e.g., from the tool's own site)
+3. Open-license technical diagrams (architecture, workflow)
+4. High-quality concept images (Unsplash 등) — **보조 용도로만** 사용. 분위기 사진만으로 기술 블로그를 채우지 않는다
 
 **CRITICAL: Image URL rules**
-- MUST be stable URLs (official sites, CDNs, Unsplash) — NOT temporary/generated URLs
+- MUST be stable URLs (arxiv, official sites, CDNs, Unsplash) — NOT temporary/generated URLs
 - MUST be HTTPS
-- MUST have appropriate licensing (open source, CC, official press/media kit)
+- MUST have appropriate licensing (open source, CC, official press/media kit, academic fair use)
 - NEVER use images from Google Image search results directly (use the source page)
 - NEVER use data: URIs or base64-encoded images
 - Prefer SVG or PNG for diagrams, WebP/JPEG for photos
@@ -63,16 +64,18 @@ Wait for user approval before proceeding.
 
 ### Standard Image Pattern
 
+**CRITICAL: `max-h-[480px]` + `object-contain`을 반드시 포함** — 세로로 긴 이미지가 화면을 지배하지 않도록 한다.
+
 ```html
 <!-- Image: [brief description] -->
 <figure class="my-8">
     <img src="[URL]"
          alt="[descriptive alt text for SEO and accessibility]"
-         class="w-full rounded-xl border themeable-border mx-auto"
+         class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
          loading="lazy"
          onerror="this.parentElement.style.display='none'">
     <figcaption class="text-xs themeable-muted text-center mt-2">
-        ▲ [Korean caption] | Source: [source name]
+        ▲ [Korean caption] | Source: <a href="[paper/project URL]" target="_blank" rel="noopener" class="underline">[source name]</a>
     </figcaption>
 </figure>
 ```
@@ -83,7 +86,7 @@ Wait for user approval before proceeding.
 <figure class="my-8">
     <img src="[URL]"
          alt="[alt text]"
-         class="max-w-[560px] w-full rounded-xl border themeable-border mx-auto"
+         class="max-w-[560px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
          loading="lazy"
          onerror="this.parentElement.style.display='none'">
     <figcaption class="text-xs themeable-muted text-center mt-2">
