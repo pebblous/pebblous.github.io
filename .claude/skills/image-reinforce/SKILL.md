@@ -1,7 +1,7 @@
 ---
 name: image-reinforce
-description: "Add contextual images to blog posts — web URL placeholders first, then final insertion"
-argument-hint: "<path-to-html-post>"
+description: "Add contextual images to blog posts — auto mode finds, verifies, downloads, and inserts without user intervention"
+argument-hint: "<path-to-html-post> [--auto]"
 ---
 
 # image-reinforce
@@ -10,81 +10,114 @@ When this skill is invoked with a path to an HTML blog post:
 
 ## Overview
 
-Analyzes an HTML blog post and inserts contextual images from the web that reinforce the narrative. Works in two modes:
+Analyzes an HTML blog post and inserts contextual images that reinforce the narrative. Three modes:
 
-- **Plan mode** (default): Analyze the post, propose image placements with placeholder markup
-- **Insert mode** (`--insert`): Replace placeholders with final verified image URLs
+- **Plan mode** (default): Analyze, propose placements, wait for approval
+- **Auto mode** (`--auto`): Find → verify → download → insert — no user intervention needed
+- **Insert mode** (`--insert`): Replace existing placeholders with final URLs
 
 ## Goals
 
 1. Add 4-6 relevant images per post that visually reinforce key concepts
-2. Use web images via URL (no repo copy) — reduces repo bloat
+2. **Download to local repo** (preferred) — eliminates hotlink/404 risks
 3. Follow Text-First principle: images always appear **after** the explaining paragraph
 4. Maintain 3-theme compatibility (dark/light/beige)
+
+## Auto Mode (`--auto`)
+
+When `--auto` is specified, run the entire pipeline without user interaction:
+
+```
+1. Analyze post → identify 4-6 visual gap slots
+2. For each slot:
+   a. Search Wikimedia Commons first (most stable)
+   b. Fallback: official sites, Apple Newsroom, arxiv, etc.
+   c. Verify URL: curl -sL -o /dev/null -w "%{http_code}" "[URL]"
+   d. If 200: download to ko/image/ directory
+   e. If 200: verify image content (Read tool — check it's the right image, not an error page)
+   f. If wrong/failed: skip slot, continue to next
+3. Insert verified local images into HTML
+4. Report results (inserted / skipped)
+5. Commit and push
+```
+
+**Auto mode rules:**
+- Do NOT wait for user approval — just do it
+- Skip failed slots silently (onerror fallback handles it anyway)
+- Download to `ko/image/img-{nn}-{slug}.{ext}` naming convention
+- Report only at the end: "5/6 images inserted, 1 skipped (AlexNet: 404)"
 
 ## Step 1: Analyze Post Structure
 
 Read the HTML post and identify:
 - Sections and their topics
 - Visual gaps: sections with only text (no chart, card, table, or image)
-- Key concepts that benefit from visual illustration (architecture diagrams, product screenshots, concept photos, data visualizations)
+- Key concepts that benefit from visual illustration
 - Existing visuals to avoid redundancy
 
 ## Step 2: Source & Reference Lookup
 
-Check for source materials:
-- `source/` subdirectory next to the HTML file
-- Related project directories
-- The post's topic keywords for web image search
-
 **Image source priority (CRITICAL — 반드시 이 순서):**
-1. **대상 소스/연구/프로젝트/논문의 실제 이미지** — 논문 figure, 프로젝트 스크린샷, 데모 결과물. 출처 논문/프로젝트 링크 반드시 포함. arxiv HTML figure (`arxiv.org/html/{id}v{n}/x{n}.png`) 등 안정적 학술 URL 활용
-2. Official product/project screenshots or diagrams (e.g., from the tool's own site)
-3. Open-license technical diagrams (architecture, workflow)
-4. High-quality concept images (Unsplash 등) — **보조 용도로만** 사용. 분위기 사진만으로 기술 블로그를 채우지 않는다
+1. **Wikimedia Commons** — 가장 안정적. 영구 URL. CC 라이선스. 항상 여기서 먼저 검색
+2. **대상 소스/프로젝트의 실제 이미지** — 논문 figure, 프로젝트 스크린샷, 공식 프레스 이미지
+3. Official product screenshots (Apple Newsroom, NVIDIA newsroom 등)
+4. Open-license technical diagrams
+5. Unsplash — **보조 용도로만**
 
-**CRITICAL: Image URL rules**
-- MUST be stable URLs (arxiv, official sites, CDNs, Unsplash) — NOT temporary/generated URLs
-- MUST be HTTPS
-- MUST have appropriate licensing (open source, CC, official press/media kit, academic fair use)
-- NEVER use images from Google Image search results directly (use the source page)
-- NEVER use data: URIs or base64-encoded images
-- Prefer SVG or PNG for diagrams, WebP/JPEG for photos
+**CRITICAL: URL 사전 검증 (반드시 실행)**
 
-## Step 3: Propose Image Plan
+이미지를 삽입하기 전에 반드시 아래 검증을 통과해야 한다:
 
-Present to the user a table:
+```bash
+# Step 1: HTTP 상태 확인
+curl -sL -o /dev/null -w "%{http_code}" "[URL]"
+# → 200이 아니면 사용 불가
 
-| # | Section | Placement (after which element) | Image concept | Source type |
-|---|---------|-------------------------------|---------------|-------------|
+# Step 2: 다운로드
+curl -sL -o /tmp/check-image.{ext} "[URL]"
 
-Wait for user approval before proceeding.
+# Step 3: 시각적 내용 확인 (Read tool)
+# → 실제 이미지 내용이 의도한 것과 맞는지 확인
+# → Cloudflare 에러 페이지, 로그인 화면, 다른 콘텐츠가 아닌지 확인
+```
 
-## Step 4: Insert Images
+**3단계 모두 통과한 이미지만 사용한다.** URL이 200을 반환해도 내용이 다를 수 있다 (Statista → EU 시민권 통계가 온 사례).
+
+## Step 3: Download & Insert
+
+### Download Convention
+
+```
+{post-dir}/ko/image/img-01-{slug}.{ext}
+{post-dir}/ko/image/img-02-{slug}.{ext}
+...
+```
+
+예: `story/nvidia-story-pb/ko/image/img-01-dennys-founding.jpg`
 
 ### Standard Image Pattern
 
-**CRITICAL: `max-h-[480px]` + `object-contain`을 반드시 포함** — 세로로 긴 이미지가 화면을 지배하지 않도록 한다.
+**CRITICAL: `max-h-[480px]` + `object-contain`을 반드시 포함**
 
 ```html
 <!-- Image: [brief description] -->
 <figure class="my-8">
-    <img src="[URL]"
+    <img src="./image/img-01-{slug}.{ext}"
          alt="[descriptive alt text for SEO and accessibility]"
          class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
          loading="lazy"
          onerror="this.parentElement.style.display='none'">
     <figcaption class="text-xs themeable-muted text-center mt-2">
-        ▲ [Korean caption] | Source: <a href="[paper/project URL]" target="_blank" rel="noopener" class="underline">[source name]</a>
+        ▲ [Korean caption] | Source: <a href="[source page URL]" target="_blank" rel="noopener" class="underline">[source name]</a>
     </figcaption>
 </figure>
 ```
 
-### Size-Constrained Pattern (for smaller images)
+### Size-Constrained Pattern (for smaller/portrait images)
 
 ```html
 <figure class="my-8">
-    <img src="[URL]"
+    <img src="./image/img-02-{slug}.{ext}"
          alt="[alt text]"
          class="max-w-[560px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
          loading="lazy"
@@ -95,24 +128,14 @@ Wait for user approval before proceeding.
 </figure>
 ```
 
-### Placeholder Pattern (Plan mode)
+### Plan Mode: Propose Table
 
-When inserting placeholders before final URLs are decided:
+In plan mode (no `--auto`), present to user:
 
-```html
-<!-- IMAGE-PLACEHOLDER: [concept description] -->
-<!-- Section: [section-id] | After: [preceding element description] -->
-<!-- Concept: [what the image should show] -->
-<!-- Source candidates: [suggested sources] -->
-<figure class="my-8" data-image-placeholder="true">
-    <div class="w-full rounded-xl border themeable-border mx-auto bg-slate-100 dark:bg-slate-800 flex items-center justify-center py-12">
-        <p class="text-sm themeable-muted italic">[Image placeholder: concept description]</p>
-    </div>
-    <figcaption class="text-xs themeable-muted text-center mt-2">
-        ▲ [Planned caption]
-    </figcaption>
-</figure>
-```
+| # | Section | Placement | Image concept | Source type |
+|---|---------|-----------|---------------|-------------|
+
+Wait for user approval before proceeding.
 
 ## Key Rules
 
@@ -141,12 +164,11 @@ When inserting placeholders before final URLs are decided:
 - Use `themeable-border` for border color adaptation
 - Use `rounded-xl` for consistent corner radius
 - Avoid images with hardcoded white/dark backgrounds that clash with themes
-- Prefer images with transparent or neutral backgrounds
 
-## Step 5: Verify
+## Verify (Auto mode: automatic)
 
 After insertion:
-- [ ] All image URLs load correctly (test with curl or fetch)
+- [ ] All local image files exist and are valid
 - [ ] Alt text is descriptive and in the correct language
 - [ ] Captions include source attribution
 - [ ] Images appear after explaining text, not before
