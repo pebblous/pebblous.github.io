@@ -67,7 +67,7 @@ pebblopedia/{topic}/
             <!-- Hero (표준: text-left, main 안) -->
             <header class="text-left mb-12">
                 <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight" style="line-height: 1.4;"></h1>
-                <p class="text-sm themeable-muted">YYYY.MM · 페블러스 데이터커뮤니케이션팀</p>
+                <p class="text-sm themeable-muted">YYYY.MM · (주)페블러스 데이터 커뮤니케이션팀</p>
                 <p class="text-sm themeable-muted mt-1">읽는 시간: ~N분 · <a href="../en/">English</a></p>
                 <div id="share-buttons-placeholder" class="flex justify-start"></div>
             </header>
@@ -150,13 +150,18 @@ PebbloPedia 포스트 리뷰 시:
 - [ ] 5단계: 시적 인사이트, 산문시 또는 에세이 형식
 - [ ] 각 단계 독립적으로 읽을 수 있으면서 순서대로 깊어짐
 
-### SEO (story-style-guide §7 + seo-check)
+### SEO (CLAUDE.md + seo-check 스킬 필수 실행)
 - [ ] mainTitle = 주제만, subtitle = [페블로피디아] + 설명
 - [ ] og:title, twitter:title, `<title>`, articles.json 5곳 일관성
 - [ ] og:image:alt + twitter:image:alt 존재
 - [ ] twitter:site + twitter:creator = @pebblous
 - [ ] article:published_time 존재
-- [ ] publisher = "페블러스 데이터커뮤니케이션팀" (no (주))
+- [ ] publisher = "(주)페블러스 데이터 커뮤니케이션팀"
+- [ ] articlePath = 디렉토리 형식 (끝에 `/`, `index.html` 금지)
+- [ ] `css/styles.css` 미포함 (인덱스 전용 CSS — 기사 페이지에 불필요)
+- [ ] CSS 3종만 로드: `theme-variables.css`, `common-styles.css`, `tailwind-build.css`
+- [ ] 캐시 버스팅: CSS/JS에 `?v=YYYYMMDD`
+- [ ] **작성 완료 후 반드시 `/seo-check` 실행** — 4계층 검증
 
 ### articles.json
 - [ ] category: "tech" (PebbloPedia는 교육 콘텐츠이므로 tech)
