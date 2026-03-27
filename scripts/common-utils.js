@@ -541,6 +541,11 @@ const PebblousPage = {
             PebblousSchema.injectFAQSchema(config.faqs);
         }
 
+        // Render FAQ HTML (if FAQs provided and container exists)
+        if (config.faqs && config.faqs.length > 0) {
+            this.renderFAQ(config.faqs);
+        }
+
         // SEO: Initialize Breadcrumbs with Schema
         PebblousBreadcrumbs.init(config);
 
@@ -569,6 +574,35 @@ const PebblousPage = {
 
         // Align TOC top with first content section (after hero)
         this.alignTOC();
+    },
+
+    /**
+     * Render FAQ items into #faq-container as an accessible accordion
+     * @param {Array} faqs - Array of {question, answer} objects
+     */
+    renderFAQ(faqs) {
+        const container = document.getElementById('faq-container');
+        if (!container || !faqs || faqs.length === 0) return;
+
+        container.innerHTML = faqs.map((faq, i) => `
+            <details class="faq-item" style="border:1px solid var(--border-color);border-radius:0.75rem;overflow:hidden;">
+                <summary style="cursor:pointer;padding:1rem 1.25rem;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center;background:var(--bg-card);color:var(--text-primary);">
+                    <span>Q. ${faq.question}</span>
+                    <svg class="faq-chevron" style="width:18px;height:18px;flex-shrink:0;transition:transform 0.2s;color:var(--accent-color);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div style="padding:1rem 1.25rem;color:var(--text-muted);line-height:1.75;background:var(--bg-primary);border-top:1px solid var(--border-color);">
+                    ${faq.answer}
+                </div>
+            </details>
+        `).join('');
+
+        // Rotate chevron on open/close
+        container.querySelectorAll('details').forEach(detail => {
+            detail.addEventListener('toggle', () => {
+                const chevron = detail.querySelector('.faq-chevron');
+                if (chevron) chevron.style.transform = detail.open ? 'rotate(180deg)' : '';
+            });
+        });
     },
 
     /**
