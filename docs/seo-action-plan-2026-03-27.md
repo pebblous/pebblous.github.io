@@ -30,29 +30,30 @@
 
 | # | 액션 | 대상 | 기대 효과 | 상태 |
 |---|------|------|----------|------|
-| 1 | 팔란티어 온톨로지 title/desc 재작성 | `project/CURK/ontology/palantir-vs-classic-ontology.html` | CTR 3.4%→7%, +40 클릭/월 | ⬜ |
+| 1 | 팔란티어 온톨로지 title/desc 재작성 | `palantir-vs-classic-ontology/ko/`, `/en/` | CTR 3.4%→7%, +40 클릭/월 | ✅ `d4caaf1` |
 | 2 | VLA 전용 콘텐츠 강화 | Physical AI 페이지 또는 신규 VLA 페이지 | +1,600% 급증 키워드 선점 | ⬜ |
 | 3 | FAQPage 중복 스키마 제거 | GSC에서 해당 페이지 특정 후 수정 | 리치 스니펫 정상화 | ⬜ |
 | 4 | 404 페이지 18개 → redirect 처리 | GSC 목록 확인 필요 | 링크 주스 보존 | ⬜ |
+| 5 | HowTo Schema 추가 | ISO 5259 치트시트, 데이터 품질 가이드 등 | 리치 스니펫 스텝 표시 → CTR +30~50% | ⬜ |
 
 ### 🟡 P1 — 단기 (1-2주)
 
 | # | 액션 | 대상 | 기대 효과 | 상태 |
 |---|------|------|----------|------|
-| 5 | robots.txt 차단 19개 페이지 검토 | robots.txt + 해당 페이지 | 의도치 않은 차단 해제 | ⬜ |
-| 6 | "Crawled - not indexed" 22개 분석 | 품질 부족 페이지 개선 또는 noindex | 크롤 예산 최적화 | ⬜ |
-| 7 | noindex 48개 의도 검증 | 리다이렉트 stub vs 실수 | 인덱싱 누락 방지 | ⬜ |
-| 8 | Physical AI title/desc 튜닝 | `project/PhysicalAI/physical-ai.html` | CTR 4.8%→7%, +120 클릭/월 | ⬜ |
-| 9 | EN sitemap 커버리지 검증 | 최근 EN 페이지 sitemap 포함 여부 | 미국 노출 확대 | ⬜ |
+| 6 | robots.txt 차단 19개 페이지 검토 | robots.txt + 해당 페이지 | 의도치 않은 차단 해제 | ⬜ |
+| 7 | "Crawled - not indexed" 22개 분석 | 품질 부족 페이지 개선 또는 noindex | 크롤 예산 최적화 | ⬜ |
+| 8 | noindex 48개 의도 검증 | 리다이렉트 stub vs 실수 | 인덱싱 누락 방지 | ⬜ |
+| 9 | Physical AI title/desc 튜닝 | `project/PhysicalAI/physical-ai.html` | CTR 4.8%→7%, +120 클릭/월 | ⬜ |
+| 10 | EN sitemap 커버리지 검증 | 최근 EN 페이지 sitemap 포함 여부 | 미국 노출 확대 | ⬜ |
 
 ### 🟢 P2 — 중기 (1개월)
 
 | # | 액션 | 대상 | 기대 효과 | 상태 |
 |---|------|------|----------|------|
-| 10 | 내부 링크 강화 | 포스트 간 크로스링크 | 크롤 효율 + 권위 분산 | ⬜ |
-| 11 | 이미지 검색 최적화 | alt 태그 + OG 이미지 | 이미지 검색 23클릭 확대 | ⬜ |
-| 12 | EN 니치 키워드 공략 | DataClinic EN 스토리 10개 SEO 강화 | UrbanGPT 패턴 복제 | ⬜ |
-| 13 | 모바일 UX 개선 | Core Web Vitals 모바일 | 모바일 15%→25% | ⬜ |
+| 11 | 내부 링크 강화 | 포스트 간 크로스링크 | 크롤 효율 + 권위 분산 | ⬜ |
+| 12 | 이미지 검색 최적화 | alt 태그 + OG 이미지 | 이미지 검색 23클릭 확대 | ⬜ |
+| 13 | EN 니치 키워드 공략 | DataClinic EN 스토리 10개 SEO 강화 | UrbanGPT 패턴 복제 | ⬜ |
+| 14 | 모바일 UX 개선 | Core Web Vitals 모바일 | 모바일 15%→25% | ⬜ |
 
 ---
 
@@ -62,7 +63,10 @@
 
 - 고노출·저CTR 페이지의 title/description을 검색 의도에 맞게 튜닝
 - 검색자가 "무엇을 얻는지" 명확히 전달 (비교, 사례, 숫자 활용)
-- 구조화 데이터(Article, HowTo) 추가로 리치 스니펫 확보
+- 구조화 데이터 리치 스니펫 확보:
+  - **Article Schema**: 대부분 `TechArticle` 적용 완료 — 유지
+  - **HowTo Schema**: 단계별 가이드 성격 페이지에 추가 (ISO 5259 치트시트, 데이터 품질 가이드 등). Google 검색 결과에 스텝별 리치 스니펫 표시 → 같은 순위에서 CTR +30~50%
+  - **대상 판별 기준**: "How to" 성격의 콘텐츠만. 분석/비교 글에는 불필요
 
 ### 중기: UrbanGPT 패턴 복제
 
