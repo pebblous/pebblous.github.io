@@ -547,6 +547,11 @@ const PebblousPage = {
         // SEO: Initialize Related Posts
         await PebblousRelatedPosts.init(config);
 
+        // Initialize CTA section (before comments)
+        if (config.enableCTA !== false) {
+            PebblousCTA.init();
+        }
+
         // Initialize comments if enabled
         if (config.enableComments !== false) {
             PebblousComments.init(config.commentsMessage);
@@ -593,6 +598,119 @@ const PebblousPage = {
         if (offset > 0) {
             tocNav.style.marginTop = offset + 'px';
         }
+    }
+};
+
+// ========================================
+// CTA (Call-to-Action) — Blog → Business Funnel
+// ========================================
+const PebblousCTA = {
+    /**
+     * Detect language from URL path (/en/ or /ko/)
+     * @returns {'en'|'ko'}
+     */
+    detectLang() {
+        return window.location.pathname.includes('/en/') ? 'en' : 'ko';
+    },
+
+    /**
+     * Initialize CTA section — auto-injected into <main> before comments
+     */
+    init() {
+        const main = document.querySelector('main');
+        if (!main) return;
+
+        const lang = this.detectLang();
+        const section = document.createElement('section');
+        section.id = 'cta-section';
+        section.className = 'mb-16 fade-in-card is-visible';
+
+        const i18n = this.getStrings(lang);
+        const calendlyUrl = lang === 'en'
+            ? 'https://calendly.com/joohaeng-pebblous/joohaeng-lee-pebblous'
+            : 'https://calendly.com/jeongwon-mf7/jeongwon-lee-pebblous';
+
+        section.innerHTML = `
+            <h2 class="text-2xl font-bold themeable-heading mb-6">${i18n.heading}</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Newsletter -->
+                <a href="https://dataclinic.stibee.com/" target="_blank" rel="noopener"
+                   class="cta-card themeable-card rounded-xl p-6 block hover:scale-[1.02] transition-transform no-underline">
+                    <div class="text-3xl mb-3">📬</div>
+                    <h3 class="text-lg font-bold themeable-heading mb-2">${i18n.newsletter.title}</h3>
+                    <p class="text-sm themeable-muted leading-relaxed">${i18n.newsletter.desc}</p>
+                    <span class="inline-block mt-3 text-sm font-semibold text-orange-500">${i18n.newsletter.cta} →</span>
+                </a>
+                <!-- Meeting -->
+                <a href="${calendlyUrl}" target="_blank" rel="noopener"
+                   class="cta-card themeable-card rounded-xl p-6 block hover:scale-[1.02] transition-transform no-underline">
+                    <div class="text-3xl mb-3">📅</div>
+                    <h3 class="text-lg font-bold themeable-heading mb-2">${i18n.meeting.title}</h3>
+                    <p class="text-sm themeable-muted leading-relaxed">${i18n.meeting.desc}</p>
+                    <span class="inline-block mt-3 text-sm font-semibold text-orange-500">${i18n.meeting.cta} →</span>
+                </a>
+                <!-- DataClinic -->
+                <a href="https://dataclinic.ai/${lang === 'en' ? 'en' : 'ko'}/auth/firebase/login" target="_blank" rel="noopener"
+                   class="cta-card themeable-card rounded-xl p-6 block hover:scale-[1.02] transition-transform no-underline">
+                    <div class="text-3xl mb-3">🔬</div>
+                    <h3 class="text-lg font-bold themeable-heading mb-2">${i18n.dataclinic.title}</h3>
+                    <p class="text-sm themeable-muted leading-relaxed">${i18n.dataclinic.desc}</p>
+                    <span class="inline-block mt-3 text-sm font-semibold text-orange-500">${i18n.dataclinic.cta} →</span>
+                </a>
+            </div>
+        `;
+
+        // Insert before comments-section if exists, otherwise append to main
+        const comments = document.getElementById('comments-section');
+        if (comments) {
+            comments.parentNode.insertBefore(section, comments);
+        } else {
+            main.appendChild(section);
+        }
+    },
+
+    /**
+     * Bilingual strings
+     */
+    getStrings(lang) {
+        if (lang === 'en') {
+            return {
+                heading: 'Take the Next Step',
+                newsletter: {
+                    title: 'Newsletter',
+                    desc: 'Get weekly insights on AI-Ready Data, Physical AI, and data quality standards.',
+                    cta: 'Subscribe Free'
+                },
+                meeting: {
+                    title: 'Schedule a Meeting',
+                    desc: 'Talk with our team about your data challenges. 30-min free consultation.',
+                    cta: 'Book a Time'
+                },
+                dataclinic: {
+                    title: 'DataClinic™',
+                    desc: 'AI-powered data quality diagnostics. Try our platform with a free account.',
+                    cta: 'Get Started'
+                }
+            };
+        }
+        return {
+            heading: '다음 단계로',
+            newsletter: {
+                title: '뉴스레터 구독',
+                desc: 'AI-Ready 데이터, Physical AI, 데이터 품질 표준에 대한 주간 인사이트를 받아보세요.',
+                cta: '무료 구독'
+            },
+            meeting: {
+                title: '미팅 예약',
+                desc: '데이터 과제에 대해 페블러스 팀과 상담하세요. 30분 무료 상담.',
+                cta: '시간 예약'
+            },
+            dataclinic: {
+                title: 'DataClinic™',
+                desc: 'AI 기반 데이터 품질 진단 플랫폼. 무료 계정으로 시작하세요.',
+                cta: '시작하기'
+            }
+        };
     }
 };
 
