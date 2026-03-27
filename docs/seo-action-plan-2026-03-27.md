@@ -46,6 +46,29 @@
 | 9 | Physical AI title/desc 튜닝 | `project/PhysicalAI/physical-ai.html` | CTR 4.8%→7%, +120 클릭/월 | ⬜ |
 | 10 | EN sitemap 커버리지 검증 | 최근 EN 페이지 sitemap 포함 여부 | 미국 노출 확대 | ⬜ |
 
+### 🟠 P0.5 — 블로그→비즈니스 전환 (이번 주)
+
+> 현재 블로그 트래픽이 비즈니스로 전환되지 않음. 댓글(giscus)은 GitHub Discussions 기반으로 비즈니스 리드 수집에 부적합. 110개국 유입을 수확할 퍼널이 급선무.
+
+| # | 액션 | 상세 | 기대 효과 | 상태 |
+|---|------|------|----------|------|
+| A1 | **글 하단 CTA 컴포넌트** | 모든 영문 글 하단에 3종 CTA 자동 삽입: ① Newsletter 구독 ② Calendly 미팅 예약 ③ DataClinic 문의 | 트래픽→리드 전환 시작 | ⬜ |
+| A2 | **CTA 국제화** | KO/EN 자동 감지, 언어별 메시지 | 한국어 글에도 적용 | ⬜ |
+| A3 | **고CTR 시장 집중 CTA** | 홍콩·UAE·말레이시아·인도 등 영어권 아시아/중동 시장 맞춤 메시지 검토 | CTR 10~44% 시장 수확 | ⬜ |
+| A4 | **UrbanGPT 패턴 복제** | 오리지널 리서치/제품 분석 영문 콘텐츠 추가 발행 | 정보성 글 CTR 0.1% vs 제품 글 CTR 21% 격차 해소 | ⬜ |
+
+**연결 자산:**
+- 메일링 리스트: (URL 확인 필요)
+- DataClinic: `blog.dataclinic.ai`
+- Calendly: (URL 확인 필요)
+- Service Request: `https://www.pebblous.ai/en/request`
+- Email: `contact@pebblous.ai`
+
+**전환 퍼널 설계:**
+```
+블로그 글 (인식) → 글 하단 CTA (관심) → Newsletter/Calendly/DataClinic (전환) → 영업팀 (성사)
+```
+
 ### 🟢 P2 — 중기 (1개월)
 
 | # | 액션 | 대상 | 기대 효과 | 상태 |
