@@ -145,6 +145,51 @@ EN 버전:
 
 **금지:** `<div class="info-box">` → `key-insight` 사용
 
+## 6-1. Article Content Component CSS Classes
+
+`styles/common-styles.css`에 정의된 재사용 클래스들. 인라인 스타일로 대체 금지.
+
+| 클래스 | 용도 | 정의 위치 |
+|--------|------|-----------|
+| `.key-insight` | teal 좌측 테두리 하이라이트 박스 (Executive Summary, 핵심 인사이트) | `common-styles.css` |
+| `.inline-code` | body 텍스트 내 인라인 코드 (`<code class="inline-code">`) | `common-styles.css` |
+| `.info-card` | 보조 정보 카드 (전체 테두리 + bg-card 배경) | `common-styles.css` |
+| `.comparison-table` | 테마 대응 비교표 래퍼 (`<div class="comparison-table"><table>...`) | `common-styles.css` |
+| `.bg-card` | `var(--bg-card)` 배경 단독 적용 유틸리티 | `common-styles.css` |
+
+```html
+<!-- key-insight: teal 하이라이트 (기본 margin 없음 — mb-N으로 제어) -->
+<div class="key-insight">
+    <p class="themeable-text leading-relaxed">...</p>
+</div>
+
+<!-- inline-code: body 내 코드 스니펫 -->
+<code class="inline-code">bfts_config.yaml</code>
+
+<!-- info-card: 논문 정보 등 보조 카드 -->
+<div class="info-card mb-6">
+    <p class="text-sm font-semibold accent-text mb-2">논문 정보</p>
+    ...
+</div>
+
+<!-- comparison-table: v1 vs v2 비교표 등 -->
+<div class="comparison-table mb-8">
+    <table class="text-sm">
+        <thead><tr><th>항목</th><th>v1</th><th>v2</th></tr></thead>
+        <tbody>
+            <tr><td>...</td><td>...</td><td>...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- bg-card + 색상 좌측 테두리 조합 (한계/경고 카드) -->
+<div class="p-4 rounded-lg border-l-4 border-red-500 bg-card">...</div>
+<div class="p-4 rounded-lg border-l-4 border-yellow-500 bg-card">...</div>
+<div class="p-4 rounded-lg border-l-4 border-blue-500 bg-card">...</div>
+```
+
+**주의:** `inline-code` 클래스는 `<code>` 태그에만 사용. `<pre>` 코드 블록에는 사용하지 말 것.
+
 ## 7. 제목/부제목 일관성 (Title Consistency Rule)
 
 제목과 부제목은 **5곳에서 동일**해야 합니다:
