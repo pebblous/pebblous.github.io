@@ -139,7 +139,99 @@ PebblousPage.init({
 
 ---
 
-## 10. 체크리스트 (글 완성 후)
+## 10. ⚠️ 반복 버그: Itemize 이중 불릿 (Double Bullet)
+
+> 이 문제는 자주 반복되는 버그야. 글 작성 시 반드시 지켜.
+
+### 원인
+
+`common-styles.css`는 `main ul { list-style-type: disc }` 로 자동 불릿을 붙인다.
+여기에 `<li>` 안에 `•` 문자를 **하드코딩**하면 불릿이 두 개 나온다.
+
+```html
+<!-- ❌ 이중 불릿 (disc CSS + 하드코딩 •) -->
+<ul>
+    <li>• 자율주행 자동차</li>
+    <li>• 로봇팔</li>
+</ul>
+```
+
+### 올바른 방법 (두 가지 중 하나 선택)
+
+**옵션 A — 하드코딩 불릿 유지 (권장: 들여쓰기 없는 리스트)**
+
+`<ul>`에 `list-style:none;margin-left:0;` 추가:
+
+```html
+<!-- ✅ -->
+<ul class="themeable-text leading-relaxed space-y-2 mb-4"
+    style="list-style:none;margin-left:0;line-height:2.0;">
+    <li>• 자율주행 자동차</li>
+    <li>• 로봇팔</li>
+</ul>
+```
+
+**옵션 B — CSS 불릿 사용 (일반 본문 리스트)**
+
+`<li>` 안에서 `•` 제거, CSS `disc`가 자동 처리:
+
+```html
+<!-- ✅ -->
+<ul class="themeable-text leading-relaxed space-y-2 mb-4 ml-6">
+    <li>자율주행 자동차</li>
+    <li>로봇팔</li>
+</ul>
+```
+
+### 체크리스트에 추가
+
+글 완성 후 다음 명령으로 이중 불릿 없는지 확인:
+
+```bash
+# <li>• 가 있는 <ul> 중 list-style:none 없는 것 찾기
+python3 << 'EOF'
+import re; from pathlib import Path
+base = Path(".")
+for fp in base.rglob("*.html"):
+    if 'node_modules' in str(fp): continue
+    text = fp.read_text(errors='ignore')
+    lines = text.split('\n'); i = 0
+    while i < len(lines):
+        m = re.match(r'^\s*<ul\b([^>]*)>', lines[i])
+        if m:
+            attrs = m.group(1)
+            block = []
+            j, d = i, 0
+            while j < len(lines):
+                bl = lines[j]; block.append(bl)
+                if re.search(r'<ul\b', bl): d += 1
+                if re.search(r'</ul>', bl):
+                    d -= 1
+                    if d == 0: j += 1; break
+                j += 1
+            bt = '\n'.join(block)
+            if re.search(r'<li>\s*•', bt) and 'list-style:none' not in attrs:
+                print(str(fp.relative_to(base)), lines[i].strip())
+            i = j; continue
+        i += 1
+EOF
+```
+
+### 일괄 수정 스크립트
+
+이미 잘못 작성된 파일이 많을 때 사용 (`/tmp/fix_bullets.py` 참조):
+
+```python
+# 핵심 로직: <li>• 를 포함하는 <ul>에 list-style:none 추가
+if re.search(r'<li>\s*•', block_text):
+    if 'list-style:none' not in attrs:
+        new_attrs = re.sub(r'style="([^"]*)"',
+            lambda m: f'style="list-style:none;margin-left:0;{m.group(1)}"', attrs)
+```
+
+---
+
+## 11. 체크리스트 (글 완성 후)
 
 - [ ] `docs/blog-html-checklist.md` 전체 항목 대조
 - [ ] 모든 비주얼 앞에 설명 문단 있음
@@ -150,8 +242,10 @@ PebblousPage.init({
 - [ ] 마무리에 인사말 + 서명 + 날짜
 - [ ] OG 이미지 생성 + 파일 존재 확인
 - [ ] hreflang 양방향 설정 (bilingual인 경우)
+- [ ] **`<li>•` 리스트에 `list-style:none;margin-left:0;` 추가 여부 확인** ← 신규
 
 ---
 
 *이 문서는 PR #23 리뷰 과정에서 2026-03-21에 작성되었습니다.*
+*2026-03-28: 섹션 10(이중 불릿 버그) 추가.*
 *질문 있으면 Slack에서 "@이주행"을 불러.*
