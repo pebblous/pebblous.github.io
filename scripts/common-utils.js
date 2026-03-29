@@ -292,7 +292,7 @@ const PebblousUI = {
         if (!scrollTopBtn) {
             scrollTopBtn = document.createElement('button');
             scrollTopBtn.id = 'scrollTopBtn';
-            scrollTopBtn.className = 'hidden fixed bottom-10 right-10 p-3 rounded-full themeable-accent-bg themeable-accent-text shadow-lg transition-opacity duration-300 z-50';
+            scrollTopBtn.className = 'hidden fixed bottom-5 right-5 p-3 rounded-full themeable-accent-bg themeable-accent-text shadow-lg transition-opacity duration-300 z-50';
             scrollTopBtn.setAttribute('aria-label', 'Scroll to top');
             scrollTopBtn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>';
             document.body.appendChild(scrollTopBtn);
