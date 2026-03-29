@@ -283,10 +283,20 @@ const PebblousComponents = {
 const PebblousUI = {
     /**
      * Initialize scroll-to-top button
+     * Auto-injects the button if #scrollTopBtn doesn't exist in the HTML
      */
     initScrollToTop() {
-        const scrollTopBtn = document.getElementById('scrollTopBtn');
-        if (!scrollTopBtn) return;
+        let scrollTopBtn = document.getElementById('scrollTopBtn');
+
+        // Auto-inject if not present
+        if (!scrollTopBtn) {
+            scrollTopBtn = document.createElement('button');
+            scrollTopBtn.id = 'scrollTopBtn';
+            scrollTopBtn.className = 'hidden fixed bottom-10 right-10 p-3 rounded-full themeable-accent-bg themeable-accent-text shadow-lg transition-opacity duration-300 z-50';
+            scrollTopBtn.setAttribute('aria-label', 'Scroll to top');
+            scrollTopBtn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>';
+            document.body.appendChild(scrollTopBtn);
+        }
 
         window.addEventListener('scroll', () => {
             if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
@@ -337,11 +347,55 @@ const PebblousUI = {
 
     /**
      * Initialize mobile TOC toggle
+     * Auto-injects toggle + menu by cloning links from desktop #toc-links if elements are absent
      */
     initMobileTOC() {
-        const mobileTocToggle = document.getElementById('mobile-toc-toggle');
-        const mobileTocMenu = document.getElementById('mobile-toc-menu');
-        if (!mobileTocToggle || !mobileTocMenu) return;
+        let mobileTocToggle = document.getElementById('mobile-toc-toggle');
+        let mobileTocMenu = document.getElementById('mobile-toc-menu');
+
+        // Auto-inject from desktop TOC if not present
+        if (!mobileTocToggle || !mobileTocMenu) {
+            const desktopTocLinks = document.querySelectorAll('#toc-links a');
+            if (desktopTocLinks.length === 0) return;
+
+            const isEn = document.documentElement.lang === 'en';
+
+            // Create toggle button
+            mobileTocToggle = document.createElement('button');
+            mobileTocToggle.id = 'mobile-toc-toggle';
+            mobileTocToggle.className = 'lg:hidden p-3 rounded-full themeable-card border shadow-lg';
+            mobileTocToggle.setAttribute('aria-label', 'Toggle table of contents');
+            mobileTocToggle.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>';
+
+            // Create menu
+            mobileTocMenu = document.createElement('nav');
+            mobileTocMenu.id = 'mobile-toc-menu';
+            mobileTocMenu.className = 'lg:hidden themeable-card rounded-lg border p-4';
+            mobileTocMenu.setAttribute('aria-label', isEn ? 'Table of contents' : '목차');
+
+            const heading = document.createElement('h3');
+            heading.className = 'font-bold themeable-heading mb-4 text-lg';
+            heading.textContent = isEn ? 'Contents' : '목차';
+
+            const ul = document.createElement('ul');
+            ul.className = 'space-y-3 text-sm';
+
+            desktopTocLinks.forEach(link => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = link.getAttribute('href');
+                a.className = 'block themeable-toc-link mobile-toc-item';
+                a.textContent = link.textContent.trim();
+                li.appendChild(a);
+                ul.appendChild(li);
+            });
+
+            mobileTocMenu.appendChild(heading);
+            mobileTocMenu.appendChild(ul);
+
+            document.body.appendChild(mobileTocToggle);
+            document.body.appendChild(mobileTocMenu);
+        }
 
         // Toggle menu
         mobileTocToggle.addEventListener('click', () => {
