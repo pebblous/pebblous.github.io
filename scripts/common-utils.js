@@ -557,8 +557,8 @@ const PebblousPage = {
             PebblousCTA.init();
         }
 
-        // Initialize comments if enabled
-        if (config.enableComments !== false) {
+        // Initialize comments (disabled by default — set enableComments: true to show)
+        if (config.enableComments === true) {
             PebblousComments.init(config.commentsMessage);
         }
 
@@ -664,17 +664,42 @@ const PebblousCTA = {
             ? 'https://calendly.com/joohaeng-pebblous/joohaeng-lee-pebblous'
             : 'https://calendly.com/jeongwon-mf7/jeongwon-lee-pebblous';
 
+        const privacyLabel = lang === 'en'
+            ? '<span>(Required)</span> I agree to the <button type="button" class="text-orange-500 hover:underline cta-privacy-toggle">privacy policy</button>.'
+            : '<span>(필수)</span> <button type="button" class="text-orange-500 hover:underline cta-privacy-toggle">개인정보 수집 및 이용</button>에 동의합니다.';
+        const privacyText = lang === 'en'
+            ? 'We collect minimal personal information for newsletter delivery. Collected data is not used for other purposes and is destroyed immediately upon service termination or unsubscription.'
+            : '뉴스레터 발송을 위한 최소한의 개인정보를 수집하고 이용합니다. 수집된 정보는 발송 외 다른 목적으로 이용되지 않으며, 서비스가 종료되거나 구독을 해지할 경우 즉시 파기됩니다.';
+
         section.innerHTML = `
             <h2 class="text-2xl font-bold themeable-heading mb-6">${i18n.heading}</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- Newsletter -->
-                <a href="https://dataclinic.stibee.com/" target="_blank" rel="noopener"
-                   class="cta-card themeable-card rounded-xl p-6 block hover:scale-[1.02] transition-transform no-underline">
+                <!-- Newsletter (inline form) -->
+                <div class="cta-card themeable-card rounded-xl p-6">
                     <div class="text-3xl mb-3">📬</div>
                     <h3 class="text-lg font-bold themeable-heading mb-2">${i18n.newsletter.title}</h3>
-                    <p class="text-sm themeable-muted leading-relaxed">${i18n.newsletter.desc}</p>
-                    <span class="inline-block mt-3 text-sm font-semibold text-orange-500">${i18n.newsletter.cta} →</span>
-                </a>
+                    <p class="text-sm themeable-muted leading-relaxed mb-4">${i18n.newsletter.desc}</p>
+                    <form class="cta-subscribe-form" data-action="https://stibee.com/api/v1.0/lists/pet__FOyQpp5sYVTk0iZUI2CO3B9NA==/public/subscribers">
+                        <input type="email" name="email" required
+                               placeholder="${lang === 'en' ? 'your@email.com' : 'your@email.com'}"
+                               class="w-full px-3 py-2 rounded-lg text-sm themeable-bg border border-[var(--border-color)] themeable-text mb-2 focus:outline-none focus:border-orange-500">
+                        <label class="flex items-start gap-2 text-xs themeable-muted mb-3 cursor-pointer">
+                            <input type="checkbox" name="cta_privacy" required class="mt-0.5 shrink-0">
+                            <span>${privacyLabel}</span>
+                        </label>
+                        <div class="cta-privacy-detail hidden text-xs themeable-muted mb-3 p-2 rounded border border-[var(--border-color)]">
+                            ${privacyText}
+                        </div>
+                        <button type="submit"
+                                class="w-full py-2 rounded-lg text-sm font-semibold text-white transition-colors"
+                                style="background-color: #F86825;"
+                                onmouseover="this.style.backgroundColor='#e55a1b'"
+                                onmouseout="this.style.backgroundColor='#F86825'">
+                            ${i18n.newsletter.cta}
+                        </button>
+                        <div class="cta-subscribe-msg hidden mt-2 text-sm font-semibold text-center"></div>
+                    </form>
+                </div>
                 <!-- Meeting -->
                 <a href="${calendlyUrl}" target="_blank" rel="noopener"
                    class="cta-card themeable-card rounded-xl p-6 block hover:scale-[1.02] transition-transform no-underline">
@@ -700,6 +725,61 @@ const PebblousCTA = {
             comments.parentNode.insertBefore(section, comments);
         } else {
             main.appendChild(section);
+        }
+
+        // Privacy toggle
+        const privacyToggle = section.querySelector('.cta-privacy-toggle');
+        const privacyDetail = section.querySelector('.cta-privacy-detail');
+        if (privacyToggle && privacyDetail) {
+            privacyToggle.addEventListener('click', () => {
+                privacyDetail.classList.toggle('hidden');
+            });
+        }
+
+        // Subscribe form handler
+        const form = section.querySelector('.cta-subscribe-form');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const emailInput = form.querySelector('input[name="email"]');
+                const privacyCheck = form.querySelector('input[name="cta_privacy"]');
+                const msgEl = form.querySelector('.cta-subscribe-msg');
+                const submitBtn = form.querySelector('button[type="submit"]');
+
+                if (!privacyCheck.checked) {
+                    msgEl.textContent = lang === 'en' ? 'Please agree to the privacy policy.' : '개인정보 수집에 동의해주세요.';
+                    msgEl.className = 'cta-subscribe-msg mt-2 text-sm font-semibold text-center text-red-500';
+                    msgEl.classList.remove('hidden');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = '...';
+
+                try {
+                    const res = await fetch(form.dataset.action, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ subscribers: [{ email: emailInput.value }] })
+                    });
+
+                    if (res.ok) {
+                        msgEl.textContent = lang === 'en' ? 'Subscribed! Check your email.' : '구독 완료! 이메일을 확인해주세요.';
+                        msgEl.className = 'cta-subscribe-msg mt-2 text-sm font-semibold text-center text-teal-500';
+                        emailInput.value = '';
+                        privacyCheck.checked = false;
+                    } else {
+                        throw new Error('API error');
+                    }
+                } catch {
+                    msgEl.textContent = lang === 'en' ? 'Something went wrong. Try again.' : '오류가 발생했습니다. 다시 시도해주세요.';
+                    msgEl.className = 'cta-subscribe-msg mt-2 text-sm font-semibold text-center text-red-500';
+                }
+
+                msgEl.classList.remove('hidden');
+                submitBtn.disabled = false;
+                submitBtn.textContent = lang === 'en' ? 'Subscribe Free' : '무료 구독';
+            });
         }
     },
 
