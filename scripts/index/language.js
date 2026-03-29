@@ -44,6 +44,8 @@
             'stats.close': '닫기',
             'stats.totalPosts': '전체 포스트',
             'stats.lastUpdate': '마지막 업데이트:',
+            // Nav
+            'nav.stats': '블로그 통계',
             // Topics
             'topics.title': 'Topics & Keywords'
         },
@@ -82,6 +84,8 @@
             'stats.close': 'Close',
             'stats.totalPosts': 'Total Posts',
             'stats.lastUpdate': 'Last updated:',
+            // Nav
+            'nav.stats': 'Blog Stats',
             // Topics
             'topics.title': 'Topics & Keywords'
         }
