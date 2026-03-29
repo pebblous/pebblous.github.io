@@ -85,9 +85,16 @@ function applyLanguageFilter(lang) {
     if (!all || all.length === 0) return;
 
     // Filter by language
+    // 1) explicit lang/language field 우선
+    // 2) 없으면 path에서 /ko/ or /en/ 추론
+    // 3) 둘 다 없으면 항상 표시
     const filtered = all.filter(function(a) {
-        if (!a.language) return true;
-        return a.language === lang;
+        var artLang = a.lang || a.language;
+        if (artLang) return artLang === lang;
+        var p = a.path || '';
+        if (p.indexOf('/en/') !== -1) return lang === 'en';
+        if (p.indexOf('/ko/') !== -1) return lang === 'ko';
+        return true; // 언어 구분 없는 구형 아티클은 항상 표시
     });
 
     window.IndexPage._allArticles = filtered;
