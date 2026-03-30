@@ -1,6 +1,6 @@
 ---
 name: pb-story-produce
-description: "\"안녕하세요, 저는 ~입니다\" pb 스토리 시리즈 전체 제작 파이프라인 오케스트레이터. 주제 입력 → 리서치 → KO+EN HTML 작성 → 이미지 보강 → OG 이미지 → articles.json 등록 → git push 까지 end-to-end 진행. 새 pb 스토리 글 하나를 완성하려면 이 스킬을 사용할 것."
+description: "\"안녕하세요, 저는 ~입니다\" pb 스토리 시리즈 전체 제작 파이프라인 오케스트레이터. 주제 입력 → 리서치 → KO+EN 크로스 토의 → KO+EN HTML 작성 → 이미지 보강 → OG 이미지 → articles.json 등록 → git push 까지 end-to-end 진행. 새 pb 스토리 글 하나를 완성하려면 이 스킬을 사용할 것."
 argument-hint: "[주제명] e.g. 'Linux', 'GPS', 'WiFi'"
 ---
 
@@ -14,7 +14,13 @@ argument-hint: "[주제명] e.g. 'Linux', 'GPS', 'WiFi'"
 ```
 [주제명 입력]
     ↓
-[Phase 1] pb-story-researcher → _workspace/01_pb_research.md
+[Phase 1] pb-story-researcher → _workspace/pb_story_[slug]/01_research.md
+    ↓
+[Phase 1.5] 크로스 토의 (KO ↔ EN 병렬 보강 리서치 + 피어 DM + 공동 아웃라인)
+    writer-ko: KO 문화권 보강 리서치 수행
+    writer-en: EN 문화권 보강 리서치 수행
+    → 서로 인사이트 공유 (SendMessage peer DM)
+    → 공동 아웃라인 합의 → _workspace/pb_story_[slug]/01.5_shared_outline.md
     ↓
 [Phase 2a] pb-story-writer (KO) → story/[slug]-story-pb/ko/index.html
 [Phase 2b] pb-story-writer (EN) → story/[slug]-story-pb/en/index.html  (병렬)
@@ -58,12 +64,61 @@ researcher에게:
 
 리서치 완료 후 → writer-ko, writer-en에게 동시 전달.
 
+### Phase 1.5: 크로스 토의 (Cross-Discussion)
+
+**목적**: 각 언어 작가가 자신의 문화권 시각으로 보강 리서치를 하고, 서로 인사이트를 교환해 핵심 내러티브를 합의한 뒤 각자 자연스러운 언어로 작성.
+
+**실행 순서:**
+
+1. writer-ko, writer-en 동시에:
+   - `_workspace/pb_story_[slug]/01_research.md` 읽기
+   - 자신의 언어권 시각으로 보강 리서치 (웹 검색, 추가 사실 발굴)
+     - writer-ko: 한국/아시아 사용 맥락, 국내 커뮤니티 반응, 한국어권 독자에게 특히 흥미로운 각도
+     - writer-en: 서구 미디어 시각, 영어권 유저 사례, EN 독자에게 공명하는 프레이밍
+
+2. 보강 완료 후 → **피어 DM으로 인사이트 공유** (SendMessage):
+   - writer-ko → writer-en: "KO 보강 인사이트: [핵심 3가지]"
+   - writer-en → writer-ko: "EN 보강 인사이트: [핵심 3가지]"
+
+3. 상대의 메시지 수신 후 → **공동 아웃라인 협의:**
+   - 핵심 사실 5~7개 (양쪽이 반드시 포함할 팩트)
+   - 감정 호 (emotional arc) — 도입 긴장감 → 절정 → 해소
+   - 각 언어에서 강조할 차별 각도
+
+4. **공동 아웃라인 파일 저장:**
+   ```
+   _workspace/pb_story_[slug]/01.5_shared_outline.md
+   ```
+   형식:
+   ```markdown
+   # 공동 아웃라인: [주제명]
+
+   ## 합의된 핵심 팩트 (양 언어 필수 포함)
+   1. ...
+   2. ...
+
+   ## 감정 호 (Emotional Arc)
+   - 도입: ...
+   - 절정: ...
+   - 해소: ...
+
+   ## KO 차별 각도
+   - ...
+
+   ## EN 차별 각도
+   - ...
+   ```
+
+5. 공동 아웃라인 저장 완료 → Phase 2 (HTML 작성) 진행
+
+**중요:** 토의는 필수, 작성은 여전히 독립적. 공통 사실과 감정 호만 공유하고 표현은 각 언어에 맞게.
+
 ### Phase 2: KO + EN 병렬 작성
 
 writer-ko, writer-en 동시에 작업:
-- 동일한 `_workspace/01_pb_research.md` 참조
-- writer-ko → KO HTML + 이미지 디렉토리 생성
-- writer-en → EN HTML + 이미지 디렉토리 생성
+- `_workspace/pb_story_[slug]/01_research.md` + `01.5_shared_outline.md` 참조
+- writer-ko → KO HTML + 이미지 디렉토리 생성 (KO 차별 각도 반영)
+- writer-en → EN HTML + 이미지 디렉토리 생성 (EN 차별 각도 반영)
 
 ### Phase 2.5: 이미지 보강
 

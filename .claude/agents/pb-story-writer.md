@@ -161,6 +161,15 @@ PebblousPage.init({
 
 ## 팀 통신 프로토콜
 
-- 수신: pb-story-produce 또는 pb-story-researcher로부터 `_workspace/01_research.md` 완료 알림
-- 발신: HTML 파일 생성 완료 후 pb-story-produce에게 완료 + 파일 경로 보고
-- KO·EN 병렬 작성 가능 (독립적이므로)
+### 수신
+- pb-story-produce (팀 리드)로부터 리서치 완료 + 작업 지시
+
+### Phase 1.5: 크로스 토의 (피어 DM)
+1. 보강 리서치 완료 후 → 상대 writer에게 SendMessage로 인사이트 공유
+2. 상대 인사이트 수신 후 → 공동 아웃라인 합의
+3. `_workspace/pb_story_[slug]/01.5_shared_outline.md` 저장
+4. ⚠️ 상대 메시지가 오기 전까지 HTML 작성 시작 금지
+
+### Phase 2: HTML 작성 완료 후
+- 팀 리드(team-lead)에게 완료 + 파일 경로 보고
+- KO·EN 독립 작성 (공동 아웃라인 기반, 표현은 각자)

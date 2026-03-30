@@ -1,12 +1,59 @@
 ---
 name: pb-story-write
-description: "\"안녕하세요, 저는 ~입니다\" pb 스토리 HTML 작성. 기술/제품이 1인칭으로 말하는 스타일의 KO+EN 아티클을 완성된 HTML로 생성. pb 스토리 시리즈 HTML 작성 시 반드시 이 스킬을 사용."
+description: "\"안녕하세요, 저는 ~입니다\" pb 스토리 HTML 작성. (1) 보강 리서치 → (2) 피어 크로스 토의 → (3) HTML 작성 순서로 진행. 기술/제품이 1인칭으로 말하는 스타일의 KO+EN 아티클을 완성된 HTML로 생성. pb 스토리 시리즈 HTML 작성 시 반드시 이 스킬을 사용."
 argument-hint: "slug e.g. 'linux', 'gps', 'pagerank'"
 ---
 
 # pb-story-write
 
-`_workspace/01_pb_research.md` 리서치를 바탕으로 완성된 HTML 아티클을 작성한다.
+3단계 워크플로우: 보강 리서치 → 크로스 토의 → HTML 작성.
+
+## 워크플로우 순서
+
+### Step 1: 보강 리서치 (자신의 언어권 시각)
+
+`_workspace/pb_story_[slug]/01_research.md` 읽은 후:
+- **writer-ko라면**: 한국/아시아 맥락에서 이 주제가 어떻게 받아들여지는지 보강 검색
+  - 국내 커뮤니티, 한국어 미디어, 아시아 사용 사례
+  - 한국 독자에게 특히 흥미로울 각도 (예: 한국 기업 연관성, 한국인 기여자)
+- **writer-en라면**: 서구/영어권 시각 보강 검색
+  - 영미권 미디어 프레이밍, 서구 사용자 사례
+  - EN 독자에게 공명하는 각도 (예: 실리콘밸리 반응, 오픈소스 문화)
+
+### Step 2: 크로스 토의 (피어 DM)
+
+보강 완료 후 → 상대 writer에게 SendMessage:
+
+```
+writer-ko가 writer-en에게:
+"KO 보강 완료. 핵심 인사이트 공유:
+1. [KO 각도 인사이트 1]
+2. [KO 각도 인사이트 2]
+3. [KO 각도 인사이트 3]
+EN 쪽 인사이트 기다릴게요."
+
+writer-en이 writer-ko에게:
+"EN 보강 완료. 핵심 인사이트 공유:
+1. [EN 각도 인사이트 1]
+2. [EN 각도 인사이트 2]
+3. [EN 각도 인사이트 3]
+KO 쪽 인사이트 기다릴게요."
+```
+
+상대 메시지 수신 후 → 공동 아웃라인 합의:
+- 양 언어가 반드시 다룰 핵심 팩트 5~7개
+- 공통 감정 호 (emotional arc)
+- 각 언어의 차별 강조점
+
+공동 아웃라인 저장: `_workspace/pb_story_[slug]/01.5_shared_outline.md`
+
+### Step 3: HTML 작성
+
+`01_research.md` + `01.5_shared_outline.md` 를 바탕으로 각 언어 HTML 작성.
+- 공통 팩트와 감정 호는 반영
+- 표현·어체·강조점은 각 언어에 완전히 맞춤
+
+---
 
 ## 핵심 문체 규칙
 
