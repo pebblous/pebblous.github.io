@@ -1,6 +1,6 @@
 ---
 name: pb-story-produce
-description: "\"안녕하세요, 저는 ~입니다\" pb 스토리 시리즈 전체 제작 파이프라인 오케스트레이터. 주제 입력 → 리서치 → KO+EN HTML 작성 → OG 이미지 → articles.json 등록 → git push 까지 end-to-end 진행. 새 pb 스토리 글 하나를 완성하려면 이 스킬을 사용할 것."
+description: "\"안녕하세요, 저는 ~입니다\" pb 스토리 시리즈 전체 제작 파이프라인 오케스트레이터. 주제 입력 → 리서치 → KO+EN HTML 작성 → 이미지 보강 → OG 이미지 → articles.json 등록 → git push 까지 end-to-end 진행. 새 pb 스토리 글 하나를 완성하려면 이 스킬을 사용할 것."
 argument-hint: "[주제명] e.g. 'Linux', 'GPS', 'WiFi'"
 ---
 
@@ -19,6 +19,8 @@ argument-hint: "[주제명] e.g. 'Linux', 'GPS', 'WiFi'"
 [Phase 2a] pb-story-writer (KO) → story/[slug]-story-pb/ko/index.html
 [Phase 2b] pb-story-writer (EN) → story/[slug]-story-pb/en/index.html  (병렬)
     ↓
+[Phase 2.5] image-reinforce --auto (KO + EN 각각)
+    ↓
 [Phase 3] OG 이미지 생성 (KO + EN)
     ↓
 [Phase 4] articles.json 등록
@@ -28,13 +30,14 @@ argument-hint: "[주제명] e.g. 'Linux', 'GPS', 'WiFi'"
 
 ## 실행 방식: 에이전트 팀
 
-3명 팀원 + 오케스트레이터(pb):
+4명 팀원 + 오케스트레이터(pb):
 
 | 에이전트 | 역할 |
 |---------|------|
 | researcher | pb-story-research 스킬 실행 |
 | writer-ko | pb-story-write 스킬 — KO 작성 |
 | writer-en | pb-story-write 스킬 — EN 작성 |
+| img-agent | image-reinforce --auto — KO+EN 이미지 보강 |
 
 ### 팀 구성
 
@@ -61,6 +64,26 @@ writer-ko, writer-en 동시에 작업:
 - 동일한 `_workspace/01_pb_research.md` 참조
 - writer-ko → KO HTML + 이미지 디렉토리 생성
 - writer-en → EN HTML + 이미지 디렉토리 생성
+
+### Phase 2.5: 이미지 보강
+
+writer-ko, writer-en 완료 후 → img-agent에게 KO+EN 각각 실행:
+
+img-agent는 `image-reinforce` 스킬을 `--auto` 모드로 실행:
+```
+Skill: image-reinforce
+Args: story/[slug]-story-pb/ko/index.html --auto
+```
+```
+Skill: image-reinforce
+Args: story/[slug]-story-pb/en/index.html --auto
+```
+
+- KO+EN 병렬 실행 가능
+- 목표: 각 포스트에 4~6개 맥락 이미지 삽입
+- 실패한 슬롯은 조용히 스킵, 결과만 보고
+- 이미지는 `ko/image/` `en/image/` 에 다운로드 (로컬 저장)
+- 완료 후 오케스트레이터에게 결과 보고
 
 ### Phase 3: OG 이미지 생성
 
@@ -106,6 +129,7 @@ git push origin main
 |------|---------|
 | 리서치 | 도메인 지식 기반 계속 진행 |
 | KO 작성 실패 | EN만으로 진행, 사용자 알림 |
+| 이미지 보강 | 슬롯별 스킵 허용, 0개여도 계속 |
 | OG 이미지 | 1회 재시도 → 실패해도 계속 |
 | articles.json | 백업(`articles.json.bak`) 후 중단 |
 | git push | 로컬 커밋 유지, 사용자 알림 |
