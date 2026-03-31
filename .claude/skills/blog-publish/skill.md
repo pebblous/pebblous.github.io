@@ -50,6 +50,22 @@ Article 필수 필드:
 }
 ```
 
+### 2.5. articles.json 검증
+
+articles.json 업데이트 직후 반드시 실행:
+
+```bash
+python3 tools/validate-articles.py --id [new-article-id]
+```
+
+오류가 있으면 즉시 수정 후 재확인. `--fix` 플래그로 자동 수정 가능한 항목은 자동 수정:
+
+```bash
+python3 tools/validate-articles.py --fix --id [new-article-id]
+```
+
+검증 통과 후 다음 단계 진행.
+
 ### 3. SEO 검증
 
 HTML에서 확인:

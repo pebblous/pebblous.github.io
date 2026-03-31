@@ -41,6 +41,22 @@ with open('articles.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 ```
 
+### 2.5. articles.json 검증
+
+articles.json 업데이트 직후 반드시 실행:
+
+```bash
+python3 tools/validate-articles.py --id [new-article-id]
+```
+
+오류가 있으면 즉시 수정. `--fix` 로 자동 수정 가능:
+
+```bash
+python3 tools/validate-articles.py --fix --id [new-article-id]
+```
+
+✅ 오류 0개 확인 후 다음 단계.
+
 ### 3. SEO 검증
 
 HTML에서 확인:
