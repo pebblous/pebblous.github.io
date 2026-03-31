@@ -36,14 +36,31 @@ argument-hint: "[주제명] e.g. 'Linux', 'GPS', 'WiFi'"
 
 ## 실행 방식: 에이전트 팀
 
-4명 팀원 + 오케스트레이터(pb):
+기본 4명 팀 + 오케스트레이터(pb). 3개국어 이상 시 writer 추가:
 
 | 에이전트 | 역할 |
 |---------|------|
 | researcher | pb-story-research 스킬 실행 |
 | writer-ko | pb-story-write 스킬 — KO 작성 |
 | writer-en | pb-story-write 스킬 — EN 작성 |
-| img-agent | image-reinforce --auto — KO+EN 이미지 보강 |
+| writer-ja | (선택) pb-story-write 스킬 — JA 작성 |
+| img-agent | image-reinforce --auto — 각 언어 이미지 보강 |
+
+### 3개국어 크로스 토의 (hub 방식)
+writer-ko, writer-en, writer-ja가 각자 보강 리서치 완료 후:
+- 각자 → 나머지 두 명에게 SendMessage로 인사이트 공유
+- 2개 메시지 수신 후 → 공동 아웃라인 합의
+- 3언어 공동 아웃라인에 각 언어 차별 각도 포함 (KO/EN/JA 섹션)
+
+### 3개국어 경로 규칙
+```
+story/[slug]-story-pb/
+├── index.html     (→ ./ko/ 리다이렉트)
+├── ko/index.html
+├── en/index.html
+└── ja/index.html  (UI 언어 스위처 미지원, 직접 URL 접근)
+```
+articles.json에 lang: "ja" 항목 추가. hreflang에 ja 포함.
 
 ### 팀 구성
 
