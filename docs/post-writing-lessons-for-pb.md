@@ -242,10 +242,67 @@ if re.search(r'<li>\s*•', block_text):
 - [ ] 마무리에 인사말 + 서명 + 날짜
 - [ ] OG 이미지 생성 + 파일 존재 확인
 - [ ] hreflang 양방향 설정 (bilingual인 경우)
-- [ ] **`<li>•` 리스트에 `list-style:none;margin-left:0;` 추가 여부 확인** ← 신규
+- [ ] **`<li>•` 리스트에 `list-style:none;margin-left:0;` 추가 여부 확인**
+- [ ] **SEO 4계층 확인 완료** (섹션 12 참조) ← 신규
+
+---
+
+## 12. ⚠️ SEO-Check 필수 실행 (새 페이지마다)
+
+> 이건 선택이 아니야. 새 페이지를 게시할 때마다 반드시 해야 해.
+
+### 언제 해야 하나
+
+- 새 포스팅 생성 후 push 전
+- 제목/메타 태그 변경 후
+- bilingual 작업 시 양쪽 페이지 모두
+
+### 확인 항목 (브라우저 eval로 검증)
+
+```bash
+agent-browser open <URL>
+agent-browser eval "JSON.stringify({
+  title: document.title,
+  description: document.querySelector('meta[name=description]')?.content?.length,
+  canonical: document.querySelector('link[rel=canonical]')?.href,
+  hreflang_ko: !!document.querySelector('link[hreflang=ko]'),
+  og_title: document.querySelector('meta[property=\"og:title\"]')?.content,
+  og_image: document.querySelector('meta[property=\"og:image\"]')?.content,
+  h1: document.getElementById('page-h1-title')?.textContent?.trim()?.slice(0,30),
+  schema: JSON.parse(document.querySelector('script[type=\"application/ld+json\"]')?.textContent||'{}')['@type']
+})"
+agent-browser close
+```
+
+### 통과 기준
+
+| 항목 | 기준 |
+|------|------|
+| `title` | "제목 \| 페블러스" 형식, 60자 이내 |
+| `description` | 120~160자 |
+| `canonical` | 현재 페이지 URL과 정확히 일치 |
+| `hreflang` | bilingual이면 ko + en + x-default 모두 있어야 |
+| `og:title` | 있음 |
+| `og:image` | URL 있음, 이미지 파일 존재 확인 |
+| `h1` | 빈 문자열이 아님 (PebblousPage.init이 렌더링했음) |
+| `schema` | TechArticle 또는 Article |
+
+### changelog에 기록
+
+SEO 확인 후 changelog.jsonl에 `"action":"seo"` 항목을 남겨야 해:
+
+```bash
+echo '{"timestamp":"...Z","post":"path/to/index.html","action":"seo","summary":"SEO 4계층 확인 통과"}' >> history/changelog.jsonl
+```
+
+### 왜 중요한가
+
+Google이 크롤링하면 title/description/og:image가 검색 결과에 그대로 나와.
+제목이 잘못된 채로 배포되면 색인이 쌓인 뒤 고치기 어려워.
 
 ---
 
 *이 문서는 PR #23 리뷰 과정에서 2026-03-21에 작성되었습니다.*
 *2026-03-28: 섹션 10(이중 불릿 버그) 추가.*
+*2026-04-01: 섹션 12(SEO-Check 필수) 추가 — JH 지적 반영.*
 *질문 있으면 Slack에서 "@이주행"을 불러.*
