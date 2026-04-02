@@ -61,13 +61,16 @@ gh pr diff {PR-number}
 | C4 | **L1 대표이미지 병행** | 평균 이미지(meanimage) 옆에 실제 샘플 이미지가 나란히 배치 (`class-card` 또는 `dual-img-row`). Issue #20 참조 |
 | C5 | **L2/L3 밀도+대표이미지 병행** | 밀도 차트 옆에 대표 이미지가 2:1 비율로 배치 (`density-card` with `den-imgs`). story-style-guide §8 참조 |
 
-### D. CDN 이미지 규칙 (3항목)
+### D. CDN 이미지 규칙 (6항목)
 
 | # | 항목 | 검증 방법 |
 |---|------|-----------|
 | D1 | 분석 이미지 크기 제한 | PCA, 밀도 분포 등 단독 배치 이미지에 `max-w-[560px] max-h-[480px]` |
 | D2 | L3 경로 버전 확인 | `level-3.X` 경로가 실제 CDN에서 접근 가능한지 확인. API 레포 `scripts/check_chart_images.md` 참조 |
 | D3 | 그리드 내 이미지 제외 | `grid-cols-*` 안의 이미지는 크기 제한 불필요 (셀 크기로 이미 제한됨) |
+| D4 | **차트 캡션 시각 확인 필수** | 모든 차트 캡션은 반드시 이미지를 직접 다운로드해서 눈으로 확인 후 작성. `curl -s {URL} -o /tmp/check.png && Read /tmp/check.png` |
+| D5 | **DataClinic 분석 vs 시각 구분** | 이미지에서 직접 보이지 않는 구조적 판단(클러스터 수, 단일/다봉형 등)은 반드시 "DataClinic 분석: ..." 형태로 출처 명시 |
+| D6 | **PCA 차트 클래스 색상 확인** | PCA 차트가 클래스별 색상 구분을 보여주는지 확인. 모든 점이 동일 색이면 "12개 클래스 분포"가 아닌 "전체 데이터 분포"로 설명 |
 
 ### E. SEO & Meta (7항목)
 
