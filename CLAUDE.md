@@ -163,6 +163,12 @@ New HTML article
 - When editing `articles.json`, always preserve the `{ "categories": {...}, "articles": [...] }` wrapper.
 - Article fields: `id`, `title`, `path` (relative), `date`, `category`, `published` (bool), `featured` (bool), `description`, `image` (relative, no leading `/`), `tags[]`, `type` (optional, `"hub"` for hub pages — auto-excluded from hub card grids)
 
+**articles.json merge conflict 규칙 (MUST):**
+- **절대 한쪽만 취하지 말 것** — `accept theirs` / `accept ours` 금지. 양쪽을 수동으로 병합할 것
+- 병합 후 반드시 항목 수 검증: `python3 -c "import json; d=json.load(open('articles.json')); print(len(d['articles']), 'articles')"`
+- 이전 커밋 대비 `published: true` 항목 수가 줄었으면 병합 오류 — 즉시 확인
+- (배경: 2026-03-24 사고에서 merge conflict를 upstream만 취해 82개 항목 누락 발생, Issue #34)
+
 ## Key Conventions
 
 ### Layout
