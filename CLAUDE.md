@@ -163,6 +163,20 @@ New HTML article
 - When editing `articles.json`, always preserve the `{ "categories": {...}, "articles": [...] }` wrapper.
 - Article fields: `id`, `title`, `path` (relative), `date`, `category`, `published` (bool), `featured` (bool), `description`, `image` (relative, no leading `/`), `tags[]`, `type` (optional, `"hub"` for hub pages — auto-excluded from hub card grids)
 
+**⛔ articles.json 필드명 규칙 (Issue #63 — 위반 시 CI 실패 + 카드 렌더링 중단):**
+
+| ✅ 올바른 필드 | ❌ 금지 필드 (에이전트 오용 패턴) |
+|---------------|----------------------------------|
+| `title` | `cardTitle` |
+| `date` | `publishDate` |
+| `path` | `url` |
+| `language` | `lang` |
+| `published: true` | 생략 |
+
+- `path`는 trailing slash 포함, 선행 `/` 없음: `"story/{slug}/ko/"`
+- `published`는 반드시 boolean `true` 명시 (생략 시 블로그에서 미표시)
+- `date`는 `"YYYY-MM-DD"` 형식
+
 **articles.json merge conflict 규칙 (MUST):**
 - **절대 한쪽만 취하지 말 것** — `accept theirs` / `accept ours` 금지. 양쪽을 수동으로 병합할 것
 - 병합 후 반드시 항목 수 검증: `python3 -c "import json; d=json.load(open('articles.json')); print(len(d['articles']), 'articles')"`
