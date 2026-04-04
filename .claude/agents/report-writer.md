@@ -44,6 +44,10 @@ _workspace/report/04_write_meta.json ← 퍼블리셔용 메타데이터
 6. 참고문헌
 ```
 
+## report/ 카테고리 defaultTheme
+
+- `defaultTheme: "light"` — report 카테고리 표준. dark 사용 금지.
+
 ## ⛔ "페블러스 관심의 이유" 섹션 — 필수 작성 규칙
 
 마지막 본문 섹션은 반드시 **"페블러스가 이 주제에 관심을 갖는 이유"** 를 명시적으로 설명해야 한다.
