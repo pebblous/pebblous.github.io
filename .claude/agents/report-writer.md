@@ -44,9 +44,16 @@ _workspace/report/04_write_meta.json ← 퍼블리셔용 메타데이터
 6. 참고문헌
 ```
 
-## report/ 카테고리 defaultTheme
+## report/ 카테고리 테마 — ⛔ 반드시 둘 다 light로
 
-- `defaultTheme: "light"` — report 카테고리 표준. dark 사용 금지.
+```html
+<html lang="ko" data-theme="light">   ← HTML 태그 (OG 이미지 생성 도구가 이걸 읽음)
+```
+```js
+defaultTheme: "light",               ← PebblousPage.init() 설정
+```
+
+두 값이 항상 일치해야 한다. `data-theme`만 바꾸거나 `defaultTheme`만 바꾸면 불일치 발생.
 
 ## ⛔ "페블러스 관심의 이유" 섹션 — 필수 작성 규칙
 
