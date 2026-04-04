@@ -31,7 +31,7 @@ description: >
 [Phase 1] report-planner
         → _workspace/report/00_plan.md
         ↓ (병렬)
-[Phase 2] arxiv-researcher  →  02a_arxiv.md
+[Phase 2] arxiv-researcher    →  02a_arxiv.md
           industry-researcher →  02b_industry.md
           data-researcher     →  02c_data.md
         ↓
@@ -41,6 +41,11 @@ description: >
 [Phase 4] report-writer
         → report/[slug]/ko/index.html
         → _workspace/report/04_write_meta.json
+        ↓ (병렬 3-way)
+[Phase 4.5] content-reviewer → 01_content_review.md
+            style-reviewer   → 02_style_review.md
+            seo-reviewer     → 03_seo_review.md
+        → 00_summary.md (통합) → ❌ 있으면 HTML 즉시 수정
         ↓
 [Phase 5] blog-publisher
         → OG 이미지 / articles.json / SEO / git push
@@ -176,6 +181,65 @@ Agent(
   """
 )
 ```
+
+### Phase 4.5: 자기검토 (Self-Review)
+
+Phase 4 완료 후, 퍼블리싱 전 품질 검증.
+
+```python
+# 3개 에이전트 병렬 실행
+Agent(
+  name="content-reviewer",
+  subagent_type="Explore",
+  model="opus",
+  run_in_background=True,
+  prompt="""
+    에이전트 정의: .claude/agents/content-reviewer.md
+    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+
+    검토 대상: report/[slug]/ko/index.html
+    합성 문서: _workspace/report/03_synthesis.md
+
+    출력: _workspace/review/01_content_review.md
+  """
+)
+
+Agent(
+  name="style-reviewer",
+  subagent_type="Explore",
+  model="opus",
+  run_in_background=True,
+  prompt="""
+    에이전트 정의: .claude/agents/style-reviewer.md
+    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+
+    검토 대상: report/[slug]/ko/index.html
+
+    출력: _workspace/review/02_style_review.md
+  """
+)
+
+Agent(
+  name="seo-reviewer",
+  subagent_type="Explore",
+  model="opus",
+  run_in_background=True,
+  prompt="""
+    에이전트 정의: .claude/agents/seo-reviewer.md
+    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+
+    검토 대상: report/[slug]/ko/index.html
+    메타 JSON: _workspace/report/04_write_meta.json
+
+    출력: _workspace/review/03_seo_review.md
+  """
+)
+```
+
+3개 완료 후:
+1. `_workspace/review/00_summary.md` 통합 리포트 생성
+2. ❌ 항목 있으면 HTML 파일 즉시 수정
+3. 수정 완료 후 Phase 5 진행
 
 ### Phase 5: 퍼블리싱
 
