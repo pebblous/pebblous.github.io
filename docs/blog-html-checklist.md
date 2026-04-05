@@ -21,7 +21,11 @@
 - [ ] Twitter Card 4종: card, title, description, image
 - [ ] GTM script (`GTM-57L9F58B`) in `<head>`
 - [ ] Favicon 3종: .ico, .png, apple-touch-icon
-- [ ] Stylesheets 3개: `css/styles.css`, `styles/common-styles.css`, `styles/tailwind-build.css`
+- [ ] Stylesheets 3개 (순서 고정, `html-conventions.md` 참조): `css/theme-variables.css`, `styles/tailwind-build.css`, `styles/common-styles.css`
+- [ ] **`css/styles.css` 미포함** (인덱스 전용 CSS — 아티클에 불필요)
+- [ ] `twitter:site` + `twitter:creator` = `@pebblous`
+- [ ] `<meta http-equiv="content-language" content="ko">` (또는 `en`)
+- [ ] `<meta name="copyright" content="© 2026 Pebblous. All rights reserved.">`
 - [ ] **인라인 `<style>` 최소화** — 공통 CSS는 styles 파일에
 
 ### Body

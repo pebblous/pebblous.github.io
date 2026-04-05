@@ -1,7 +1,10 @@
 # HTML Conventions — blog.pebblous.ai
 
-blog-write 스킬의 상세 HTML 구조 레퍼런스.
-레이아웃 레퍼런스 구현: `/workspace/extra/repos/pebblous.github.io/report/blog-2026/ko/index.html`
+> **이 파일이 HTML 구조의 정본(Single Source of Truth)입니다.**
+> 다른 문서(`blog-html-checklist.md`, `story-style-guide`)는 이 파일을 참조합니다.
+> CSS 순서, 필수 메타 태그, Hero 구조 등이 충돌할 경우 이 파일을 따르세요.
+
+레이아웃 레퍼런스 구현: `report/blog-2026/ko/index.html`
 HTML 체크리스트: `docs/blog-html-checklist.md`
 
 ## 목차
@@ -25,10 +28,10 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- SEO 메타 (2번 섹션 참조) -->
 
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="/css/styles.css?v=YYYYMMDD">
-    <link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
+    <!-- Stylesheets (순서 고정 — css/styles.css는 인덱스 전용, 아티클에 포함 금지) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=YYYYMMDD">
     <link rel="stylesheet" href="/styles/tailwind-build.css?v=YYYYMMDD">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
 
     <!-- GTM -->
     <script>(function(w,d,s,l,i){...})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
@@ -69,8 +72,15 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 ## 2. head 필수 태그
 
 ```html
+<meta name="author" content="Pebblous Data Communication Team">
+<meta name="language" content="Korean">
+<meta http-equiv="content-language" content="ko">
+<meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+<meta name="robots" content="index, follow">
+
 <title>[제목] | 페블러스</title>
 <meta name="description" content="[120-155자 설명]">
+<meta name="keywords" content="[키워드1, 키워드2, ...]">
 <link rel="canonical" href="https://blog.pebblous.ai/[path]">
 
 <!-- hreflang -->
@@ -91,6 +101,9 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 <meta name="twitter:title" content="[제목]">
 <meta name="twitter:description" content="[설명]">
 <meta name="twitter:image" content="https://blog.pebblous.ai/[path]image/index.png">
+<meta name="twitter:image:alt" content="[이미지 설명]">
+<meta name="twitter:site" content="@pebblous">
+<meta name="twitter:creator" content="@pebblous">
 
 <!-- Favicon -->
 <link rel="icon" href="/favicon.ico">
@@ -114,6 +127,7 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
             읽는 시간: ~10분 ·
             <a href="../en/" class="text-orange-400 hover:text-orange-300 transition-colors">English</a>
         </p>
+        <div id="share-buttons-placeholder" class="flex justify-start mt-4"></div>
     </div>
 </section>
 ```
