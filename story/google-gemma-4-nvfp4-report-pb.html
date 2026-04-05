@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>Gemma 4 31B, 24GB GPU에서 돌아간다 — NVIDIA NVFP4 양자화 심층 분석 | 페블러스</title>
+    <meta name="description" content="NVIDIA가 NVFP4로 양자화한 Gemma 4 31B — GPQA Diamond 정확도 손실 0.25%, 256K 컨텍스트 유지, RTX 4090 한 장으로 프론티어급 추론. 4-bit 블록 스케일링 구조와 VRAM 현실을 심층 분석한다.">
+    <meta name="keywords" content="Gemma 4, NVFP4, 양자화, NVIDIA, 로컬 AI, 소버린 AI, vLLM, Blackwell, RTX 4090, 오픈소스 LLM">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb.html">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Gemma 4 31B, 24GB GPU에서 돌아간다 — NVIDIA NVFP4 양자화 심층 분석">
+    <meta property="og:description" content="NVIDIA NVFP4 양자화로 Gemma 4 31B가 RTX 4090 한 장에서 돌아간다. GPQA Diamond 0.25% 손실, 256K 컨텍스트 유지 — 소버린 AI 인프라의 하드웨어 문이 열렸다.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb.html">
+    <meta property="og:image" content="https://blog.pebblous.ai/story/image/google-gemma-4-nvfp4-report-pb.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Gemma 4 31B NVFP4 양자화 분석 — 페블러스">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-04-05">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Gemma 4 31B, 24GB GPU에서 돌아간다 — NVIDIA NVFP4 양자화">
+    <meta name="twitter:description" content="NVFP4 4-bit 양자화로 RTX 4090 한 장에서 프론티어급 추론. GPQA Diamond 0.25% 손실, 256K 컨텍스트 유지.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/story/image/google-gemma-4-nvfp4-report-pb.png">
+    <meta name="twitter:image:alt" content="Gemma 4 31B NVFP4 양자화 분석">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/styles/common-styles.css">
+    <link rel="stylesheet" href="/styles/tailwind-build.css">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* 이 포스트 고유 스타일만 */
+        .benchmark-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        .benchmark-table th { background: rgba(248, 104, 37, 0.12); font-weight: 700; padding: 0.75rem 1rem; text-align: left; font-size: 0.875rem; }
+        .benchmark-table td { padding: 0.65rem 1rem; font-size: 0.875rem; border-bottom: 1px solid rgba(128,128,128,0.15); }
+        .benchmark-table tr:last-child td { border-bottom: none; }
+        .delta-good { color: #22c55e; font-weight: 700; }
+        .delta-neutral { color: #f86825; font-weight: 700; }
+        .vram-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        .vram-table th { background: rgba(99, 102, 241, 0.12); font-weight: 700; padding: 0.75rem 1rem; text-align: left; font-size: 0.875rem; }
+        .vram-table td { padding: 0.65rem 1rem; font-size: 0.875rem; border-bottom: 1px solid rgba(128,128,128,0.15); }
+        .vram-table tr:last-child td { border-bottom: none; }
+        .bit-diagram { display: flex; gap: 4px; margin: 1rem 0; align-items: center; flex-wrap: wrap; }
+        .bit-block { padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; font-family: monospace; }
+        .bit-sign { background: #fee2e2; color: #dc2626; }
+        .bit-exp { background: #fef9c3; color: #a16207; }
+        .bit-mantissa { background: #dcfce7; color: #16a34a; }
+        .bit-label { font-size: 0.75rem; color: #888; margin-left: 8px; }
+        pre code { font-size: 0.875rem; }
+    </style>
+</head>
+<body class="themeable-bg min-h-screen">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <!-- Hero Section -->
+    <section class="themeable-hero-bg pt-28 pb-16 px-4">
+        <div class="max-w-[800px] mx-auto text-left">
+            <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight" style="line-height: 1.4;"></h1>
+            <p class="text-xl themeable-muted mb-6">4-bit 부동소수점이 프론티어 AI의 하드웨어 문턱을 낮추는 방법</p>
+            <p class="text-sm themeable-muted mt-4">2026.04 · (주)페블러스 데이터 커뮤니케이션팀</p>
+            <p class="text-sm themeable-muted mt-1">읽는 시간: ~10분</p>
+            <div id="share-buttons-placeholder" class="flex justify-start mt-4"></div>
+        </div>
+    </section>
+
+    <!-- Main Layout -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- Desktop TOC -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">Executive Summary</a></li>
+                    <li><a href="#nvfp4-explained" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">NVFP4가 뭔가</a></li>
+                    <li><a href="#accuracy" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">정확도 손실: 실측값</a></li>
+                    <li><a href="#vs-part1" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">1편 대비 달라진 것</a></li>
+                    <li><a href="#vram" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">VRAM 현실</a></li>
+                    <li><a href="#how-to-run" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">구동 방법</a></li>
+                    <li><a href="#implications" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">이것이 의미하는 것</a></li>
+                    <li><a href="#references" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">참고 자료</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <div class="key-insight mb-8">
+                        <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                        <p class="themeable-text leading-relaxed">
+                            Google DeepMind가 Apache 2.0 라이선스로 Gemma 4 패밀리를 공개한 지 사흘 뒤,
+                            NVIDIA가 31B Dense 모델의 NVFP4 양자화 버전을 Hugging Face에 올렸다.
+                            이번이 의미 있는 이유는 단순히 "더 작아졌다"가 아니다.
+                            <strong class="themeable-heading">GPQA Diamond 기준 정확도 손실 0.25%, 256K 컨텍스트 유지,
+                            24GB GPU에서 일상 추론 가능</strong> — 이 세 가지가 동시에 성립한다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            <a href="https://blog.pebblous.ai/story/google-gemma-4-report-pb/ko/" class="text-orange-400 hover:text-orange-300 underline transition-colors">
+                                Gemma 4 1편: Apache 2.0으로 열린 소버린 AI의 문</a>에서
+                            라이선스와 아키텍처를 다뤘다면, 이번 편은 그 모델을 실제로 어떻게 구동하는지에 대한 이야기다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- NVFP4가 뭔가 -->
+                <section id="nvfp4-explained" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">NVFP4가 뭔가</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Gemma 4 31B NVFP4를 이해하려면 먼저 NVFP4 형식 자체를 알아야 한다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">4-bit floating point의 구조</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        NVFP4는 비트 구성이 단순하다: <strong class="themeable-heading">1 부호 비트 + 2 지수 비트 + 1 가수 비트</strong>.
+                        표현 범위는 약 -6에서 6까지.
+                    </p>
+
+                    <div class="bit-diagram">
+                        <div class="bit-block bit-sign">S</div>
+                        <div class="bit-block bit-exp">E E</div>
+                        <div class="bit-block bit-mantissa">M</div>
+                        <span class="bit-label">= 4 bits total (1 sign + 2 exp + 1 mantissa)</span>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6 mt-4">
+                        이 좁은 범위를 어떻게 대형 언어 모델 가중치에 적용하면서 정확도를 유지할까?
+                        답은 <strong class="themeable-heading">듀얼 레벨 블록 스케일링</strong>에 있다.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-6 mb-6">
+                        <div class="space-y-4">
+                            <div>
+                                <p class="font-semibold themeable-heading mb-1">1단계: 미세 블록 스케일링</p>
+                                <p class="themeable-text text-sm leading-relaxed">
+                                    16개 값마다 FP8(E4M3) 스케일 팩터 하나를 공유한다.
+                                    경쟁 포맷인 MXFP4가 32개 값 단위로 묶는 것과 비교해 <strong class="themeable-heading">2배 더 세밀</strong>하다.
+                                </p>
+                            </div>
+                            <div>
+                                <p class="font-semibold themeable-heading mb-1">2단계: 전체 텐서 스케일링</p>
+                                <p class="themeable-text text-sm leading-relaxed">
+                                    FP8 스케일 블록 위에 FP32 스칼라를 한 번 더 씌워,
+                                    미세 블록들이 사실상 2의 제곱수가 아닌 값으로도 표현되도록 한다.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        결과적으로 실효 비트 수는 <strong class="themeable-heading">4.5 bits/value</strong>
+                        (4bit 가중치 + FP8 스케일 오버헤드). 이게 FP16 대비 <strong class="themeable-heading">3.5배 메모리 절약</strong>,
+                        FP8 대비 <strong class="themeable-heading">1.8배 절약</strong>이라는 수치로 이어진다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed">
+                        NVIDIA Blackwell의 5세대 Tensor Core는 이 미세 블록 그룹핑과 동적 스케일링, 4-bit 행렬 연산을
+                        하드웨어 수준에서 자동 처리한다. H100(Hopper)에서도 테스트됐지만,
+                        최대 성능은 Blackwell 아키텍처에서 나온다.
+                    </p>
+                </section>
+
+                <!-- 정확도 손실: 실측값 -->
+                <section id="accuracy" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">정확도 손실: 실측값</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이론보다 숫자가 말해준다. NVIDIA가 공개한 벤치마크다.
+                    </p>
+
+                    <div class="overflow-x-auto rounded-xl mb-6">
+                        <table class="benchmark-table themeable-card">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-heading">벤치마크</th>
+                                    <th class="themeable-heading">BF16 원본</th>
+                                    <th class="themeable-heading">NVFP4</th>
+                                    <th class="themeable-heading">손실</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="themeable-text">
+                                    <td>GPQA Diamond</td>
+                                    <td>75.71%</td>
+                                    <td>75.46%</td>
+                                    <td class="delta-good">-0.25%</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>AIME 2025</td>
+                                    <td>66.25%</td>
+                                    <td>65.94%</td>
+                                    <td class="delta-good">-0.31%</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>MMLU Pro</td>
+                                    <td>85.25%</td>
+                                    <td>84.94%</td>
+                                    <td class="delta-good">-0.31%</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>LiveCodeBench (pass@1)</td>
+                                    <td>70.90%</td>
+                                    <td>70.63%</td>
+                                    <td class="delta-good">-0.27%</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>Scicode subtask</td>
+                                    <td>33.61%</td>
+                                    <td>33.18%</td>
+                                    <td class="delta-good">-0.43%</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>Terminal-Bench Hard</td>
+                                    <td>27.08%</td>
+                                    <td>27.08%</td>
+                                    <td class="delta-neutral">0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        모든 벤치마크에서 절대값 기준 <strong class="themeable-heading">0.5% 미만 손실</strong>.
+                        인간 평가자 간 재현성 오차 범위 안에 있는 수준이다.
+                        "4배 작아지면서 사실상 같은 성능"이라는 주장이 과장이 아니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed">
+                        양자화 방법은 <strong class="themeable-heading">PTQ(Post-Training Quantization)</strong> —
+                        재학습 없이 가중치와 활성화를 NVFP4로 변환했다.
+                        캘리브레이션 데이터셋은 CNN DailyMail 뉴스 기사 30만 건.
+                        NVIDIA Model Optimizer v0.42.0 사용.
+                    </p>
+                </section>
+
+                <!-- 1편 대비 달라진 것 -->
+                <section id="vs-part1" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">1편 대비 달라진 것</h2>
+
+                    <p class="themeable-text leading-relaxed mb-8">
+                        1편에서 다뤘던 Gemma 4 원본 스펙과 비교하면 주목할 세 가지 변화가 있다.
+                    </p>
+
+                    <div class="space-y-6">
+                        <div class="themeable-card rounded-xl p-6">
+                            <h3 class="text-lg font-bold themeable-heading mb-3">① 컨텍스트 윈도우: 128K → 256K</h3>
+                            <p class="themeable-text leading-relaxed">
+                                1편에서 128K 컨텍스트로 소개한 31B가 NVFP4 버전 HF 모델 카드에서는
+                                <strong class="themeable-heading">256K 토큰</strong>을 명시한다.
+                                Gemma 4 아키텍처 업데이트와 맞물린 것으로,
+                                소비자 GPU에서 단일 긴 문서를 처리하는 실용성이 크게 높아졌다.
+                            </p>
+                        </div>
+
+                        <div class="themeable-card rounded-xl p-6">
+                            <h3 class="text-lg font-bold themeable-heading mb-3">② 멀티모달: 이미지 → 이미지 + 비디오</h3>
+                            <p class="themeable-text leading-relaxed">
+                                이미지만 처리하던 것에서
+                                <strong class="themeable-heading">비디오(MP4/WebM, 최대 60초, 1fps 샘플링)</strong>까지 지원한다.
+                                비주얼 토큰 버짓은 70, 140, 280, 560, 1120 중 선택 가능하다.
+                            </p>
+                        </div>
+
+                        <div class="themeable-card rounded-xl p-6">
+                            <h3 class="text-lg font-bold themeable-heading mb-3">③ 라이선스 주의사항</h3>
+                            <p class="themeable-text leading-relaxed">
+                                1편의 핵심 주제였던 Apache 2.0은 Google의 원본 모델에 해당한다.
+                                이번 NVFP4 양자화 버전은
+                                <strong class="themeable-heading">NVIDIA Open Model License Agreement + Apache 2.0</strong>
+                                혼합 라이선스가 적용된다. 상업 배포는 가능하지만, NVIDIA 약관을 별도로 검토해야 한다.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VRAM 현실 -->
+                <section id="vram" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">VRAM 현실</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        LinkedIn 포스트에서 자주 언급되는 수치들을 실제 사용 시나리오별로 정리한다.
+                    </p>
+
+                    <div class="overflow-x-auto rounded-xl mb-6">
+                        <table class="vram-table themeable-card">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-heading">사용 시나리오</th>
+                                    <th class="themeable-heading">필요 VRAM</th>
+                                    <th class="themeable-heading">해당 GPU</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="themeable-text">
+                                    <td>가중치만 로드</td>
+                                    <td>~16–21 GB</td>
+                                    <td>RTX 4090 (24GB) 가능</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>일상 추론 (짧은 컨텍스트)</td>
+                                    <td>24 GB</td>
+                                    <td>RTX 4090, RTX 5090</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>256K 풀 컨텍스트</td>
+                                    <td>~32 GB</td>
+                                    <td>RTX 5090 (32GB)</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>데이터센터 배포</td>
+                                    <td>tensor-parallel 8</td>
+                                    <td>H100 × 8</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="themeable-card rounded-xl p-5 border-l-4 border-orange-500">
+                        <p class="themeable-text text-sm leading-relaxed">
+                            <strong class="themeable-heading">주의:</strong>
+                            HF 공식 모델 카드의 예시 명령어는 <code>--tensor-parallel-size 8</code>을 권장한다.
+                            이는 데이터센터 운용 기준이고, 소비자 GPU 싱글 카드 추론은 커뮤니티 검증 수치 기반이다.
+                            RTX 4090 단일 카드로 긴 컨텍스트 처리 시 OOM이 발생할 수 있다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- 구동 방법 -->
+                <section id="how-to-run" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">구동 방법</h2>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        vLLM v0.17.2rc1 이상에서 지원한다. 싱글 GPU 환경 기준:
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-6 mb-6">
+                        <pre class="themeable-text text-sm overflow-x-auto"><code>pip install vllm>=0.17.2rc1
+
+vllm serve nvidia/Gemma-4-31B-IT-NVFP4 \
+  --quantization modelopt \
+  --tensor-parallel-size 1</code></pre>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed">
+                        멀티모달 입력 처리 시 <code class="themeable-text">--limit-mm-per-prompt</code> 옵션으로
+                        비주얼 토큰 버짓을 조정할 수 있다.
+                        비디오 처리는 최대 60초 / 1fps 기준이며, 긴 영상은 직접 프레임 추출 후 이미지 배치로 전달하는 것이 권장된다.
+                    </p>
+                </section>
+
+                <!-- 이것이 의미하는 것 -->
+                <section id="implications" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">이것이 의미하는 것</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Gemma 4 NVFP4는 "양자화된 오픈 모델"이라는 카테고리에서 몇 가지 기준점을 세웠다.
+                    </p>
+
+                    <div class="space-y-5 mb-6">
+                        <div class="themeable-card rounded-xl p-5">
+                            <p class="font-semibold themeable-heading mb-2">정확도 손실과 메모리 절약의 트레이드오프가 대폭 개선됐다</p>
+                            <p class="themeable-text text-sm leading-relaxed">
+                                이전 INT4 방식들은 몇 퍼센트 손실이 일반적이었다. 0.25% 손실은 설계 결정의 차이다 —
+                                16값 단위 미세 블록 스케일링이 실제로 작동한다는 뜻이다.
+                            </p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-5">
+                            <p class="font-semibold themeable-heading mb-2">프론티어급 추론이 소비자 하드웨어 범주로 내려왔다</p>
+                            <p class="themeable-text text-sm leading-relaxed">
+                                GPQA Diamond 75%는 GPT-4 수준의 과학적 추론 능력이다.
+                                RTX 4090 한 장으로 이걸 로컬에서 돌릴 수 있다는 건,
+                                1년 전 기준으로는 상상하기 어려운 일이었다.
+                            </p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-5">
+                            <p class="font-semibold themeable-heading mb-2">소버린 AI 인프라의 하드웨어 요건이 현실적이 됐다</p>
+                            <p class="themeable-text text-sm leading-relaxed">
+                                클라우드 API 없이, 데이터가 외부로 나가지 않는 환경에서, 프론티어 수준의 AI를 구동하는 것.
+                                이것이 엔터프라이즈 소버린 AI 논의의 실질적 전제 조건이다.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            1편에서 라이선스가 "문을 열었다"고 했다면, NVFP4가 "그 문 안으로 실제로 들어가는" 방법이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- 참고 자료 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">참고 자료</h2>
+                    <ul class="space-y-3 themeable-text">
+                        <li>
+                            <a href="https://huggingface.co/nvidia/Gemma-4-31B-IT-NVFP4" target="_blank" rel="noopener"
+                               class="text-orange-400 hover:text-orange-300 underline transition-colors">
+                                NVIDIA Gemma-4-31B-IT-NVFP4 (Hugging Face)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://developer.nvidia.com/blog/bringing-ai-closer-to-the-edge-and-on-device-with-gemma-4/" target="_blank" rel="noopener"
+                               class="text-orange-400 hover:text-orange-300 underline transition-colors">
+                                Bringing AI Closer to the Edge and On-Device with Gemma 4 | NVIDIA Technical Blog
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://developer.nvidia.com/blog/introducing-nvfp4-for-efficient-and-accurate-low-precision-inference/" target="_blank" rel="noopener"
+                               class="text-orange-400 hover:text-orange-300 underline transition-colors">
+                                Introducing NVFP4 for Efficient and Accurate Low-Precision Inference | NVIDIA Technical Blog
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://blog.pebblous.ai/story/google-gemma-4-report-pb/ko/" target="_blank" rel="noopener"
+                               class="text-orange-400 hover:text-orange-300 underline transition-colors">
+                                Gemma 4 1편: Apache 2.0으로 열린 소버린 AI의 문 | 페블러스
+                            </a>
+                        </li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "Gemma 4 31B, 24GB GPU에서 돌아간다",
+            subtitle: "NVIDIA NVFP4 양자화 심층 분석",
+            pageTitle: "Gemma 4 31B, 24GB GPU에서 돌아간다 — NVIDIA NVFP4 양자화 심층 분석 | 페블러스",
+            category: "tech",
+            publishDate: "2026-04-05",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "story/google-gemma-4-nvfp4-report-pb.html",
+            tags: ["Google", "Gemma 4", "NVFP4", "양자화", "NVIDIA", "로컬 AI", "소버린 AI", "vLLM", "Blackwell"],
+            faqs: [
+                {
+                    question: "NVFP4가 INT4와 다른 점은 무엇인가요?",
+                    answer: "INT4가 정수 기반 고정 범위 양자화인 반면, NVFP4는 4-bit 부동소수점 형식(1 부호 + 2 지수 + 1 가수)에 16값 단위 FP8 블록 스케일링을 결합한 방식입니다. 이 듀얼 레벨 스케일링 덕분에 정수 양자화 대비 정확도 손실이 훨씬 작습니다."
+                },
+                {
+                    question: "Gemma 4 31B NVFP4를 RTX 4090으로 돌릴 수 있나요?",
+                    answer: "짧은 컨텍스트 일상 추론은 RTX 4090(24GB)으로 가능합니다. 단, 256K 풀 컨텍스트 처리는 약 32GB VRAM이 필요해 RTX 5090급 GPU가 필요합니다. 긴 컨텍스트에서는 OOM이 발생할 수 있으므로 주의가 필요합니다."
+                },
+                {
+                    question: "1편에서 128K였는데 256K로 늘어난 이유는 무엇인가요?",
+                    answer: "Gemma 4 아키텍처 자체의 업데이트와 맞물린 결과입니다. NVFP4 모델 카드 기준으로 256K 컨텍스트를 명시하고 있으며, 이는 긴 문서나 대화 히스토리를 처리하는 실용적인 상황에서 큰 차이를 만듭니다."
+                },
+                {
+                    question: "NVFP4 양자화 버전의 라이선스는 Apache 2.0인가요?",
+                    answer: "아닙니다. Google의 원본 Gemma 4 모델은 Apache 2.0이지만, NVIDIA가 양자화한 이번 버전은 NVIDIA Open Model License Agreement와 Apache 2.0의 혼합 라이선스가 적용됩니다. 상업 배포 전에 NVIDIA 약관을 별도로 검토해야 합니다."
+                },
+                {
+                    question: "PTQ(Post-Training Quantization)란 무엇이고, 재학습이 필요한가요?",
+                    answer: "PTQ는 이미 학습된 모델의 가중치를 재학습 없이 양자화하는 방식입니다. 이번 NVFP4 양자화는 NVIDIA Model Optimizer v0.42.0을 사용해 CNN DailyMail 30만 건으로 캘리브레이션만 수행했습니다. 재학습이 필요 없어 배포 비용이 낮습니다."
+                },
+                {
+                    question: "vLLM 어떤 버전이 필요한가요?",
+                    answer: "vLLM v0.17.2rc1 이상이 필요합니다. --quantization modelopt 옵션으로 NVFP4 모델을 서빙할 수 있으며, 싱글 GPU 환경에서는 --tensor-parallel-size 1을 사용합니다."
+                },
+                {
+                    question: "Blackwell GPU가 없으면 NVFP4 이점을 누릴 수 없나요?",
+                    answer: "최대 성능(50x 에너지 효율 향상 등)은 Blackwell 아키텍처 전용입니다. 하지만 NVIDIA는 H100(Hopper)에서도 테스트를 완료했으며, 메모리 절약과 정확도 유지 효과는 Hopper에서도 동일하게 적용됩니다."
+                },
+                {
+                    question: "소버린 AI에 Gemma 4 NVFP4가 왜 중요한가요?",
+                    answer: "클라우드 API 없이 온프레미스 환경에서 프론티어급 AI를 구동하는 것이 소버린 AI의 핵심 요건입니다. Apache 2.0 라이선스 원본 + NVFP4 양자화 조합으로 24GB GPU에서 GPQA Diamond 75%급 추론이 가능해졌고, 이는 엔터프라이즈 소버린 AI 인프라 구축의 실질적 진입 장벽을 낮춰줍니다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
