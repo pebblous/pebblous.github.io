@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>Gemma 4 31B Runs on 24GB GPU — NVIDIA NVFP4 Quantization Deep Dive | Pebblous</title>
+    <meta name="description" content="NVIDIA quantizes Gemma 4 31B with NVFP4 — 0.25% GPQA Diamond accuracy loss, 256K context preserved, frontier-level inference on a single RTX 4090. A deep dive into 4-bit block scaling and VRAM realities.">
+    <meta name="keywords" content="Gemma 4, NVFP4, quantization, NVIDIA, local AI, sovereign AI, vLLM, Blackwell, RTX 4090, open source LLM">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb/en/">
+
+    <!-- Open Graph -->
+    <meta name="og-image-title" content="Gemma 4 NVFP4">
+    <meta property="og:title" content="Gemma 4 31B Runs on 24GB GPU — NVIDIA NVFP4 Quantization Deep Dive">
+    <meta property="og:description" content="NVIDIA NVFP4 quantization brings Gemma 4 31B to a single RTX 4090. 0.25% accuracy loss on GPQA Diamond, 256K context preserved — the hardware door to sovereign AI has opened.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Gemma 4 31B NVFP4 Quantization Analysis — Pebblous">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-04-05">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Gemma 4 31B Runs on 24GB GPU — NVIDIA NVFP4 Quantization">
+    <meta name="twitter:description" content="NVFP4 4-bit quantization enables frontier-level inference on RTX 4090. 0.25% GPQA Diamond loss, 256K context preserved.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb/en/image/index.png">
+    <meta name="twitter:image:alt" content="Gemma 4 31B NVFP4 Quantization Analysis">
+    <meta name="twitter:site" content="@pebblous">
+    <meta name="twitter:creator" content="@pebblous">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260405">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260405">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260405">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* 이 포스트 고유 스타일만 */
+        .benchmark-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        .benchmark-table th { background: rgba(248, 104, 37, 0.12); font-weight: 700; padding: 0.75rem 1rem; text-align: left; font-size: 0.875rem; }
+        .benchmark-table td { padding: 0.65rem 1rem; font-size: 0.875rem; border-bottom: 1px solid rgba(128,128,128,0.15); }
+        .benchmark-table tr:last-child td { border-bottom: none; }
+        .delta-good { color: #22c55e; font-weight: 700; }
+        .delta-neutral { color: #f86825; font-weight: 700; }
+        .vram-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        .vram-table th { background: rgba(99, 102, 241, 0.12); font-weight: 700; padding: 0.75rem 1rem; text-align: left; font-size: 0.875rem; }
+        .vram-table td { padding: 0.65rem 1rem; font-size: 0.875rem; border-bottom: 1px solid rgba(128,128,128,0.15); }
+        .vram-table tr:last-child td { border-bottom: none; }
+        .bit-diagram { display: flex; gap: 4px; margin: 1rem 0; align-items: center; flex-wrap: wrap; }
+        .bit-block { padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; font-family: monospace; }
+        .bit-sign { background: #fee2e2; color: #dc2626; }
+        .bit-exp { background: #fef9c3; color: #a16207; }
+        .bit-mantissa { background: #dcfce7; color: #16a34a; }
+        .bit-label { font-size: 0.75rem; color: #888; margin-left: 8px; }
+        pre code { font-size: 0.875rem; }
+    </style>
+</head>
+<body class="themeable-bg min-h-screen">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <!-- Main Layout -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- Desktop TOC -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">Executive Summary</a></li>
+                    <li><a href="#nvfp4-explained" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">What is NVFP4</a></li>
+                    <li><a href="#accuracy" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">Accuracy Loss: Real Numbers</a></li>
+                    <li><a href="#vs-part1" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">What Changed from Part 1</a></li>
+                    <li><a href="#vram" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">VRAM Reality</a></li>
+                    <li><a href="#how-to-run" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">How to Run It</a></li>
+                    <li><a href="#implications" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">What This Means</a></li>
+                    <li><a href="#references" class="block pl-4 -ml-px border-l-2 border-transparent hover:border-orange-500 themeable-toc-link">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight" style="line-height: 1.4;"></h1>
+                    <p class="text-sm themeable-muted">2026.04 · Pebblous Data Communication Team</p>
+                    <p class="text-sm themeable-muted mt-1">Reading time: ~10 min · <a href="../ko/" class="text-orange-400 hover:text-orange-300 transition-colors">한국어</a></p>
+                    <div id="share-buttons-placeholder" class="flex justify-start mt-4"></div>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <div class="key-insight mb-8">
+                        <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                        <p class="themeable-text leading-relaxed">
+                            Three days after Google DeepMind released the Gemma 4 family under the Apache 2.0 license,
+                            NVIDIA uploaded an NVFP4-quantized version of the 31B Dense model to Hugging Face.
+                            What makes this significant is not simply that it got smaller.
+                            <strong class="themeable-heading">0.25% accuracy loss on GPQA Diamond, 256K context preserved,
+                            everyday inference on a 24GB GPU</strong> — all three hold at the same time.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            <a href="https://blog.pebblous.ai/story/google-gemma-4-report-pb/en/" class="text-orange-400 hover:text-orange-300 underline transition-colors">
+                                Gemma 4 Part 1: The Open Door to Sovereign AI via Apache 2.0</a> covered the license and architecture.
+                            This part is about how to actually run that model.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- NVFP4가 뭔가 -->
+                <section id="nvfp4-explained" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">What is NVFP4</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To understand Gemma 4 31B NVFP4, you first need to understand the NVFP4 format itself.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">Structure of 4-bit floating point</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        NVFP4 has a simple bit layout: <strong class="themeable-heading">1 sign bit + 2 exponent bits + 1 mantissa bit</strong>.
+                        The representable range is approximately -6 to 6.
+                    </p>
+
+                    <div class="bit-diagram">
+                        <div class="bit-block bit-sign">S</div>
+                        <div class="bit-block bit-exp">E E</div>
+                        <div class="bit-block bit-mantissa">M</div>
+                        <span class="bit-label">= 4 bits total (1 sign + 2 exp + 1 mantissa)</span>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6 mt-4">
+                        How can this narrow range be applied to large language model weights while preserving accuracy?
+                        The answer lies in <strong class="themeable-heading">dual-level block scaling</strong>.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-6 mb-6">
+                        <div class="space-y-4">
+                            <div>
+                                <p class="font-semibold themeable-heading mb-1">Step 1: Fine-grained block scaling</p>
+                                <p class="themeable-text text-sm leading-relaxed">
+                                    Every 16 values share one FP8 (E4M3) scale factor.
+                                    Compared to the competing MXFP4 format that groups 32 values, this is <strong class="themeable-heading">2× more granular</strong>.
+                                </p>
+                            </div>
+                            <div>
+                                <p class="font-semibold themeable-heading mb-1">Step 2: Global tensor scaling</p>
+                                <p class="themeable-text text-sm leading-relaxed">
+                                    An FP32 scalar is applied on top of the FP8 scale blocks,
+                                    allowing the fine-grained blocks to effectively represent values that are not powers of two.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        The effective bit width is <strong class="themeable-heading">4.5 bits/value</strong>
+                        (4-bit weights + FP8 scale overhead). This translates to <strong class="themeable-heading">3.5× memory savings</strong> vs. FP16
+                        and <strong class="themeable-heading">1.8× savings</strong> vs. FP8.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed">
+                        NVIDIA Blackwell's 5th-generation Tensor Cores handle this fine-grained block grouping, dynamic scaling, and 4-bit matrix operations
+                        automatically at the hardware level. Testing on H100 (Hopper) has also been completed,
+                        but peak performance comes from the Blackwell architecture.
+                    </p>
+                </section>
+
+                <!-- 정확도 손실: 실측값 -->
+                <section id="accuracy" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">Accuracy Loss: Real Numbers</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Numbers speak louder than theory. These are the benchmarks NVIDIA published.
+                    </p>
+
+                    <div class="overflow-x-auto rounded-xl mb-6">
+                        <table class="benchmark-table themeable-card">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-heading">Benchmark</th>
+                                    <th class="themeable-heading">BF16 Original</th>
+                                    <th class="themeable-heading">NVFP4</th>
+                                    <th class="themeable-heading">Delta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="themeable-text">
+                                    <td>GPQA Diamond</td>
+                                    <td>75.71%</td>
+                                    <td>75.46%</td>
+                                    <td class="delta-good">-0.25%</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>AIME 2025</td>
+                                    <td>66.25%</td>
+                                    <td>65.94%</td>
+                                    <td class="delta-good">-0.31%</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>MMLU Pro</td>
+                                    <td>85.25%</td>
+                                    <td>84.94%</td>
+                                    <td class="delta-good">-0.31%</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>LiveCodeBench (pass@1)</td>
+                                    <td>70.90%</td>
+                                    <td>70.63%</td>
+                                    <td class="delta-good">-0.27%</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>Scicode subtask</td>
+                                    <td>33.61%</td>
+                                    <td>33.18%</td>
+                                    <td class="delta-good">-0.43%</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>Terminal-Bench Hard</td>
+                                    <td>27.08%</td>
+                                    <td>27.08%</td>
+                                    <td class="delta-neutral">0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        Across all benchmarks, the absolute loss is <strong class="themeable-heading">under 0.5%</strong> —
+                        within the reproducibility margin between human evaluators.
+                        The claim of "4× smaller with essentially the same performance" is not an exaggeration.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed">
+                        The quantization method used is <strong class="themeable-heading">PTQ (Post-Training Quantization)</strong> —
+                        weights and activations were converted to NVFP4 without retraining.
+                        The calibration dataset was 300,000 CNN DailyMail news articles.
+                        NVIDIA Model Optimizer v0.42.0 was used.
+                    </p>
+                </section>
+
+                <!-- 1편 대비 달라진 것 -->
+                <section id="vs-part1" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">What Changed from Part 1</h2>
+
+                    <p class="themeable-text leading-relaxed mb-8">
+                        Compared to the original Gemma 4 specs covered in Part 1, there are three notable changes worth highlighting.
+                    </p>
+
+                    <div class="space-y-6">
+                        <div class="themeable-card rounded-xl p-6">
+                            <h3 class="text-lg font-bold themeable-heading mb-3">① Context window: 128K → 256K</h3>
+                            <p class="themeable-text leading-relaxed">
+                                The 31B that was introduced with a 128K context in Part 1 now specifies
+                                <strong class="themeable-heading">256K tokens</strong> on the NVFP4 HuggingFace model card.
+                                This is tied to a Gemma 4 architecture update,
+                                and significantly improves the practicality of processing long single documents on consumer GPUs.
+                            </p>
+                        </div>
+
+                        <div class="themeable-card rounded-xl p-6">
+                            <h3 class="text-lg font-bold themeable-heading mb-3">② Multimodal: image → image + video</h3>
+                            <p class="themeable-text leading-relaxed">
+                                Support has expanded from images only to
+                                <strong class="themeable-heading">video (MP4/WebM, up to 60 seconds, 1fps sampling)</strong>.
+                                Visual token budget can be selected from 70, 140, 280, 560, or 1120.
+                            </p>
+                        </div>
+
+                        <div class="themeable-card rounded-xl p-6">
+                            <h3 class="text-lg font-bold themeable-heading mb-3">③ License note</h3>
+                            <p class="themeable-text leading-relaxed">
+                                Apache 2.0, the central topic of Part 1, applies to Google's original model.
+                                This NVFP4 quantized version is subject to a
+                                <strong class="themeable-heading">NVIDIA Open Model License Agreement + Apache 2.0</strong>
+                                dual license. Commercial distribution is possible, but NVIDIA's terms must be reviewed separately.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VRAM 현실 -->
+                <section id="vram" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">VRAM Reality</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here are the numbers frequently cited on LinkedIn, organized by actual use scenario.
+                    </p>
+
+                    <div class="overflow-x-auto rounded-xl mb-6">
+                        <table class="vram-table themeable-card">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-heading">Use Scenario</th>
+                                    <th class="themeable-heading">VRAM Required</th>
+                                    <th class="themeable-heading">Applicable GPU</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="themeable-text">
+                                    <td>Weights only (load)</td>
+                                    <td>~16–21 GB</td>
+                                    <td>RTX 4090 (24GB) feasible</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>Everyday inference (short context)</td>
+                                    <td>24 GB</td>
+                                    <td>RTX 4090, RTX 5090</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>256K full context</td>
+                                    <td>~32 GB</td>
+                                    <td>RTX 5090 (32GB)</td>
+                                </tr>
+                                <tr class="themeable-text">
+                                    <td>Datacenter deployment</td>
+                                    <td>tensor-parallel 8</td>
+                                    <td>H100 × 8</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="themeable-card rounded-xl p-5 border-l-4 border-orange-500">
+                        <p class="themeable-text text-sm leading-relaxed">
+                            <strong class="themeable-heading">Note:</strong>
+                            The example command in the official HF model card recommends <code>--tensor-parallel-size 8</code>.
+                            That is for datacenter use; single consumer GPU inference figures are based on community-validated numbers.
+                            OOM may occur when processing long contexts on a single RTX 4090.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- 구동 방법 -->
+                <section id="how-to-run" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">How to Run It</h2>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        Supported in vLLM v0.17.2rc1 and above. For a single-GPU setup:
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-6 mb-6">
+                        <pre class="themeable-text text-sm overflow-x-auto"><code>pip install vllm>=0.17.2rc1
+
+vllm serve nvidia/Gemma-4-31B-IT-NVFP4 \
+  --quantization modelopt \
+  --tensor-parallel-size 1</code></pre>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed">
+                        For multimodal input, use the <code class="themeable-text">--limit-mm-per-prompt</code> option
+                        to adjust the visual token budget.
+                        Video processing supports up to 60 seconds at 1fps; for longer videos, it is recommended to extract frames manually and pass them as an image batch.
+                    </p>
+                </section>
+
+                <!-- 이것이 의미하는 것 -->
+                <section id="implications" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">What This Means</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Gemma 4 NVFP4 has set several benchmarks in the category of "quantized open models."
+                    </p>
+
+                    <div class="space-y-5 mb-6">
+                        <div class="themeable-card rounded-xl p-5">
+                            <p class="font-semibold themeable-heading mb-2">The accuracy-vs-memory trade-off has improved dramatically</p>
+                            <p class="themeable-text text-sm leading-relaxed">
+                                Earlier INT4 approaches typically incurred several percent of accuracy loss. A 0.25% loss is a difference in design —
+                                it means that fine-grained block scaling at 16-value granularity actually works.
+                            </p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-5">
+                            <p class="font-semibold themeable-heading mb-2">Frontier-level inference has come within consumer hardware reach</p>
+                            <p class="themeable-text text-sm leading-relaxed">
+                                GPQA Diamond 75% represents GPT-4-level scientific reasoning ability.
+                                Running this locally on a single RTX 4090 was something that would have been
+                                hard to imagine just a year ago.
+                            </p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-5">
+                            <p class="font-semibold themeable-heading mb-2">Hardware requirements for sovereign AI infrastructure have become realistic</p>
+                            <p class="themeable-text text-sm leading-relaxed">
+                                Running frontier-level AI without cloud APIs, in an environment where data never leaves your premises —
+                                that is the practical prerequisite for enterprise sovereign AI.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            If Part 1 said the license "opened the door," NVFP4 is how you actually walk through it.
+                        </p>
+                    </div>
+
+                    <div class="themeable-card rounded-xl p-5 mt-6">
+                        <p class="font-semibold themeable-heading mb-2">🔍 The next bottleneck for sovereign AI: data quality</p>
+                        <p class="themeable-text text-sm leading-relaxed">
+                            Now that the hardware door is open, the next bottleneck is what you run on it.
+                            Running Gemma 4 31B on-premises is now possible,
+                            but the quality of the data fed to the model determines the outcome.
+                            Whether fine-tuning, RAG indexing, or agent context —
+                            <a href="https://dataclinic.ai" target="_blank" rel="noopener" class="text-orange-400 hover:text-orange-300 underline transition-colors">DataClinic</a>'s
+                            diagnostic layer filters out data distribution anomalies, duplicates, and label errors upfront,
+                            which is when on-premises AI delivers its real performance.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- 참고 자료 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <h2 class="text-2xl font-bold themeable-heading mb-6 border-b-2 border-orange-500 pb-2">References</h2>
+                    <ul class="space-y-3 themeable-text">
+                        <li>
+                            <a href="https://huggingface.co/nvidia/Gemma-4-31B-IT-NVFP4" target="_blank" rel="noopener"
+                               class="text-orange-400 hover:text-orange-300 underline transition-colors">
+                                NVIDIA Gemma-4-31B-IT-NVFP4 (Hugging Face)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://developer.nvidia.com/blog/bringing-ai-closer-to-the-edge-and-on-device-with-gemma-4/" target="_blank" rel="noopener"
+                               class="text-orange-400 hover:text-orange-300 underline transition-colors">
+                                Bringing AI Closer to the Edge and On-Device with Gemma 4 | NVIDIA Technical Blog
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://developer.nvidia.com/blog/introducing-nvfp4-for-efficient-and-accurate-low-precision-inference/" target="_blank" rel="noopener"
+                               class="text-orange-400 hover:text-orange-300 underline transition-colors">
+                                Introducing NVFP4 for Efficient and Accurate Low-Precision Inference | NVIDIA Technical Blog
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://blog.pebblous.ai/story/google-gemma-4-report-pb/en/" target="_blank" rel="noopener"
+                               class="text-orange-400 hover:text-orange-300 underline transition-colors">
+                                Gemma 4 Part 1: The Open Door to Sovereign AI via Apache 2.0 | Pebblous
+                            </a>
+                        </li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260405"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "Gemma 4 31B Runs on a 24GB GPU",
+            subtitle: "A Deep Dive into NVIDIA NVFP4 Quantization",
+            pageTitle: "Gemma 4 31B Runs on 24GB GPU — NVIDIA NVFP4 Quantization Deep Dive | Pebblous",
+            category: "tech",
+            publishDate: "2026-04-05",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "story/google-gemma-4-nvfp4-report-pb/en/",
+            tags: ["Google", "Gemma 4", "NVFP4", "Quantization", "NVIDIA", "Local AI", "Sovereign AI", "vLLM", "Blackwell"],
+            faqs: [
+                {
+                    question: "How is NVFP4 different from INT4?",
+                    answer: "While INT4 is an integer-based fixed-range quantization, NVFP4 combines a 4-bit floating-point format (1 sign + 2 exponent + 1 mantissa) with FP8 block scaling at 16-value granularity. This dual-level scaling results in far less accuracy loss compared to integer quantization."
+                },
+                {
+                    question: "Can I run Gemma 4 31B NVFP4 on an RTX 4090?",
+                    answer: "Everyday inference with short contexts is feasible on an RTX 4090 (24GB). However, full 256K context processing requires approximately 32GB of VRAM, so an RTX 5090-class GPU is needed. OOM can occur with long contexts, so caution is advised."
+                },
+                {
+                    question: "Why did the context window grow from 128K in Part 1 to 256K?",
+                    answer: "It reflects an update to the Gemma 4 architecture itself. The NVFP4 model card specifies 256K context, which makes a significant difference in practical scenarios involving long documents or conversation histories."
+                },
+                {
+                    question: "Is the NVFP4 quantized version licensed under Apache 2.0?",
+                    answer: "No. Google's original Gemma 4 model is Apache 2.0, but this NVIDIA-quantized version is subject to a dual license: the NVIDIA Open Model License Agreement plus Apache 2.0. NVIDIA's terms must be reviewed separately before commercial distribution."
+                },
+                {
+                    question: "What is PTQ (Post-Training Quantization), and does it require retraining?",
+                    answer: "PTQ quantizes the weights of an already-trained model without retraining. This NVFP4 quantization used NVIDIA Model Optimizer v0.42.0 and performed only calibration on 300,000 CNN DailyMail articles. No retraining is needed, which keeps deployment costs low."
+                },
+                {
+                    question: "Which version of vLLM is required?",
+                    answer: "vLLM v0.17.2rc1 or higher is required. The NVFP4 model can be served using the --quantization modelopt option. For single-GPU setups, use --tensor-parallel-size 1."
+                },
+                {
+                    question: "Can I benefit from NVFP4 without a Blackwell GPU?",
+                    answer: "Peak performance gains (such as 50x energy efficiency improvements) are exclusive to the Blackwell architecture. However, NVIDIA has also completed testing on H100 (Hopper), and the memory savings and accuracy retention benefits apply equally to Hopper."
+                },
+                {
+                    question: "Why is Gemma 4 NVFP4 important for sovereign AI?",
+                    answer: "Running frontier-level AI on-premises without cloud APIs is the core requirement for sovereign AI. The combination of the Apache 2.0-licensed original plus NVFP4 quantization makes GPQA Diamond 75%-level inference possible on a 24GB GPU, meaningfully lowering the hardware barrier to building enterprise sovereign AI infrastructure."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
