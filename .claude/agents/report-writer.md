@@ -36,7 +36,7 @@ _workspace/report/04_write_meta.json ← 퍼블리셔용 메타데이터
 ## 보고서 필수 섹션 순서
 
 ```
-1. Hero (mainTitle + subtitle + publishDate + 읽기시간)
+1. Hero (mainTitle + subtitle + publishDate + 읽기시간 + share-buttons-placeholder)
 2. Executive Summary (key-insight 블록)
 3. 섹션 1~N (각 H2 + 본문)
 4. 페블러스 관심의 이유 (마지막 본문 섹션 — 반드시 포함)
@@ -81,6 +81,7 @@ defaultTheme: "light",               ← PebblousPage.init() 설정
 
 - publisher: `"(주)페블러스 데이터 커뮤니케이션팀"`
 - category: `"business"` 또는 `"tech"` (주제에 따라)
+- **Hero 헤더**: 언어 전환 링크 바로 아래 `<div id="share-buttons-placeholder" class="flex justify-start mt-4"></div>` 필수
 - Executive Summary는 `<section id="executive-summary">` 별도 섹션
 - 수치 데이터는 `<strong>` 또는 카드 형태로 강조
 - 참고문헌 섹션: `<section id="references">`에 번호 목록
