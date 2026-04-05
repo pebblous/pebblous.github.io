@@ -32,6 +32,7 @@
 ### Hero Section
 - [ ] `<h1 id="page-h1-title">` **비어 있음** (JS가 채움)
 - [ ] 메타 2줄: `YYYY.MM · 팀명` / `읽는 시간 · 언어 전환 링크`
+- [ ] **공유 버튼**: 언어 전환 링크 바로 아래 `<div id="share-buttons-placeholder" class="flex justify-start mt-4"></div>` (필수)
 - [ ] **Breadcrumbs**: 정적 `<span class="hero-badge">` 금지 → PebblousBreadcrumbs가 자동 생성
 
 ### TOC + Layout
