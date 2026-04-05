@@ -155,6 +155,34 @@ def validate_article(a, strict=True, auto_fix=False):
     if strict and not a.get("lang") and not a.get("language"):
         warn(aid, "lang 필드 없음 — 언어 필터 비적용 (모든 언어에서 노출됨)")
 
+    # 10. noindex 충돌 — published=true인데 HTML에 noindex (Google 미인덱싱)
+    if a.get("published") and path:
+        full = resolve_path(path)
+        if os.path.exists(full):
+            try:
+                head = open(full, encoding="utf-8").read(2000)
+                has_noindex = "noindex" in head
+                is_redirect = "http-equiv=\"refresh\"" in head or "location.replace" in head
+                if has_noindex and not is_redirect:
+                    err(aid, "published=true인데 HTML에 noindex → Google 미인덱싱 (noindex 제거 또는 published=false)")
+                elif has_noindex and is_redirect:
+                    # redirect stub을 가리키고 있음 → path를 실제 콘텐츠로 변경 필요
+                    if auto_fix:
+                        import re as _re
+                        m = _re.search(r'url=\.?/?(.*?)/?["\']', head) or _re.search(r"location\.replace\(['\"]\.?/?(.*?)/?['\"]\)", head)
+                        if m:
+                            target = m.group(1).strip('./')
+                            parent = os.path.dirname(path)
+                            new_path = os.path.normpath(os.path.join(parent, target)).replace('\\', '/') + '/'
+                            if os.path.exists(os.path.join(ROOT, new_path, "index.html")):
+                                a["path"] = new_path
+                                fix_msg(aid, f"redirect stub path → {new_path}")
+                                changed = True
+                    else:
+                        err(aid, f"path가 redirect stub(noindex) → 실제 콘텐츠 경로로 변경 필요 (--fix)")
+            except Exception:
+                pass
+
     return changed
 
 

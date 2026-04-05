@@ -45,7 +45,7 @@ Article 필수 필드:
   "published": true,
   "featured": false,
   "description": "[150자 설명]",
-  "image": "[category]/[slug]/ko/image/index.png",
+  "image": "",
   "tags": []
 }
 ```

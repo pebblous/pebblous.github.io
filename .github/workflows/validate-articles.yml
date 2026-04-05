@@ -96,6 +96,49 @@ jobs:
 
           echo "✅ All article categories are valid"
 
+      - name: Check featured limits (max 3 per category)
+        run: |
+          echo "Checking featured article limits..."
+
+          for category in $(jq -r '.categories | keys[]' articles.json); do
+            count=$(jq -r "[.articles[] | select(.featured == true and .category == \"$category\")] | length" articles.json)
+            if [ "$count" -gt 3 ]; then
+              echo "❌ Category '$category' has $count featured articles (max 3)"
+              exit 1
+            fi
+          done
+
+          echo "✅ All categories within featured limits"
+
+      - name: Check noindex conflicts
+        run: |
+          echo "Checking for published articles pointing to noindex pages..."
+
+          errors=0
+          for path in $(jq -r '.articles[] | select(.published == true) | .path' articles.json); do
+            # Resolve to actual file
+            if echo "$path" | grep -q '\.html$'; then
+              file="$path"
+            else
+              file="${path%/}/index.html"
+            fi
+
+            if [ -f "$file" ]; then
+              if grep -q 'noindex' "$file" && grep -q 'http-equiv="refresh"\|location.replace' "$file"; then
+                id=$(jq -r ".articles[] | select(.path == \"$path\") | .id" articles.json)
+                echo "❌ [$id] path points to redirect stub with noindex: $path"
+                errors=$((errors + 1))
+              fi
+            fi
+          done
+
+          if [ "$errors" -gt 0 ]; then
+            echo "❌ Found $errors noindex conflicts. Run: python3 tools/validate-articles.py --fix"
+            exit 1
+          fi
+
+          echo "✅ No noindex conflicts"
+
       - name: Summary
         if: success()
         run: |
