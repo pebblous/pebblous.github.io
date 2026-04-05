@@ -104,3 +104,15 @@ PebblousPage.init({
 <meta property="og:image" content="https://blog.pebblous.ai/[path]image/index.png">
 <meta property="og:url" content="https://blog.pebblous.ai/[path]">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="[제목]">
+<meta name="twitter:description" content="[설명]">
+<meta name="twitter:image" content="https://blog.pebblous.ai/[path]image/index.png">
+```
+
+## 콘텐츠 원칙
+
+- **Text-First**: 차트/카드/다이어그램 앞에 설명 단락이 먼저
+- 섹션 구조: `<h2>` → `<h3>` (더 깊은 계층 금지)
+- 영어 아티클: publisher = "Pebblous Data Communication Team", "Reading time: ~Nmin"
+
+상세 HTML 전체 구조 → `references/html-conventions.md`
