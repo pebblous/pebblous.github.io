@@ -8,6 +8,21 @@ description: "blog.pebblous.ai HTML 아티클 작성 — PebblousPage.init() 구
 blog.pebblous.ai 아티클 HTML 작성 스킬.
 상세 HTML 구조 예시는 `references/html-conventions.md` 참조.
 
+## ⛔ 작성 시작 전 필수 읽기 (예외 없음, 기억에 의존 금지)
+
+```
+Read: docs/post-writing-lessons-for-pb.md          # 이중 불릿, SEO-check 절차
+Read: references/html-conventions.md               # CSS 순서·Hero·메타 정본
+Read: docs/blog-html-checklist.md                  # 완성 후 대조용
+```
+
+## ⛔ Push 전 필수 검증
+
+```bash
+python3 tools/validate-articles.py                 # 구조 검증
+# SEO-check: post-writing-lessons-for-pb.md 섹션 12 참조
+```
+
 ## 파일 경로 컨벤션
 
 ```
@@ -89,15 +104,3 @@ PebblousPage.init({
 <meta property="og:image" content="https://blog.pebblous.ai/[path]image/index.png">
 <meta property="og:url" content="https://blog.pebblous.ai/[path]">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="[제목]">
-<meta name="twitter:description" content="[설명]">
-<meta name="twitter:image" content="https://blog.pebblous.ai/[path]image/index.png">
-```
-
-## 콘텐츠 원칙
-
-- **Text-First**: 차트/카드/다이어그램 앞에 설명 단락이 먼저
-- 섹션 구조: `<h2>` → `<h3>` (더 깊은 계층 금지)
-- 영어 아티클: publisher = "Pebblous Data Communication Team", "Reading time: ~Nmin"
-
-상세 HTML 전체 구조 → `references/html-conventions.md`

@@ -9,6 +9,16 @@ description: >
 
 # report-produce: 심층조사 보고서 파이프라인 오케스트레이터
 
+## ⛔ Phase 0 필수 읽기 (스킬 실행 전 예외 없이)
+
+HTML 작성 단계(Phase 4) 시작 전, report-writer 에이전트에게 다음 파일을 Read 툴로 읽도록 지시:
+
+1. `docs/post-writing-lessons-for-pb.md` — 작성 규칙 (이중 불릿, SEO-check 등)
+2. `.claude/skills/blog-write/references/html-conventions.md` — HTML 정본 (CSS 순서, Hero, 메타)
+3. `docs/blog-html-checklist.md` — 완성 후 대조 체크리스트
+
+Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
+
 ## 실행 모드: 서브 에이전트 (Pipeline + 병렬 팬아웃)
 
 ## 에이전트 구성
@@ -209,14 +219,4 @@ Agent(
 - 생성된 보고서 경로
 - 블로그 URL (`https://blog.pebblous.ai/report/[slug]/ko/`)
 - articles.json 반영 확인
-- git push / PR 생성 결과
-
-## 에러 핸들링
-
-| 단계 | 실패 | 처리 |
-|------|------|------|
-| 기획 실패 | planner 미응답 | 주제 기반 직접 기획 후 진행 |
-| 리서치 트랙 1개 실패 | 2개 트랙만 완료 | 실패 트랙 명시 후 합성 진행 |
-| 합성 실패 | synthesizer 미응답 | 3개 트랙 결과 직접 합산 후 진행 |
-| 작성 실패 | HTML 생성 안 됨 | 사용자에게 알리고 중단 |
-| 퍼블리싱 부분 실패 | OG/articles/git 중 일부 | 실패 단계 명시 후 나머지 진행 |
+- git push / PR 생성 결
