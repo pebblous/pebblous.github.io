@@ -70,6 +70,11 @@ PebblousPage.init({
 - FAQ는 `config.faqs`만 — `<head>`에 FAQPage JSON-LD 직접 추가 금지
 - `article-page.js` 사용 금지 → `common-utils.js` 사용
 
+**⚠️ articles.json과 필드명이 다름 (혼동 주의):**
+- `PebblousPage.init()` → `publishDate` (HTML 렌더링용)
+- `articles.json` → `date` (CI 스키마 검증 필수 필드)
+- 전체 필드명 정본: `.claude/AGENT-POLICY.md` 섹션 3 참조
+
 ## HTML 필수 요소
 
 ```html

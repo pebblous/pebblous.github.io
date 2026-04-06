@@ -108,9 +108,9 @@ def validate_article(a, strict=True, auto_fix=False):
     # 4. description missing (RSS generate-rss.js 에러: undefined.replace())
     if not a.get("description"):
         fallback = a.get("cardDescription") or a.get("subtitle") or a.get("title", "")
+        src = "cardDescription" if a.get("cardDescription") else ("subtitle" if a.get("subtitle") else "title")
         if fallback and auto_fix:
             a["description"] = fallback
-            src = "cardDescription" if a.get("cardDescription") else ("subtitle" if a.get("subtitle") else "title")
             fix_msg(aid, f"description 없음 → {src} 복사: '{fallback[:50]}'")
             changed = True
         elif not fallback:
