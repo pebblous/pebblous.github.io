@@ -20,8 +20,23 @@ Read: docs/blog-html-checklist.md                  # 완성 후 대조용
 
 ```bash
 python3 tools/validate-articles.py                 # 구조 검증
-# SEO-check: post-writing-lessons-for-pb.md 섹션 12 참조
 ```
+
+### SEO-check (새 페이지마다 필수 — 예외 없음)
+
+```bash
+agent-browser open <배포된 URL>
+agent-browser wait --load networkidle
+agent-browser eval "document.title"
+agent-browser eval "document.querySelector('link[rel=canonical]')?.href"
+agent-browser eval "document.querySelector('link[hreflang=en]')?.href"
+agent-browser eval "document.querySelector('meta[property=\"og:image\"]')?.content"
+agent-browser eval "!!document.getElementById('share-buttons-placeholder')"
+agent-browser eval "document.querySelector('meta[name=\"twitter:site\"]')?.content"
+agent-browser eval "document.querySelector('meta[http-equiv=\"content-language\"]')?.content"
+```
+
+통과 기준: title 60자 이내, description 120-160자, canonical = 현재 URL, hreflang 3개(bilingual 시), og:image URL 존재, share-btn = true, twitter:site = `@pebblous`
 
 ## 파일 경로 컨벤션
 
@@ -114,5 +129,43 @@ PebblousPage.init({
 - **Text-First**: 차트/카드/다이어그램 앞에 설명 단락이 먼저
 - 섹션 구조: `<h2>` → `<h3>` (더 깊은 계층 금지)
 - 영어 아티클: publisher = "Pebblous Data Communication Team", "Reading time: ~Nmin"
+
+## ⚠️ 이중 불릿 버그 (자주 반복 — 반드시 준수)
+
+`common-styles.css`가 `main ul { list-style-type: disc }` 자동 불릿을 붙인다.
+`<li>` 안에 `•`를 하드코딩하면 불릿이 두 개 나온다.
+
+```html
+<!-- ❌ 이중 불릿 -->
+<ul>
+    <li>• 항목</li>
+</ul>
+
+<!-- ✅ 옵션 A: 하드코딩 불릿 + list-style:none -->
+<ul style="list-style:none;margin-left:0;">
+    <li>• 항목</li>
+</ul>
+
+<!-- ✅ 옵션 B: CSS 불릿만 사용 (• 제거) -->
+<ul class="ml-6">
+    <li>항목</li>
+</ul>
+```
+
+또는 페블러스 표준 스타일 (teal 불릿):
+```html
+<ul class="space-y-3 mb-6">
+    <li class="flex items-start gap-3">
+        <span class="text-teal-400 mt-1">•</span>
+        <span class="themeable-text leading-relaxed">항목</span>
+    </li>
+</ul>
+```
+
+완성 후 확인:
+```bash
+grep -n '<li>•\|<li> •' <파일>.html
+# 결과가 있으면 해당 <ul>에 list-style:none 추가
+```
 
 상세 HTML 전체 구조 → `references/html-conventions.md`
