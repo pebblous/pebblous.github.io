@@ -42,19 +42,45 @@ agent-browser eval "document.querySelector('meta[http-equiv=\"content-language\"
 
 ```
 [category]/[slug]/ko/index.html         # 한국어
-[category]/[slug]/en/index.html         # 영어 (선택)
-[category]/[slug]/ko/image/index.png    # OG 이미지 (generate-og-image.js 생성)
+[category]/[slug]/en/index.html         # 영어
+[category]/[slug]/ko/image/index.png    # KO OG 이미지
+[category]/[slug]/en/image/index.png    # EN OG 이미지
 ```
 
-카테고리: `blog/` | `project/` | `report/` | `story/` | `event/`
+**필수**: 단일 언어만 먼저 작성하더라도 `ko/` 또는 `en/` 디렉토리 구조로 생성.
+루트에 직접 `[slug]/index.html` 생성 금지. 공유 이미지 경로 금지.
+정본: `.claude/AGENT-POLICY.md` 섹션 3.
+
+카테고리: `project/` | `blog/` | `report/` | `story/` | `event/`
+
+## 제목 완성 절차 (blog-research 초안 → 최종 3슬롯)
+
+작성 시작 전 `docs/title-strategy.md`를 읽고 아래 절차를 따른다:
+
+1. **리서치 초안 확인**: `_workspace/01_research.md`의 `추천 제목` 섹션에서 mainTitle 후보, subtitle 후보, pageTitle 키워드 소재, 검색 의도를 확인
+2. **3슬롯 최종 결정**:
+
+| 슬롯 | 기준 | 글자 수 |
+|------|------|---------|
+| `pageTitle` | 핵심 키워드 앞배치 + 구체적 약속 + ` \| 페블러스` | 50-60자 |
+| `mainTitle` | 감성 후킹 (은유/선언/대조) — 키워드 나열 금지 | 20-40자 |
+| `subtitle` | 맥락 보충 + mainTitle에 없는 보조 키워드 | 30-60자 |
+
+3. **검증 체크**:
+   - [ ] `pageTitle ≠ mainTitle` (역할이 다르므로 반드시 다른 문장)
+   - [ ] `pageTitle` 앞쪽 1/3에 핵심 키워드
+   - [ ] `mainTitle` 소리 내어 읽었을 때 자연스러운가?
+   - [ ] EN 제목은 한국어 직역이 아닌 영어 검색 의도에 맞게 재작성
+
+4. **EN 제목** (bilingual 시): 한국어 제목을 번역하지 말고, 영어 검색 의도에 맞게 별도 작성. Title Case 적용.
 
 ## PebblousPage.init() — 필수 설정
 
 ```javascript
 PebblousPage.init({
-  mainTitle: "메인 제목",          // REQUIRED — h1에 렌더링
-  subtitle: "부제목",              // REQUIRED — h1 아래
-  pageTitle: "제목 | 페블러스",    // <title> 태그용
+  mainTitle: "메인 제목",          // REQUIRED — h1에 렌더링 (감성 후킹)
+  subtitle: "부제목",              // REQUIRED — h1 아래 (맥락 + 보조 키워드)
+  pageTitle: "제목 | 페블러스",    // <title> 태그용 (SEO 키워드 중심)
   category: "tech",               // tech|business|art|story
   publishDate: "2026-03-29",
   publisher: "(주)페블러스 데이터 커뮤니케이션팀",

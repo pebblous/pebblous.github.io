@@ -42,7 +42,25 @@
 
 즉, **핵심 규칙은 인라인으로 요약하고, 원문 위치를 병기**한다.
 
-## 3. 필드명 정본 (Canonical Field Names)
+## 3. 파일 경로 정본 (Canonical File Paths)
+
+**모든 신규 콘텐츠는 이중어(KO/EN) 디렉토리 구조로 생성한다.** 단일 언어만 먼저 작성하더라도 디렉토리 구조는 처음부터 이중어를 전제로 잡는다.
+
+```
+{category}/{slug}/ko/index.html        # 한국어 페이지
+{category}/{slug}/en/index.html        # 영어 페이지
+{category}/{slug}/ko/image/index.png   # KO OG 이���지
+{category}/{slug}/en/image/index.png   # EN OG ���미지
+```
+
+**금지 패턴:**
+- `{slug}/index.html` (언어 디렉토리 없이 루트에 직접 생성)
+- `{slug}/image/index.png` (공유 이미지 — 반드시 `ko/` 또는 `en/` 하위)
+- `{category}/image/{slug}.png` (구버전 공유 OG 이미지 경로)
+
+**카테고리:** `project/` | `blog/` | `report/` | `story/` | `event/`
+
+## 4. 필드명 정본 (Canonical Field Names)
 
 에이전트 간 혼동이 반복되는 필드명을 여기서 확정한다.
 
@@ -76,7 +94,7 @@ PebblousPage.init({
 });
 ```
 
-## 4. 에이전트 간 협업 규칙
+## 5. 에이전트 간 협업 규칙
 
 ### 충돌 방지
 - **main 브랜치 직접 push**: 한 번에 한 에이전트만. 동시 작업 시 브랜치 분리 필수
@@ -95,7 +113,7 @@ PebblousPage.init({
   3. 이 정책 문서의 필드명 정본, 지식 소스 계층을 준수
   4. 변경 시 changelog에 기록
 
-## 5. 환경별 차이 (Environment Differences)
+## 6. 환경별 차이 (Environment Differences)
 
 | 항목 | 로컬 Claude Code | 나노클로 (GitHub) |
 |------|-----------------|------------------|
@@ -107,7 +125,7 @@ PebblousPage.init({
 
 스킬 문서에 환경별 차이가 있는 경우 명시해야 한다.
 
-## 6. 정책 변경
+## 7. 정책 변경
 
 - 이 문서의 변경은 CLAUDE.md 변경과 동일하게 취급
 - 변경 시 관련 스킬 SKILL.md도 동기화 필요 여부 확인
