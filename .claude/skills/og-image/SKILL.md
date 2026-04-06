@@ -82,6 +82,20 @@ node tools/generate-og-image.js --from-html "project/World Model/world-model-com
 
 긴 제목(>50자)은 `og-image-title`으로 짧게 오버라이드 권장.
 
+### 제목 줄바꿈 규칙 (2026-04-06)
+
+OG 이미지 제목은 **최대 2줄**. 3줄 이상은 가독성이 떨어지므로 자동 방지:
+
+```
+자동 줄바꿈 알고리즘 (30자 초과 시):
+1. 엠 대시(—) 기준 분할 우선 → "A — " / "B" (의미 단위)
+2. 엠 대시 없으면 균등 분배 (balancedSplit) → 두 줄 길이 차이 최소화
+3. og-image-title 메타태그의 &#10; → 수동 \n (최우선)
+```
+
+**안티패턴**: 단어 greedy 채우기 → "긴줄 + 짧은줄 + 찌꺼기" 3줄 발생
+**해결**: 항상 2줄 균등 분배 또는 의미 단위 분할
+
 ## OG 이미지 경로 규칙
 
 - **표준 OG**: `{post}/ko/image/index.png` — `generate-og-image.js`가 자동 생성·관리

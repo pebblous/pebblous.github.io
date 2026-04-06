@@ -176,28 +176,80 @@ function generatePebbles(title, accent, opacity) {
     return pebbles.join('\n        ');
 }
 
+// Split words into 2 balanced lines (minimize length difference)
+function balancedSplit(words) {
+    const full = words.join(' ');
+    const target = Math.ceil(full.length / 2);
+    let bestSplit = 1;
+    let bestDiff = Infinity;
+
+    for (let i = 1; i < words.length; i++) {
+        const line1 = words.slice(0, i).join(' ');
+        const line2 = words.slice(i).join(' ');
+        const diff = Math.abs(line1.length - line2.length);
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            bestSplit = i;
+        }
+    }
+
+    return words.slice(0, bestSplit).join(' ') + '<br>' + words.slice(bestSplit).join(' ');
+}
+
+// Calculate font size to fit title in max 2 lines
+// OG image: 1200px wide, 60px padding each side = 1080px content
+// At 56px font, ~25 English chars or ~20 Korean chars per line
+function calcTitleFontSize(title) {
+    // Count "visual width" — CJK chars count as ~1.8 Latin chars
+    function visualLen(str) {
+        let len = 0;
+        for (const ch of str) {
+            len += /[\u3000-\u9fff\uac00-\ud7af]/.test(ch) ? 1.8 : 1;
+        }
+        return len;
+    }
+
+    // Split by <br> to get the longest line
+    const lines = title.replace(/\n/g, '<br>').split('<br>');
+    const maxLineLen = Math.max(...lines.map(l => visualLen(l.trim())));
+
+    // At 56px, max ~28 visual units fit per line
+    const maxUnitsPerLine = 28;
+    if (maxLineLen <= maxUnitsPerLine) return 56;
+
+    // Scale down proportionally, floor to 40px minimum
+    const scaled = Math.floor(56 * maxUnitsPerLine / maxLineLen);
+    return Math.max(scaled, 40);
+}
+
 function generateHTML(title, subtitle, theme, logoPath) {
     // Handle manual line breaks first
     let displayTitle = title.replace(/\n/g, '<br>');
 
-    // Split long titles (only if no manual breaks)
+    // Split long titles into max 2 lines with balanced distribution
+    // (only if no manual breaks via \n or og-image-title)
     const maxCharsPerLine = 30;
     if (!title.includes('\n') && title.length > maxCharsPerLine) {
         const words = title.split(' ');
-        let lines = [];
-        let currentLine = '';
 
-        for (const word of words) {
-            if ((currentLine + ' ' + word).trim().length <= maxCharsPerLine) {
-                currentLine = (currentLine + ' ' + word).trim();
+        // Try em-dash split first: "A — B" → natural 2-line break
+        const dashIndex = words.findIndex(w => w === '—' || w === '-' || w === '–');
+        if (dashIndex > 0 && dashIndex < words.length - 1) {
+            const line1 = words.slice(0, dashIndex + 1).join(' ');
+            const line2 = words.slice(dashIndex + 1).join(' ');
+            // Accept if both lines fit and neither is too short
+            if (line1.length <= 36 && line2.length <= 36) {
+                displayTitle = line1 + '<br>' + line2;
             } else {
-                if (currentLine) lines.push(currentLine);
-                currentLine = word;
+                displayTitle = balancedSplit(words);
             }
+        } else {
+            displayTitle = balancedSplit(words);
         }
-        if (currentLine) lines.push(currentLine);
-        displayTitle = lines.join('<br>');
     }
+
+    const titleFontSize = calcTitleFontSize(displayTitle);
+    const titleLineHeight = titleFontSize <= 44 ? 1.35 : 1.3;
 
     const pebbleHTML = generatePebbles(title, theme.accent, theme.decorationOpacity);
     const sectionBar = theme.sectionBar
@@ -256,9 +308,9 @@ function generateHTML(title, subtitle, theme, logoPath) {
 
         .title {
             color: ${theme.titleColor};
-            font-size: 56px;
+            font-size: ${titleFontSize}px;
             font-weight: 800;
-            line-height: 1.3;
+            line-height: ${titleLineHeight};
             margin-bottom: 20px;
         }
 

@@ -28,6 +28,9 @@
             'search.placeholder': '기사 검색... (제목, 설명, 태그)',
             'search.results': '검색 결과',
             'search.noResults': '검색 결과가 없습니다.',
+            'search.filterAll': '전체',
+            'search.filterArticles': '기사',
+            'search.filterHubs': '허브',
             'search.readMore': '자세히 보기 →',
             // Articles
             'articles.empty': '게시된 기사가 없습니다.',
@@ -68,6 +71,9 @@
             'search.placeholder': 'Search articles... (title, description, tags)',
             'search.results': 'Search Results',
             'search.noResults': 'No search results found.',
+            'search.filterAll': 'All',
+            'search.filterArticles': 'Articles',
+            'search.filterHubs': 'Hubs',
             'search.readMore': 'Read More →',
             // Articles
             'articles.empty': 'No published articles.',
