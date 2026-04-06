@@ -9,6 +9,12 @@ description: "blog.pebblous.ai 퍼블리싱 파이프라인 — OG 이미지 생
 
 작업 디렉토리: `/workspace/extra/repos/pebblous.github.io/`
 
+## SEO 전략 참조
+
+발행 전 `docs/seo-action-plan-2026-03-27.md`의 CTA 전략을 확인:
+- **P0.5 CTA**: 영문 글 하단에 CTA 컴포넌트 삽입 여부 확인
+- **페블러스 연결**: 외부 제품 분석 글이면 DataClinic/AADS 관점 CTA 자연스럽게 연결
+
 ## 파이프라인 (순서 엄수)
 
 ### 1. OG 이미지 생성
