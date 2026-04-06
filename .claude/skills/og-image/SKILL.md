@@ -8,6 +8,14 @@ argument-hint: "[path-to-html | --all | --check]"
 
 `tools/generate-og-image.js`를 사용하여 OG 이미지를 생성/재생성합니다. 이 스킬은 디자인 규칙과 운영 가이드를 포함합니다.
 
+## 환경 요구사항
+
+로컬 Chrome/Chromium이 자동 감지되지 않는 환경(나노클로, CI 등)에서는 환경변수 설정 필요:
+
+```bash
+export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium  # 또는 실제 Chrome 경로
+```
+
 ## Usage
 
 ```bash

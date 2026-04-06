@@ -296,33 +296,8 @@ Optional fields: `sections[]`, `languages[]`, `files[]`, `skill`, `linesAdded`.
 
 See `.claude/skills/changelog/SKILL.md` for full schema and examples.
 
-## Changelog (Post-Action Logging)
-
-After completing **any task that modifies blog content** (whether via a skill or ad-hoc), append a JSON line to `history/changelog.jsonl`:
-
-```bash
-echo '{"timestamp":"...","post":"...","action":"...","summary":"..."}' >> history/changelog.jsonl
-```
-
-Required fields: `timestamp` (ISO 8601 UTC), `post` (relative path), `action` (text-reinforce|new-post|bilingual|style|fix|seo|feature|content), `summary`.
-Optional fields: `sections[]`, `languages[]`, `files[]`, `skill`, `linesAdded`.
-
-See `.claude/skills/changelog/SKILL.md` for full schema and examples.
-
-## Changelog (Post-Action Logging)
-
-After completing **any task that modifies blog content** (whether via a skill or ad-hoc), append a JSON line to `history/changelog.jsonl`:
-
-```bash
-echo '{"timestamp":"...","post":"...","action":"...","summary":"..."}' >> history/changelog.jsonl
-```
-
-Required fields: `timestamp` (ISO 8601 UTC), `post` (relative path), `action` (text-reinforce|new-post|bilingual|style|fix|seo|feature|content), `summary`.
-Optional fields: `sections[]`, `languages[]`, `files[]`, `skill`, `linesAdded`.
-
-See `.claude/skills/changelog/SKILL.md` for full schema and examples.
-
 ## Prompt Files
 
 - `.claude/CLAUDE-CONTENT.md` — Content writing rules (Text-First, source document utilization)
 - `.claude/CLAUDE-SNS.md` — SNS writing tone (Warm Expert, agricultural metaphors)
+- `.claude/AGENT-POLICY.md` — **에이전트 거버넌스 정책** (지식 소스 계층, 스킬 자급자족 원칙, 필드명 정본, 협업 규칙)
