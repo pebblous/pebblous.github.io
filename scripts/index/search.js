@@ -49,6 +49,9 @@ function updateCategoryTitles() {
     });
 }
 
+// Current search type filter: 'all' | 'article' | 'hub'
+let currentSearchFilter = 'all';
+
 function setupSearch() {
     const searchInput = document.getElementById('search-input');
     const searchResults = document.getElementById('search-results');
@@ -57,18 +60,18 @@ function setupSearch() {
 
     let debounceTimer;
 
-    searchInput.addEventListener('input', (e) => {
-        clearTimeout(debounceTimer);
-        const query = e.target.value.trim().toLowerCase();
-
+    function triggerSearch() {
+        const query = searchInput.value.trim().toLowerCase();
         if (query.length < 2) {
             searchResults.classList.remove('has-results');
             return;
         }
+        performSearch(query, searchResultsList, searchCount, searchResults);
+    }
 
-        debounceTimer = setTimeout(() => {
-            performSearch(query, searchResultsList, searchCount, searchResults);
-        }, 300);
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(triggerSearch, 300);
     });
 
     searchInput.addEventListener('keydown', (e) => {
@@ -76,6 +79,16 @@ function setupSearch() {
             searchInput.value = '';
             searchResults.classList.remove('has-results');
         }
+    });
+
+    // Search type filter buttons
+    document.querySelectorAll('.search-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.search-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentSearchFilter = btn.dataset.filter;
+            triggerSearch();
+        });
     });
 
     document.querySelectorAll('.keyword-filter').forEach(btn => {
@@ -94,6 +107,10 @@ function performSearch(query, resultsContainer, countElement, resultsSection) {
     const categories = window.IndexPage._categories;
 
     const results = allArticles.filter(article => {
+        // Type filter
+        if (currentSearchFilter === 'hub' && article.type !== 'hub') return false;
+        if (currentSearchFilter === 'article' && article.type === 'hub') return false;
+
         const searchText = [
             article.title,
             article.description,
@@ -129,23 +146,27 @@ function performSearch(query, resultsContainer, countElement, resultsSection) {
             return text.replace(regex, '<span class="search-highlight">$1</span>');
         };
 
+        const hubBadge = article.type === 'hub'
+            ? '<span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-400 ml-2">HUB</span>'
+            : '';
+
         return `
             <div class="search-result-item p-4 rounded-lg border transition-colors">
-                <div class="flex items-start justify-between gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                     <div class="flex-grow min-w-0">
-                        <div class="tags-container mb-3">
+                        <div class="flex flex-wrap items-center gap-2 text-xs search-meta mb-2">
+                            <span>${article.date}</span>
+                            <span>• ${categoryName}</span>${hubBadge}
+                        </div>
+                        <h4 class="text-base sm:text-lg font-bold mb-1">${highlightText(article.title)}</h4>
+                        <p class="text-sm search-desc">${highlightText(article.description)}</p>
+                        <div class="tags-container mt-2">
                             <div class="tags-scroll">
                                 ${tagsHtml}
                             </div>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 text-xs search-meta mb-2">
-                            <span>${article.date}</span>
-                            <span>• ${categoryName}</span>
-                        </div>
-                        <h4 class="text-lg font-bold mb-2">${highlightText(article.title)}</h4>
-                        <p class="text-sm">${highlightText(article.description)}</p>
                     </div>
-                    <a href="${article.path}" ${article.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="flex-shrink-0 accent-bg text-white text-sm font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity whitespace-nowrap">
+                    <a href="${article.path}" ${article.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="flex-shrink-0 accent-bg text-white text-sm font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity whitespace-nowrap self-start">
                         ${(window.IndexPage.t || function(k){return k;})('search.readMore')}
                     </a>
                 </div>

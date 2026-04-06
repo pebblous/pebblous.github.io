@@ -250,6 +250,7 @@ For deeper reference, see `docs/`:
 - `docs/blog-html-checklist.md` — **Blog HTML 작성 전/중/후 검증 체크리스트** (필독)
 - `docs/blog-creation-workflow.md` — 10-step blog post creation process
 - `docs/seo.md` — Full SEO checklist and keyword strategy
+- `docs/title-strategy.md` — **한국어/영어 제목 전략 가이드** (SEO 제목 vs 본문 제목 분리, CTR 패턴, 스킬 체인)
 - `docs/style.md` — UX/UI design rules and CSS conventions
 - `docs/layout-guidelines.md` — Layout system details
 - `docs/pebblous-modules.md` — PebblousChart & PebblousTabs API
