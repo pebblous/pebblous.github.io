@@ -34,16 +34,18 @@
 - [ ] `<div id="footer-placeholder"></div>`
 
 ### Hero Section
+- [ ] Hero가 `<header class="text-left mb-12">` 태그로 **`<main>` 첫 번째 자식**에 위치
+- [ ] **`<section class="py-16 themeable-hero-bg text-center">` 구조 금지** (구버전 패턴)
 - [ ] `<h1 id="page-h1-title">` **비어 있음** (JS가 채움)
 - [ ] 메타 2줄: `YYYY.MM · 팀명` / `읽는 시간 · 언어 전환 링크`
-- [ ] **공유 버튼**: 언어 전환 링크 바로 아래 `<div id="share-buttons-placeholder" class="flex justify-start mt-4"></div>` (필수)
+- [ ] **공유 버튼**: `<div id="share-buttons-placeholder" class="flex justify-start"></div>` (필수, `mt-4` 없음)
 - [ ] **Breadcrumbs**: 정적 `<span class="hero-badge">` 금지 → PebblousBreadcrumbs가 자동 생성
 
 ### TOC + Layout
+- [ ] 외부 컨테이너: `class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]"`
 - [ ] Flex: `lg:flex lg:gap-8 lg:justify-center lg:items-start`
-- [ ] TOC: `lg:w-[240px] sticky top-20`, `hidden lg:block`
-- [ ] Main: `max-w-[800px]`
-- [ ] Container: `max-w-[1400px]`
+- [ ] TOC: **`<nav>` 태그** (`<aside>` 금지), `lg:w-[240px] sticky top-20`, `hidden lg:block`
+- [ ] Main content: **`<main class="max-w-[800px] px-4 sm:px-6">`** (`<article>` 금지)
 - [ ] 모든 섹션 `id=`가 TOC `href="#"`과 1:1 매칭
 
 ### Executive Summary (필수)

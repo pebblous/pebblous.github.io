@@ -10,8 +10,8 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 ## 목차
 1. [HTML 뼈대](#1-html-뼈대)
 2. [head 필수 태그](#2-head-필수-태그)
-3. [Hero 섹션](#3-hero-섹션)
-4. [TOC + 레이아웃](#4-toc--레이아웃)
+3. [TOC (사이드바)](#3-toc-사이드바)
+4. [Hero 섹션](#4-hero-섹션) — **`<header class="text-left mb-12">` inside `<main>` (text-center 금지)**
 5. [Executive Summary](#5-executive-summary)
 6. [섹션 구조](#6-섹션-구조)
 7. [PebblousPage.init() 전체](#7-pebblouspage-init-전체)
@@ -42,20 +42,18 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 
     <div id="header-placeholder"></div>
 
-    <main>
-        <!-- Hero 섹션 (3번 참조) -->
-        <!-- 레이아웃 wrapper -->
-        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
-                <!-- TOC (4번 참조) -->
-                <!-- Main content -->
-                <article class="max-w-[800px] w-full px-4 sm:px-6">
-                    <!-- Executive Summary (5번) -->
-                    <!-- 섹션들 (6번) -->
-                </article>
-            </div>
+    <!-- 레이아웃 wrapper (Hero는 main 내부에 위치 — 별도 full-width section 금지) -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <!-- TOC (3번 참조) -->
+            <!-- Main content — Hero(4번) 포함 -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <!-- Hero: <header class="text-left mb-12"> (4번 참조) -->
+                <!-- Executive Summary (5번) -->
+                <!-- 섹션들 (6번) -->
+            </main>
         </div>
-    </main>
+    </div>
 
     <div id="footer-placeholder"></div>
 
@@ -113,51 +111,50 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 
 ---
 
-## 3. Hero 섹션
+## 3. TOC (사이드바)
+
+`<main>` 의 왼쪽 형제 요소로 배치. `<aside>` 금지 — `<nav>` 사용.
 
 ```html
-<section class="py-16 themeable-hero-bg">
-    <div class="max-w-[800px] mx-auto px-4 sm:px-6 text-center">
+<nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+    <p class="text-sm font-semibold themeable-muted mb-3">목차</p>
+    <ul class="space-y-1 text-sm">
+        <li><a href="#executive-summary" class="themeable-toc-link">Executive Summary</a></li>
+        <li><a href="#section-1" class="themeable-toc-link">섹션 1 제목</a></li>
+        <!-- 모든 h2 섹션 포함 -->
+    </ul>
+</nav>
+```
+
+---
+
+## 4. Hero 섹션
+
+`<main>` 의 *첫 번째 자식*으로 배치. 별도 full-width `<section class="py-16 ...">` 금지.
+**`text-center` 절대 금지** — 반드시 `text-left`.
+
+```html
+<main class="max-w-[800px] px-4 sm:px-6">
+    <header class="text-left mb-12">
         <!-- h1: JS가 mainTitle로 채움 — 비워둔다 -->
-        <h1 id="page-h1-title" class="text-4xl sm:text-5xl font-bold themeable-heading mb-4"></h1>
+        <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
 
         <!-- meta info: 2줄 형식 -->
-        <p class="text-sm themeable-muted">2026.03 · (주)페블러스 데이터 커뮤니케이션팀</p>
+        <p class="text-sm themeable-muted">2026.04 · (주)페블러스 데이터 커뮤니케이션팀</p>
         <p class="text-sm themeable-muted mt-1">
-            읽는 시간: ~10분 ·
+            읽는 시간: ~9분 ·
             <a href="../en/" class="text-orange-400 hover:text-orange-300 transition-colors">English</a>
         </p>
-        <div id="share-buttons-placeholder" class="flex justify-start mt-4"></div>
-    </div>
-</section>
+        <div id="share-buttons-placeholder" class="flex justify-start"></div>
+    </header>
+
+    <!-- Executive Summary, 섹션들 → 5·6번 참조 -->
+</main>
 ```
 
 **주의:**
 - `<h1>` 내부 텍스트 금지 (JS 덮어씀)
 - `hero-badge` 정적 요소 추가 금지 (PebblousBreadcrumbs가 자동 생성)
-
----
-
-## 4. TOC + 레이아웃
-
-```html
-<!-- TOC (lg 이상만 표시) -->
-<aside class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
-    <nav>
-        <p class="text-sm font-semibold themeable-muted mb-3">목차</p>
-        <ul class="space-y-1 text-sm">
-            <li><a href="#executive-summary" class="themeable-toc-link">Executive Summary</a></li>
-            <li><a href="#section-1" class="themeable-toc-link">섹션 1 제목</a></li>
-            <!-- 모든 h2 섹션 포함 -->
-        </ul>
-    </nav>
-</aside>
-
-<!-- Main content -->
-<article class="max-w-[800px] w-full min-w-0">
-    ...
-</article>
-```
 
 ---
 
