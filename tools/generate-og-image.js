@@ -177,27 +177,62 @@ function generatePebbles(title, accent, opacity) {
 }
 
 function generateHTML(title, subtitle, theme, logoPath) {
+    // Count Korean syllable blocks (wider than Latin at same font-size)
+    function koreanCount(text) {
+        let n = 0;
+        for (const ch of text) {
+            const c = ch.charCodeAt(0);
+            if ((c >= 0xAC00 && c <= 0xD7AF) || (c >= 0x3130 && c <= 0x318F)) n++;
+        }
+        return n;
+    }
+
     // Handle manual line breaks first
     let displayTitle = title.replace(/\n/g, '<br>');
 
-    // Split long titles (only if no manual breaks)
-    const maxCharsPerLine = 30;
-    if (!title.includes('\n') && title.length > maxCharsPerLine) {
-        const words = title.split(' ');
-        let lines = [];
-        let currentLine = '';
-
+    // Word-based split near string midpoint
+    function splitAtMid(text) {
+        const words = text.split(' ');
+        const half = text.length / 2;
+        let lines = [], cur = '';
         for (const word of words) {
-            if ((currentLine + ' ' + word).trim().length <= maxCharsPerLine) {
-                currentLine = (currentLine + ' ' + word).trim();
-            } else {
-                if (currentLine) lines.push(currentLine);
-                currentLine = word;
-            }
+            const next = cur ? cur + ' ' + word : word;
+            if (cur && Math.abs(cur.length - half) < Math.abs(next.length - half)) {
+                lines.push(cur); cur = word;
+            } else { cur = next; }
         }
-        if (currentLine) lines.push(currentLine);
-        displayTitle = lines.join('<br>');
+        if (cur) lines.push(cur);
+        return lines;
     }
+
+    // Smart line splitting (only if no manual breaks)
+    if (!title.includes('\n')) {
+        if (title.includes(' — ')) {
+            // Natural break at em-dash: "Title — Description" → two lines
+            const idx = title.indexOf(' — ');
+            const line1 = title.substring(0, idx + 2); // keep "—"
+            let line2 = title.substring(idx + 3);      // skip trailing space
+            // If line2 is still too long for Latin text, split it further
+            const isLatin = koreanCount(line2) === 0;
+            if (isLatin && line2.length > 32) {
+                line2 = splitAtMid(line2).join('<br>');
+            }
+            displayTitle = line1 + '<br>' + line2;
+        } else if (title.length > 22) {
+            displayTitle = splitAtMid(title).join('<br>');
+        }
+    }
+
+    // Dynamic font-size based on longest line
+    // Korean chars ≈ 53px at 56px; Latin chars ≈ 30px. Container ≈ 1080px.
+    // Max safe: Korean ~20, Latin ~36 at 56px.
+    const splitLines = displayTitle.split('<br>');
+    const maxKorean = Math.max(...splitLines.map(l => koreanCount(l)));
+    const maxLatin  = Math.max(...splitLines.map(l => koreanCount(l) === 0 ? l.length : 0));
+    let titleFontSize = 56;
+    if      (maxKorean > 24 || maxLatin > 44) titleFontSize = 43;
+    else if (maxKorean > 21 || maxLatin > 38) titleFontSize = 48;
+    else if (maxKorean > 18 || maxLatin > 32) titleFontSize = 52;
 
     const pebbleHTML = generatePebbles(title, theme.accent, theme.decorationOpacity);
     const sectionBar = theme.sectionBar
@@ -256,10 +291,11 @@ function generateHTML(title, subtitle, theme, logoPath) {
 
         .title {
             color: ${theme.titleColor};
-            font-size: 56px;
+            font-size: ${titleFontSize}px;
             font-weight: 800;
             line-height: 1.3;
             margin-bottom: 20px;
+            word-break: keep-all;
         }
 
         .title span {
