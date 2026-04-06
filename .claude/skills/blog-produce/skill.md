@@ -28,6 +28,14 @@ blog.pebblous.ai 블로그 포스트 전체 프로덕션 파이프라인.
    ```
 3. 입력을 `_workspace/00_input.md`에 기록
 
+### SEO 전략 참조
+
+Phase 2 시작 전, `docs/seo-action-plan-2026-03-27.md`를 읽어 현재 SEO 전략을 확인:
+- **UrbanGPT 패턴**: 바이럴 소재는 EN 선행 발행 (48h 내) → KO 후속
+- **글로벌 노출**: 영문 1개 = 110개국 도달. 트렌드 소재는 EN 퍼스트
+- **페블러스 연결**: 외부 제품 분석 → DataClinic/AADS 관점으로 자연스럽게 연결
+- **후속 시리즈**: 1회성이 아닌 비교/분석/PebbloPedia로 확장 기획
+
 ### Phase 2: 리서치
 
 blog-researcher 서브 에이전트 실행:
