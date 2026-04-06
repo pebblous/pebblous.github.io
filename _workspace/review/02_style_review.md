@@ -1,21 +1,59 @@
-## Style Review — timesfm-industrial-forecasting/ko/index.html
+## Style Review — mlflow-mlops-standard/ko/index.html
 
-| 카테고리 | 결과 | 비고 |
-|---------|------|------|
-| S1. 기본 HTML 구조 | 5/5 ✅ | 완벽 |
-| S2. PebblousPage.init() | 8/8 ✅ | 완벽 |
-| S3. 레이아웃 클래스 | 4/4 ✅ | 완벽 |
-| S4. TOC 구조 | 3/3 ✅ | 완벽 |
-| S5. 타이포그래피 | 4/5 — ❌ S5-2 | 하드코딩 색상 13건 |
-| S6. 캐시버스팅 & 링크 | 3/3 ✅ | 완벽 |
-| **TOTAL** | **27/28 (96.4%)** | |
+### S1. 기본 구조
+| # | 항목 | 결과 | 비고 |
+|---|------|------|------|
+| S1-1 | `<html lang="ko" data-theme="light">` | ✅ | — |
+| S1-2 | `<div id="header-placeholder">` body 최상단 | ✅ | — |
+| S1-3 | `<div id="footer-placeholder">` body 하단 | ✅ | — |
+| S1-4 | `<h1 id="page-h1-title">` 비어 있음 | ✅ | — |
+| S1-5 | `share-buttons-placeholder` `mt-4` 포함 | ✅ | 수정 완료 |
 
-### ❌ S5-2 하드코딩 색상 13건
+### S2. PebblousPage.init()
+| # | 항목 | 결과 | 비고 |
+|---|------|------|------|
+| S2-1 | `mainTitle` 있음 | ✅ | — |
+| S2-2 | `subtitle` 있음 | ✅ | — |
+| S2-3 | `pageTitle` 있음 | ✅ | — |
+| S2-4 | `publishDate` "YYYY-MM-DD" | ✅ | "2026-04-06" |
+| S2-5 | `defaultTheme: "light"` | ✅ | — |
+| S2-6 | `category` 유효값 | ✅ | "tech" |
+| S2-7 | `faqs` 7개 이상 (question/answer 형식) | ✅ | 10개 |
+| S2-8 | `/scripts/common-utils.js` 경로 | ✅ | — |
 
-위치: 테이블 셀, 불릿, 숫자 배지, 테두리
-주요 색상: `#F86825`(오렌지) 5건, `#6366f1`(인디고) 3건, `#475569`(슬레이트) 2건, `#14b8a6`(청록) 2건, `#dc2626`(빨강) 1건
+### S3. 레이아웃
+| # | 항목 | 결과 |
+|---|------|------|
+| S3-1 | Container `max-w-[1400px]` | ✅ |
+| S3-2 | Flex 래퍼 `lg:flex lg:gap-8` | ✅ |
+| S3-3 | Main `max-w-[800px]` (flex-1 금지) | ✅ |
+| S3-4 | TOC `lg:w-[240px] sticky top-20` | ✅ |
 
-수정:
-- `style="color: #F86825;"` → `text-orange-500`
-- `style="background-color: #F86825;"` → `bg-orange-500`
-- `style="border-color: #F86825;"` → `border-orange-500`
+### S4. TOC 구조
+| # | 항목 | 결과 | 비고 |
+|---|------|------|------|
+| S4-1 | `<ul id="toc-links">` (NOT nav) | ✅ | `<nav>` → `<aside>` 수정 완료 |
+| S4-2 | TOC 링크 `-ml-px border-l-2 border-transparent hover:border-orange-500` | ✅ | — |
+| S4-3 | TOC href ↔ 섹션 id 1:1 매칭 | ✅ | — |
+
+### S5. 타이포그래피
+| # | 항목 | 결과 |
+|---|------|------|
+| S5-1 | 한국어 이탤릭 없음 | ✅ |
+| S5-2 | 하드코딩 색상 없음 | ✅ |
+| S5-3 | Hero h1 스타일 | ✅ |
+| S5-4 | 섹션 h2 number-badge | ✅ |
+| S5-5 | section-heading 클래스 사용 안 함 | ✅ |
+
+### S6. 캐시버스팅
+| # | 항목 | 결과 |
+|---|------|------|
+| S6-1 | CSS `?v=20260406` | ✅ |
+| S6-2 | JS `?v=20260406` | ✅ |
+| S6-3 | `css/styles.css` 미사용 | ✅ |
+
+### 수정 완료 항목
+- ✅ S1-5: `share-buttons-placeholder`에 `mt-4` 추가
+- ✅ S4-1: `<nav>` → `<aside>` 변경
+
+**최종 총점: 28✅ 0⚠️ 0❌**
