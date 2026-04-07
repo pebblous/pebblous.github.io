@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="&copy; 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>One Encoder to Rule Them All — Meta EUPE, the Universal Vision Encoder for Edge AI | Pebblous</title>
+    <meta name="description" content="Meta AI's EUPE resolves the vision encoder specialization dilemma. We analyze the 3-stage proxy distillation recipe that compresses three 1–2B-param teachers into a single 86M model — and what it means for VLA robotics and DataClinic embedding quality.">
+    <meta name="keywords" content="EUPE, Meta AI, vision encoder, knowledge distillation, universal encoder, VLA, VLM, Physical AI, DINOv3, SigLIP, edge AI, data quality, DataClinic, embedding, ViT, ConvNext, robotics">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/eupe-universal-encoder/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/eupe-universal-encoder/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/eupe-universal-encoder/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/eupe-universal-encoder/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="One Encoder to Rule Them All — Meta EUPE, Universal Vision Encoder for Edge AI">
+    <meta property="og:description" content="CLIP dominates VLM tasks. DINO dominates dense prediction. Running both doubles the cost. Meta EUPE packs a 1.9B proxy's unified knowledge into 86M parameters.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/eupe-universal-encoder/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/eupe-universal-encoder/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Meta EUPE universal vision encoder deep analysis">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="One Encoder to Rule Them All — Meta EUPE Universal Vision Encoder">
+    <meta name="twitter:description" content="CLIP is strong at VLM. DINO is strong at dense prediction. Using both doubles the cost. EUPE packs it all into 86M via a 1.9B proxy.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/eupe-universal-encoder/en/image/index.png">
+    <meta name="twitter:image:alt" content="Meta EUPE universal vision encoder deep analysis">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (fixed order) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260407">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260407">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260407">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* Pipeline diagram */
+        .pipeline-stage {
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 0.75rem;
+            background: var(--bg-secondary, #f8fafc);
+        }
+        .pipeline-stage .stage-label {
+            display: inline-block;
+            background: #14b8a6;
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.15rem 0.6rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.04em;
+        }
+        .pipeline-stage.stage-proxy .stage-label {
+            background: #F86825;
+        }
+        .pipeline-arrow {
+            text-align: center;
+            font-size: 1.5rem;
+            color: var(--text-muted, #94a3b8);
+            margin: 0.25rem 0;
+        }
+        /* Comparison table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        .comparison-table th {
+            background: var(--bg-secondary, #f1f5f9);
+            padding: 0.625rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color, #e2e8f0);
+        }
+        .comparison-table td {
+            padding: 0.625rem 1rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+        }
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+        .comparison-table tr.highlight-row td {
+            background: rgba(248, 104, 37, 0.07);
+            font-weight: 600;
+        }
+        /* Encoder cards */
+        .encoder-card {
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary, #f8fafc);
+        }
+        .encoder-card .encoder-name {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        .encoder-card .encoder-strength {
+            font-size: 0.8rem;
+            color: #14b8a6;
+            font-weight: 600;
+        }
+        .encoder-card .encoder-weak {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <p class="text-sm font-semibold themeable-muted mb-3">Contents</p>
+                <ul class="space-y-1 text-sm">
+                    <li><a href="#executive-summary" class="themeable-toc-link">Executive Summary</a></li>
+                    <li><a href="#section-1" class="themeable-toc-link">1. The Specialization Trap</a></li>
+                    <li><a href="#section-2" class="themeable-toc-link">2. The Proxy Teacher Invention</a></li>
+                    <li><a href="#section-3" class="themeable-toc-link">3. The 3-Stage Pipeline</a></li>
+                    <li><a href="#section-4" class="themeable-toc-link">4. Benchmark Results</a></li>
+                    <li><a href="#section-5" class="themeable-toc-link">5. VLA/VLM Backbone Potential</a></li>
+                    <li><a href="#section-6" class="themeable-toc-link">6. DataClinic Implications</a></li>
+                    <li><a href="#section-7" class="themeable-toc-link">7. Pebblous Opportunities</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                    <p class="text-sm themeable-muted">2026.04 · Pebblous Data Communication Team</p>
+                    <p class="text-sm themeable-muted mt-1">
+                        Reading time: ~12 min ·
+                        <a href="../ko/" class="text-orange-400 hover:text-orange-300 transition-colors">한국어</a>
+                    </p>
+                    <div id="share-buttons-placeholder" class="flex justify-start"></div>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Edge AI deployment has a structural dilemma. Encoders strong at image classification and VLM tasks (CLIP, SigLIP2, PEcore) are weak at dense prediction tasks like segmentation and depth estimation. Conversely, spatially strong encoders (DINOv2, DINOv3) are poor at language-vision alignment. In practice, systems either run two encoders in parallel — doubling cost — or accept a performance compromise. Meta AI's EUPE (Efficient Universal Perception Encoder) resolves this structurally.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            EUPE's core finding is that small encoders cannot directly learn from multiple large, heterogeneous teachers. A 86M ViT-B lacks the capacity to simultaneously absorb the feature spaces of three ~1B-param teachers trained with fundamentally different objectives. The solution is elegant: first train a 1.9B proxy model to unify all teacher knowledge into a single representation, then let the small student learn only from this consolidated proxy. The result: EUPE-ViT-B (86M) matches or surpasses each specialist encoder across image understanding, dense prediction, and VLM — simultaneously.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            From the Pebblous perspective, EUPE opens two immediate angles. First, the dual-encoder architecture that VLA models like OpenVLA currently require (DINOv2 + SigLIP in parallel) can potentially be replaced by a single 86M EUPE encoder. Second, EUPE reveals that data quality is a decisive variable for universal encoder training — specifically domain balance, resolution diversity, and feature normalization stability. These are exactly the dimensions DataClinic already addresses, providing a direct pathway to position "AI-Ready Data" as an embedding compatibility standard.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Specialization Trap — Why No Single Encoder Is Enough</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The progress of modern vision AI has created an ironic trap: the more an encoder is optimized for one task, the more it degrades on others. Each encoder excels in its training domain but falls short elsewhere. Systems deployed in the real world — where multiple tasks must run simultaneously — run directly into this wall.
+                    </p>
+
+                    <!-- Image: discriminative vs generative neural network -->
+                    <figure class="my-8">
+                        <img src="./image/img-05-discriminative-generative.png"
+                             alt="Discriminative neural networks (CLIP/SigLIP) classify images into categories; self-supervised encoders (DINO) learn spatial structure — the training objective determines specialization"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Discriminative models (CLIP lineage) excel at classification; self-supervised spatial models (DINO lineage) excel at dense prediction — each training objective creates specialization | Source: <a href="https://commons.wikimedia.org/wiki/File:Discriminative_vs_Generative_Neural_Networks.png" target="_blank" rel="noopener" class="underline">Wikimedia Commons</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Three lineages dominate different corners of the problem. CLIP and its successors (SigLIP2, PEcore) use text-image contrastive learning to dominate classification and VLM benchmarks. DINOv2/DINOv3 use self-supervised learning to produce dense spatial features with no rival. SAM achieves zero-shot segmentation through masked learning — but has no language-vision alignment capability.
+                    </p>
+
+                    <!-- Encoder comparison cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                        <div class="encoder-card">
+                            <div class="encoder-name themeable-heading">CLIP / SigLIP2 / PEcore</div>
+                            <div class="encoder-strength">✓ Image classification, VLM</div>
+                            <div class="encoder-weak">✗ Weak at dense prediction</div>
+                        </div>
+                        <div class="encoder-card">
+                            <div class="encoder-name themeable-heading">DINOv2 / DINOv3</div>
+                            <div class="encoder-strength">✓ Segmentation, depth estimation</div>
+                            <div class="encoder-weak">✗ Weak at language alignment</div>
+                        </div>
+                        <div class="encoder-card">
+                            <div class="encoder-name themeable-heading">SAM (2/3)</div>
+                            <div class="encoder-strength">✓ Zero-shot segmentation</div>
+                            <div class="encoder-weak">✗ No VLM capability</div>
+                        </div>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The bottleneck sharpens on edge hardware. Running multiple encoders in parallel on smartphones, robots, or industrial cameras is impractical. Parameters and memory requirements multiply linearly, and inference latency drops sharply. In deployment, engineers are forced into an unsatisfying trade-off: which encoder do we sacrifice?
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Prior work tried to bridge this gap. RADIO (Ranzinger et al.) and DUNE (Sariyildiz et al.) took an "agglomerative" approach — distilling from multiple teachers simultaneously. This worked reasonably for encoders above 300M parameters, but failed clearly at the sub-86M efficiency range. RADIOv2.5-B showed a significant performance gap versus DINOv3-ViT-B on dense prediction tasks.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            EUPE's key finding: <strong>small student models lack the capacity to learn effectively from multiple large teachers with heterogeneous feature spaces simultaneously.</strong> Direct multi-teacher distillation fails because each teacher's feature dimension, token count, and embedding space geometry are fundamentally different — and a 86M student simply cannot reconcile all three at once.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Proxy Teacher Invention — "Scale Up First, Then Scale Down"</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        EUPE's core insight is simple but powerful. If a small student cannot learn from multiple teachers directly, first let a large intermediate model unify all teacher knowledge into a single representation — then let the small student learn only from that consolidated source. This intermediate model is the "proxy teacher."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        The 1.9B parameter count is not arbitrary. EUPE's three teacher models are PEcore-G (1.9B), PElang-G (1.7B), and DINOv3-H+ (840M). For the proxy to absorb their knowledge, it needs capacity comparable to or larger than the teachers themselves. At 1.9B, the proxy sits within the teacher size range — the minimum threshold for effective knowledge distillation from this teacher ensemble.
+                    </p>
+
+                    <!-- Ablation results table -->
+                    <p class="themeable-text leading-relaxed mb-4">
+                        The paper's ablation study quantifies the necessity of the proxy path. Here are ViT-B student results by training configuration:
+                    </p>
+                    <div class="overflow-x-auto mb-8">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-text">Configuration</th>
+                                    <th class="themeable-text">TextVQA</th>
+                                    <th class="themeable-text">SPair (Dense)</th>
+                                    <th class="themeable-text">ADE20k (Dense)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="themeable-text">Stage 2 only (direct distillation)</td>
+                                    <td class="themeable-text">46.8</td>
+                                    <td class="themeable-text">35.1</td>
+                                    <td class="themeable-text">41.9</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text">Stage 1+2 (via proxy)</td>
+                                    <td class="themeable-text">49.5</td>
+                                    <td class="themeable-text">53.3</td>
+                                    <td class="themeable-text">52.0</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td class="themeable-text">Stage 1+2+3 (final EUPE)</td>
+                                    <td class="themeable-text">50.4</td>
+                                    <td class="themeable-text">51.3</td>
+                                    <td class="themeable-text">52.4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Going via the proxy improves SPair (dense prediction) from <strong>35.1 → 53.3</strong> — a +18.2 point jump. This number makes it clear that the proxy is not simply acting as a "bigger teacher." It is chemically unifying heterogeneous feature spaces into a representation that a much smaller student can efficiently absorb.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Scaling the proxy to 7B produced an interesting result: image understanding and dense prediction improved slightly, but VLM performance dropped. The capacity gap between a 7B proxy and an 86M student became too large for effective knowledge transfer. The paper mentions "Teaching Assistant" progressive distillation (Mirzadeh et al., 2020) as a potential fix in future work.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The Capacity Gap hypothesis: when the size gap between teacher and student is too large, knowledge transfer efficiency degrades. EUPE splits the gap into two manageable steps: multi-teacher → 1.9B proxy, then 1.9B proxy → 86M student. Each hop stays within an effective transfer range.
+                        </p>
+                    </div>
+
+                    <!-- Image: ViT architecture animated -->
+                    <figure class="my-8">
+                        <img src="./image/img-01-vit-architecture.gif"
+                             alt="Vision Transformer (ViT) architecture — images are split into patches processed by transformer self-attention layers, forming the foundation of EUPE's student models"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Vision Transformer (ViT) architecture — all EUPE model variants are built on ViT (6M–86M) or ConvNext backbones. The 1.9B proxy is a ViT-G. | Source: <a href="https://commons.wikimedia.org/wiki/File:Vision_Transformer.gif" target="_blank" rel="noopener" class="underline">Wikimedia Commons, Davide Caccomini (2021, CC BY 4.0)</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Anatomy of the 3-Stage Distillation Pipeline</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        EUPE's training pipeline has three stages, each with a distinct role. The combination of Stage 2 (long fixed-resolution training) and Stage 3 (short multi-resolution fine-tuning) is the key to balancing performance across task types.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Stage 1 — Multi-Teacher to Proxy</h3>
+                    <div class="pipeline-stage stage-proxy mb-2">
+                        <span class="stage-label">STAGE 1</span>
+                        <p class="themeable-text text-sm leading-relaxed">
+                            <strong>Input:</strong> PEcore-G (1.9B, 448px), PElang-G (1.7B, 448px), DINOv3-H+ (840M, 256px)<br>
+                            <strong>Output:</strong> 1.9B ViT-G proxy model<br>
+                            <strong>Goal:</strong> Absorb all three teachers' knowledge into a single unified representation
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A 2-layer MLP adapter (Linear → LayerNorm → GELU → Linear) is attached to each teacher's output to align dimensions with the proxy output. The loss function uses cosine similarity for class tokens, and a weighted combination of cosine similarity (α=0.9) and smooth L1 (β=0.1) for patch tokens. Teacher outputs are normalized per-teacher using mean/std statistics computed from a small batch at training start and then frozen. Without this normalization, a single teacher tends to dominate the gradient signal.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Stage 2 — Proxy to Efficient Student (Fixed Resolution)</h3>
+                    <div class="pipeline-stage mb-2">
+                        <span class="stage-label">STAGE 2</span>
+                        <p class="themeable-text text-sm leading-relaxed">
+                            <strong>Resolution:</strong> 256×256 fixed · <strong>Iterations:</strong> 390k<br>
+                            <strong>Batch size:</strong> 8,192 · <strong>Learning rate:</strong> 2e-5 (cosine) · <strong>Weight decay:</strong> 1e-4<br>
+                            <strong>Goal:</strong> Long-form transfer of unified proxy knowledge into the efficient student
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Stage 2 is the longest training phase — 390k iterations at fixed 256×256 resolution. Most of the VLM capability (text-image alignment) is acquired here. The adapter hidden dimension is 3,072 — double the Stage 1 size of 1,536 — designed to maximize transfer of the proxy's rich unified representation into the efficient student.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Stage 3 — Multi-Resolution Fine-Tuning</h3>
+                    <div class="pipeline-stage mb-2">
+                        <span class="stage-label">STAGE 3</span>
+                        <p class="themeable-text text-sm leading-relaxed">
+                            <strong>Resolution pyramid:</strong> 256 / 384 / 512px (teacher and student select scale independently per iteration)<br>
+                            <strong>Iterations:</strong> 100k (one-quarter of Stage 2)<br>
+                            <strong>Goal:</strong> Adapt to downstream tasks across varied input resolutions
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Stage 3 is short but decisive. Real deployment environments present images at varied resolutions. Having teacher and student independently select scale per iteration maximizes training diversity. Multi-resolution training roughly doubles per-iteration cost, so 100k iterations (one-quarter of Stage 2) is used. The paper's ablation shows that skipping Stage 2 (running only Stage 1+3) produces a model strong at dense prediction but significantly weaker at VLM. Both stages are necessary, and their proportions matter.
+                    </p>
+
+                    <!-- Image: attention head mechanism -->
+                    <figure class="my-8">
+                        <img src="./image/img-03-attention-head.jpg"
+                             alt="Single attention head in a transformer model — Query, Key, Value matrix operations learn relationships between tokens; EUPE uses different loss functions for class tokens vs patch tokens"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Single attention head in a transformer — EUPE's loss function applies cosine similarity to class tokens (CLS) and a cosine+SmoothL1 blend to patch tokens, reflecting their different roles in this architecture | Source: <a href="https://commons.wikimedia.org/wiki/File:Process_of_a_Single_Attention_Head_in_a_Transformer_Model.jpg" target="_blank" rel="noopener" class="underline">Wikimedia Commons (CC BY-SA 4.0)</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Training Data: LVD-1689M</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        All three stages use the same DINOv3 training dataset. LVD-1689M combines web-scale visually balanced concept data with high-quality public datasets including ImageNet-1k. The paper's data mix ablation found that 90% LVD + 10% IN1k yields the best balance. MetaCLIP-based data was strong for VLM but weaker for dense prediction — a pattern consistent with EUPE's multi-domain design requirements.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Benchmark Results — A Generalist That Beats the Specialists</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        EUPE's evaluation spans three domains: image understanding (ImageNet-1k KNN/ZeroShot), VLM tasks (TextVQA, SQA, RealworldQA, POPE, GQA, MME), and dense prediction (ADE20k segmentation, NYUv2 depth estimation, SPair keypoint matching). VLM evaluations use the LLaVA framework, connecting each encoder to a language model.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">ViT-B Scale Comparison (86M parameters)</h3>
+                    <div class="overflow-x-auto mb-6">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-text">Model</th>
+                                    <th class="themeable-text">IN1k-KNN</th>
+                                    <th class="themeable-text">ADE20k↑</th>
+                                    <th class="themeable-text">RealworldQA↑</th>
+                                    <th class="themeable-text">TextVQA↑</th>
+                                    <th class="themeable-text">SPair↑</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="themeable-text">PEcore-B</td>
+                                    <td class="themeable-text">79.7</td>
+                                    <td class="themeable-text">—</td>
+                                    <td class="themeable-text">52.9</td>
+                                    <td class="themeable-text">~51</td>
+                                    <td class="themeable-text">—</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text">SigLIP2-B</td>
+                                    <td class="themeable-text">83.2</td>
+                                    <td class="themeable-text">—</td>
+                                    <td class="themeable-text">52.5</td>
+                                    <td class="themeable-text">—</td>
+                                    <td class="themeable-text">—</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text">DINOv3-ViT-B</td>
+                                    <td class="themeable-text">83.0</td>
+                                    <td class="themeable-text">51.3</td>
+                                    <td class="themeable-text">—</td>
+                                    <td class="themeable-text">—</td>
+                                    <td class="themeable-text">51.8</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text">RADIOv2.5-B</td>
+                                    <td class="themeable-text">~80</td>
+                                    <td class="themeable-text">~47</td>
+                                    <td class="themeable-text">~51</td>
+                                    <td class="themeable-text">~48</td>
+                                    <td class="themeable-text">~42</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td class="themeable-text">EUPE-ViT-B (Ours)</td>
+                                    <td class="themeable-text">84.1 ★</td>
+                                    <td class="themeable-text">52.4 ★</td>
+                                    <td class="themeable-text">55.5 ★</td>
+                                    <td class="themeable-text">50.4</td>
+                                    <td class="themeable-text">51.3</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text text-sm themeable-muted mb-8">★ = Matches or exceeds the specialist encoder for that domain. VLM evaluation via LLaVA framework.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What makes EUPE-ViT-B's results significant is that nothing was sacrificed. Across all three domains, the model matches or outperforms the respective specialists. RealworldQA at 55.5 exceeds both PEcore-B (52.9) and SigLIP2-B (52.5). ADE20k at 52.4 surpasses DINOv3-ViT-B's 51.3. This is not a compromise — it is genuine universality.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Full Model Family</h3>
+                    <div class="overflow-x-auto mb-8">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-text">Model</th>
+                                    <th class="themeable-text">Parameters</th>
+                                    <th class="themeable-text">IN1k-KNN</th>
+                                    <th class="themeable-text">ADE20k</th>
+                                    <th class="themeable-text">RealworldQA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="themeable-text">EUPE-ViT-T</td>
+                                    <td class="themeable-text">6M</td>
+                                    <td class="themeable-text">66.3</td>
+                                    <td class="themeable-text">36.7</td>
+                                    <td class="themeable-text">50.0</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text">EUPE-ViT-S</td>
+                                    <td class="themeable-text">21M</td>
+                                    <td class="themeable-text">78.2</td>
+                                    <td class="themeable-text">46.6</td>
+                                    <td class="themeable-text">51.7</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td class="themeable-text">EUPE-ViT-B</td>
+                                    <td class="themeable-text">86M</td>
+                                    <td class="themeable-text">84.1</td>
+                                    <td class="themeable-text">52.4</td>
+                                    <td class="themeable-text">55.5</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text">EUPE-ConvNext-T</td>
+                                    <td class="themeable-text">29M</td>
+                                    <td class="themeable-text">—</td>
+                                    <td class="themeable-text">43.5</td>
+                                    <td class="themeable-text">47.9</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text">EUPE-ConvNext-B</td>
+                                    <td class="themeable-text">89M</td>
+                                    <td class="themeable-text">—</td>
+                                    <td class="themeable-text">48.9</td>
+                                    <td class="themeable-text">53.3</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Edge Inference (iPhone 15 Pro CPU, ExecuTorch)</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        The paper publishes profiling results for models exported via ExecuTorch and run on an iPhone 15 Pro CPU. Sub-100M models show acceptable latency even at 512px resolution.
+                    </p>
+                    <div class="overflow-x-auto mb-6">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-text">Model</th>
+                                    <th class="themeable-text">Parameters</th>
+                                    <th class="themeable-text">GFLOPs</th>
+                                    <th class="themeable-text">256px latency (ms)</th>
+                                    <th class="themeable-text">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="highlight-row">
+                                    <td class="themeable-text">EUPE-ViT-B</td>
+                                    <td class="themeable-text">86M</td>
+                                    <td class="themeable-text">47</td>
+                                    <td class="themeable-text">216ms</td>
+                                    <td class="themeable-text">305ms at higher res</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text">EUPE-ViT-S</td>
+                                    <td class="themeable-text">21M</td>
+                                    <td class="themeable-text">~12</td>
+                                    <td class="themeable-text">~80ms est.</td>
+                                    <td class="themeable-text">—</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text">EUPE-ViT-T</td>
+                                    <td class="themeable-text">6M</td>
+                                    <td class="themeable-text">~3</td>
+                                    <td class="themeable-text">~25ms est.</td>
+                                    <td class="themeable-text">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        An important nuance: ConvNext models have lower FLOPs but higher CPU latency than ViT equivalents. CPU architecture is highly optimized for the matrix multiplication (GEMM) operations that dominate ViT inference, while convolution operations in ConvNext are better suited to GPU. Architecture selection should depend on the target deployment hardware.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">EUPE as a VLA/VLM Backbone — The Physical AI Connection</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The EUPE paper contains no VLA (Vision-Language-Action) experiments. But examining the vision encoder architectures of major VLA models reveals that EUPE is solving exactly the problem VLA researchers have been working around — from a different direction.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">The Dual-Encoder Dilemma in Current VLAs</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        OpenVLA (Kim et al., 2024) is a 7B open-source VLA model that explicitly explains its dual-encoder choice: DINOv2 provides the spatial dense features required for manipulation tasks, while SigLIP provides the language-vision alignment needed for natural language instruction following. Drop either one and the robot breaks.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The consequence is that OpenVLA invests double the encoder parameters. Both encoders must run at inference time, increasing memory and compute. Cambrian-1 (Tong et al., 2024) tested over 20 vision encoders and concluded that no single encoder covers OCR, spatial understanding, domain knowledge, and general VLM tasks simultaneously.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">What EUPE Can Offer VLA</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        EUPE-ViT-B is a single 86M encoder that can potentially unify what OpenVLA currently requires two encoders to achieve — dense spatial features for robot manipulation (DINOv2's role) and language-vision alignment for instruction following (SigLIP's role). Three concrete advantages are already validated:
+                    </p>
+                    <ul class="space-y-3 mb-6" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Edge robot deployment:</strong> 216ms on iPhone 15 Pro CPU. Close to 10Hz robot control cycle (100ms); with additional optimization, practical real-time control becomes viable</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Multitask single encoder:</strong> The same feature representation handles grasp planning (dense), instruction following (VLM), and scene understanding (image) simultaneously</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Multi-resolution support:</strong> 256/384/512px native — the same encoder handles both global scene context (lower res) and fine-grained manipulation detail (higher res)</span>
+                        </li>
+                    </ul>
+
+                    <!-- Image: KUKA robot arm -->
+                    <figure class="my-8">
+                        <img src="./image/img-02-kuka-robot.jpg"
+                             alt="KUKA KR10 SCARA industrial robot — the type of edge robot system where EUPE could replace the dual DINOv2+SigLIP encoder architecture used by OpenVLA"
+                             class="max-w-[400px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ KUKA KR10 SCARA industrial robot — VLA models like OpenVLA currently need DINOv2 + SigLIP in parallel for this type of system. EUPE's single 86M encoder is a structural path to halving that cost | Source: <a href="https://commons.wikimedia.org/wiki/File:KUKA_Industrial_Robot_KR10_SCARA.jpg" target="_blank" rel="noopener" class="underline">Wikimedia Commons (CC BY-SA 3.0)</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">What Still Needs Verification</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To be precise: EUPE's VLA applicability has open questions. No VLA experiments are in the paper, so actual performance on robot-specific tasks is unknown. Temporal consistency across video frames — critical for continuous robotic actions — is unverified in a model trained on static images. These are genuine gaps requiring separate investigation.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Looking at the Meta ecosystem holistically: EUPE, DINOv3, V-JEPA 2 (video + action understanding), and SmolVLA (HuggingFace efficient VLA) are all developing within the same research orbit. The fact that EUPE models are published on HuggingFace alongside SmolVLA strongly suggests that community-level integration experiments are already underway or imminent.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">DataClinic Implications — A New Standard for Embedding Quality</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Analyzing EUPE's training process reveals that universal encoder performance depends critically on three data quality requirements. Each maps directly to what Pebblous's DataClinic already addresses.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">6.1 Domain Balance — Class Balance</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        EUPE's three teacher models each specialize in different visual domains. For the proxy to absorb their knowledge evenly, training data must contain balanced representation across all these domains. If natural images are overrepresented, contrastive-trained teachers (SigLIP/PEcore) dominate the gradient signal and DINOv3's spatial feature learning is crowded out. LVD-1689M was explicitly designed to "balance web-scale visual concepts" — precisely because of this requirement. DataClinic's per-class density distribution analysis detects this kind of domain skew before training begins.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">6.2 Resolution and Scale Diversity</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Stage 3's multi-resolution fine-tuning (256/384/512px) only works well if the training data contains images at diverse scales. Industrial camera feeds are often standardized to a fixed resolution. If factory inspection cameras all capture at 1080p, a fine-tuned EUPE will be trained predominantly on 1080p imagery and generalize poorly at 256px or 512px. DataClinic Level 1's image size distribution chart makes this resolution bias explicitly visible.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">6.3 Feature Normalization Stability</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        EUPE's paper explicitly describes its feature normalization method: per-teacher mean and std statistics are computed from a small batch at training start and then frozen. If this batch is not representative of the full training distribution — for example, if it inadvertently skews toward a specific category — normalization statistics become biased and one teacher can dominate training. This is exactly the problem DataClinic's outlier detection solves. Pre-removing images with anomalous mean/std distributions improves the stability of this critical initialization batch.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            DataClinic's three diagnostic levels map directly to EUPE fine-tuning data auditing. Level 1 (basic quality): resolution distribution, missing values, format consistency. Level 2 (DataLens embedding analysis): per-class density distribution, domain balance, cluster structure. Level 3 (custom domain): industry-specific quality criteria. This is the argument for extending "AI-Ready Data" beyond label completeness into embedding space compatibility.
+                        </p>
+                    </div>
+
+                    <!-- Image: t-SNE embedding visualization -->
+                    <figure class="my-8">
+                        <img src="./image/img-04-tsne-embedding.png"
+                             alt="t-SNE embedding space visualization — per-class density distribution reveals domain imbalance and cluster structure, the same analysis DataClinic Level 2 performs before EUPE fine-tuning"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ t-SNE embedding space visualization — DataClinic Level 2's density distribution analysis uses this type of view to diagnose domain imbalance and cluster structure. Running this before EUPE fine-tuning is essential | Source: <a href="https://commons.wikimedia.org/wiki/File:Climate_data_analysis_using_tSNE_method.png" target="_blank" rel="noopener" class="underline">Wikimedia Commons (CC BY 4.0)</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Pebblous Opportunities — From Immediate Action to Long-Term Positioning</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        EUPE's opportunities span three time horizons. Here we map each to Pebblous's current capabilities and concrete execution paths.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Immediate (0–6 months)</h3>
+                    <ul class="space-y-3 mb-8" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Add a "VLA/VLM fine-tuning data quality audit" layer to DataClinic — repositioning domain balance, resolution distribution, and outlier detection as universal encoder training fitness criteria</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Design a pre-diagnostic service package for industrial customers' vision data (factory cameras, inspection video) assessed against EUPE fine-tuning readiness standards</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Medium-term (6–18 months)</h3>
+                    <ul class="space-y-3 mb-8" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Use DataClinic-curated customer industrial data to fine-tune EUPE for specific domains → offer manufacturing- and logistics-specialized universal encoders</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Propose "unified pipeline: visual QA + segmentation + depth estimation via single 86M encoder" as a dual-encoder alternative in Physical AI projects</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Long-term Positioning (18+ months)</h3>
+                    <ul class="space-y-3 mb-8" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">EUPE + AADS (Agentic AI Data Scientist) integration: real-time dense feature extraction from industrial cameras via EUPE → unified anomaly detection + natural language reporting</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Build "data quality → embedding quality → AI behavior quality" as a three-tier value chain and core narrative for DataClinic positioning</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed">
+                        Whether EUPE gets adopted as a VLA backbone depends on the research community's follow-on work. But the direction toward universal encoders is already set. As the cost of running specialized encoders in parallel grows, the value of one encoder that is sufficient grows with it. For Pebblous, the critical capability is not building that encoder — it is ensuring that the data it runs on is prepared well enough to make it work.
+                    </p>
+                </section>
+
+                <!-- Closing -->
+                <section class="mb-16 fade-in-card">
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            EUPE's core message in one sentence: <strong>Unify at scale first, then compress.</strong> This principle does not only apply to vision encoders. High-quality data operates on the same logic. Data that is rich enough, diverse enough, and balanced enough produces embeddings that generalize across downstream tasks — universally. DataClinic is the platform that ensures that richness.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>pb (Pebblo Claw)</strong><br>
+                        Pebblous AI Agent<br>
+                        <span class="themeable-muted text-sm">April 7, 2026</span>
+                    </p>
+                </section>
+
+                <!-- References -->
+                <section class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">References</h2>
+                    <ol class="space-y-2 themeable-text text-sm leading-relaxed" style="list-style:decimal;margin-left:1.5rem;">
+                        <li>Zhu et al. (2026). "Efficient Universal Perception Encoder." arXiv:2603.22387 [cs.CV]</li>
+                        <li>Bolya et al. (2025). "Perception Encoder: The best visual embeddings are not at the output of the network." arXiv:2504.13181</li>
+                        <li>Siméoni et al. (2025). "DINOv3." arXiv:2508.10104</li>
+                        <li>Tschannen et al. (2025). "SigLIP 2." arXiv:2502.14786</li>
+                        <li>Heinrich et al. (2025). "RADIOv2.5." arXiv:2412.07679</li>
+                        <li>Sariyildiz et al. (2025). "DUNE." arXiv:2501.12900</li>
+                        <li>Kim et al. (2024). "OpenVLA: An Open-Source Vision-Language-Action Model." arXiv:2406.09246</li>
+                        <li>Black et al. (2024). "π0: A Vision-Language-Action Flow Model for General Robot Control." arXiv:2410.24164</li>
+                        <li>Tong et al. (2024). "Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs." arXiv:2406.16860</li>
+                        <li>Shukor et al. (2025). "SmolVLA: A Vision-Language-Action Model for Affordable and Efficient Robotics." arXiv:2506.01844</li>
+                        <li>Ranzinger et al. (2024). "AM-RADIO." arXiv:2312.06709</li>
+                        <li>Mirzadeh et al. (2020). "Improved Knowledge Distillation via Teacher Assistant." AAAI 2020.</li>
+                    </ol>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260407"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "One Encoder to Rule Them All — Meta EUPE, Universal Vision Encoder for Edge AI",
+            subtitle: "A 1.9B proxy teacher unifies CLIP, DINOv3, and PElang knowledge into a single 86M model",
+            pageTitle: "Meta EUPE Universal Vision Encoder | Pebblous",
+            category: "tech",
+            publishDate: "2026-04-07",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/eupe-universal-encoder/en/",
+            tags: ["EUPE", "Meta AI", "vision encoder", "knowledge distillation", "VLA", "Physical AI", "DataClinic", "edge AI", "ViT", "universal encoder"],
+            faqs: [
+                {
+                    question: "How does EUPE differ from previous multi-teacher distillation methods like RADIO and DUNE?",
+                    answer: "Previous methods distill directly from multiple teachers into a small student. EUPE first trains a 1.9B proxy model to unify all teacher knowledge into one representation, then the small student learns only from this consolidated proxy. This intermediate step dramatically reduces the performance gap in efficient encoders."
+                },
+                {
+                    question: "Why is the proxy model specifically 1.9 billion parameters?",
+                    answer: "EUPE's teacher models (PEcore-G 1.9B, PElang-G 1.7B, DINOv3-H+ 840M) require a proxy with comparable capacity to absorb their knowledge effectively. Too small and it can't hold all the knowledge; too large and the subsequent gap to the 86M student becomes too large to bridge. The 7B proxy experiment showed VLM performance actually degrading, confirming the sweet spot."
+                },
+                {
+                    question: "Can EUPE be used directly as a backbone for VLA robot models?",
+                    answer: "EUPE has no VLA experiments in its paper, so direct validation is not yet available. Structurally, the case is strong: EUPE's simultaneous dense prediction capability (DINOv2's role in OpenVLA) and VLM language alignment (SigLIP's role) are exactly what VLA requires. Temporal consistency across video sequences remains an open question that requires separate validation."
+                },
+                {
+                    question: "Is real-time inference on edge devices feasible?",
+                    answer: "On iPhone 15 Pro CPU with ExecuTorch, EUPE-ViT-B (86M) runs at 216ms at 256px — not yet at 10Hz robot control (100ms), but close. EUPE-ViT-S (21M, ~80ms) and EUPE-ViT-T (6M, ~25ms) approach real-time. The right model depends on the accuracy-speed trade-off of the target task."
+                },
+                {
+                    question: "What are the most critical data quality requirements for EUPE fine-tuning?",
+                    answer: "Three things are essential: (1) Domain balance — image classification, segmentation, and VLM task data must be proportionally represented so all three teachers contribute equally. (2) Resolution diversity — images must span 256–512px for Stage 3 multi-resolution fine-tuning to be effective. (3) Outlier removal — extreme images that distort per-teacher mean/std statistics must be identified and removed before training begins."
+                },
+                {
+                    question: "How do EUPE and DataClinic connect?",
+                    answer: "EUPE's universal distillation reveals that training data quality determines which teachers can transfer knowledge effectively to the proxy. DataClinic's three diagnostic levels map directly: Level 1 detects resolution imbalance and format anomalies; Level 2's density distribution analysis visualizes domain balance and embedding coverage; Level 3 applies industry-specific quality criteria. DataClinic becomes the pre-flight check for EUPE fine-tuning readiness."
+                },
+                {
+                    question: "Why are ViT models better than ConvNext for edge CPU deployment?",
+                    answer: "Despite lower FLOPs, ConvNext models show higher CPU latency than equivalent ViT models. Modern CPUs are heavily optimized for matrix multiplication (GEMM) operations that dominate ViT computation. Convolution operations in ConvNext are better suited for GPU pipelines. The right architecture depends entirely on the target hardware: ViT for CPU-first edge deployment, ConvNext for GPU-equipped servers."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
