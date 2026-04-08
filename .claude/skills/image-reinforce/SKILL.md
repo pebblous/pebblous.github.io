@@ -58,6 +58,15 @@ Read the HTML post and identify:
 ## Step 2: Source & Reference Lookup
 
 **Image source priority (CRITICAL — 반드시 이 순서):**
+
+> ⚠️ **포스팅 유형에 따라 우선순위가 달라진다 — 반드시 먼저 판단하라.**
+
+### 📌 심층보고서 / 논문 분석 포스팅 (report/, 특정 논문이 주요 참조인 경우)
+1. **주요 참조 논문의 figure** — arXiv HTML (`/html/{id}/x1.png`), PDF 추출(`pdfimages`), 공식 프로젝트 페이지 이미지
+2. **Wikimedia Commons** — 논문 figure가 없는 개념 보충용으로만
+3. Unsplash — **절대 금지**
+
+### 📌 일반 블로그 포스팅 (blog/, story/, project/)
 1. **Wikimedia Commons** — 가장 안정적. 영구 URL. CC 라이선스. 항상 여기서 먼저 검색
 2. **대상 소스/프로젝트의 실제 이미지** — 논문 figure, 프로젝트 스크린샷, 공식 프레스 이미지
 3. Official product screenshots (Apple Newsroom, NVIDIA newsroom 등)
