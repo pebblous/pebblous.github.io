@@ -17,6 +17,22 @@ description: "blog.pebblous.ai 퍼블리싱 파이프라인 — OG 이미지 생
 
 ## 파이프라인 (순서 엄수)
 
+### ⛔ 0. KO + EN HTML 존재 확인 (파이프라인 시작 전 필수)
+
+**파이프라인을 시작하기 전, KO + EN HTML 파일이 모두 존재하는지 반드시 확인한다.**
+하나라도 없으면 **즉시 중단** — OG 이미지 생성조차 시작하지 말 것.
+
+```bash
+[ -f "[category]/[slug]/ko/index.html" ] && echo "✅ KO 존재" || echo "❌ KO 없음 — 중단"
+[ -f "[category]/[slug]/en/index.html" ] && echo "✅ EN 존재" || echo "❌ EN 없음 — 중단"
+```
+
+EN HTML 없으면 → bilingual 또는 blog-write 스킬로 EN 먼저 작성 후 이 파이프라인 재실행.
+
+> ⚠️ **교훈 (2026-04-08)**: EN HTML 없이 publish를 시작하면 EN OG 생성 실패 + articles.json 깨진 항목 등록 사고 발생.
+
+---
+
 ### 1. OG 이미지 생성
 
 ```bash
