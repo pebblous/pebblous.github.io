@@ -5,9 +5,13 @@ description: "blog.pebblous.ai 퍼블리싱 파이프라인 — OG 이미지 생
 
 # Blog Publish
 
-작성된 아티클을 blog.pebblous.ai에 퍼블리싱하는 전체 파이프라인.
+> **이 파일이 블로그 퍼블리싱의 정본입니다.** 레포 `.claude/skills/` 기준.
 
-작업 디렉토리: `/workspace/extra/repos/pebblous.github.io/`
+작성된 아티클을 blog.pebblous.ai에 퍼블리싱하는 범용 전체 파이프라인.
+
+`dc-publish`와의 역할 구분:
+- **`blog-publish` (이 스킬)**: 범용 블로그 전체 파이프라인 — SEO 4계층 검증, 하네스 일관성 보장
+- **`dc-publish`**: DataClinic 스토리 특화 퍼블리싱 — dc-story 오케스트레이터의 Stage 5
 
 ## SEO 전략 참조
 

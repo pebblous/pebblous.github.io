@@ -5,8 +5,14 @@ description: "blog.pebblous.ai HTML 아티클 작성 — PebblousPage.init() 구
 
 # Blog Write
 
-blog.pebblous.ai 아티클 HTML 작성 스킬.
+> **이 파일이 블로그 HTML 작성의 정본입니다.** 레포 `.claude/skills/` 기준.
+
+blog.pebblous.ai 아티클 HTML **신규 작성** 스킬.
 상세 HTML 구조 예시는 `references/html-conventions.md` 참조.
+
+`blog-polish`와의 역할 구분:
+- **`blog-write` (이 스킬)**: 새 아티클 HTML을 처음부터 작성 — 구조, SEO, 컴포넌트 전체 포함
+- **`blog-polish`**: 기존 아티클의 제목·리드·섹션 헤딩을 Warm Expert Tone으로 다듬기 — 콘텐츠 보존
 
 ## ⛔ 작성 시작 전 필수 읽기 (예외 없음, 기억에 의존 금지)
 
