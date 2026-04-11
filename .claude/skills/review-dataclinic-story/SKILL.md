@@ -84,13 +84,22 @@ gh pr diff {PR-number}
 | E6 | **부제목 일관성** | `config.subtitle` = `og:title` 뒷부분(— 이후) = `articles.json title` 뒷부분. 부제목도 일관되어야 함 |
 | E7 | **OG 이미지 제목 일치** | OG 이미지에 렌더링된 제목/부제목이 og:title과 일치하는지 확인. `og-image-title` meta 사용 시 줄바꿈만 다르고 내용은 동일해야 함 |
 
-### F. articles.json (3항목)
+### F. CSS 표준 준수 (4항목)
 
 | # | 항목 | 검증 방법 |
 |---|------|-----------|
-| F1 | 신규 항목 필수 필드 | `id`, `title`, `description`, `category`, `date`, `path`, `image`, `published`, `tags`, `language` |
-| F2 | `language` 필드 존재 | `"language": "ko"` 또는 `"en"` |
-| F3 | **기존 항목 미변경** | diff에서 기존 항목의 포맷 변경, 필드 추가/제거 없는지 확인 |
+| F1 | **인라인 CSS 최소화** | `<style>` 블록에 `common-styles.css`에 이미 존재하는 클래스(`.stat-card`, `.key-insight`, `.grade-bar` 등)를 재정의하지 않는지 확인. 중복 정의 발견 시 FAIL |
+| F2 | **표준 클래스명 사용** | `themeable-text`, `themeable-heading`, `themeable-muted` 등 표준 클래스 사용. `themeable-primary`, `themeable-secondary` 등 비표준 클래스 사용 시 FAIL |
+| F3 | **CSS 로드 순서** | `theme-variables.css` → `common-styles.css` → `tailwind-build.css` 순서. 캐시 버스팅 `?v=YYYYMMDD` 포함 |
+| F4 | **비표준 인라인 색상** | `style="color:#..."` 에 페블러스 브랜드 색상(#F86825, #14b8a6, #3B82F6) 외 사용 금지. `.grade-bad` 등 뱃지 배경색은 예외 |
+
+### G. articles.json (3항목)
+
+| # | 항목 | 검증 방법 |
+|---|------|-----------|
+| G1 | 신규 항목 필수 필드 | `id`, `title`, `description`, `category`, `date`, `path`, `image`, `published`, `tags`, `language` |
+| G2 | `language` 필드 존재 | `"language": "ko"` 또는 `"en"` |
+| G3 | **기존 항목 미변경** | diff에서 기존 항목의 포맷 변경, 필드 추가/제거 없는지 확인 |
 
 ---
 
