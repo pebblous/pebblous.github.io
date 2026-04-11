@@ -22,6 +22,7 @@ Usage:
   10. path ends with index.html → 디렉토리 형식 권장
   11. featured max 3 per cat    → 메인 카드 과다 표시
   12. image 필드 비어야 함       → 관례: 빈 문자열 기본
+  13. language 필드 필수          → 언어 필터·카드 렌더링에 필수 (ko/en)
 """
 
 import json
@@ -151,9 +152,18 @@ def validate_article(a, strict=True, auto_fix=False):
         if not os.path.exists(full):
             warn(aid, f"파일 없음: {full.replace(ROOT+'/', '')}")
 
-    # 9. lang 없음 (신규 아티클 권고 — 언어 필터에 영향)
-    if strict and not a.get("lang") and not a.get("language"):
-        warn(aid, "lang 필드 없음 — 언어 필터 비적용 (모든 언어에서 노출됨)")
+    # 9. language 필드 필수 (언어 필터·카드 렌더링에 영향)
+    if not a.get("language"):
+        if auto_fix:
+            # Infer from id or path
+            if aid.endswith("-en") or "/en/" in path:
+                a["language"] = "en"
+            else:
+                a["language"] = "ko"
+            fix_msg(aid, f"language 없음 → '{a['language']}' 자동 추론")
+            changed = True
+        else:
+            err(aid, "language 필드 없음 — 필수 (--fix 로 자동 추론 가능)")
 
     # 10. noindex 충돌 — published=true인데 HTML에 noindex (Google 미인덱싱)
     if a.get("published") and path:
