@@ -63,13 +63,70 @@ function buildSidebar(currentSlug) {
   return `
             <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
                 <p class="text-xs font-bold uppercase tracking-widest themeable-text-muted mb-3 px-0">블록체인 위키</p>
+
+                <!-- 검색 -->
+                <div class="relative mb-4">
+                    <input id="wiki-search" type="text" placeholder="위키 검색..."
+                        class="w-full px-3 py-2 text-sm rounded-lg border themeable-border bg-transparent themeable-text-secondary placeholder:text-gray-500 focus:outline-none focus:border-orange-500 transition-colors">
+                    <div id="wiki-search-results" class="absolute left-0 right-0 top-full mt-1 z-50 rounded-lg border themeable-border shadow-xl hidden"
+                        style="background: var(--bg-card); max-height: 320px; overflow-y: auto;"></div>
+                </div>
+
                 <ul class="space-y-1 text-sm border-l-2 themeable-toc-border">
                     ${items}
                 </ul>
                 <div class="mt-6 pt-4 border-t themeable-border">
                     <a href="/wiki/public/" class="text-xs themeable-text-muted hover:text-orange-400 transition-colors">← 위키 홈</a>
                 </div>
-            </nav>`;
+            </nav>
+
+            <script>
+            (function() {
+                let index = null;
+                async function loadIndex() {
+                    if (index) return index;
+                    const r = await fetch('/wiki/public/search-index.json');
+                    index = await r.json();
+                    return index;
+                }
+                function esc(s) {
+                    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                }
+                document.addEventListener('DOMContentLoaded', function() {
+                    const input = document.getElementById('wiki-search');
+                    const results = document.getElementById('wiki-search-results');
+                    if (!input) return;
+                    input.addEventListener('input', async function() {
+                        const q = this.value.trim().toLowerCase();
+                        if (!q) { results.classList.add('hidden'); return; }
+                        const data = await loadIndex();
+                        const hits = data.filter(p =>
+                            p.label.toLowerCase().includes(q) || p.excerpt.toLowerCase().includes(q)
+                        ).slice(0, 6);
+                        if (!hits.length) {
+                            results.innerHTML = '<p class="px-4 py-3 text-sm" style="color:var(--text-muted)">결과 없음</p>';
+                        } else {
+                            results.innerHTML = hits.map(h => {
+                                const idx = h.excerpt.toLowerCase().indexOf(q);
+                                const snippet = idx >= 0 ? h.excerpt.slice(Math.max(0, idx-30), idx+80) : h.excerpt.slice(0, 80);
+                                return \`<a href="/wiki/public/\${h.slug ? h.slug+'/' : ''}"
+                                    class="block px-4 py-3 hover:bg-orange-500/10 border-b last:border-0 transition-colors"
+                                    style="border-color:var(--border-color); text-decoration:none">
+                                    <div class="text-sm font-semibold" style="color:var(--text-primary)">\${esc(h.title)}</div>
+                                    <div class="text-xs mt-0.5" style="color:var(--text-muted)">...\${esc(snippet)}...</div>
+                                </a>\`;
+                            }).join('');
+                        }
+                        results.classList.remove('hidden');
+                    });
+                    document.addEventListener('click', function(e) {
+                        if (!input.contains(e.target) && !results.contains(e.target)) {
+                            results.classList.add('hidden');
+                        }
+                    });
+                });
+            })();
+            </script>`;
 }
 
 // ── 관련 문서 섹션 ─────────────────────────────────────────────
