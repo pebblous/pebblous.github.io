@@ -244,6 +244,119 @@ The `key-insight` box provides the teal-bordered highlight. Content should be 3 
 /docs/           # Internal documentation (17 files)
 ```
 
+## ⛔ Blog Article Mandatory Protocol — ZERO EXCEPTIONS
+
+**아티클 HTML을 새로 작성하거나 수정하기 전에 반드시 아래를 실행한다. 기억에 의존 금지.**
+
+### Step 0: Pre-Write Read (매번, 예외 없음)
+
+```
+Read: docs/post-writing-lessons-for-pb.md
+Read: .claude/skills/blog-write/references/html-conventions.md
+Read: docs/blog-html-checklist.md
+```
+
+이 3개를 Read 툴로 직접 읽지 않으면 작업을 시작하지 않는다.
+
+---
+
+### ⛔ Forbidden Anti-Patterns — 발견 즉시 수정
+
+아래 패턴이 코드에 있으면 **표준 미준수**. 커밋 전에 반드시 제거한다.
+
+#### 1. DOMContentLoaded 비표준 스크립트 (금지)
+```javascript
+// ❌ 절대 금지
+document.addEventListener('DOMContentLoaded', function() {
+    const h1 = document.getElementById('page-h1-title');
+    h1.textContent = ...;
+});
+<script src="/scripts/share-buttons.js" defer></script>
+```
+```javascript
+// ✅ 유일한 정답
+PebblousPage.init({ mainTitle: "...", subtitle: "...", faqs: [...] });
+// share-buttons.js 별도 로드 금지 — common-utils.js가 포함
+```
+
+#### 2. H1 하드코딩 (금지)
+```html
+<!-- ❌ 절대 금지 -->
+<h1 id="page-h1-title">제목을 여기에 직접 쓰면 안 된다</h1>
+
+<!-- ✅ 유일한 정답 — 반드시 비어있어야 함 -->
+<h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+```
+
+#### 3. h2 비표준 패턴 (금지)
+```html
+<!-- ❌ 절대 금지 -->
+<h2 class="text-2xl font-bold themeable-heading mb-6">1. 섹션 제목</h2>
+
+<!-- ✅ 유일한 정답 -->
+<div class="flex items-center gap-4 mb-8">
+    <span class="number-badge">1</span>
+    <h2 class="text-3xl font-bold themeable-heading">섹션 제목</h2>
+</div>
+```
+
+#### 4. fade-in-card 누락 (금지)
+```html
+<!-- ❌ 절대 금지 -->
+<section id="section-1" class="mb-16">
+
+<!-- ✅ 유일한 정답 -->
+<section id="section-1" class="mb-16 fade-in-card">
+```
+
+#### 5. FAQ 하드코딩 (금지)
+```html
+<!-- ❌ 절대 금지 — FAQ를 HTML에 직접 쓰면 안 됨 -->
+<div class="themeable-card rounded-xl p-5">
+    <p class="font-semibold">질문?</p>
+    <p>답변.</p>
+</div>
+
+<!-- ✅ 유일한 정답 — placeholder + PebblousPage.init faqs[] -->
+<section id="faq" class="mb-16 fade-in-card"></section>
+// PebblousPage.init({ faqs: [ /* 7개 이상 */ ] })
+```
+
+#### 6. CSS 오로드 오류 (금지)
+```html
+<!-- ❌ 절대 금지 — 아티클에 index 전용 CSS 포함 금지 -->
+<link rel="stylesheet" href="/css/styles.css">
+
+<!-- ✅ 아티클 CSS 3개 (순서 고정) -->
+<link rel="stylesheet" href="/css/theme-variables.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/styles/tailwind-build.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
+```
+
+---
+
+### Pre-Commit Self-Check (커밋 전 grep 검증)
+
+```bash
+# 아래 명령어를 커밋 전에 실행한다. 출력이 있으면 수정 후 커밋.
+grep -n "DOMContentLoaded" [html파일]        # → 0줄이어야 함
+grep -n "share-buttons.js" [html파일]        # → 0줄이어야 함
+grep -n "text-2xl.*mb-6" [html파일]          # → 0줄이어야 함 (h2 비표준)
+grep -n "page-h1-title\">[^<]" [html파일]   # → 0줄이어야 함 (H1 하드코딩)
+grep -n "class=\"mb-16\"" [html파일]         # → 0줄이어야 함 (fade-in-card 누락)
+grep -c "question:" [html파일]               # → 7 이상이어야 함 (FAQ 수)
+```
+
+---
+
+### Bilingual Parity Rules
+
+- KO 완료 직후 EN도 완료해야 한다. "나중에"는 없다.
+- articles.json에 KO/EN 2개 항목을 동시에 등록한다.
+- EN 없이 KO만 push 금지 (articles.json EN 항목 누락 포함).
+
+---
+
 ## Detailed Documentation
 
 For deeper reference, see `docs/`:

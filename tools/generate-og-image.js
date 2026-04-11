@@ -222,7 +222,27 @@ function calcTitleFontSize(title) {
     return Math.max(scaled, 40);
 }
 
-function generateHTML(title, subtitle, theme, logoPath) {
+function getFontFaces(projectRoot) {
+    const fontsDir = path.join(projectRoot, 'tools', 'fonts');
+    const weights = [
+        { weight: 900, file: 'Pretendard-Black.woff2' },
+        { weight: 800, file: 'Pretendard-ExtraBold.woff2' },
+        { weight: 700, file: 'Pretendard-Bold.woff2' },
+        { weight: 600, file: 'Pretendard-SemiBold.woff2' },
+        { weight: 400, file: 'Pretendard-Regular.woff2' },
+    ];
+
+    return weights.map(({ weight, file }) => {
+        const fontPath = path.join(fontsDir, file);
+        if (fs.existsSync(fontPath)) {
+            const b64 = fs.readFileSync(fontPath).toString('base64');
+            return `@font-face { font-family: 'Pretendard'; font-weight: ${weight}; font-display: block; src: url('data:font/woff2;base64,${b64}') format('woff2'); }`;
+        }
+        return '';
+    }).filter(Boolean).join('\n        ');
+}
+
+function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
     // Handle manual line breaks first
     let displayTitle = title.replace(/\n/g, '<br>');
 
@@ -262,7 +282,7 @@ function generateHTML(title, subtitle, theme, logoPath) {
 <head>
     <meta charset="UTF-8">
     <style>
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        ${fontFaces}
 
         * {
             margin: 0;
@@ -387,7 +407,10 @@ async function generateOGImage(title, subtitle, outputPath, category, projectRoo
     const logoBase64 = fs.readFileSync(logoFile).toString('base64');
     const logoDataUri = `data:image/png;base64,${logoBase64}`;
 
-    const html = generateHTML(title, subtitle, theme, logoDataUri);
+    // Embed fonts as base64 for reliable rendering (no CDN dependency)
+    const fontFaces = getFontFaces(projectRoot);
+
+    const html = generateHTML(title, subtitle, theme, logoDataUri, fontFaces);
 
     console.log(`Generating OG image...`);
     console.log(`  Title: ${title}`);
@@ -404,11 +427,11 @@ async function generateOGImage(title, subtitle, outputPath, category, projectRoo
     try {
         const page = await browser.newPage();
         await page.setViewport({ width: 1200, height: 630 });
-        await page.setContent(html, { waitUntil: 'networkidle0' });
+        await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
-        // Wait for fonts to load
+        // Wait for embedded fonts to render
         await page.evaluate(() => document.fonts.ready);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // Ensure output directory exists
         const outputDir = path.dirname(outputPath);
