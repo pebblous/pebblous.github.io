@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ 블로그 작업 시작 전 필독 체크리스트
+
+**HTML 작성, 파일 생성, git 작업을 시작하기 전에 반드시 아래 파일을 읽을 것. 기억에 의존하지 말 것.**
+
+- [ ] `docs/post-writing-lessons-for-pb.md` — pb 전용 작성 가이드 (PR 리뷰 교훈 누적)
+- [ ] `docs/blog-html-checklist.md` — HTML 완성 체크리스트 (구조·SEO·스크립트 검증)
+- [ ] `report/blog-2026/ko/index.html` — 구조 기준 템플릿 (절대 기억으로 재구성 금지)
+
+기존 시리즈 글 작업 시: 해당 시리즈의 기존 글도 반드시 읽어 스타일·구조 일관성 확인.
+
 ## Project Overview
 
 Pebblous Blog (`blog.pebblous.ai`) — a static site on GitHub Pages for Pebblous Inc., covering AI-Ready Data, Physical AI, and Data Quality topics. Built with vanilla JavaScript + TailwindCSS (build, not CDN).
