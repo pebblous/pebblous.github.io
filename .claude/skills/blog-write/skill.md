@@ -140,9 +140,45 @@ PebblousPage.init({
 
 ## CSS 규칙
 
-- 색상 하드코딩 금지 → `themeable-*` classes 사용
+### ⛔ 인라인 CSS 금지 (CRITICAL)
+
+`common-styles.css`에 이미 존재하는 컴포넌트를 `<style>` 블록에 재정의하지 말 것. 위반 시 글꼴·행간·색상이 표준과 달라지고 유지보수 부담이 생긴다.
+
+**금지 패턴:**
+```html
+<!-- ❌ common-styles.css에 이미 있는 클래스를 인라인으로 재정의 -->
+<style>
+  .stat-card { ... }
+  .key-insight { ... }
+  .themeable-toc-link { ... }
+</style>
+```
+
+**허용:** 해당 포스트에만 필요한 고유 컴포넌트 (`.timeline-box`, `.weapon-card` 등)는 인라인 `<style>`에 작성 가능.
+
+### CSS 로드 순서 (정확히 이 순서)
+
+```html
+<link rel="stylesheet" href="/css/theme-variables.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/styles/tailwind-build.css">
+```
+
+### 표준 클래스명
+
+| 용도 | 표준 클래스 | ❌ 금지 |
+|------|-----------|---------|
+| 본문 텍스트 | `themeable-text` | `themeable-secondary` |
+| 제목 | `themeable-heading` | `themeable-primary` |
+| 보조 텍스트 | `themeable-muted` | 커스텀 색상 |
+| 핵심 인사이트 | `key-insight` | `insight-box` |
+
+### 색상·타이포그래피
+
+- 색상 하드코딩 금지 → `themeable-*` classes 또는 CSS 변수 사용
+- 허용 브랜드 색상: Orange `#F86825`, Teal `#14b8a6`, Blue `#3B82F6`
+- 빨간색·임의 초록 등 비표준 색상 금지
 - 한국어에 italic 금지 → `font-weight: 600` 사용
-- Brand: Orange `#F86825` (CTA), Teal `#14b8a6` (secondary)
 - 본문: 18px, line-height 2.1 (단락), 2.0 (목록)
 
 ## SEO 4계층 (HTML head)
