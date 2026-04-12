@@ -16,11 +16,28 @@ window.IndexPage._categories = {};
 (function() {
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const mobileMenu = document.getElementById('mobile-menu');
+    const mobileOverlay = document.getElementById('mobile-menu-overlay');
+
+    function openSidebar() {
+        if (mobileMenu) mobileMenu.classList.add('is-open');
+        if (mobileOverlay) mobileOverlay.classList.add('is-open');
+        if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+        if (mobileMenu) mobileMenu.classList.remove('is-open');
+        if (mobileOverlay) mobileOverlay.classList.remove('is-open');
+        if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+    }
 
     if (mobileMenuBtn && mobileMenu) {
         mobileMenuBtn.addEventListener('click', () => {
-            const isOpen = mobileMenu.classList.toggle('is-open');
-            mobileMenuBtn.setAttribute('aria-expanded', isOpen);
+            mobileMenu.classList.contains('is-open') ? closeSidebar() : openSidebar();
+        });
+        if (mobileOverlay) mobileOverlay.addEventListener('click', closeSidebar);
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', closeSidebar);
         });
     }
 })();
