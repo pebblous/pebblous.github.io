@@ -530,10 +530,10 @@ const PebblousPage = {
      * Load serif fonts for subtitles (Playfair Display for EN, Nanum Myeongjo for KO)
      */
     loadSubtitleFont() {
-        if (!document.querySelector('link[href*="Playfair+Display"]')) {
+        if (!document.querySelector('link[href*="Lora"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = 'https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap';
+            link.href = 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400&family=Noto+Serif+KR:wght@400;700&display=swap';
             document.head.appendChild(link);
         }
     },
