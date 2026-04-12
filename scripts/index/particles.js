@@ -12,8 +12,19 @@
     if (!ctx) return;
 
     let particles = [];
-    const particleCount = 100;
-    const maxDistance = 150;
+    // Scale particle count and connection distance by screen area
+    // Reference: 1920x1080 = ~2M px² → 100 particles, maxDistance 150
+    function getParticleConfig() {
+        const area = window.innerWidth * window.innerHeight;
+        const refArea = 1920 * 1080;
+        const ratio = Math.sqrt(area / refArea); // sqrt for linear scaling
+        const count = Math.max(40, Math.round(200 * ratio));
+        const dist = Math.max(80, Math.round(150 * ratio));
+        return { count, dist };
+    }
+    let particleConfig = getParticleConfig();
+    let particleCount = particleConfig.count;
+    let maxDistance = particleConfig.dist;
 
     function setCanvasSize() {
         const dpr = window.devicePixelRatio || 1;
@@ -124,6 +135,9 @@
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
+            particleConfig = getParticleConfig();
+            particleCount = particleConfig.count;
+            maxDistance = particleConfig.dist;
             particles = [];
             setCanvasSize();
             initParticles();
