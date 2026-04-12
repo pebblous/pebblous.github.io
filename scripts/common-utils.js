@@ -533,7 +533,7 @@ const PebblousPage = {
         if (!document.querySelector('link[href*="Cormorant+Garamond"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Do+Hyeon&display=swap';
+            link.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Gowun+Batang:wght@400;700&display=swap';
             document.head.appendChild(link);
         }
     },
