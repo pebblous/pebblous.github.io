@@ -584,7 +584,7 @@ const PebblousPage = {
 
                     // Language switch link
                     const langPath = isEn ? '../ko/' : '../en/';
-                    const langLabel = isEn ? '한국어' : 'English';
+                    const langLabel = isEn ? '🇰🇷 KOR' : '영어';
 
                     // Build meta row
                     const metaDiv = document.createElement('div');
