@@ -22,8 +22,11 @@ const PAGES = [
   { slug: 'digital-asset-exchange',   file: 'digital-asset-exchange.md',     title: '🏦 거래소 & 지갑',    label: '거래소 & 지갑' },
   { slug: 'blockchain-applications',  file: 'blockchain-applications.md',    title: '🏭 블록체인 응용',    label: '블록체인 응용' },
   { slug: 'korea-policy',             file: 'korea-digital-finance-policy.md', title: '🇰🇷 한국 정책',   label: '한국 정책' },
-  { slug: 'agentic-data-management',   file: 'agentic-data-management.md',    title: '🤖 에이전틱 데이터 관리', label: '에이전틱 데이터 관리' },
-  { slug: 'log',                      file: 'log.md',                        title: '📋 변경 로그',        label: '변경 로그' },
+  { slug: 'agentic-data-management',      file: 'agentic-data-management.md',      title: '🤖 에이전틱 데이터 관리',    label: '에이전틱 데이터 관리' },
+  { slug: 'unstructured-data-management', file: 'unstructured-data-management.md', title: '📂 비정형 데이터 관리',      label: '비정형 데이터 관리' },
+  { slug: 'hype-cycle-agentic-ai',        file: 'hype-cycle-agentic-ai.md',        title: '📈 AI 에이전트 하이프사이클', label: 'AI 에이전트 하이프사이클' },
+  { slug: 'pebblous-strategic-overview',  file: 'pebblous-strategic-overview.md',  title: '🏢 Pebblous 전략 개요',      label: 'Pebblous 전략 개요' },
+  { slug: 'log',                          file: 'log.md',                          title: '📋 변경 로그',               label: '변경 로그' },
 ];
 
 // ── 날짜 포맷 ─────────────────────────────────────────────────
