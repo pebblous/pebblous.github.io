@@ -525,7 +525,7 @@ const PebblousPage = {
             if (h1Element) {
                 h1Element.innerHTML = `
                     <span class="block font-bold themeable-heading hero-main-title">${config.mainTitle}</span>
-                    <span class="block themeable-text-muted font-normal hero-subtitle">${config.subtitle}</span>
+                    <span class="block font-normal hero-subtitle">${config.subtitle}</span>
                 `;
 
                 // Ensure hero container has internal padding
