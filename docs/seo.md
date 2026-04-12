@@ -150,8 +150,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 ```html
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@pebblous">
-<meta name="twitter:creator" content="@pebblous">
+<meta name="twitter:site" content="@pebblous_ai">
+<meta name="twitter:creator" content="@pebblous_ai">
 <meta name="twitter:title" content="{제목}">
 <meta name="twitter:description" content="{요약}">
 <meta name="twitter:image" content="https://blog.pebblous.ai/{이미지}">

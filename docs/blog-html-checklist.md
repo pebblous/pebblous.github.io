@@ -37,8 +37,7 @@
 - [ ] Hero가 `<header class="text-left mb-12">` 태그로 **`<main>` 첫 번째 자식**에 위치
 - [ ] **`<section class="py-16 themeable-hero-bg text-center">` 구조 금지** (구버전 패턴)
 - [ ] `<h1 id="page-h1-title">` **비어 있음** (JS가 채움)
-- [ ] 메타 2줄: `YYYY.MM · 팀명` / `읽는 시간 · 언어 전환 링크`
-- [ ] **공유 버튼**: `<div id="share-buttons-placeholder" class="flex justify-start"></div>` (필수, `mt-4` 없음)
+- [ ] **⛔ 메타 하드코딩 금지** — `<p class="text-sm themeable-muted">`, `<div id="share-buttons-placeholder">` 등 직접 넣지 말 것. `PebblousPage.init()`이 `publishDate`, `publisher`, `wordCount`에서 동적 생성
 - [ ] **Breadcrumbs**: 정적 `<span class="hero-badge">` 금지 → PebblousBreadcrumbs가 자동 생성
 
 ### TOC + Layout

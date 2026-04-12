@@ -100,8 +100,8 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 <meta name="twitter:description" content="[설명]">
 <meta name="twitter:image" content="https://blog.pebblous.ai/[path]image/index.png">
 <meta name="twitter:image:alt" content="[이미지 설명]">
-<meta name="twitter:site" content="@pebblous">
-<meta name="twitter:creator" content="@pebblous">
+<meta name="twitter:site" content="@pebblous_ai">
+<meta name="twitter:creator" content="@pebblous_ai">
 
 <!-- Favicon -->
 <link rel="icon" href="/favicon.ico">
@@ -117,10 +117,10 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 
 ```html
 <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
-    <p class="text-sm font-semibold themeable-muted mb-3">목차</p>
-    <ul class="space-y-1 text-sm">
-        <li><a href="#executive-summary" class="themeable-toc-link">Executive Summary</a></li>
-        <li><a href="#section-1" class="themeable-toc-link">섹션 1 제목</a></li>
+    <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+    <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+        <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+        <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">섹션 1 제목</a></li>
         <!-- 모든 h2 섹션 포함 -->
     </ul>
 </nav>
@@ -136,16 +136,10 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 ```html
 <main class="max-w-[800px] px-4 sm:px-6">
     <header class="text-left mb-12">
-        <!-- h1: JS가 mainTitle로 채움 — 비워둔다 -->
+        <!-- h1: JS가 mainTitle로 채움 — 반드시 비워둔다 -->
         <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
-
-        <!-- meta info: 2줄 형식 -->
-        <p class="text-sm themeable-muted">2026.04 · (주)페블러스 데이터 커뮤니케이션팀</p>
-        <p class="text-sm themeable-muted mt-1">
-            읽는 시간: ~9분 ·
-            <a href="../en/" class="text-orange-400 hover:text-orange-300 transition-colors">English</a>
-        </p>
-        <div id="share-buttons-placeholder" class="flex justify-start"></div>
+        <!-- ⛔ 메타(날짜·팀명·읽기시간·언어전환·공유버튼) 하드코딩 금지
+             PebblousPage.init()이 publishDate, publisher, wordCount에서 동적 생성 -->
     </header>
 
     <!-- Executive Summary, 섹션들 → 5·6번 참조 -->
