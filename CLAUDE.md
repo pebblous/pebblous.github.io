@@ -18,7 +18,9 @@ python3 -m http.server 8000
 open http://localhost:8000
 
 # Content pipeline
-python3 scripts/scan-html-files.py   # Re-index all HTML → articles.json
+python3 scripts/scan-html-files.py   # Re-index HTML → articles.json (publisher, wordCount, modified)
+python3 scripts/scan-html-files.py --clean  # + 비표준 필드 정리
+python3 scripts/scan-html-files.py --dry-run  # 변경 없이 미리보기
 node scripts/generate-rss.js         # Regenerate RSS feed
 node scripts/generate-sitemap.js     # Regenerate sitemap.xml
 
@@ -58,16 +60,12 @@ This auto-loads: Header, Footer, BreadcrumbList Schema, FAQ Schema (JSON-LD), Re
 **Critical rules:**
 - Hero `<h1 id="page-h1-title">` must exist in HTML — needed for breadcrumbs injection point
 - **Breadcrumbs = Hero badge**: `PebblousBreadcrumbs` renders a hero-badge-style pill (`Home / Category`) with navigation links + Google BreadcrumbList Schema. Do NOT add static `<span class="hero-badge">` — breadcrumbs replace it.
-- **Hero meta info** (below subtitle): 2-line compact format, centered, `text-sm themeable-muted`:
-  ```html
-  <!-- Korean -->
-  <p class="text-sm themeable-muted">2026.01 · (주)페블러스 데이터 커뮤니케이션팀</p>
-  <p class="text-sm themeable-muted mt-1">읽는 시간: ~15분 · <a href="../en/" class="text-orange-400 hover:text-orange-300 transition-colors">English</a></p>
-  <!-- English -->
-  <p class="text-sm themeable-muted">2026.01 · Pebblous Data Communication Team</p>
-  <p class="text-sm themeable-muted mt-1">Reading time: ~15 min · <a href="../ko/" class="text-orange-400 hover:text-orange-300 transition-colors">한국어</a></p>
-  ```
-  Line 1: `YYYY.MM · team name` / Line 2: `reading time · language switch link`
+- **⛔ Hero meta info — 동적 생성 (HTML 하드코딩 금지)**:
+  `PebblousPage.init()`이 config의 `publishDate`, `publisher`, `wordCount`에서 메타를 자동 생성한다.
+  HTML에 `<p class="text-sm themeable-muted">` 메타 라인이나 `<div id="share-buttons-placeholder">`를 직접 넣지 말 것.
+  렌더링 결과: `날짜 | 팀명 | ~N분 | English | [공유아이콘]` (1줄 가로, `.hero-meta-group`)
+  - readTime은 `config.wordCount / 500`으로 자동 계산 (wordCount 없으면 `<main>` 텍스트에서 계산)
+  - 언어 전환: fetch HEAD로 상대 언어 페이지 존재 확인, 없으면 한글로 fallback
 - FAQ: use ONLY `config.faqs` — NEVER add FAQPage JSON-LD in `<head>` (causes Google duplication errors)
 - Always use `/scripts/common-utils.js` — never `/js/article-page.js` (deprecated)
 
@@ -141,11 +139,18 @@ Three themes: dark (default), light, beige. Use `themeable-*` CSS classes (e.g.,
 ```
 New HTML article
   → Register in articles.json (category, date, featured flag, etc.)
-  → python3 scripts/scan-html-files.py (re-index)
+  → python3 scripts/scan-html-files.py          (re-index: publisher, wordCount, modified 자동 추출)
+  → python3 scripts/scan-html-files.py --clean   (비표준 필드 정리 포함)
   → node scripts/generate-rss.js
   → node scripts/generate-sitemap.js
   → git push → GitHub Pages auto-deploy
 ```
+
+**메타데이터 아키텍처** (Single Source of Truth):
+- `articles.json`이 메타데이터 DB 역할 (`publisher`, `wordCount`, `modified` 등)
+- `PebblousPage.init(config)`의 config가 렌더링 시점에 사용 (fetch 없이 즉시)
+- `scan-html-files.py`가 HTML → articles.json 동기화 보장
+- HTML에 메타 하드코딩 금지 — JS가 config에서 동적 생성
 
 **articles.json structure** — MUST be a wrapper object, NEVER a bare array:
 ```json
@@ -161,7 +166,13 @@ New HTML article
 ```
 - **CRITICAL**: `init.js` reads `data.categories` and `data.articles`. A bare array `[...]` breaks the index page.
 - When editing `articles.json`, always preserve the `{ "categories": {...}, "articles": [...] }` wrapper.
-- Article fields: `id`, `title`, `path` (relative), `date`, `category`, `published` (bool), `featured` (bool), `description`, `image` (relative, no leading `/`), `tags[]`, `type` (optional, `"hub"` for hub pages — auto-excluded from hub card grids)
+- Article fields:
+  - **필수**: `id`, `title`, `path` (relative), `date`, `category`, `published` (bool), `description`, `language`, `tags[]`
+  - **선택**: `featured` (bool), `image` (relative, no leading `/`), `type` (`"hub"` for hub pages)
+  - **자동 생성** (`scan-html-files.py`가 HTML에서 추출): `publisher`, `wordCount`, `modified`
+  - `publisher`: PebblousPage.init() config에서 추출 — 메타 영역에 표시
+  - `wordCount`: `<main>` 본문 글자 수 — readTime 계산용 (`Math.ceil(wordCount/500)`)
+  - `modified`: git log 기반 최종 수정일 (YYYY-MM-DD)
 
 **⛔ articles.json 필드명 규칙 (Issue #63 — 위반 시 CI 실패 + 카드 렌더링 중단):**
 
@@ -202,9 +213,16 @@ New HTML article
 4. Google Search Console
 
 ### Brand Colors
-- Orange `#F86825` (primary/CTA), Teal `#14b8a6` (secondary), Slate `#475569` (neutral), Deep Blue `#020617` (dark bg)
+- Orange `#F86825` (primary/CTA), Slate `#475569` (neutral), Deep Blue `#020617` (dark bg)
+- **⛔ 색상 원칙**: 흰색 + 검정 + 오렌지만. 틸(#14b8a6) 신규 사용 금지, 그라데이션 금지 (중간색 탁함)
+- 기존 코드의 틸은 유지하되 새 작업에서는 오렌지로 대체
 
-### Typography & Korean
+### Typography & Fonts
+- **글꼴 체계** (`css/theme-variables.css`):
+  - `--font-display`: 제목/디스플레이 — `Outfit`(영문) → `Wanted Sans Variable`(한글) → `Pretendard`
+  - `--font-sans`: 본문 — `Pretendard`
+  - 적용 범위: h1~h6, TOC, 헤더 메뉴, hero-meta-group → `var(--font-display)`
+- **CDN**: Pretendard (jsdelivr), Wanted Sans (jsdelivr), Outfit (Google Fonts)
 - Body 18px, line-height 2.1 (paragraphs), 2.0 (lists)
 - **Never use italic for Korean text** — use `font-weight: 600` instead
 - Headings: `<h2>` for sections, `<h3>` for subsections
