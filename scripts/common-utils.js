@@ -605,7 +605,7 @@ const PebblousPage = {
                     }).catch(() => {});
 
                     parts.push('__LANG__');
-                    metaDiv.innerHTML = parts.join('<span class="meta-sep">|</span>') + '<span id="share-buttons-placeholder" class="inline-flex items-center flex-shrink-0" style="margin-left:0.375rem;"></span>';
+                    metaDiv.innerHTML = parts.join('<span class="meta-sep">|</span>') + '<span id="share-buttons-placeholder" style="display:inline-flex !important;align-items:center;flex:0 0 auto;width:fit-content;margin-left:0.375rem;"></span>';
 
                     // Replace __LANG__ placeholder with actual link element
                     const langPlaceholder = metaDiv.querySelector('span:last-of-type');
