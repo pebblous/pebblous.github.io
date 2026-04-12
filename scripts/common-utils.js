@@ -203,7 +203,11 @@ const PebblousComponents = {
                 // Only insert the share-container (not <style>)
                 const container = temp.querySelector('.share-container');
                 placeholder.innerHTML = '';
-                if (container) placeholder.appendChild(container);
+                if (container) {
+                    // Force tight layout regardless of parent flex context
+                    container.style.cssText = 'display:inline-flex !important;gap:0.25rem;width:fit-content;flex:0 0 auto;';
+                    placeholder.appendChild(container);
+                }
                 // Initialize share buttons after HTML is loaded
                 this.initShareButtons();
             }
