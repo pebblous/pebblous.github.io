@@ -300,6 +300,12 @@ function buildHtml({ slug, title, label, updated, sources, related, contentHtml 
 
     <script src="/scripts/common-utils.js?v=${TODAY}"></script>
     <script>
+    // 헤더·푸터 주입
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.PebblousComponents) {
+            PebblousComponents.loadAll();
+        }
+    });
     (function() {
         function initFolding() {
             const content = document.querySelector('.wiki-content');
