@@ -2,8 +2,8 @@
 
 > 소스: report/claude-mythos-preview/ko/index.html
 > 생성일: 2026-04-12
-> KO URL: https://pebblous.com/report/claude-mythos-preview/ko/
-> EN URL: https://pebblous.com/report/claude-mythos-preview/en/
+> KO URL: https://blog.pebblous.ai/report/claude-mythos-preview/ko/
+> EN URL: https://blog.pebblous.ai/report/claude-mythos-preview/en/
 
 ---
 
@@ -38,7 +38,7 @@ Mythos를 막을 수 있는 것도 결국 Mythos뿐이라면,
 DataGreenhouse — 에이전트와 평가 환경이 물리적으로 격리된 합성 데이터 공간.
 Anthropic이 Glasswing으로 구현한 것, 그리고 저희가 데이터 품질 검증에 적용하는 원리는 같습니다.
 
-전체 분석 보기 → https://pebblous.com/report/claude-mythos-preview/ko/
+전체 분석 보기 → https://blog.pebblous.ai/report/claude-mythos-preview/ko/
 
 #페블러스 #합성데이터 #데이터클리닉 #데이터품질 #데이터저널리즘 #AI안전 #사이버보안 #제로데이 #Anthropic
 
@@ -58,7 +58,7 @@ Anthropic이 Claude Mythos Preview를 발표했습니다.
 프로메테우스는 신에게서 불을 훔쳐 인간에게 줬습니다.
 Anthropic은 불을 만들고, 갖고 있기로 했습니다.
 
-https://pebblous.com/report/claude-mythos-preview/ko/
+https://blog.pebblous.ai/report/claude-mythos-preview/ko/
 
 #페블러스 #데이터저널리즘 #AI안전 #사이버보안
 
@@ -88,7 +88,7 @@ Mythos를 막을 수 있는 방패도 결국 Mythos 수준의 AI일 것입니다
 저희는 이 질문을 Prometheus 신화의 프레임으로 분석했습니다.
 그리고 평가 환경의 물리적 격리 — DataGreenhouse와의 연결 고리도요.
 
-전체 분석 보기 → https://pebblous.com/report/claude-mythos-preview/ko/
+전체 분석 보기 → https://blog.pebblous.ai/report/claude-mythos-preview/ko/
 
 여러분은 Anthropic의 선택이 옳다고 생각하시나요?
 
