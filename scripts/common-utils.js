@@ -193,7 +193,17 @@ const PebblousComponents = {
             const html = await response.text();
             const placeholder = document.getElementById('share-buttons-placeholder');
             if (placeholder) {
-                placeholder.innerHTML = html;
+                // Extract <style> and move to <head> to prevent flex layout interference
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                const styleEl = temp.querySelector('style');
+                if (styleEl) {
+                    document.head.appendChild(styleEl);
+                }
+                // Only insert the share-container (not <style>)
+                const container = temp.querySelector('.share-container');
+                placeholder.innerHTML = '';
+                if (container) placeholder.appendChild(container);
                 // Initialize share buttons after HTML is loaded
                 this.initShareButtons();
             }
