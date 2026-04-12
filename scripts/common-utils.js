@@ -1350,7 +1350,7 @@ const PebblousBreadcrumbs = {
         const categoryName = this.getCategoryName(category);
 
         nav.innerHTML = `
-            <div class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest px-5 py-2 rounded-full" style="color: var(--accent-color, #F86825); background: rgba(248, 104, 37, 0.12);">
+            <div class="hero-breadcrumb-pill inline-flex items-center gap-1.5 font-semibold uppercase tracking-widest px-4 py-1.5 rounded-full" style="color: var(--accent-color, #F86825); background: rgba(248, 104, 37, 0.10);">
                 <a href="/" class="hover:opacity-70 transition-opacity" style="color: inherit; text-decoration: none;">Home</a>
                 <span style="opacity: 0.5;">/</span>
                 <a href="/#${category}" class="hover:opacity-70 transition-opacity" style="color: inherit; text-decoration: none;">${categoryName}</a>
