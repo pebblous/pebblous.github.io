@@ -84,7 +84,9 @@ When this skill is invoked:
    - 이모지 없음, 뉴스 어조 (Warm Expert 아님)
    - 구조: Hook → 기술 설명 → 핵심 질문 → 페블러스 관점 → CTA(블로그 링크)
    - **⛔ OG 이미지(`image/index.png`) 삽입 금지** — 본문용이 아닌 소셜 미리보기 전용 이미지
-   - **⛔ `<table>` 태그 사용 금지** — Medium import 시 표가 무시됨. 원본 기사에 비교표·벤치마크가 있으면 **불릿 리스트**(`<ul><li>`)로 변환하여 핵심 수치를 볼드로 표현
+   - **⛔ `<table>` 태그 사용 금지** — Medium import 시 표가 무시됨. 표 데이터 처리 우선순위:
+     1. **불릿 리스트** (기본) — `<ul><li>`로 변환, 핵심 수치를 볼드로 표현
+     2. **표 이미지 렌더링** (사용자 요청 시) — HTML 테이블을 PNG로 렌더링하여 `sns/image/`에 저장, `<img>`로 삽입. Puppeteer 또는 `generate-og-image.js` 활용
    - **블로그 링크는 원본 기사 주소** — `sns/medium.html` 주소가 아닌 원본 EN 기사(`/en/`) 주소를 CTA에 사용
    - 마지막에 블로그 전문 링크: `**[Read the full analysis →](URL)**`
    - **`sns/medium.html` 자동 생성** (아래 템플릿)
