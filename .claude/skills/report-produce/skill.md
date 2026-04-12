@@ -2,7 +2,7 @@
 name: report-produce
 description: >
   심층조사 보고서 기획부터 퍼블리싱까지 완전 자동화. 주제를 받아
-  기획 → 병렬 3트랙 리서치(논문/업계/데이터) → 합성 → HTML 작성 → 퍼블리싱을
+  사전 검토(중복·가치 병렬 판별) → JH 컨펌 → 기획 → 병렬 3트랙 리서치(논문/업계/데이터) → 합성 → HTML 작성 → 퍼블리싱을
   멀티 에이전트로 일괄 실행.
   "심층조사 보고서 써줘", "리포트 작성해줘", "report-produce 실행" 요청 시 이 스킬 사용.
 ---
@@ -25,6 +25,8 @@ Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
 
 | 에이전트 | subagent_type | 역할 | 출력 |
 |---------|--------------|------|------|
+| topic-coverage-checker | Explore | 직·간접 중복 여부 검색 | `_workspace/report/pre_coverage.md` |
+| topic-value-assessor | Explore | 주제 가치 평가 | `_workspace/report/pre_value.md` |
 | report-planner | Explore | 조사 범위·구조 설계 | `_workspace/report/00_plan.md` |
 | arxiv-researcher | Explore | 논문/학술 트랙 | `_workspace/report/02a_arxiv.md` |
 | industry-researcher | Explore | 업계 동향 트랙 | `_workspace/report/02b_industry.md` |
@@ -37,6 +39,13 @@ Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
 
 ```
 [사용자 입력: 주제]
+        ↓ (병렬)
+[Phase Pre] topic-coverage-checker → pre_coverage.md
+            topic-value-assessor   → pre_value.md
+        ↓
+⏸ 결과 요약 → JH 컨펌 대기 (항상 멈춤, 자동 진행 없음)
+        ↓ (승인 시)
+[Phase 0] 준비 (브랜치, 워크스페이스)
         ↓
 [Phase 1] report-planner
         → _workspace/report/00_plan.md
@@ -60,7 +69,87 @@ Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
 
 ## 오케스트레이터 실행 절차
 
+### Phase Pre: 사전 병렬 검토
+
+주제 입력 직후, 두 에이전트를 동시에 스폰:
+
+```python
+Agent(
+  name="topic-coverage-checker",
+  subagent_type="Explore",
+  run_in_background=True,
+  prompt="""
+    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    대화 이력: /workspace/group/conversations/
+
+    주제: [주제]
+
+    다음을 검색하여 직·간접 중복 여부를 판별하라:
+    1. articles.json — 제목·description·tags에서 관련 키워드 검색
+    2. story/, report/ 폴더 — HTML 파일 내 관련 내용 검색
+    3. /workspace/group/conversations/ — 이 주제를 논의한 기록 검색
+
+    출력: _workspace/report/pre_coverage.md
+    형식:
+    ## 중복 판정
+    - 결론: [신규 / 부분 중복 / 직접 중복]
+    - 관련 기사/보고서: (있으면 경로 + 요약)
+    - 관련 대화: (있으면 날짜 + 내용 요약)
+    - 차별화 가능 각도: (부분 중복이면 새로운 접근법 제안)
+  """
+)
+
+Agent(
+  name="topic-value-assessor",
+  subagent_type="Explore",
+  run_in_background=True,
+  prompt="""
+    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+
+    주제: [주제]
+
+    다음 기준으로 주제 가치를 평가하라:
+    1. 타이밍 — 지금 다루기에 적절한가? (트렌드, 뉴스 사이클)
+    2. 페블러스 연결 — DataClinic, AI-Ready Data, 데이터 품질과 접점이 있는가?
+    3. 독자성 — 다른 매체와 차별화된 페블러스만의 시각이 가능한가?
+    4. 깊이 — 심층조사 보고서 분량(5,000자+)을 채울 수 있는가? 아니면 짧은 블로그가 더 적합한가?
+    5. 독자 관심도 — 페블러스 독자(데이터 실무자, AI 관심층)에게 실질적 가치가 있는가?
+
+    출력: _workspace/report/pre_value.md
+    형식:
+    ## 가치 평가
+    - 종합 판정: [강력 추천 / 추천 / 보류 / 비추천]
+    - 타이밍: [평가]
+    - 페블러스 연결: [평가]
+    - 독자성: [평가]
+    - 깊이: [심층보고서 적합 / 일반 블로그 적합 / 짧은 포스트 적합]
+    - 독자 가치: [평가]
+    - 추천 접근법: (어떤 각도로 쓰면 좋은지 1-2줄)
+  """
+)
+```
+
+두 에이전트 완료 후, 오케스트레이터가 결과를 읽고 사용자에게 요약 메시지 전송:
+
+```
+📋 사전 검토 완료 — [주제]
+
+[중복 판정]: 신규 / 부분 중복(관련: ...) / 직접 중복
+[가치 평가]: 강력 추천 / 추천 / 보류
+[추천 형식]: 심층보고서 / 일반 블로그 / 짧은 포스트
+
+→ 진행할까요?
+```
+
+⛔ *반드시 여기서 멈추고 JH 확인을 기다린다. 자동으로 Phase 0을 시작하지 않는다.*
+JH가 "ㅇㅇ", "진행", "go" 등으로 승인하면 Phase 0으로 이동.
+"수정", "보류", "skip" 등이면 그에 따라 처리.
+
+---
+
 ### Phase 0: 준비
+
+JH 승인 후 실행:
 
 ```bash
 mkdir -p /workspace/extra/repos/pebblous.github.io/_workspace/report
@@ -104,7 +193,6 @@ Agent(
 Phase 1 완료 후 동시 실행:
 
 ```python
-# 동시에 3개 스폰
 Agent(
   name="arxiv-researcher",
   subagent_type="Explore",
@@ -225,6 +313,7 @@ Agent(
 
 | 단계 | 실패 | 처리 |
 |------|------|------|
+| 사전 검토 실패 | 에이전트 미응답 | 수동으로 결과 요약 후 JH 확인 요청 |
 | 기획 실패 | planner 미응답 | 주제 기반 직접 기획 후 진행 |
 | 리서치 트랙 1개 실패 | 2개 트랙만 완료 | 실패 트랙 명시 후 합성 진행 |
 | 합성 실패 | synthesizer 미응답 | 3개 트랙 결과 직접 합산 후 진행 |
