@@ -186,7 +186,7 @@ function buildHtml({ slug, title, label, updated, sources, related, contentHtml 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="${label} — 페블러스 위키">
-    <meta name="twitter:site" content="@pebblous">
+    <meta name="twitter:site" content="@pebblous_ai">
 
     <!-- Favicon -->
     <link rel="icon" href="/image/favicon.ico" sizes="any">
@@ -267,7 +267,7 @@ function buildHtml({ slug, title, label, updated, sources, related, contentHtml 
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <!-- 헤더: common-utils.js가 주입 -->
-    <div id="site-header"></div>
+    <div id="header-placeholder"></div>
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
         <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
@@ -296,7 +296,7 @@ function buildHtml({ slug, title, label, updated, sources, related, contentHtml 
     </div>
 
     <!-- 푸터: common-utils.js가 주입 -->
-    <div id="site-footer"></div>
+    <div id="footer-placeholder"></div>
 
     <script src="/scripts/common-utils.js?v=${TODAY}"></script>
     <script>
