@@ -135,6 +135,23 @@ const PebblousComponents = {
             const placeholder = document.getElementById('header-placeholder');
             if (placeholder) {
                 placeholder.innerHTML = html;
+                // Initialize mobile menu toggle
+                const menuBtn = document.getElementById('mobile-menu-btn');
+                const mobileMenu = document.getElementById('mobile-menu');
+                if (menuBtn && mobileMenu) {
+                    menuBtn.addEventListener('click', () => {
+                        const expanded = menuBtn.getAttribute('aria-expanded') === 'true';
+                        menuBtn.setAttribute('aria-expanded', !expanded);
+                        mobileMenu.classList.toggle('hidden');
+                    });
+                    // Close menu when a link is clicked
+                    mobileMenu.querySelectorAll('a').forEach(link => {
+                        link.addEventListener('click', () => {
+                            mobileMenu.classList.add('hidden');
+                            menuBtn.setAttribute('aria-expanded', 'false');
+                        });
+                    });
+                }
             }
         } catch (error) {
             console.error('Error loading header:', error);
