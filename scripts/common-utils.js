@@ -528,9 +528,33 @@ const PebblousPage = {
                     <span class="block font-normal hero-subtitle">${config.subtitle}</span>
                 `;
 
-                // Ensure hero container has internal padding
+                // Inject unified hero-meta-group after h1
                 const heroContainer = h1Element.closest('header');
-                if (heroContainer && !heroContainer.classList.contains('hero-section')) {
+                if (heroContainer) {
+                    // Remove old meta lines and share placeholder
+                    heroContainer.querySelectorAll('p.text-sm, .hero-meta-group, #share-buttons-placeholder').forEach(el => el.remove());
+
+                    // Build meta row
+                    const langPath = isEn ? '../ko/' : '../en/';
+                    const langLabel = isEn ? '한국어' : 'English';
+                    const date = config.publishDate || '';
+                    const publisher = config.publisher || '';
+                    const readTime = heroContainer.textContent.match(/[~약]?\s*\d+\s*분|~\d+\s*min/)?.[0] || '';
+
+                    const metaDiv = document.createElement('div');
+                    metaDiv.className = 'hero-meta-group themeable-muted';
+
+                    let parts = [];
+                    if (date) parts.push(`<span>${date}</span>`);
+                    if (publisher) parts.push(`<span>${publisher}</span>`);
+                    if (readTime) parts.push(`<span>${readTime}</span>`);
+                    parts.push(`<a href="${langPath}" class="text-orange-400 hover:text-orange-300 transition-colors">${langLabel}</a>`);
+                    parts.push(`<span id="share-buttons-placeholder" class="inline-flex items-center"></span>`);
+
+                    metaDiv.innerHTML = parts.join('<span class="meta-sep">|</span>');
+                    heroContainer.appendChild(metaDiv);
+
+                    // Ensure hero container padding
                     heroContainer.style.paddingTop = heroContainer.style.paddingTop || '2.5rem';
                     heroContainer.style.paddingBottom = heroContainer.style.paddingBottom || '2rem';
                     heroContainer.style.paddingLeft = heroContainer.style.paddingLeft || '1.5rem';
