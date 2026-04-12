@@ -200,10 +200,12 @@ const PebblousComponents = {
                 if (styleEl) {
                     document.head.appendChild(styleEl);
                 }
-                // Only insert the share-container (not <style>)
+                // Only insert the share-container (not <style> or <script>)
                 const container = temp.querySelector('.share-container');
                 placeholder.innerHTML = '';
                 if (container) {
+                    // Remove any <script> inside container to prevent flex height bloat
+                    container.querySelectorAll('script').forEach(s => { s.remove(); });
                     // Force tight layout regardless of parent flex context
                     container.style.cssText = 'display:inline-flex !important;gap:0.25rem;width:fit-content;flex:0 0 auto;';
                     placeholder.appendChild(container);
@@ -220,6 +222,13 @@ const PebblousComponents = {
      * Initialize share buttons event listeners
      */
     initShareButtons() {
+        // Localize button titles for EN pages
+        if (document.documentElement.lang === 'en') {
+            document.querySelectorAll('.share-btn[data-title-en]').forEach(btn => {
+                btn.title = btn.dataset.titleEn;
+            });
+        }
+
         const pageUrl = window.location.href;
 
         // Try multiple sources for page title
