@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb/en/">
+    <title>Gemma 4 31B Now Runs on a Single 24GB GPU — Here's What That Means | Pebblous</title>
+    <meta name="description" content="NVIDIA quantized Gemma 4 31B with NVFP4 — 0.25% accuracy loss, 256K context preserved, frontier-level inference on a single RTX 4090. A deep dive into what changed.">
+    <style>
+        body { max-width: 720px; margin: 2rem auto; padding: 0 1rem; font-family: -apple-system, sans-serif; line-height: 1.8; color: #1a1a2e; }
+        h1 { font-size: 2rem; font-weight: 800; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; }
+        img { max-width: 100%; border-radius: 8px; margin: 1.5rem 0; }
+        figcaption { font-size: 0.8rem; color: #64748b; text-align: center; }
+        a { color: #F86825; }
+        .cta { margin-top: 2rem; padding: 1.5rem; border-left: 4px solid #F86825; background: rgba(248,104,37,0.04); border-radius: 0 8px 8px 0; }
+        .footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; font-size: 0.85rem; color: #64748b; }
+    </style>
+</head>
+<body>
+
+<h1>Gemma 4 31B Now Runs on a Single 24GB GPU</h1>
+
+<p>Three days after Google DeepMind released the Gemma 4 family under Apache 2.0, NVIDIA quietly uploaded something to Hugging Face that may matter just as much: an NVFP4-quantized version of the 31B Dense model.</p>
+
+<p>The headline numbers: <strong>0.25% accuracy loss on GPQA Diamond. 256K context window preserved. Everyday inference on a 24GB consumer GPU.</strong> All three hold at the same time.</p>
+
+<p>If Part 1 of our Gemma 4 analysis said the license "opened the door to sovereign AI," this is how you actually walk through it.</p>
+
+<h2>What NVFP4 Actually Does</h2>
+
+<p>NVFP4 is a 4-bit floating-point format with a simple layout: 1 sign bit, 2 exponent bits, 1 mantissa bit. The representable range is approximately -6 to 6 — far too narrow for LLM weights on its own.</p>
+
+<p>The key is dual-level block scaling. Every 16 values share one FP8 scale factor (twice as granular as the competing MXFP4 format's 32-value blocks). An FP32 scalar is then applied globally on top of those FP8 blocks. The effective bit width comes out to 4.5 bits per value, delivering 3.5x memory savings versus FP16 and 1.8x versus FP8.</p>
+
+<p>NVIDIA's Blackwell Tensor Cores handle this block grouping and dynamic scaling at the hardware level. Testing on H100 (Hopper) has also been completed, though peak performance comes from Blackwell.</p>
+
+<h2>The Accuracy Numbers</h2>
+
+<p>Theory means nothing without measurement. Here are NVIDIA's published benchmarks comparing the BF16 original against the NVFP4 quantized version:</p>
+
+<figure>
+    <img src="./image/table-accuracy.png" alt="NVFP4 vs BF16 accuracy comparison — all benchmarks show less than 0.5% loss">
+</figure>
+
+<p>Across every benchmark, the absolute loss is under 0.5% — within the reproducibility margin between human evaluators. The quantization method is PTQ (Post-Training Quantization) using 300,000 CNN DailyMail articles as calibration data. No retraining required.</p>
+
+<h2>VRAM Reality</h2>
+
+<p>The practical question everyone asks: what GPU do I actually need?</p>
+
+<figure>
+    <img src="./image/table-vram.png" alt="VRAM requirements by scenario — RTX 4090 handles everyday inference at 24GB">
+</figure>
+
+<p>For everyday inference with short-to-medium contexts, a single RTX 4090 (24GB) works. For the full 256K context window, you'll want an RTX 5090 (32GB). Datacenter deployments use tensor-parallel 8 across H100s. The important point: frontier-level scientific reasoning on a consumer GPU is now a reality, not a roadmap item.</p>
+
+<h2>What Changed Since Part 1</h2>
+
+<p>Three updates worth noting since our initial Gemma 4 analysis:</p>
+
+<ul>
+    <li><strong>Context window doubled:</strong> 128K → 256K tokens, confirmed on the NVFP4 model card</li>
+    <li><strong>Video support added:</strong> MP4/WebM up to 60 seconds at 1fps, with configurable visual token budgets (70 to 1120)</li>
+    <li><strong>Dual license:</strong> The NVFP4 version ships under NVIDIA Open Model License + Apache 2.0. Commercial deployment is possible, but NVIDIA's terms require separate review</li>
+</ul>
+
+<h2>Running It: Three Lines of Code</h2>
+
+<p>Supported in vLLM v0.17.2rc1 and above:</p>
+
+<pre><code>pip install vllm>=0.17.2rc1
+
+vllm serve nvidia/Gemma-4-31B-IT-NVFP4 \
+  --quantization modelopt \
+  --tensor-parallel-size 1</code></pre>
+
+<p>That's it. Frontier-level inference, locally, with no API dependency.</p>
+
+<h2>The Real Bottleneck Shifts to Data</h2>
+
+<p>With Apache 2.0 removing the legal barrier and NVFP4 removing the hardware barrier, the remaining constraint for sovereign AI infrastructure is data quality. Running a 31B model on-premises is now straightforward — but the quality of what you feed it determines everything: fine-tuning outcomes, RAG accuracy, agent reliability.</p>
+
+<p>The model and the hardware are ready. The question is whether your data is.</p>
+
+<div class="cta">
+    <strong>Read the full technical analysis on Pebblous Blog →</strong><br>
+    <a href="https://blog.pebblous.ai/story/google-gemma-4-nvfp4-report-pb/en/">Gemma 4 31B Runs on a 24GB GPU — A Deep Dive into NVIDIA NVFP4 Quantization</a>
+</div>
+
+<div class="footer">
+    <p>Pebblous builds AI-Ready data infrastructure for the Physical AI era.</p>
+    <p><a href="https://www.pebblous.ai">pebblous.ai</a> · <a href="https://dataclinic.ai">DataClinic</a> · <a href="https://pebbloscope.ai">Pebbloscope</a></p>
+</div>
+
+</body>
+</html>
