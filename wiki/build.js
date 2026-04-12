@@ -300,10 +300,13 @@ function buildHtml({ slug, title, label, updated, sources, related, contentHtml 
 
     <script src="/scripts/common-utils.js?v=${TODAY}"></script>
     <script>
-    // 헤더·푸터 주입
-    document.addEventListener('DOMContentLoaded', function() {
+    // 헤더·푸터 주입 + 로고 초기화
+    document.addEventListener('DOMContentLoaded', async function() {
         if (window.PebblousComponents) {
-            PebblousComponents.loadAll();
+            await PebblousComponents.loadAll();
+        }
+        if (window.PebblousTheme) {
+            PebblousTheme.init('light');
         }
     });
     (function() {
