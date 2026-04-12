@@ -66,7 +66,7 @@ function buildSidebar(currentSlug) {
 
   return `
             <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
-                <p class="text-xs font-bold uppercase tracking-widest themeable-text-muted mb-3 px-0">블록체인 위키</p>
+                <p class="text-xs font-bold uppercase tracking-widest themeable-text-muted mb-3 px-0">페블러스 위키</p>
 
                 <!-- 검색 -->
                 <div class="relative mb-4">
@@ -171,13 +171,13 @@ function buildHtml({ slug, title, label, updated, sources, related, contentHtml 
     <meta name="copyright" content="(주)페블러스 데이터 커뮤니케이션">
     <meta name="robots" content="index, follow">
 
-    <title>${label} — 블록체인·디지털자산 위키 | 페블러스</title>
-    <meta name="description" content="${label}에 대한 블록체인·디지털자산 위키. 페블러스 학습 자료.">
+    <title>${label} — 페블러스 위키 | 페블러스</title>
+    <meta name="description" content="${label}에 대한 페블러스 위키. 페블러스 학습 자료.">
 
     <link rel="canonical" href="${canonical}">
 
     <!-- Open Graph -->
-    <meta property="og:title" content="${label} — 블록체인·디지털자산 위키">
+    <meta property="og:title" content="${label} — 페블러스 위키">
     <meta property="og:type" content="article">
     <meta property="og:url" content="${canonical}">
     <meta property="og:site_name" content="Pebblous Blog">
@@ -185,7 +185,7 @@ function buildHtml({ slug, title, label, updated, sources, related, contentHtml 
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="${label} — 블록체인·디지털자산 위키">
+    <meta name="twitter:title" content="${label} — 페블러스 위키">
     <meta name="twitter:site" content="@pebblous">
 
     <!-- Favicon -->
