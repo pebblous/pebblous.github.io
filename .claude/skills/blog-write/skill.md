@@ -156,13 +156,15 @@ PebblousPage.init({
 
 **허용:** 해당 포스트에만 필요한 고유 컴포넌트 (`.timeline-box`, `.weapon-card` 등)는 인라인 `<style>`에 작성 가능.
 
-### CSS 로드 순서 (정확히 이 순서)
+### CSS 로드 순서 (정확히 이 순서 — CLAUDE.md 정본)
 
 ```html
 <link rel="stylesheet" href="/css/theme-variables.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/styles/tailwind-build.css?v=YYYYMMDD">
 <link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
-<link rel="stylesheet" href="/styles/tailwind-build.css">
 ```
+
+> Tailwind utility → common-styles 커스텀 순서. common-styles가 나중에 로드되어야 Tailwind를 오버라이드 가능.
 
 ### 표준 클래스명
 
