@@ -1,6 +1,6 @@
-# 블록체인·디지털자산 위키
+# 위키
 
-JH의 강의자료 4개를 기반으로 구축한 지식 베이스.
+JH의 강의자료 및 리서치 문서를 기반으로 구축한 지식 베이스.
 
 ## 소스 목록
 | 파일 | 출처 | 내용 |
@@ -30,6 +30,18 @@ JH의 강의자료 4개를 기반으로 구축한 지식 베이스.
 
 ### 응용
 - [blockchain-applications.md](blockchain-applications.md) — 공급망, 의료, 해외송금, 디지털신원 등 산업 응용
+
+---
+
+## AI·데이터
+
+### 에이전틱 AI & 데이터 관리
+- [agentic-data-management.md](agentic-data-management.md) — 에이전틱 데이터 관리: 데이터 에이전트 Get/Prep/Put, 액티브 메타데이터, N-tier 아키텍처 (Gartner G00852862)
+- [unstructured-data-management.md](unstructured-data-management.md) — 비정형 데이터 관리: RAG 파이프라인, 품질·거버넌스, Pebblous 공식 인용 (Gartner G00821728)
+- [hype-cycle-agentic-ai.md](hype-cycle-agentic-ai.md) — AI 에이전트 하이프사이클 2026: 31개 혁신, 채택 통계, 전략적 시사점 (Gartner G00842058)
+
+### Pebblous
+- [pebblous-strategic-overview.md](pebblous-strategic-overview.md) — Pebblous 전략 개요: Data Greenhouse, 특허 포트폴리오, ROI 사례 (내부 기밀)
 
 ---
 
