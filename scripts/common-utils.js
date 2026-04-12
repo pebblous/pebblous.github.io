@@ -523,6 +523,18 @@ const PebblousUI = {
 // ========================================
 const PebblousPage = {
     /**
+     * Load Gowun Batang serif font for subtitles (if not already loaded)
+     */
+    loadSubtitleFont() {
+        if (!document.querySelector('link[href*="Gowun+Batang"]')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap';
+            document.head.appendChild(link);
+        }
+    },
+
+    /**
      * Apply static page configuration
      * @param {object} config - Page configuration object
      */
@@ -658,6 +670,9 @@ const PebblousPage = {
     },
 
     async init(config) {
+        // Load subtitle serif font
+        this.loadSubtitleFont();
+
         // Apply default theme immediately (before component fetch) to prevent FOUC
         const defaultTheme = config.defaultTheme || 'light';
         document.documentElement.setAttribute('data-theme', defaultTheme);
