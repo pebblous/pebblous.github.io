@@ -532,15 +532,35 @@ const PebblousPage = {
                 const heroContainer = h1Element.closest('header');
                 if (heroContainer) {
                     // Remove old meta lines and share placeholder
-                    heroContainer.querySelectorAll('p.text-sm, .hero-meta-group, #share-buttons-placeholder').forEach(el => el.remove());
+                    heroContainer.querySelectorAll('p.text-sm, .hero-meta-group, #share-buttons-placeholder, div[id="share-buttons-placeholder"]').forEach(el => el.remove());
 
-                    // Build meta row
+                    // Date
+                    const date = config.publishDate || '';
+
+                    // Publisher
+                    const publisher = config.publisher || '';
+
+                    // ReadTime: from config.wordCount or count main text
+                    let readTime = '';
+                    if (config.wordCount) {
+                        const mins = Math.max(1, Math.ceil(config.wordCount / 500));
+                        readTime = isEn ? `~${mins} min` : `~${mins}분`;
+                    } else {
+                        const mainEl = document.querySelector('main');
+                        if (mainEl) {
+                            const textLen = mainEl.textContent.replace(/\s+/g, '').length;
+                            if (textLen > 0) {
+                                const mins = Math.max(1, Math.ceil(textLen / 500));
+                                readTime = isEn ? `~${mins} min` : `~${mins}분`;
+                            }
+                        }
+                    }
+
+                    // Language switch link
                     const langPath = isEn ? '../ko/' : '../en/';
                     const langLabel = isEn ? '한국어' : 'English';
-                    const date = config.publishDate || '';
-                    const publisher = config.publisher || '';
-                    const readTime = heroContainer.textContent.match(/[~약]?\s*\d+\s*분|~\d+\s*min/)?.[0] || '';
 
+                    // Build meta row
                     const metaDiv = document.createElement('div');
                     metaDiv.className = 'hero-meta-group themeable-muted';
 
@@ -548,17 +568,36 @@ const PebblousPage = {
                     if (date) parts.push(`<span>${date}</span>`);
                     if (publisher) parts.push(`<span>${publisher}</span>`);
                     if (readTime) parts.push(`<span>${readTime}</span>`);
-                    parts.push(`<a href="${langPath}" class="text-orange-400 hover:text-orange-300 transition-colors">${langLabel}</a>`);
-                    parts.push(`<span id="share-buttons-placeholder" class="inline-flex items-center flex-shrink-0"></span>`);
-                    metaDiv.innerHTML = parts.join('<span class="meta-sep">|</span>');
-                    heroContainer.appendChild(metaDiv);
 
-                    // Ensure hero container padding
-                    heroContainer.style.paddingTop = heroContainer.style.paddingTop || '2.5rem';
-                    heroContainer.style.paddingBottom = heroContainer.style.paddingBottom || '2rem';
-                    heroContainer.style.paddingLeft = heroContainer.style.paddingLeft || '1.5rem';
-                    heroContainer.style.paddingRight = heroContainer.style.paddingRight || '1.5rem';
-                    heroContainer.style.borderRadius = heroContainer.style.borderRadius || '0.75rem';
+                    // Language link with existence check
+                    const langLink = document.createElement('a');
+                    langLink.href = langPath;
+                    langLink.className = 'text-orange-400 hover:text-orange-300 transition-colors';
+                    langLink.textContent = langLabel;
+                    // Check if alt-lang page exists; if not, redirect to ko
+                    fetch(langPath, { method: 'HEAD' }).then(r => {
+                        if (!r.ok) {
+                            langLink.href = isEn ? langPath : '../ko/';
+                            langLink.title = isEn ? 'Korean version' : '한국어 버전만 제공';
+                        }
+                    }).catch(() => {});
+
+                    parts.push('__LANG__');
+                    metaDiv.innerHTML = parts.join('<span class="meta-sep">|</span>') + '<span id="share-buttons-placeholder" class="inline-flex items-center flex-shrink-0" style="margin-left:0.375rem;"></span>';
+
+                    // Replace __LANG__ placeholder with actual link element
+                    const langPlaceholder = metaDiv.querySelector('span:last-of-type');
+                    // Find the text node with __LANG__
+                    const walker = document.createTreeWalker(metaDiv, NodeFilter.SHOW_TEXT);
+                    while (walker.nextNode()) {
+                        if (walker.currentNode.textContent.includes('__LANG__')) {
+                            const parent = walker.currentNode.parentNode;
+                            parent.replaceChild(langLink, walker.currentNode);
+                            break;
+                        }
+                    }
+
+                    heroContainer.appendChild(metaDiv);
                 }
             }
         }
