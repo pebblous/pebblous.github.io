@@ -527,13 +527,13 @@ const PebblousUI = {
 // ========================================
 const PebblousPage = {
     /**
-     * Load Gowun Batang serif font for subtitles (if not already loaded)
+     * Load serif fonts for subtitles (Playfair Display for EN, Nanum Myeongjo for KO)
      */
     loadSubtitleFont() {
-        if (!document.querySelector('link[href*="Gowun+Batang"]')) {
+        if (!document.querySelector('link[href*="Playfair+Display"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = 'https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap';
+            link.href = 'https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap';
             document.head.appendChild(link);
         }
     },
