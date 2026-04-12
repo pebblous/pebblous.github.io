@@ -1,77 +1,77 @@
 # SNS 홍보 글: Gemma 4 심층 보고서 — Apache 2.0으로 열린 소버린 AI의 문
 
 > 소스: story/google-gemma-4-report-pb/ko/index.html
-> 생성일: 2026-04-03
+> 생성일: 2026-04-12
 > URL: https://blog.pebblous.ai/story/google-gemma-4-report-pb/ko/
-
----
-
-## Facebook
-
-🌱 좋은 씨앗이 있어야 좋은 작물이 나옵니다.
-
-AI 모델도 마찬가지이죠.
-도메인에 맞는 데이터로 직접 경작할 수 없다면, 결국 남의 밭에서 수확한 걸 빌려 쓰는 셈입니다.
-
-Google DeepMind가 Gemma 4를 Apache 2.0으로 공개했습니다.
-상업 배포, 파인튜닝 파생물, 온프레미스 운영 — 제한이 없습니다.
-
-이번 라인업을 보면:
-▸ E2B / E4B — 스마트폰에서 돌아가는 경량 멀티모달
-▸ 26B MoE — 128개 전문가 중 3.8B만 활성화, 추론 비용 대폭 절감
-▸ 31B Dense — 단일 GPU 최고 품질
-▸ 128K 컨텍스트, 140개 언어
-
-"소버린 AI 인프라"가 구호에서 현실로 가까워지고 있습니다.
-외부 API 없이, 우리 데이터로, 우리 서버에서 운영하는 스마트 온실.
-그 핵심 부품이 하나 더 갖춰진 셈이죠.
-
-여러분의 조직에서 도메인 특화 모델을 직접 경작할 준비가 되셨나요?
-
-👉 https://blog.pebblous.ai/story/google-gemma-4-report-pb/ko/
-
-#페블러스 #Gemma4 #데이터품질 #소버린AI #데이터스토리
 
 ---
 
 ## LinkedIn
 
-🚀 Apache 2.0이 바꾸는 것
+💡 벤치마크보다 중요한 건 라이선스였습니다.
 
-Google DeepMind의 Gemma 4 출시에서 가장 중요한 변화는 아키텍처가 아닙니다.
-라이선스입니다.
+Google DeepMind가 Gemma 4를 Apache 2.0으로 공개했습니다.
+VentureBeat는 "라이선스 변경이 벤치마크보다 더 중요할 수 있다"고 평가했습니다.
 
-이전 Gemma 시리즈는 커스텀 라이선스로 상업적 활용에 제약이 있었습니다.
-Gemma 4는 Apache 2.0 — 파인튜닝, 상업 배포, 온프레미스 운영 모두 제한 없이 허용됩니다.
+그 이유가 있습니다.
 
-모델 패밀리는 네 가지입니다.
-▸ E2B / E4B — 온디바이스 경량 멀티모달 (모바일 구동 가능)
-▸ 26B MoE — 128개 전문가, 3.8B만 활성. 추론 비용이 Dense 대비 크게 낮아집니다.
-▸ 31B Dense — 단일 GPU 환경에서 최고 품질
-▸ 128K 컨텍스트, 140개 언어 네이티브 학습
+🔸 AIME 2026에서 89.2% — Gemma 3 대비 4배 이상의 리즈닝 도약
+🔸 26B MoE는 3.8B 활성 파라미터로 31B Dense에 필적하는 성능
+🔸 E4B 엣지 모델이 이전 세대 27B를 1/6 크기로 추월
+🔸 네이티브 함수 호출, 멀티모달, 256K 컨텍스트 — 4개 모델 전부
 
-이것이 실무에 의미하는 바는 명확합니다.
-외부 API 의존 없이, 도메인 데이터로 직접 파인튜닝하는 사내 AI 인프라 — "Data Greenhouse" 패턴이 이제 오픈 모델로 구현 가능해졌습니다.
+그런데 진짜 변화는 기술이 아닙니다.
 
-DataClinic으로 데이터 품질을 진단하고, Gemma 4로 경작하는 파이프라인.
-그것이 페블러스가 이 출시에 주목하는 이유입니다.
+Apache 2.0은 파인튜닝 결과물의 상업적 배포를 법적 모호함 없이 허용합니다.
+의료, 제조, 금융처럼 데이터 주권이 중요한 산업에서
+자사 데이터로 모델을 경작하고, 그 수확물을 온전히 소유할 수 있다는 의미입니다.
 
-전체 기술 분석 (아키텍처, 벤치마크, 전략적 의미):
-👉 https://blog.pebblous.ai/story/google-gemma-4-report-pb/en/
+씨앗이 진정한 오픈소스일 때, 비로소 자기 땅에서 자기 작물을 키울 수 있습니다.
 
-#Gemma4 #SovereignAI #OpenSourceAI #LLM #MixtureOfExperts #DataGreenhouse #페블러스 #데이터품질 #데이터클리닉 #합성데이터
+페블러스가 4종 모델 아키텍처부터 파인튜닝 생태계, 소버린 Data Greenhouse 구현까지 정리한 심층 보고서입니다.
+
+https://blog.pebblous.ai/story/google-gemma-4-report-pb/ko/
+
+#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘 #Gemma4 #오픈소스AI #소버린AI #LLM
 
 ---
 
 ## Twitter/X
 
-🌱 Gemma 4의 핵심은 아키텍처가 아닙니다. Apache 2.0 라이선스입니다.
+Google이 Gemma 4를 Apache 2.0으로 풀었다.
+AIME 89.2%, 네이티브 함수 호출, 256K 컨텍스트 — 그런데 VentureBeat는 "라이선스가 벤치마크보다 중요하다"고 했다.
 
-파인튜닝, 상업 배포, 온프레미스 — 제한 없음.
-26B MoE로 추론 비용은 낮추고, 128K 컨텍스트로 도메인 특화 가능.
+파인튜닝 결과물을 법적 모호함 없이 상업 배포 가능.
+소버린 AI의 씨앗이 열렸다.
 
-소버린 AI 인프라의 부품이 하나 더 갖춰졌습니다.
+https://blog.pebblous.ai/story/google-gemma-4-report-pb/ko/
 
-→ https://blog.pebblous.ai/story/google-gemma-4-report-pb/ko/
+#Gemma4 #오픈소스AI #페블러스 #소버린AI
 
-#페블러스 #Gemma4 #소버린AI #데이터품질
+---
+
+## Facebook
+
+한 가지 질문입니다.
+
+여러분 회사의 AI 모델을 파인튜닝해서 제품에 넣었습니다.
+그런데 라이선스 약관을 다시 읽어보니, 상업적 배포에 "법적 해석이 필요하다"고 쓰여 있다면요?
+
+이게 지금까지 오픈소스 AI의 현실이었습니다.
+Meta의 Llama는 7억 MAU 제한이 있고, 이전 Gemma도 커스텀 라이선스의 모호한 구간이 있었습니다.
+
+Google DeepMind가 Gemma 4를 Apache 2.0으로 공개했습니다.
+진정한 의미의 오픈소스입니다. 파인튜닝하고, 배포하고, 판매해도 됩니다.
+
+성능도 놀랍습니다.
+AIME 수학 추론에서 89.2%, 이전 세대 대비 4배 이상.
+26B MoE 모델은 3.8B 파라미터만 활성화하면서도 31B Dense급 품질을 냅니다.
+스마트폰에 올라가는 E2B/E4B 모델도 이전 세대 27B를 넘어섰습니다.
+
+페블러스가 4종 모델, 파인튜닝 옵션, 배포 생태계, 소버린 AI 전략까지 정리했습니다.
+
+여러분의 조직에서 AI 모델의 라이선스를 마지막으로 확인한 건 언제인가요?
+
+https://blog.pebblous.ai/story/google-gemma-4-report-pb/ko/
+
+#페블러스 #데이터품질 #오픈소스AI #데이터저널리즘
