@@ -458,7 +458,7 @@ const PebblousUI = {
                     observer.unobserve(entry.target);
                 }
             });
-        }, { threshold: 0.1 });
+        }, { threshold: 0, rootMargin: '0px 0px -40px 0px' });
 
         fadeInCards.forEach(card => {
             observer.observe(card);
