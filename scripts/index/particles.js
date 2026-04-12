@@ -18,7 +18,7 @@
         const area = window.innerWidth * window.innerHeight;
         const refArea = 1920 * 1080;
         const ratio = Math.sqrt(area / refArea); // sqrt for linear scaling
-        const count = Math.max(20, Math.round(100 * ratio));
+        const count = Math.max(40, Math.round(200 * ratio));
         const dist = Math.max(80, Math.round(150 * ratio));
         return { count, dist };
     }
