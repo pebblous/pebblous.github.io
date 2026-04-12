@@ -549,15 +549,9 @@ const PebblousPage = {
                     if (publisher) parts.push(`<span>${publisher}</span>`);
                     if (readTime) parts.push(`<span>${readTime}</span>`);
                     parts.push(`<a href="${langPath}" class="text-orange-400 hover:text-orange-300 transition-colors">${langLabel}</a>`);
+                    parts.push(`<span id="share-buttons-placeholder" class="inline-flex items-center flex-shrink-0"></span>`);
                     metaDiv.innerHTML = parts.join('<span class="meta-sep">|</span>');
                     heroContainer.appendChild(metaDiv);
-
-                    // Share buttons on separate line
-                    const shareDiv = document.createElement('div');
-                    shareDiv.id = 'share-buttons-placeholder';
-                    shareDiv.className = 'flex justify-start';
-                    shareDiv.style.marginTop = '0.75rem';
-                    heroContainer.appendChild(shareDiv);
 
                     // Ensure hero container padding
                     heroContainer.style.paddingTop = heroContainer.style.paddingTop || '2.5rem';
