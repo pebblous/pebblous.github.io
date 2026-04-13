@@ -61,6 +61,8 @@ Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
         → report/[slug]/ko/index.html
         → _workspace/report/04_write_meta.json
         ↓
+⏸ [Phase 4.5] JH 리뷰 — 콘텐츠·각도·톤 컨펌 (자동 진행 없음)
+        ↓ (승인 시)
 [Phase 5] 품질 검증 + 보강
         5-A: content + style review (자기검토, 위반 즉시 수정)
         5-B: text-reinforce (차트/표 앞 설명 문단 보강)
@@ -296,9 +298,31 @@ Agent(
 )
 ```
 
+### Phase 4.5: JH 리뷰 (콘텐츠 컨펌)
+
+⏸ Phase 4 초고 완성 후 반드시 멈추고 JH 리뷰를 요청한다.
+
+사용자에게 다음 정보를 제시:
+
+```
+📝 초고 완성 — [제목]
+
+▸ 경로: report/[slug]/ko/index.html
+▸ 로컬 확인: http://localhost:8000/report/[slug]/ko/
+▸ 분량: ~N자, N개 섹션
+▸ 핵심 각도: [1줄 요약]
+
+리뷰 부탁드립니다. 콘텐츠·각도·톤 확인 후 진행 여부를 알려주세요.
+```
+
+⛔ *자동으로 Phase 5를 시작하지 않는다.* JH가 승인하면 Phase 5로 이동.
+수정 요청이 있으면 해당 내용을 반영한 후 다시 리뷰 요청.
+
+---
+
 ### Phase 5: 품질 검증 + 보강
 
-Phase 4 완료 후, 퍼블리싱 전에 반드시 아래 3단계를 실행한다.
+Phase 4.5 승인 후, 퍼블리싱 전에 반드시 아래 3단계를 실행한다.
 
 #### 5-A: Content + Style Review (자기검토)
 
