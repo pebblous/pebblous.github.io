@@ -26,6 +26,7 @@ const PAGES = [
   { slug: 'unstructured-data-management', file: 'unstructured-data-management.md', title: '📂 비정형 데이터 관리',   label: '비정형 데이터 관리' },
   { slug: 'hype-cycle-agentic-ai',    file: 'hype-cycle-agentic-ai.md',      title: '📈 AI 에이전트 하이프사이클', label: 'AI 에이전트 하이프사이클' },
   { slug: 'pebblous-strategic-overview', file: 'pebblous-strategic-overview.md', title: '🏢 Pebblous 전략 개요',  label: 'Pebblous 전략 개요' },
+  { slug: 'data-quality-iso5259',      file: 'data-quality-iso5259.md',       title: '📐 ISO/IEC 5259 데이터 품질', label: 'ISO/IEC 5259 데이터 품질' },
   { slug: 'log',                      file: 'log.md',                        title: '📋 변경 로그',        label: '변경 로그' },
 ];
 
