@@ -61,10 +61,22 @@ Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
         → report/[slug]/ko/index.html
         → _workspace/report/04_write_meta.json
         ↓
-[Phase 5] blog-publisher
-        → OG 이미지 / articles.json / SEO / git push
+[Phase 5] 품질 검증 + 보강
+        5-A: content + style review (자기검토, 위반 즉시 수정)
+        5-B: text-reinforce (차트/표 앞 설명 문단 보강)
+        5-C: image-reinforce (맥락 이미지 추가)
         ↓
-[완료 보고]
+[Phase 6] 영문화 (단순 번역 금지, 영미권 문화 고려 재작성)
+        → report/[slug]/en/index.html
+        ↓
+[Phase 7] SEO + SNS
+        7-A: seo-check (KO + EN 각각 4계층 검증)
+        7-B: sns-write (LinkedIn/Twitter/Facebook + Medium)
+        ↓
+[Phase 8] blog-publisher
+        → OG 이미지 / articles.json (KO+EN) / git push
+        ↓
+[Phase 9: 완료 보고]
 ```
 
 ## 오케스트레이터 실행 절차
@@ -284,7 +296,86 @@ Agent(
 )
 ```
 
-### Phase 5: 퍼블리싱
+### Phase 5: 품질 검증 + 보강
+
+Phase 4 완료 후, 퍼블리싱 전에 반드시 아래 3단계를 실행한다.
+
+#### 5-A: Content + Style Review (자기검토)
+
+생성된 KO HTML을 읽고 다음을 검증:
+- 표준 스타일 준수 (number-badge h2, fade-in-card, key-insight, themeable-card 등)
+- DOMContentLoaded 미사용, share-buttons-placeholder 미삽입
+- 색상 규칙 (오렌지 단색, 그라데이션/틸 금지)
+- Text-First 원칙 (차트·표·카드 앞에 반드시 설명 문단)
+- 이중 불릿(`<li>·`) 없음
+- Executive Summary에 key-insight 텍스트가 카드보다 앞에 위치
+
+위반 발견 시 직접 수정한 후 진행.
+
+#### 5-B: text-reinforce
+
+```python
+# 스킬: .claude/skills/text-reinforce/SKILL.md
+# 차트/표/카드 앞에 설명 문단이 빠진 곳을 찾아 보강
+```
+
+#### 5-C: image-reinforce
+
+```python
+# 스킬: .claude/skills/image-reinforce/SKILL.md
+# 본문 맥락에 맞는 이미지를 찾아 삽입 (CC 라이선스 또는 자체 생성)
+```
+
+---
+
+### Phase 6: 영문화 (EN 작성)
+
+⛔ 단순 번역 금지 — 영미권 독자 기준으로 재작성.
+
+```python
+Agent(
+  name="report-en-writer",
+  subagent_type="general-purpose",
+  model="opus",
+  prompt="""
+    스킬: .claude/skills/bilingual/SKILL.md
+    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+
+    소스: report/[slug]/ko/index.html (Phase 5 완료본)
+
+    규칙:
+    - 직역 금지 — 영미권 독자가 자연스럽게 읽히는 표현 사용
+    - 한국 맥락의 비유·사례는 글로벌 등가물로 교체
+    - SEO 제목(pageTitle)과 본문 제목(mainTitle) 분리 (docs/title-strategy.md 참조)
+    - articles.json에 EN 항목 등록
+
+    출력: report/[slug]/en/index.html
+  """
+)
+```
+
+---
+
+### Phase 7: SEO + SNS
+
+#### 7-A: seo-check (KO + EN)
+
+```python
+# 스킬: .claude/skills/seo-check/SKILL.md
+# KO와 EN 각각 실행. 4계층 전부 PASS여야 진행.
+```
+
+#### 7-B: sns-write
+
+```python
+# 스킬: .claude/skills/sns-write/SKILL.md
+# LinkedIn + Twitter/X + Facebook + Medium 영문 기사
+# 표가 있으면 Puppeteer로 이미지 렌더링하여 sns/image/에 저장
+```
+
+---
+
+### Phase 8: 퍼블리싱
 
 ```python
 Agent(
@@ -297,16 +388,22 @@ Agent(
     저장소 루트: /workspace/extra/repos/pebblous.github.io/
 
     메타데이터: _workspace/report/04_write_meta.json
+
+    추가 파일:
+    - report/[slug]/en/index.html (EN 버전)
+    - report/[slug]/sns/ (SNS 홍보 글)
   """
 )
 ```
 
-### Phase 6: 완료 보고
+### Phase 9: 완료 보고
 
 사용자에게:
-- 생성된 보고서 경로
-- 블로그 URL (`https://blog.pebblous.ai/report/[slug]/ko/`)
-- articles.json 반영 확인
+- 생성된 보고서 경로 (KO + EN)
+- 블로그 URL (`https://blog.pebblous.ai/report/[slug]/ko/`, `/en/`)
+- articles.json 반영 확인 (KO + EN 2개 항목)
+- SEO 점수 (KO/EN 각각)
+- SNS 파일 경로 (sns/index.md, sns/medium.html)
 - git push / PR 생성 결과
 
 ## 에러 핸들링
@@ -318,4 +415,8 @@ Agent(
 | 리서치 트랙 1개 실패 | 2개 트랙만 완료 | 실패 트랙 명시 후 합성 진행 |
 | 합성 실패 | synthesizer 미응답 | 3개 트랙 결과 직접 합산 후 진행 |
 | 작성 실패 | HTML 생성 안 됨 | 사용자에게 알리고 중단 |
+| 품질 검증 위반 | 표준 미준수 발견 | 직접 수정 후 진행 (중단 불필요) |
+| 영문화 실패 | EN 생성 안 됨 | KO만 먼저 퍼블리싱, EN은 별도 작업으로 분리 |
+| SEO 실패 | 4계층 중 FAIL | 해당 항목 수정 후 재검증 |
+| SNS 실패 | Medium/이미지 생성 오류 | SNS 텍스트만 생성, 이미지는 수동 후처리 |
 | 퍼블리싱 부분 실패 | OG/articles/git 중 일부 | 실패 단계 명시 후 나머지 진행 |
