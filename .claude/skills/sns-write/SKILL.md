@@ -1,6 +1,6 @@
 ---
 name: sns-write
-description: Write SNS promotional posts in Pebblous Warm Expert Tone
+description: Write SNS promotional posts as magazine-style cover articles for blog posts
 argument-hint: "[blog-path or topic] [platform: linkedin|twitter|facebook|all]"
 ---
 
@@ -10,43 +10,42 @@ When this skill is invoked:
 
 2. **Identify source**: If a blog URL or file path is given, read the article to extract key messages.
 
-3. **Write in "Warm Expert Tone"** (따뜻한 전문가 어조):
-   - 합쇼체 기반 + "~이죠" soft transitions
-   - Structure: 역설/질문 → 문제 제기 → 해결책 → 메타포 마무리
-   - Short sentences (one idea per sentence)
-   - Line breaks for visual breathing
+3. **Write in "Mature Expert Tone"** (성숙한 전문가 어조):
+   - 블로그 기사를 소개하는 **커버 기사** — 뉴스/매거진 기사에 가깝다
+   - 합쇼체 기반, 간결한 서술체
+   - 핵심 팩트로 시작 → 기술적 의미 → 페블러스 비즈니스 연결 → 링크
+   - 성숙하고 절제된 어조. 신뢰감 있는 매거진 편집자처럼
 
-4. **Use data-farming metaphors consistently**:
-   - 합성 데이터 생성 → 재배, 경작
-   - 데이터 수집 → 사냥, 채집
-   - Data Greenhouse → 스마트 온실
-   - Edge Case 부족 → 데이터 기근
-   - 고품질 데이터 → 수확물, 작물
+4. **완전 금지 항목**:
+   - 이모지 — 헤드라인, 불릿, 본문 어디에도 사용하지 않음
+   - 데이터 파밍/농업 메타포 (경작, 재배, 수확, 온실, 기근 등)
+   - 가벼운 농담, 감탄사, 과장
+   - 불릿에 이모지 사용 → `▸` 또는 `-` 텍스트 기호만
 
-5. **Emoji rules**:
-   - Headline: 1 emoji max (🌱, 🚀, 💡)
-   - List bullets: 🔸 or ▸ OK
-   - Never mid-sentence, never 3+ consecutive
+5. **페블러스 비즈니스 연결** (기사 말미 1-2문장):
+   - 기사 내용과 관련된 페블러스 제품/사업을 팩트 기반으로 짧게 언급
+   - 자연스럽게 흐름에 녹일 것 — 광고처럼 튀지 않게
+   - 기사 내용과 무관한 제품 언급 금지
 
 6. **Hashtag rules**:
    - **기본 해시태그** (모든 포스트에 포함):
-     `#페블러스 #합성데이터 #페블로스코프 #데이터클리닉 #데이터품질 #데이터스토리 #데이터저널리즘`
+     `#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘`
    - 기본 해시태그 + 주제별 해시태그(2~3개)를 조합
-   - LinkedIn: 기본 + 주제별 = 총 8~10개
-   - Twitter/X: 기본에서 핵심 3~4개 선택 + 주제별 1~2개
-   - Facebook: 해시태그 최소화 (기본 중 3~4개만)
+   - LinkedIn: 기본 + 주제별 = 총 7-8개
+   - Twitter/X: 기본에서 핵심 2 + 주제별 1-2개 = 총 3-4개
+   - Facebook: 해시태그 최소화 (기본 중 3-4개만)
 
 7. **Platform adjustments**:
    - If platform is `all`, write for all 3 platforms in sequence
-   - **LinkedIn**: Professional context, industry trends
-   - **Twitter/X**: Compressed core message, link last
-   - **Facebook**: Extended storytelling, question ending for engagement
+   - **LinkedIn**: 업계 맥락, 첫 문장에 핵심 팩트, 3-4문단
+   - **Twitter/X**: 핵심 팩트 1-2줄 + 의미 1줄, 링크 마지막
+   - **Facebook**: 구체적 숫자/사례로 시작, 3-4문단 확장 서술
 
-7. **Output to console AND file**:
+8. **Output to console AND file**:
    - Display the full output in the conversation (console)
    - Determine the output file path from the source blog path:
      - Pattern: `{blog-parent-dir}/sns/{blog-filename-without-ext}.md`
-     - Example: `project/PhysicalAI/physical-ai.html` → `project/PhysicalAI/sns/physical-ai.md`
+     - Example: `report/kronos-financial-foundation-model/ko/index.html` → `report/kronos-financial-foundation-model/sns/index.md`
    - Create the `sns/` directory if it doesn't exist
    - Write a Markdown file with the following structure:
 
@@ -79,14 +78,14 @@ When this skill is invoked:
    - If a single platform is specified, only include that platform's section
    - If the file already exists, ask the user whether to overwrite or append
 
-8. **Medium article** (platform `medium` or `all`):
+9. **Medium article** (platform `medium` or `all`):
    - **영문** 요약 기사 (~900단어, 5분 읽기)
-   - 이모지 없음, 뉴스 어조 (Warm Expert 아님)
+   - 이모지 없음, 뉴스 어조
    - 구조: Hook → 기술 설명 → 핵심 질문 → 페블러스 관점 → CTA(블로그 링크)
    - **⛔ OG 이미지(`image/index.png`) 삽입 금지** — 본문용이 아닌 소셜 미리보기 전용 이미지
    - **⛔ `<table>` 태그 사용 금지** — Medium import 시 표가 무시됨. 표 데이터 처리 우선순위:
      1. **불릿 리스트** (기본) — `<ul><li>`로 변환, 핵심 수치를 볼드로 표현
-     2. **표 이미지 렌더링** (사용자 요청 시) — HTML 테이블을 PNG로 렌더링하여 `sns/image/`에 저장, `<img>`로 삽입. Puppeteer 또는 `generate-og-image.js` 활용
+     2. **표 이미지 렌더링** (사용자 요청 시) — HTML 테이블을 PNG로 렌더링하여 `sns/image/`에 저장, `<img>`로 삽입
    - **블로그 링크는 원본 기사 주소** — `sns/medium.html` 주소가 아닌 원본 EN 기사(`/en/`) 주소를 CTA에 사용
    - 마지막에 블로그 전문 링크: `**[Read the full analysis →](URL)**`
    - **`sns/medium.html` 자동 생성** (아래 템플릿)

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://blog.pebblous.ai/report/kronos-financial-foundation-model/en/">
+    <title>Kronos Turned Financial Data Into Language — And Beat Every General-Purpose Model | Pebblous</title>
+    <meta name="description" content="Tsinghua's Kronos tokenizes K-line candlesticks into discrete tokens with a 2^20 codebook, achieving RankIC +93% over general-purpose TSFMs. What this means for domain-specific foundation models and data quality.">
+    <style>
+        body { max-width: 720px; margin: 2rem auto; padding: 0 1rem; font-family: -apple-system, sans-serif; line-height: 1.8; color: #1a1a2e; }
+        h1 { font-size: 2rem; font-weight: 800; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; }
+        img { max-width: 100%; border-radius: 8px; margin: 1.5rem 0; }
+        figcaption { font-size: 0.8rem; color: #64748b; text-align: center; }
+        a { color: #F86825; }
+        blockquote { border-left: 3px solid #F86825; padding: 1rem 1.25rem; margin: 1.5rem 0; background: rgba(248,104,37,0.04); border-radius: 0 8px 8px 0; font-style: italic; }
+        blockquote cite { display: block; margin-top: 0.5rem; font-size: 0.85rem; font-style: normal; color: #64748b; }
+        .cta { margin-top: 2rem; padding: 1.5rem; border-left: 4px solid #F86825; background: rgba(248,104,37,0.04); border-radius: 0 8px 8px 0; }
+        .footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; font-size: 0.85rem; color: #64748b; }
+    </style>
+</head>
+<body>
+
+<h1>Kronos Turned Financial Data Into Language — And Beat Every General-Purpose Model</h1>
+
+<p>Google's TimesFM has 500 million parameters and was trained on 100 billion time points across weather, energy, traffic, and economics. When applied to financial data in a zero-shot setting, its R-squared was -2.80%. Worse than random.</p>
+
+<p>Amazon's Chronos fared no better: R-squared of -1.37% on the same financial tasks. These are not bad models. They simply were not designed for financial data, and financial data has its own language.</p>
+
+<p>This is the starting point for Kronos, a financial time-series foundation model developed at Tsinghua University and presented at AAAI 2026. Rather than treating candlestick data as generic numbers, Kronos treats it as domain-specific language — and the results are striking.</p>
+
+<h2>How Kronos Works: K-lines as Tokens</h2>
+
+<p>Large language models convert text into discrete tokens — word fragments mapped to integer indices in a vocabulary. Kronos does the same thing with financial candlesticks (K-lines).</p>
+
+<p>Each K-line consists of six values: Open, High, Low, Close, Volume, and Amount (OHLCVA). Kronos compresses these six continuous values into a single discrete token using Binary Spherical Quantization (BSQ). A 3-layer Transformer autoencoder projects the OHLCVA vector into a latent space, then maps it onto 20 learned hyperplanes to produce a 20-bit binary code. This yields a codebook of 2^20 — roughly one million possible tokens.</p>
+
+<p>The codebook is hierarchical. The upper 10 bits (coarse sub-token) capture the broad structure of price movement — direction, volume level. The lower 10 bits (fine sub-token) encode residual precision — exact positioning of highs and lows, turnover shifts. During prediction, Kronos generates the coarse sub-token first, then conditionally predicts the fine sub-token using cross-attention. This is analogous to how language models might first predict sentence structure, then fill in specific words.</p>
+
+<h2>The Numbers: Domain-Specific Beats General-Purpose</h2>
+
+<p>Kronos was benchmarked against 25 baseline models across four categories: zero-shot TSFMs, full-shot trained models, econometric volatility models, and generative models. Key results:</p>
+
+<ul>
+    <li><strong>RankIC (directional prediction)</strong>: +93% vs best general-purpose TSFM, +87% vs best non-pretrained model</li>
+    <li><strong>MAE (volatility forecasting)</strong>: Kronos-small 0.0384 vs Direct-AR 0.0565 (-32%)</li>
+    <li><strong>Synthetic K-line fidelity</strong>: +22% vs DiffusionTS and TimeVAE</li>
+    <li><strong>Discrete vs continuous ablation</strong>: RankIC 0.0254 vs 0.0149 (+70%), proving the tokenization approach itself drives performance</li>
+</ul>
+
+<h2>Four Model Sizes, MIT Open Source</h2>
+
+<p>Kronos ships as a family of four models:</p>
+
+<ul>
+    <li><strong>Mini</strong>: 4.1M parameters, 2,048 context length — optimized for real-time and ultra-short-term trading</li>
+    <li><strong>Small</strong>: 24.7M parameters, 512 context</li>
+    <li><strong>Base</strong>: 102.3M parameters, 512 context</li>
+    <li><strong>Large</strong>: 499.2M parameters, 512 context — institutional licensing only</li>
+</ul>
+
+<p>Mini, Small, and Base are MIT-licensed on HuggingFace (NeoQuasar organization). The GitHub repository has accumulated 16,400 stars as of April 2026 — surpassing TimesFM (~15,600) and far exceeding Chronos (~4,800). The decision to keep Large behind institutional licensing reflects a familiar commercial open-source tension: build community with free models, monetize with the largest one.</p>
+
+<figure>
+    <img src="./image/table-benchmark.png" alt="Kronos benchmark results: RankIC +93%, synthetic K-line fidelity +22%, discrete vs continuous +70%">
+    <figcaption>Kronos benchmark results against 25 baselines across four evaluation categories.</figcaption>
+</figure>
+
+<h2>Why Financial Data Breaks General Models</h2>
+
+<p>The failure of general-purpose TSFMs on financial data is structural, not accidental. Four reasons emerge consistently from the literature:</p>
+
+<ul>
+    <li><strong>Low signal-to-noise ratio</strong>: Financial time series are noise-dominated. General TSFMs optimized for high-SNR domains (weather, energy) end up learning noise as signal.</li>
+    <li><strong>Strong non-stationarity</strong>: Regime shifts between quantitative easing and tightening periods fundamentally change statistical properties. Fixed patch representations cannot adapt.</li>
+    <li><strong>OHLCVA multivariate constraints</strong>: High must exceed Low. Close must fall between them. General models that treat each variable independently violate these structural constraints.</li>
+    <li><strong>Higher-order dependencies</strong>: Bollinger Band breakouts, death crosses, head-and-shoulder patterns form across multiple K-lines. Simple continuous-value patches cannot capture these multi-step patterns.</li>
+</ul>
+
+<h2>The Key Question: What Happens to the Codebook When Data Quality Fails?</h2>
+
+<p>Here is where the analysis gets uncomfortable. Kronos's BSQ codebook directly reflects the distribution of its training data. If that training data contains noise, outliers, or missing values, the corrupted distribution gets encoded into the codebook itself. Every downstream inference then uses contaminated representations.</p>
+
+<p>The VQ literature has a name for this: Representation Collapse (arXiv:2411.16550). Noisy training data causes only a fraction of the codebook entries to be utilized — the rest become "dead codes." A vocabulary of one million tokens might effectively shrink to a few thousand. The model's representational capacity collapses from within.</p>
+
+<p>Kronos applied rigorous quality filtering — removing illiquid assets, clipping Z-score outliers beyond [-5, 5]. This worked because financial exchange data is centralized and relatively clean. But what about domains where data is messier?</p>
+
+<blockquote>
+    "Through 2026, organizations will abandon 60% of AI projects unsupported by AI-ready data."
+    <cite>— Gartner, February 2026</cite>
+</blockquote>
+
+<h2>From Finance to Manufacturing: The Next Domain Transfer</h2>
+
+<p>The structural parallels between financial and manufacturing time series are surprisingly deep:</p>
+
+<ul>
+    <li>K-line (OHLCVA) maps to sensor time series (temperature, pressure, vibration, current)</li>
+    <li>45+ exchanges map to factory and equipment diversity</li>
+    <li>Price volatility maps to equipment degradation and anomaly signals</li>
+    <li>Candlestick patterns map to equipment health patterns (predictive maintenance)</li>
+    <li>Backtesting data scarcity maps to real failure data scarcity</li>
+</ul>
+
+<figure>
+    <img src="./image/table-domain-transfer.png" alt="Financial to manufacturing domain analogy — K-line to sensor data, exchanges to factories, volatility to equipment degradation">
+    <figcaption>Structural parallels between financial and manufacturing time-series domains.</figcaption>
+</figure>
+
+<p>Yet no manufacturing equivalent of Kronos exists. Siemens announced its Industrial Foundation Model project at Hannover Messe 2025, and the ProcessFM framework proposed the first dedicated approach, but neither has achieved Kronos-level maturity. The bottleneck is not architecture — it is data. Manufacturing sensor data lives in silos across individual factories. Collecting 12 billion observations from 45 exchanges is fundamentally different from collecting the same from 45 factories.</p>
+
+<p>The predictive maintenance market is projected at $10B-$18B by 2026 with a CAGR of 20-30%. The digital twin market is expected to grow from $36.19B (2025) to $180.28B (2030). The demand is there. The data infrastructure is not — yet.</p>
+
+<h2>What This Means for Data Infrastructure</h2>
+
+<p>Kronos demonstrates a paradigm shift in how data quality relates to model performance. In the general-purpose model era, data quality was a "nice to have." In the domain-specific foundation model era, data quality is a component of the model itself — literally encoded into the codebook.</p>
+
+<p>This creates a concrete pipeline: raw domain data flows through quality diagnosis and cleansing (outlier detection, missing value handling, distribution validation), then through synthetic augmentation (generating rare scenarios to fill data gaps), before reaching domain-specific FM training. The upstream stages determine the downstream model's ceiling.</p>
+
+<p>For organizations evaluating domain-specific foundation models — whether in finance, manufacturing, healthcare, or energy — the question is no longer "which architecture?" but "is my data ready?"</p>
+
+<div class="cta">
+    <strong>Read the full technical analysis on Pebblous Blog →</strong><br>
+    <a href="https://blog.pebblous.ai/report/kronos-financial-foundation-model/en/">Kronos Financial Foundation Model: Domain-Specific AI and the New Data Quality Formula</a>
+</div>
+
+<div class="footer">
+    <p>Pebblous builds AI-Ready data infrastructure for the Physical AI era.</p>
+    <p><a href="https://www.pebblous.ai">pebblous.ai</a> · <a href="https://dataclinic.ai">DataClinic</a> · <a href="https://pebbloscope.ai">Pebbloscope</a></p>
+</div>
+
+</body>
+</html>
