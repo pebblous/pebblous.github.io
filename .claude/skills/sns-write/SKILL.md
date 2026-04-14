@@ -37,7 +37,8 @@ When this skill is invoked:
 
 7. **Platform adjustments**:
    - If platform is `all`, write for all 3 platforms in sequence
-   - **LinkedIn**: 업계 맥락, 첫 문장에 핵심 팩트, 3-4문단
+   - **LinkedIn (KO)**: 업계 맥락, 첫 문장에 핵심 팩트, 3-4문단
+   - **LinkedIn (EN)**: 같은 내용의 영문 버전. 직역 금지 — 영미권 독자가 자연스럽게 읽히는 톤으로 재작성. EN 블로그 링크 사용
    - **Twitter/X**: 핵심 팩트 1-2줄 + 의미 1줄, 링크 마지막
    - **Facebook**: 구체적 숫자/사례로 시작, 3-4문단 확장 서술
 
