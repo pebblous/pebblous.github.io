@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://blog.pebblous.ai/report/great-expectations-data-quality/en/">
+    <title>Great Expectations Deep Dive — The First Line of Defense for ML Pipeline Data Quality and Its Limits | Pebblous</title>
+    <meta name="description" content="Why GX dominates structured data validation, what changed in v1.x, and what it cannot see in ML training data.">
+    <style>
+        body { max-width: 720px; margin: 2rem auto; padding: 0 1rem; font-family: -apple-system, sans-serif; line-height: 1.8; color: #1a1a2e; }
+        h1 { font-size: 2rem; font-weight: 800; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; }
+        img { max-width: 100%; border-radius: 8px; margin: 1.5rem 0; }
+        figcaption { font-size: 0.8rem; color: #64748b; text-align: center; }
+        a { color: #F86825; }
+        .cta { margin-top: 2rem; padding: 1.5rem; border-left: 4px solid #F86825; background: rgba(248,104,37,0.04); border-radius: 0 8px 8px 0; }
+        .footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; font-size: 0.85rem; color: #64748b; }
+        .meta { font-size: 0.85rem; color: #64748b; margin-bottom: 2rem; }
+        ul { padding-left: 1.5rem; }
+        li { margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+
+<h1>Great Expectations Deep Dive — The First Line of Defense for ML Pipeline Data Quality and Its Limits</h1>
+
+<p class="meta">Pebblous Data Communication Team · April 14, 2026 · ~5 min read</p>
+
+<h2>The Numbers Behind the Problem</h2>
+
+<p>Google deployed its TFX-based data validation system across 700+ ML pipelines and observed the results over 30 days. The finding: <strong>6% of training runs contained actual data errors</strong> (Schelter et al., MLSys 2019). At Google's scale, one in seventeen training jobs started with contaminated data.</p>
+
+<p>The problem extends to the benchmarks themselves. MIT CSAIL researchers analyzed 10 major ML benchmark datasets including ImageNet and CIFAR-10. The average label error rate was <strong>3.4%</strong>. CIFAR-100 had 6%. QuickDraw reached 10.12% (Northcutt et al., NeurIPS 2021). The datasets we treat as ground truth are themselves corrupted.</p>
+
+<p>Data quality is not a risk. It is a certainty.</p>
+
+<h2>What Great Expectations Does Well</h2>
+
+<p>Great Expectations (GX) is the most mature open-source framework built to address this problem through engineering. It reached v1.0 GA in August 2024, recording 11,398 GitHub stars and approximately 28.35 million monthly PyPI downloads as of April 2026.</p>
+
+<p>GX operates on a straightforward principle: declare what your data should look like, and let the framework validate automatically. The core components:</p>
+
+<ul>
+    <li><strong>Expectations</strong> — assert-style declarations for data properties. 47 core types in v1.x, down from 300+ in v0.x after a deliberate simplification</li>
+    <li><strong>Data Docs</strong> — automated HTML documentation from validation results. The validation logic itself becomes the documentation</li>
+    <li><strong>Checkpoints</strong> — pipeline gates that halt execution when data fails validation. Insert them into Airflow, Dagster, or any orchestrator</li>
+</ul>
+
+<p>For structured data — CSV, Parquet, SQL tables — GX handles schema validation, statistical range checks, null detection, and distribution monitoring at production scale. In an Avanade case study, a GX Checkpoint caught an upstream schema change that was silently zeroing out critical features before the data reached model training.</p>
+
+<h2>The v0.x to v1.x Shift</h2>
+
+<p>Most Korean-language GX tutorials were written for v0.x (2021-2022). Using them with v1.x will produce errors. The key changes:</p>
+
+<ul>
+    <li><strong>Data source connections</strong>: YAML-based configuration replaced entirely by the Python Fluent Datasources API. Block-style Data Sources deleted</li>
+    <li><strong>Checkpoint configuration</strong>: "Validations list" approach replaced with "Expectation Bindings"</li>
+    <li><strong>Expectations reduction</strong>: 300+ types consolidated to 47 core types, with custom extension support</li>
+</ul>
+
+<p>The v1.x API direction has been well-received by the community. But migration friction is real — start from the official v1.x documentation, not legacy tutorials.</p>
+
+<h2>What GX Cannot See</h2>
+
+<p>GX's structural limitation is precisely defined: it operates on structured, tabular data. The following ML training data quality problems are outside its architecture:</p>
+
+<ul>
+    <li><strong>Image visual quality</strong> — blur, occlusion, exposure defects in training images. GX can check file paths exist, but not what the images contain</li>
+    <li><strong>Class imbalance</strong> — detecting whether a 95/5 class split will collapse model performance requires AI-level understanding, not rule-based checks</li>
+    <li><strong>Label contamination</strong> — a "cat" labeled as "dog" in a training set passes every GX Expectation. The metadata is valid. The label is wrong</li>
+    <li><strong>Distribution drift in unstructured data</strong> — sensor data distributions shifting between collection batches require statistical methods beyond column-level checks</li>
+</ul>
+
+<p>These are not edge cases. They are the primary quality problems in ML training data. A pipeline that passes every GX Checkpoint can still produce a model trained on fundamentally flawed data.</p>
+
+<h2>The Tool Landscape in 2025-2026</h2>
+
+<p>Three market shifts are reshaping the competitive landscape:</p>
+
+<ul>
+    <li><strong>WhyLabs acquired by Apple</strong> (January 2025) — the whylogs open-source library continues, but WhyLabs SaaS no longer exists as a standalone product</li>
+    <li><strong>Soda Core v4 adopts Data Contracts</strong> (January 2026) — moving beyond YAML checks to formalize cross-team data quality responsibilities</li>
+    <li><strong>dbt's built-in unit testing strengthened</strong> (2024) — dbt Core 1.8+ has narrowed the gap, making "dbt-only vs. GX" a real community debate</li>
+</ul>
+
+<p>The right framing is not "which tool is best" but "which layer does each tool own." GX owns source ingestion and ML pipeline validation. dbt Tests own SQL transformation verification. Soda handles production monitoring. They are complementary, not competing.</p>
+
+<h2>The Dual-Layer Defense</h2>
+
+<p>An AI-Ready data pipeline must answer two fundamentally different questions:</p>
+
+<ul>
+    <li><strong>Layer 1 (GX):</strong> "Does this data conform to the expected format?" — schema, nulls, value ranges, statistical bounds</li>
+    <li><strong>Layer 2 (DataClinic):</strong> "Is this data suitable for AI training?" — visual quality, class balance, label integrity, distribution health</li>
+</ul>
+
+<p>What GX cannot catch is precisely what DataClinic detects. They are not alternatives — they are different layers of the same defense.</p>
+
+<p>At Pebblous, DataClinic provides the AI-powered diagnostic layer that starts where GX stops. Rule-based validation gates filter data that does not meet format requirements. AI-based diagnostics assess whether the data that passes those gates is actually fit for model training.</p>
+
+<p>The data quality tools market is projected to grow from $2.78 billion in 2025 to $7.39 billion by 2031 (Mordor Intelligence, CAGR 17.7%). That growth reflects a market consensus: data quality engineering is no longer optional infrastructure. It is a competitive requirement.</p>
+
+<div class="cta">
+    <strong>Read the full technical analysis on Pebblous Blog →</strong><br>
+    <a href="https://blog.pebblous.ai/report/great-expectations-data-quality/en/">Great Expectations Deep Dive — The First Line of Defense for ML Pipeline Data Quality and Its Limits</a>
+</div>
+
+<div class="footer">
+    <p>Pebblous builds AI-Ready data infrastructure for the Physical AI era.</p>
+    <p><a href="https://www.pebblous.ai">pebblous.ai</a> · <a href="https://dataclinic.ai">DataClinic</a> · <a href="https://pebbloscope.ai">Pebbloscope</a></p>
+</div>
+
+</body>
+</html>
