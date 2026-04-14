@@ -6,12 +6,13 @@
     <meta name="author" content="Pebblous Data Communication Team">
     <meta name="language" content="English">
     <meta http-equiv="content-language" content="en">
-    <meta name="copyright" content="(주)페블러스 데이터 커뮤니케이션">
-    <meta name="robots" content="noindex, follow">
-    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
 
     <title>Great Expectations Deep Dive — The First Line of Defense for ML Pipeline Data Quality and Its Limits | Pebblous</title>
-    <meta name="description" content="TODO: EN translation pending. See Korean version at /report/great-expectations-data-quality/ko/">
+    <meta name="description" content="A thorough analysis of why GX is the dominant first line of defense for structured data pipelines, and where it falls short for ML training data — covering image quality, class imbalance, and label corruption, based on v1.x.">
+    <meta name="keywords" content="Great Expectations, data quality, MLOps, data validation, open source, machine learning, DataClinic, AI-Ready Data, pipeline, GX v1, Expectations, Data Docs, Checkpoints, dbt, Soda, Pandera">
 
     <link rel="canonical" href="https://blog.pebblous.ai/report/great-expectations-data-quality/en/">
     <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/great-expectations-data-quality/ko/">
@@ -19,48 +20,624 @@
     <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/great-expectations-data-quality/ko/">
 
     <!-- Open Graph -->
-    <meta property="og:type" content="article">
-    <meta property="og:site_name" content="Pebblous">
     <meta property="og:title" content="Great Expectations Deep Dive — The First Line of Defense for ML Pipeline Data Quality and Its Limits">
-    <meta property="og:description" content="What GX can do, what it cannot — and what lies beyond.">
+    <meta property="og:description" content="What GX excels at in structured data validation, what changed in v1.x, and where it falls short for ML training data — image quality, class imbalance, and label corruption.">
+    <meta property="og:type" content="article">
     <meta property="og:url" content="https://blog.pebblous.ai/report/great-expectations-data-quality/en/">
     <meta property="og:image" content="https://blog.pebblous.ai/report/great-expectations-data-quality/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Great Expectations Data Quality Report - Pebblous">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
     <meta name="twitter:title" content="Great Expectations Deep Dive — The First Line of Defense for ML Pipeline Data Quality and Its Limits">
     <meta name="twitter:description" content="What GX can do, what it cannot — and what lies beyond.">
     <meta name="twitter:image" content="https://blog.pebblous.ai/report/great-expectations-data-quality/en/image/index.png">
+    <meta name="twitter:image:alt" content="Great Expectations Data Quality Report - Pebblous">
 
-    <!-- GTM -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
 
-    <!-- Styles -->
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="/css/theme-variables.css?v=20260414">
     <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260414">
     <link rel="stylesheet" href="/styles/common-styles.css?v=20260414">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 </head>
-<body class="themeable-bg themeable-text font-sans antialiased">
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
     <div id="header-placeholder"></div>
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
-        <main class="max-w-[800px] px-4 sm:px-6 mx-auto">
-            <header class="text-left mb-12">
-                <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
-                <p class="themeable-muted text-sm mt-4">
-                    English translation coming soon. <a href="../ko/" class="underline">Read the Korean version</a>.
-                </p>
-            </header>
-            <section class="mb-16">
-                <p class="themeable-text leading-relaxed">
-                    This article is currently available in Korean only. The English translation is in progress.
-                    Please visit <a href="../ko/">the Korean version</a> in the meantime.
-                </p>
-                <!-- TODO: EN translation of report/great-expectations-data-quality/ko/index.html -->
-            </section>
-        </main>
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. The GIGO Era</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. GX Core Concepts</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Strengths vs. Blind Spots</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. MLOps Tool Landscape 2025</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. The Pebblous Perspective</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            "Good models start with good data." This is not a slogan — it is a measurable engineering proposition. Google's data validation system automatically detected real data errors in 6% of training runs across more than 700 ML pipelines (Schelter et al., MLSys 2019). Even ML benchmark datasets we trust as "curated gold standards" contain an average label error rate of 3.4% (Northcutt et al., NeurIPS 2021). Data quality problems are not something that "might happen" — they are something that will happen.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Great Expectations (GX) is the most mature open-source data validation framework built to tackle this problem through engineering. It reached v1.0 GA (General Availability) in August 2024, earning its production-ready designation. As of now, GX has 11,398 GitHub Stars and roughly 28.35 million monthly PyPI downloads. For schema validation, statistical range checks, automated documentation (Data Docs), and pipeline gating on structured data such as CSV, Parquet, and SQL tables, GX has become the industry standard.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Yet GX has structural limitations. Visual quality assessment for unstructured data like images, audio, and point clouds; AI-driven class imbalance diagnosis; and label corruption detection — the real quality problems in ML training data — all fall outside GX's scope. This report honestly dissects what GX does well and what it cannot, and presents a dual defense architecture of GX (rule-based validation gate) + DataClinic (AI-driven ML data diagnosis) that completes a true AI-Ready Data pipeline.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The GIGO Era — Why ML Data Quality Matters Now</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        GIGO — Garbage In, Garbage Out. It is one of the oldest principles in computer science, but in the age of deep learning, its implications have taken on an entirely new dimension. When a model with billions of parameters trains on flawed data, it produces errors at a scale commensurate with its size — and with far greater confidence.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">1.1 The Scale of the Problem: Data Quality in Numbers</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The numbers paint a stark picture of how pervasive data quality issues really are.
+                    </p>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">6% error rate in Google's data pipelines</span>: Google deployed a TFX-based data validation system across more than 700 ML pipelines. Over a 30-day observation window, real data errors were detected in 6% of training runs (Schelter et al., MLSys 2019). Even at Google's scale, 1 in 17 training runs starts with corrupted data.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Label errors in benchmark datasets</span>: Northcutt et al. from MIT CSAIL (NeurIPS 2021) analyzed 10 major ML benchmark datasets including ImageNet and CIFAR-10. The average label error rate was 3.4%. CIFAR-100 had 6% (roughly 3,000 errors), and QuickDraw reached 10.12%. Even datasets we consider "curated gold standards" can have 1 in 10 labels wrong.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Time spent on data preparation</span>: A widely cited CrowdFlower (2016) survey found that data scientists spend 60% of their work time on data cleaning. More recent surveys from Anaconda's State of Data Science (2023-2024) show data preparation still accounts for over 45% of total work time. That data prep is the single largest time sink for data scientists is a consistent finding across studies.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Data vs. Model — the data wins</span>: In the Data-Centric AI Competition (2021), hosted by DeepLearning.AI and Landing AI, participants used an identical model architecture and improved only the data. The result? Accuracy jumped from 64.4% to 85.8% — a roughly 33 percentage-point increase. As model architecture competition reaches maturity, the competitive edge now comes from data quality engineering.</span>
+                        </li>
+                    </ul>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Sculley et al. (NIPS 2015) noted in "Hidden Technical Debt in Machine Learning Systems" that the bulk of a real-world ML system is not ML code but data infrastructure, feature engineering, and configuration code. The ML code is the tip of the iceberg — the largest mass beneath it is the data layer.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">1.2 Paradigm Shift: From Model-Centric to Data-Centric</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For years, the ML community raced toward bigger models and more sophisticated architectures. That changed when Andrew Ng launched the Data-Centric AI movement in 2021. The core thesis is simple: systematically improving the data with a fixed model often yields greater performance gains than improving the model with fixed data.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This paradigm shift spawned a new ecosystem of tools — tools that test data quality like code, auto-document validation results, and serve as pipeline gates. Among them, Great Expectations (GX) is the most widely adopted.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">1.3 Why GX Now — What v1.0 GA Means</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Since its debut in 2017, GX had long been known as a "powerful but complex tool." The YAML-based configuration, convoluted DataContext setup, and extensive boilerplate code of v0.x created a steep learning curve. That frustration finally led to the v1.0 GA release on August 22, 2024.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        v1.x completely redesigned the data source connection model around a Python Fluent API. It eliminated YAML configuration and simplified everything into consistent, code-first patterns. The community response has been broadly positive regarding the API direction. v1.x signals that GX has finally entered the stage where it can be used reliably in production. That is why this report is timely.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">GX Core Concepts — Expectations, Data Docs, Checkpoints</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The core idea behind GX is simple. Declare what your data "should look like" in code. GX will then validate it automatically and generate an HTML report of the results. The validation logic is the documentation. This "single source of truth" design is what sets GX apart from other tools.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">2.1 Expectations — Assert Statements for Data</h3>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        Expectations are the basic unit of GX. Just as you use <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded text-sm">assert</code> in unit tests to verify code logic, GX lets you express assertions about data in a declarative style.
+                    </p>
+
+                    <pre class="bg-gray-900 text-green-300 rounded-xl p-6 text-sm overflow-x-auto mb-6"><code>import great_expectations as gx
+
+# Connect to data source (v1.x Fluent API)
+context = gx.get_context()
+data_source = context.data_sources.add_pandas("my_datasource")
+data_asset = data_source.add_dataframe_asset("my_asset")
+
+# Define Expectation Suite
+suite = context.suites.add(gx.ExpectationSuite(name="my_suite"))
+
+# Declare core Expectations
+suite.add_expectation(
+    gx.expectations.ExpectColumnValuesToNotBeNull(column="user_id")
+)
+suite.add_expectation(
+    gx.expectations.ExpectColumnMeanToBeBetween(
+        column="age", min_value=18, max_value=90
+    )
+)
+suite.add_expectation(
+    gx.expectations.ExpectColumnValuesToBeBetween(
+        column="score", min_value=0, max_value=100
+    )
+)</code></pre>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        As of v1.x, the official gallery includes 47 core Expectations. During the v0.x era, more than 300 Expectations had accumulated, but user feedback that "too many options create confusion" led to a redesign in v1.x that retained only the most commonly used types. Writing custom Expectations in Python is also supported, and the community ecosystem enables further extension.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">2.2 Data Docs — Validation Results That Become Documentation</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One of GX's most distinctive features is Data Docs. When you run an Expectation Suite, GX automatically generates the validation results as an HTML document. Which Expectations are defined, whether each validation passed or failed, and what statistical distributions look like — all of it is rendered into a visual report.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This matters for three reasons. First, sharing across teams is easy. Since the output is an HTML file, you can host it on S3 or an internal wiki so that data engineers, ML engineers, and analysts all see the same document. Second, it creates an audit trail. A history of when specific data passed which validation criteria accumulates automatically. Third, it supports regulatory compliance. In finance or healthcare, where you need to submit evidence of data quality checks, Data Docs can serve as that documentation.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">2.3 Checkpoints — Automating Pipeline Gates</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A Checkpoint is the unit that automates Expectation Suite execution. Insert a Checkpoint into an Airflow DAG, Dagster job, or Vertex AI Kubeflow Pipeline, and validation runs automatically before data advances to the next stage. If validation fails, the pipeline halts and alerts are triggered.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            A real-world case from Avanade illustrates this value well. In an ML pipeline consolidating data from multiple sources, an upstream data model change occurred. A GX Checkpoint automatically detected that a key feature's values had collapsed to zero. The pipeline stopped before any stakeholder noticed the problem, preventing corrupted data from entering model training (Avanade Case Study, Great Expectations official blog).
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">2.4 From v0.x to v1.x — Must-Know Changes</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Most GX tutorials in circulation were written for v0.x between 2021 and 2022. If you try to configure v1.x based on a v0.x tutorial, you will inevitably run into errors. Three key changes to know:
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Complete overhaul of data source connections</span>: The v0.x YAML-based datasource configuration was replaced by the Python Fluent Datasources API. Block-style Data Sources were removed entirely.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Checkpoint configuration restructured</span>: The v0.x "Validations list" approach was replaced by "Expectation Bindings" in v1.x.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Databricks environment caveats</span>: When using EphemeralDataContext, <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded text-sm">.sources</code> attribute errors are frequently reported. This reflects API changes in v1.x, and consulting the official v1.x migration guide is essential.</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">2.5 GX Cloud — From Open Source to SaaS</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        GX Cloud is the fully managed SaaS layer built on top of open-source GX. In February 2025, it launched ExpectAI — a feature that generates Expectations automatically from natural-language descriptions of data quality requirements, with initial support for Snowflake environments. The Enterprise plan guarantees 99.5% uptime SLA and includes Slack/PagerDuty alerting, scheduled validation runs, and team collaboration features.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For small teams or individual projects, starting with the open-source version and migrating to Cloud as the team grows or collaboration needs arise is a natural path. This is also GX's open-source-to-enterprise upsell strategy.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What GX Does Well vs. Where It Falls Short — An Honest Assessment</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Adopt GX as a silver bullet, and you will be disappointed within six months. Understanding both its strengths and limitations clearly is the only way to extract its real value. Acknowledging the limits honestly is the first step toward using GX well.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">3.1 Where GX Excels</h3>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Structured data schema and statistical validation</span>: For column types, null ratios, value ranges, and statistical distributions in CSV, Parquet, and SQL tables, GX is dominant. It can validate datasets with millions of rows at speed.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Pipeline gating</span>: Checkpoints allow automatic pipeline halts on validation failure, preventing corrupted data from reaching model training or production.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Automated documentation (Data Docs)</span>: Validation results automatically become HTML documents — a single source of truth for team sharing, audit trails, and regulatory compliance.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Ecosystem integration</span>: Official integrations with Airflow, Dagster, Vertex AI, and dbt are supported. A dedicated Dagster library is also available (currently in legacy mode; v1.x migration recommended).</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Synthetic data statistical validation</span>: GX can automatically verify whether synthetic data generated by tools like DataGreenhouse preserves the original data's per-column mean, standard deviation, value range, and null ratio.</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">3.2 Where GX Falls Short — The Blind Spots in ML Training Data</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In Akande et al.'s survey of data quality tools (arXiv 2406.19614, 2024), only 4 out of 17 tools reviewed were designed specifically for ML. GX was not among them. GX is powerful, but it was never built as a dedicated ML training data tool.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here are the structural limitations in detail:
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b themeable-border">
+                                    <th class="text-left py-3 pr-4 themeable-heading font-semibold">Validation Type</th>
+                                    <th class="text-left py-3 pr-4 themeable-heading font-semibold">GX</th>
+                                    <th class="text-left py-3 themeable-heading font-semibold">Better Tool</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y themeable-border">
+                                <tr>
+                                    <td class="py-3 pr-4 themeable-text">Structured data schema, null, range validation</td>
+                                    <td class="py-3 pr-4 text-green-500 font-semibold">Strength</td>
+                                    <td class="py-3 themeable-muted">—</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4 themeable-text">Pipeline gate (auto-halt on failure)</td>
+                                    <td class="py-3 pr-4 text-green-500 font-semibold">Strength</td>
+                                    <td class="py-3 themeable-muted">—</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4 themeable-text">Auto-documentation, audit trail</td>
+                                    <td class="py-3 pr-4 text-green-500 font-semibold">Strength</td>
+                                    <td class="py-3 themeable-muted">—</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4 themeable-text">Synthetic data distribution validation</td>
+                                    <td class="py-3 pr-4 text-yellow-500 font-semibold">Capable</td>
+                                    <td class="py-3 themeable-muted">—</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4 themeable-text">Image/audio visual quality diagnosis</td>
+                                    <td class="py-3 pr-4 text-red-500 font-semibold">Not supported</td>
+                                    <td class="py-3 themeable-text">DataClinic</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4 themeable-text">AI-driven class imbalance diagnosis</td>
+                                    <td class="py-3 pr-4 text-red-500 font-semibold">Not supported</td>
+                                    <td class="py-3 themeable-text">DataClinic</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4 themeable-text">Automatic label corruption detection</td>
+                                    <td class="py-3 pr-4 text-red-500 font-semibold">Not supported</td>
+                                    <td class="py-3 themeable-text">DataClinic, Cleanlab</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4 themeable-text">Post-serving drift detection</td>
+                                    <td class="py-3 pr-4 text-yellow-500 font-semibold">Weak</td>
+                                    <td class="py-3 themeable-text">Evidently AI, Arize AI</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4 themeable-text">Spark large-scale processing optimization</td>
+                                    <td class="py-3 pr-4 text-yellow-500 font-semibold">Performance issues reported</td>
+                                    <td class="py-3 themeable-muted">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">3.3 Real User Pain Points — The "Abandoned After Six Months" Pattern</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There are recurring churn patterns reported in the GX community. Addressing them honestly rather than glossing over them leads to smarter adoption decisions.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Expectations overload</span>: Creating too many Expectations at once during initial adoption causes a maintenance burden that spirals out of control. You end up with a sprawling list that nobody manages. Start with the 10-20 that actually matter.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">v0 to v1 migration confusion</span>: Multiple cases have been reported of teams getting stuck on API mismatches when trying to configure v1.x based on v0.x tutorials. Always start from the official v1.x documentation.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Spark performance degradation</span>: Cases of count/collect operations taking more than 2x longer on large Spark datasets have been reported. Performance testing before full deployment on Spark is strongly recommended.</span>
+                        </li>
+                    </ul>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <span class="font-semibold">When NOT to use GX:</span> If you already use dbt and don't need source-layer validation, dbt-expectations may be sufficient. If non-technical users are the primary audience, Soda Core has a lower barrier to entry. If all you need is Pandas DataFrame type validation, Pandera is lighter. If post-serving monitoring is the primary objective, Evidently AI or Arize AI is a better fit.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">MLOps Data Quality Tool Landscape 2025 — Where GX Stands</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        When choosing a data quality tool, "Which one is better?" is the wrong question. "Which layer is each tool responsible for?" is the right one. Under the same umbrella of "data quality tools" sit tools with fundamentally different roles.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">4.1 Open-Source Validation Tool Comparison</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The following comparison is based on actual GitHub API metrics as of April 14, 2026.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b themeable-border">
+                                    <th class="text-left py-3 pr-3 themeable-heading font-semibold">Tool</th>
+                                    <th class="text-left py-3 pr-3 themeable-heading font-semibold">Target Data</th>
+                                    <th class="text-left py-3 pr-3 themeable-heading font-semibold">Approach</th>
+                                    <th class="text-left py-3 pr-3 themeable-heading font-semibold">Stars</th>
+                                    <th class="text-left py-3 themeable-heading font-semibold">Responsible Layer</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y themeable-border">
+                                <tr>
+                                    <td class="py-3 pr-3 themeable-text font-semibold">GX</td>
+                                    <td class="py-3 pr-3 themeable-text">Structured (CSV/SQL/Parquet)</td>
+                                    <td class="py-3 pr-3 themeable-text">Python Fluent API, rule-based</td>
+                                    <td class="py-3 pr-3 themeable-text">11.4k</td>
+                                    <td class="py-3 themeable-text">Source ingestion / ML pipeline</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-3 themeable-text font-semibold">dbt Tests</td>
+                                    <td class="py-3 pr-3 themeable-text">Structured SQL</td>
+                                    <td class="py-3 pr-3 themeable-text">SQL declarative</td>
+                                    <td class="py-3 pr-3 themeable-text">12.6k</td>
+                                    <td class="py-3 themeable-text">SQL transformation layer</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-3 themeable-text font-semibold">Soda Core</td>
+                                    <td class="py-3 pr-3 themeable-text">Structured</td>
+                                    <td class="py-3 pr-3 themeable-text">YAML/SodaCL declarative</td>
+                                    <td class="py-3 pr-3 themeable-text">2.3k</td>
+                                    <td class="py-3 themeable-text">Validation / monitoring</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-3 themeable-text font-semibold">Pandera</td>
+                                    <td class="py-3 pr-3 themeable-text">Structured DataFrame</td>
+                                    <td class="py-3 pr-3 themeable-text">Python schema</td>
+                                    <td class="py-3 pr-3 themeable-text">4.3k</td>
+                                    <td class="py-3 themeable-text">Within analysis code</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-3 themeable-text font-semibold">whylogs</td>
+                                    <td class="py-3 pr-3 themeable-text">Structured + semi-structured</td>
+                                    <td class="py-3 pr-3 themeable-text">Statistical profiling</td>
+                                    <td class="py-3 pr-3 themeable-text">2.8k</td>
+                                    <td class="py-3 themeable-text">Serving monitoring</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-3 themeable-text font-semibold">DataClinic</td>
+                                    <td class="py-3 pr-3 themeable-text">Unstructured (images, etc.)</td>
+                                    <td class="py-3 pr-3 themeable-text">AI-driven diagnosis</td>
+                                    <td class="py-3 pr-3 themeable-text">Commercial</td>
+                                    <td class="py-3 themeable-text">ML training data diagnosis</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">4.2 Three Industry Shifts in 2025-2026</h3>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        Three notable changes are reshaping the tool landscape.
+                    </p>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">WhyLabs acquired by Apple in January 2025</span>: WhyLabs Inc.'s commercial operations have ceased. The whylogs open-source library continues to be maintained, but the WhyLabs SaaS product no longer exists. Referring to "WhyLabs" as an active competing commercial tool is now misinformation.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Soda Core v4 adopts Data Contracts (January 2026)</span>: Soda v4 moves beyond simple YAML checks by adopting Data Contracts as a first-class concept — formalizing data quality responsibilities between teams as contractual obligations. The paradigm: the team providing the data guarantees its quality through a contract.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">dbt's built-in unit testing matures (2024)</span>: Since dbt Core 1.8, the built-in unit testing framework has been significantly strengthened. More teams are concluding that "dbt alone is enough," making the GX vs. dbt-expectations choice a real community debate.</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">4.3 Layer-Based Tool Selection Guide</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The following principles can reduce selection confusion.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Validating data at source ingestion</span> → GX</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Post-SQL-transformation validation (dbt ecosystem)</span> → dbt Tests or dbt-expectations</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Accessibility for non-technical users</span> → Soda Core</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Type safety in Python data science workflows</span> → Pandera</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Post-serving drift monitoring</span> → Evidently AI, Arize AI</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">ML training image/unstructured data quality diagnosis</span> → DataClinic</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A common production stack is GX (source ingestion / ML pipeline layer) + dbt Tests (SQL transformation layer) + Soda (continuous production monitoring). Because each tool handles a different layer, they form a complementary relationship rather than a competitive one.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Pebblous Perspective — A Dual Defense with GX + DataClinic</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Once you understand both GX's strengths and its limitations, one question naturally follows: Who handles what GX cannot see — visual defects in images, class imbalance, label corruption, distribution drift?
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">5.1 Two Questions, Two Layers</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        An AI-Ready Data pipeline must answer two fundamentally different questions.
+                    </p>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Layer 1 (GX): "Does this data conform to the expected format?"</span> — Is the schema correct? Are there nulls? Are values within the allowed range? Data that passes the Checkpoint advances to the next layer.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><span class="font-semibold">Layer 2 (DataClinic): "Is this data fit to train an AI?"</span> — Are there visual defects in the images? Is the class distribution severely imbalanced? Is there label corruption? These questions require AI-driven diagnosis.</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What GX cannot catch is precisely what DataClinic detects. The two tools are not competitors — they operate as complementary layers.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">5.2 Dual Defense Architecture</h3>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        In a production AI-Ready Data pipeline, these two layers operate in sequence.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed font-mono text-sm">
+                            [Data Source] → GX Checkpoint<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;├── Schema validation<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;├── Null ratio validation<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;├── Statistical range validation<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;└── Pass → DataClinic Diagnosis<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── AI-driven image quality diagnosis<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── Class imbalance analysis<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── Label corruption detection<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── Pass → ML Pipeline
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">5.3 DataGreenhouse 3-Stage Flow</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        GX also plays a key role in synthetic data generation workflows. After generating synthetic data with DataGreenhouse, GX can automatically verify whether the synthetic data's statistical properties preserve those of the original, and only data that passes validation enters the AI pipeline — a 3-stage flow.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed font-mono text-sm">
+                            DataGreenhouse (synthetic data generation)<br>
+                            → GX Checkpoint (statistical distribution validation)<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;├── Per-column mean/stddev preservation<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;├── Null ratio consistency<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;└── Category distribution preservation<br>
+                            → AI Pipeline
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">5.4 "AI-Ready Data" — Where GX and Pebblous Converge</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        GX's official blog features AI-Ready Data as its central message. "Only good data produces good AI models." This is the same proposition as Pebblous's brand philosophy: "Good models start with good data."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The implication is clear. Understanding GX deeply means understanding the full scope of data quality problems. And the team that knows GX's limits also understands why a layer beyond GX is necessary. DataClinic starts where GX stops.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The data quality tools market is projected to grow from approximately $2.78 billion in 2025 to $7.39 billion by 2031 (Mordor Intelligence, CAGR 17.7%). The MLOps market is expected to reach $16.6 billion by 2030 (Grand View Research, CAGR 40.5%). This growth signals that investing in data quality is shifting from optional to essential.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed">
+                        The GX + DataClinic dual defense is a practical answer to what this era demands for AI-Ready Data pipelines. GX filters data that conforms to the expected format; DataClinic diagnoses whether data is fit for AI. Both questions must be answered for a truly AI-Ready Data pipeline to be complete.
+                    </p>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Frequently Asked Questions</h2>
+                    <div id="faq-container"></div>
+                </section>
+
+            </main>
+        </div>
     </div>
 
     <div id="footer-placeholder"></div>
+
     <script src="/scripts/common-utils.js?v=20260414"></script>
     <script>
         PebblousPage.init({
@@ -72,7 +649,42 @@
             publisher: "Pebblous Data Communication Team",
             defaultTheme: "light",
             articlePath: "report/great-expectations-data-quality/en/",
-            tags: ["Data Quality", "Great Expectations", "MLOps", "Open Source", "Machine Learning", "Data Validation", "AI-Ready Data", "DataClinic", "Pipeline"]
+            tags: ["data quality", "Great Expectations", "MLOps", "open source", "machine learning", "data validation", "AI-Ready Data", "DataClinic", "pipeline"],
+            wordCount: 4200,
+            faqs: [
+                {
+                    question: "How does Great Expectations differ from pytest or unit testing?",
+                    answer: "pytest verifies whether your code logic is correct, while GX verifies whether the shape, distribution, and content of your data are correct. Code is written once and stays the same, but data continuously changes from external systems — which is why a separate validation layer is necessary. GX lets you declare assertions about data itself, such as 'this column must have no nulls' or 'values must range from 0 to 100,' and auto-documents the results. Use pytest to test your code, and GX to test your data."
+                },
+                {
+                    question: "What is the biggest change when migrating from GX v0.x to v1.x?",
+                    answer: "The biggest change is how data sources are connected. The v0.x YAML-based datasource configuration was entirely replaced by the Python-code-first Fluent Datasources API, and Block-style Data Sources were removed completely. The Checkpoint configuration also changed — the v0.x 'Validations list' approach was replaced by 'Expectation Bindings.' If you try to configure v1.x using a v0.x tutorial, you will inevitably encounter errors. Always consult the official v1.x migration guide first."
+                },
+                {
+                    question: "Can GX be used for image data quality validation?",
+                    answer: "Not directly. GX can verify file path existence or metadata columns (file size, resolution as numeric values), but it cannot detect visual quality of image content, focus blur, class label consistency, or class distribution anomalies — these fall outside GX's structural capabilities. To cover this domain, you need an AI-based image quality diagnosis tool like DataClinic. Dividing responsibilities between GX (structured metadata layer) and DataClinic (unstructured content layer) is the practical approach."
+                },
+                {
+                    question: "How does GX Cloud differ from the open-source version?",
+                    answer: "Open-source GX runs on your local machine or your own servers, and you manage all configurations yourself. GX Cloud adds a web UI, ExpectAI (auto-generating Expectations from natural language, launched February 2025), scheduled validation runs, team collaboration, Slack/PagerDuty alert integration, and an Enterprise plan with a 99.5% SLA guarantee. For small teams or individual projects, starting with the open-source version and migrating to Cloud as the team grows or alerting and collaboration needs arise is the natural path."
+                },
+                {
+                    question: "If I already use dbt, do I still need GX?",
+                    answer: "It depends. dbt Tests only work within the SQL transformation workflow, so they cannot validate source-layer data before it enters dbt. Similarly, statistical distribution checks or drift detection on data fed into the ML pipeline after dbt are outside dbt Tests' scope. GX covers exactly these upstream and downstream layers. A common production stack is dbt Tests (transformation success) + GX (source ingestion / ML pipeline layer) + Soda (continuous production monitoring)."
+                },
+                {
+                    question: "How many Expectations does GX have? Can I write custom ones?",
+                    answer: "As of v1.x, the official gallery contains 47 core Expectations. The 300+ Expectations from the v0.x era were redesigned in v1.x based on user feedback, retaining only the most commonly used validation types. Writing custom Expectations in Python is fully supported, and a separate community Expectations ecosystem is also available."
+                },
+                {
+                    question: "How can GX be used for synthetic data quality validation?",
+                    answer: "GX can verify whether synthetic data preserves the statistical properties of the original. Define Expectations for per-column mean, standard deviation, value range, null ratio, and category distribution based on the original data, then validate the synthetic data through the same Checkpoint to automatically confirm distribution preservation. A practical pattern is generating synthetic data with DataGreenhouse, passing it through a GX quality gate, and then feeding it into the AI pipeline — a 3-stage flow."
+                },
+                {
+                    question: "What are the most common mistakes when adopting GX for the first time?",
+                    answer: "Two mistakes are the most common. First, creating too many Expectations at once. As the number of validation rules grows, maintenance burden increases until you end up with a sprawling list nobody manages. Start with the 10-20 that truly matter. Second, trying to configure v1.x based on v0.x tutorials. The API has been completely overhauled, so you must start from the official v1.x documentation."
+                }
+            ]
         });
     </script>
 </body>
