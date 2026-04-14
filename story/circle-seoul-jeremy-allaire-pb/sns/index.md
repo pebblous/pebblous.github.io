@@ -11,7 +11,7 @@
 
 "스테이블코인은 암호화폐가 아닙니다."
 
-2026년 4월 13일 서울. Circle CEO 제레미 알레어([@jerallaire](https://x.com/jerallaire))가 해시드 CEO 사이먼 김([@siaborgor](https://x.com/siaborgor))과의 공개 대담에서 한 말입니다. 같은 날 Circle은 한국 최대 거래소 두 곳과 USDC 파트너십을 발표했습니다.
+2026년 4월 13일 서울. Circle CEO 제레미 알레어([@jerallaire](https://x.com/jerallaire))가 해시드 CEO 사이먼 김([Simon Kim](https://www.facebook.com/kimseojoon/))과의 공개 대담에서 한 말입니다. 같은 날 Circle은 한국 최대 거래소 두 곳과 USDC 파트너십을 발표했습니다.
 
 알레어의 논점은 세 갈래였습니다.
 
@@ -33,7 +33,7 @@ https://blog.pebblous.ai/story/circle-seoul-jeremy-allaire-pb/ko/
 
 "Stablecoins are not cryptocurrency."
 
-On April 13, 2026, Circle CEO Jeremy Allaire ([@jerallaire](https://x.com/jerallaire)) sat down with Hashed CEO Simon Kim ([@siaborgor](https://x.com/siaborgor)) in Seoul for a public conversation. The same day, Circle announced USDC partnerships with South Korea's two largest exchanges.
+On April 13, 2026, Circle CEO Jeremy Allaire ([@jerallaire](https://x.com/jerallaire)) sat down with Hashed CEO Simon Kim ([Simon Kim](https://www.facebook.com/kimseojoon/)) in Seoul for a public conversation. The same day, Circle announced USDC partnerships with South Korea's two largest exchanges.
 
 Allaire's thesis had three pillars.
 
