@@ -111,6 +111,19 @@ tags: [AI, 데이터, 메타데이터, 에이전트]
 
 ---
 
+## Pebblous 연결점
+
+| Gartner 개념 | Pebblous 제품 | 매핑 |
+|---|---|---|
+| 데이터 옵저버빌리티·검증 에이전트 | DataClinic | 데이터 에이전트가 수행하는 자동 검증·품질 진단 기능과 동일 |
+| Data Fabric 기반 액티브 메타데이터 | DataGreenhouse | 데이터 자산의 메타데이터 관리, 품질 규칙, 컨텍스트 생성 |
+| GET/PREP/PUT 다계층 | DataGreenhouse 3-step | 수집(GET)→정제(PREP)→제공(PUT) 구조와 일치 |
+| 에이전트 접지(Grounding) | AADS | Adaptive Agentic Data System이 메타데이터로 에이전트 접지 |
+
+> Gartner가 "먼저 메타데이터, 그 다음 에이전트"를 권고하는 것은 Pebblous가 DataClinic+DataGreenhouse를 AADS의 기반으로 먼저 구축한 전략과 일치한다.
+
+---
+
 ## 참고
 
 - Gartner G00852862 (2026-04-02)
