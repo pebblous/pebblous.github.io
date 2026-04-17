@@ -755,6 +755,36 @@ const PebblousPage = {
 
         // Align TOC top with first content section (after hero)
         this.alignTOC();
+
+        // Record visit to reading history
+        this.recordVisit(config);
+    },
+
+    /**
+     * Record page visit to localStorage reading history
+     * @param {object} config - Page config with articlePath, mainTitle, etc.
+     */
+    recordVisit(config) {
+        if (!config.articlePath || !config.mainTitle) return;
+        const STORAGE_KEY = 'pebblous-reading-history';
+        const path = config.articlePath;
+        const now = new Date().toISOString();
+
+        let history = {};
+        try {
+            history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        } catch (e) { history = {}; }
+
+        const existing = history[path] || {};
+        history[path] = {
+            title: config.mainTitle,
+            date: config.publishDate || '',
+            visits: (existing.visits || 0) + 1,
+            lastVisit: now,
+            firstVisit: existing.firstVisit || now
+        };
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     },
 
     /**

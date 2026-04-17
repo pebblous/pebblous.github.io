@@ -49,6 +49,9 @@
             'stats.lastUpdate': '마지막 업데이트:',
             // Nav
             'nav.stats': '블로그 통계',
+            // Reading History
+            'history.title': '읽은 글',
+            'history.empty': '아직 읽은 글이 없습니다.',
             // Topics
             'topics.title': 'Topics & Keywords'
         },
@@ -92,6 +95,9 @@
             'stats.lastUpdate': 'Last updated:',
             // Nav
             'nav.stats': 'Blog Stats',
+            // Reading History
+            'history.title': 'Reading History',
+            'history.empty': 'No articles read yet.',
             // Topics
             'topics.title': 'Topics & Keywords'
         }
