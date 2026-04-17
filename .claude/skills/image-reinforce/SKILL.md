@@ -67,11 +67,11 @@ Read the HTML post and identify:
 3. Unsplash — **절대 금지**
 
 ### 📌 일반 블로그 포스팅 (blog/, story/, project/)
-1. **Wikimedia Commons** — 가장 안정적. 영구 URL. CC 라이선스. 항상 여기서 먼저 검색
-2. **대상 소스/프로젝트의 실제 이미지** — 논문 figure, 프로젝트 스크린샷, 공식 프레스 이미지
-3. Official product screenshots (Apple Newsroom, NVIDIA newsroom 등)
-4. Open-license technical diagrams
-5. Unsplash — **보조 용도로만**
+1. **대상 소스/프로젝트의 실제 이미지** — 논문 figure, 프로젝트 스크린샷, 공식 프레스 이미지
+2. **Official product screenshots** (Apple Newsroom, NVIDIA newsroom 등)
+3. **Open-license technical diagrams**
+4. **Wikimedia Commons** — 위 소스에서 적절한 이미지가 없을 때 보충용
+5. Unsplash — **절대 금지**
 
 **CRITICAL: URL 사전 검증 (반드시 실행)**
 
