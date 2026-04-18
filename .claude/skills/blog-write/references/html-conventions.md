@@ -15,6 +15,7 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 5. [Executive Summary](#5-executive-summary)
 6. [섹션 구조](#6-섹션-구조)
 7. [PebblousPage.init() 전체](#7-pebblouspage-init-전체)
+8. [KaTeX 수식 렌더링 (선택)](#8-katex-수식-렌더링-선택)
 
 ---
 
@@ -238,3 +239,43 @@ PebblousPage.init({
     tags: ["tag1", "tag2"],
 });
 ```
+
+---
+
+## 8. KaTeX 수식 렌더링 (선택)
+
+수식이 포함된 아티클에만 추가한다. 모든 아티클에 기본 포함하지 않는다.
+
+### head에 추가 (CSS 3종 뒤, common-utils.js 전)
+
+```html
+<!-- KaTeX (수식이 있는 페이지만) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false}
+            ]
+        });"></script>
+```
+
+### 사용법
+
+```html
+<!-- 인라인 수식 -->
+<p>Shannon Entropy는 $H(S) = -\sum_{i} p_i \log_2 p_i$ 로 정의된다.</p>
+
+<!-- 블록 수식 (별도 줄) -->
+<div class="my-6 text-center">
+$$IG(S, A) = H(S) - \sum_{v \in \text{Values}(A)} \frac{|S_v|}{|S|} \cdot H(S_v)$$
+</div>
+```
+
+### 규칙
+
+- 인라인: `$...$` — 문장 안에 수식을 넣을 때
+- 블록: `$$...$$` — 독립된 수식 블록. `<div class="my-6 text-center">` 로 감싸서 여백 확보
+- 기존 `.formula-box` + Unicode 수식이 있는 글에 KaTeX를 적용할 때, `.formula-box`는 유지하고 내부 텍스트만 `$...$` 또는 `$$...$$`로 교체
+- KaTeX CDN 버전은 `0.16.22` 고정 (호환성 보장)

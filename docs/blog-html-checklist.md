@@ -109,6 +109,19 @@
 
 ---
 
+## 수식이 포함된 아티클 (KaTeX)
+
+수식이 있는 경우에만 체크:
+
+- [ ] KaTeX CDN 3줄이 `<head>`에 포함 (CSS + katex.min.js + auto-render.min.js)
+- [ ] 버전 `0.16.22` 고정
+- [ ] 인라인 수식: `$...$`, 블록 수식: `$$...$$`
+- [ ] 블록 수식은 `<div class="my-6 text-center">` 로 감싸기
+- [ ] 기존 `.formula-box` Unicode 수식 → KaTeX `$`/`$$` 구문으로 교체
+- [ ] 로컬 서버에서 수식 렌더링 정상 확인
+
+---
+
 **Related docs** (상세 설명):
 - `docs/blog-creation-workflow.md` — 10단계 작성 프로세스
 - `docs/seo.md` — SEO 4계층 전략
