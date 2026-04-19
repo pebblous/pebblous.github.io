@@ -414,7 +414,163 @@ function build() {
   fs.writeFileSync(indexPath, JSON.stringify(buildSearchIndex(pageDataList), null, 2), 'utf8');
   console.log(`  OK  search-index.json`);
 
-  console.log(`\n✓ 빌드 완료 — ${pageDataList.length}페이지`);
+  console.log(`\n✓ 공개 빌드 완료 — ${pageDataList.length}페이지`);
+
+  // ── Private 페이지 빌드 ──────────────────────────────────────
+  const PRIVATE_SRC = path.join(SRC_DIR, 'private');
+  const PRIVATE_OUT = path.join(__dirname, 'private');
+  if (fs.existsSync(PRIVATE_SRC)) {
+    fs.mkdirSync(PRIVATE_OUT, { recursive: true });
+    const privateFiles = fs.readdirSync(PRIVATE_SRC).filter(f => f.endsWith('.md') && f !== 'index.md');
+    let privateCount = 0;
+
+    // private index (목차)
+    const privateIndexSrc = path.join(PRIVATE_SRC, 'index.md');
+    if (fs.existsSync(privateIndexSrc)) {
+      const raw = fs.readFileSync(privateIndexSrc, 'utf8');
+      const { data: fm, content: mdRaw } = matter(raw);
+      const contentHtml = marked.parse(convertWikiLinks(mdRaw));
+      const html = buildPrivateHtml({
+        slug: 'private',
+        title: fm.title || '🔒 비공개 문서',
+        label: fm.label || '비공개 문서',
+        updated: fmDate(fm.updated || fm.created),
+        contentHtml,
+        password: fm.password || 'pebblous2025',
+      });
+      fs.writeFileSync(path.join(PRIVATE_OUT, 'index.html'), html, 'utf8');
+      console.log(`  🔒 private/index.html`);
+    }
+
+    for (const file of privateFiles) {
+      const srcPath = path.join(PRIVATE_SRC, file);
+      const raw = fs.readFileSync(srcPath, 'utf8');
+      const { data: fm, content: mdRaw } = matter(raw);
+      const slug = file.replace(/\.md$/, '');
+      const contentHtml = marked.parse(convertWikiLinks(mdRaw));
+      const outDir = path.join(PRIVATE_OUT, slug);
+      fs.mkdirSync(outDir, { recursive: true });
+      const html = buildPrivateHtml({
+        slug: `private/${slug}`,
+        title: fm.title || slug,
+        label: fm.label || slug,
+        updated: fmDate(fm.updated || fm.created),
+        contentHtml,
+        password: fm.password || 'pebblous2025',
+      });
+      fs.writeFileSync(path.join(outDir, 'index.html'), html, 'utf8');
+      console.log(`  🔒 private/${slug}/index.html`);
+      privateCount++;
+    }
+    console.log(`\n✓ 비공개 빌드 완료 — ${privateCount}페이지`);
+  }
+}
+
+// ── Private 페이지 HTML 템플릿 ──────────────────────────────────
+function buildPrivateHtml({ slug, title, label, updated, contentHtml, password }) {
+  const canonical = `https://blog.pebblous.ai/wiki/${slug}/`;
+
+  return `<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>${label} — 페블러스 위키 (비공개)</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=${TODAY}">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=${TODAY}">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=${TODAY}">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        .wiki-content h1 { font-size: 2rem; font-weight: 700; color: var(--heading-color); border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem; margin-top: 0; }
+        .wiki-content h2 { font-size: 1.35rem; font-weight: 700; color: var(--heading-color); margin-top: 2.5rem; margin-bottom: 0.75rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border-color); }
+        .wiki-content h3 { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-top: 1.75rem; margin-bottom: 0.5rem; }
+        .wiki-content h4 { font-size: 1rem; font-weight: 600; color: var(--text-secondary); margin-top: 1.25rem; margin-bottom: 0.375rem; }
+        .wiki-content p  { line-height: 1.85; color: var(--text-secondary); margin-bottom: 0.875rem; }
+        .wiki-content a  { color: var(--accent-color); text-decoration: none; }
+        .wiki-content a:hover { text-decoration: underline; }
+        .wiki-content strong { color: var(--text-primary); font-weight: 600; }
+        .wiki-content code { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 6px; font-family: var(--font-mono); font-size: 0.85em; color: var(--accent-color); }
+        .wiki-content pre  { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1rem 1.25rem; overflow-x: auto; margin: 1.25rem 0; }
+        .wiki-content pre code { background: none; border: none; padding: 0; color: var(--text-secondary); font-size: 0.875rem; }
+        .wiki-content table { border-collapse: collapse; width: 100%; margin: 1.25rem 0; font-size: 0.9rem; }
+        .wiki-content th { background: var(--bg-secondary); color: var(--text-primary); padding: 0.625rem 0.875rem; text-align: left; border: 1px solid var(--border-color); font-weight: 600; }
+        .wiki-content td { padding: 0.5rem 0.875rem; border: 1px solid var(--border-color); color: var(--text-secondary); vertical-align: top; }
+        .wiki-content tr:nth-child(even) td { background: var(--bg-secondary); }
+        .wiki-content ul, .wiki-content ol { padding-left: 1.5rem; margin: 0.5rem 0 0.875rem; }
+        .wiki-content li { line-height: 1.85; color: var(--text-secondary); margin-bottom: 0.25rem; }
+        .wiki-content blockquote { border-left: 4px solid var(--accent-color); background: var(--bg-secondary); padding: 0.875rem 1.25rem; margin: 1.25rem 0; border-radius: 0 0.5rem 0.5rem 0; }
+        .wiki-content blockquote p { color: var(--text-primary); margin: 0; }
+        .wiki-content hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
+    </style>
+</head>
+<body class="antialiased content-locked">
+    <!-- Password overlay (표준 양식) -->
+    <div class="password-overlay" id="password-overlay">
+        <div class="password-modal">
+            <div class="password-modal-logo">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+            </div>
+            <h2>KOLAS QMS</h2>
+            <p>페블러스 품질경영 시스템 내부 문서<br><strong>(주)페블러스 - CONFIDENTIAL</strong></p>
+            <form id="password-form">
+                <div class="password-input-group">
+                    <input type="password" id="password-input" placeholder="비밀번호를 입력하세요" autocomplete="off" required>
+                </div>
+                <button type="submit" class="password-submit-btn">입장</button>
+                <p class="password-error-msg" id="password-error">비밀번호가 올바르지 않습니다. 다시 시도해 주세요.</p>
+            </form>
+        </div>
+    </div>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <main class="max-w-[800px] px-4 sm:px-6 mx-auto">
+            <header class="text-left mb-10">
+                <div class="flex items-center gap-2 mb-4">
+                    <a href="/wiki/public/" class="text-xs themeable-text-muted hover:text-orange-400 transition-colors">위키</a>
+                    <span class="text-xs themeable-text-muted">/</span>
+                    <a href="/wiki/private/" class="text-xs themeable-text-muted hover:text-orange-400 transition-colors">비공개</a>
+                    <span class="text-xs themeable-text-muted">/</span>
+                    <span class="text-xs themeable-text-muted">${label}</span>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight">${title}</h1>
+                <p class="text-sm themeable-text-muted">비공개 문서 · 업데이트: ${updated}</p>
+            </header>
+
+            <div class="wiki-content">
+                ${contentHtml}
+            </div>
+        </main>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=${TODAY}"></script>
+    <script src="/scripts/pbls-auth.js?v=${TODAY}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        if (window.PebblousComponents) await PebblousComponents.loadAll();
+        if (window.PebblousTheme) PebblousTheme.init('light');
+    });
+    PebblousAuth.initPageProtection({
+        password: '${password}',
+        sessionKey: 'wiki_private_${slug.replace(/[^a-z0-9]/g, '_')}',
+        pageName: '${label}'
+    });
+    </script>
+</body>
+</html>`;
 }
 
 build();
