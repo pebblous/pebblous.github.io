@@ -175,7 +175,61 @@ PebblousPage.init({
 
 ---
 
-## 7. 안티패턴 (하지 말 것)
+## 7. 제목 → Executive Summary 일관성 규칙
+
+mainTitle이 던진 약속을 Executive Summary가 즉시 이행해야 한다. 제목과 첫 화면이 따로 놀면 독자가 이탈한다.
+
+### 7.1 원칙: 제목의 핵심 주장이 Executive Summary 안에 있어야 한다
+
+| 요소 | 역할 | 예시 |
+|------|------|------|
+| **mainTitle** | 호기심 유발, 핵심 발견 한 줄 | "가장 뛰어난 AI가 가장 적게 공개한다" |
+| **Executive Summary** | mainTitle의 근거를 수치로 제시 | FMTI 58→40, 84% 학습코드 미공개 |
+| **본문 해당 섹션** | 상세 분석 | 5.2 학습 데이터 투명성의 붕괴 |
+
+만약 mainTitle이 "투명성 위기"를 말하는데 Executive Summary에 투명성 관련 수치가 없다면 → **제목과 본문이 단절**된 것. 반드시 수정.
+
+### 7.2 체크리스트
+
+- [ ] mainTitle의 핵심 키워드가 Executive Summary 3문단 안에 등장하는가?
+- [ ] mainTitle이 약속한 "발견"의 근거 수치가 Executive Summary에 있는가?
+- [ ] stat-card(핵심 수치 카드)에 mainTitle과 관련된 지표가 포함되어 있는가?
+- [ ] subtitle의 보조 키워드도 Executive Summary에서 맥락이 설명되는가?
+
+### 7.3 외부 보고서/논문 기반 글의 제목 전략
+
+외부 보고서(Stanford HAI, McKinsey 등)를 다룰 때:
+
+| 규칙 | 이유 |
+|------|------|
+| **mainTitle에 외부 브랜드명 넣지 않는다** | 페블러스의 독자적 관점이 묻힘 |
+| **subtitle에 외부 보고서명을 넣는다** | SEO 키워드 확보 + 출처 명시 |
+| **mainTitle은 페블러스 관점의 발견이어야 한다** | 단순 요약이 아닌 해석을 약속 |
+| **페블러스/DataClinic 언급은 본문에서만** | 제목에 넣으면 독자층이 좁아짐 |
+
+```
+✅ 좋은 예:
+mainTitle: "가장 뛰어난 AI가 가장 적게 공개한다"
+subtitle: "Stanford HAI AI Index 2026 핵심 해설"
+
+❌ 나쁜 예:
+mainTitle: "AI의 지도를 펼치다"             ← 모호, 클릭 이유 없음
+mainTitle: "Stanford HAI AI Index 2026 분석" ← 정보형, 후킹 없음
+mainTitle: "DataClinic 관점에서 본 AI Index" ← 독자층 축소
+```
+
+### 7.4 교훈 사례: HAI AI Index 2026
+
+- **변경 전**: mainTitle "AI의 지도를 펼치다" / subtitle "Stanford HAI AI Index 2026이 말하는 것"
+- **문제**: 시적이지만 모호. Executive Summary에 제목과 직결되는 수치 없음
+- **변경 후**: mainTitle "가장 뛰어난 AI가 가장 적게 공개한다" / subtitle "Stanford HAI AI Index 2026 핵심 해설"
+- **보강**: Executive Summary에 FMTI 58→40, 84% 학습코드 미공개 문단 추가 + stat-card 추가
+
+---
+
+## 8. 안티패턴 (하지 말 것)
+
+> 7번의 제목→Exec Summary 단절도 안티패턴에 해당한다.
 
 | 안티패턴 | 문제 | 개선 |
 |----------|------|------|
@@ -188,7 +242,7 @@ PebblousPage.init({
 
 ---
 
-## 8. UrbanGPT 사례 분석 — CTR 21-55%의 비밀
+## 9. UrbanGPT 사례 분석 — CTR 21-55%의 비밀
 
 GSC 데이터 기반 분석 (2026-03 기준):
 
