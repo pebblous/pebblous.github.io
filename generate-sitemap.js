@@ -23,12 +23,29 @@ const SITEMAP_FILE = path.join(__dirname, 'sitemap.xml');
 const articlesData = JSON.parse(fs.readFileSync(ARTICLES_FILE, 'utf8'));
 const articles = articlesData.articles || [];
 
+// Non-HTML file extensions and partial HTML paths to exclude from sitemap
+// These cause "Crawled - currently not indexed" in GSC
+const EXCLUDED_PATH_PATTERNS = [
+    /\.json$/i,
+    /\.owl$/i,
+    /\.ttl$/i,
+    /\.pdf$/i,
+    /\.xml$/i,
+    /^components\//i,   // partial HTML (header.html, footer.html, etc.)
+];
+
+function isExcludedPath(path) {
+    return EXCLUDED_PATH_PATTERNS.some(pattern => pattern.test(path));
+}
+
 // Filter: only published, non-external, non-locked articles
 // locked: true → password-protected/noindex pages (IR confidential, etc.)
+// Also exclude non-HTML resources (json, owl, ttl, pdf, xml, components/)
 const publishedArticles = articles.filter(article =>
     article.published === true &&
     article.external !== true &&
-    article.locked !== true
+    article.locked !== true &&
+    !isExcludedPath(article.path || '')
 );
 
 // Sort by date (newest first)
@@ -70,17 +87,6 @@ xml += `
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-  </url>
-`;
-
-// Add RSS feed
-xml += `
-  <!-- RSS Feed -->
-  <url>
-    <loc>${SITE_URL}/rss.xml</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
   </url>
 `;
 
@@ -143,7 +149,7 @@ xml += `
 fs.writeFileSync(SITEMAP_FILE, xml, 'utf8');
 
 console.log('✅ Sitemap generated successfully!');
-console.log(`📊 Total URLs: ${publishedArticles.length + 2}`);
+console.log(`📊 Total URLs: ${publishedArticles.length + 1}`);
 console.log(`📝 Published articles: ${publishedArticles.length}`);
 console.log(`📅 Last updated: ${new Date().toISOString()}`);
 console.log(`📄 Sitemap location: ${SITEMAP_FILE}`);

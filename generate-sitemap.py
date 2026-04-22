@@ -12,6 +12,7 @@ Generates sitemap.xml from articles.json
 """
 
 import json
+import re
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -81,10 +82,27 @@ def main():
             print("⚠️ Warning: No articles found in articles.json", file=sys.stderr)
             sys.exit(1)
 
+        # Non-HTML file extensions and partial HTML paths to exclude from sitemap
+        # These cause "Crawled - currently not indexed" in GSC
+        EXCLUDED_PATH_PATTERNS = [
+            re.compile(r'\.json$', re.IGNORECASE),
+            re.compile(r'\.owl$', re.IGNORECASE),
+            re.compile(r'\.ttl$', re.IGNORECASE),
+            re.compile(r'\.pdf$', re.IGNORECASE),
+            re.compile(r'\.xml$', re.IGNORECASE),
+            re.compile(r'^components/', re.IGNORECASE),
+        ]
+
+        def is_excluded_path(path):
+            return any(p.search(path) for p in EXCLUDED_PATH_PATTERNS)
+
         # Filter: only published, non-external articles
+        # Also exclude non-HTML resources (json, owl, ttl, pdf, xml, components/)
         published_articles = [
             article for article in articles
-            if article.get('published') is True and article.get('external') is not True
+            if article.get('published') is True
+            and article.get('external') is not True
+            and not is_excluded_path(article.get('path', ''))
         ]
 
         print(f"✅ Found {len(published_articles)} published articles (out of {len(articles)} total)")
@@ -110,18 +128,6 @@ def main():
             f'    <lastmod>{today}</lastmod>',
             '    <changefreq>daily</changefreq>',
             '    <priority>1.0</priority>',
-            '  </url>',
-            ''
-        ])
-
-        # Add RSS feed
-        xml_lines.extend([
-            '  <!-- RSS Feed -->',
-            '  <url>',
-            f'    <loc>{SITE_URL}/rss.xml</loc>',
-            f'    <lastmod>{today}</lastmod>',
-            '    <changefreq>daily</changefreq>',
-            '    <priority>0.8</priority>',
             '  </url>',
             ''
         ])
@@ -196,7 +202,7 @@ def main():
 
         # Success summary
         print('✅ Sitemap generated successfully!')
-        print(f'📊 Total URLs: {len(published_articles) + 2}')
+        print(f'📊 Total URLs: {len(published_articles) + 1}')
         print(f'📝 Published articles: {len(published_articles)}')
         print(f'📅 Last updated: {datetime.now().isoformat()}')
         print(f'📄 Sitemap location: {SITEMAP_FILE}')

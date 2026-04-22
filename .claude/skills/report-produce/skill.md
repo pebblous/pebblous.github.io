@@ -289,7 +289,13 @@ Agent(
 
     HTML 템플릿: report/korea-ai-fund-report-2026-03/ko/index.html
     체크리스트: docs/blog-html-checklist.md
+    제목 전략: docs/title-strategy.md (§7 제목→Exec Summary 일관성 필수)
     CLAUDE.md: /workspace/extra/repos/pebblous.github.io/CLAUDE.md
+
+    ⛔ 제목→Executive Summary 일관성 규칙 (title-strategy.md §7):
+    - mainTitle의 핵심 주장이 Executive Summary 3문단 안에 근거 수치와 함께 등장해야 함
+    - stat-card에 mainTitle 관련 지표 포함 필수
+    - 외부 보고서 기반 글: mainTitle에 외부 브랜드명 금지, subtitle에 배치
 
     출력:
     - report/[slug]/ko/index.html
