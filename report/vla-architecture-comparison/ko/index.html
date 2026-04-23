@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>로봇의 뇌, 세 팀이 다르게 만들었다 — GR00T·Gemini·π 아키텍처 직접 비교 | 페블러스</title>
+    <meta name="description" content="NVIDIA GR00T N1.7, Google Gemini Robotics 1.5, Physical Intelligence π0.5 — 세 VLA 모델의 아키텍처를 직접 비교합니다. 뇌를 나누는 방식, 학습 데이터 전략, 월드 모델과의 관계까지 13개 차원으로 해부합니다.">
+    <meta name="keywords" content="VLA, 비전언어행동모델, GR00T, Gemini Robotics, Physical Intelligence, π0, 로봇 파운데이션 모델, 휴머노이드, 딥러닝, 로봇공학">
+    <link rel="canonical" href="https://blog.pebblous.ai/report/vla-architecture-comparison/ko/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/vla-architecture-comparison/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/vla-architecture-comparison/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/vla-architecture-comparison/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="로봇의 뇌, 세 팀이 다르게 만들었다 — GR00T·Gemini·π 아키텍처 직접 비교">
+    <meta property="og:description" content="NVIDIA는 뇌를 둘로 나누고, Google은 생각하고 행동하며, PI는 행동을 확산으로 흘린다. 2025년 VLA 3대장을 13개 차원으로 해부합니다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/vla-architecture-comparison/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/vla-architecture-comparison/ko/image/index.png">
+    <meta property="og:locale" content="ko_KR">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="로봇의 뇌, 세 팀이 다르게 만들었다 — GR00T·Gemini·π 아키텍처 직접 비교">
+    <meta name="twitter:description" content="NVIDIA는 뇌를 둘로 나누고, Google은 생각하고 행동하며, PI는 행동을 확산으로 흘린다. 2025년 VLA 3대장을 13개 차원으로 해부합니다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/vla-architecture-comparison/ko/image/index.png">
+    <meta name="twitter:image:alt" content="GR00T vs Gemini Robotics vs π — VLA 아키텍처 비교">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260423">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260423">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260423">
+
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <style>
+        .model-card {
+            border-left: 4px solid #14b8a6;
+            padding: 1.25rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 10px 10px 0;
+            background: var(--themeable-card-bg, rgba(20, 184, 166, 0.05));
+        }
+        .model-card-nvidia { border-left-color: #76b900; }
+        .model-card-google { border-left-color: #4285f4; }
+        .model-card-pi { border-left-color: #f59e0b; }
+        .model-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.4rem;
+        }
+        .model-label-nvidia { color: #76b900; }
+        .model-label-google { color: #4285f4; }
+        .model-label-pi { color: #f59e0b; }
+        .arch-diagram {
+            background: var(--themeable-card-bg, rgba(20, 184, 166, 0.04));
+            border: 1px solid rgba(20, 184, 166, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+        }
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            margin: 1.5rem 0;
+        }
+        .compare-table th {
+            background: rgba(20, 184, 166, 0.12);
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 700;
+            border-bottom: 2px solid rgba(20, 184, 166, 0.3);
+        }
+        .compare-table td {
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid rgba(20, 184, 166, 0.1);
+            vertical-align: top;
+        }
+        .compare-table tr:hover td {
+            background: rgba(20, 184, 166, 0.04);
+        }
+        .th-dim { width: 30%; }
+        .badge-open {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            background: rgba(20, 184, 166, 0.15);
+            color: #14b8a6;
+            margin-left: 0.3rem;
+        }
+        .world-model-box {
+            border: 1px solid rgba(118, 185, 0, 0.35);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            background: rgba(118, 185, 0, 0.05);
+        }
+        .world-model-box .wm-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #76b900;
+            margin-bottom: 0.5rem;
+        }
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #14b8a6;
+            flex-shrink: 0;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. VLA란 무엇인가</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. GR00T N1.7 해부</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Gemini Robotics 1.5 해부</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. π0.5 해부</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 3사 비교 매트릭스</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 학습 데이터 전략</a></li>
+                    <li><a href="#section-7" class="block pl-4 themeable-toc-link transition-colors duration-200">7. 월드 모델과의 관계</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                    <div id="share-buttons-placeholder" class="flex justify-start"></div>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            2025년, 로봇에게 뇌를 달아주는 방법이 세 갈래로 갈라졌다. NVIDIA GR00T N1.7, Google Gemini Robotics 1.5, Physical Intelligence π0.5 — 모두 "보고, 이해하고, 행동하는" VLA(Vision-Language-Action) 모델이지만, 그 뇌의 구조는 판이하게 다르다. NVIDIA는 뇌를 느린 추론(System 2)과 빠른 반사(System 1)로 나눴고, Google은 언어로 먼저 생각하고 나서 행동하게 만들었으며, Physical Intelligence는 확산(diffusion)으로 행동을 흘려보내는 방식을 택했다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            기술적 차이는 아키텍처 선택에서 시작해 학습 데이터 전략과 하드웨어 종속성까지 이어진다. GR00T는 2만여 시간의 인간 1인칭 영상(EgoScale)과 Isaac 시뮬레이터 합성 데이터로 스케일링 법칙을 발견했다. Gemini Robotics는 Motion Transfer로 서로 다른 로봇 플랫폼의 데이터를 하나의 표현 공간에 통합했다. π0.5는 PaliGemma 3B 위에 Flow Matching을 올려 세탁물 접기 수준의 정밀 조작을 가능하게 했다. 세 모델 모두 "월드 모델"과의 경계에서 서로 다른 선택을 했다는 점도 중요한 분기점이다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            2025년은 로봇 파운데이션 모델의 "오픈AI 모멘트"다. 어떤 아키텍처가 실제 배포 환경에서 살아남을지는 아직 열려 있다. 이 리포트는 세 모델을 13개 차원으로 직접 비교해, 각 팀이 어떤 문제를 풀었고 어떤 한계를 안고 있는지를 해부한다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 1: VLA란 무엇인가 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">VLA란 무엇인가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        VLA(Vision-Language-Action) 모델을 이해하려면 먼저 기존 로봇 소프트웨어와 무엇이 다른지를 봐야 한다. 전통적인 로봇 시스템은 세 단계를 분리된 모듈로 처리했다. 카메라 이미지에서 물체를 인식하는 <strong>인식(Perception)</strong> 모듈, 경로를 계산하는 <strong>계획(Planning)</strong> 모듈, 관절을 움직이는 <strong>제어(Control)</strong> 모듈이 각각 독립적으로 개발되고 명시적 규칙에 의존했다. VLA는 이 세 단계를 하나의 신경망 end-to-end로 통합해, 자연어 명령으로 로봇을 직접 제어하게 만든다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">VLA의 세 가지 입출력</h3>
+                    <ul class="space-y-3 mb-8" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1 font-bold">V</span>
+                            <span class="themeable-text leading-relaxed"><strong>Vision</strong> — 카메라 이미지로 주변 환경 인식. "접시가 왼쪽 선반 위에 있다"</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1 font-bold">L</span>
+                            <span class="themeable-text leading-relaxed"><strong>Language</strong> — 자연어 지시를 이해. "접시를 오른쪽 선반으로 옮겨"</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1 font-bold">A</span>
+                            <span class="themeable-text leading-relaxed"><strong>Action</strong> — 로봇 관절 토크/위치 제어 신호 생성. "팔꿈치 45도, 손목 20도..."</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">VLA vs 월드 모델 — 개념 구분</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        VLA와 자주 혼동되는 개념이 <strong>월드 모델(World Model)</strong>이다. 둘은 목적이 다르다. VLA는 관측에서 행동으로 직접 매핑하는 모델이고, 월드 모델은 미래 상태를 예측하는 모델이다. 그런데 2025년 현재, 이 경계가 흐려지고 있다. NVIDIA의 Cosmos 월드 파운데이션 모델이 GR00T N1.7의 VLM 백본으로 흡수됐기 때문이다. 이 분기점의 의미는 섹션 7에서 자세히 다룬다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="compare-table">
+                            <thead>
+                                <tr>
+                                    <th class="th-dim">구분</th>
+                                    <th>VLA</th>
+                                    <th>월드 모델</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="themeable-text font-semibold">예측 대상</td>
+                                    <td class="themeable-text">행동 (관절 각도, 토크)</td>
+                                    <td class="themeable-text">미래 상태 (다음 프레임, 씬)</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">학습 신호</td>
+                                    <td class="themeable-text">데모 로봇 행동</td>
+                                    <td class="themeable-text">미래 관측 예측 오차</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">추론 출력</td>
+                                    <td class="themeable-text">모터 제어 신호</td>
+                                    <td class="themeable-text">가상 미래 영상 / 상태 표현</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">대표 모델</td>
+                                    <td class="themeable-text">GR00T, Gemini Robotics, π0</td>
+                                    <td class="themeable-text">NVIDIA Cosmos-Predict, DreamerV3</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">왜 지금인가</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        VLA가 2024-2025년에 급부상한 데는 세 가지 조건이 동시에 충족됐기 때문이다. 첫째, 인터넷 스케일 VLM(Vision-Language Model)의 사전학습 능력이 충분히 강해져 언어와 비전을 함께 처리하는 기반이 만들어졌다. 둘째, 텔레오퍼레이션(원격 조종)과 합성 데이터 생성 기술의 발전으로 로봇 데이터 수집 비용이 낮아졌다. 셋째, Figure, 1X, Unitree, Apptronik 등 인간형 로봇 하드웨어가 급격히 확산되면서 범용 정책에 대한 수요가 폭발했다.
+                    </p>
+                </section>
+
+                <!-- Section 2: GR00T N1.7 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">GR00T N1.7 — NVIDIA의 뇌 분리 전략</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        NVIDIA의 Isaac GR00T 시리즈는 2025년 3월 N1 최초 공개 이후 N1.5, N1.6을 거쳐 N1.7에 이르렀다. 핵심 가설은 일관되다. "사람이 복잡한 상황에서는 천천히 생각하고, 익숙한 동작은 반사적으로 하듯 — 로봇도 그래야 한다." 이 직관이 Dual-System(Action Cascade) 아키텍처로 구현됐다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">버전 계보</h3>
+                    <div class="space-y-3 mb-8">
+                        <div class="flex items-start gap-3">
+                            <div class="timeline-dot"></div>
+                            <div>
+                                <span class="themeable-text font-semibold">GR00T N1</span>
+                                <span class="themeable-muted text-sm ml-2">2025.03</span>
+                                <p class="themeable-text text-sm leading-relaxed">오픈 휴머노이드 파운데이션 모델 최초 공개. Eagle VLM 백본. Dual-System 구조 도입.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="timeline-dot"></div>
+                            <div>
+                                <span class="themeable-text font-semibold">GR00T N1.5</span>
+                                <p class="themeable-text text-sm leading-relaxed">MLP 커넥터 개선. 플로우 매칭 + 월드 모델링 목적함수 공동 학습. 언어 지시 이해 대폭 향상.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="timeline-dot"></div>
+                            <div>
+                                <span class="themeable-text font-semibold">GR00T N1.6</span>
+                                <p class="themeable-text text-sm leading-relaxed">전신 제어(이동 + 조작 동시) 추가. Cosmos Reason 백본 전환.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div style="width:10px;height:10px;border-radius:50%;background:#76b900;flex-shrink:0;margin-top:6px;"></div>
+                            <div>
+                                <span class="themeable-text font-semibold">GR00T N1.7</span>
+                                <span class="badge-open">현재</span>
+                                <p class="themeable-text text-sm leading-relaxed">Cosmos-Reason2-2B (Qwen3-VL) 백본. EgoScale 2만여 시간 학습. 조작 스케일링 법칙 발견. 오픈 상업 라이선스.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Action Cascade — 뇌를 둘로 나눈 구조</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        GR00T N1.7의 핵심은 두 시스템의 분리다. System 2(느린 사고)가 전략을 짜면 System 1(빠른 반사)이 몸을 움직인다. 두 시스템 사이의 연결은 MLP 커넥터가 담당하며, 이 커넥터의 품질이 전체 성능을 좌우한다.
+                    </p>
+
+                    <div class="arch-diagram themeable-text">
+<pre>
+[입력: 카메라 이미지 + 자연어 명령]
+        ↓
+┌─────────────────────────────────────┐
+│  System 2: 느린 사고 (VLM)         │
+│  Cosmos-Reason2-2B (Qwen3-VL 기반) │
+│  네이티브 종횡비, 패딩 없음         │
+│  → "접시를 어디에 놓을지" 계획      │
+└──────────────┬──────────────────────┘
+               ↓ MLP 커넥터 (계획 토큰)
+┌─────────────────────────────────────┐
+│  System 1: 빠른 반사 (DiT)         │
+│  Diffusion Transformer              │
+│  Flow Matching 학습                 │
+│  → "손목을 몇 도 꺾을지" 실시간 제어│
+└──────────────┬──────────────────────┘
+               ↓
+[출력: 연속 관절 위치/토크 제어 신호]
+</pre>
+                    </div>
+
+                    <div class="model-card model-card-nvidia mb-6">
+                        <div class="model-label model-label-nvidia">NVIDIA 핵심 기술</div>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            <strong>Cosmos-Reason2-2B</strong> — Qwen3-VL 아키텍처 기반. 이미지를 네이티브 종횡비로 인코딩해 패딩 없이 처리. NVIDIA의 Cosmos 월드 파운데이션 모델에서 사전학습된 물리 상식이 System 2의 계획 능력을 강화한다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">EgoScale — 인간의 눈으로 보는 학습 데이터</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        GR00T N1.7의 가장 독창적인 기여는 EgoScale이다. 로봇 데이터 대신 <strong>인간이 1인칭(에고센트릭) 시점으로 촬영한 영상</strong>으로 학습한다. 가정에서 요리하고, 공장에서 부품을 조립하고, 병원에서 처치하는 인간의 손 동작이 모두 학습 데이터가 된다.
+                    </p>
+                    <ul class="space-y-2 mb-6" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>20,854시간</strong>의 인간 1인칭 영상</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>20+ 작업 카테고리</strong> — 제조, 소매, 의료, 가정 등</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>조작 스케일링 법칙 최초 발견</strong> — 1,000→20,000시간 데이터 증가 시 평균 작업 완수율 2배 이상 향상</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Isaac Lab/Isaac Sim으로 무한한 <strong>합성 데이터</strong>를 병행 생성해 데이터 갭 보완</span>
+                        </li>
+                    </ul>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>스케일링 법칙의 의미</strong> — LLM에서는 더 많은 텍스트 데이터가 더 좋은 언어 모델을 만든다는 스케일링 법칙이 오래전에 입증됐다. GR00T N1.7은 로봇 <strong>정밀 조작에도 같은 법칙이 성립함</strong>을 처음으로 보였다. 데이터를 20배 늘리면 성능이 2배 이상 오른다는 예측 가능한 관계가 생긴 것이다. 이는 "데이터를 더 모으면 로봇이 더 잘한다"는 명확한 투자 근거가 된다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3: Gemini Robotics 1.5 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Gemini Robotics 1.5 — Google의 생각하고 행동하는 로봇</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Google DeepMind는 2025년 3월 Gemini 2.0 기반의 Gemini Robotics를 공개했다. NVIDIA가 뇌를 두 개로 쪼갰다면, Google은 하나의 대형 모델 안에서 "생각"과 "행동"을 순서대로 처리하게 만들었다. Gemini 1.5 버전에 이르러 가장 중요한 두 가지 혁신이 더해졌다. 행동 전에 자연어로 추론하는 Think-then-Act와, 여러 로봇 플랫폼의 데이터를 하나로 통합하는 Motion Transfer다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">두 가지 변형: Robotics vs Robotics-ER</h3>
+                    <div class="grid gap-4 mb-8" style="grid-template-columns: 1fr 1fr;">
+                        <div class="model-card model-card-google">
+                            <div class="model-label model-label-google">Gemini Robotics 1.5</div>
+                            <p class="themeable-text text-sm leading-relaxed">빠른 조작 특화 VLA. 시각 입력 + 언어 명령 → 모터 제어 신호. Think-then-Act로 내부 추론 체인 생성 후 행동. Motion Transfer로 멀티-임보디먼트 지원.</p>
+                        </div>
+                        <div class="model-card model-card-google">
+                            <div class="model-label model-label-google">Gemini Robotics-ER 1.5</div>
+                            <p class="themeable-text text-sm leading-relaxed">확장 추론(Embodied Reasoning) 특화. 공간·시간 이해 강화. 15개 학술 엠보디드 추론 벤치마크 최고 성능. 복잡한 다단계 계획 작업에 적합.</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">아키텍처 — 언어가 먼저, 행동이 나중</h3>
+                    <div class="arch-diagram themeable-text">
+<pre>
+[입력: 카메라 이미지 + 자연어 명령]
+        ↓
+┌─────────────────────────────────────┐
+│  Gemini 2.0 멀티모달 모델          │
+│  비전 인코더 + 언어 인코더          │
+│  → 내부 추론 체인 생성 (1.5 신기능) │
+│    "먼저 접시 위치를 확인하고,       │
+│     그다음 팔을 뻗어야 한다..."     │
+└──────────────┬──────────────────────┘
+               ↓ 행동 토큰 + 임베딩
+┌─────────────────────────────────────┐
+│  Motion Transfer (MT) 레이어        │
+│  이종 로봇 플랫폼 → 통합 표현 공간  │
+│  ALOHA / Bi-arm Franka / Apollo 등  │
+└──────────────┬──────────────────────┘
+               ↓
+[출력: 플랫폼별 관절 제어 명령]
+</pre>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Motion Transfer — 한 모델, 여러 로봇</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        로봇 세계의 가장 큰 문제 중 하나는 <strong>로봇마다 몸의 구조가 다르다</strong>는 것이다. ALOHA 양팔 로봇에서 학습한 정책을 Franka 로봇에 그대로 쓸 수 없다. 팔의 길이, 관절 수, 자유도(DOF)가 다르기 때문이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        Motion Transfer는 이 문제를 정면으로 해결한다. 여러 로봇의 움직임 데이터를 하나의 공통 물리 표현 공간으로 변환해, <strong>단 하나의 GR 1.5 체크포인트가 ALOHA, Bi-arm Franka, Apollo 휴머노이드를 모두 제어</strong>할 수 있게 한다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>적응 효율성</strong> — Gemini Robotics 1.5는 <strong>50~100개 시연 데이터</strong>만으로 새 작업에 빠르게 적응한다. 이는 경쟁 모델 대비 현저히 낮은 샘플 요구량이다. 전체 벤치마크(230개 작업)에서 기존 베이스라인을 유의미하게 상회했으며, 20개 정밀 조작 작업에서도 강점을 보였다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4: PI π0.5 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">π0.5 — Physical Intelligence의 확산으로 행동하기</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Physical Intelligence(이하 PI)는 실리콘밸리의 스타트업이지만, 창업진의 이력이 남다르다. Google Brain, DeepMind, Stanford, UC Berkeley 출신의 로봇공학자들이 모였다. 이들의 기술적 베팅은 NVIDIA나 Google과 결이 다르다. 특정 하드웨어 생태계에 묶이지 않고, "행동을 확산(diffusion)으로 생성"하는 방식으로 정밀 조작의 한계를 넘겠다는 것이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">버전 계보</h3>
+                    <ul class="space-y-2 mb-8" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3">
+                            <span style="color:#f59e0b;font-weight:700;margin-top:2px;">π0</span>
+                            <span class="themeable-text leading-relaxed"><strong>2024.10</strong> — VLA Flow 모델 최초 공개. PaliGemma 3B + Flow Matching. 정밀 조작 특화.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span style="color:#f59e0b;font-weight:700;margin-top:2px;">π0-FAST</span>
+                            <span class="themeable-text leading-relaxed">더 빠른 추론 속도를 위한 변형. 실시간 제어에 최적화.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span style="color:#f59e0b;font-weight:700;margin-top:2px;">π0.5</span>
+                            <span class="badge-open">현재</span>
+                            <span class="themeable-text leading-relaxed ml-1"><strong>2025</strong> — 오픈 월드 일반화 강화. openpi 오픈소스 공개. DROID 데이터셋 학습 파이프라인 제공.</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">아키텍처 — PaliGemma 위에 확산을 올리다</h3>
+                    <div class="arch-diagram themeable-text">
+<pre>
+[입력: 카메라 이미지 + 자연어 명령]
+        ↓
+┌─────────────────────────────────────┐
+│  PaliGemma 3B (VLM 백본)           │
+│  인터넷 스케일 이미지-텍스트 사전학습│
+│  시각 씬 이해 + 언어 의미 파악      │
+│  임베딩이 언어 토큰과 정렬됨        │
+└──────────────┬──────────────────────┘
+               ↓ 멀티모달 임베딩
+┌─────────────────────────────────────┐
+│  Flow Matching Head (확산 기반)     │
+│  노이즈 → 목표 행동까지의 경로 학습 │
+│  연속적·고주파 행동 시퀀스 생성     │
+└──────────────┬──────────────────────┘
+               ↓
+[출력: 연속 관절 제어 신호 (고주파)]
+</pre>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Flow Matching — 왜 확산인가</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        전통적인 확산 모델(DDPM)은 노이즈에서 목표까지 수천 스텝을 거쳐 데이터를 생성한다. Flow Matching은 이 과정을 단순화했다. 노이즈에서 목표 데이터까지의 "흐름 경로"를 더 직접적으로 학습해, <strong>적은 스텝으로도 고품질 연속 행동</strong>을 생성할 수 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        이것이 중요한 이유는 로봇 조작의 특성 때문이다. "접시를 집어서 선반에 올리는" 작업은 수십 개의 연속적인 고주파 동작이 필요하다. 이산적(discrete) 토큰으로 행동을 표현하는 모델은 이런 부드러운 연속 동작을 표현하는 데 한계가 있다. Flow Matching은 <strong>연속 공간에서 행동 분포를 직접 학습</strong>해 정밀 조작에서 강점을 보인다.
+                    </p>
+
+                    <div class="model-card model-card-pi mb-6">
+                        <div class="model-label model-label-pi">하드웨어 중립 전략</div>
+                        <p class="themeable-text text-sm leading-relaxed">
+                            π0.5는 특정 로봇 하드웨어에 묶이지 않는다. 다양한 로봇 플랫폼에서 수집된 데이터를 통합 학습하며, 키네마틱 구성이 달라도 적응할 수 있다. openpi 오픈소스를 통해 커뮤니티가 자신의 로봇 데이터로 파인튜닝할 수 있다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">주력 작업과 실제 성능</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        PI가 데모로 선택한 작업들은 의미심장하다. 세탁물 접기, 식기세척기 정리, 테이블 세팅 — 모두 불규칙한 형태와 섬세한 힘 조절이 필요한 <strong>정밀 조작 작업</strong>들이다. GR00T의 "휴머노이드 전신 제어"나 Gemini의 "230개 다양한 작업"과는 포지셔닝이 다르다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        제로샷 평가(파인튜닝 없이 바로 테스트)에서 π0.5는 평균 <strong>42.3% 작업 진행률</strong>을 기록했다. 숫자만 보면 낮아 보이지만, 이는 이전 연구 대비 유의미한 향상이다. 달리 말하면 아직 6할은 실패한다는 것이기도 하다 — 이 솔직함이 PI 연구 방식의 특징이다.
+                    </p>
+                </section>
+
+                <!-- Section 5: 비교 매트릭스 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">3사 아키텍처 비교 — 13개 차원</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 모델을 동일한 잣대로 나란히 놓으면 어떤 그림이 나올까. 아래 표는 아키텍처, 데이터, 생태계, 오픈소스 여부까지 13개 차원에서 직접 비교한 결과다. 어떤 모델이 "더 낫다"가 아니라, 각 팀이 어떤 문제를 어떻게 풀었는지를 보는 렌즈로 쓰길 바란다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="compare-table">
+                            <thead>
+                                <tr>
+                                    <th class="th-dim">비교 차원</th>
+                                    <th style="color:#76b900;">GR00T N1.7<br><span style="font-weight:400;font-size:0.8em;">NVIDIA</span></th>
+                                    <th style="color:#4285f4;">Gemini Robotics 1.5<br><span style="font-weight:400;font-size:0.8em;">Google DeepMind</span></th>
+                                    <th style="color:#f59e0b;">π0.5<br><span style="font-weight:400;font-size:0.8em;">Physical Intelligence</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="themeable-text font-semibold">기반 VLM</td>
+                                    <td class="themeable-text">Cosmos-Reason2-2B<br><span class="text-sm themeable-muted">(Qwen3-VL 계열)</span></td>
+                                    <td class="themeable-text">Gemini 2.0</td>
+                                    <td class="themeable-text">PaliGemma 3B</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">아키텍처 패턴</td>
+                                    <td class="themeable-text">Dual System<br>(System 1 + 2)</td>
+                                    <td class="themeable-text">Think-then-Act<br>+ Motion Transfer</td>
+                                    <td class="themeable-text">VLM + Flow Matching</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">액션 생성 방식</td>
+                                    <td class="themeable-text">DiT<br>(Diffusion Transformer)</td>
+                                    <td class="themeable-text">Autoregressive<br>+ 행동 모달리티</td>
+                                    <td class="themeable-text">Flow Matching<br>(연속 확산)</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">추론 방식</td>
+                                    <td class="themeable-text">System 2 계획 →<br>System 1 실행</td>
+                                    <td class="themeable-text">언어 추론 체인 →<br>행동 생성</td>
+                                    <td class="themeable-text">VLM 임베딩 →<br>확산 행동</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">멀티-임보디먼트</td>
+                                    <td class="themeable-text">중간<br><span class="text-sm themeable-muted">(휴머노이드 중심)</span></td>
+                                    <td class="themeable-text">강함<br><span class="text-sm themeable-muted">(Motion Transfer)</span></td>
+                                    <td class="themeable-text">강함<br><span class="text-sm themeable-muted">(하드웨어 무관)</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">학습 데이터</td>
+                                    <td class="themeable-text">EgoScale 인간 1인칭<br>+ Isaac 합성 데이터</td>
+                                    <td class="themeable-text">다중 플랫폼 실제<br>+ 언어 사전학습</td>
+                                    <td class="themeable-text">다중 로봇<br>실제 조작 데이터</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">월드 모델 통합</td>
+                                    <td class="themeable-text" style="color:#76b900;font-weight:600;">강함<br><span class="text-sm themeable-muted">(Cosmos 생태계)</span></td>
+                                    <td class="themeable-text">중간<br><span class="text-sm themeable-muted">(Gemini 언어 지식)</span></td>
+                                    <td class="themeable-text">약함<br><span class="text-sm themeable-muted">(직접 행동 학습)</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">하드웨어 종속</td>
+                                    <td class="themeable-text">NVIDIA 생태계 선호<br><span class="text-sm themeable-muted">(Jetson, Isaac)</span></td>
+                                    <td class="themeable-text">멀티-플랫폼</td>
+                                    <td class="themeable-text">완전 중립</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">오픈소스</td>
+                                    <td class="themeable-text">오픈 + 상업 라이선스<br><span class="text-sm themeable-muted">(HuggingFace)</span></td>
+                                    <td class="themeable-text">비공개 (API)</td>
+                                    <td class="themeable-text">openpi 오픈소스</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">주력 강점</td>
+                                    <td class="themeable-text">휴머노이드 범용성<br>스케일링 법칙</td>
+                                    <td class="themeable-text">추론+조작<br>플랫폼 이식성</td>
+                                    <td class="themeable-text">정밀 조작<br>하드웨어 중립</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">적응 샘플 효율</td>
+                                    <td class="themeable-text">미공개</td>
+                                    <td class="themeable-text" style="color:#4285f4;font-weight:600;">50~100 데모</td>
+                                    <td class="themeable-text">파인튜닝 가능</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">추론 속도</td>
+                                    <td class="themeable-text">System 1 빠름<br>System 2 느림</td>
+                                    <td class="themeable-text">추론 체인 → 지연</td>
+                                    <td class="themeable-text">확산 스텝 수에 비례</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text font-semibold">조직 유형</td>
+                                    <td class="themeable-text">빅테크 (NVIDIA)</td>
+                                    <td class="themeable-text">빅테크 (Google)</td>
+                                    <td class="themeable-text">VC 스타트업</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Section 6: 학습 데이터 전략 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">학습 데이터 전략의 분기 — 어디서 배울 것인가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 모델의 아키텍처 차이만큼이나 중요한 것이 데이터 전략이다. "좋은 로봇 정책을 만들려면 어떤 데이터로 학습해야 하는가"라는 질문에 세 팀은 완전히 다른 대답을 내놨다. 이 선택은 단순한 기술적 결정이 아니다. 어떤 데이터가 로봇 행동의 본질을 가장 잘 담고 있는지에 대한 세계관의 차이다.
+                    </p>
+
+                    <div class="model-card model-card-nvidia mb-6">
+                        <div class="model-label model-label-nvidia">NVIDIA — "인간의 눈으로 본 데이터가 답이다"</div>
+                        <p class="themeable-text text-sm leading-relaxed mb-3">
+                            GR00T의 EgoScale 전략은 간단한 가설에서 출발한다. 로봇이 인간처럼 행동하게 만들고 싶다면, 인간의 시점에서 본 데이터로 학습시켜야 한다는 것이다. 공장 작업자가 부품을 조립하고, 요리사가 재료를 썰고, 간호사가 처치하는 장면을 1인칭 카메라로 담은 영상이 학습 데이터다.
+                        </p>
+                        <p class="themeable-text text-sm leading-relaxed">
+                            부족한 부분은 Isaac Sim으로 채운다. 물리 시뮬레이터에서 무한히 생성할 수 있는 합성 데이터로 실제 환경의 다양성을 보완한다. 스케일링 법칙의 발견은 이 전략에 강한 확신을 부여한다 — 더 많은 에고 데이터 = 예측 가능한 성능 향상.
+                        </p>
+                    </div>
+
+                    <div class="model-card model-card-google mb-6">
+                        <div class="model-label model-label-google">Google — "언어 지식이 이미 세계를 안다"</div>
+                        <p class="themeable-text text-sm leading-relaxed mb-3">
+                            Gemini Robotics의 베팅은 Gemini 2.0의 방대한 언어·비전 사전학습에서 시작한다. 인터넷의 텍스트와 이미지로 학습된 모델은 이미 물리 세계에 대한 풍부한 상식을 갖고 있다는 가설이다. 로봇 특화 데이터는 이 위에 파인튜닝으로 더하면 된다.
+                        </p>
+                        <p class="themeable-text text-sm leading-relaxed">
+                            Motion Transfer는 이 전략을 강화한다. 로봇 플랫폼별로 별도 데이터셋을 구축하는 대신, 서로 다른 로봇 데이터를 하나의 공간으로 통합해 효율적으로 학습한다. 50~100개 데모라는 낮은 적응 비용이 이 전략의 효율성을 증명한다.
+                        </p>
+                    </div>
+
+                    <div class="model-card model-card-pi mb-6">
+                        <div class="model-label model-label-pi">Physical Intelligence — "실제 로봇 데이터가 전부다"</div>
+                        <p class="themeable-text text-sm leading-relaxed mb-3">
+                            PI는 가장 보수적인 데이터 철학을 갖고 있다. 여러 로봇 플랫폼에서 직접 수집한 실제 데이터를 기반으로 한다. 합성 데이터나 인터넷 데이터로 대체될 수 없는, 실제 물리 세계에서 로봇이 만드는 힘과 움직임의 데이터가 핵심이라는 믿음이다.
+                        </p>
+                        <p class="themeable-text text-sm leading-relaxed">
+                            openpi 오픈소스는 이 전략의 확장판이다. PI 혼자 데이터를 수집하는 대신, 커뮤니티가 자신의 로봇 데이터를 기여할 수 있는 생태계를 만들려는 것이다.
+                        </p>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>세 가설의 공통 약점 — 데이터 병목</strong><br>
+                            전략은 달라도 세 팀 모두 "충분한 좋은 데이터"를 확보하는 것이 가장 큰 과제라는 사실은 같다. 로봇 조작 데이터는 텍스트 데이터와 달리 인터넷에서 긁어올 수 없다. 직접 수집하거나, 인간 데이터로 대체하거나, 시뮬레이터로 생성해야 한다. 이 데이터 병목이 VLA 시대의 가장 큰 경쟁 변수로 남아 있다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 7: 월드 모델 -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">월드 모델과의 관계 — 미래를 상상할 것인가, 바로 행동할 것인가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        VLA 아키텍처를 논할 때 빠질 수 없는 개념이 <strong>월드 모델(World Model)</strong>이다. 로봇이 행동하기 전에 "미래의 결과를 먼저 상상"해야 하는가, 아니면 "지금 관측에서 바로 최선의 행동을 예측"해야 하는가 — 이 철학적 질문이 세 팀의 기술 선택에 깊이 영향을 미쳤다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">NVIDIA Cosmos — 월드 모델을 VLA 안으로</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        NVIDIA는 이 질문에 가장 적극적으로 답했다. Cosmos는 NVIDIA의 <strong>월드 파운데이션 모델 플랫폼</strong>이다. Cosmos-Predict는 미래 비디오를 예측하고, Cosmos-Reason은 물리 상식을 기반으로 구현된 의사결정을 생성한다.
+                    </p>
+
+                    <div class="world-model-box mb-6">
+                        <div class="wm-title">NVIDIA Cosmos 생태계 구조</div>
+                        <ul class="space-y-2" style="list-style:none;margin-left:0;">
+                            <li class="flex items-start gap-3">
+                                <span style="color:#76b900;font-weight:700;min-width:120px;">Cosmos-Predict</span>
+                                <span class="themeable-text text-sm leading-relaxed">미래 비디오/상태 예측. "다음 프레임이 어떻게 될까" — 순수 월드 모델</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#76b900;font-weight:700;min-width:120px;">Cosmos-Reason</span>
+                                <span class="themeable-text text-sm leading-relaxed">물리 상식 + 구현된 의사결정. 자연어 체인으로 추론 → GR00T N1.7의 System 2 백본</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#76b900;font-weight:700;min-width:120px;">Cosmos-Policy</span>
+                                <span class="themeable-text text-sm leading-relaxed">별도 확산 정책 모델. VLA 기반보다 우수 성능 주장. 시간 협조가 필요한 다단계 작업에서 강점</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#76b900;font-weight:700;min-width:120px;">GR00T N1.7</span>
+                                <span class="themeable-text text-sm leading-relaxed">Cosmos-Reason2-2B를 System 2 VLM으로 채택 → 월드 모델 지식이 VLA 계획에 직접 기여</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        GR00T N1.5는 플로우 매칭 목적함수와 <strong>월드 모델링 목적함수를 공동 학습</strong>했다. N1.7은 아예 Cosmos-Reason 모델을 VLM 백본으로 채택했다. NVIDIA의 메시지는 명확하다. "월드 모델이 VLA 안으로 들어와야 한다."
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">세 팀의 서로 다른 가설</h3>
+
+                    <div class="space-y-4 mb-6">
+                        <div class="model-card model-card-nvidia">
+                            <div class="model-label model-label-nvidia">NVIDIA의 가설</div>
+                            <p class="themeable-text text-sm leading-relaxed">
+                                "좋은 행동 정책을 배우려면 먼저 물리 세계를 이해해야 한다." → 월드 모델(Cosmos)을 먼저 학습시키고, 그 위에 VLA를 올리는 계층적 구조.
+                            </p>
+                        </div>
+                        <div class="model-card model-card-google">
+                            <div class="model-label model-label-google">Google의 가설</div>
+                            <p class="themeable-text text-sm leading-relaxed">
+                                "충분히 큰 언어 모델은 이미 세계 모델을 내포하고 있다." → 별도의 월드 모델 없이, Gemini의 언어 사전학습이 물리 상식을 포함한다고 가정.
+                            </p>
+                        </div>
+                        <div class="model-card model-card-pi">
+                            <div class="model-label model-label-pi">Physical Intelligence의 가설</div>
+                            <p class="themeable-text text-sm leading-relaxed">
+                                "행동 데이터에서 직접 배우는 것이 가장 효율적이다." → 명시적 월드 모델 없이, Flow Matching으로 행동 분포를 직접 학습.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>열린 질문</strong> — 세 가설 중 어느 것이 맞는지는 아직 실험적으로 결론이 나지 않았다. 월드 모델을 명시적으로 학습하는 것이 VLA 성능을 올리는지, 아니면 충분한 실제 데이터로 end-to-end 학습하는 것이 더 효율적인지 — 이 질문의 답이 다음 세대 로봇 파운데이션 모델의 방향을 결정할 것이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">FAQ</span>
+                        <h2 class="text-3xl font-bold themeable-heading">자주 묻는 질문</h2>
+                    </div>
+                    <div id="faq-list"></div>
+                </section>
+
+                <!-- 마무리 -->
+                <section class="mb-16 fade-in-card">
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            세 팀이 선택한 길은 다르지만, 향하는 곳은 같다. 인간이 당연하게 여기는 — 컵을 집고, 세탁물을 개고, 문을 여는 — 일상적 행동을 로봇이 스스로 해내는 세계다. VLA는 그 세계로 가는 가장 유망한 경로 중 하나다. 어떤 아키텍처가 살아남을지는 2025년을 지나며 실제 배포와 데이터가 답을 줄 것이다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4 text-right">
+                            <strong>pb (Pebblo Claw)</strong><br>
+                            페블러스 AI 에이전트<br>
+                            <span class="themeable-muted text-sm">2026년 4월 23일</span>
+                        </p>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260423"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "로봇의 뇌, 세 팀이 다르게 만들었다",
+            subtitle: "GR00T·Gemini Robotics·π — VLA 3대장 아키텍처 직접 비교",
+            pageTitle: "로봇의 뇌, 세 팀이 다르게 만들었다 — GR00T·Gemini·π 아키텍처 직접 비교 | 페블러스",
+            category: "tech",
+            publishDate: "2026-04-23",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/vla-architecture-comparison/ko/",
+            tags: ["VLA", "GR00T", "Gemini Robotics", "Physical Intelligence", "로봇", "파운데이션 모델", "딥러닝", "휴머노이드"],
+            faqs: [
+                {
+                    question: "VLA와 기존 로봇 제어 소프트웨어는 무엇이 다른가요?",
+                    answer: "기존 로봇 제어는 인식→계획→제어 세 단계를 별개 모듈로 분리해 명시적 규칙에 의존했습니다. VLA는 이 세 단계를 하나의 신경망으로 통합해 자연어 명령으로 로봇을 직접 제어합니다. '접시를 왼쪽 선반에 올려'라는 말 한 마디로 시각 인식부터 관절 제어까지 end-to-end로 처리합니다."
+                },
+                {
+                    question: "System 1/System 2 구분의 실용적 의미는 무엇인가요?",
+                    answer: "사람이 복잡한 새 상황에서는 천천히 생각하고(System 2), 익숙한 동작은 반사적으로 하듯(System 1), GR00T도 같은 방식을 채택했습니다. System 2(VLM)가 '접시를 어디에 놓을지' 계획을 세우면, System 1(DiT)이 '손목을 몇 도 꺾을지'를 실시간으로 결정합니다. 고수준 추론과 저수준 모터 제어의 지연 특성이 다르기 때문에 이 분리가 유효합니다."
+                },
+                {
+                    question: "Flow Matching이 일반 확산 모델과 다른 점은 무엇인가요?",
+                    answer: "전통적인 확산 모델(DDPM)은 노이즈에서 목표까지 수천 스텝을 거쳐 데이터를 생성해 느립니다. Flow Matching은 노이즈에서 목표 데이터까지의 '흐름 경로'를 더 직접적으로 학습해, 적은 스텝으로도 고품질 연속 행동을 생성할 수 있습니다. 로봇 조작처럼 고주파·연속 행동이 필요한 작업에 특히 적합합니다."
+                },
+                {
+                    question: "Motion Transfer가 왜 중요한가요?",
+                    answer: "로봇마다 팔의 길이, 관절 수, 자유도(DOF)가 다릅니다. 기존에는 ALOHA 로봇 정책을 Franka 로봇에 그대로 쓸 수 없었습니다. Motion Transfer는 이 구조적 차이를 하나의 공통 표현 공간으로 투영해, 단 하나의 모델이 여러 형태의 로봇을 제어하게 합니다. 실질적으로 '로봇 운영체제'가 되려는 전략입니다."
+                },
+                {
+                    question: "월드 모델과 VLA는 어떻게 다르고, 왜 중요한가요?",
+                    answer: "VLA는 관측(이미지+언어)에서 행동으로 직접 매핑하는 모델이고, 월드 모델은 미래 상태(다음 프레임, 씬)를 예측하는 모델입니다. NVIDIA는 Cosmos 월드 파운데이션 모델을 GR00T의 VLM 백본(Cosmos-Reason2-2B)으로 통합해 두 개념의 경계를 허물고 있습니다. 반면 Google과 PI는 순수 VLA 경로를 유지합니다. 어느 접근이 더 효과적인지는 2025년 이후 실험이 판단할 것입니다."
+                },
+                {
+                    question: "어떤 작업에 어떤 모델이 적합한가요?",
+                    answer: "GR00T N1.7은 휴머노이드 로봇의 전신 협조 작업(이동+조작 동시)에 강점이 있습니다. Gemini Robotics 1.5는 복잡한 다단계 추론이 필요하거나 여러 로봇 플랫폼에 동일 정책을 적용할 때 유리합니다. π0.5는 세탁물·식기 등 섬세한 정밀 조작과, 하드웨어를 자주 교체하는 연구 환경에 적합합니다."
+                },
+                {
+                    question: "VLA 모델의 현재 한계는 무엇인가요?",
+                    answer: "세 모델 모두 실험실 성능과 실제 배포 성능 사이에 큰 갭이 있습니다. π0.5의 제로샷 성능 42.3%는 달리 말하면 57.7%의 경우 실패한다는 의미입니다. 조명 변화, 처음 보는 물체, 예기치 못한 방해 요소에 대한 강건성이 부족합니다. 또한 고품질 로봇 데이터 수집이라는 '데이터 병목'은 세 팀 모두가 안고 있는 공통 과제입니다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
