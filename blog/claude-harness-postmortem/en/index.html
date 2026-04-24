@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="&copy; 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>The Real Reason Claude Got Dumber — Anthropic Harness Postmortem | Pebblous</title>
+    <meta name="description" content="Three harness changes caused seven weeks of Claude performance degradation starting in March. Anthropic's postmortem reveals reasoning effort downgrades, a cache bug, and system prompt issues. The model never changed — the harness broke.">
+    <meta name="keywords" content="Claude, Anthropic, harness, system prompt, AI agent, postmortem, Claude Code, reasoning effort, cache bug">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/claude-harness-postmortem/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/claude-harness-postmortem/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/claude-harness-postmortem/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/claude-harness-postmortem/en/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="The Real Reason Claude Got Dumber — Anthropic Harness Postmortem">
+    <meta property="og:description" content="Three harness changes caused seven weeks of Claude performance degradation. The model never changed — the harness broke.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/claude-harness-postmortem/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/claude-harness-postmortem/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="The Real Reason Claude Got Dumber — Anthropic Harness Postmortem">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="The Real Reason Claude Got Dumber — Anthropic Harness Postmortem">
+    <meta name="twitter:description" content="Three harness changes caused seven weeks of Claude performance degradation. The model never changed — the harness broke.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/claude-harness-postmortem/en/image/index.png">
+    <meta name="twitter:image:alt" content="Anthropic harness postmortem analysis">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (fixed order) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260424">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260424">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260424">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #F86825;
+        }
+        .timeline-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            border-bottom: 2px solid #F86825;
+        }
+        .timeline-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(71,85,105,0.15);
+        }
+        .timeline-table tr:hover td {
+            background: rgba(248,104,37,0.04);
+        }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. They Turned Down the Thinking</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The Memory-Erasing Bug</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. "Keep It Under 25 Words"</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Three Shadows, One Darkness</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. What This Incident Reveals</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+
+                    <div class="key-insight mb-8">
+                        <p class="themeable-text leading-relaxed">
+                            From March through April, Claude users reported widespread performance degradation. On April 23, Anthropic published a postmortem. The model weights had not changed. Three modifications to the harness — the system prompt, caching logic, and reasoning effort setting — had been deployed at different times, to different traffic slices. Individually, each was minor. Together, they produced what looked like "broad, inconsistent degradation."
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            This incident demonstrates that an AI model's performance is not determined by its weights alone. A single line in a system prompt, a caching policy, a default reasoning depth — any one of these can fundamentally alter the user experience.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            A harness is not a model's clothing. It is the model's sensory apparatus. When the senses break, a perfectly healthy brain cannot perceive the world. And it was users, not internal testing, who noticed.
+                        </p>
+                    </div>
+
+                    <!-- Key metrics cards -->
+                    <p class="themeable-text leading-relaxed mb-6">Here are the key numbers from this incident at a glance.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="stat-card themeable-bg-card rounded-lg">
+                            <div class="stat-number">7 wks</div>
+                            <p class="themeable-text text-sm mt-1">Duration of issues (3/4 - 4/20)</p>
+                        </div>
+                        <div class="stat-card themeable-bg-card rounded-lg">
+                            <div class="stat-number">3</div>
+                            <p class="themeable-text text-sm mt-1">Simultaneous harness changes</p>
+                        </div>
+                        <div class="stat-card themeable-bg-card rounded-lg">
+                            <div class="stat-number">3%</div>
+                            <p class="themeable-text text-sm mt-1">Coding quality drop (verbosity limit)</p>
+                        </div>
+                        <div class="stat-card themeable-bg-card rounded-lg">
+                            <div class="stat-number">0</div>
+                            <p class="themeable-text text-sm mt-1">API users affected (product layer only)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1: They Turned Down the Thinking -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">They Turned Down the Thinking</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On March 4, Claude Code's default reasoning effort was lowered from <strong>high</strong> to <strong>medium</strong>. The goal was to reduce UI latency. Users noticed almost immediately.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        "Claude got dumber."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Medium means thinking less. Responses come faster, but accuracy drops on complex problems. In the tradeoff between speed and intelligence, Anthropic chose speed. Users wanted intelligence.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        It was reverted on April 7. Currently, Opus 4.7 defaults to <strong>xhigh</strong>, and other models default to <strong>high</strong>.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Anthropic's own assessment: <strong>"This was the wrong tradeoff."</strong>
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2: The Memory-Erasing Bug -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Memory-Erasing Bug</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On March 26, a bug shipped during a cache optimization deployment. A cleanup routine meant to run once started running on every turn. The result was amnesia and repetition. Claude would repeat itself and forget context from just moments before.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This bug passed code review, unit tests, end-to-end tests, automated validation, and internal dogfooding — every gate in the pipeline. It was finally caught by an <strong>Opus 4.7 code review</strong>. The 4.6 model missed it entirely. A smarter model caught a subtler bug.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        It was fixed on April 10.
+                    </p>
+                </section>
+
+                <!-- Section 3: "Keep It Under 25 Words" -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">"Keep It Under 25 Words"</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On April 16, a system prompt change went live. The new instruction: "Keep responses between tool calls under 25 words, and final responses under 100 words."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The intent was to trim unnecessary chatter between tool calls. It passed weeks of internal testing. But once deployed at scale, coding quality dropped by <strong>3%</strong>.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Telling a model to speak less made it think less. Compressing the output compressed the reasoning.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        It was reverted on April 20.
+                    </p>
+                </section>
+
+                <!-- Section 4: Three Shadows, One Darkness -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Three Shadows, One Darkness</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The three changes were deployed on different dates, to different traffic percentages. Each was a small issue on its own. But their combined effect manifested as "inconsistent degradation" — the most confusing kind of outage. Some users noticed problems. Others were fine. Pinpointing the cause was nearly impossible.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The API was unaffected. The problems lived entirely in the product layer — the harness, the system prompt, the caching logic. The same model that worked perfectly via API was misbehaving in the product.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Below is the full timeline of events.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full timeline-table themeable-text text-sm">
+                            <thead>
+                                <tr class="themeable-bg-card">
+                                    <th>Date</th>
+                                    <th>Event</th>
+                                    <th>Impact</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="whitespace-nowrap">Mar 4</td>
+                                    <td>Reasoning effort high &rarr; medium</td>
+                                    <td>Claude Code intelligence drop</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">Mar 26</td>
+                                    <td>Cache cleanup bug deployed</td>
+                                    <td>Amnesia, repetition</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">Apr 7</td>
+                                    <td>Reasoning effort reverted</td>
+                                    <td>Partial recovery</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">Apr 10</td>
+                                    <td>Cache bug fixed</td>
+                                    <td>Memory restored</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">Apr 16</td>
+                                    <td>25-word limit deployed</td>
+                                    <td>3% coding quality drop</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">Apr 20</td>
+                                    <td>25-word limit reverted</td>
+                                    <td>Full recovery</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">Apr 23</td>
+                                    <td>Postmortem published</td>
+                                    <td>Usage limits reset</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Section 5: What This Incident Reveals -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What This Incident Reveals</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Anthropic announced concrete remediation. They reset usage limits for affected users and launched <strong>@ClaudeDevs</strong>, a channel for real-time product change announcements. They committed to dogfooding public builds internally and tightening controls around system prompt changes.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        But the deeper lesson is not about organizational response. It is about structural truth.
+                    </p>
+
+                    <div class="key-insight mb-6">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>A harness is not a model's clothing. It is the model's sensory apparatus.</strong> When the senses break, a perfectly healthy brain cannot perceive the world.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The system prompt determines how a model perceives the world. The cache determines how it retains memory. The reasoning effort setting determines how deeply it thinks. All three sit outside the model weights, yet the user experience is defined by them.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        And it was users who discovered the problem. Internal testing, automated validation, code review — none of these caught the combined effect of three simultaneous changes. It was everyday practitioners, running real workflows, who detected the subtle degradation. The people who use the model know the model better than the people who build it. An old truth, repeated once more.
+                    </p>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">References</h2>
+                    <ol class="space-y-3 themeable-text text-sm leading-relaxed ml-6" style="list-style-type: decimal;">
+                        <li><a href="https://www.anthropic.com/engineering/april-23-postmortem" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">Anthropic Engineering — April 23 Postmortem</a> — Official postmortem on Claude performance degradation causes and response</li>
+                        <li><a href="https://venturebeat.com/technology/mystery-solved-anthropic-reveals-changes-to-claudes-harnesses-and-operating-instructions-likely-caused-degradation" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">VentureBeat — Mystery solved: Anthropic reveals changes to Claude's harnesses</a> — Coverage of harness changes as the root cause of degradation</li>
+                        <li><a href="https://www.theregister.com/2026/04/23/anthropic_says_it_has_fixed/" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">The Register — Anthropic says it has fixed the issues</a> — Coverage of fixes and preventive measures</li>
+                    </ol>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260424"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "The Real Reason Claude Got Dumber",
+            subtitle: "Three mistakes Anthropic owned up to — the model never changed, the harness broke",
+            pageTitle: "The Real Reason Claude Got Dumber — Anthropic Harness Postmortem | Pebblous",
+            category: "tech",
+            publishDate: "2026-04-24",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/claude-harness-postmortem/en/",
+            tags: ["Claude", "Anthropic", "harness", "system prompt", "AI agent", "postmortem", "Claude Code"],
+            faqs: [
+                {
+                    question: "Did the model itself change?",
+                    answer: "No. The model weights remained identical. Three harness changes — a reasoning effort downgrade, a cache cleanup bug, and a 25-word system prompt limit — were responsible."
+                },
+                {
+                    question: "Were API users affected?",
+                    answer: "No. The API was unaffected. Only product-layer surfaces like Claude Code, Agent SDK, and Cowork were impacted."
+                },
+                {
+                    question: "What is reasoning effort?",
+                    answer: "A setting that controls how deeply Claude thinks before responding. Higher settings produce more accurate results on complex tasks but increase latency. Lower settings are faster but sacrifice accuracy."
+                },
+                {
+                    question: "Why did the cache bug escape testing?",
+                    answer: "It occurred at the intersection of three systems. Two unrelated experiments were running simultaneously, making it difficult to isolate the cause. It passed code review, unit tests, and e2e tests. It was ultimately discovered by an Opus 4.7 code review."
+                },
+                {
+                    question: "Why was the 25-word limit introduced?",
+                    answer: "To reduce unnecessary text between tool calls. It passed weeks of internal testing, but coding quality dropped 3% after public deployment, so it was reverted."
+                },
+                {
+                    question: "What is the difference between xhigh and high?",
+                    answer: "xhigh is the highest reasoning mode, currently exclusive to Opus 4.7. It performs deeper reasoning than high but incurs greater response latency."
+                },
+                {
+                    question: "Were Pebblous users affected?",
+                    answer: "All users of Claude Code were affected. Agent SDK-based systems like NanoClaw experienced the same issues."
+                },
+                {
+                    question: "What preventive measures did Anthropic announce?",
+                    answer: "Expanded internal dogfooding of public builds, tighter controls on system prompt changes, mandatory soak periods and gradual rollouts. They also launched the @ClaudeDevs channel for real-time product change communication."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="&copy; 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>Claude가 멍청해진 진짜 이유 — Anthropic 하네스 포스트모템 | 페블러스</title>
+    <meta name="description" content="3월부터 7주간 Claude 성능 저하를 일으킨 세 가지 하네스 변경. Anthropic 포스트모템이 밝힌 추론 노력 하향, 캐시 버그, 시스템 프롬프트 문제를 분석합니다. 모델은 바뀌지 않았다, 하네스가 망가졌다.">
+    <meta name="keywords" content="Claude, Anthropic, 하네스, 시스템프롬프트, AI에이전트, 포스트모템, Claude Code, reasoning effort, 캐시 버그">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/claude-harness-postmortem/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/claude-harness-postmortem/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/claude-harness-postmortem/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/claude-harness-postmortem/en/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Claude가 멍청해진 진짜 이유 — Anthropic 하네스 포스트모템">
+    <meta property="og:description" content="3월부터 7주간 Claude 성능 저하를 일으킨 세 가지 하네스 변경. 모델은 바뀌지 않았다, 하네스가 망가졌다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/claude-harness-postmortem/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/claude-harness-postmortem/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Claude가 멍청해진 진짜 이유 — Anthropic 하네스 포스트모템">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="Claude가 멍청해진 진짜 이유 — Anthropic 하네스 포스트모템">
+    <meta name="twitter:description" content="3월부터 7주간 Claude 성능 저하를 일으킨 세 가지 하네스 변경. 모델은 바뀌지 않았다, 하네스가 망가졌다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/claude-harness-postmortem/ko/image/index.png">
+    <meta name="twitter:image:alt" content="Claude 하네스 포스트모템 분석">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260424">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260424">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260424">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #F86825;
+        }
+        .timeline-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            border-bottom: 2px solid #F86825;
+        }
+        .timeline-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(71,85,105,0.15);
+        }
+        .timeline-table tr:hover td {
+            background: rgba(248,104,37,0.04);
+        }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 생각의 깊이를 낮췄다</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 기억을 지우는 버그</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. "25단어 이내로 말하라"</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 세 겹의 그림자</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 이 사건이 말해주는 것</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+
+                    <div class="key-insight mb-8">
+                        <p class="themeable-text leading-relaxed">
+                            3월부터 4월까지 Claude 사용자들이 성능 저하를 보고했다. 4월 23일 Anthropic이 포스트모템을 발표했다. 모델은 바뀌지 않았다. 모델을 감싸는 하네스 — 시스템 프롬프트, 캐싱, 추론 설정 — 에서 세 가지 변경이 동시다발적으로 일어났고, 그것이 겹치면서 "광범위하고 비일관적인 성능 저하"처럼 보였다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            이 사건은 AI 모델의 성능이 모델 가중치만으로 결정되지 않는다는 것을 보여준다. 시스템 프롬프트 한 줄, 캐시 정책 하나, 추론 깊이 기본값 하나가 사용자 경험을 근본적으로 바꿀 수 있다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            하네스는 모델의 옷이 아니라 감각기관이다. 감각기관이 망가지면 뇌가 멀쩡해도 세상을 볼 수 없다. 문제를 발견한 건 사용자들이었다.
+                        </p>
+                    </div>
+
+                    <!-- 핵심 수치 카드 -->
+                    <p class="themeable-text leading-relaxed mb-6">아래는 이번 사건의 핵심 수치를 한눈에 정리한 것이다.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="stat-card themeable-bg-card rounded-lg">
+                            <div class="stat-number">7주</div>
+                            <p class="themeable-text text-sm mt-1">문제 지속 기간 (3/4~4/20)</p>
+                        </div>
+                        <div class="stat-card themeable-bg-card rounded-lg">
+                            <div class="stat-number">3건</div>
+                            <p class="themeable-text text-sm mt-1">동시다발 하네스 변경</p>
+                        </div>
+                        <div class="stat-card themeable-bg-card rounded-lg">
+                            <div class="stat-number">3%</div>
+                            <p class="themeable-text text-sm mt-1">코딩 품질 하락 (verbosity 지시)</p>
+                        </div>
+                        <div class="stat-card themeable-bg-card rounded-lg">
+                            <div class="stat-number">0건</div>
+                            <p class="themeable-text text-sm mt-1">API 영향 (제품 레이어만)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1: 생각의 깊이를 낮췄다 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">생각의 깊이를 낮췄다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        3월 4일, Claude Code의 기본 추론 노력(reasoning effort)을 <strong>high</strong>에서 <strong>medium</strong>으로 내렸다. 목적은 UI 지연 해결이었다. 사용자들은 곧바로 알아챘다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        "Claude가 덜 똑똑해졌다."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        medium은 생각을 덜 하는 모드다. 응답은 빨라지지만, 복잡한 문제에서 정확도가 떨어진다. 속도와 지능의 트레이드오프에서 Anthropic은 속도를 택했고, 사용자들은 지능을 원했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        4월 7일에 되돌렸다. 현재 Opus 4.7은 <strong>xhigh</strong>, 나머지 모델은 <strong>high</strong>가 기본이다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Anthropic의 회고: <strong>"이것은 잘못된 트레이드오프였다."</strong>
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2: 기억을 지우는 버그 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">기억을 지우는 버그</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        3월 26일, 캐시 최적화 작업에서 버그가 배포되었다. 한 번만 실행될 정리 로직이 매 턴마다 반복 실행되었다. 결과는 건망증과 반복이었다. Claude가 같은 말을 되풀이하고, 방금 논의한 맥락을 잊어버렸다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 버그는 코드 리뷰, 유닛 테스트, e2e 테스트, 자동 검증, 내부 사용 — 모든 관문을 통과했다. 발견한 것은 <strong>Opus 4.7의 코드 리뷰</strong>였다. 4.6으로는 찾지 못했다. 더 똑똑한 모델이 더 교묘한 버그를 잡았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        4월 10일에 수정되었다.
+                    </p>
+                </section>
+
+                <!-- Section 3: "25단어 이내로 말하라" -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">"25단어 이내로 말하라"</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        4월 16일, 시스템 프롬프트가 바뀌었다. 새 지시: "도구 호출 사이에는 25단어 이내로, 최종 응답은 100단어 이내로."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        목적은 도구 호출 사이의 불필요한 텍스트를 줄이는 것이었다. 수 주간 내부 테스트를 통과했다. 그러나 배포 후 코딩 품질이 <strong>3% 하락</strong>한 것이 확인되었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        말을 짧게 하라는 지시가 생각까지 짧게 만들었다. 설명을 줄이려다 추론의 밀도까지 줄어들었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        4월 20일에 되돌렸다.
+                    </p>
+                </section>
+
+                <!-- Section 4: 세 겹의 그림자 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">세 겹의 그림자</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 변경은 각각 다른 날짜에, 다른 트래픽 비율에 적용되었다. 각각은 작은 문제였지만, 합산 효과는 "비일관적 저하"라는 혼란스러운 증상으로 나타났다. 어떤 사용자는 문제를 느꼈고, 어떤 사용자는 괜찮았다. 원인을 특정하기 어려운 가장 까다로운 종류의 장애였다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        API는 영향받지 않았다. 문제는 전적으로 제품 레이어 — 하네스, 시스템 프롬프트, 캐싱 — 에서 발생했다. 같은 모델이 API로는 정상이고, 제품으로는 이상했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        아래는 사건의 전체 타임라인이다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full timeline-table themeable-text text-sm">
+                            <thead>
+                                <tr class="themeable-bg-card">
+                                    <th>날짜</th>
+                                    <th>사건</th>
+                                    <th>영향</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="whitespace-nowrap">3월 4일</td>
+                                    <td>추론 노력 high &rarr; medium</td>
+                                    <td>Claude Code 지능 저하</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">3월 26일</td>
+                                    <td>캐시 정리 버그 배포</td>
+                                    <td>건망증, 반복</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">4월 7일</td>
+                                    <td>추론 노력 되돌림</td>
+                                    <td>부분 회복</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">4월 10일</td>
+                                    <td>캐시 버그 수정</td>
+                                    <td>기억 회복</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">4월 16일</td>
+                                    <td>25단어 제한 배포</td>
+                                    <td>코딩 3% 하락</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">4월 20일</td>
+                                    <td>25단어 제한 되돌림</td>
+                                    <td>전면 회복</td>
+                                </tr>
+                                <tr>
+                                    <td class="whitespace-nowrap">4월 23일</td>
+                                    <td>포스트모템 발표</td>
+                                    <td>사용 한도 리셋</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Section 5: 이 사건이 말해주는 것 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">이 사건이 말해주는 것</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Anthropic은 대응책을 내놓았다. 영향받은 사용자의 사용 한도를 리셋했고, <strong>@ClaudeDevs</strong> 채널을 개설해 제품 변경 사항을 실시간으로 공유하기 시작했다. 공개 빌드를 내부에서도 동일하게 사용하고, 시스템 프롬프트 변경에 대한 통제를 강화했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그러나 더 깊은 교훈은 조직적 대응이 아니라 구조적 진실에 있다.
+                    </p>
+
+                    <div class="key-insight mb-6">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>하네스는 모델의 옷이 아니라 감각기관이다.</strong> 감각기관이 망가지면 뇌가 멀쩡해도 세상을 볼 수 없다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        시스템 프롬프트는 모델이 세상을 인식하는 방식을 결정한다. 캐시는 모델이 기억을 유지하는 메커니즘이다. 추론 노력은 모델이 얼마나 깊이 생각할지를 결정하는 설정이다. 이 세 가지는 모델 가중치 바깥에 있지만, 사용자 경험은 이것들로 결정된다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그리고 이 문제를 발견한 건 사용자들이었다. 내부 테스트도, 자동화된 검증도, 코드 리뷰도 이 세 변경의 합산 효과를 잡아내지 못했다. 실전 사용자가 매일 겪는 워크플로우의 미묘한 저하를 감지한 것이다. 모델을 만드는 사람보다 모델을 쓰는 사람이 모델을 더 잘 안다는, 오래된 진실의 반복이다.
+                    </p>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">참고문헌</h2>
+                    <ol class="space-y-3 themeable-text text-sm leading-relaxed ml-6" style="list-style-type: decimal;">
+                        <li><a href="https://www.anthropic.com/engineering/april-23-postmortem" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">Anthropic Engineering — April 23 Postmortem</a> — Claude 성능 저하 원인과 대응에 대한 공식 포스트모템</li>
+                        <li><a href="https://venturebeat.com/technology/mystery-solved-anthropic-reveals-changes-to-claudes-harnesses-and-operating-instructions-likely-caused-degradation" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">VentureBeat — Mystery solved: Anthropic reveals changes to Claude's harnesses</a> — 하네스 변경이 성능 저하의 원인이었음을 보도</li>
+                        <li><a href="https://www.theregister.com/2026/04/23/anthropic_says_it_has_fixed/" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">The Register — Anthropic says it has fixed the issues</a> — 문제 해결과 재발 방지책에 대한 보도</li>
+                    </ol>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260424"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "Claude가 멍청해진 진짜 이유",
+            subtitle: "Anthropic이 밝힌 세 가지 실수 — 모델은 바뀌지 않았다, 하네스가 망가졌다",
+            pageTitle: "Claude가 멍청해진 진짜 이유 — Anthropic 하네스 포스트모템 | 페블러스",
+            category: "tech",
+            publishDate: "2026-04-24",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/claude-harness-postmortem/ko/",
+            tags: ["Claude", "Anthropic", "하네스", "시스템프롬프트", "AI에이전트", "포스트모템", "Claude Code"],
+            faqs: [
+                {
+                    question: "모델 자체가 바뀐 건가?",
+                    answer: "아니다. 모델 가중치는 동일하다. 하네스(제품 레이어)의 세 가지 변경 — 추론 노력 하향, 캐시 정리 버그, 시스템 프롬프트 25단어 제한 — 이 원인이었다."
+                },
+                {
+                    question: "API 사용자도 영향받았나?",
+                    answer: "아니다. API는 영향받지 않았다. Claude Code, Agent SDK, Cowork 등 제품 레이어만 영향을 받았다."
+                },
+                {
+                    question: "reasoning effort가 뭔가?",
+                    answer: "Claude의 사고 깊이 설정이다. high일수록 오래 생각하지만 정확도가 상승한다. medium으로 내리면 응답은 빨라지지만 복잡한 문제에서 성능이 떨어진다."
+                },
+                {
+                    question: "캐시 버그는 왜 테스트에서 못 잡았나?",
+                    answer: "세 시스템의 교차점에서 발생한 버그였다. 두 개의 무관한 실험이 동시에 진행되어 원인 분리가 어려웠다. 코드 리뷰, 유닛 테스트, e2e 테스트 모두 통과했고, Opus 4.7 코드 리뷰로 발견되었다."
+                },
+                {
+                    question: "25단어 제한은 왜 도입했나?",
+                    answer: "도구 호출 사이의 불필요한 텍스트를 줄이려는 목적이었다. 수 주간 내부 테스트를 통과했으나, 실전 배포 후 코딩 품질이 3% 하락하여 되돌렸다."
+                },
+                {
+                    question: "xhigh와 high의 차이는?",
+                    answer: "xhigh는 Opus 4.7 전용 최고 수준 사고 모드다. high보다 더 깊은 추론을 수행하지만 응답 지연이 더 크다."
+                },
+                {
+                    question: "페블러스 사용자도 영향받았나?",
+                    answer: "Claude Code를 사용하는 모든 사용자가 영향을 받았다. NanoClaw 같은 Agent SDK 기반 시스템도 동일하게 영향을 받았다."
+                },
+                {
+                    question: "Anthropic의 재발 방지책은?",
+                    answer: "공개 빌드 내부 사용 확대, 시스템 프롬프트 변경 통제 강화, 소크 기간과 점진적 롤아웃 의무화를 발표했다. @ClaudeDevs 채널을 개설해 제품 변경 사항을 실시간 공유하기 시작했다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>

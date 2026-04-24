@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>NanoClaw Architecture Deep Dive — AI Agent Design in 5,526 Lines | Pebblous</title>
+    <meta name="description" content="A complete teardown of NanoClaw v1.2.12: 21 source files, container isolation, SQLite state, and MCP integration. Design choices and trade-offs of a single-process multi-channel agent on Claude Agent SDK.">
+    <meta name="keywords" content="NanoClaw, Claude Agent SDK, Managed Agents, AI agent, container isolation, MCP, multi-channel, SQLite, TypeScript, architecture analysis">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/nanoclaw-architecture-deep-dive/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/nanoclaw-architecture-deep-dive/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/nanoclaw-architecture-deep-dive/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/nanoclaw-architecture-deep-dive/en/">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="21 Files, 5,526 Lines — Inside NanoClaw's AI Agent Architecture">
+    <meta property="og:description" content="A complete teardown of NanoClaw v1.2.12: container isolation, SQLite state management, and MCP integration. The structural trade-offs of a single-process multi-channel agent.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/nanoclaw-architecture-deep-dive/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/nanoclaw-architecture-deep-dive/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-04-23">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="21 Files, 5,526 Lines — Inside NanoClaw's AI Agent Architecture">
+    <meta name="twitter:description" content="NanoClaw v1.2.12 teardown — container isolation, SQLite, MCP integration, and structural trade-offs">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/nanoclaw-architecture-deep-dive/en/image/index.png">
+    <meta name="twitter:image:alt" content="NanoClaw Architecture Deep Dive Report">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- JSON-LD: Article -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "21 Files, 5,526 Lines — Inside NanoClaw's AI Agent Architecture",
+        "description": "A complete teardown of NanoClaw v1.2.12: 21 source files, container isolation, SQLite state management, and MCP integration. Design choices and trade-offs of a single-process multi-channel agent on Claude Agent SDK.",
+        "image": "https://blog.pebblous.ai/report/nanoclaw-architecture-deep-dive/en/image/index.png",
+        "author": {
+            "@type": "Organization",
+            "name": "Pebblous"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Pebblous",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://www.pebblous.ai/image/Pebblous_BM_Orange_RGB.png"
+            }
+        },
+        "datePublished": "2026-04-23",
+        "dateModified": "2026-04-23",
+        "keywords": ["NanoClaw", "Claude Agent SDK", "Managed Agents", "AI agent", "container isolation", "MCP", "multi-channel", "SQLite", "TypeScript", "architecture analysis"]
+    }
+    </script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260423">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260423">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260423">
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. What Is NanoClaw</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Architecture Teardown</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Container Isolation</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Scheduler & State</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Skills & MCP Integration</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. Architecture Comparison</a></li>
+                    <li><a href="#section-7" class="block pl-4 themeable-toc-link transition-colors duration-200">7. Structural Limitations</a></li>
+                    <li><a href="#section-8" class="block pl-4 themeable-toc-link transition-colors duration-200">8. Implications</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            NanoClaw (v1.2.12) is an open-source framework that implements a container-isolated, multi-channel AI agent on top of a radically compact codebase: 21 source files totaling 5,526 lines. A single Node.js process orchestrates the entire lifecycle — from message ingestion and container provisioning to scheduling and response delivery — by wrapping the Claude Agent SDK to delegate the agent execution loop.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Its 27,690 GitHub stars and 12,607 forks signal strong community interest, yet real-world constraints are equally clear: a single-file SQLite dependency, no horizontal scaling, and only two active channel adapters (Slack and Gmail) as of v1.2.12.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            This report positions NanoClaw through a three-way comparison with Claude Agent SDK (a library, v0.2.118, 16.8M monthly npm downloads) and Anthropic Managed Agents (a hosted platform, launched April 2026), examining the design choices and trade-offs of self-hosted AI agent architectures.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 1: What Is NanoClaw -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What Is NanoClaw — An AI Agent in 21 Files</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        NanoClaw was born as a lightweight alternative to OpenClaw (434,453 lines across 3,680 files). Its founding premise: "the entire codebase should be comprehensible in under 8 minutes." The measured scale is 21 source files and 5,526 lines, with just 8 runtime dependencies.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Three design principles underpin NanoClaw's architecture.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Code-as-Configuration</strong> — Zero configuration files. To change behavior, you modify the code directly. Compare this with OpenClaw's 53 config files.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Skills Over Features</strong> — Rather than baking capabilities into the framework, NanoClaw extends through skills (code snippets). The framework itself stays thin.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>AI-Native Debugging</strong> — The codebase must be small enough that the agent can read and debug its own source code.</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The following table compares the scale of OpenClaw and NanoClaw.
+                    </p>
+
+                    <!-- OpenClaw vs NanoClaw Comparison Table -->
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm themeable-text" style="border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color);">
+                                    <th class="text-left py-3 px-4 font-semibold themeable-heading">Metric</th>
+                                    <th class="text-right py-3 px-4 font-semibold themeable-heading">OpenClaw</th>
+                                    <th class="text-right py-3 px-4 font-semibold themeable-heading">NanoClaw</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-4">Source files</td>
+                                    <td class="text-right py-3 px-4">3,680</td>
+                                    <td class="text-right py-3 px-4 font-semibold" style="color: var(--accent-color);">21</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-4">Lines of code</td>
+                                    <td class="text-right py-3 px-4">434,453</td>
+                                    <td class="text-right py-3 px-4 font-semibold" style="color: var(--accent-color);">5,526</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-4">Dependencies</td>
+                                    <td class="text-right py-3 px-4">70+</td>
+                                    <td class="text-right py-3 px-4 font-semibold" style="color: var(--accent-color);">8</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4">Config files</td>
+                                    <td class="text-right py-3 px-4">53</td>
+                                    <td class="text-right py-3 px-4 font-semibold" style="color: var(--accent-color);">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The tech stack consists of Node.js 20+, TypeScript (90.2% of the codebase), SQLite in WAL mode, Docker/Apple Container, and the Claude Agent SDK. Shell scripts account for 7.6%, Python for 1.2%.
+                    </p>
+                </section>
+
+                <!-- Section 2: Architecture Teardown -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Architecture Teardown — How a Message Travels</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Tracing a single message through NanoClaw reveals the system's design intent. A message follows this path from ingestion to response.
+                    </p>
+
+                    <!-- Message Flow Diagram -->
+                    <div class="key-insight mb-8">
+                        <p class="themeable-text leading-relaxed text-sm" style="font-family: monospace; line-height: 1.8;">
+                            Messaging app (Slack/Gmail) → <strong>Channel Adapter</strong> → SQLite (inbound store) → <strong>2-second polling loop</strong> → Container launch (Claude Agent SDK) → <strong>IPC (filesystem)</strong> → Host process → Messaging app response
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">src/index.ts</code> (662 lines) serves as the system-wide orchestrator. It maps precisely to Anthropic's recommended Orchestrator-Workers pattern. This single file handles channel registration, message polling, container management, and response routing.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">2.1 Channel Self-Registration Pattern</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Channel connectivity is implemented through a Map-based pattern in <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">registry.ts</code> (28 lines). If credentials exist as environment variables, the corresponding channel activates automatically. An elegant design that avoids hardcoding channels — yet as of v1.2.12, only Slack and Gmail are actually active. WhatsApp, Telegram, and Discord adapters exist in the code but are commented out.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">2.2 Concurrency Control: GroupQueue</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">group-queue.ts</code> (366 lines) manages two dimensions of concurrency simultaneously. It preserves message ordering within groups while enforcing a global ceiling of <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">MAX_CONCURRENT_CONTAINERS=5</code>. No more than five containers can run at once.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        From an academic perspective, this structure corresponds to the Supervisor/Hub-Spoke pattern — the most mature orchestration model, but one with a well-known limitation: "the central orchestrator becomes a bottleneck at scale" (arXiv:2601.13671).
+                    </p>
+                </section>
+
+                <!-- Section 3: Container Isolation Strategy -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Container Isolation — Security at the OS Boundary</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Where NanoClaw diverges most sharply from other agent frameworks is in embedding OS-level container isolation directly into the framework itself. None of LangGraph, CrewAI, or AutoGen offer this level of isolation out of the box.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">3.1 .env Shadowing: Physically Blocking API Keys</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">buildVolumeMounts()</code> function mounts the <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">.env</code> file to <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">/dev/null</code>. API keys physically do not exist inside the container. This goes beyond merely withholding environment variables — it overwrites the file itself with an empty device node.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">3.2 Credential Proxy Pattern</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">credential-proxy.ts</code> (126 lines) manages API keys on the host side, and containers access external services only through the proxy. This design addresses OWASP ASI05 (Unexpected Code Execution) and ASI03 (Identity and Privilege Abuse).
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">3.3 Filesystem-Based IPC</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Agent-host communication uses filesystem-based IPC rather than network sockets (<code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">ipc.ts</code>, 490 lines). No network ports are opened, reducing the attack surface.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">3.4 Three Tiers of Isolation</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        NanoClaw offers three levels of isolation.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Docker containers</strong> — Default isolation. Runs on a shared kernel, so kernel vulnerabilities remain a concern.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Docker Sandboxes (microVMs)</strong> — Firecracker-grade isolation. Boot time around 125ms, memory footprint under 5 MiB.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Apple Container</strong> — Native macOS virtualization. Provides isolation without Docker in development environments.</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That said, container isolation alone does not complete the security picture. Both academic research and NanoClaw's own codebase reveal additional considerations.
+                    </p>
+
+                    <div class="key-insight mb-6">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Note:</strong> Container isolation is a starting point, not an endpoint, for security. Research from IsolateGPT (NDSS 2025) shows that containers share the host kernel, making microVMs the recommended choice for untrusted code execution. <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">mount-security.ts</code> (420 lines) adds an allowlist-based mount path validation layer as a further line of defense.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4: Scheduler and State Management -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Scheduler and State Management — Time on SQLite</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        All of NanoClaw's state lives in a single SQLite file. Message storage, group registration, schedule state, and session mappings share 7 tables and 4 indexes running in WAL mode. <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">db.ts</code> (698 lines) exposes 30 functions that handle all data access.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">4.1 Three Schedule Types</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">task-scheduler.ts</code> (297 lines) supports three schedule types.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>cron</strong> — Recurring execution at specific times. Uses standard cron expressions.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>interval</strong> — Recurring execution at fixed intervals, specified in milliseconds.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>once</strong> — Single execution at a specified time, then deleted.</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">4.2 Drift Prevention</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The scheduler's core mechanism is its drift prevention logic. The <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">computeNextRun()</code> function anchors interval-type tasks to <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">task.next_run</code> rather than <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">Date.now()</code>. A <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">while (next &lt;= now) next += ms;</code> loop skips missed intervals while preventing cumulative execution drift. However, since <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">SCHEDULER_POLL_INTERVAL</code> is 60 seconds, up to 60 seconds of execution latency is unavoidable.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">4.3 A Deliberate Trade-Off</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The single SQLite file is a deliberate trade-off. No external database server is needed, and a single file handles deployment — operational simplicity at the cost of horizontal scalability. Even in WAL mode, writes are serialized. The vector search and reflective memory proposed by the agent memory survey (arXiv:2603.07670) are absent entirely.
+                    </p>
+                </section>
+
+                <!-- Section 5: Skills System and MCP Integration -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Skills System and MCP Integration — Designing for Extension</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        NanoClaw connects to the outside world through two pathways: the Skills system and MCP (Model Context Protocol) integration.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">5.1 Skills: Extensions Defined in Code</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Skills use a YAML frontmatter-based just-in-time loading mechanism. When the agent needs a particular skill, it loads that skill's definition and injects it into context. This "load only when needed" approach is designed for efficient use of the context window.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">5.2 MCP Passthrough</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        MCP (announced by Anthropic in November 2024) is a tool integration protocol built on a Host/Client/Server triad and JSON-RPC 2.0. NanoClaw connects to MCP servers via the Claude Agent SDK's <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">mcpServers</code> option using stdio/HTTP transport. Of MCP's five primitives (Tools, Resources, Prompts, Sampling, Elicitation), NanoClaw primarily uses Tools.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Academically, MCP standardizes at the infrastructure level the "tool selection and invocation" paradigm proposed by Toolformer (NeurIPS 2023). NanoClaw adopts this standard as a passthrough without adding its own tool selection logic. It wraps the Claude Agent SDK's <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">query()</code> call and uses <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">allowedTools</code>, <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">mcpServers</code>, and <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">agents</code> options to control the agent's capability scope.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">5.3 Fork-Based Customization</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Instead of a plugin system or configuration files, NanoClaw recommends customization through forking. With just 5,526 lines, forking the entire codebase and modifying it directly is a practical option. This is the natural consequence of the Code-as-Configuration principle.
+                    </p>
+                </section>
+
+                <!-- Section 6: Architecture Comparison -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Architecture Comparison — NanoClaw vs. Agent SDK vs. Managed Agents</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Understanding NanoClaw's position requires comparing it within the Anthropic ecosystem. Self-hosting (NanoClaw), library embedding (Claude Agent SDK), and hosted platform (Managed Agents) represent three approaches, each solving different problems.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">6.1 Managed Agents' Three-Part Architecture</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Launched in April 2026, Managed Agents separates concerns into Brain (stateless reasoning), Hands (sandboxed execution), and Session (append-only event log). Because Brain is stateless, it scales horizontally; Session logs enable automatic recovery from failures. The platform achieves approximately 60% reduction in p50 TTFT (Time to First Token) and over 90% reduction in p95 TTFT. Pricing is $0.08 per session-hour plus token costs.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">6.2 Three-Way Comparison</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The following table compares the three approaches across key dimensions.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm themeable-text" style="border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border-color);">
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading" style="min-width: 100px;">Dimension</th>
+                                    <th class="text-left py-3 px-3 font-semibold" style="color: var(--accent-color); min-width: 120px;">NanoClaw</th>
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading" style="min-width: 120px;">Agent SDK</th>
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading" style="min-width: 120px;">Managed Agents</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-3 font-semibold">Deployment</td>
+                                    <td class="py-3 px-3">Self-hosted single process</td>
+                                    <td class="py-3 px-3">Library embedding</td>
+                                    <td class="py-3 px-3">Anthropic-hosted cloud</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-3 font-semibold">Isolation unit</td>
+                                    <td class="py-3 px-3">Docker/Apple Container per group</td>
+                                    <td class="py-3 px-3">Developer's responsibility</td>
+                                    <td class="py-3 px-3">Brain/Hands/Session separation</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-3 font-semibold">State management</td>
+                                    <td class="py-3 px-3">SQLite single file (WAL)</td>
+                                    <td class="py-3 px-3">Session ID-based local files</td>
+                                    <td class="py-3 px-3">Server-side event log</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-3 font-semibold">Scalability</td>
+                                    <td class="py-3 px-3">Vertical only (max 5 concurrent)</td>
+                                    <td class="py-3 px-3">Application-dependent</td>
+                                    <td class="py-3 px-3">Horizontal (stateless Brain)</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-3 font-semibold">MCP integration</td>
+                                    <td class="py-3 px-3">Passthrough (stdio/HTTP)</td>
+                                    <td class="py-3 px-3">Native</td>
+                                    <td class="py-3 px-3">Native</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-3 font-semibold">Messaging</td>
+                                    <td class="py-3 px-3">Built-in (Slack + Gmail)</td>
+                                    <td class="py-3 px-3">None</td>
+                                    <td class="py-3 px-3">None</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-3 font-semibold">Scheduling</td>
+                                    <td class="py-3 px-3">cron/interval/once built-in</td>
+                                    <td class="py-3 px-3">None</td>
+                                    <td class="py-3 px-3">None</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-3 font-semibold">Cost model</td>
+                                    <td class="py-3 px-3">Infra + API tokens</td>
+                                    <td class="py-3 px-3">API tokens only</td>
+                                    <td class="py-3 px-3">Tokens + $0.08/session-hour</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-3 font-semibold">Failure recovery</td>
+                                    <td class="py-3 px-3">Manual restart</td>
+                                    <td class="py-3 px-3">Session resume</td>
+                                    <td class="py-3 px-3">Auto-recovery via Session log</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td class="py-3 px-3 font-semibold">Code transparency</td>
+                                    <td class="py-3 px-3">5,526 lines, fully auditable</td>
+                                    <td class="py-3 px-3">Open-source SDK</td>
+                                    <td class="py-3 px-3">Black-box infrastructure</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-3 font-semibold">Credential security</td>
+                                    <td class="py-3 px-3">Credential Proxy + .env shadowing</td>
+                                    <td class="py-3 px-3">Direct env var exposure</td>
+                                    <td class="py-3 px-3">Credential isolation (outside sandbox)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">6.3 Position Among Competing Frameworks</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        By GitHub stars, the ranking is AutoGen (57,347), CrewAI (49,605), LangGraph (30,088), and NanoClaw (27,690). Yet NanoClaw is effectively the only framework that embeds OS-level container isolation within the framework itself, with messaging app integration as a first-class citizen. On the other hand, NanoClaw lacks multi-vendor LLM support, graph-based workflows, and role-based team composition — advanced orchestration patterns found in its competitors.
+                    </p>
+                </section>
+
+                <!-- Section 7: Structural Limitations -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Structural Limitations — NanoClaw's Ceiling</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        NanoClaw's minimalism comes with a clear ceiling. What follows is a data-driven analysis of its structural limitations.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">7.1 Single-Process Bottleneck</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">MAX_CONCURRENT_CONTAINERS=5</code> is the hard ceiling. When a sixth group requests processing, it queues. SQLite synchronous writes and container startup (~3 seconds) risk blocking the event loop. If the process crashes, every channel, schedule, and session goes down simultaneously — a single point of failure (SPOF).
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">7.2 SQLite Scalability Limits</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Even in WAL mode, writes are serialized. When multiple groups process messages concurrently, write contention occurs. Seven tables consolidate messages, sessions, schedules, and router state, so table sizes grow linearly. As a file-based database, horizontal scaling across multiple servers is structurally impossible.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">7.3 Channel Support Gap</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        While officially claiming support for 13+ channels, source code analysis of v1.2.12 reveals only two active channel adapters: Slack (606 lines) and Gmail (419 lines). The channel self-registration pattern (<code style="background-color: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">registry.ts</code>, 28 lines) is elegant, but each real adapter implementation demands 400-600 lines of effort.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">7.4 No Observability or Recovery</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is no built-in monitoring or alerting system. A logger (pino) exists in 17 lines, but it connects to no external dashboard or notification channel. Failure recovery means manual restarts — a stark contrast to Managed Agents' Session log-based automatic recovery.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">7.5 Memory Architecture Gaps</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Vector search, reflective memory, and semantic graphs are absent. The write-manage-read loop proposed by the agent memory survey (arXiv:2603.07670) remains unimplemented. Long-running agents face context window exhaustion, with compaction relying entirely on Claude Agent SDK's built-in capabilities.
+                    </p>
+                </section>
+
+                <!-- Section 8: Implications -->
+                <section id="section-8" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">8</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Implications — The Reality of Building Local AI Agents</h2>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">8.1 What NanoClaw Proved</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        It proved that a production-grade multi-channel AI agent is possible in 5,526 lines. Container isolation and Credential Proxy demonstrated that security can be addressed at the code level. NanoClaw is a concrete embodiment of Anthropic's recommendation to "start with the simplest solution and add complexity only when needed."
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">8.2 What NanoClaw Exposed</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The single-process ceiling is unambiguous. In the era of Managed Agents, the value proposition of self-hosting lies in "total control" and "code transparency." According to Gartner, enterprise inquiries about multi-agent systems surged 1,445% between Q1 2024 and Q2 2025, while the share of enterprise AI projects using multi-agent architectures jumped from 23% to 72%. Within this trajectory, minimalist frameworks like NanoClaw serve primarily as tools for understanding and learning.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">8.3 Decision Framework</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The right choice depends on your situation.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Messaging integration is core, team is small</strong> — NanoClaw. You can audit the entire codebase yourself, and messaging channel support is built into the framework.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Embedding agents into an existing app, CI/CD automation</strong> — Claude Agent SDK. Embed as a library and add agent capabilities wherever you need them.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Enterprise long-running async workloads</strong> — Managed Agents. If you need horizontal scaling, automatic failure recovery, and observability, delegate the infrastructure.</span>
+                        </li>
+                    </ul>
+
+                    <!-- Closing Statement -->
+                    <div class="key-insight mt-8">
+                        <p class="themeable-text leading-relaxed">
+                            21 files. 5,526 lines. These numbers approximate the upper bound of an AI agent architecture that a single person can fully comprehend. NanoClaw is an experiment that simultaneously demonstrates what is possible within that limit — and what is not.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>Pebblous Team</strong><br>
+                        Pebblous Data Communication<br>
+                        <span class="themeable-muted text-sm">April 2026</span>
+                    </p>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260423"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "21 Files, 5,526 Lines \u2014 Inside NanoClaw\u2019s Architecture",
+            subtitle: "A single-process multi-channel agent on Claude Agent SDK, and its structural trade-offs",
+            pageTitle: "NanoClaw Architecture Deep Dive \u2014 AI Agent Design in 5,526 Lines | Pebblous",
+            publishDate: "2026-04-23",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            category: "tech",
+            articlePath: "report/nanoclaw-architecture-deep-dive/en/",
+            tags: ["NanoClaw", "Claude Agent SDK", "Managed Agents", "AI agent", "container isolation", "MCP", "multi-channel", "SQLite", "TypeScript", "architecture analysis"],
+            faqs: [
+                {
+                    question: "Does NanoClaw really consist of just 21 files?",
+                    answer: "Yes. Early planning estimated 15 files and roughly 3,900 lines, but measured analysis of v1.2.12 shows 21 source files totaling 5,526 lines. Channel adapters (slack.ts at 606 lines, gmail.ts at 419 lines) and security modules (mount-security.ts at 420 lines) pushed the count 42% above the initial estimate. Including tests, the total reaches 9,559 lines."
+                },
+                {
+                    question: "Does NanoClaw support WhatsApp?",
+                    answer: "The public repository claims support for 13+ channels, but source code analysis of v1.2.12 reveals only two active channel adapters: Slack and Gmail. WhatsApp, Telegram, and Discord adapters exist in the code but are commented out."
+                },
+                {
+                    question: "Is container isolation sufficient for security?",
+                    answer: "Container isolation is a starting point, not an endpoint, for security. NanoClaw shadows .env files to /dev/null, manages API keys outside containers via Credential Proxy, and uses filesystem-based IPC to reduce the network attack surface \u2014 a defense-in-depth approach. However, academic research shows that containers share the host kernel, so microVMs (such as Firecracker) are recommended for untrusted code execution."
+                },
+                {
+                    question: "Why choose NanoClaw over Managed Agents?",
+                    answer: "Four reasons: (1) Full control \u2014 you can audit and customize the entire 5,526-line codebase; (2) built-in messaging channel integration; (3) infrastructure costs only, with no additional $0.08/session-hour fee; and (4) data sovereignty, as all data stays on your own servers. If you need horizontal scaling, automatic failure recovery, and observability, Managed Agents is the better fit."
+                },
+                {
+                    question: "How does NanoClaw\u2019s scheduler maintain timing accuracy?",
+                    answer: "The computeNextRun() function in task-scheduler.ts implements drift prevention. For interval-type tasks, it anchors to task.next_run rather than Date.now(), using a while (next <= now) next += ms; loop to skip missed intervals. However, since SCHEDULER_POLL_INTERVAL is 60 seconds, up to 60 seconds of execution latency can occur."
+                },
+                {
+                    question: "Doesn\u2019t the single SQLite file become a bottleneck?",
+                    answer: "For small-scale operations, WAL mode provides read concurrency, but writes remain serialized. When multiple groups process messages simultaneously, write contention occurs. Because SQLite is file-based, horizontal scaling across multiple servers is structurally impossible. This is a deliberate trade-off: operational simplicity exchanged for scalability."
+                },
+                {
+                    question: "How does NanoClaw differ from frameworks like LangGraph and CrewAI?",
+                    answer: "The fundamental differences are isolation and messaging. LangGraph (30,088 stars), CrewAI (49,605 stars), and AutoGen (57,347 stars) focus on agent orchestration logic and provide neither container isolation nor messaging channel integration. NanoClaw is effectively the only framework that embeds OS-level container isolation within the framework itself, with messaging app integration as a first-class citizen."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
