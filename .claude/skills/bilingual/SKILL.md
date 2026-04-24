@@ -74,6 +74,7 @@ The English version MUST be created by **copying the completed KO file** and the
 - `og:locale` → `en_US`
 - `articlePath` → change `/ko/` to `/en/`
 - Language switcher: `href="../en/"` → `href="../ko/"`, text `English` → `한국어`
+- ⛔ **`og:image`, `twitter:image`, JSON-LD `image`** → `/en/image/index.png` 경로로 변경 (KO의 `/ko/image/` 그대로 두면 EN 공유 시 한글 OG 이미지 노출)
 
 **Text-only translations (using Edit tool for each):**
 - `<title>` content
