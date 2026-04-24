@@ -9,7 +9,7 @@
 
 ## LinkedIn
 
-총 펀딩 $944만(약 140억원). 이 금액으로 월 10,000건 이상의 미디어 인용과 150개 이상의 기관 고객을 확보한 기업이 있습니다.
+총 펀딩 $9.44M(약 140억원). 이 금액으로 월 10,000건 이상의 미디어 인용과 150개 이상의 기관 고객을 확보한 기업이 있습니다.
 
 CryptoQuant는 2018년 POSTECH 출신 주기영 대표가 설립한 온체인 데이터 분석 플랫폼입니다. 2022년 CME Group DataMine의 최초 온체인 데이터 공급업체로 선정되며 전통 금융과 크립토의 가교 역할을 확보했습니다.
 
@@ -45,7 +45,7 @@ Full analysis → https://blog.pebblous.ai/project/BizReport/cryptoquant-analysi
 
 ## Twitter/X
 
-$944만 펀딩으로 CME Group 최초 온체인 데이터 공급업체가 된 CryptoQuant.
+$9.44M 펀딩으로 CME Group 최초 온체인 데이터 공급업체가 된 CryptoQuant.
 
 Chainalysis의 1/57 자본으로 월 10,000+ 미디어 인용을 달성한 자본 효율성의 벤치마크.
 
@@ -57,7 +57,7 @@ https://blog.pebblous.ai/project/BizReport/cryptoquant-analysis/ko/
 
 ## Facebook
 
-$944만(약 140억원). 이것이 CryptoQuant의 총 투자유치 금액입니다.
+$9.44M(약 140억원). 이것이 CryptoQuant의 총 투자유치 금액입니다.
 
 같은 블록체인 분석 시장에서 Chainalysis는 $537M(약 7,950억원)을 모았습니다. CryptoQuant는 그 1/57 자본으로 월 10,000건 이상의 미디어 인용과 150개 이상의 기관 고객을 확보했습니다. Bloomberg, Forbes, Nasdaq이 매일 CryptoQuant의 데이터를 인용합니다.
 
