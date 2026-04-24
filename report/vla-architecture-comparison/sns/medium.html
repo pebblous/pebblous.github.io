@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://blog.pebblous.ai/report/vla-architecture-comparison/ko/">
+    <title>Three Teams, Three Robot Brains: How GR00T, Gemini Robotics, and pi-0 Diverged</title>
+</head>
+<body>
+
+<h1>Three Teams, Three Robot Brains: How GR00T, Gemini Robotics, and pi-0 Diverged</h1>
+
+<p><em>A 13-dimension architecture comparison of the three leading Vision-Language-Action models of 2025.</em></p>
+
+<hr>
+
+<p>In 2025, three organizations shipped fundamentally different answers to the same question: how should a robot brain be wired?</p>
+
+<p>NVIDIA, Google DeepMind, and Physical Intelligence each released a Vision-Language-Action (VLA) model -- a neural network that takes in camera images and natural-language instructions and outputs motor commands. All three aim for the same destination: robots that can see, understand, and act in the physical world. But their architectures reveal strikingly different beliefs about how to get there.</p>
+
+<h2>What Is a VLA?</h2>
+
+<p>Traditional robot software separates perception, planning, and control into discrete modules governed by explicit rules. A VLA collapses all three into a single end-to-end neural network. You say "move the plate to the right shelf," and the model handles everything from visual scene understanding to joint-level torque commands.</p>
+
+<p>Three conditions converged to make this possible in 2024-2025. First, internet-scale vision-language models (VLMs) became powerful enough to jointly process language and vision. Second, teleoperation and synthetic-data generation lowered the cost of collecting robot demonstrations. Third, humanoid hardware from Figure, 1X, Unitree, and Apptronik created explosive demand for general-purpose policies.</p>
+
+<h2>NVIDIA GR00T N1.7: Split the Brain in Two</h2>
+
+<p>NVIDIA's core hypothesis is borrowed from cognitive science. Humans deliberate slowly in unfamiliar situations (System 2) and react reflexively for practiced actions (System 1). GR00T N1.7 implements this literally.</p>
+
+<p>System 2 is a VLM -- Cosmos-Reason2-2B, built on the Qwen3-VL architecture -- that ingests camera frames and language instructions and produces a high-level plan. System 1 is a Diffusion Transformer (DiT) that converts that plan into real-time joint-position commands via flow matching. An MLP connector bridges the two, and its quality turns out to be the single most consequential design choice in the pipeline.</p>
+
+<p>The most original contribution is EgoScale: 20,000+ hours of human egocentric video -- factory workers assembling parts, cooks slicing ingredients, nurses performing procedures -- used as training data instead of robot demonstrations. NVIDIA reports the first manipulation scaling law: increasing egocentric data from 1,000 to 20,000 hours more than doubled average task completion rate. Gaps in coverage are filled with synthetic data from Isaac Sim.</p>
+
+<p>NVIDIA also integrates Cosmos, its World Foundation Model platform. Cosmos-Predict forecasts future video frames; Cosmos-Reason supplies physics-grounded decision-making. GR00T N1.7 adopts Cosmos-Reason2-2B as its System 2 backbone, making the boundary between VLA and world model deliberately porous.</p>
+
+<h2>Gemini Robotics 1.5: Think First, Act Second</h2>
+
+<p>Where NVIDIA splits the brain into two separate networks, Google keeps everything inside a single large model: Gemini 2.0. The key innovation in version 1.5 is Think-then-Act -- an internal chain-of-thought reasoning step that precedes action generation. Before the model moves a limb, it articulates a plan in natural language: "First confirm the plate position, then extend the arm..."</p>
+
+<p>The second innovation is Motion Transfer. Robots differ in arm length, joint count, and degrees of freedom. Motion Transfer projects heterogeneous robot morphologies into a shared physical representation space, allowing a single Gemini Robotics 1.5 checkpoint to control ALOHA, Bi-arm Franka, and Apollo humanoid platforms.</p>
+
+<p>Sample efficiency is the standout metric. Gemini Robotics 1.5 adapts to new tasks with just 50 to 100 demonstrations -- substantially lower than competing approaches. Across a 230-task benchmark, it significantly outperforms prior baselines. A separate variant, Robotics-ER 1.5, targets extended embodied reasoning and leads on 15 academic reasoning benchmarks.</p>
+
+<p>Google's implicit bet is that a sufficiently large language model already contains a world model. The vast pre-training of Gemini 2.0 on internet text and images encodes enough physical commonsense that an explicit world-modeling objective is unnecessary.</p>
+
+<h2>Physical Intelligence pi-0.5: Diffuse the Action</h2>
+
+<p>Physical Intelligence (PI) is a VC-backed startup, but its founding team comes from Google Brain, DeepMind, Stanford, and UC Berkeley. Their technical bet diverges from both NVIDIA and Google: generate actions through diffusion rather than autoregressive decoding or discrete tokenization.</p>
+
+<p>The architecture places a Flow Matching head on top of PaliGemma 3B, a 3-billion-parameter VLM pre-trained on internet-scale image-text pairs. PaliGemma encodes the visual scene and language instruction into a multimodal embedding. The Flow Matching head then learns a direct path from noise to target action, producing smooth, high-frequency continuous joint commands.</p>
+
+<p>Why diffusion? Robot manipulation demands sequences of dozens of tightly coordinated continuous motions. Discrete-token approaches struggle to express the smooth trajectories required for tasks like folding laundry or clearing a dishwasher. Flow Matching learns action distributions directly in continuous space, yielding finer-grained dexterity.</p>
+
+<p>PI reports a zero-shot task progress rate of 42.3% -- meaningful progress over prior work, but also an honest acknowledgment that nearly 60% of attempts still fail. The openpi open-source release invites the community to fine-tune on their own robot data, effectively crowdsourcing the data problem.</p>
+
+<h2>The Shared Bottleneck: Data</h2>
+
+<p>Architecture choices diverge, but all three teams converge on the same constraint: high-quality robot manipulation data is scarce, expensive, and impossible to scrape from the internet.</p>
+
+<p>NVIDIA bets on human egocentric video plus simulator-generated synthetic data. Google bets on massive language-vision pre-training plus cross-platform data unification. PI bets on real robot demonstrations plus community contributions. Each strategy reflects a worldview about which data best captures the essence of physical action.</p>
+
+<p>The manipulation scaling law discovered by GR00T gives the clearest investment signal: more data yields predictably better performance. But "more data" in the robot domain means either more hours of human video, more simulator compute, or more teleoperation labor. None of these scale as cheaply as web crawling.</p>
+
+<h2>World Models: Imagine or Act?</h2>
+
+<p>A deeper philosophical split runs beneath the architecture diagrams. Should a robot imagine the consequences of its actions before executing them, or should it learn to act directly from observation?</p>
+
+<p>NVIDIA answers emphatically: yes, imagine first. The Cosmos ecosystem layers world prediction (Cosmos-Predict), physics reasoning (Cosmos-Reason), and policy execution (GR00T) into a hierarchy where world understanding precedes action.</p>
+
+<p>Google answers implicitly: a large enough language model already imagines. Gemini's pre-training on internet data encodes sufficient physical intuition that a separate world model is redundant.</p>
+
+<p>PI answers pragmatically: skip the imagination and learn action distributions directly from data. No explicit world model, no future-frame prediction -- just Flow Matching on real demonstrations.</p>
+
+<p>Which hypothesis survives deployment will shape the next generation of robot foundation models.</p>
+
+<h2>What This Means</h2>
+
+<p>2025 is the "OpenAI moment" for robotics. For the first time, three credible organizations have released general-purpose VLA models that can be compared on common dimensions -- architecture, data strategy, hardware coupling, open-source availability, and world-model integration.</p>
+
+<p>The full 13-dimension comparison -- including adaptation efficiency, inference speed, multi-embodiment support, and organizational structure -- is available in the original report.</p>
+
+<p>At Pebblous, we work at the intersection of this data challenge: PebbloSim generates physics-based synthetic data for robotics and autonomous driving, while DataClinic provides quantitative data-quality diagnostics for AI training pipelines. As VLA models scale, the quality and diversity of training data will matter as much as the architecture itself.</p>
+
+<p><strong>Read the full report:</strong> <a href="https://blog.pebblous.ai/report/vla-architecture-comparison/ko/">VLA Architecture Comparison -- GR00T vs Gemini Robotics vs pi-0</a></p>
+
+</body>
+</html>
