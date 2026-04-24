@@ -14,8 +14,23 @@ agent: dc-story-writer-en
 
 - KO HTML을 자연스러운 영어로 번역 (직역 금지)
 - 영미권 독자 기준 표현 사용
-- `../ko/image/` 이미지 경로 참조 (중복 다운로드 방지)
+- 본문 이미지: `../ko/image/` 경로 참조 (중복 다운로드 방지)
 - EN OG 이미지 생성
+
+### ⛔ OG 이미지 경로 규칙 (필수)
+
+**og:image, twitter:image, JSON-LD image 경로는 반드시 `/en/image/index.png`로 변경해야 한다.**
+
+KO의 `/ko/image/` 경로를 그대로 복사하면 EN 페이지 공유 시 한글 OG 이미지가 노출된다.
+본문 `<img>` 태그는 `../ko/image/`를 공유해도 되지만, 메타 태그의 OG 이미지는 반드시 EN 전용 경로를 사용할 것.
+
+```
+✅ og:image    → https://blog.pebblous.ai/{slug}/en/image/index.png
+✅ twitter:image → https://blog.pebblous.ai/{slug}/en/image/index.png
+✅ JSON-LD image → https://blog.pebblous.ai/{slug}/en/image/index.png
+
+❌ og:image    → https://blog.pebblous.ai/{slug}/ko/image/index.png  ← 금지
+```
 
 ## 입력
 
