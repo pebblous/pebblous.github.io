@@ -318,6 +318,12 @@ PebblousPage.init({ mainTitle: "...", subtitle: "...", faqs: [...] });
 </div>
 ```
 
+#### 3-1. h3 서브섹션 번호 (표준)
+```html
+<!-- ✅ 서브섹션 번호는 sub-number-badge 사용 -->
+<h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>서브섹션 제목</h3>
+```
+
 #### 4. fade-in-card 누락 (금지)
 ```html
 <!-- ❌ 절대 금지 -->
