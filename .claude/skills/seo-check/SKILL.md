@@ -34,6 +34,7 @@ When this skill is invoked:
    - `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
    - OG image dimensions (1200x630 recommended)
    - **OG image file exists**: Extract the path from `og:image` content, convert the URL to a local file path (e.g., `https://blog.pebblous.ai/story/.../image/index.png` → `story/.../image/index.png`), and verify the file exists on disk. FAIL if the file is missing — the image will be a broken link on social media shares.
+   - **⛔ EN 페이지 OG 이미지 언어 불일치 검증**: `<html lang="en">` 페이지에서 `og:image` 또는 `twitter:image` 경로에 `/ko/image/`가 포함되어 있으면 **CRITICAL FAIL**: "EN 페이지가 KO OG 이미지를 참조 — SNS 공유 시 한글 이미지 노출. `/en/image/`로 수정 필요." (원인: KO 복사 후 경로 미변경)
 
    **Layer 3 — JSON-LD Schema**:
    - BreadcrumbList (auto via PebblousPage — verify config)
