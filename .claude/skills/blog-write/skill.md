@@ -203,6 +203,10 @@ PebblousPage.init({
 
 - **Text-First**: 차트/카드/다이어그램 앞에 설명 단락이 먼저
 - 섹션 구조: `<h2>` → `<h3>` (더 깊은 계층 금지)
+- **h3 서브섹션 번호**: `<span class="sub-number-badge">1.1</span>제목` 형식 사용. number-badge(h2)와 시각 계층 통일.
+  ```html
+  <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>서브섹션 제목</h3>
+  ```
 - 영어 아티클: publisher = "Pebblous Data Communication Team", "Reading time: ~Nmin"
 
 ## ⚠️ 이중 불릿 버그 (자주 반복 — 반드시 준수)
