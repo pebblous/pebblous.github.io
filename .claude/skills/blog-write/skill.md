@@ -243,4 +243,12 @@ grep -n '<li>•\|<li> •' <파일>.html
 # 결과가 있으면 해당 <ul>에 list-style:none 추가
 ```
 
+### ⛔ EN OG 이미지 경로 검증 (bilingual 작성 시)
+
+EN HTML을 KO에서 복사하여 만들 때, og:image/twitter:image 경로가 `/ko/image/`로 남는 실수가 반복된다.
+EN HTML 생성 후 반드시 실행:
+```bash
+grep -n "/ko/image/" [EN HTML 파일]  # → 0줄이어야 함. 있으면 /en/image/로 수정
+```
+
 상세 HTML 전체 구조 → `references/html-conventions.md`

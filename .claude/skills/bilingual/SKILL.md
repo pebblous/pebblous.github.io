@@ -157,6 +157,10 @@ If the original post does not have an Executive Summary section, add one to both
 - Check all relative paths resolve correctly (CSS, JS, images, PDFs)
 - Verify hreflang tags match between KO and EN versions
 - **CRITICAL**: Confirm PebblousPage.init config includes `mainTitle` and `subtitle` in BOTH versions — these are REQUIRED for Hero h1 rendering, breadcrumbs, Article Schema, and TOC alignment. If the original post was missing them, add them now.
+- **⛔ EN OG 이미지 경로 검증 (MUST)**: EN HTML 생성 후 반드시 아래 명령 실행. 출력이 있으면 `/ko/image/`를 `/en/image/`로 수정한다.
+  ```bash
+  grep -n "/ko/image/" [EN HTML 파일]  # → 0줄이어야 함
+  ```
 
 ### 10. Post-Task Chain (MUST follow after completion)
 1. **`/seo-check`** on both KO and EN versions — verify hreflang, canonical, OG tags
