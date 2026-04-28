@@ -560,17 +560,19 @@ Phase 4 (dc-write-ko) 프롬프트에 추가:
 
 ---
 
-## 기존 dc-story와의 관계
+## 하위 스킬 참조
 
-`dc-story`는 5단계 실행만 나열한 간략 오케스트레이터.
-`dc-story-produce`는 이를 확장하여:
+각 Phase의 에이전트 프롬프트에서 다음 스킬 파일을 Read하여 참조한다 (스킬 시스템 호출이 아닌 문서 참조):
 
-1. **Phase 3 (스토리라인 기획)** 신설 — 데이터 저널리즘 각도를 미리 설계
-2. **JH 컨펌 2회** — 스토리라인(Phase 3.5) + 초고(Phase 4.5)
-3. **Phase 5 품질 검증** — review-dataclinic-story(22항목) + data-journalism-review(5항목) 통합
-4. **시각 컴포넌트 기준 인라인** — class-card, density-card, 페블로스코프 필수 명시
-5. **Phase 7 SEO+SNS** 추가
-6. **에러 핸들링** 추가
+| Phase | 참조 스킬 파일 |
+|-------|---------------|
+| 1 | `.claude/skills/dc-collect/skill.md` |
+| 2 | `.claude/skills/dc-analyze/skill.md` |
+| 4 | `.claude/skills/dc-write-ko/skill.md` + `.claude/skills/story-style-guide/SKILL.md` |
+| 5 | `.claude/skills/review-dataclinic-story/SKILL.md` + `.claude/skills/data-journalism-review/SKILL.md` |
+| 6 | `.claude/skills/dc-write-en/skill.md` |
+| 7 | `.claude/skills/seo-check/SKILL.md` + `.claude/skills/sns-write/SKILL.md` |
+| 8 | `.claude/skills/dc-publish/skill.md` |
 
 ---
 

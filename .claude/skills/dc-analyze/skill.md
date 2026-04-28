@@ -1,12 +1,12 @@
 ---
 name: dc-analyze
-description: DataClinic 차트 시각 분석 스킬. collected.json의 차트 이미지를 시각적으로 분석하고 API 텍스트와 비교하여 불일치를 탐지. dc-story 오케스트레이터의 Stage 2.
+description: DataClinic 차트 시각 분석 스킬. collected.json의 차트 이미지를 시각적으로 분석하고 API 텍스트와 비교하여 불일치를 탐지. dc-story-produce 파이프라인의 Stage 2.
 agent: dc-visual-analyst
 ---
 
 # dc-analyze
 
-`dc-story` 파이프라인의 Stage 2. `collected.json`의 차트 이미지를 시각적으로 분석하고 API 텍스트 클레임과 비교하여 불일치를 탐지한다.
+`dc-story-produce` 파이프라인의 Stage 2. `collected.json`의 차트 이미지를 시각적으로 분석하고 API 텍스트 클레임과 비교하여 불일치를 탐지한다.
 
 ## 역할
 

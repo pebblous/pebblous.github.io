@@ -1,12 +1,12 @@
 ---
 name: dc-write-ko
-description: DataClinic 진단 스토리 한국어 HTML 작성 스킬. analysis.json을 기반으로 PebblousPage 컨벤션에 맞는 완전한 한국어 블로그 포스트를 작성. dc-story 오케스트레이터의 Stage 3.
+description: DataClinic 진단 스토리 한국어 HTML 작성 스킬. analysis.json을 기반으로 PebblousPage 컨벤션에 맞는 완전한 한국어 블로그 포스트를 작성. dc-story-produce 파이프라인의 Stage 3.
 agent: dc-story-writer-ko
 ---
 
 # dc-write-ko
 
-`dc-story` 파이프라인의 Stage 3. `analysis.json`을 기반으로 데이터 저널리즘 내러티브의 한국어 HTML 블로그 포스트를 작성한다.
+`dc-story-produce` 파이프라인의 Stage 3. `analysis.json`을 기반으로 데이터 저널리즘 내러티브의 한국어 HTML 블로그 포스트를 작성한다.
 
 ## 역할
 

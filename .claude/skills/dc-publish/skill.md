@@ -1,6 +1,6 @@
 ---
 name: dc-publish
-description: 블로그 스토리 범용 퍼블리시 스킬. KO+EN OG 이미지, articles.json 등록(스키마 검증), sitemap, changelog, Tailwind 빌드, git commit+push. dc-story 오케스트레이터의 Stage 5. DataClinic 외 커스텀 스토리에도 동일하게 사용.
+description: 블로그 스토리 범용 퍼블리시 스킬. KO+EN OG 이미지, articles.json 등록(스키마 검증), sitemap, changelog, Tailwind 빌드, git commit+push. dc-story-produce 파이프라인의 Stage 5. DataClinic 외 커스텀 스토리에도 동일하게 사용.
 argument-hint: "[slug]"
 ---
 

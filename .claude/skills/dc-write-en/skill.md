@@ -1,12 +1,12 @@
 ---
 name: dc-write-en
-description: DataClinic 진단 스토리 영어 번역 스킬. 완성된 한국어 HTML을 자연스러운 영어로 번역하고, 이미지 복사 및 영어 OG 이미지 생성. dc-story 오케스트레이터의 Stage 4.
+description: DataClinic 진단 스토리 영어 번역 스킬. 완성된 한국어 HTML을 자연스러운 영어로 번역하고, 이미지 복사 및 영어 OG 이미지 생성. dc-story-produce 파이프라인의 Stage 4.
 agent: dc-story-writer-en
 ---
 
 # dc-write-en
 
-`dc-story` 파이프라인의 Stage 4. 완성된 한국어 HTML을 자연스러운 영어로 번역하고 EN OG 이미지를 생성한다.
+`dc-story-produce` 파이프라인의 Stage 4. 완성된 한국어 HTML을 자연스러운 영어로 번역하고 EN OG 이미지를 생성한다.
 
 ## 역할
 

@@ -1,12 +1,12 @@
 ---
 name: dc-collect
-description: DataClinic 리포트 데이터 수집 스킬. API 텍스트, CDN 이미지, JS 렌더링 차트, 아웃라이어, 유사도 샘플, 클래스 목록을 수집하여 collected.json으로 저장. dc-story 오케스트레이터의 Stage 1.
+description: DataClinic 리포트 데이터 수집 스킬. API 텍스트, CDN 이미지, JS 렌더링 차트, 아웃라이어, 유사도 샘플, 클래스 목록을 수집하여 collected.json으로 저장. dc-story-produce 파이프라인의 Stage 1.
 agent: dc-collector
 ---
 
 # dc-collect
 
-`dc-story` 파이프라인의 Stage 1. DataClinic 리포트 데이터를 수집하여 `collected.json`으로 저장한다.
+`dc-story-produce` 파이프라인의 Stage 1. DataClinic 리포트 데이터를 수집하여 `collected.json`으로 저장한다.
 
 ## 역할
 
