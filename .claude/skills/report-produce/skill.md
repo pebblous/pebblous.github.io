@@ -378,8 +378,13 @@ Agent(
     - 한국 맥락의 비유·사례는 글로벌 등가물로 교체
     - SEO 제목(pageTitle)과 본문 제목(mainTitle) 분리 (docs/title-strategy.md 참조)
     - articles.json에 EN 항목 등록
+    - ⛔ og:image, twitter:image 경로를 반드시 /en/image/index.png으로 변경 (KO 복사 시 /ko/image/ 그대로 남는 반복 버그)
 
     출력: report/[slug]/en/index.html
+
+    ⛔ EN 생성 후 반드시 아래 검증 실행:
+    grep -n 'ko/image/index.png' report/[slug]/en/index.html
+    # → 출력이 있으면 /en/image/index.png으로 수정
   """
 )
 ```
