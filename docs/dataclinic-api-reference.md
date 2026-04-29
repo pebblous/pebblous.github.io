@@ -1,7 +1,7 @@
 # DataClinic API Reference
 
 > **목적**: dc-story-produce 파이프라인 및 외부 에이전트가 DataClinic API를 독립적으로 사용할 수 있도록 정리한 레퍼런스.
-> **최종 업데이트**: 2026-04-28
+> **최종 업데이트**: 2026-04-29
 > **예시 데이터**: `.claude/skills/dc-collect/examples/collected-194.json` (Report #194)
 
 ---
@@ -12,7 +12,7 @@
 |------|-----|
 | Base URL | `https://api.dataclinic.ai` |
 | CDN URL | `https://cdn.dataclinic.ai` |
-| 인증 | API Key (환경변수 `DATACLINIC_API_KEY`) |
+| 인증 | Firebase JWT (환경변수 `DATACLINIC_TOKEN`) |
 | 응답 형식 | JSON |
 
 ---
@@ -105,17 +105,31 @@ cdn.dataclinic.ai/datasets/{datasetId}/train/{className}/{imageFileName}
 
 ---
 
-## 4. JS 렌더링 차트 (Playwright 필요)
+## 4. JS 렌더링 차트 (Python 스크립트)
 
-다음 차트는 CDN에 정적 이미지가 없고, 브라우저에서 JS로 렌더링됨:
+다음 차트는 CDN에 정적 이미지가 없고, API에서 JSON 데이터를 받아 matplotlib으로 렌더링:
 
-| 차트 | 렌더링 방법 |
-|------|------------|
-| Pixel Histogram (L1) | `dataclinic.ai/ko/report/{reportId}` 접속 → chartId=3 캡처 |
-| Density Histogram (L2/L3) | `dataclinic.ai/ko/report/{reportId}` 접속 → chartId=13,23 캡처 |
-| Box Chart (L2/L3) | `dataclinic.ai/ko/report/{reportId}` 접속 → chartId=15,24 캡처 |
+| 차트 | chartId |
+|------|---------|
+| Pixel Histogram (L1) | 3 |
+| Density Histogram (L2) | 13 |
+| Box Chart (L2) | 15 |
+| Density Histogram (L3) | 23 |
+| Box Chart (L3) | 24 |
 
-**대안**: Playwright 없으면 CDN 정적 이미지(PCA/density heatmap)만 사용
+**렌더링 방법**: `tools/render-dataclinic-chart.py` 사용 (Playwright 불필요)
+
+```bash
+# 단일 차트
+DATACLINIC_TOKEN=... python3 tools/render-dataclinic-chart.py \
+  --report-id 115 --chart-id 13 --output image/density-l2.png
+
+# JS 차트 전체 일괄 생성
+DATACLINIC_TOKEN=... python3 tools/render-dataclinic-chart.py \
+  --report-id 115 --all-js-charts --output-dir image/
+```
+
+**환경변수**: `DATACLINIC_TOKEN` — Firebase JWT (nanoclaw MCP와 동일)
 
 ---
 
