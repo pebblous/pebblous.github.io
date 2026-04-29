@@ -132,6 +132,13 @@
 
 완료된 글:
 - ✅ wikiart-iso5259-eval KO+EN (정정 1, 3)
+- ✅ 5259-image-guide-02 KO+EN (정정 1, 2, 3, 4, 5, 6 — 전부)
+- ✅ imagenet-iso5259-eval KO+EN (정정 1)
+- ✅ spectralwaste-iso5259-eval KO+EN (정정 1)
+- ✅ 5259-pbls-dataclinic-01 KO+EN (정정 1)
+- ✅ 5259-pbls-dataclinic-02 KO+EN (정정 1)
+
+**정정 완료: 2026-04-29, 12파일 342줄**
 
 ---
 
