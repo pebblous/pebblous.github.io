@@ -28,14 +28,13 @@ import urllib.request
 import urllib.parse
 from pathlib import Path
 
-# --- 페블러스 브랜딩 ---
-BG_COLOR     = "#0a0e1a"   # deep navy
-FG_COLOR     = "#e2e8f0"   # light text
-ORANGE_DARK  = "#ff6b35"
-ORANGE_LIGHT = "#ff9500"
-TEAL_COLOR   = "#00d4aa"
-INDIGO_COLOR = "#6366f1"
-GRID_COLOR   = "#1e2a3a"
+# --- DataClinic 웹 기준 컬러 (라이트 테마) ---
+BG_COLOR     = "#ffffff"
+FG_COLOR     = "#585858"   # 축 레이블, 텍스트
+ORANGE       = "#F86825"   # 주 액센트 (산점도, 중앙값선, 수염)
+BOX_FILL     = "#fdd2be"   # 박스 채우기
+GRID_COLOR   = "#F5F5F5"   # 그리드 라인
+MEAN_LINE    = "#000000"   # 전체 평균선 (검정 대시)
 
 # JS-only 차트 ID → (이름, 레벨)
 JS_CHART_IDS = {
@@ -74,7 +73,8 @@ def fetch_chart_data(report_id: int, chart_id: int, class_name: str | None = Non
     if class_name:
         params["class_name"] = class_name
 
-    url = f"{base}/report/classwise/chart/image?" + urllib.parse.urlencode(params)
+    endpoint = "/chart/classwise" if class_name else "/chart/overall"
+    url = f"{base}{endpoint}?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(
         url,
         headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
@@ -95,78 +95,35 @@ def fetch_chart_data(report_id: int, chart_id: int, class_name: str | None = Non
 # ---------------------------------------------------------------------------
 
 def render_density_histogram(data: dict, output_path: str, title: str = "Density Histogram"):
-    """chartId 13/23 — 밀도 히스토그램"""
+    """chartId 13/23 — 밀도 히스토그램 (DataClinic 웹 스타일)"""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    import matplotlib.patches as mpatches
-    import numpy as np
 
     bins = data["data"]["total"]
     x_mid = [(b["bin_start"] + b["bin_end"]) / 2 for b in bins]
     heights = [b["heights"] for b in bins]
 
-    # 피크 + 통계
-    peak_idx = int(np.argmax(heights))
-    peak_x = x_mid[peak_idx]
-    total = sum(heights)
-    mean_x = sum(x * h for x, h in zip(x_mid, heights)) / total if total else 0
-    # 꼬리 임계값: 95 퍼센타일 이후
-    cumsum = np.cumsum(heights)
-    tail_thresh_idx = next((i for i, c in enumerate(cumsum) if c >= total * 0.95), len(x_mid) - 1)
-    tail_x = x_mid[tail_thresh_idx]
-
     fig, ax = plt.subplots(figsize=(10, 5), facecolor=BG_COLOR)
     ax.set_facecolor(BG_COLOR)
 
-    # 색상 그라데이션: 오렌지 기준, 꼬리는 틸, 이상치 영역은 인디고
-    colors = []
-    for i, x in enumerate(x_mid):
-        if x > tail_x:
-            colors.append(TEAL_COLOR)
-        elif x < x_mid[0] + (x_mid[-1] - x_mid[0]) * 0.05:
-            colors.append(INDIGO_COLOR)
-        else:
-            t = (x - x_mid[0]) / max(x_mid[-1] - x_mid[0], 1e-9)
-            r1, g1, b1 = int(ORANGE_DARK[1:3], 16), int(ORANGE_DARK[3:5], 16), int(ORANGE_DARK[5:7], 16)
-            r2, g2, b2 = int(ORANGE_LIGHT[1:3], 16), int(ORANGE_LIGHT[3:5], 16), int(ORANGE_LIGHT[5:7], 16)
-            r = r1 + (r2 - r1) * t
-            g = g1 + (g2 - g1) * t
-            b = b1 + (b2 - b1) * t
-            colors.append((r / 255, g / 255, b / 255))
+    # 단일 색상 — DataClinic 웹과 동일한 연한 오렌지
+    bar_width = (x_mid[1] - x_mid[0]) if len(x_mid) > 1 else 0.002
+    ax.bar(x_mid, heights, width=bar_width, color="#f9b088", edgecolor="#f9b088", linewidth=0.3)
 
-    width = (x_mid[1] - x_mid[0]) if len(x_mid) > 1 else 0.002
-    ax.bar(x_mid, heights, width=width * 0.9, color=colors, alpha=0.85)
-
-    # 피크 어노테이션
-    ax.annotate(
-        f"peak {peak_x:.3f}",
-        xy=(peak_x, heights[peak_idx]),
-        xytext=(peak_x + width * 5, heights[peak_idx] * 0.9),
-        color=FG_COLOR, fontsize=8,
-        arrowprops=dict(arrowstyle="->", color=FG_COLOR, lw=0.8),
-    )
-    # 평균선
-    ax.axvline(mean_x, color=TEAL_COLOR, lw=1.2, linestyle="--", alpha=0.7)
-    ax.text(mean_x + width, max(heights) * 0.95, f"μ≈{mean_x:.3f}", color=TEAL_COLOR, fontsize=8)
-
-    ax.set_title(title, color=FG_COLOR, fontsize=13, pad=12)
+    ax.set_title(title, color="#333333", fontsize=13, fontweight="bold", pad=12)
     ax.set_xlabel("Density", color=FG_COLOR, fontsize=10)
     ax.set_ylabel("Count", color=FG_COLOR, fontsize=10)
-    ax.tick_params(colors=FG_COLOR)
-    for spine in ax.spines.values():
-        spine.set_edgecolor(GRID_COLOR)
-    ax.yaxis.grid(True, color=GRID_COLOR, linewidth=0.5)
-    ax.set_axisbelow(True)
+    ax.tick_params(colors=FG_COLOR, labelsize=9)
 
-    # 범례
-    legend_items = [
-        mpatches.Patch(color=ORANGE_DARK, label="Core distribution"),
-        mpatches.Patch(color=TEAL_COLOR, label="Long tail"),
-        mpatches.Patch(color=INDIGO_COLOR, label="Outlier zone"),
-    ]
-    ax.legend(handles=legend_items, facecolor=BG_COLOR, edgecolor=GRID_COLOR,
-              labelcolor=FG_COLOR, fontsize=8, loc="upper right")
+    # 그리드: DataClinic 웹과 동일 — 수평 그리드만, 연한 회색
+    ax.yaxis.grid(True, color=GRID_COLOR, linewidth=0.8)
+    ax.set_axisbelow(True)
+    # 스파인: 상단/우측 제거, 하단/좌측은 연한 회색
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["bottom"].set_edgecolor("#ddd")
+    ax.spines["left"].set_visible(False)
 
     plt.tight_layout()
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
@@ -176,63 +133,59 @@ def render_density_histogram(data: dict, output_path: str, title: str = "Density
 
 
 def render_box_chart(data: dict, output_path: str, title: str = "Box Chart"):
-    """chartId 15/24 — 클래스별 박스플롯"""
+    """chartId 15/24 — 세로 방향 박스플롯 (DataClinic 웹 스타일)"""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    import numpy as np
 
     plot = data["data"]["plot"]
     total_mean = data["data"].get("total_mean_density", None)
 
-    # 중앙값 기준 정렬
-    classes = sorted(plot.keys(), key=lambda c: plot[c]["median"])
+    classes = list(plot.keys())  # API 순서 유지 (웹과 동일)
     n = len(classes)
 
-    fig_h = max(6, n * 0.32)
-    fig, ax = plt.subplots(figsize=(10, fig_h), facecolor=BG_COLOR)
+    fig_w = max(12, n * 0.5)
+    fig, ax = plt.subplots(figsize=(fig_w, 5), facecolor=BG_COLOR)
     ax.set_facecolor(BG_COLOR)
 
     positions = list(range(n))
+    box_w = 0.5
+
     for i, cls in enumerate(classes):
         d = plot[cls]
         q1, med, q3 = d["first_quartile"], d["median"], d["third_quartile"]
         lo, hi = d["min"], d["max"]
-        iqr = q3 - q1
-        # 수염
-        whisker_lo = max(lo, q1 - 1.5 * iqr)
-        whisker_hi = min(hi, q3 + 1.5 * iqr)
 
-        color = ORANGE_DARK if med < (total_mean or med) else ORANGE_LIGHT
-        box_h = 0.5
-        # 박스
-        ax.barh(i, q3 - q1, left=q1, height=box_h, color=color, alpha=0.75, zorder=3)
-        # 중앙값 선
-        ax.plot([med, med], [i - box_h / 2, i + box_h / 2], color=FG_COLOR, lw=1.5, zorder=4)
-        # 수염
-        ax.plot([whisker_lo, q1], [i, i], color=FG_COLOR, lw=0.8, zorder=3)
-        ax.plot([q3, whisker_hi], [i, i], color=FG_COLOR, lw=0.8, zorder=3)
-        # 이상치
-        outliers = [lo] if lo < whisker_lo else []
-        outliers += [hi] if hi > whisker_hi else []
-        for ov in outliers:
-            ax.scatter(ov, i, color=INDIGO_COLOR, s=15, zorder=5)
+        # 박스 (Q1~Q3) — 연한 오렌지 채우기
+        ax.bar(i, q3 - q1, bottom=q1, width=box_w, color=BOX_FILL, edgecolor="none", zorder=3)
+        # 중앙값 선 — 오렌지
+        ax.plot([i - box_w / 2, i + box_w / 2], [med, med],
+                color=ORANGE, lw=2.5, zorder=4)
+        # 수염 (min~max) — 오렌지
+        ax.plot([i, i], [lo, hi], color=ORANGE, lw=1, zorder=2)
+        # 수염 끝 가로선
+        cap_w = box_w * 0.5
+        ax.plot([i - cap_w / 2, i + cap_w / 2], [hi, hi], color=ORANGE, lw=1, zorder=2)
+        ax.plot([i - cap_w / 2, i + cap_w / 2], [lo, lo], color=ORANGE, lw=1, zorder=2)
 
-    # 전체 평균 수직선
+    # 전체 평균 수평선 — 검정 대시 (웹: stroke="#000", dasharray="5,5")
     if total_mean:
-        ax.axvline(total_mean, color=TEAL_COLOR, lw=1.2, linestyle="--", alpha=0.8)
-        ax.text(total_mean, n - 0.5, f"mean {total_mean:.4f}",
-                color=TEAL_COLOR, fontsize=7, va="top")
+        ax.axhline(total_mean, color=MEAN_LINE, lw=1, linestyle="--", alpha=0.6, zorder=1)
 
-    ax.set_yticks(positions)
-    ax.set_yticklabels([c.replace("_", " ") for c in classes], fontsize=7)
-    ax.tick_params(colors=FG_COLOR, labelsize=7)
-    for spine in ax.spines.values():
-        spine.set_edgecolor(GRID_COLOR)
-    ax.xaxis.grid(True, color=GRID_COLOR, linewidth=0.5)
+    ax.set_xticks(positions)
+    ax.set_xticklabels([c.replace("_", " ") for c in classes],
+                       fontsize=7, rotation=45, ha="right")
+    ax.tick_params(colors=FG_COLOR, labelsize=8)
+    ax.set_ylabel("Density", color=FG_COLOR, fontsize=10)
+    ax.set_title(title, color="#333333", fontsize=13, fontweight="bold", pad=12)
+
+    # 스파인/그리드 — 웹 스타일
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["bottom"].set_edgecolor("#ddd")
+    ax.spines["left"].set_visible(False)
+    ax.yaxis.grid(True, color=GRID_COLOR, linewidth=0.8)
     ax.set_axisbelow(True)
-    ax.set_title(title, color=FG_COLOR, fontsize=13, pad=12)
-    ax.set_xlabel("Density", color=FG_COLOR, fontsize=10)
 
     plt.tight_layout()
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
@@ -242,7 +195,7 @@ def render_box_chart(data: dict, output_path: str, title: str = "Box Chart"):
 
 
 def render_pixel_histogram(data: dict, output_path: str, title: str = "Pixel Histogram"):
-    """chartId 3 — R/G/B 픽셀 밝기 분포"""
+    """chartId 3 — R/G/B 픽셀 밝기 분포 (DataClinic 웹 스타일)"""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -256,19 +209,22 @@ def render_pixel_histogram(data: dict, output_path: str, title: str = "Pixel His
     fig, ax = plt.subplots(figsize=(10, 4), facecolor=BG_COLOR)
     ax.set_facecolor(BG_COLOR)
 
-    ax.fill_between(xs, r_vals, alpha=0.55, color="#ff4444", label="Red")
-    ax.fill_between(xs, g_vals, alpha=0.55, color="#44cc44", label="Green")
-    ax.fill_between(xs, b_vals, alpha=0.55, color="#4499ff", label="Blue")
+    ax.fill_between(xs, r_vals, alpha=0.45, color="#ef4444", label="Red")
+    ax.fill_between(xs, g_vals, alpha=0.45, color="#22c55e", label="Green")
+    ax.fill_between(xs, b_vals, alpha=0.45, color="#3b82f6", label="Blue")
 
-    ax.set_title(title, color=FG_COLOR, fontsize=13, pad=12)
-    ax.set_xlabel("Pixel Value (0–255)", color=FG_COLOR, fontsize=10)
+    ax.set_title(title, color="#333333", fontsize=13, fontweight="bold", pad=12)
+    ax.set_xlabel("Pixel Value (0-255)", color=FG_COLOR, fontsize=10)
     ax.set_ylabel("Count", color=FG_COLOR, fontsize=10)
-    ax.tick_params(colors=FG_COLOR)
-    for spine in ax.spines.values():
-        spine.set_edgecolor(GRID_COLOR)
-    ax.yaxis.grid(True, color=GRID_COLOR, linewidth=0.5)
+    ax.tick_params(colors=FG_COLOR, labelsize=9)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["bottom"].set_edgecolor("#ddd")
+    ax.spines["left"].set_visible(False)
+    ax.yaxis.grid(True, color=GRID_COLOR, linewidth=0.8)
     ax.set_axisbelow(True)
-    ax.legend(facecolor=BG_COLOR, edgecolor=GRID_COLOR, labelcolor=FG_COLOR, fontsize=9)
+    ax.legend(facecolor=BG_COLOR, edgecolor="#ddd", labelcolor=FG_COLOR, fontsize=9)
 
     plt.tight_layout()
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)

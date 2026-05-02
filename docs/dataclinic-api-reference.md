@@ -1,7 +1,8 @@
 # DataClinic API Reference
 
 > **목적**: dc-story-produce 파이프라인 및 외부 에이전트가 DataClinic API를 독립적으로 사용할 수 있도록 정리한 레퍼런스.
-> **최종 업데이트**: 2026-04-29
+> **최종 업데이트**: 2026-05-02
+> **소스 레포**: `dataclinic-api-production`, `dataclinic-web-production`
 > **예시 데이터**: `.claude/skills/dc-collect/examples/collected-194.json` (Report #194)
 
 ---
@@ -29,24 +30,59 @@ GET /report/detail/level1-contents?id={reportId}
 
 **단일 클래스 판별**: `totalClassCount == 0` 또는 `classwiseMeanImagePaths == null` → 단일 클래스 워크플로우
 
-### 2.2 클래스별 차트 이미지
+### 2.2 차트 데이터 (JS 렌더링용)
+
+두 개의 엔드포인트가 존재한다:
+
+```
+# 전체 분포
+GET /chart/overall?diagnosis_report_id={reportId}&diagnosis_report_chart_id={chartId}
+
+# 클래스별 분포
+GET /chart/classwise?diagnosis_report_id={reportId}&diagnosis_report_chart_id={chartId}&class_name={className}
+```
+
+**헤더**: `x_header_language: "ko"` (기본값)
+
+**chartId 매핑**:
+
+| chartId | 차트 유형 | interactive |
+|---------|----------|-------------|
+| 3 | Pixel Histogram (L1) | Y |
+| 6 | Class Representative Images | N |
+| 13 | Density Histogram (L2) | Y |
+| 15 | Box Chart (L2) | Y |
+| 23 | Density Histogram (L3) | Y |
+| 24 | Box Chart (L3) | Y |
+
+**응답 구조** (`interactive_chart_yn='Y'`인 경우):
+
+```json
+{
+  "data": {
+    "total": [
+      { "norm": 0.123, "density": 0.456, "image_path": "...", "class": "className" }
+    ]
+  }
+}
+```
+
+- Overall 엔드포인트: `data.total` 키에 전체 데이터
+- Classwise 엔드포인트: `data[className]` 키에 해당 클래스 데이터
+
+**소스 위치**:
+- API: `dataclinic-api-production/app/feature/chart/chart_manager.py` (L18-141)
+- 웹: `dataclinic-web-production/src/sections/report/components/detail/density-chart.tsx`
+
+### 2.3 클래스별 차트 이미지 (정적)
 
 ```
 GET /report/classwise/chart/image?diagnosis_report_id={reportId}&diagnosis_report_chart_id={chartId}
 ```
 
-**chartId 매핑**:
+`interactive_chart_yn='N'`인 차트(chartId 6 등)는 이 엔드포인트에서 `chart_image_path` 문자열을 반환한다.
 
-| chartId | 차트 유형 |
-|---------|----------|
-| 3 | Pixel Histogram (L1) |
-| 6 | Class Representative Images |
-| 13 | Density Histogram (L2) |
-| 15 | Box Chart (L2) |
-| 23 | Density Histogram (L3) |
-| 24 | Box Chart (L3) |
-
-### 2.3 레벨별 진단 결과
+### 2.4 레벨별 진단 결과
 
 ```
 GET /report/detail/level2-contents?id={reportId}
@@ -243,4 +279,5 @@ https://pebbloscope.ai/snapshots/{snapshotId}
 - L3 경로는 `level-3.2` (버전 표기 주의)
 - 한글 클래스명은 URL 인코딩 필요
 - CDN 이미지가 없는 경우 `onerror="this.style.display='none'"` 처리
-- JS 차트는 Playwright 없이 접근 불가 — CDN 정적 이미지로 대체 가능
+- JS 차트는 `/chart/overall` 또는 `/chart/classwise` 엔드포인트에서 JSON 데이터를 받아 `tools/render-dataclinic-chart.py`로 렌더링
+- **주의**: `/report/classwise/chart/image`는 정적 이미지 전용 — interactive 차트 데이터는 `/chart/overall`, `/chart/classwise` 사용
