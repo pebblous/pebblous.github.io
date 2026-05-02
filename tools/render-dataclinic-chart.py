@@ -9,8 +9,9 @@ Usage:
   # 리포트의 JS 차트 전체 일괄 생성
   python3 tools/render-dataclinic-chart.py --report-id 115 --all-js-charts --output-dir image/
 
-환경변수:
-  DATACLINIC_TOKEN  Firebase JWT (필수)
+환경변수 (택 1):
+  DATACLINIC_TOKEN              Firebase JWT (직접 지정)
+  DATACLINIC_EMAIL + PASSWORD   Firebase 자동 로그인 (토큰 없을 때)
 
 JS 렌더링 전용 차트 (CDN 정적 이미지 없음):
   chartId 3  — Pixel Histogram (L1)
@@ -54,12 +55,51 @@ JS_CHART_FILENAMES = {
 }
 
 
-def get_token() -> str:
-    token = os.environ.get("DATACLINIC_TOKEN", "")
-    if not token:
-        print("ERROR: DATACLINIC_TOKEN 환경변수가 설정되지 않았습니다.", file=sys.stderr)
+FIREBASE_API_KEY = "AIzaSyBI4CQ_ZiZ0tsrs2zuKRTt4h7D-9gik57k"
+
+_cached_token: str | None = None
+
+
+def firebase_login(email: str, password: str) -> str:
+    """Firebase REST API로 로그인하여 idToken을 반환합니다."""
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+    payload = json.dumps({
+        "email": email,
+        "password": password,
+        "returnSecureToken": True,
+    }).encode()
+    req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+            print(f"  ✓ Firebase 로그인 성공 ({email})")
+            return data["idToken"]
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"ERROR: Firebase 로그인 실패 {e.code} — {body[:200]}", file=sys.stderr)
         sys.exit(1)
-    return token
+
+
+def get_token() -> str:
+    global _cached_token
+    if _cached_token:
+        return _cached_token
+
+    token = os.environ.get("DATACLINIC_TOKEN", "")
+    if token:
+        _cached_token = token
+        return token
+
+    # DATACLINIC_TOKEN이 없으면 email/password로 자동 로그인
+    email = os.environ.get("DATACLINIC_EMAIL", "")
+    password = os.environ.get("DATACLINIC_PASSWORD", "")
+    if email and password:
+        print("→ DATACLINIC_TOKEN 없음 — Firebase 자동 로그인 시도...")
+        _cached_token = firebase_login(email, password)
+        return _cached_token
+
+    print("ERROR: DATACLINIC_TOKEN 또는 DATACLINIC_EMAIL + DATACLINIC_PASSWORD 환경변수가 필요합니다.", file=sys.stderr)
+    sys.exit(1)
 
 
 def fetch_chart_data(report_id: int, chart_id: int, class_name: str | None = None) -> dict:
@@ -144,12 +184,34 @@ def render_box_chart(data: dict, output_path: str, title: str = "Box Chart"):
     classes = list(plot.keys())  # API 순서 유지 (웹과 동일)
     n = len(classes)
 
-    fig_w = max(12, n * 0.5)
-    fig, ax = plt.subplots(figsize=(fig_w, 5), facecolor=BG_COLOR)
+    # 클래스 수에 따라 레이아웃 적응
+    if n <= 40:
+        fig_w = max(12, n * 0.45)
+        fig_h = 5
+        label_size = 7
+        show_labels = True
+        box_w = 0.5
+        median_lw = 2.5
+    elif n <= 100:
+        fig_w = 16
+        fig_h = 6
+        label_size = 5
+        show_labels = True
+        box_w = 0.6
+        median_lw = 1.5
+    else:
+        # 100+ 클래스: 레이블 생략, 밀집 표현
+        fig_w = 16
+        fig_h = 6
+        label_size = 0
+        show_labels = False
+        box_w = 0.7
+        median_lw = 1.0
+
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h), facecolor=BG_COLOR)
     ax.set_facecolor(BG_COLOR)
 
     positions = list(range(n))
-    box_w = 0.5
 
     for i, cls in enumerate(classes):
         d = plot[cls]
@@ -160,21 +222,29 @@ def render_box_chart(data: dict, output_path: str, title: str = "Box Chart"):
         ax.bar(i, q3 - q1, bottom=q1, width=box_w, color=BOX_FILL, edgecolor="none", zorder=3)
         # 중앙값 선 — 오렌지
         ax.plot([i - box_w / 2, i + box_w / 2], [med, med],
-                color=ORANGE, lw=2.5, zorder=4)
+                color=ORANGE, lw=median_lw, zorder=4)
         # 수염 (min~max) — 오렌지
-        ax.plot([i, i], [lo, hi], color=ORANGE, lw=1, zorder=2)
+        ax.plot([i, i], [lo, hi], color=ORANGE, lw=0.8, zorder=2)
         # 수염 끝 가로선
-        cap_w = box_w * 0.5
-        ax.plot([i - cap_w / 2, i + cap_w / 2], [hi, hi], color=ORANGE, lw=1, zorder=2)
-        ax.plot([i - cap_w / 2, i + cap_w / 2], [lo, lo], color=ORANGE, lw=1, zorder=2)
+        cap_w = box_w * 0.4
+        ax.plot([i - cap_w / 2, i + cap_w / 2], [hi, hi], color=ORANGE, lw=0.8, zorder=2)
+        ax.plot([i - cap_w / 2, i + cap_w / 2], [lo, lo], color=ORANGE, lw=0.8, zorder=2)
 
     # 전체 평균 수평선 — 검정 대시 (웹: stroke="#000", dasharray="5,5")
     if total_mean:
         ax.axhline(total_mean, color=MEAN_LINE, lw=1, linestyle="--", alpha=0.6, zorder=1)
 
-    ax.set_xticks(positions)
-    ax.set_xticklabels([c.replace("_", " ") for c in classes],
-                       fontsize=7, rotation=45, ha="right")
+    if show_labels:
+        ax.set_xticks(positions)
+        ax.set_xticklabels([c.replace("_", " ") for c in classes],
+                           fontsize=label_size, rotation=45, ha="right")
+    else:
+        # 라벨 대신 클래스 수 표시
+        ax.set_xticks([0, n // 4, n // 2, 3 * n // 4, n - 1])
+        ax.set_xticklabels(["1", f"{n // 4}", f"{n // 2}", f"{3 * n // 4}", f"{n}"],
+                           fontsize=8)
+        ax.set_xlabel(f"Classes (n={n})", color=FG_COLOR, fontsize=10)
+
     ax.tick_params(colors=FG_COLOR, labelsize=8)
     ax.set_ylabel("Density", color=FG_COLOR, fontsize=10)
     ax.set_title(title, color="#333333", fontsize=13, fontweight="bold", pad=12)
