@@ -118,15 +118,18 @@ Agent(
     저장소 루트: {repo_root}
     reportId: {reportId}
 
+    인증: Firebase REST API로 로그인하여 토큰 획득.
+    DATACLINIC_EMAIL + DATACLINIC_PASSWORD 환경변수 사용.
+
     수집 항목:
     1. API 텍스트 (L1·L2·L3 진단 결과)
     2. CDN 정적 이미지 URL (collage, meanimage, PCA, 밀도 플롯)
-    3. JS 렌더링 차트 → Playwright 스크린샷으로 로컬 저장
-       ⛔ JS 차트는 CDN 이미지가 없음 — 반드시 Playwright로 렌더링 후 PNG 캡처
+    3. JS 렌더링 차트 → tools/render-dataclinic-chart.py 사용 (Playwright 불필요)
+       DATACLINIC_EMAIL=... DATACLINIC_PASSWORD=... python3 tools/render-dataclinic-chart.py \
+         --report-id {reportId} --all-js-charts --output-dir /tmp/dc-{reportId}/image/
     4. 아웃라이어 샘플 (고밀도/저밀도 이미지 URL)
     5. 유사도 샘플 (nearest/farthest)
     6. 클래스 목록 + 대표이미지 URL
-       → API: GET /report/classwise/chart/image?diagnosis_report_id={reportId}&diagnosis_report_chart_id=6
     7. 페블로스코프 스냅샷 ID (있는 경우)
 
     출력: /tmp/dc-{reportId}/collected.json
@@ -136,35 +139,85 @@ Agent(
 
 ---
 
-### Phase 2: 시각 분석 (dc-analyze)
+### Phase 2: 시각 분석 (dc-analyze) — 3-way 병렬
+
+⛔ Phase 2는 3개 에이전트를 **동시에** 실행하여 분석 시간을 1/3로 단축한다.
 
 ```python
+# 3개 에이전트를 한 메시지에서 동시 실행
 Agent(
-  name="dc-visual-analyst",
+  name="dc-analyst-L1",
   subagent_type="general-purpose",
   model="opus",
+  run_in_background=True,
   prompt="""
-    스킬: .claude/skills/dc-analyze/SKILL.md
-    저장소 루트: {repo_root}
     입력: /tmp/dc-{reportId}/collected.json
 
-    분석 항목:
-    1. CDN 이미지 및 렌더링된 차트를 시각적으로 분석
-    2. API 텍스트와 시각 자료의 불일치 탐지
-    3. 클러스터 구조 해석 (단일/다봉형, 계절/환경 패턴)
-    4. 이상치 원인 추론
+    L1 분석만 수행:
+    1. /tmp/dc-{reportId}/image/pixel-histogram-l1.png — Read로 시각 확인, RGB 채널 분포 특성
+    2. CDN collage 이미지 — 다운로드 후 Read, 데이터셋 전체 인상
+    3. CDN overall mean image — 전체 평균 형태
+    4. collected.json의 L1 API 텍스트와 시각 자료 불일치 확인
 
-    ⛔ 차트 캡션 시각 확인 필수 (D4):
-    모든 차트는 반드시 이미지를 직접 다운로드해서 눈으로 확인 후 분석.
-    curl -s {URL} -o /tmp/check.png && Read /tmp/check.png
+    ⛔ 이미지는 반드시 Read 툴로 직접 확인 후 분석.
 
-    ⛔ DataClinic 분석 vs 시각 구분 (D5):
-    이미지에서 직접 보이지 않는 구조적 판단은 "DataClinic 분석: ..." 형태로 출처 명시.
-
-    출력: /tmp/dc-{reportId}/analysis.json
+    출력: /tmp/dc-{reportId}/analysis-L1.json
+    형식: {"pixelHistogram": {...}, "collage": {...}, "meanImage": {...}, "l1Finding": "..."}
   """
 )
+
+Agent(
+  name="dc-analyst-L2",
+  subagent_type="general-purpose",
+  model="opus",
+  run_in_background=True,
+  prompt="""
+    입력: /tmp/dc-{reportId}/collected.json
+
+    L2 분석만 수행:
+    1. /tmp/dc-{reportId}/image/density-histogram-l2.png — 밀도 분포 형태
+    2. /tmp/dc-{reportId}/image/box-chart-l2.png — 클래스별 밀도 편차
+    3. CDN L2 PCA 차트 — 클러스터 구조
+    4. CDN L2 밀도 히트맵
+    5. 아웃라이어 대표 2~3개 다운로드 → Read → 원인 추론
+
+    ⛔ 이미지는 반드시 Read 툴로 직접 확인 후 분석.
+    ⛔ DataClinic 분석 vs 시각 구분 — 직접 보이지 않는 판단은 "DataClinic 분석: ..." 형태로 출처 명시.
+
+    출력: /tmp/dc-{reportId}/analysis-L2.json
+    형식: {"densityL2": {...}, "boxChartL2": {...}, "pcaL2": {...}, "outliersL2": {...}}
+  """
+)
+
+Agent(
+  name="dc-analyst-L3",
+  subagent_type="general-purpose",
+  model="opus",
+  run_in_background=True,
+  prompt="""
+    입력: /tmp/dc-{reportId}/collected.json
+
+    L3 분석만 수행:
+    1. /tmp/dc-{reportId}/image/density-histogram-l3.png — L3 밀도 분포
+    2. /tmp/dc-{reportId}/image/box-chart-l3.png — 클래스별 L3 밀도 편차
+    3. CDN L3 PCA 차트 — 차원 최적화 후 클러스터 변화
+    4. CDN L3 밀도 히트맵
+    5. L3 아웃라이어 대표 2~3개 다운로드 → Read → 원인 추론
+    6. L2 vs L3 비교 — 차원 최적화 효과 (분포 변화, 클러스터 분리도)
+
+    ⛔ 이미지는 반드시 Read 툴로 직접 확인 후 분석.
+
+    출력: /tmp/dc-{reportId}/analysis-L3.json
+    형식: {"densityL3": {...}, "boxChartL3": {...}, "pcaL3": {...}, "outliersL3": {...}, "l2VsL3": {...}}
+  """
+)
+
+# 3개 에이전트 완료 후 오케스트레이터가 merge:
+# jq -s '.[0] * .[1] * .[2]' analysis-L1.json analysis-L2.json analysis-L3.json > analysis.json
+# + 도메인 인사이트(혼동 그룹 등)는 오케스트레이터가 collected.json에서 직접 추출
 ```
+
+**기대 효과**: Phase 2가 ~24분 → ~8분으로 단축 (3개 병렬, 가장 느린 에이전트 기준)
 
 ---
 
