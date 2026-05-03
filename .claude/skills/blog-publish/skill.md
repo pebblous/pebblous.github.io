@@ -114,6 +114,15 @@ git commit -m "feat: [아티클 제목] — KO 아티클 추가"
 git push
 ```
 
+### 6. Google Sitemap Ping
+
+```bash
+curl -s "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
+```
+
+- git push 후 실행 — sitemap 갱신을 Google에 즉시 알려 크롤링을 앞당김
+- 응답에 "Sitemap Notification Received"가 포함되면 성공
+
 ## 에러 핸들링
 
 | 단계 | 실패 시 처리 |
