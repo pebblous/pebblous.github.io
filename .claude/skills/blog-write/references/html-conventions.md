@@ -180,7 +180,13 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 
 ```html
 <section id="section-1" class="mb-16 fade-in-card">
-    <h2 class="text-3xl font-bold themeable-heading mb-8">[섹션 제목]</h2>
+    <!-- ⛔ number-badge: <h2> 안에 <div> 금지. 반드시 <div> 안에 <h2> -->
+    <div class="flex items-center gap-4 mb-8">
+        <span class="number-badge">1</span>
+        <h2 class="text-3xl font-bold themeable-heading">[섹션 제목]</h2>
+    </div>
+    <!-- number-badge 없는 섹션(Executive Summary 등)은 기존 패턴 유지 -->
+    <!-- <h2 class="text-3xl font-bold themeable-heading mb-8">[섹션 제목]</h2> -->
 
     <!-- Text-First: 설명 단락이 시각 요소 앞에 -->
     <p class="themeable-text leading-relaxed mb-6">[내용]</p>

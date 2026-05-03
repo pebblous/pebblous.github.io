@@ -36,10 +36,11 @@ When this skill is invoked:
    - **OG image file exists**: Extract the path from `og:image` content, convert the URL to a local file path (e.g., `https://blog.pebblous.ai/story/.../image/index.png` → `story/.../image/index.png`), and verify the file exists on disk. FAIL if the file is missing — the image will be a broken link on social media shares.
    - **⛔ EN 페이지 OG 이미지 언어 불일치 검증**: `<html lang="en">` 페이지에서 `og:image` 또는 `twitter:image` 경로에 `/ko/image/`가 포함되어 있으면 **CRITICAL FAIL**: "EN 페이지가 KO OG 이미지를 참조 — SNS 공유 시 한글 이미지 노출. `/en/image/`로 수정 필요." (원인: KO 복사 후 경로 미변경)
 
-   **Layer 3 — JSON-LD Schema**:
+   **Layer 3 — JSON-LD Schema & FAQ**:
    - BreadcrumbList (auto via PebblousPage — verify config)
    - FAQPage: must be in `config.faqs` ONLY, NOT in `<head>` `<script type="application/ld+json">`
-   - Article schema (if applicable)
+   - Article/TechArticle schema in `<head>` — FAIL if missing
+   - **⛔ FAQ 렌더링 컨테이너 검증**: `config.faqs`가 있는데 `<section id="faq">`가 HTML에 없으면 **FAIL**: "FAQ가 config에 정의되었지만 렌더링 컨테이너(`<section id="faq">`)가 없어 페이지에 표시되지 않음. `</main>` 앞에 `<section id=\"faq\" class=\"mb-16 fade-in-card\"></section>` 추가 필요."
 
    **Layer 4 — Technical**:
    - Heading hierarchy (single H1, proper H2/H3 nesting)
