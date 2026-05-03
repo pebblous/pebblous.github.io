@@ -32,7 +32,14 @@ When this skill is invoked:
    - Check if `history/changelog.jsonl` was updated in this session
    - If not, remind the user to run `/changelog` before committing
 
-7. **Hand off to `/commit`**: Suggest the user run `/commit` to stage, commit, and push with smart exclusions.
+7. **Google Sitemap Ping** (sitemap 갱신을 Google에 즉시 알림):
+   ```bash
+   curl -s "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
+   ```
+   - 새 포스트 발행 시 Google 크롤링을 앞당기는 효과
+   - 응답이 "Sitemap Notification Received"면 성공
+
+8. **Hand off to `/commit`**: Suggest the user run `/commit` to stage, commit, and push with smart exclusions.
 
 Note: This skill does NOT auto-commit or push. It prepares everything and lets the user decide.
 
