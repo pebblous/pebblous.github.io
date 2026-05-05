@@ -114,14 +114,14 @@ git commit -m "feat: [아티클 제목] — KO 아티클 추가"
 git push
 ```
 
-### 6. Google Sitemap Ping
+### 6. Sitemap 크롤링 (Google ping API는 deprecated)
 
-```bash
-curl -s "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
-```
+Google은 2023-06부로 `/ping?sitemap=...` API를 제거했다. 대신:
 
-- git push 후 실행 — sitemap 갱신을 Google에 즉시 알려 크롤링을 앞당김
-- 응답에 "Sitemap Notification Received"가 포함되면 성공
+- `sitemap.xml`의 `<lastmod>` 값을 보고 자동 재크롤링한다 (CI가 push 후 자동 갱신)
+- 출처: https://developers.google.com/search/blog/2023/06/sitemaps-lastmod-ping
+- 빠른 인덱싱이 필요하면 Google Search Console의 "URL 검사" → "색인 생성 요청" (수동, 배치 안 됨)
+- 별도 ping curl 호출은 더 이상 필요/유효하지 않음
 
 ## 에러 핸들링
 
