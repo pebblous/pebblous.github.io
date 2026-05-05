@@ -19,6 +19,23 @@ HTML 작성 단계(Phase 4) 시작 전, report-writer 에이전트에게 다음 
 
 Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
 
+### ⛔ Phase 4 작성 시 반복 오류 방지 (에이전트 필독)
+
+다음 3가지는 모든 PR에서 반복 발견된 오류. Phase 4 에이전트 프롬프트에 반드시 포함:
+
+1. **number-badge 패턴**: `<h2>` 안에 `<div>` 금지. 반드시 `<div>` 안에 `<h2>`:
+   ```html
+   <!-- ❌ 금지 -->
+   <h2><div class="flex ..."><span class="number-badge">1</span> 제목</div></h2>
+   <!-- ✅ 정답 -->
+   <div class="flex items-center gap-4 mb-8">
+       <span class="number-badge">1</span>
+       <h2 class="text-3xl font-bold themeable-heading">제목</h2>
+   </div>
+   ```
+2. **JSON-LD TechArticle**: `<head>`에 반드시 포함. 누락 시 seo-check FAIL
+3. **`<section id="faq">`**: `config.faqs`가 있으면 HTML에 빈 section 필수. 없으면 FAQ 미렌더링
+
 ## 실행 모드: 서브 에이전트 (Pipeline + 병렬 팬아웃)
 
 ## 에이전트 구성
