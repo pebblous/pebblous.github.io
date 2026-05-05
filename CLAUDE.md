@@ -6,6 +6,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Pebblous Blog (`blog.pebblous.ai`) — a static site on GitHub Pages for Pebblous Inc., covering AI-Ready Data, Physical AI, and Data Quality topics. Built with vanilla JavaScript + TailwindCSS (build, not CDN).
 
+## ⛔ Branch Policy — 새 작업 시작 시 반드시 확인
+
+여러 Claude 창이 병렬로 작업 중인 환경이다. 위험을 피하려면:
+
+### 새 작업을 시작하기 전 — 항상 사용자에게 질문
+
+새로운 작업(파일 수정, 새 글 작성, 스킬 변경 등) 요청을 받으면 **즉시 `git status`로 현재 브랜치를 확인하고 사용자에게 물어본다**:
+
+```
+현재 브랜치: <branch-name>
+이 작업을 어디서 진행할까요?
+1) 현재 브랜치에서 계속
+2) 새 브랜치 생성 (제안: feat/xxx-yyy)
+3) 다른 기존 브랜치로 이동
+```
+
+**예외 — 질문 생략해도 되는 경우:**
+- 사용자가 명시적으로 브랜치를 지정한 경우 ("feat/foo에서 작업해")
+- 단순 파일 읽기·조회·디버깅(쓰기 작업 없음)
+- 같은 세션에서 이미 브랜치 결정을 한 후의 후속 작업
+
+### 브랜치 네이밍 컨벤션
+
+```
+feat/<주제>     — 새 기능, 새 콘텐츠
+fix/<주제>      — 버그 수정
+chore/<주제>    — 빌드, 설정, 의존성
+docs/<주제>     — 문서 변경
+```
+
+### main 브랜치 직접 작업 금지
+
+`main`에 있을 때 쓰기 작업을 받으면 **반드시 새 브랜치를 만들도록 사용자에게 제안**한다.
+
+### Push 규칙 (병렬 작업 환경)
+
+- `git push --force` 단독 사용 금지 → 항상 `--force-with-lease` 사용
+- rebase 후 push 전에 `git fetch`로 다른 에이전트의 새 커밋 확인
+- 다른 에이전트가 같은 브랜치에 커밋했을 가능성이 보이면 push 보류하고 사용자에게 보고
+
 ## Build & Development Commands
 
 ```bash

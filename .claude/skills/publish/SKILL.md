@@ -32,12 +32,11 @@ When this skill is invoked:
    - Check if `history/changelog.jsonl` was updated in this session
    - If not, remind the user to run `/changelog` before committing
 
-7. **Google Sitemap Ping** (sitemap 갱신을 Google에 즉시 알림):
-   ```bash
-   curl -s "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
-   ```
-   - 새 포스트 발행 시 Google 크롤링을 앞당기는 효과
-   - 응답이 "Sitemap Notification Received"면 성공
+7. **Sitemap 크롤링 안내** (Google ping API는 2023-06부로 deprecated):
+   - Google은 `sitemap.xml`의 `<lastmod>` 값을 보고 자동으로 재크롤링한다 — 별도 ping 불필요
+   - 출처: https://developers.google.com/search/blog/2023/06/sitemaps-lastmod-ping
+   - **참고**: `sitemap.xml`은 CI(`update-sitemap.yml`)가 push 후 자동 갱신하므로 로컬에서 건드리지 않는다
+   - 빠른 인덱싱이 필요하면 Google Search Console의 "URL 검사" → "색인 생성 요청"을 사용 (수동, 배치 안 됨)
 
 8. **Hand off to `/commit`**: Suggest the user run `/commit` to stage, commit, and push with smart exclusions.
 
