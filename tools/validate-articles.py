@@ -229,6 +229,14 @@ def main():
 
     # === Global validations (전체 articles 대상) ===
 
+    # Category 정의 검증 (Issue #127): articles.json의 categories 오브젝트에 정의된 키만 허용
+    defined_categories = set(data.get("categories", {}).keys())
+    if defined_categories:
+        for a in articles:
+            cat = a.get("category")
+            if cat and cat not in defined_categories:
+                err(a.get("id", "?"), f"category '{cat}' 미정의 — 허용: {sorted(defined_categories)}")
+
     # Featured: 카테고리당 최대 3개
     featured_by_cat = {}
     for a in articles:

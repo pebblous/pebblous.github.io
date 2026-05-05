@@ -21,6 +21,24 @@ description: "blog.pebblous.ai 퍼블리싱 파이프라인 — OG 이미지 생
 
 ## 파이프라인 (순서 엄수)
 
+### ⛔ -1. 현재 브랜치 확인 (Issue #128)
+
+작업 파일이 어느 브랜치에 있는지 먼저 확인한다. 다른 브랜치에서 작성된 파일이라면 해당 브랜치로 체크아웃해야 Step 0의 파일 존재 확인이 통과된다.
+
+```bash
+BRANCH=$(git branch --show-current)
+echo "현재 브랜치: $BRANCH"
+git status --short
+```
+
+- **main 브랜치**에서 신규 작업 파일이 보이지 않으면 → 작업한 feature branch로 `git checkout` 후 진행
+- **feature branch**에서 실행 중이면 → 그대로 진행 (퍼블리시 후 PR로 머지)
+- 사용자가 특정 브랜치를 지정하지 않았다면 사용자에게 브랜치 결정을 물어볼 것 (CLAUDE.md Branch Policy 참조)
+
+> ⚠️ **교훈 (2026-05-05, Issue #128)**: feature branch에서 작성한 파일을 main에서 publish 시도 → Step 0 "❌ KO 없음" 오류로 시간 낭비.
+
+---
+
 ### ⛔ 0. KO + EN HTML 존재 확인 (파이프라인 시작 전 필수)
 
 **파이프라인을 시작하기 전, KO + EN HTML 파일이 모두 존재하는지 반드시 확인한다.**

@@ -46,6 +46,18 @@ docs/<주제>     — 문서 변경
 - rebase 후 push 전에 `git fetch`로 다른 에이전트의 새 커밋 확인
 - 다른 에이전트가 같은 브랜치에 커밋했을 가능성이 보이면 push 보류하고 사용자에게 보고
 
+### 세션 종료 시 untracked 정리 (Issue #129)
+
+세션을 마무리하기 전 반드시 `git status`로 untracked 파일을 확인한다. 멀티 에이전트 환경에서 untracked 파일이 남으면 다음 세션의 `git pull`이나 `git checkout`에서 충돌을 일으킨다.
+
+작업 상태별 처리:
+- **작업 완료 + 커밋 가능** → feature branch에 커밋 후 push
+- **작업 중단(WIP)** → `git stash push -u -m "WIP: <설명>"`으로 보관
+- **이미 remote에 있는 파일과 동일** → `git status`로 확인 후 안전하게 삭제 (다음 pull에서 정상 받음)
+- **불필요한 임시 파일** → 삭제 또는 `.gitignore` 추가
+
+> ⚠️ **교훈 (2026-05-05, Issue #129)**: 다른 에이전트가 남긴 untracked 파일이 main의 동일 파일과 충돌하여 `git pull` 차단됨.
+
 ## Build & Development Commands
 
 ```bash
