@@ -1,0 +1,600 @@
+openapi: 3.1.0
+
+info:
+  title: Pebblous Blog Service API
+  version: 0.1.0-draft
+  description: |
+    HTTP API for executing the Pebblous blog repo's content pipelines (blog/report/dc-story)
+    and managing pipeline runs with async approval gates.
+
+    This API and the MCP server (`mcp-tools.md`) share the same underlying Pipeline Engine.
+    See `architecture.md` for the system design and `decision-log.md` for major decisions.
+
+    **Status:** Draft — derived from `docs/nanoclaw/blog-mcp-stdio.ts` (the existing MCP implementation
+    inside NanoClaw). The 9 MCP tools map 1:1 to REST endpoints below.
+
+  contact:
+    name: Pebblous
+    url: https://www.pebblous.ai
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://blog-service.pebblous.ai
+    description: Production (planned)
+
+tags:
+  - name: pipelines
+    description: Content pipeline execution and lifecycle
+  - name: artifacts
+    description: Drafts, previews, PRs produced by pipelines
+  - name: articles
+    description: Existing published articles (read-only)
+  - name: query
+    description: Free-form Q&A about the blog repo
+
+security:
+  - apiKey: []
+
+paths:
+
+  # ── Pipelines ───────────────────────────────────────────────────────────────
+  /pipelines:
+    post:
+      tags: [pipelines]
+      summary: Start a new pipeline
+      description: |
+        Spawns a content pipeline. Equivalent to MCP tool `blog_run_pipeline`.
+
+        The pipeline runs asynchronously. The response is returned immediately after
+        the first phase starts. Use `GET /pipelines/{run_id}` or `/stream` to track progress.
+
+        Pipeline types:
+        - `blog`: Simple blog post (8 phases)
+        - `report`: Deep research report with parallel research tracks (14 phases)
+        - `dc-story`: DataClinic diagnostic story with 3-way analysis (13 phases)
+      operationId: startPipeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartPipelineRequest'
+      responses:
+        '202':
+          description: Pipeline accepted and started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunState'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Concurrency limit reached or branch conflict
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+    get:
+      tags: [pipelines]
+      summary: List pipeline runs
+      description: Equivalent to MCP tool `blog_list_runs`.
+      operationId: listPipelines
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [running, paused_at_gate, completed, failed]
+          description: Filter by status
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [blog, report, dc-story]
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        '200':
+          description: Run list (most recent first)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer }
+                  runs:
+                    type: array
+                    items: { $ref: '#/components/schemas/RunSummary' }
+
+  /pipelines/{run_id}:
+    parameters:
+      - $ref: '#/components/parameters/RunId'
+    get:
+      tags: [pipelines]
+      summary: Get pipeline status
+      description: Equivalent to MCP tool `blog_get_status`.
+      operationId: getPipeline
+      responses:
+        '200':
+          description: Current state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RunState' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /pipelines/{run_id}/resume:
+    parameters:
+      - $ref: '#/components/parameters/RunId'
+    post:
+      tags: [pipelines]
+      summary: Resume a paused pipeline
+      description: |
+        Resume a pipeline that's `paused_at_gate`. Optional feedback is saved to
+        the run directory and made available to the next phase via `feedback-{phase}.md`.
+
+        Equivalent to MCP tool `blog_resume_pipeline`.
+      operationId: resumePipeline
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feedback:
+                  type: string
+                  description: Optional reviewer feedback (markdown)
+                  maxLength: 10000
+      responses:
+        '200':
+          description: Pipeline resumed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RunState' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Pipeline is not paused at a gate
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /pipelines/{run_id}/stream:
+    parameters:
+      - $ref: '#/components/parameters/RunId'
+    get:
+      tags: [pipelines]
+      summary: Subscribe to pipeline events (SSE)
+      description: |
+        Server-Sent Events stream of phase transitions and gate events.
+        Useful for Web UI live progress.
+
+        **No MCP equivalent** — this is a REST-only convenience over polling.
+
+        Event types:
+        - `phase_started`
+        - `phase_completed`
+        - `phase_failed`
+        - `gate_paused`
+        - `pipeline_completed`
+        - `pipeline_failed`
+      operationId: streamPipeline
+      responses:
+        '200':
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  ```
+                  event: phase_started
+                  data: {"run_id":"run-...","phase":"write-ko","model":"opus"}
+
+                  event: gate_paused
+                  data: {"run_id":"run-...","phase":"write-ko","gate_message":"한국어 초안 완성. 검토해주세요."}
+                  ```
+
+  /pipelines/{run_id}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/RunId'
+    post:
+      tags: [pipelines]
+      summary: Cancel a running or paused pipeline
+      description: |
+        **No MCP equivalent yet** — added for API completeness. Sets status to `failed`
+        with reason "cancelled". Does not delete the branch (user can manually clean up).
+      operationId: cancelPipeline
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RunState' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Artifacts ───────────────────────────────────────────────────────────────
+  /pipelines/{run_id}/draft:
+    parameters:
+      - $ref: '#/components/parameters/RunId'
+      - name: language
+        in: query
+        schema:
+          type: string
+          enum: [ko, en]
+          default: ko
+    get:
+      tags: [artifacts]
+      summary: Get current draft HTML
+      description: |
+        Returns the latest HTML draft from the run's branch. Equivalent to MCP tool `blog_get_draft`.
+
+        Truncated to 5000 chars by default. Use `Accept: text/html` to get the full file.
+      operationId: getDraft
+      responses:
+        '200':
+          description: Draft content
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  file: { type: string, description: 'Path relative to repo root' }
+                  language: { type: string, enum: [ko, en] }
+                  content: { type: string }
+                  truncated: { type: boolean }
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: No draft produced yet, or run not found
+
+  /pipelines/{run_id}/pr:
+    parameters:
+      - $ref: '#/components/parameters/RunId'
+    post:
+      tags: [artifacts]
+      summary: Create a GitHub PR from the run branch
+      description: Equivalent to MCP tool `blog_submit_pr`.
+      operationId: createPR
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: PR title (auto-generated if omitted)
+                  maxLength: 200
+                body:
+                  type: string
+                  description: PR body markdown (auto-generated if omitted)
+                  maxLength: 50000
+      responses:
+        '201':
+          description: PR created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pr_url]
+                properties:
+                  pr_url: { type: string, format: uri }
+                  pr_number: { type: integer }
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          description: PR creation failed (push or gh CLI error)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ── Preview ─────────────────────────────────────────────────────────────────
+  /preview:
+    post:
+      tags: [artifacts]
+      summary: Start a preview tunnel
+      description: |
+        Starts a `cloudflared` Quick Tunnel for the blog repo (or a specific run's branch).
+        Returns a public URL. Equivalent to MCP tool `blog_preview`.
+
+        **Note:** The previous tunnel is killed if a new request arrives — only one preview
+        is active at a time.
+      operationId: startPreview
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                run_id:
+                  type: string
+                  description: Run ID (switches to its branch before starting tunnel)
+                article_path:
+                  type: string
+                  description: |
+                    Article path relative to repo root. Returned URL will point directly to it.
+                    Example: `report/my-article/ko/index.html`
+      responses:
+        '200':
+          description: Tunnel established
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url]
+                properties:
+                  url: { type: string, format: uri }
+                  expires_at:
+                    type: string
+                    format: date-time
+                    description: Trycloudflare quick tunnels have no guaranteed expiry — value is informational
+
+  # ── Articles ────────────────────────────────────────────────────────────────
+  /articles:
+    get:
+      tags: [articles]
+      summary: List/search articles
+      description: |
+        Search the blog repo's `articles.json`. Equivalent to MCP tool `blog_list_articles`.
+
+        This endpoint is read-only. Article creation goes through pipelines.
+      operationId: listArticles
+      parameters:
+        - name: keyword
+          in: query
+          schema: { type: string }
+          description: Search in title and description (case-insensitive)
+        - name: category
+          in: query
+          schema:
+            type: string
+            description: Path-prefix match (e.g., `report`, `blog`, `story`)
+        - name: language
+          in: query
+          schema:
+            type: string
+            enum: [ko, en]
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10, maximum: 100 }
+      responses:
+        '200':
+          description: Article matches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer, description: 'Total matching articles' }
+                  articles:
+                    type: array
+                    items: { $ref: '#/components/schemas/ArticleSummary' }
+
+  # ── Free-form query ─────────────────────────────────────────────────────────
+  /query:
+    post:
+      tags: [query]
+      summary: Free-form Q&A about the blog repo
+      description: |
+        Asks Claude Code (Sonnet) to answer a question by searching CLAUDE.md, skills, articles.json, docs/.
+        Equivalent to MCP tool `blog_query`.
+
+        Use sparingly — each query spawns a Claude Code subprocess (cost + latency).
+      operationId: query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question:
+                  type: string
+                  minLength: 5
+                  maxLength: 2000
+      responses:
+        '200':
+          description: Answer
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [answer]
+                properties:
+                  answer: { type: string }
+                  duration_ms: { type: integer }
+        '504':
+          description: Query timeout (default 120s)
+
+components:
+
+  parameters:
+    RunId:
+      name: run_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^run-[0-9]+-[a-z0-9]+$'
+        example: 'run-1746500000000-abc123'
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        Pebblous-issued API key. Phase 1 uses static keys; Phase 4 may move to OAuth.
+
+  schemas:
+
+    PipelineType:
+      type: string
+      enum: [blog, report, dc-story]
+      description: |
+        Pipeline templates defined in `blog-mcp-stdio.ts` PIPELINES constant.
+        `pebblopedia` is reserved for future use.
+
+    Model:
+      type: string
+      enum: [sonnet, opus]
+      description: Claude model alias. Sonnet for research/SEO/publish, Opus for planning/writing/synthesis.
+
+    PhaseStatus:
+      type: string
+      enum: [pending, running, completed, failed, skipped]
+
+    PipelineStatus:
+      type: string
+      enum: [running, paused_at_gate, completed, failed]
+
+    StartPipelineRequest:
+      type: object
+      required: [type, topic]
+      properties:
+        type:
+          $ref: '#/components/schemas/PipelineType'
+        topic:
+          type: string
+          minLength: 5
+          maxLength: 200
+          description: Topic or working title for the content
+        report_id:
+          type: string
+          description: DataClinic report ID (required when type=dc-story)
+        extra_context:
+          type: string
+          maxLength: 10000
+          description: Additional context or instructions for the pipeline
+
+    PhaseDef:
+      type: object
+      description: Static definition of a pipeline phase (from PIPELINES constant)
+      required: [name, model, skill]
+      properties:
+        name: { type: string, example: 'write-ko' }
+        model: { $ref: '#/components/schemas/Model' }
+        skill:
+          type: string
+          description: Skill path under `.claude/skills/`
+          example: 'blog-write'
+        is_gate:
+          type: boolean
+          default: false
+          description: If true, pipeline pauses after this phase
+        gate_message:
+          type: string
+          description: Korean message shown when paused at this gate
+        parallel:
+          type: array
+          items: { type: string }
+          description: Names of phases that run in parallel with this one
+
+    PhaseRecord:
+      type: object
+      description: Runtime record of a phase execution
+      required: [name, model, status]
+      properties:
+        name: { type: string }
+        model: { $ref: '#/components/schemas/Model' }
+        status: { $ref: '#/components/schemas/PhaseStatus' }
+        started_at: { type: string, format: date-time }
+        completed_at: { type: string, format: date-time }
+        output:
+          type: string
+          description: Path to output file in run directory
+
+    RunSummary:
+      type: object
+      description: Compact run for list views
+      required: [id, type, topic, status]
+      properties:
+        id: { type: string }
+        type: { $ref: '#/components/schemas/PipelineType' }
+        topic: { type: string }
+        status: { $ref: '#/components/schemas/PipelineStatus' }
+        branch: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    RunState:
+      type: object
+      description: Full state of a pipeline run
+      required: [id, type, topic, status, current_phase, branch, created_at, updated_at, phases]
+      properties:
+        id: { type: string }
+        type: { $ref: '#/components/schemas/PipelineType' }
+        topic: { type: string }
+        status: { $ref: '#/components/schemas/PipelineStatus' }
+        current_phase: { type: string }
+        branch: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        gate_message:
+          type: string
+          description: Set when status=paused_at_gate
+        error:
+          type: string
+          description: Set when status=failed
+        phases:
+          type: array
+          items: { $ref: '#/components/schemas/PhaseRecord' }
+
+    ArticleSummary:
+      type: object
+      description: Subset of articles.json fields (read-only projection)
+      required: [id, title, path, language]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        path: { type: string, description: 'Relative path including trailing slash' }
+        date: { type: string, format: date }
+        category: { type: string }
+        language: { type: string, enum: [ko, en] }
+        published: { type: boolean }
+        featured: { type: boolean }
+        tags:
+          type: array
+          items: { type: string }
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: 'bad_request'
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
