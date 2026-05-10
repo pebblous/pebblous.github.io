@@ -157,6 +157,9 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 
 모든 아티클 필수. Hero 직후, 섹션 1 이전.
 
+**⛔ 순서 고정: h2 → key-insight(3문단) → stat-card.** key-insight가 stat-card보다 **반드시 먼저** 온다.
+stat-card에는 수치 + 라벨 + 맥락 설명(text-xs) 3줄 구조를 사용한다.
+
 ```html
 <section id="executive-summary" class="mb-16 fade-in-card">
     <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
@@ -170,6 +173,16 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
         <p class="themeable-text leading-relaxed mt-4">
             [문단 3: 비즈니스/실무적 의미]
         </p>
+    </div>
+
+    <!-- Stat Cards — key-insight 뒤에 배치 -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-8">
+        <div class="themeable-card rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold" style="color: #F86825;">[수치]</p>
+            <p class="text-sm themeable-text-secondary mt-1">[라벨]</p>
+            <p class="text-xs themeable-muted mt-1">[맥락 설명]</p>
+        </div>
+        <!-- 3~5개 반복 -->
     </div>
 </section>
 ```
