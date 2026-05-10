@@ -81,7 +81,6 @@ let xml = `<?xml version="1.0" encoding="UTF-8"?>
 
 // Add homepage
 xml += `
-  <!-- Homepage -->
   <url>
     <loc>${SITE_URL}/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
@@ -101,7 +100,6 @@ publishedArticles.forEach((article, index) => {
     const priority = getPriority(article, index);
 
     xml += `
-  <!-- ${article.title} -->
   <url>
     <loc>${url}</loc>
     <lastmod>${lastmod}</lastmod>
