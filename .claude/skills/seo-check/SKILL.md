@@ -36,11 +36,15 @@ When this skill is invoked:
    - **OG image file exists**: Extract the path from `og:image` content, convert the URL to a local file path (e.g., `https://blog.pebblous.ai/story/.../image/index.png` → `story/.../image/index.png`), and verify the file exists on disk. FAIL if the file is missing — the image will be a broken link on social media shares.
    - **⛔ EN 페이지 OG 이미지 언어 불일치 검증**: `<html lang="en">` 페이지에서 `og:image` 또는 `twitter:image` 경로에 `/ko/image/`가 포함되어 있으면 **CRITICAL FAIL**: "EN 페이지가 KO OG 이미지를 참조 — SNS 공유 시 한글 이미지 노출. `/en/image/`로 수정 필요." (원인: KO 복사 후 경로 미변경)
 
-   **Layer 3 — JSON-LD Schema & FAQ**:
-   - BreadcrumbList (auto via PebblousPage — verify config)
-   - FAQPage: must be in `config.faqs` ONLY, NOT in `<head>` `<script type="application/ld+json">`
-   - Article/TechArticle schema in `<head>` — FAIL if missing
+   **Layer 3 — JSON-LD Schema & FAQ** (페블러스 표준: 동적 주입):
+
+   이 사이트의 JSON-LD 스키마는 `PebblousSchema` (scripts/common-utils.js)가 런타임에 동적으로 주입한다. 검증된 사실(2026-05-13 Google Rich Results Test 확인): 동적 JSON-LD를 Google이 정상 인식하며 Rich Results 자격을 부여한다.
+
+   - **BreadcrumbList**: `PebblousSchema.injectBreadcrumbSchema()`가 `config.category` + `config.mainTitle`에서 자동 주입. → config에 `mainTitle`과 `category` 있는지 확인.
+   - **Article/TechArticle**: `PebblousSchema.injectArticleSchema()`가 `config.mainTitle` + `config.subtitle`에서 자동 주입. → **`<head>`에 직접 정적 JSON-LD를 작성하지 말 것** (PebblousSchema 동적 주입과 중복되어 Google Rich Results Test에서 "Articles 2 items" 중복 경고). config에 `mainTitle`+`subtitle` 있는지만 확인.
+   - **FAQPage**: `config.faqs` 배열만 사용 (자동 주입). `<head>`에 직접 작성 금지.
    - **⛔ FAQ 렌더링 컨테이너 검증**: `config.faqs`가 있는데 `<section id="faq">`가 HTML에 없으면 **FAIL**: "FAQ가 config에 정의되었지만 렌더링 컨테이너(`<section id="faq">`)가 없어 페이지에 표시되지 않음. `</main>` 앞에 `<section id=\"faq\" class=\"mb-16 fade-in-card\"></section>` 추가 필요."
+   - **⛔ 정적 JSON-LD 중복 검증**: `<head>`에 `@type: Article/TechArticle/BlogPosting` JSON-LD가 정적으로 존재하면 **FAIL** (PebblousSchema와 중복). 정적 블록 제거하고 PebblousPage.init config로 동작 위임할 것.
 
    **Layer 4 — Technical**:
    - Heading hierarchy (single H1, proper H2/H3 nesting)
