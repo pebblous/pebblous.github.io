@@ -1432,6 +1432,29 @@ const PebblousBreadcrumbs = {
 // ========================================
 const PebblousSchema = {
     /**
+     * Convert "YYYY-MM-DD" → ISO 8601 with KST timezone ("YYYY-MM-DDT12:00:00+09:00").
+     * 이미 timezone 정보가 있는 ISO 문자열이면 그대로 반환. 빈 값/잘못된 형식은 현재 시간.
+     * Google Rich Results의 "Datetime missing timezone" 경고 방지용.
+     */
+    _toIsoDate(value) {
+        if (!value) {
+            return new Date().toISOString();
+        }
+        // Already has time component with Z or ±HH:MM offset
+        if (typeof value === 'string' && /T.+(Z|[+-]\d{2}:?\d{2})$/.test(value)) {
+            return value;
+        }
+        // YYYY-MM-DD → set to noon KST so date doesn't shift in UTC display
+        const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+        if (dateOnly) {
+            return value + 'T12:00:00+09:00';
+        }
+        // Anything else: parse and produce ISO with Z
+        const d = new Date(value);
+        return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+    },
+
+    /**
      * Inject Article Schema for SEO and AI agent citation
      * @param {object} config - Page configuration
      */
@@ -1471,8 +1494,10 @@ const PebblousSchema = {
                     "height": 60
                 }
             },
-            "datePublished": config.publishDate || new Date().toISOString().split('T')[0],
-            "dateModified": config.publishDate || new Date().toISOString().split('T')[0],
+            // ISO 8601 with timezone (Google Rich Results: "missing timezone" 경고 방지).
+            // config.publishDate가 "YYYY-MM-DD" 형식이면 KST(+09:00) 정오로 변환.
+            "datePublished": this._toIsoDate(config.publishDate),
+            "dateModified": this._toIsoDate(config.dateModified || config.publishDate),
             "mainEntityOfPage": {
                 "@type": "WebPage",
                 "@id": window.location.href
