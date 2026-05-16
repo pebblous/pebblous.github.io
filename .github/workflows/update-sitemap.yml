@@ -1,4 +1,4 @@
-name: Update Sitemap & RSS
+name: Update Sitemap & RSS & llms.txt
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
       - 'articles.json'
       - 'generate-sitemap.js'
       - 'generate-rss.js'
+      - 'scripts/generate-llms-txt.py'
   schedule:
     # Run daily at 00:00 UTC (09:00 KST)
     - cron: '0 0 * * *'
@@ -30,6 +31,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Generate sitemap
         run: |
           node generate-sitemap.js
@@ -42,16 +48,24 @@ jobs:
           echo "RSS feed generation completed"
         continue-on-error: false
 
+      - name: Generate llms.txt
+        run: |
+          python3 scripts/generate-llms-txt.py
+          echo "llms.txt generation completed"
+        continue-on-error: false
+
       - name: Check for changes
         id: check_changes
         run: |
           SITEMAP_CHANGED=false
           RSS_CHANGED=false
+          LLMS_CHANGED=false
 
           git diff --exit-code --quiet sitemap.xml || SITEMAP_CHANGED=true
           git diff --exit-code --quiet rss.xml || RSS_CHANGED=true
+          git diff --exit-code --quiet llms.txt || LLMS_CHANGED=true
 
-          if [ "$SITEMAP_CHANGED" = "true" ] || [ "$RSS_CHANGED" = "true" ]; then
+          if [ "$SITEMAP_CHANGED" = "true" ] || [ "$RSS_CHANGED" = "true" ] || [ "$LLMS_CHANGED" = "true" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
@@ -59,9 +73,11 @@ jobs:
 
           echo "sitemap_changed=$SITEMAP_CHANGED" >> $GITHUB_OUTPUT
           echo "rss_changed=$RSS_CHANGED" >> $GITHUB_OUTPUT
+          echo "llms_changed=$LLMS_CHANGED" >> $GITHUB_OUTPUT
 
           [ "$SITEMAP_CHANGED" = "true" ] && echo "📝 Sitemap has changes" && git diff --stat sitemap.xml || echo "✅ No changes in sitemap"
           [ "$RSS_CHANGED" = "true" ] && echo "📝 RSS feed has changes" && git diff --stat rss.xml || echo "✅ No changes in RSS feed"
+          [ "$LLMS_CHANGED" = "true" ] && echo "📝 llms.txt has changes" && git diff --stat llms.txt || echo "✅ No changes in llms.txt"
 
       - name: Commit and push if changed
         if: steps.check_changes.outputs.changed == 'true'
@@ -80,6 +96,11 @@ jobs:
           if [ "${{ steps.check_changes.outputs.rss_changed }}" = "true" ]; then
             git add rss.xml
             [ -n "$COMMIT_FILES" ] && COMMIT_FILES="$COMMIT_FILES, rss.xml" || COMMIT_FILES="rss.xml"
+          fi
+
+          if [ "${{ steps.check_changes.outputs.llms_changed }}" = "true" ]; then
+            git add llms.txt
+            [ -n "$COMMIT_FILES" ] && COMMIT_FILES="$COMMIT_FILES, llms.txt" || COMMIT_FILES="llms.txt"
           fi
 
           git commit -m "Auto-update $COMMIT_FILES [skip ci]" || exit 0
@@ -105,9 +126,10 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "## Sitemap & RSS Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Sitemap & RSS & llms.txt Update Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Sitemap changed**: ${{ steps.check_changes.outputs.sitemap_changed }}" >> $GITHUB_STEP_SUMMARY
           echo "- **RSS changed**: ${{ steps.check_changes.outputs.rss_changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **llms.txt changed**: ${{ steps.check_changes.outputs.llms_changed }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.check_changes.outputs.changed }}" == "true" ]; then
             echo "- **Status**: ✅ Updated and pushed" >> $GITHUB_STEP_SUMMARY

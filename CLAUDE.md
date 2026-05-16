@@ -75,6 +75,7 @@ python3 scripts/scan-html-files.py --clean  # + 비표준 필드 정리
 python3 scripts/scan-html-files.py --dry-run  # 변경 없이 미리보기
 node scripts/generate-rss.js         # Regenerate RSS feed
 node scripts/generate-sitemap.js     # Regenerate sitemap.xml
+python3 scripts/generate-llms-txt.py # Regenerate llms.txt (AI crawler index)
 
 # OG image generation
 node tools/generate-og-image.js --from-html <path.html>  # Auto-extract title/subtitle/theme
@@ -195,7 +196,9 @@ New HTML article
   → python3 scripts/scan-html-files.py --clean   (비표준 필드 정리 포함)
   → node scripts/generate-rss.js
   → node scripts/generate-sitemap.js
+  → python3 scripts/generate-llms-txt.py
   → git push → GitHub Pages auto-deploy
+  (rss.xml, sitemap.xml, llms.txt 은 CI(`update-sitemap.yml`)가 push 후 자동 재생성 — 로컬에서 건드리지 않는다)
 ```
 
 **메타데이터 아키텍처** (Single Source of Truth):
