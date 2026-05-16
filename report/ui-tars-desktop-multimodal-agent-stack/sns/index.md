@@ -39,7 +39,7 @@ The empty seat is here. ByteDance builds the model. Open source lays the framewo
 
 Full analysis → https://blog.pebblous.ai/report/ui-tars-desktop-multimodal-agent-stack/en/
 
-#Pebblous #DataClinic #DataQuality #DataJournalism #UITARS #AIAgent #Multimodal #OpenSource
+#Pebblous #DataClinic #DataQuality #DataJournalism #UITARS #AIAgent #Multimodal #OpenSource #ByteDance
 
 ---
 
@@ -57,14 +57,16 @@ https://blog.pebblous.ai/report/ui-tars-desktop-multimodal-agent-stack/ko/
 
 ## Facebook
 
-UI-TARS의 GitHub stars 33,573개가 한 가지를 증명합니다 — 에이전트 인프라는 오픈됐다는 것. 그리고 그 위로 흐르는 행동 데이터의 품질·주권·거버넌스는 여전히 비어 있다는 것.
+요즘 가끔 멈춰 서서 이런 생각을 합니다. 우리가 AI에게 일을 시킬 때, 그 결과물은 정말 우리만의 것일까.
 
-ByteDance가 UI-TARS-2 기술보고서에서 자신의 학습 메커니즘을 "data flywheel for scalable data generation"이라 부른 순간, 페블러스가 일관되게 주장해 온 "에이전트도 데이터다"는 명제가 빅테크의 공식 어휘가 됐습니다. 모델이 행동 트레이스를 만들고, 트레이스가 다시 모델을 학습시키는 폐쇄 루프 — 정적 학습 코퍼스의 시대가 끝났다는 신호입니다.
+ByteDance가 며칠 전 UI-TARS-desktop을 오픈소스로 풀었습니다. GitHub 별이 33,573개 — 그 자체로도 놀라운 숫자였지만, 정작 오래 머문 문장은 따로 있었습니다. UI-TARS-2 기술보고서에 적혀 있던 "data flywheel for scalable data generation." 모델이 행동을 만들고, 그 행동의 흔적이 다시 모델을 키우는 닫힌 회로. 페블러스가 자주 이야기해 온 "에이전트도 데이터다"라는 표현이, 빅테크 발표문의 공식 어휘로 박혀 있었습니다.
 
-벤치마크 곡선도 가파릅니다. OSWorld 최고 모델이 2024-04 12.24% → 2026-04 82.6%까지 올라갔습니다. 인간 기준선 72.36%를 18개월 만에 넘었습니다. 시장은 글로벌 CAGR 46.3%, 한국 59.1%로 더 빠르게 자랍니다. 그러나 Gartner는 agentic AI 프로젝트의 40% 이상이 2027년 말까지 취소될 것이라 경고합니다. 시장은 폭증하지만 거버넌스 토대는 비어 있다는 뜻입니다.
+읽으면서 한참 페이지를 넘기지 못했습니다. 모델이 더 똑똑해진다는 건 그동안 흔히 들어온 이야기였지만, 모델을 똑똑하게 만드는 식량이 어디서 오는지는 좀처럼 묻지 않았던 것 같아서요. OSWorld 점수가 18개월 만에 12%에서 82%로 인간 수준을 넘은 것보다, 그 점수를 끌어올린 행동 데이터가 어디서 흘러왔는지가 더 마음에 걸렸습니다. 시장은 글로벌 CAGR 46%, 한국은 59%로 자라는 중인데, Gartner는 그 프로젝트의 40%가 2027년이면 사라질 거라고 합니다. 빠른 성장과 깊은 공백이 같은 그래프 위에 겹쳐 있는 풍경이었습니다.
 
-페블러스가 보는 빈자리는 이 지점입니다. DataClinic이 모달리티별 결함을 잡고, AI-Ready Data가 재훈련 셋을 정제하며, Physical AI Platform이 디지털과 물리의 행동 데이터를 한 인터페이스로 묶는 자리 — 모델 옆자리의 빈 공간이 페블러스의 자리입니다.
+페블러스가 한참 들여다보는 자리는 그 빈 공백입니다. 누군가는 모델을 만들고, 누군가는 에이전트를 풀어놓겠지만 — 그 사이에서 흐르는 데이터의 결을 보고, 어디서 흐려졌는지 진단하고, 다음 학습에 쓸 수 있도록 다듬는 일. 화려하지 않고, 카메라가 잘 비추지 않는 일입니다. 다만 그 일이 빠진 채로 데이터 농사는 오래 가지 못합니다.
 
-전문 분석 → https://blog.pebblous.ai/report/ui-tars-desktop-multimodal-agent-stack/ko/
+조용히 쓴 분석 한 편 두고 갑니다. 같은 풍경을 함께 바라봐 주시면 좋겠습니다.
+
+→ https://blog.pebblous.ai/report/ui-tars-desktop-multimodal-agent-stack/ko/
 
 #페블러스 #데이터클리닉 #UITARS #AI에이전트

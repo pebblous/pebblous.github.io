@@ -43,7 +43,8 @@ When this skill is invoked:
    - **LinkedIn (KO)**: 업계 맥락, 첫 문장에 핵심 팩트, 3-4문단
    - **LinkedIn (EN)**: 같은 내용의 영문 버전. 직역 금지 — 영미권 독자가 자연스럽게 읽히는 톤으로 재작성. EN 블로그 링크 사용
    - **Twitter/X**: 핵심 팩트 1-2줄 + 의미 1줄, 링크 마지막
-   - **Facebook**: 구체적 숫자/사례로 시작, 3-4문단 확장 서술
+   - **Facebook (KO) — Reflective Voice (필수)**: LinkedIn의 분석 톤과 분명히 구별. 단정·선언("증명합니다", "됐습니다") 대신 의문·관찰("이런 생각을 합니다", "한참 머물렀습니다", "마음에 걸렸습니다")로 호흡한다. 첫 문장은 질문 또는 개인적 멈춤(예: "요즘 가끔 멈춰 서서..."). 수치는 나열하지 않고 사색 안에 녹인다(예: "33,573이라는 숫자보다 오래 머문 문장은 따로 있었습니다"). 마지막은 단언 대신 여운("같은 풍경을 함께 바라봐 주시면 좋겠습니다"). 5-6 문단, 합쇼체 유지하되 LinkedIn보다 호흡이 길고 느슨함. 해시태그는 3-4개로 최소.
+   - **Facebook (EN)**: KO와 같은 reflective 결을 영어 에세이 톤으로. *The New Yorker* 1인칭 도입부 느낌. 직역 금지.
 
 8. **Output to console AND file**:
    - Display the full output in the conversation (console)
