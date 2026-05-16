@@ -21,7 +21,7 @@ UI-TARS-2 기술보고서는 핵심 메커니즘을 "data flywheel for scalable 
 
 전문 분석 → https://blog.pebblous.ai/report/ui-tars-desktop-multimodal-agent-stack/ko/
 
-#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘 #UITARS #AI에이전트 #멀티모달 #오픈소스
+#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘 #DataClinic #AIReadyData #PhysicalAI #UITARS #ByteDance #MCP #AI에이전트 #GUIagent #멀티모달 #합성데이터
 
 ---
 
@@ -39,7 +39,7 @@ The empty seat is here. ByteDance builds the model. Open source lays the framewo
 
 Full analysis → https://blog.pebblous.ai/report/ui-tars-desktop-multimodal-agent-stack/en/
 
-#Pebblous #DataClinic #DataQuality #DataJournalism #UITARS #AIAgent #Multimodal #OpenSource #ByteDance
+#Pebblous #DataClinic #DataQuality #DataJournalism #AIReadyData #PhysicalAI #UITARS #ByteDance #Anthropic #MCP #AIAgent #GUIAgent #Multimodal #SyntheticData
 
 ---
 
@@ -51,7 +51,7 @@ ByteDance가 GUI 에이전트 풀스택을 오픈한 것보다 더 흥미로운 
 
 https://blog.pebblous.ai/report/ui-tars-desktop-multimodal-agent-stack/ko/
 
-#페블러스 #데이터클리닉 #UITARS #AI에이전트
+#페블러스 #데이터클리닉 #UITARS #ByteDance #AI에이전트
 
 ---
 
@@ -69,4 +69,4 @@ ByteDance가 며칠 전 UI-TARS-desktop을 오픈소스로 풀었습니다. GitH
 
 → https://blog.pebblous.ai/report/ui-tars-desktop-multimodal-agent-stack/ko/
 
-#페블러스 #데이터클리닉 #UITARS #AI에이전트
+#페블러스 #데이터클리닉 #DataClinic #UITARS #ByteDance #AI에이전트 #합성데이터
