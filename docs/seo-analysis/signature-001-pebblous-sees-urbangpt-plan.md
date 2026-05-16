@@ -37,7 +37,14 @@
 
 ### 시그니처 1호의 차별 포인트
 
-**관점 글로 포지셔닝**. "UrbanGPT가 뭔가"는 이미 있음. 이번엔 **"UrbanGPT 같은 Spatial AI를 어떻게 평가할 것인가"** — 페블러스의 데이터 품질·시뮬레이션 관점에서 본 평가 프레임워크.
+**관점 글로 포지셔닝**. "UrbanGPT가 뭔가"는 이미 있음. 이번엔 **"UrbanGPT 같은 Spatial AI를 어떻게 평가할 것인가"** — 페블러스가 **PebbloSim 관점에서 제안하는** 평가 프레임워크.
+
+**중요한 톤 원칙**: 페블러스 팀이 실무에서 *이미 사용 중인* 기준이 아님. **PebbloSim(시뮬레이션 기반 합성데이터 생성기) 관점에서 제안하는 가설 프레임워크**로 명확히 포지셔닝. 표현 예:
+- ❌ "페블러스가 PebbloSim 운영 경험에서 도출한 5가지 기준" (사실 아님)
+- ✅ "페블러스가 PebbloSim 관점에서 제안하는 평가 프레임워크"
+- ✅ "PebbloSim 팀이 Spatial AI를 평가한다면 — 5가지 제안"
+
+이 명확한 포지셔닝은 시그니처 시리즈 전체의 톤 원칙. "Pebblous가 본다"는 *우리의 관점·제안*이지 *기존 IP의 공유*가 아니다.
 
 ## 1호 제안 — 제목·메타·구조
 
@@ -55,23 +62,23 @@ Spatial AI에 점수를 매긴다면
 
 **부제** (`subtitle`):
 ```
-페블러스가 UrbanGPT를 분석하며 만든 Spatial AI 평가 프레임워크 5가지
+페블러스가 PebbloSim 관점에서 제안하는 Spatial AI 평가 프레임워크 5가지
 ```
 
 ### Meta description
 ```
-UrbanGPT 2.0 같은 Spatial AI를 어떻게 평가할까. 페블러스가 자체 PebbloSim
-운영 경험에서 도출한 5가지 데이터 품질 기준 — Geo 정합성, Scale 일관성,
+UrbanGPT 2.0 같은 Spatial AI를 어떻게 평가할까. 페블러스가 PebbloSim
+관점에서 제안하는 5가지 데이터 품질 기준 — Geo 정합성, Scale 일관성,
 GFA 검증, 시나리오 다양성, Sim-to-Real Gap. 실무 도구로 사용 가능한
 체크리스트 형식.
 ```
 
 ### 슬러그
 ```
-project/UrbanGPT/spatial-ai-evaluation-pebblous/
+project/UrbanGPT/spatial-ai-pebblous/
 ```
 
-(`{keyword}-pebblous` 패턴 변형 — keyword를 `spatial-ai-evaluation`으로 확장해 새 노드 생성)
+(`{keyword}-pebblous` 패턴 정석 — "spatial ai"는 검증되진 않았지만 broad한 1차 토픽 키워드라 새 노드로 개척 가능. 짧고 깔끔.)
 
 ### tags
 ```json
@@ -84,7 +91,7 @@ project/UrbanGPT/spatial-ai-evaluation-pebblous/
 ```
 Executive Summary
   └─ Spatial AI가 폭발적으로 등장 중. 그런데 누구도 "어떻게 평가할지" 합의 없음.
-     페블러스가 PebbloSim을 만들며 도출한 5가지 평가 기준을 공유.
+     페블러스가 PebbloSim 관점에서 5가지 평가 기준을 제안.
 
 1. Spatial AI의 부상 — UrbanGPT를 사례로
   └─ UrbanGPT 2.0 등장. 비슷한 흐름: Cesium AI, Esri GeoAI, Mapbox GenAI
@@ -95,7 +102,7 @@ Executive Summary
   └─ 기존 LLM 벤치마크(MMLU 등)로는 측정 불가능
   └─ 시각적 그럴듯함 ≠ 실제 사용 가능성
 
-3. 페블러스의 5가지 평가 기준 ⭐ (핵심 섹션)
+3. 페블러스가 제안하는 5가지 평가 기준 ⭐ (핵심 섹션)
   ├─ 3.1. Geo 정합성 (Geographic Coherence)
   │       — 생성된 좌표·축척이 실제 지리와 맞는가
   ├─ 3.2. Scale 일관성 (Scale Consistency)
