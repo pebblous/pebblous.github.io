@@ -19,8 +19,10 @@
 
 | 주차 | 작업 | 카테고리 | 타입 | 우선순위 |
 |---|---|---|---|---|
-| 셋째 주 | **Palantir Hub 페이지 신설** — 분산 5+ 페이지 통합 가이드 | hub | 통합 | 🔴 P0 |
-| 넷째 주 | **"Pebblous가 보는 UrbanGPT" 시그니처 1호** | report | 신규 | 🔴 P0 |
+| 셋째 주 | **"Pebblous가 보는 UrbanGPT" 시그니처 1호** (`spatial-ai-pebblous`) | report | 신규 | 🔴 P0 |
+| 넷째 주 | **"Pebblous가 보는 Palantir" 시그니처 2호** (+ 5+ 분산 페이지 자연 통합) | report | 신규 | 🔴 P0 |
+
+**순서 변경 이유 (2026-05-16)**: 시그니처 시리즈의 톤·구조 템플릿을 빨리 굳히기 위해 검증된 최강 두 키워드(UrbanGPT → Palantir) 연속 발행. 별도 "Palantir Hub" 작업은 시그니처 2호 본문에서 기존 분산 5+ 페이지를 인용·연결하는 방식으로 자연 통합.
 
 ### 6월
 
@@ -28,7 +30,7 @@
 |---|---|---|---|---|
 | 첫째 주 | **HAI Index 메타 실험 D+28 측정** + 패턴 검증 시 12개 페이지 일괄 적용 | (분석) | 측정 | 🔴 P0 |
 | 둘째 주 | **VLA 모델 비교 2026** (π0, OpenVLA, Helix, RT-2) | blog/report | 신규 | 🟠 P1 |
-| 셋째 주 | **"Pebblous가 보는 Palantir" 시그니처 2호** | report | 신규 | 🟠 P1 |
+| 셋째 주 | **"Pebblous가 보는 GitNexus" 시그니처 3호** | report | 신규 | 🟠 P1 |
 | 넷째 주 | 1차 효과 측정 + 7월 계획 조정 | (분석) | 측정 | 🟢 P3 |
 
 ### 7월
@@ -37,7 +39,7 @@
 |---|---|---|---|---|
 | 첫째 주 | **GitNexus vs GitHub Copilot Workspace 비교** | blog | 신규 | 🟠 P1 |
 | 둘째 주 | **UrbanGPT 2.0 vs 1.0 변천사** (UrbanGPT 클러스터 확장) | blog | 신규 | 🟡 P2 |
-| 셋째 주 | **"Pebblous가 보는 GitNexus" 시그니처 3호** | report | 신규 | 🟠 P1 |
+| 셋째 주 | **"Pebblous가 보는 VLA" 시그니처 4호** | report | 신규 | 🟠 P1 |
 | 넷째 주 | 분기 측정 — 봇 필터 스크립트 재실행, MoM 비교 | (분석) | 측정 | 🔴 P0 |
 
 ### 8월
@@ -46,7 +48,7 @@
 |---|---|---|---|---|
 | 첫째 주 | **Spatial AI 비교: UrbanGPT vs Cesium vs Esri GeoAI** | report | 신규 | 🟡 P2 |
 | 둘째 주 | **DataClinic × ISO 5259 — 표준을 제품에 어떻게 녹였나** | project | 신규 | 🟡 P2 |
-| 셋째 주 | **"Pebblous가 보는 VLA" 시그니처 4호** | report | 신규 | 🟠 P1 |
+| 셋째 주 | **"Pebblous가 보는 ISO 5259" 시그니처 5호** | report | 신규 | 🟡 P2 |
 | 넷째 주 | (휴식 또는 1편 추가) | — | — | — |
 
 ### 9월
@@ -55,7 +57,7 @@
 |---|---|---|---|---|
 | 첫째 주 | **ISO 5259 통합 Hub** (8+ 페이지 통합) | hub | 통합 | 🟢 P3 |
 | 둘째 주 | **VLA 벤치마크 심층 — RLBench, LIBERO** | report | 신규 | 🟢 P3 |
-| 셋째 주 | **"Pebblous가 보는 ISO 5259" 시그니처 5호** | report | 신규 | 🟡 P2 |
+| 셋째 주 | **"Pebblous가 보는 AI for Science" 시그니처 6호** | report | 신규 | 🟢 P3 |
 | 넷째 주 | 분기 측정 + Q4 계획 | (분석) | 측정 | 🔴 P0 |
 
 ### 10월
@@ -64,7 +66,7 @@
 |---|---|---|---|---|
 | 첫째 주 | **AI Scientist v3 분석** (Sakana 신모델 트래킹) | blog | 신규 | 🟢 P3 |
 | 둘째 주 | **AI for Science 비교 시리즈** | report | 신규 | 🟢 P3 |
-| 셋째 주 | **"Pebblous가 보는 AI for Science" 시그니처 6호** | report | 신규 | 🟢 P3 |
+| 셋째 주 | (시그니처 7호 — 후속 토픽 미정, 분기 측정 후 결정) | report | 신규 | 🟢 P3 |
 | 넷째 주 | 반기 측정 — 봇 vs 사람 CTR 추이, 브랜드 검색 증가율 | (분석) | 측정 | 🔴 P0 |
 
 ## 총량
