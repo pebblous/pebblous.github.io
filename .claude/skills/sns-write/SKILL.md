@@ -1,140 +1,234 @@
 ---
 name: sns-write
-description: Write SNS promotional posts as magazine-style cover articles for blog posts
-argument-hint: "[blog-path or topic] [platform: linkedin|twitter|facebook|all]"
+description: >
+  Write SNS promotional posts for blog articles.
+  LinkedIn/Twitter → sns-cover voice. Facebook → reflective voice (PR #154). Essay platform → reflective long-form.
+argument-hint: "[blog-path or topic] [platform: linkedin|twitter|facebook|essay|medium|all] [--voice=sns-cover|reflective]"
 ---
 
-When this skill is invoked:
+# sns-write: 블로그 글의 SNS 카피 생성
 
-1. **Read the tone guide**: Read `.claude/CLAUDE-SNS.md` for full rules.
+## voice는 voice-edit 체계를 따른다
 
-2. **Identify source**: If a blog URL or file path is given, read the article to extract key messages.
+이 스킬은 voice 정의를 직접 들고 있지 않다. **모든 톤 규칙은 `voice-edit/voices/*.md`가 단일 출처(SSOT)**다.
 
-3. **Write in "Voice-Essay Tone"** (보이스 에세이 어조):
-   - 블로그 기사를 소개하는 **커버 에세이** — 팩트 나열이 아니라, 맥락이 이어지는 짧은 글
-   - **⛔ 팩트 나열 금지**: 숫자와 사실을 쏟아붓지 않는다. 팩트 사이에 "왜?"라는 질문과 맥락을 넣어 독자가 따라갈 이유를 만든다
-   - **첫 문장은 의외성 훅**: 독자의 예상을 깨는 사실이나 질문으로 시작. "GitHub 트렌딩 1위가 메타데이터 카탈로그였다" 같은 것
-   - **맥락 연결 질문**: 팩트 블록 사이에 "왜 지금일까", "이것이 왜 중요한가" 같은 전환 질문을 삽입하여 흐름을 만든다
-   - **불릿 나열보다 흐름 문장**: 4개 제품을 불릿으로 나열하지 말고, 하나의 파이프라인 흐름으로 연결하는 문장을 쓴다
-   - **마무리는 주장**: 숫자를 근거로 담대한 한 문장. "다음 승부처는 모델이 아니라 데이터 인프라다" 같은 것
-   - 합쇼체 기반, 간결한 서술체. 성숙하고 절제된 어조
+| 호출 시 voice | 출처 | 사용 시점 |
+|--------------|------|---------|
+| `sns-cover` | `.claude/skills/voice-edit/voices/sns-cover.md` | LinkedIn, Twitter 짧은 카피 |
+| `reflective` | `.claude/skills/voice-edit/voices/reflective.md` | **Facebook 카피 (필수)**, 장문 에세이 슬롯 (Medium 마스터 카피 등) |
 
-4. **완전 금지 항목**:
-   - 이모지 — 헤드라인, 불릿, 본문 어디에도 사용하지 않음
-   - 데이터 파밍/농업 메타포 (경작, 재배, 수확, 온실, 기근 등)
-   - 가벼운 농담, 감탄사, 과장
-   - 불릿에 이모지 사용 → `▸` 또는 `-` 텍스트 기호만
+자세한 호출 방법은 아래 "voice 선택" 절 참조.
 
-5. **페블러스 비즈니스 연결** (기사 말미 1-2문장):
-   - 기사 내용과 관련된 페블러스 제품/사업을 팩트 기반으로 짧게 언급
-   - 자연스럽게 흐름에 녹일 것 — 광고처럼 튀지 않게
-   - 기사 내용과 무관한 제품 언급 금지
+## 1. 진입점: 정본 + voice 가이드 읽기
 
-6. **Hashtag rules**:
-   - **기본 해시태그** (모든 포스트에 포함):
-     `#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘`
-   - 기본 해시태그 + 주제별 해시태그(2~3개)를 조합
-   - LinkedIn: 기본 + 주제별 = 총 7-8개
-   - Twitter/X: 기본에서 핵심 2 + 주제별 1-2개 = 총 3-4개
-   - Facebook: 해시태그 최소화 (기본 중 3-4개만)
+호출받으면 다음을 먼저 읽는다:
 
-7. **Platform adjustments**:
-   - If platform is `all`, write for all 3 platforms in sequence
-   - **LinkedIn (KO)**: 업계 맥락, 첫 문장에 핵심 팩트, 3-4문단
-   - **LinkedIn (EN)**: 같은 내용의 영문 버전. 직역 금지 — 영미권 독자가 자연스럽게 읽히는 톤으로 재작성. EN 블로그 링크 사용
-   - **Twitter/X**: 핵심 팩트 1-2줄 + 의미 1줄, 링크 마지막
-   - **Facebook (KO) — Reflective Voice (필수)**: LinkedIn의 분석 톤과 분명히 구별. 단정·선언("증명합니다", "됐습니다") 대신 의문·관찰("이런 생각을 합니다", "한참 머물렀습니다", "마음에 걸렸습니다")로 호흡한다. 첫 문장은 질문 또는 개인적 멈춤(예: "요즘 가끔 멈춰 서서..."). 수치는 나열하지 않고 사색 안에 녹인다(예: "33,573이라는 숫자보다 오래 머문 문장은 따로 있었습니다"). 마지막은 단언 대신 여운("같은 풍경을 함께 바라봐 주시면 좋겠습니다"). 5-6 문단, 합쇼체 유지하되 LinkedIn보다 호흡이 길고 느슨함. 해시태그는 3-4개로 최소.
-   - **Facebook (EN)**: KO와 같은 reflective 결을 영어 에세이 톤으로. *The New Yorker* 1인칭 도입부 느낌. 직역 금지.
+```
+Read .claude/skills/voice-edit/SKILL.md                # 공통 원칙 7원칙
+Read .claude/skills/voice-edit/voices/{voice}.md       # 선택된 voice의 차이점·정본·자기검증
+Read .claude/CLAUDE-SNS.md                              # 해시태그 등 SNS 공통 규칙
+```
 
-8. **Output to console AND file**:
-   - Display the full output in the conversation (console)
-   - Determine the output file path from the source blog path:
-     - Pattern: `{blog-parent-dir}/sns/{blog-filename-without-ext}.md`
-     - Example: `report/kronos-financial-foundation-model/ko/index.html` → `report/kronos-financial-foundation-model/sns/index.md`
-   - Create the `sns/` directory if it doesn't exist
-   - Write a Markdown file with the following structure:
+선택된 voice의 정본 글도 가능하면 함께 읽어 톤을 체화한다.
 
-   ```markdown
-   # SNS 홍보 글: {article title}
+## 2. 소스 파악
 
-   > 소스: {blog path}
-   > 생성일: {YYYY-MM-DD}
-   > URL: https://blog.pebblous.ai/{blog path}
+블로그 URL 또는 파일 경로를 받으면 해당 글을 읽어 핵심 메시지·숫자·논점을 추출한다.
 
-   ---
+## 3. voice 선택
 
-   ## LinkedIn
+채널마다 기본 voice가 다르다 (PR #154에서 결정). `all` 또는 채널 직접 지정 시 자동 매핑:
 
-   {linkedin post content}
+| 입력 | 적용 voice |
+|------|-----------|
+| platform=`linkedin` | `sns-cover` |
+| platform=`twitter` | `sns-cover` |
+| platform=`facebook` | **`reflective`** (LinkedIn 분석 톤과 분명히 구별) |
+| platform=`all` | LinkedIn+Twitter는 sns-cover, Facebook은 reflective (자동 분기) |
+| platform=`essay` | `reflective` (장문 마스터 카피) |
+| `--voice=sns-cover` 명시 | 모든 채널 강제로 sns-cover |
+| `--voice=reflective` 명시 | 모든 채널 강제로 reflective |
+| 자연어: "사유 에세이로", "긴 에세이로" | `reflective` |
 
-   ---
+## 4. 플랫폼별 출력 슬롯
 
-   ## Twitter/X
+`sns-cover` voice (LinkedIn/Twitter 기본):
+- **LinkedIn (KO)**: 업계 맥락, 첫 문장에 핵심 팩트, 3-4문단
+- **LinkedIn (EN)**: 같은 내용의 영문 버전. 직역 금지 — 영미권 매거진 톤으로 재작성. EN 블로그 링크 사용
+- **Twitter/X (KO/EN)**: 핵심 팩트 1-2줄 + 의미 1줄, 링크 마지막
 
-   {twitter post content}
+`reflective` voice (Facebook 기본 — PR #154에서 결정):
+- **Facebook (KO) — Reflective Voice (필수)**: LinkedIn 분석 톤과 분명히 구별. 첫 문장 질문/멈춤, 수치는 사색 안에 녹임, 마지막은 여운으로 끝. 5~6문단, 합쇼체. 자세한 가이드는 `voice-edit/voices/reflective.md` "Facebook reflective 카피 작성 가이드" 표 참조.
+- **Facebook (EN) — Reflective Voice (필수)**: KO와 같은 reflective 결을 영어 에세이 톤으로. *The New Yorker* 1인칭 도입부 느낌. 직역 금지.
 
-   ---
+`reflective` voice (장문 — 명시 호출 시):
+- **에세이 (KO)**: 채널 무관 마스터 카피, 1,500~2,500자, 10~15문단
+- **Essay (EN)**: 영미권 에세이 톤으로 재작성. 비유 화이트리스트(eye/bones/map/grammar/lens/order/foundation) 사용
 
-   ## Facebook
+**채널-voice 매핑 요약:**
 
-   {facebook post content}
-   ```
+| 채널 | voice | 분량 |
+|------|-------|-----|
+| LinkedIn KO/EN | sns-cover | 3-4문단 |
+| Twitter/X KO/EN | sns-cover | 1-2줄 + 1줄 |
+| **Facebook KO/EN** | **reflective** | **5-6문단** |
+| 에세이 (essay platform) | reflective | 1,500~2,500자 |
 
-   - If a single platform is specified, only include that platform's section
-   - If the file already exists, ask the user whether to overwrite or append
+platform=`all`은 위 매핑대로 LinkedIn+Twitter+Facebook을 모두 생성 (Facebook은 자동으로 reflective). essay는 명시 호출 시에만.
 
-9. **Medium article** (platform `medium` or `all`):
-   - **영문** 요약 기사 (~900단어, 5분 읽기)
-   - 이모지 없음, 뉴스 어조
-   - 구조: Hook → 기술 설명 → 핵심 질문 → 페블러스 관점 → CTA(블로그 링크)
-   - **⛔ OG 이미지(`image/index.png`) 삽입 금지** — 본문용이 아닌 소셜 미리보기 전용 이미지
-   - **⛔ `<table>` 태그 사용 금지** — Medium import 시 표가 무시됨. 표 데이터 처리 우선순위:
-     1. **불릿 리스트** (기본) — `<ul><li>`로 변환, 핵심 수치를 볼드로 표현
-     2. **표 이미지 렌더링** (사용자 요청 시) — HTML 테이블을 PNG로 렌더링하여 `sns/image/`에 저장, `<img>`로 삽입
-   - **블로그 링크는 원본 기사 주소** — `sns/medium.html` 주소가 아닌 원본 EN 기사(`/en/`) 주소를 CTA에 사용
-   - 마지막에 블로그 전문 링크: `**[Read the full analysis →](URL)**`
-   - **`sns/medium.html` 자동 생성** (아래 템플릿)
-   - **절대 블로그 전문 복사 금지** — 요약+독자적 관점으로 작성
+## 5. 해시태그
 
-   ### medium.html 템플릿
+기본 해시태그 (모든 포스트 공통):
+```
+#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘
+```
 
-   ```html
-   <!DOCTYPE html>
-   <html lang="en">
-   <head>
-       <meta charset="UTF-8">
-       <meta name="robots" content="noindex, nofollow">
-       <link rel="canonical" href="https://blog.pebblous.ai/{blog-en-path}">
-       <title>{Title} | Pebblous</title>
-       <meta name="description" content="{description}">
-       <style>
-           body { max-width: 720px; margin: 2rem auto; padding: 0 1rem; font-family: -apple-system, sans-serif; line-height: 1.8; color: #1a1a2e; }
-           h1 { font-size: 2rem; font-weight: 800; }
-           h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; }
-           img { max-width: 100%; border-radius: 8px; margin: 1.5rem 0; }
-           figcaption { font-size: 0.8rem; color: #64748b; text-align: center; }
-           a { color: #F86825; }
-           .cta { margin-top: 2rem; padding: 1.5rem; border-left: 4px solid #F86825; background: rgba(248,104,37,0.04); border-radius: 0 8px 8px 0; }
-           .footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; font-size: 0.85rem; color: #64748b; }
-       </style>
-   </head>
-   <body>
-       {article content as HTML}
+플랫폼별 수량:
+- LinkedIn: 기본 4 + 주제별 3~4 = 총 7~8개
+- Facebook: 기본 중 3~4개만
+- Twitter/X: 기본 중 핵심 2 + 주제별 1~2 = 총 3~4개
+- 에세이 (reflective): 끝에 일반 패턴 (기본 4 + 주제별 2~3)
 
-       <div class="cta">
-           <strong>Read the full technical analysis on Pebblous Blog →</strong><br>
-           <a href="https://blog.pebblous.ai/{blog-en-path}">{full title}</a>
-       </div>
+해시태그 규칙은 `.claude/CLAUDE-SNS.md` 의 "해시태그 규칙" 절 참조.
 
-       <div class="footer">
-           <p>Pebblous builds AI-Ready data infrastructure for the Physical AI era.</p>
-           <p><a href="https://www.pebblous.ai">pebblous.ai</a> · <a href="https://dataclinic.ai">DataClinic</a> · <a href="https://pebbloscope.ai">Pebbloscope</a></p>
-       </div>
-   </body>
-   </html>
-   ```
+## 6. 출력
 
-   ### 미디엄 import 방법
-   1. `sns/medium.html`을 git push → GitHub Pages 배포
-   2. Medium → New Story → ⋯ → Import a story → `https://blog.pebblous.ai/{sns/medium.html URL}` 붙여넣기
-   3. Story Settings → "Originally published at" → 원본 블로그 URL 입력 (canonical)
+콘솔에 전체를 표시하고 동시에 파일로 저장:
+
+- 경로: `{blog-parent-dir}/sns/{blog-filename-without-ext}.md`
+- 예: `report/kronos-financial-foundation-model/ko/index.html` → `report/kronos-financial-foundation-model/sns/index.md`
+- `sns/` 디렉토리가 없으면 생성
+
+파일 구조:
+
+```markdown
+# SNS 홍보 글: {article title}
+
+> 소스: {blog path}
+> 생성일: {YYYY-MM-DD}
+> URL: https://blog.pebblous.ai/{blog path}
+> voice: {sns-cover | reflective}
+
+---
+
+## LinkedIn (KO)
+
+{linkedin KO content — voice=sns-cover}
+
+---
+
+## LinkedIn (EN)
+
+{linkedin EN content — voice=sns-cover}
+
+---
+
+## Twitter/X (KO)
+
+{twitter KO content — voice=sns-cover}
+
+---
+
+## Twitter/X (EN)
+
+{twitter EN content — voice=sns-cover}
+
+---
+
+## Facebook (KO)
+
+{facebook KO content — voice=sns-cover}
+
+---
+
+## Facebook (EN)
+
+{facebook EN content — voice=sns-cover}
+
+---
+
+## 에세이 (KO)
+<!-- voice=reflective. 명시 호출 시에만 포함. -->
+
+{reflective KO content — 1,500~2,500자}
+
+---
+
+## Essay (EN)
+<!-- voice=reflective. 명시 호출 시에만 포함. -->
+
+{reflective EN content}
+```
+
+- 단일 platform 지정 시 해당 섹션만 포함
+- 파일이 이미 있으면: 덮어쓸지, 누락된 슬롯만 추가할지 사용자에게 묻는다
+
+## 7. 자기검증
+
+작성 후 voice별 자기검증을 수행:
+
+- 공통: `voice-edit/SKILL.md` "자기검증" 절
+- voice별: `voice-edit/voices/{voice}.md` "자기검증" 절
+
+## 8. Medium article (platform `medium` or `all`)
+
+- **영문** 요약 기사 (~900단어, 5분 읽기). voice는 `sns-cover`를 길이만 늘려서 사용 (뉴스 어조)
+- 구조: Hook → 기술 설명 → 핵심 질문 → 페블러스 관점 → CTA(블로그 링크)
+- **⛔ OG 이미지(`image/index.png`) 삽입 금지** — 본문용이 아닌 소셜 미리보기 전용 이미지
+- **⛔ `<table>` 태그 사용 금지** — Medium import 시 표가 무시됨. 표 데이터 처리:
+  1. **불릿 리스트** (기본) — `<ul><li>`로 변환, 핵심 수치를 볼드로 표현
+  2. **표 이미지 렌더링** (사용자 요청 시) — HTML 테이블을 PNG로 렌더링하여 `sns/image/`에 저장, `<img>`로 삽입
+- **블로그 링크는 원본 기사 주소** — `sns/medium.html` 주소가 아닌 원본 EN 기사(`/en/`) 주소를 CTA에 사용
+- 마지막에 블로그 전문 링크: `**[Read the full analysis →](URL)**`
+- **`sns/medium.html` 자동 생성** (아래 템플릿)
+- **절대 블로그 전문 복사 금지** — 요약+독자적 관점으로 작성
+
+### medium.html 템플릿
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://blog.pebblous.ai/{blog-en-path}">
+    <title>{Title} | Pebblous</title>
+    <meta name="description" content="{description}">
+    <style>
+        body { max-width: 720px; margin: 2rem auto; padding: 0 1rem; font-family: -apple-system, sans-serif; line-height: 1.8; color: #1a1a2e; }
+        h1 { font-size: 2rem; font-weight: 800; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; }
+        img { max-width: 100%; border-radius: 8px; margin: 1.5rem 0; }
+        figcaption { font-size: 0.8rem; color: #64748b; text-align: center; }
+        a { color: #F86825; }
+        .cta { margin-top: 2rem; padding: 1.5rem; border-left: 4px solid #F86825; background: rgba(248,104,37,0.04); border-radius: 0 8px 8px 0; }
+        .footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; font-size: 0.85rem; color: #64748b; }
+    </style>
+</head>
+<body>
+    {article content as HTML}
+
+    <div class="cta">
+        <strong>Read the full technical analysis on Pebblous Blog →</strong><br>
+        <a href="https://blog.pebblous.ai/{blog-en-path}">{full title}</a>
+    </div>
+
+    <div class="footer">
+        <p>Pebblous builds AI-Ready data infrastructure for the Physical AI era.</p>
+        <p><a href="https://www.pebblous.ai">pebblous.ai</a> · <a href="https://dataclinic.ai">DataClinic</a> · <a href="https://pebbloscope.ai">Pebbloscope</a></p>
+    </div>
+</body>
+</html>
+```
+
+### 미디엄 import 방법
+1. `sns/medium.html`을 git push → GitHub Pages 배포
+2. Medium → New Story → ⋯ → Import a story → `https://blog.pebblous.ai/{sns/medium.html URL}` 붙여넣기
+3. Story Settings → "Originally published at" → 원본 블로그 URL 입력 (canonical)
+
+## 변천 메모
+
+- ~2026-04: "Mature Expert" 톤
+- 2026-04-26 (PR #116): voice-essay 톤으로 전환 — Voice-Essay Tone 규칙을 SKILL.md에 직접 포함
+- 2026-05-15: reflective 변종을 SKILL.md에 추가 (feat/hub-neuro-symbolic-ontology 브랜치)
+- **2026-05-16 (이번 변경)**: voice 규칙을 `voice-edit/voices/*.md`로 이전. 이 스킬은 voice 선택과 채널/포맷만 다룬다.
