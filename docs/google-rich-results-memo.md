@@ -66,25 +66,34 @@ Google 검색 결과에서 "단순 파란 링크" 위에 추가 시각 요소가
 
 ### 부족한 부분 ⚠️
 
-**자동 점검 결과 (2026-05-06 `tools/audit-jsonld.py` 실행):**
+> **⚠️ 2026-05-13 정정 (Google Rich Results Test 검증 후)**
+>
+> 2026-05-06에 작성한 "189개 누락" 통계는 **거짓 양성**이었다.
+> 그날 사용한 `tools/audit-jsonld.py`는 정적 `<head>` JSON-LD만 검사했는데,
+> 페블러스 사이트의 실제 표준은 `PebblousSchema` (scripts/common-utils.js)가
+> 런타임에 동적으로 주입하는 방식이다.
+>
+> Google Rich Results Test로 직접 검증한 결과 — "누락"으로 판정된 페이지
+> (예: `report/karpathy-coding-skills-2026-04/ko/`) 들은 모두 **3 valid items
+> detected** (TechArticle + BreadcrumbList + FAQPage)로 정상 작동.
+>
+> 정정된 통계 (2026-05-13 갱신된 audit-jsonld.py 실행):
 
-- **전체 published 415개 중 Article 스키마 보유: 208 / 397 (52.4%)**
-- **누락: 189개 페이지** (예상 50~80개를 크게 상회)
+**자동 점검 결과 (2026-05-13 갱신, 정적 + 동적 주입 자격 모두 검사):**
+
+- **전체 published 423개 중 Article 스키마 자격 보유: 310 / 403 (76.9%)**
+- **진짜 누락: 83개 페이지** (PebblousPage.init 또는 mainTitle/subtitle 미설정)
+- **중복: 103개 페이지** ⚠️ ← 진짜 위험 (정적 + 동적 동시 존재 → 'Articles 2 items' 경고)
 
 | 카테고리 | 전체 | 누락 | 누락률 |
 |----------|------|------|--------|
-| **art** | 75 | 55 | **73.3%** |
-| **business** | 43 | 27 | **62.8%** |
-| tech | 207 | 89 | 43.0% |
-| story | 72 | 18 | 25.0% |
+| story | 72 | 3 | 4.2% |
+| tech | 209 | 25 | 12.0% |
+| business | 47 | 18 | 38.3% |
+| **art** | 75 | 37 | **49.3%** ← DAL 전시작 일부 PebblousPage 미사용 |
 
-| 언어 | 전체 | 누락 | 누락률 |
-|------|------|------|--------|
-| ko | 214 | 102 | 47.7% |
-| en | 182 | 86 | 47.3% |
-
-- **art 카테고리 73.3% 누락** — DAL(Data Art Lab) 전시작 대부분이 미적용. AI 검색 인용 가치 큼
-- **business 62.8% 누락** — BizReport 시리즈도 절반 이상 누락. IR 자료 신뢰도와 직결
+- **art 카테고리 49.3% 누락** — 오래된 DAL(Data Art Lab) 페이지들이 PebblousPage 표준을 따르지 않는 옛 구조. 별도 마이그레이션 작업 필요.
+- **103개 중복** — 정적 JSON-LD를 직접 작성한 페이지들. 단계적으로 정적 블록 제거 작업 필요.
 - **파일 누락 10건** — articles.json에 등록은 됐지만 디스크에 파일 없음. 별도 정리 이슈
 
 상세 리포트: `tools/jsonld-audit-report.md`, `tools/jsonld-audit-report.json`
@@ -101,22 +110,39 @@ Google 검색 결과에서 "단순 파란 링크" 위에 추가 시각 요소가
 
 ---
 
-## 4. 권장 액션 (3단계)
+## 4. 권장 액션 (정정본 2026-05-13)
 
-### 단계 1 — 표준 페이지 일괄 점검 ✅ 도구 완성
+### 단계 1 — 점검 도구 (✅ 완료)
 
-- ✅ 검출 도구 작성: `tools/audit-jsonld.py`
+- ✅ `tools/audit-jsonld.py` 작성 + 동적 검사 로직 추가 (2026-05-13 갱신)
   ```bash
   python3 tools/audit-jsonld.py                 # 전체 점검
   python3 tools/audit-jsonld.py --category art  # 카테고리 필터
   python3 tools/audit-jsonld.py --language ko   # 언어 필터
   ```
-- ✅ 1차 실행 완료 — 189개 누락 페이지 식별 (위 표 참조)
-- ⏳ **남은 작업: 일괄 자동 추가 도구 작성** (`tools/inject-jsonld.py` 가칭)
-  - articles.json의 메타데이터(title, description, date, image, language)에서 추출
-  - HTML `<head>` `<script src="...common-utils.js">` 직전에 삽입
-  - `--dry-run`으로 미리보기, `--apply`로 실제 수정
-  - 카테고리별 단계 적용: business → tech → story → art 순 추천 (영향도 순)
+
+### 단계 2 — 중복 정리 (우선순위 ⚠️ HIGH, 103개)
+
+정적 + 동적 JSON-LD가 동시에 있는 103개 페이지. Google이 "Articles 2 items detected"
+경고를 띄우는 상태. 단계적으로 정적 블록 제거 권장.
+
+- 예: `report/multiagent-industrial-data-operations/ko|en/`는 2026-05-13 PR에서 처리됨
+- 나머지 101개: 카테고리별/단계별 분할 PR 권장
+
+**제거 방법** (한 페이지 기준):
+1. `<head>` 안의 `<script type="application/ld+json">...{"@type":"TechArticle",...}</script>` 블록 삭제
+2. PebblousPage.init config에 `mainTitle`, `subtitle`, `category`, `publishDate` 있는지 확인 (없으면 추가)
+3. Google Rich Results Test로 페이지 검증 → 'Articles 1 valid item'으로 줄어드는지 확인
+
+### 단계 3 — 진짜 누락 페이지 보강 (우선순위 MEDIUM, 83개)
+
+PebblousPage.init이 없거나 mainTitle/subtitle이 빠진 페이지들. 대부분 art 카테고리의
+오래된 DAL 전시작.
+
+- art 49.3% — DAL 페이지 PebblousPage 표준 마이그레이션 (별도 작업)
+- business 38.3% — BizReport 일부, IR 페이지 일부
+- tech 12.0% — 비교적 잘 정리됨
+- story 4.2% — 매우 잘 정리됨
 
 ### 단계 2 — 신규 페이지에 강제 적용 (1일)
 
