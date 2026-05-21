@@ -182,6 +182,7 @@ platform=`all`은 위 매핑대로 LinkedIn+Twitter+Facebook을 모두 생성 (F
 - 마지막에 블로그 전문 링크: `**[Read the full analysis →](URL)**`
 - **`sns/medium.html` 자동 생성** (아래 템플릿)
 - **절대 블로그 전문 복사 금지** — 요약+독자적 관점으로 작성
+- **⛔ `<link rel="canonical">` 금지** — Medium importer가 canonical을 보고 원본 글(`/en/`)을 redirect로 따라가 본문 글이 import된다. canonical은 반드시 주석으로만 남기고, Medium 발행 후 에디터의 "Originally published at"에서 수동 설정한다 (2026-05-22 사고에서 확립)
 
 ### medium.html 템플릿
 
@@ -191,7 +192,7 @@ platform=`all`은 위 매핑대로 LinkedIn+Twitter+Facebook을 모두 생성 (F
 <head>
     <meta charset="UTF-8">
     <meta name="robots" content="noindex, nofollow">
-    <link rel="canonical" href="https://blog.pebblous.ai/{blog-en-path}">
+    <!-- canonical은 미디엄 발행 후 에디터에서 수동 설정 (import 시 redirect 방지) -->
     <title>{Title} | Pebblous</title>
     <meta name="description" content="{description}">
     <style>
