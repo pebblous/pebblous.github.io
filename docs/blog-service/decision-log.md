@@ -4,6 +4,49 @@
 
 ---
 
+## 2026-05-22 — B단계 진입: 진본/사본 모델 + 자산 2/3 진본 위치 결정
+
+**상황**: C단계(스펙) 완료 후 B단계(코드 분리) 진입. "자산 2/3을 어떻게 분리하느냐"가 쟁점.
+
+**결정 핵심 — 진본/사본 모델**:
+- **자산 2/3의 진본**: 새 레포 `blog-service` (현 `joohaeng-pbls/blog-service`, 추후 `pebblous/blog-service`로 transfer 예정)
+  - 콘텐츠 작성 도구·로직 일체 (스킬·에이전트·정책·렌더링 코드·결정론적 도구·파이프라인)
+- **자산 1**: 본 레포 `pebblous.github.io` — 콘텐츠 + 렌더링 코드 사본
+  - 자산 2/3에서 생성된 콘텐츠와 렌더링에 필요한 정적 자산 사본만 보관
+  - GitHub Pages가 호스팅 — 독자/검색엔진은 변화 없음
+
+**경계 (사용자 정의)**: "콘텐츠 자체를 제외한 모든 것"이 자산 2.
+- 자산 1에 남는 것: `blog/`, `report/`, `story/`, `project/`, `pebblopedia/`, `event/`, `articles.json`, `sitemap.xml`, `rss.xml`, `history/`, `image/`
+- 자산 2/3에 옮길 것: `.claude/`, `scripts/`, `tools/`, `components/`, `css/`, `styles/`, `docs/`, `CLAUDE.md`, `AGENT-POLICY.md`, `package.json`, `index.html`, `tailwind.config.js`, `.github/workflows/`
+
+**렌더링 코드 동기화 방식 (β 채택)**:
+- 콘텐츠 PR과 별개로, 진본(blog-service)의 렌더링 코드 갱신 시 별도 PR로 자산 1에 일괄 동기화
+- 콘텐츠 PR과 렌더링 PR이 섞이지 않아 신호 단순
+
+**언어/스택 결정**:
+- 자산 2는 코드 거의 없음 (스킬 .md + 에이전트 .md + Python/JS 도구). 그대로 이전.
+- 자산 3 (Pipeline Engine) 언어는 추후 결정 — 에이전트 오케스트레이션 호환성이 기준 (NanoClaw가 TypeScript+Bun이라 참고).
+
+**마일스톤 범위**:
+- 첫 마일스톤은 **9개 툴 전부도 핵심 3개도 아닌, "자산 2 이전 + 외부 호출 검증"**
+- 새 위치에서 본 레포(자산 1)에 새 글 작성 PR이 정상 동작하는지 확인이 1차 성공 기준
+- 검증 통과 후 자산 3 (Pipeline Engine + API/MCP) 단계 진입
+
+**NanoClaw 협업**:
+- 본 분리 작업에는 불필요 — 우리는 자산 2를 이전하는 것이지 NanoClaw 코드를 옮기는 것이 아니다.
+- NanoClaw `blog-mcp-stdio.ts`는 자산 3 단계에서 참조 자료로만 사용 (이미 `docs/nanoclaw/`에 복사본 있음).
+
+**적용 단계**:
+1. blog-service 레포에 자산 2 초기 파일 복사 + push
+2. README + 검증 시나리오 작성
+3. 검증: blog-service 환경에서 본 레포에 새 글 PR — 동작 확인
+4. (검증 후) 본 레포의 자산 2 파일들을 "사본"으로 명시 (진본은 blog-service)
+5. (장기) 진본 갱신 → 사본 동기화 파이프라인 정착
+
+**관련**: 이슈 #137, [architecture.md](architecture.md)
+
+---
+
 ## 2026-05-06 — 통합 우선, 분리 차차
 
 **상황**: 본 레포(`pebblous.github.io`)에 세 종류의 자산(콘텐츠 / 메서드론 / 도구)이 통합되어 있고, 콘텐츠가 수백 건으로 늘어남. Blog Service를 새로 만들면서 별도 레포로 시작할지, 본 레포 안에서 시작할지가 쟁점.
