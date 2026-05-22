@@ -46,35 +46,6 @@ docs/<주제>     — 문서 변경
 - rebase 후 push 전에 `git fetch`로 다른 에이전트의 새 커밋 확인
 - 다른 에이전트가 같은 브랜치에 커밋했을 가능성이 보이면 push 보류하고 사용자에게 보고
 
-### 같은 디렉토리 다른 세션과 분리 — git worktree
-
-같은 컴퓨터에서 여러 Claude 세션이 같은 working tree를 공유할 때 한 세션이 브랜치 전환하면 다른 세션의 파일이 갑자기 바뀜. **`git status` 결과가 의도와 다르거나 미커밋 변경이 보이면 worktree로 분리**:
-
-```bash
-# 별도 디렉토리에 새 브랜치 + worktree 생성
-git worktree add ~/Downloads/pebblous-<짧은이름> -b <branch> origin/main
-cd ~/Downloads/pebblous-<짧은이름>
-# ... 작업, 커밋, push, PR 머지 ...
-
-# 머지는 gh pr merge 로 (로컬 main 안 건드림)
-gh api -X PUT repos/pebblous/pebblous.github.io/pulls/<NUM>/merge -f merge_method=merge
-
-# 정리
-cd "/Users/joohaeng/BeerGraph Dropbox/Joo-Haeng Lee/Dev/github/pebblous.github.io"
-git worktree remove ~/Downloads/pebblous-<짧은이름>
-```
-
-### 충돌 위험 파일 — 동시 수정 주의
-
-| 파일 | 위험 | 대응 |
-|------|------|------|
-| **articles.json** | 여러 에이전트 동시 항목 추가 | 머지 충돌 시 **양쪽 다 살리기** (한쪽만 취하기 금지 — Issue #34) |
-| **scripts/common-utils.js, styles/common-styles.css** | 사이트 전체 영향 | 수정 중에는 다른 PR 머지 잠시 보류 권장 |
-| **CLAUDE.md, .claude/skills/** | 모든 에이전트 행동 영향 | 변경 후 영향 받는 에이전트 작업이 새 정책을 따르는지 확인 |
-| **sitemap.xml, rss.xml** | CI 자동 생성 | 수동 편집 피하기 |
-| `history/changelog.jsonl` | append-only지만 동시 append 충돌 가능 | 충돌 시 양쪽 라인 모두 보존 |
-| 콘텐츠 폴더 (`blog/`, `report/`, `story/`, `project/`, `pebblopedia/`) | 보통 분리됨 | 한 글 = 한 PR 원칙 유지 |
-
 ### 세션 종료 시 untracked 정리 (Issue #129)
 
 세션을 마무리하기 전 반드시 `git status`로 untracked 파일을 확인한다. 멀티 에이전트 환경에서 untracked 파일이 남으면 다음 세션의 `git pull`이나 `git checkout`에서 충돌을 일으킨다.
