@@ -47,13 +47,11 @@ mkdir -p blog/ko blog/en
    - All remaining old `.html` URLs in JSON-LD schemas → new `/ko/` URL (use `replace_all`)
    - `articlePath` in PebblousPage.init config → new path with `/ko/`
    - Internal relative links to same-directory assets (PDFs, images) → adjust depth (e.g., `./file.pdf` → `../../file.pdf`)
-   - **Replace hero meta info** with 2-line compact format (below subtitle, centered):
-     ```html
-     <!-- Korean -->
-     <p class="text-sm themeable-muted">YYYY.MM · (주)페블러스 데이터 커뮤니케이션팀</p>
-     <p class="text-sm themeable-muted mt-1">읽는 시간: ~N분 · <a href="../en/" class="text-orange-400 hover:text-orange-300 transition-colors">English</a></p>
-     ```
-     Line 1: `date · team` / Line 2: `reading time · language link`. Remove any old `<div class="flex ...">` publication info block.
+   - **⛔ Hero meta info — DO NOT hardcode (Issue #118)**:
+     `PebblousPage.init()` auto-generates the meta line (`날짜 | 팀명 | ~N분 | English | [공유아이콘]`) from `config.publishDate`, `config.publisher`, `config.wordCount`. See `CLAUDE.md` "Hero meta info — 동적 생성" rule.
+     - Keep the hero `<header>` minimal — just an empty `<h1 id="page-h1-title">`.
+     - Remove any existing hardcoded `<p class="text-sm themeable-muted">` meta lines, `<div id="share-buttons-placeholder">`, or `<div class="flex ...">` publication info block.
+     - Language switcher is rendered by `common-utils.js` (it checks `fetch HEAD` for the alternate-language sibling page).
    - Fix any existing HTML issues (e.g., broken tags)
 
 ### 4. Create `blog/en/index.html` — English translation
@@ -70,6 +68,7 @@ The English version MUST be created by **copying the completed KO file** and the
 - `<html lang="ko">` → `<html lang="en">`
 - `<meta name="language" content="Korean">` → `English`
 - `<meta http-equiv="content-language" content="ko">` → `en`
+- `<meta name="copyright" content="...">` → `© 2026 Pebblous. All rights reserved.` (Issue #118 — KO `(주)페블러스 데이터 커뮤니케이션` 그대로 복사 금지)
 - `canonical`, `og:url`, `twitter:url` → change `/ko/` to `/en/`
 - `og:locale` → `en_US`
 - `articlePath` → change `/ko/` to `/en/`
