@@ -13,8 +13,9 @@ argument-hint: "[path-to-html-or-references.json]"
 
 1. **references.json 생성** — 리서치 결과에서 CSL-JSON 포맷의 참고문헌 정본 파일 생성
 2. **HTML 렌더링** — `.reference-list` 표준 클래스로 참고문헌 섹션 렌더링
-3. **Download Citation** — citation.js 기반 BibTeX/RIS 다운로드 버튼 삽입
+3. **Download Citation** — `/scripts/citation-download.js` 기반 BibTeX/RIS 다운로드 버튼 (외부 의존 없음)
 4. **Scholar 메타** — Google Scholar `citation_*` 메타 태그 추가
+5. **시리즈 공유 SSOT** — 같은 시리즈의 여러 글은 공통 `references.json` 한 파일을 공유
 
 ---
 
@@ -22,11 +23,24 @@ argument-hint: "[path-to-html-or-references.json]"
 
 ### 파일 위치
 
+**단독 글** — references.json은 글 폴더 바로 아래:
 ```
 report/[slug]/references.json    ← 정본 (Single Source of Truth)
-report/[slug]/ko/index.html      ← HTML에서 참조
-report/[slug]/en/index.html      ← 동일 references.json 공유
+report/[slug]/ko/index.html      ← fetch('../references.json')
+report/[slug]/en/index.html      ← fetch('../references.json')
 ```
+
+**시리즈 글** — 시리즈 디렉토리 루트에 공유 SSOT를 둔다:
+```
+project/[SeriesName]/references.json                ← 시리즈 공유 SSOT
+project/[SeriesName]/series-part-01/ko/index.html   ← fetch('../../references.json')
+project/[SeriesName]/series-part-01/en/index.html   ← fetch('../../references.json')
+project/[SeriesName]/series-part-02/ko/index.html   ← fetch('../../references.json')
+project/[SeriesName]/series-part-02/en/index.html   ← fetch('../../references.json')
+```
+
+- 시리즈 글들이 같은 표준·법령·논문을 공통으로 인용할 때 SSOT 한 파일로 유지보수 부담을 줄인다 (ISO5259 시리즈 사례).
+- ⛔ 시리즈에서 글마다 별도 references.json을 두면 안 됨 — 표준 번호 갱신·항목 추가 시 동기화 누락 발생.
 
 ### 스키마
 
@@ -73,6 +87,10 @@ report/[slug]/en/index.html      ← 동일 references.json 공유
 | 기업 보고서/백서 | `report` |
 | 블로그/뉴스 | `webpage` |
 | 책 | `book` |
+| ISO/IEC, IEEE 등 표준 | `standard` *(Pebblous 확장)* |
+| 법령·행정명령·규제 | `legislation` *(Pebblous 확장)* |
+
+**Pebblous 확장 type** — CSL 표준 외에 `standard` / `legislation`을 사용한다. `/scripts/citation-download.js`는 이를 BibTeX `@misc + note`, RIS `STAND` / `STAT`로 손실 없이 변환한다. 원 type 정보는 BibTeX의 `note` 필드와 RIS의 `N1` 필드에 보존된다.
 
 ---
 
@@ -135,35 +153,68 @@ report/[slug]/en/index.html      ← 동일 references.json 공유
 
 ## 3. Download Citation
 
+### `/scripts/citation-download.js` (커스텀, 외부 의존 없음)
+
+citation-js@0.7 UMD 빌드가 글로벌 `Cite` 객체를 노출하지 않는 문제 + Pebblous 확장 type 지원을 위해 직접 구현했다. ~210줄, ~8.3KB, vanilla JS.
+
+**경로 규칙**:
+- 단독 글 (`report/[slug]/ko/index.html`): `'../references.json'`
+- 시리즈 글 (`project/[Series]/[part]/ko/index.html`): `'../../references.json'`
+
+### HTML 삽입 패턴
+
 ```html
-<!-- 참고문헌 섹션 상단에 삽입 -->
+<!-- 참고문헌 섹션 상단 -->
 <div class="flex gap-2 mb-6">
-    <button onclick="downloadCitation('bibtex')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+    <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
         BibTeX
     </button>
-    <button onclick="downloadCitation('ris')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+    <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
         RIS
     </button>
 </div>
 
-<!-- citation.js (참고문헌 있는 페이지만 로드) -->
-<script src="https://cdn.jsdelivr.net/npm/citation-js@0.7/build/citation.min.js" defer></script>
-<script>
-async function downloadCitation(format) {
-    const res = await fetch('../references.json');
-    const data = await res.json();
-    const cite = new Cite(data);
-    const output = format === 'bibtex' 
-        ? cite.format('bibtex') 
-        : cite.format('ris');
-    const blob = new Blob([output], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `references.${format === 'bibtex' ? 'bib' : 'ris'}`;
-    a.click();
-}
-</script>
+<!-- </body> 직전에 한 번만 로드 -->
+<script src="/scripts/citation-download.js?v=YYYYMMDD" defer></script>
 ```
+
+### 시리즈 글 (공유 SSOT) 패턴
+
+```html
+<button onclick="PebblousCitation.download('bibtex', '../../references.json')">BibTeX</button>
+<button onclick="PebblousCitation.download('ris', '../../references.json')">RIS</button>
+```
+
+### API
+
+```js
+PebblousCitation.download(format, refsUrl)   // fetch + 변환 + 다운로드 트리거
+PebblousCitation.toBibtex(refs)              // CSL-JSON 배열 → BibTeX 문자열
+PebblousCitation.toRis(refs)                 // CSL-JSON 배열 → RIS 문자열
+```
+
+### type 매핑 (스크립트 내부)
+
+| CSL type | BibTeX | RIS |
+|----------|--------|-----|
+| `article-journal` | `@article` | `JOUR` |
+| `paper-conference` | `@inproceedings` | `CONF` |
+| `book` | `@book` | `BOOK` |
+| `report` | `@techreport` | `RPRT` |
+| `webpage` | `@misc` | `ELEC` |
+| `standard` *(확장)* | `@misc` + `note` 보존 | `STAND` |
+| `legislation` *(확장)* | `@misc` + `note` 보존 | `STAT` |
+
+### ⛔ 더 이상 사용하지 말 것
+
+```html
+<!-- ❌ citation-js CDN — UMD가 global Cite 미노출, 실제 클릭 시 동작 안 함 -->
+<script src="https://cdn.jsdelivr.net/npm/citation-js@0.7/build/citation.min.js"></script>
+<!-- ❌ downloadCitation 인라인 함수 — global 충돌, refsUrl 하드코딩 -->
+<script>async function downloadCitation(format) { ... new Cite(data) ... }</script>
+```
+
+기존 글에서 위 두 줄이 보이면 마이그레이션 대상이다 (아래 Step 4 참조).
 
 ---
 
@@ -266,27 +317,25 @@ grep -rEn '<li>.*https?://[^"<]*</li>' report/ project/ 2>/dev/null
 + <ul class="reference-list mb-6">...</ul>
 ```
 
-### Step 4: citation.js + downloadCitation 함수 주입
+### Step 4: citation-download.js 주입
 
-`</script>` (common-utils.js) 직후, PebblousPage.init 스크립트 **직전**에 추가:
+`</body>` 직전에 한 번만 추가 (PebblousPage.init 이후, 다른 스크립트와 무관):
 
 ```html
-<!-- Citation download (BibTeX/RIS) -->
-<script src="https://cdn.jsdelivr.net/npm/citation-js@0.7/build/citation.min.js" defer></script>
-<script>
-    async function downloadCitation(format) {
-        const res = await fetch('../references.json');
-        const data = await res.json();
-        const cite = new Cite(data);
-        const output = format === 'bibtex' ? cite.format('bibtex') : cite.format('ris');
-        const blob = new Blob([output], { type: 'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'references.' + (format === 'bibtex' ? 'bib' : 'ris');
-        a.click();
-    }
-</script>
+<!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+<script src="/scripts/citation-download.js?v=YYYYMMDD" defer></script>
 ```
+
+버튼은 `PebblousCitation.download()` 호출로 변경:
+
+```diff
+- <button onclick="downloadCitation('bibtex')">BibTeX</button>
+- <button onclick="downloadCitation('ris')">RIS</button>
++ <button onclick="PebblousCitation.download('bibtex', '../references.json')">BibTeX</button>
++ <button onclick="PebblousCitation.download('ris', '../references.json')">RIS</button>
+```
+
+> 시리즈 글이면 `'../../references.json'`. depth가 다르면 button onclick의 path도 다르게.
 
 ### Step 5: 사후 검증 (grep)
 
@@ -299,9 +348,14 @@ grep -c "reference-list" $FILE
 # 안티 패턴 잔재 (0이어야)
 grep -c '<ol class="space-y-3"' $FILE
 grep -cE '<strong>\[[0-9]+\]</strong>' $FILE
+grep -c 'citation.min.js' $FILE          # citation-js 잔재
+grep -c 'downloadCitation' $FILE         # 인라인 함수 잔재
 
-# citation.js 로드 (1)
-grep -c "citation.min.js" $FILE
+# 새 스크립트 로드 (1)
+grep -c 'citation-download.js' $FILE
+
+# PebblousCitation.download 호출 (2: BibTeX + RIS)
+grep -c 'PebblousCitation.download' $FILE
 
 # references.json 항목 수 = ref-num 항목 수
 JSON_COUNT=$(python3 -c "import json; print(len(json.load(open('report/[slug]/references.json'))))")
@@ -312,6 +366,8 @@ echo "json=$JSON_COUNT html=$HTML_COUNT (같아야)"
 ### 마이그레이션 사례
 
 - **karpathy-llm-wiki** (PR #163, 2026-05-17): 19항목, 3카테고리(1차 소스 / 학술 / 업계·시장). 사용자 스크린샷에서 "1. [1]" 이중 번호 발견 → 표준화.
+- **citation-download.js 신설** (PR #173, 2026-05-22): citation-js@0.7 UMD가 글로벌 `Cite`를 노출하지 않아 BibTeX/RIS 클릭이 무반응. vanilla JS로 직접 구현하고 ISO5259 4파일 + karpathy 2파일을 일괄 마이그레이션. Pebblous 확장 type(`standard`, `legislation`) 지원.
+- **ISO5259 시리즈 공유 SSOT** (PR #173): `project/ISO5259/references.json` 한 파일을 4글이 `../../references.json`으로 공유. 표준 번호 갱신 시 한 곳만 수정.
 
 ---
 
@@ -327,19 +383,20 @@ echo "json=$JSON_COUNT html=$HTML_COUNT (같아야)"
 
 ### 작성 시 (신규 글)
 - [ ] references.json CSL-JSON 유효성 확인
+- [ ] 단독 글이면 `report/[slug]/references.json`, 시리즈면 `project/[Series]/references.json` (공유 SSOT)
 - [ ] 모든 arXiv/DOI에 URL 링크
 - [ ] HTML에서 `.reference-list` 클래스 사용
 - [ ] 번호(`ref-num`)에 주황색 사용하지 않음
 - [ ] 카테고리별 분류 (4건 이상이면 필수)
-- [ ] BibTeX/RIS 버튼 추가
-- [ ] citation.js defer 로드
+- [ ] BibTeX/RIS 버튼: `PebblousCitation.download(format, '<상대경로>')` 사용
+- [ ] `/scripts/citation-download.js` defer 로드 (1회)
 
 ### 마이그레이션 시 (기존 비표준 글)
-- [ ] Step 1 grep으로 안티 패턴 확인
-- [ ] Step 2 references.json 생성 (SSOT)
+- [ ] Step 1 grep으로 안티 패턴 확인 (`citation.min.js`, `downloadCitation`, `<ol class="space-y-3"`)
+- [ ] Step 2 references.json 생성 (SSOT, 시리즈면 공유 위치)
 - [ ] Step 3 KO+EN 둘 다 마크업 교체
-- [ ] Step 4 citation.js 두 파일 모두 주입
-- [ ] Step 5 grep 사후 검증
+- [ ] Step 4 citation-download.js 두 파일 모두 주입 + onclick 변경
+- [ ] Step 5 grep 사후 검증 (`citation-download.js` 1, `PebblousCitation.download` 2, `citation.min.js` 0)
 
 ### 검증 시
 - [ ] references.json 파일 존재
