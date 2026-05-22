@@ -66,15 +66,15 @@ https://blog.pebblous.ai/project/UrbanGPT/spatial-ai-pebblous/en/
 
 ## Facebook (KO)
 
-요즘 가끔 멈춰 서서 생각하는 장면이 있습니다. 자연어 한 줄로 3D 도시가 만들어지는 시연 영상이 SNS에 흘러갈 때, 저는 잠시 화면 앞에 머무르게 됩니다.
+"FAR 450%로 70% 주거 30% 상업." 이 한 줄을 받아 3D 도시 레이아웃을 그려 내는 시연 영상이 며칠 전 피드를 지나갔습니다. 도구는 STF Labs의 UrbanGPT 2.0. 같은 주에 World Labs는 Marble을 commercial로 열었고, Sat2City는 위성 한 장에서 도시를 복원하는 모델을 ICCV에 올렸습니다.
 
-도구는 분명히 멋집니다. STF Labs의 UrbanGPT 2.0이 "FAR 450%"를 받아 도시 레이아웃을 그려 내고, World Labs Marble이 navigable한 3D 세계를 commercial로 열고, Sat2City가 위성 한 장에서 도시를 복원합니다. 시장은 2025년 $2.26B에서 2035년 $13.60B로 움직인다는 전망도 있습니다.
+영상을 닫고 한참 뒤에도 머리에 남은 건 도시의 모습이 아니라 어떤 비어 있음이었습니다. 이 도시가 정말 쓸 만한가, 라는 질문에 답할 방법이 합의되어 있지 않다는 사실. 보고서를 쓰면서 정리해 본 10개 주요 플레이어 가운데 자체 평가 메서드론을 공개한 곳은 Esri 한 군데뿐이었습니다. 나머지 아홉은 생성에는 강하고 검증에는 침묵하고 있었습니다.
 
-그런데 시연을 보고 나서 가장 오래 마음에 남았던 질문은 따로 있었습니다. 이 도시가 정말 쓸 만한가 — 그 질문에 답할 방법이 합의되지 않았다는 사실입니다. 본 보고서에서 정리한 10개 주요 플레이어 중 자체 평가 메서드론을 공개한 곳은 사실상 Esri 한 곳뿐이었습니다.
+페블러스가 PebbloSim 관점에서 5가지 기준을 *제안*하기로 한 까닭이 거기에 있습니다. Geo 정합성·Scale 일관성·GFA 검증·시나리오 다양성·Sim-to-Real Gap. 페블러스가 이미 운영하는 표준이 아니라, 비어 있는 자리에 시험 삼아 두는 가설입니다. 학계가 절반쯤 닦아 둔 메트릭과 업계가 비워 둔 검증 차원 사이에 다리를 놓아 보려는 시도이기도 합니다.
 
-페블러스가 PebbloSim 관점에서 5가지 기준을 제안하는 까닭은 여기에 있습니다. Geo 정합성·Scale 일관성·GFA 검증·시나리오 다양성·Sim-to-Real Gap. 우리가 이미 운영하는 표준이 아니라, 비어 있는 자리에 두는 가설입니다. 학계가 부분적으로 닦아 둔 메트릭과 업계가 비워 둔 검증 차원의 사이에 다리를 놓아 보려는 작은 시도이기도 합니다.
+LLM도 같은 길을 지나왔습니다. 2년 동안 생성이 평가보다 먼저 달렸고, MMLU와 HELM이 평가의 자리를 정리한 뒤에야 시장은 무엇을 좋은 모델이라 부를지 합의했습니다. Spatial AI는 지금 그 2년 전의 자리에 서 있는 것 같습니다.
 
-평가의 자리는 정답을 가진 자가 아니라, 먼저 질문을 정리한 자에게 열리는 것 같습니다. 같은 풍경을 함께 바라봐 주시면 좋겠습니다.
+평가의 자리는 정답을 가진 사람에게 먼저 오지 않는 것 같습니다. 질문을 먼저 정리한 사람에게 열립니다. 보고서를 내놓는 마음도 그쪽에 가깝습니다.
 
 ▸ https://blog.pebblous.ai/project/UrbanGPT/spatial-ai-pebblous/ko/
 
@@ -84,15 +84,15 @@ https://blog.pebblous.ai/project/UrbanGPT/spatial-ai-pebblous/en/
 
 ## Facebook (EN)
 
-Lately, I find myself pausing on a particular kind of demo video. Someone types a sentence, and a 3D city blooms on the screen. I sit with it longer than I expect to.
+"FAR 450%, 70% residential, 30% commercial." A demo video crossed my feed earlier this week showing that single sentence becoming a 3D urban layout in seconds. The tool was STF Labs' UrbanGPT 2.0. That same week, World Labs shipped Marble as a commercial product, and Sat2City landed at ICCV with a model that reconstructs cities from a single satellite image.
 
-The tools are remarkable. STF Labs' UrbanGPT 2.0 turns "FAR 450%" into an urban layout. World Labs shipped Marble, a navigable 3D world, last November. Sat2City reconstructs cities from a single satellite image. The AI urban planning market is projected to move from $2.26B in 2025 to $13.60B by 2035.
+What stayed with me long after the demo wasn't the city itself but a quiet absence behind it. Whether this city is actually usable — that question has no agreed answer. While writing the report, I mapped ten major players in this space. Only Esri publishes an evaluation methodology, grounded in ISO/IEC 23894. The other nine are excellent at generation and silent on verification.
 
-But the question that stayed with me, after the demos faded, was a quieter one. Is this city actually usable — and who decides? Among the ten major players we surveyed, only Esri publishes an evaluation methodology grounded in ISO 23894. The rest are excellent at generation, silent on verification.
+That's the gap Pebblous is *proposing* five criteria for, from PebbloSim's perspective — Geographic Coherence, Scale Consistency, GFA Validation, Scenario Coverage, Sim-to-Real Gap. Not a standard we operate, but a hypothesis placed in the empty seat for now. An attempt to bridge the metrics academia has half-laid with the verification dimension industry has left open.
 
-Pebblous proposes five criteria from PebbloSim's perspective — Geographic Coherence, Scale Consistency, GFA Validation, Scenario Coverage, Sim-to-Real Gap. Not a standard we operate, but a hypothesis placed in the empty seat. A small attempt to build a bridge between the metrics academia has half-laid and the verification dimension industry has left open.
+LLMs walked the same road. For two years, generation ran ahead of evaluation. Only after MMLU and HELM organized the question did the market agree on what a "good model" meant. Spatial AI is sitting where LLMs sat two years ago.
 
-The seat at the evaluation table seems to open not for those with answers, but for those who first take the time to organize the questions. I hope you'll come look at this landscape with us.
+The seat at the evaluation table doesn't seem to open first for those with the answers. It opens for those who first take the time to organize the questions. That's the spirit in which we're putting this report out.
 
 ▸ https://blog.pebblous.ai/project/UrbanGPT/spatial-ai-pebblous/en/
 
