@@ -40,49 +40,17 @@ Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
 
 ## 에이전트 구성
 
-| 에이전트 | subagent_type | 모델 | 역할 | 출력 |
-|---------|--------------|------|------|------|
-| topic-coverage-checker | Explore | haiku | 직·간접 중복 여부 검색 | `_workspace/report/pre_coverage.md` |
-| topic-value-assessor | Explore | sonnet | 주제 가치 평가 | `_workspace/report/pre_value.md` |
-| report-planner | Explore | **opus** | 조사 범위·구조 설계 | `_workspace/report/00_plan.md` |
-| arxiv-researcher | Explore | **opus** | 논문/학술 트랙 | `_workspace/report/02a_arxiv.md` |
-| industry-researcher | Explore | sonnet | 업계 동향 트랙 | `_workspace/report/02b_industry.md` |
-| data-researcher | Explore | sonnet | 수치/데이터 트랙 | `_workspace/report/02c_data.md` |
-| report-synthesizer | general-purpose | **opus** | 3트랙 통합 + Exec Summary | `_workspace/report/03_synthesis.md` |
-| report-writer | general-purpose | **opus** | HTML 보고서 작성 | `report/[slug]/ko/index.html` |
-| report-en-writer | general-purpose | **opus** | 영문 재작성 | `report/[slug]/en/index.html` |
-| blog-publisher | general-purpose | haiku | OG + articles.json + git push | 퍼블리싱 완료 |
-
-⛔ **모델 매핑은 비용·시간을 잡기 위한 하이브리드 설계**. 핵심 추론·서사 노드(planner / synthesizer / writer / en-writer / arxiv)만 opus, 수집·요약·검증·실행은 sonnet/haiku. 품질이 의심되는 노드는 이 표에서만 opus로 올린다.
-
-## 로깅 계약 (Logger Contract)
-
-오케스트레이터는 **각 Phase 시작/종료 시점에 logger를 호출**한다. 로그는 글과 함께 영구 보관되도록 `report/[slug]/log/`에 저장한다.
-
-```bash
-# 시작
-python3 tools/report-produce-logger.py start \
-  --slug [slug] --phase [n] --agent [name] --model [opus|sonnet|haiku] --mode [standard|express]
-
-# 종료
-python3 tools/report-produce-logger.py end \
-  --slug [slug] --phase [n] --agent [name] --status [ok|fail|partial] \
-  --output-path [path] --notes "[한 줄 메모]"
-
-# 자유 노트 (theme adequity, intervention, warning 등)
-python3 tools/report-produce-logger.py note \
-  --slug [slug] --kind [adequity|intervention|warning|info] --content "[내용]"
-
-# 실행 종료 시 (Phase 9)
-python3 tools/report-produce-logger.py finalize \
-  --slug [slug] --topic "[주제]" --mode [standard|express]
-```
-
-산출물:
-- `report/[slug]/log/report-produce-YYYY-MM-DD.jsonl` — 기계용 raw (append-only)
-- `report/[slug]/log/report-produce-YYYY-MM-DD.md` — 사람용 요약 (finalize 시 생성/갱신)
-
-⛔ **색인 금지 (Option C)**: 이 디렉토리의 파일은 `articles.json` / `sitemap.xml` 등에 등록하지 않는다. 어떤 페이지에서도 링크하지 않는다. URL을 직접 알면 접근 가능 — 재현성·투명성 목적.
+| 에이전트 | subagent_type | 역할 | 출력 |
+|---------|--------------|------|------|
+| topic-coverage-checker | Explore | 직·간접 중복 여부 검색 | `_workspace/report/pre_coverage.md` |
+| topic-value-assessor | Explore | 주제 가치 평가 | `_workspace/report/pre_value.md` |
+| report-planner | Explore | 조사 범위·구조 설계 | `_workspace/report/00_plan.md` |
+| arxiv-researcher | Explore | 논문/학술 트랙 | `_workspace/report/02a_arxiv.md` |
+| industry-researcher | Explore | 업계 동향 트랙 | `_workspace/report/02b_industry.md` |
+| data-researcher | Explore | 수치/데이터 트랙 | `_workspace/report/02c_data.md` |
+| report-synthesizer | general-purpose | 3트랙 통합 + Exec Summary | `_workspace/report/03_synthesis.md` |
+| report-writer | general-purpose | HTML 보고서 작성 | `report/[slug]/ko/index.html` |
+| blog-publisher | general-purpose | OG + articles.json + git push | 퍼블리싱 완료 |
 
 ## 데이터 흐름
 
@@ -134,18 +102,12 @@ python3 tools/report-produce-logger.py finalize \
 
 ### Phase Pre: 사전 병렬 검토
 
-주제 입력 직후, 두 에이전트를 동시에 스폰. **slug는 이 시점에 잠정 결정**(주제 한 줄 요약 → kebab-case). slug 결정 후 즉시 logger를 시작:
-
-```bash
-python3 tools/report-produce-logger.py start --slug [slug] --phase Pre --agent topic-coverage-checker --model haiku --mode standard &
-python3 tools/report-produce-logger.py start --slug [slug] --phase Pre --agent topic-value-assessor --model sonnet --mode standard
-```
+주제 입력 직후, 두 에이전트를 동시에 스폰:
 
 ```python
 Agent(
   name="topic-coverage-checker",
   subagent_type="Explore",
-  model="haiku",
   run_in_background=True,
   prompt="""
     콘텐츠 루트: $BLOG_CONTENT_REPO
@@ -171,7 +133,6 @@ Agent(
 Agent(
   name="topic-value-assessor",
   subagent_type="Explore",
-  model="sonnet",
   run_in_background=True,
   prompt="""
     콘텐츠 루트: $BLOG_CONTENT_REPO
@@ -199,14 +160,7 @@ Agent(
 )
 ```
 
-두 에이전트 완료 후 logger 종료:
-
-```bash
-python3 tools/report-produce-logger.py end --slug [slug] --phase Pre --agent topic-coverage-checker --status ok --output-path _workspace/report/pre_coverage.md --notes "[중복 판정 한 줄]"
-python3 tools/report-produce-logger.py end --slug [slug] --phase Pre --agent topic-value-assessor --status ok --output-path _workspace/report/pre_value.md --notes "[가치 판정 한 줄]"
-```
-
-오케스트레이터가 결과를 읽고 사용자에게 요약 메시지 전송:
+두 에이전트 완료 후, 오케스트레이터가 결과를 읽고 사용자에게 요약 메시지 전송:
 
 ```
 📋 사전 검토 완료 — [주제]
@@ -239,10 +193,6 @@ git checkout -b feat/report-[slug]-pb
 
 ### Phase 1: 기획
 
-```bash
-python3 tools/report-produce-logger.py start --slug [slug] --phase 1 --agent report-planner --model opus
-```
-
 ```python
 Agent(
   name="report-planner",
@@ -269,21 +219,9 @@ Agent(
 )
 ```
 
-Phase 1 종료 시:
-
-```bash
-python3 tools/report-produce-logger.py end --slug [slug] --phase 1 --agent report-planner --status ok --output-path _workspace/report/00_plan.md --notes "[핵심 각도 한 줄]"
-```
-
 ### Phase 2: 병렬 리서치 (3-way 팬아웃)
 
-Phase 1 완료 후 동시 실행. **모델 차등 배정**: arxiv는 학술 추론이 핵심이므로 opus, 나머지 둘은 sonnet.
-
-```bash
-python3 tools/report-produce-logger.py start --slug [slug] --phase 2 --agent arxiv-researcher --model opus &
-python3 tools/report-produce-logger.py start --slug [slug] --phase 2 --agent industry-researcher --model sonnet &
-python3 tools/report-produce-logger.py start --slug [slug] --phase 2 --agent data-researcher --model sonnet
-```
+Phase 1 완료 후 동시 실행:
 
 ```python
 Agent(
@@ -302,7 +240,7 @@ Agent(
 Agent(
   name="industry-researcher",
   subagent_type="Explore",
-  model="sonnet",
+  model="opus",
   run_in_background=True,
   prompt="""
     에이전트 정의: .claude/agents/industry-researcher.md
@@ -315,7 +253,7 @@ Agent(
 Agent(
   name="data-researcher",
   subagent_type="Explore",
-  model="sonnet",
+  model="opus",
   run_in_background=True,
   prompt="""
     에이전트 정의: .claude/agents/data-researcher.md
@@ -326,21 +264,9 @@ Agent(
 )
 ```
 
-3트랙 모두 완료 시 각각 logger end:
-
-```bash
-python3 tools/report-produce-logger.py end --slug [slug] --phase 2 --agent arxiv-researcher --status ok --output-path _workspace/report/02a_arxiv.md
-python3 tools/report-produce-logger.py end --slug [slug] --phase 2 --agent industry-researcher --status ok --output-path _workspace/report/02b_industry.md
-python3 tools/report-produce-logger.py end --slug [slug] --phase 2 --agent data-researcher --status ok --output-path _workspace/report/02c_data.md
-```
-
 ### Phase 3: 합성
 
 3개 트랙 모두 완료 확인 후:
-
-```bash
-python3 tools/report-produce-logger.py start --slug [slug] --phase 3 --agent report-synthesizer --model opus
-```
 
 ```python
 Agent(
@@ -362,17 +288,7 @@ Agent(
 )
 ```
 
-Phase 3 종료 시:
-
-```bash
-python3 tools/report-produce-logger.py end --slug [slug] --phase 3 --agent report-synthesizer --status ok --output-path _workspace/report/03_synthesis.md
-```
-
 ### Phase 4: HTML 작성
-
-```bash
-python3 tools/report-produce-logger.py start --slug [slug] --phase 4 --agent report-writer --model opus
-```
 
 ```python
 Agent(
@@ -405,12 +321,6 @@ Agent(
 )
 ```
 
-Phase 4 종료 시:
-
-```bash
-python3 tools/report-produce-logger.py end --slug [slug] --phase 4 --agent report-writer --status ok --output-path report/[slug]/ko/index.html --notes "[mainTitle 한 줄]"
-```
-
 ### Phase 4.5: JH 리뷰 (콘텐츠 컨펌)
 
 ⏸ Phase 4 초고 완성 후 반드시 멈추고 JH 리뷰를 요청한다.
@@ -435,19 +345,7 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 4 --agent repor
 
 ### Phase 5: 품질 검증 + 보강
 
-Phase 4.5 승인 후, 퍼블리싱 전에 반드시 아래 3단계를 실행한다. 각 서브단계별로 logger start/end를 호출 (5-A는 self-review, 5-B/C는 스킬).
-
-```bash
-python3 tools/report-produce-logger.py start --slug [slug] --phase 5-A --agent self-review --model sonnet
-# (자기검토 후)
-python3 tools/report-produce-logger.py end --slug [slug] --phase 5-A --agent self-review --status ok --notes "[발견·수정한 위반 요약]"
-
-python3 tools/report-produce-logger.py start --slug [slug] --phase 5-B --agent text-reinforce --model sonnet
-python3 tools/report-produce-logger.py end --slug [slug] --phase 5-B --agent text-reinforce --status ok --notes "[보강 문단 수]"
-
-python3 tools/report-produce-logger.py start --slug [slug] --phase 5-C --agent image-reinforce --model haiku
-python3 tools/report-produce-logger.py end --slug [slug] --phase 5-C --agent image-reinforce --status ok --notes "[삽입 이미지 수]"
-```
+Phase 4.5 승인 후, 퍼블리싱 전에 반드시 아래 3단계를 실행한다.
 
 #### 5-A: Content + Style Review (자기검토)
 
@@ -481,10 +379,6 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 5-C --agent ima
 
 ⛔ 단순 번역 금지 — 영미권 독자 기준으로 재작성.
 
-```bash
-python3 tools/report-produce-logger.py start --slug [slug] --phase 6 --agent report-en-writer --model opus
-```
-
 ```python
 Agent(
   name="report-en-writer",
@@ -514,22 +408,7 @@ Agent(
 
 ---
 
-Phase 6 종료 시:
-
-```bash
-python3 tools/report-produce-logger.py end --slug [slug] --phase 6 --agent report-en-writer --status ok --output-path report/[slug]/en/index.html --notes "[og:image 경로 검증 결과]"
-```
-
 ### Phase 7: SEO + SNS
-
-```bash
-python3 tools/report-produce-logger.py start --slug [slug] --phase 7-A --agent seo-check --model haiku
-# (KO+EN seo-check 후)
-python3 tools/report-produce-logger.py end --slug [slug] --phase 7-A --agent seo-check --status ok --notes "[KO 점수 / EN 점수]"
-
-python3 tools/report-produce-logger.py start --slug [slug] --phase 7-B --agent sns-write --model sonnet
-python3 tools/report-produce-logger.py end --slug [slug] --phase 7-B --agent sns-write --status ok --output-path report/[slug]/sns/ --notes "[생성된 채널 수]"
-```
 
 #### 7-A: seo-check (KO + EN)
 
@@ -550,15 +429,11 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 7-B --agent sns
 
 ### Phase 8: 퍼블리싱
 
-```bash
-python3 tools/report-produce-logger.py start --slug [slug] --phase 8 --agent blog-publisher --model haiku
-```
-
 ```python
 Agent(
   name="blog-publisher",
   subagent_type="general-purpose",
-  model="haiku",
+  model="opus",
   prompt="""
     에이전트 정의: .claude/agents/blog-publisher.md
     스킬: .claude/skills/blog-publish/skill.md
@@ -573,13 +448,6 @@ Agent(
 )
 ```
 
-Phase 8 종료 + Phase 9 진입 시 logger finalize:
-
-```bash
-python3 tools/report-produce-logger.py end --slug [slug] --phase 8 --agent blog-publisher --status ok --notes "[PR URL]"
-python3 tools/report-produce-logger.py finalize --slug [slug] --topic "[주제]" --mode standard
-```
-
 ### Phase 9: 완료 보고
 
 사용자에게:
@@ -589,7 +457,6 @@ python3 tools/report-produce-logger.py finalize --slug [slug] --topic "[주제]"
 - SEO 점수 (KO/EN 각각)
 - SNS 파일 경로 (sns/index.md, sns/medium.html)
 - git push / PR 생성 결과
-- **실행 로그 경로**: `report/[slug]/log/report-produce-YYYY-MM-DD.md` (jsonl 동반)
 
 ## 에러 핸들링
 
