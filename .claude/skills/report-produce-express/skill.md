@@ -3,8 +3,9 @@ name: report-produce-express
 description: >
   report-produce의 무인 변형(테스트용). 주제만 받고 사용자 개입 0회로
   사전 검토 → 기획 → 병렬 리서치 → 합성 → 작성 → 보강 → 영문화 → SEO/SNS →
-  퍼블리싱(PR까지)을 끝낸 뒤 iMessage + Mail.app으로 종료 알림.
-  미래 MCP 무인 서비스의 베이스라인 검증 트랙. **프로덕션 자동화 아님.**
+  퍼블리싱(PR까지)을 끝낸 뒤 iMessage 즉시 푸시 + Gmail Drafts에 풍부 본문
+  draft 생성으로 종료 알림. 미래 MCP 무인 서비스의 베이스라인 검증 트랙.
+  **프로덕션 자동화 아님.**
   "report-produce --express", "리포트 무인 실행", "express 모드" 요청 시 사용.
 ---
 
@@ -19,7 +20,8 @@ end-to-end 동작 가능성을 측정하기 위한 실험 트랙이며, 미래 M
 - 정지점(⏸) 없음. Pre 가치 평가는 **차단 기준이 아니라 로그 기록**.
 - 머지는 자동으로 하지 **않는다** (PR까지). 잘못된 글이 main에 올라가는 비용이
   자동화 이득보다 크다. JH가 PR을 확인하고 머지.
-- 알림은 iMessage(`+82-10-8719-3580`) + Mail(`joohaeng@pebblous.ai`)로 동시 발송.
+- 알림은 iMessage(`+82-10-8719-3580`) 즉시 푸시 + Gmail Draft(`joohaeng@pebblous.ai`) 풍부 본문.
+  Mail.app osascript는 큐 정체 문제로 폴백/디버그용만 (`--legacy-mail`).
 
 ## 표준 report-produce와의 차이
 
@@ -131,19 +133,26 @@ python3 tools/report-produce-logger.py note --slug [slug] --kind info \
 - worktree에 node_modules가 없으면 OG 생성 등 부수 작업이 실패할 수 있음 — 메인 repo의 `node_modules`를 symlink하면 됨.
 - Preview tunnel 프로세스는 알림 발송 후에도 유지 (사용자가 링크를 클릭할 동안 살아있어야 함). 세션 끝낼 때 `pkill -f "cloudflared tunnel"` + `pkill -f "http.server 8000"` 정리.
 
-### Phase 9 — 종료 알림
+### Phase 9 — 종료 알림 (Plan A: iMessage Python + Gmail Draft MCP)
 
-finalize 호출 직후, 알림 발송. **PR URL + Preview URL(KO+EN) + Live URL(KO+EN) 모두 포함**:
+**채널 분리 (2026-05-23 전환)**:
+- **iMessage**: `report-produce-notify.py`가 osascript로 직접 발송. 즉시 푸시. 한 손에 잡히는 요약.
+- **Gmail Draft**: `report-produce-notify.py`가 JSON payload를 파일로 출력. Claude 세션이 그 파일을 읽고 `mcp__claude_ai_Gmail__create_draft` 도구로 Drafts에 풍부 본문 draft 생성. Mail.app 큐 정체 회피.
+
+⛔ **Mail.app osascript 경로(`--legacy-mail`)는 폴백/디버그용만**. 큐 정체 문제로 운영 채널에서 제외.
+
+#### 단계
 
 ```bash
-# 모든 URL 변수화
+# 모든 URL/메타 변수화
 PR_URL=$(cat _workspace/report/_express_pr_url.txt 2>/dev/null || gh pr view --json url -q .url)
 PREVIEW_KO="$BASE_URL/report/[slug]/ko/"     # Phase 8.5에서 발급
 PREVIEW_EN="$BASE_URL/report/[slug]/en/"     # Phase 8.5에서 발급
 LIVE_KO="https://blog.pebblous.ai/report/[slug]/ko/"
 LIVE_EN="https://blog.pebblous.ai/report/[slug]/en/"
-DURATION=$(...)   # logger md에서 추출 또는 wall-clock
+DURATION=$(...)   # logger md 또는 wall-clock
 
+# (1) iMessage 발송 + 이메일 payload 출력
 python3 tools/report-produce-notify.py \
   --slug [slug] \
   --topic "[주제]" \
@@ -156,18 +165,56 @@ python3 tools/report-produce-notify.py \
   --en-url "$LIVE_EN" \
   --adequity "[Pre note 요약 한 줄]" \
   --log-md "report/[slug]/log/report-produce-$(date +%Y-%m-%d).md" \
-  --meta "_workspace/report/04_write_meta.json"
+  --meta "_workspace/report/04_write_meta.json" \
+  --emit-email-payload "_workspace/report/_notify_email.json"
+# 결과:
+#   - iMessage 발송 완료 (즉시)
+#   - _workspace/report/_notify_email.json 생성 (to / subject / body)
 ```
 
-**`--log-md` + `--meta` 필수 (Mail 상세 내용 위해)**:
-- `--meta`: write_meta.json → 보고서 제목/분량/섹션/FAQ 수/refs/hub 등 (SMS 한 줄 요약 + Mail 메타 블록)
-- `--log-md`: finalize 직후 생성된 실행 로그 → Mail에 단계별 표 + 단계별 노트 + 자유 노트 포함
+```python
+# (2) Claude 세션이 payload를 읽고 Gmail MCP draft 생성
+# (스킬을 실행하는 Claude 세션 안에서 직접 호출)
+import json
+payload = json.loads(open("_workspace/report/_notify_email.json").read())
 
-이 두 인자를 빠뜨리면 알림이 빈약해진다 (PR/preview 링크만 + adequity 한 줄).
+# 도구 호출 (오케스트레이터가 직접 부른다):
+# mcp__claude_ai_Gmail__create_draft(
+#   to=payload["to"],
+#   subject=payload["subject"],
+#   body=payload["body"],
+# )
+```
 
-알림 본문 구성 순서: PR → Preview KO/EN (임시) → Live KO/EN (배포 후) → adequity → 단계별 표 → 노트. PR 검토 → 모바일 미리보기 → 머지 → 배포 확인 → 세부 분석의 자연스러운 사용자 동선과 일치.
+```bash
+# (3) logger에 채널 결과 기록
+python3 tools/report-produce-logger.py note --slug [slug] --kind info \
+  --content "Phase 9: iMessage 발송 OK / Gmail Draft 생성 OK (id=[draft_id])"
+```
 
-`--preview-url` 단일 인자도 받음 (KO/EN 구분 없이 한 링크만 보낼 때).
+#### 채널별 콘텐츠
+
+**iMessage (~600자, 즉시 푸시)**:
+- 상태 + 주제
+- 한 줄 요약 (KO N자 · M섹션 · FAQ X · ref Y)
+- 소요시간
+- PR / Preview KO / Preview EN
+- adequity
+
+**Gmail Draft (Drafts 폴더에 영구 보관)**:
+- 모든 메타 (KO/EN 제목, subtitle, category, 분량, hub)
+- 모든 링크 (PR + Preview KO/EN + Live KO/EN)
+- adequity
+- 단계별 실행 표 (Phase별 model/status/duration/output)
+- 단계별 노트 (각 Phase 핵심 발견)
+- 자유 노트 (warning/info — 수치 보정, fabrication 위험 경고 등)
+- 로그 위치 안내
+
+#### 옛 인자/모드 호환
+
+`--log-md` + `--meta`는 여전히 필수 (payload body 풍부도 결정).
+`--legacy-mail`: Gmail MCP 사용 불가한 환경에서만. 큐 정체 위험 있음.
+`--preview-url` 단일 인자: KO/EN 구분 없이 한 링크만 보낼 때.
 
 ### 실패 시 알림
 
@@ -183,7 +230,9 @@ python3 tools/report-produce-notify.py \
   --topic "[주제]" \
   --status failure \
   --duration "[지금까지 소요]" \
-  --adequity "실패 단계: Phase [n] / 에이전트 [name] / 사유 [한 줄]"
+  --adequity "실패 단계: Phase [n] / 에이전트 [name] / 사유 [한 줄]" \
+  --emit-email-payload "_workspace/report/_notify_email.json"
+# 이어서 Claude 세션이 payload를 읽고 mcp__claude_ai_Gmail__create_draft 호출 (성공/실패 동일 흐름)
 ```
 
 부분 완료(KO만 되고 EN 실패 등)는 `--status partial`로 보낸다.
