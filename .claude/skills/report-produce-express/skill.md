@@ -154,10 +154,18 @@ python3 tools/report-produce-notify.py \
   --preview-en-url "$PREVIEW_EN" \
   --ko-url "$LIVE_KO" \
   --en-url "$LIVE_EN" \
-  --adequity "[Pre note 요약 한 줄]"
+  --adequity "[Pre note 요약 한 줄]" \
+  --log-md "report/[slug]/log/report-produce-$(date +%Y-%m-%d).md" \
+  --meta "_workspace/report/04_write_meta.json"
 ```
 
-알림 본문 구성 순서: PR → Preview KO/EN (임시) → Live KO/EN (배포 후) → adequity. PR 검토 → 모바일 미리보기 → 머지 → 배포 확인의 자연스러운 사용자 동선과 일치.
+**`--log-md` + `--meta` 필수 (Mail 상세 내용 위해)**:
+- `--meta`: write_meta.json → 보고서 제목/분량/섹션/FAQ 수/refs/hub 등 (SMS 한 줄 요약 + Mail 메타 블록)
+- `--log-md`: finalize 직후 생성된 실행 로그 → Mail에 단계별 표 + 단계별 노트 + 자유 노트 포함
+
+이 두 인자를 빠뜨리면 알림이 빈약해진다 (PR/preview 링크만 + adequity 한 줄).
+
+알림 본문 구성 순서: PR → Preview KO/EN (임시) → Live KO/EN (배포 후) → adequity → 단계별 표 → 노트. PR 검토 → 모바일 미리보기 → 머지 → 배포 확인 → 세부 분석의 자연스러운 사용자 동선과 일치.
 
 `--preview-url` 단일 인자도 받음 (KO/EN 구분 없이 한 링크만 보낼 때).
 

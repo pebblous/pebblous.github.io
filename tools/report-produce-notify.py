@@ -32,21 +32,54 @@ Usage:
 """
 
 import argparse
+import json
 import subprocess
 import sys
-import textwrap
+from pathlib import Path
 
 
 DEFAULT_PHONE = "+82-10-8719-3580"
 DEFAULT_EMAIL = "joohaeng@pebblous.ai"
 
 
-def build_sms(args) -> str:
+def _read_text(path: str) -> str:
+    if not path:
+        return ""
+    try:
+        return Path(path).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return ""
+
+
+def _read_json(path: str) -> dict:
+    if not path:
+        return {}
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return {}
+
+
+def build_sms(args, meta: dict) -> str:
+    """SMS는 ~600자 — 한 손에 잡히는 핵심만."""
     lines = [
         f"[report-produce/express] {args.status.upper()}",
         f"주제: {args.topic}",
-        f"소요: {args.duration}",
     ]
+    summary_bits = []
+    if meta.get("wordCount"):
+        summary_bits.append(f"KO {meta['wordCount']:,}자")
+    if meta.get("en_wordCount"):
+        summary_bits.append(f"EN {meta['en_wordCount']:,}w")
+    if meta.get("sections"):
+        summary_bits.append(f"{meta['sections']}섹션")
+    if meta.get("faqs"):
+        summary_bits.append(f"FAQ{meta['faqs']}")
+    if meta.get("references"):
+        summary_bits.append(f"ref{meta['references']}")
+    if summary_bits:
+        lines.append(" · ".join(summary_bits))
+    lines.append(f"소요: {args.duration}")
     if args.pr_url:
         lines.append(f"PR: {args.pr_url}")
     if args.preview_url:
@@ -56,48 +89,114 @@ def build_sms(args) -> str:
             lines.append(f"Preview KO: {args.preview_ko_url}")
         if args.preview_en_url:
             lines.append(f"Preview EN: {args.preview_en_url}")
-    if args.ko_url:
-        lines.append(f"Live KO: {args.ko_url}")
-    if args.en_url:
-        lines.append(f"Live EN: {args.en_url}")
     if args.adequity:
         lines.append(f"adequity: {args.adequity}")
     body = "\n".join(lines)
     return body[:600]
 
 
-def build_email_body(args) -> str:
-    preview_block = ""
+def _extract_log_section(log_md: str, header_keyword: str) -> str:
+    """log .md에서 특정 ## 헤더 아래 내용을 추출 (다음 ## 직전까지)."""
+    if not log_md:
+        return ""
+    lines = log_md.split("\n")
+    out, in_section = [], False
+    for line in lines:
+        if line.startswith("## "):
+            if in_section:
+                break
+            if header_keyword in line:
+                in_section = True
+                continue
+        if in_section:
+            out.append(line)
+    return "\n".join(out).strip()
+
+
+def build_email_body(args, meta: dict, log_md: str) -> str:
+    """Mail은 풍부하게 — log + meta + 모든 링크."""
+    parts = []
+    parts.append("=" * 60)
+    parts.append(f"report-produce --express  /  {args.status.upper()}")
+    parts.append("=" * 60)
+    parts.append("")
+    parts.append(f"주제      : {args.topic}")
+    parts.append(f"slug      : {args.slug}")
+    if meta.get("publishDate"):
+        parts.append(f"실행일    : {meta['publishDate']}")
+    parts.append(f"총 소요   : {args.duration}")
+    parts.append("")
+
+    if meta:
+        parts.append("─ 보고서 메타 ─")
+        if meta.get("mainTitle"):
+            parts.append(f"  Title (KO)    : {meta['mainTitle']}")
+        if meta.get("en_mainTitle"):
+            parts.append(f"  Title (EN)    : {meta['en_mainTitle']}")
+        if meta.get("subtitle"):
+            parts.append(f"  Subtitle      : {meta['subtitle']}")
+        if meta.get("category"):
+            parts.append(f"  Category      : {meta['category']}")
+        size_bits = []
+        if meta.get("wordCount"):
+            size_bits.append(f"KO {meta['wordCount']:,}자")
+        if meta.get("en_wordCount"):
+            size_bits.append(f"EN {meta['en_wordCount']:,} words")
+        if meta.get("sections"):
+            size_bits.append(f"{meta['sections']} 섹션")
+        if meta.get("faqs"):
+            size_bits.append(f"FAQ {meta['faqs']}")
+        if meta.get("references"):
+            size_bits.append(f"refs {meta['references']}")
+        if size_bits:
+            parts.append(f"  Size          : {' / '.join(size_bits)}")
+        if meta.get("hub_proposal"):
+            parts.append(f"  Hub 제안      : {meta['hub_proposal']}")
+        parts.append("")
+
+    parts.append("─ 링크 ─")
+    parts.append(f"  PR        : {args.pr_url or '(없음)'}")
     if args.preview_url or args.preview_ko_url or args.preview_en_url:
-        preview_block = "\n        Preview (cloudflared, 임시 — 세션 종료 시 만료):\n"
+        parts.append("  Preview (cloudflared 임시 — 세션 종료 시 만료):")
         if args.preview_ko_url:
-            preview_block += f"          KO: {args.preview_ko_url}\n"
+            parts.append(f"    KO      : {args.preview_ko_url}")
         if args.preview_en_url:
-            preview_block += f"          EN: {args.preview_en_url}\n"
+            parts.append(f"    EN      : {args.preview_en_url}")
         if args.preview_url and not (args.preview_ko_url or args.preview_en_url):
-            preview_block += f"          {args.preview_url}\n"
+            parts.append(f"    URL     : {args.preview_url}")
+    parts.append("  Live (배포 후 — 머지 전에는 미접속):")
+    parts.append(f"    KO      : {args.ko_url or '(없음)'}")
+    parts.append(f"    EN      : {args.en_url or '(없음)'}")
+    parts.append("")
 
-    return textwrap.dedent(f"""\
-        report-produce --express 실행 종료
+    if args.adequity:
+        parts.append("─ Theme adequity (기록 전용, 차단 아님) ─")
+        parts.append(f"  {args.adequity}")
+        parts.append("")
 
-        상태: {args.status}
-        주제: {args.topic}
-        slug: {args.slug}
-        소요: {args.duration}
+    phase_table = _extract_log_section(log_md, "단계별 실행")
+    if phase_table:
+        parts.append("─ 단계별 실행 ─")
+        parts.append(phase_table)
+        parts.append("")
 
-        PR: {args.pr_url or '(없음)'}
-{preview_block}
-        Live (배포 후 — 머지 전에는 미접속):
-          KO: {args.ko_url or '(없음)'}
-          EN: {args.en_url or '(없음)'}
+    phase_notes = _extract_log_section(log_md, "단계별 노트")
+    if phase_notes:
+        parts.append("─ 단계별 노트 ─")
+        parts.append(phase_notes)
+        parts.append("")
 
-        Theme adequity (참고용 기록, 차단 아님):
-          {args.adequity or '(기록 없음)'}
+    free_notes = _extract_log_section(log_md, "자유 노트")
+    if free_notes:
+        parts.append("─ 자유 노트 (warning / info) ─")
+        parts.append(free_notes)
+        parts.append("")
 
-        실행 로그: report/{args.slug}/log/report-produce-*.md (색인 안 됨)
-
-        — Claude (report-produce-express)
-    """)
+    parts.append("─ 로그 위치 ─")
+    parts.append(f"  report/{args.slug}/log/report-produce-*.md (색인 안 됨)")
+    parts.append("")
+    parts.append("— Claude (report-produce-express)")
+    return "\n".join(parts)
 
 
 def applescript_imessage(phone: str, body: str) -> str:
@@ -157,6 +256,8 @@ def main() -> int:
     p.add_argument("--preview-ko-url", default="", help="cloudflared preview KO URL")
     p.add_argument("--preview-en-url", default="", help="cloudflared preview EN URL")
     p.add_argument("--adequity", default="")
+    p.add_argument("--log-md", default="", help="실행 로그 .md 경로 (단계별 표·노트를 Mail에 포함)")
+    p.add_argument("--meta", default="", help="write_meta.json 경로 (제목/분량/섹션 등 메타)")
     p.add_argument("--phone", default=DEFAULT_PHONE)
     p.add_argument("--email", default=DEFAULT_EMAIL)
     p.add_argument("--no-sms", action="store_true")
@@ -164,9 +265,12 @@ def main() -> int:
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
-    sms_body = build_sms(args)
+    meta = _read_json(args.meta)
+    log_md = _read_text(args.log_md)
+
+    sms_body = build_sms(args, meta)
     email_subject = f"[report-produce/express] {args.status.upper()} — {args.topic}"
-    email_body = build_email_body(args)
+    email_body = build_email_body(args, meta, log_md)
 
     if args.dry_run:
         print("=== SMS (iMessage) ===")
