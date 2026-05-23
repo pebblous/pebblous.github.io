@@ -4,7 +4,7 @@
  * RSS Feed Generator for Pebblous Blog
  * Generates an RSS 2.0 feed from articles.json
  *
- * Usage: node generate-rss.js
+ * Usage: node tools/generate-rss.js
  */
 
 const fs = require('fs');

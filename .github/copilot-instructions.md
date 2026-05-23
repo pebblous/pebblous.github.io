@@ -13,8 +13,8 @@ This is a static blog site for Pebblous using GitHub Pages. The site follows a c
 
 ### Content Management
 - Blog articles are tracked in `articles.json`
-- HTML files are automatically indexed by `scan-html-files.py`
-- RSS feed is generated from `articles.json` using `generate-rss.py`
+- HTML files are automatically indexed by `tools/scan-files-index.py` (files-index.json) and `tools/scan-articles-meta.py` (articles.json metadata)
+- RSS feed is generated from `articles.json` using `tools/generate-rss.js`
 
 ## File Structure Conventions
 ```
@@ -36,8 +36,8 @@ open http://localhost:8000
 ### Content Updates
 1. Add new HTML content files in appropriate directories
 2. Register articles in `articles.json` if needed
-3. Run indexing: `python3 scan-html-files.py`
-4. Update RSS: `python3 generate-rss.py`
+3. Run articles.json indexing: `python3 tools/scan-articles-meta.py`
+4. Update RSS: `node tools/generate-rss.js`
 
 ## Common Tasks
 
@@ -56,8 +56,10 @@ open http://localhost:8000
 ## Key Files Reference
 - `articles.json`: Content registry
 - `files-index.json`: Auto-generated file index
-- `scan-html-files.py`: File indexing script
-- `generate-rss.py`: RSS feed generator
+- `tools/scan-files-index.py`: HTML file inventory (files-index.json)
+- `tools/scan-articles-meta.py`: HTML → articles.json metadata sync (publisher, wordCount, modified)
+- `tools/generate-rss.js`: RSS feed generator
+- `tools/generate-sitemap.js`: sitemap.xml generator
 
 ## Common Patterns
 - Use absolute paths from root for assets (`/components/`, `/image/`)

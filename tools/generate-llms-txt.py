@@ -9,8 +9,8 @@ GA-based viewCount sorting will be added separately (see issue #151).
 Output: /llms.txt at repo root.
 
 Usage:
-  python3 scripts/generate-llms-txt.py
-  python3 scripts/generate-llms-txt.py --per-category 12 --output llms.txt
+  python3 tools/generate-llms-txt.py
+  python3 tools/generate-llms-txt.py --per-category 12 --output llms.txt
 """
 
 import argparse

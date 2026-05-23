@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-scan-html-files.py — HTML → articles.json 메타데이터 동기화
+scan-articles-meta.py — HTML → articles.json 메타데이터 동기화
 
 각 아티클 HTML에서 메타데이터를 추출하여 articles.json을 업데이트한다.
 
@@ -10,9 +10,9 @@ scan-html-files.py — HTML → articles.json 메타데이터 동기화
   - modified: git log에서 최종 수정일
 
 Usage:
-  python3 scripts/scan-html-files.py           # 전체 스캔
-  python3 scripts/scan-html-files.py --dry-run  # 변경 없이 미리보기
-  python3 scripts/scan-html-files.py --clean    # 비표준 필드 정리 포함
+  python3 tools/scan-articles-meta.py           # 전체 스캔
+  python3 tools/scan-articles-meta.py --dry-run  # 변경 없이 미리보기
+  python3 tools/scan-articles-meta.py --clean    # 비표준 필드 정리 포함
 """
 
 import json
