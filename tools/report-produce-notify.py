@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """
-report-produce --express 종료 알림 — macOS iMessage + Mail.app.
+report-produce --express 종료 알림.
 
-외부 키 없이 osascript로 보낸다. SMS는 iMessage 게이트웨이를 통해 처리되며,
-수신 단말이 iPhone/iPad/Mac 중 하나에 iMessage가 켜져 있으면 도달한다.
+설계 (Plan A — 2026-05-23 전환):
+  - iMessage: 이 스크립트가 osascript로 직접 발송 (~600자, 한 손에 잡히는 요약)
+  - Email   : 이 스크립트는 **payload만 stdout으로 출력**, 실제 발송은
+              호출자(Claude 세션)가 Gmail MCP `create_draft`로 처리.
+              Mail.app outgoing 큐 정체 회피 + 풍부 본문 + Drafts 영구 보관.
 
-Usage:
+iMessage가 잘 동작하고 즉시 도달성이 좋으므로 SMS는 push 채널.
+Gmail Draft는 검색/아카이브 + 풍부 본문 + 단계별 표를 담는 영구 기록 채널.
+
+Usage (iMessage 발송 + 이메일 payload 출력):
   python3 tools/report-produce-notify.py \
     --slug korea-ai-fund-2026 \
     --topic "한국 AI 펀드 2026" \
@@ -17,18 +23,16 @@ Usage:
     --duration "32m 14s" \
     --status   "success" \
     --adequity "value=추천, coverage=신규" \
-    [--phone +82-10-8719-3580] [--email joohaeng@pebblous.ai] \
-    [--dry-run]
+    --log-md   "report/[slug]/log/report-produce-YYYY-MM-DD.md" \
+    --meta     "_workspace/report/04_write_meta.json" \
+    --emit-email-payload _workspace/report/_notify_email.json
+  # → iMessage 발송 + _notify_email.json에 {to, subject, body} 저장
+  # → Claude가 그 JSON을 읽어 mcp__claude_ai_Gmail__create_draft 호출
 
-알림 구성:
-  - PR URL: 가장 위 (검토용)
-  - Preview URLs: cloudflared 임시 (세션 종료 시 만료)
-  - Live URLs: 배포 후 (머지 전에는 미접속, 표시는 유지)
-
-설계 메모:
-  - dry-run은 osascript를 실행하지 않고 stdout에 메시지를 출력. CI/유닛 테스트용.
-  - osascript 실패 시 stderr에 사유를 남기고 exit 0 (알림 실패가 파이프라인 전체를 죽이지 않도록).
-  - 메시지가 너무 길면 iMessage가 잘릴 수 있으므로 본문은 ~600자로 제한.
+옵션:
+  --no-sms             iMessage 발송 생략
+  --dry-run            아무것도 발송하지 않고 stdout에 모든 본문 출력
+  --legacy-mail        (deprecated) Mail.app osascript로 발송. 정체 가능성.
 """
 
 import argparse
@@ -260,8 +264,11 @@ def main() -> int:
     p.add_argument("--meta", default="", help="write_meta.json 경로 (제목/분량/섹션 등 메타)")
     p.add_argument("--phone", default=DEFAULT_PHONE)
     p.add_argument("--email", default=DEFAULT_EMAIL)
-    p.add_argument("--no-sms", action="store_true")
-    p.add_argument("--no-email", action="store_true")
+    p.add_argument("--no-sms", action="store_true", help="iMessage 발송 생략")
+    p.add_argument("--emit-email-payload", default="",
+                   help="이메일 payload(JSON)를 이 경로에 저장. Claude 세션이 Gmail MCP로 발송.")
+    p.add_argument("--legacy-mail", action="store_true",
+                   help="(deprecated) Mail.app osascript로 발송. 큐 정체 가능성 있음. Gmail MCP 권장.")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
@@ -277,7 +284,7 @@ def main() -> int:
         print(f"to: {args.phone}")
         print(sms_body)
         print()
-        print("=== EMAIL ===")
+        print("=== EMAIL (payload — Claude가 Gmail MCP로 발송) ===")
         print(f"to: {args.email}")
         print(f"subject: {email_subject}")
         print(email_body)
@@ -292,12 +299,31 @@ def main() -> int:
         else:
             print(f"[notify] iMessage sent to {args.phone}")
 
-    if not args.no_email:
+    # 이메일 payload — Claude 세션이 읽고 Gmail MCP로 발송할 JSON.
+    if args.emit_email_payload:
+        payload = {
+            "to": [args.email],
+            "subject": email_subject,
+            "body": email_body,
+        }
+        try:
+            Path(args.emit_email_payload).write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            print(f"[notify] email payload → {args.emit_email_payload}")
+            print(f"[notify] 다음 단계: Claude 세션에서 이 JSON을 읽어 "
+                  f"mcp__claude_ai_Gmail__create_draft 호출")
+        except OSError as e:
+            failures.append(f"email payload write failed: {e}")
+
+    # Legacy: Mail.app osascript (큐 정체 가능성 — 폴백/디버그용)
+    if args.legacy_mail:
         rc, msg = run_osascript(applescript_mail(args.email, email_subject, email_body))
         if rc != 0:
-            failures.append(f"Mail failed (rc={rc}): {msg}")
+            failures.append(f"Mail (legacy) failed (rc={rc}): {msg}")
         else:
-            print(f"[notify] Mail sent to {args.email}")
+            print(f"[notify] Mail (legacy, osascript) sent to {args.email}")
 
     if failures:
         for f in failures:
