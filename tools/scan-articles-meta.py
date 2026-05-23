@@ -23,7 +23,9 @@ import sys
 from pathlib import Path
 from html.parser import HTMLParser
 
-ROOT = Path(__file__).resolve().parent.parent
+# Asset 1 (content repo) location.
+# Priority: BLOG_CONTENT_REPO env var → ROOT (parent of tools/, i.e. repo root)
+ROOT = Path(os.environ.get("BLOG_CONTENT_REPO", str(Path(__file__).resolve().parent.parent)))
 ARTICLES_JSON = ROOT / "articles.json"
 
 # ========================================
