@@ -86,7 +86,7 @@ Bold, I know.
 
 ## 파일 경로
 
-저장소 루트: `/workspace/extra/repos/pebblous.github.io/`
+콘텐츠 레포 루트(자산 1, 사본 `pebblous.github.io`): `$BLOG_CONTENT_REPO` (없으면 자산 1 사본 위치)
 
 ```
 story/[slug]-story-pb/

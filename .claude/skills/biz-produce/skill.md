@@ -76,10 +76,10 @@ Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
 ### Phase 0: 준비
 
 ```bash
-mkdir -p /workspace/extra/repos/pebblous.github.io/_workspace/biz-report/[slug]
-mkdir -p /workspace/extra/repos/pebblous.github.io/project/BizReport/[slug]/ko
-mkdir -p /workspace/extra/repos/pebblous.github.io/project/BizReport/[slug]/en
-cd /workspace/extra/repos/pebblous.github.io
+mkdir -p $BLOG_CONTENT_REPO/_workspace/biz-report/[slug]
+mkdir -p $BLOG_CONTENT_REPO/project/BizReport/[slug]/ko
+mkdir -p $BLOG_CONTENT_REPO/project/BizReport/[slug]/en
+cd "$BLOG_CONTENT_REPO"
 git checkout main && git pull origin main
 git checkout -b feat/biz-report-[slug]-pb
 ```
@@ -94,8 +94,8 @@ Agent(
   subagent_type="Explore",
   model="opus",
   prompt="""
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/biz-planner.md
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    에이전트 정의: <repo-root>/.claude/agents/biz-planner.md
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     분석 대상 기업: [기업명]
     슬러그: [slug]
@@ -128,9 +128,9 @@ Agent(
   model="opus",
   run_in_background=True,
   prompt="""
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/financials-researcher.md
+    에이전트 정의: <repo-root>/.claude/agents/financials-researcher.md
     기획 문서: _workspace/biz-report/[slug]/00_plan.md (트랙 A 조사 지시 참조)
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     출력: _workspace/biz-report/[slug]/02a_financials.md
 
     조사 범위 (트랙 A):
@@ -148,9 +148,9 @@ Agent(
   model="opus",
   run_in_background=True,
   prompt="""
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/product-researcher.md
+    에이전트 정의: <repo-root>/.claude/agents/product-researcher.md
     기획 문서: _workspace/biz-report/[slug]/00_plan.md (트랙 B 조사 지시 참조)
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     출력: _workspace/biz-report/[slug]/02b_product.md
 
     조사 범위 (트랙 B):
@@ -168,9 +168,9 @@ Agent(
   model="opus",
   run_in_background=True,
   prompt="""
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/market-researcher.md
+    에이전트 정의: <repo-root>/.claude/agents/market-researcher.md
     기획 문서: _workspace/biz-report/[slug]/00_plan.md (트랙 C 조사 지시 참조)
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     출력: _workspace/biz-report/[slug]/02c_market.md
 
     조사 범위 (트랙 C):
@@ -193,8 +193,8 @@ Agent(
   subagent_type="general-purpose",
   model="opus",
   prompt="""
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/biz-synthesizer.md
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    에이전트 정의: <repo-root>/.claude/agents/biz-synthesizer.md
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     입력 파일:
     - _workspace/biz-report/[slug]/00_plan.md
@@ -229,8 +229,8 @@ Agent(
   model="opus",
   run_in_background=True,
   prompt="""
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/biz-writer-ko.md
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    에이전트 정의: <repo-root>/.claude/agents/biz-writer-ko.md
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     입력 파일:
     - _workspace/biz-report/[slug]/00_plan.md
@@ -256,8 +256,8 @@ Agent(
   model="opus",
   run_in_background=True,
   prompt="""
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/biz-writer-en.md
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    에이전트 정의: <repo-root>/.claude/agents/biz-writer-en.md
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     입력 파일:
     - _workspace/biz-report/[slug]/00_plan.md
@@ -297,9 +297,9 @@ Agent(
   subagent_type="general-purpose",
   model="opus",
   prompt="""
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/blog-publisher.md
-    스킬: /workspace/extra/repos/pebblous.github.io/.claude/skills/blog-publish/skill.md
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    에이전트 정의: <repo-root>/.claude/agents/blog-publisher.md
+    스킬: <repo-root>/.claude/skills/blog-publish/skill.md
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     메타데이터: _workspace/biz-report/[slug]/04_write_meta.json
 
