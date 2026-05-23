@@ -11,8 +11,13 @@ const fs = require('fs');
 const path = require('path');
 
 const SITE_URL = 'https://blog.pebblous.ai';
-const RSS_PATH = path.join(__dirname, 'rss.xml');
-const ARTICLES_PATH = path.join(__dirname, 'articles.json');
+
+// Asset 1 (content repo) location.
+// Priority: BLOG_CONTENT_REPO env var → ROOT (parent of tools/, i.e. repo root)
+const ROOT = path.resolve(__dirname, '..');
+const BLOG_CONTENT_REPO = process.env.BLOG_CONTENT_REPO || ROOT;
+const RSS_PATH = path.join(BLOG_CONTENT_REPO, 'rss.xml');
+const ARTICLES_PATH = path.join(BLOG_CONTENT_REPO, 'articles.json');
 
 function escapeXml(unsafe) {
     return unsafe

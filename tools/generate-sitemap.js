@@ -16,8 +16,13 @@ const path = require('path');
 
 // Configuration
 const SITE_URL = 'https://blog.pebblous.ai';
-const ARTICLES_FILE = path.join(__dirname, 'articles.json');
-const SITEMAP_FILE = path.join(__dirname, 'sitemap.xml');
+
+// Asset 1 (content repo) location.
+// Priority: BLOG_CONTENT_REPO env var → ROOT (parent of tools/, i.e. repo root)
+const ROOT = path.resolve(__dirname, '..');
+const BLOG_CONTENT_REPO = process.env.BLOG_CONTENT_REPO || ROOT;
+const ARTICLES_FILE = path.join(BLOG_CONTENT_REPO, 'articles.json');
+const SITEMAP_FILE = path.join(BLOG_CONTENT_REPO, 'sitemap.xml');
 
 // Read articles.json
 const articlesData = JSON.parse(fs.readFileSync(ARTICLES_FILE, 'utf8'));

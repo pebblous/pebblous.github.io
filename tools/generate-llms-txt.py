@@ -15,10 +15,14 @@ Usage:
 
 import argparse
 import json
+import os
 from pathlib import Path
 from datetime import datetime, timezone
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+# Asset 1 (content repo) location.
+# Priority: BLOG_CONTENT_REPO env var → ROOT (parent of tools/, i.e. repo root)
+ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(os.environ.get("BLOG_CONTENT_REPO", str(ROOT)))
 ARTICLES_JSON = REPO_ROOT / "articles.json"
 DEFAULT_OUTPUT = REPO_ROOT / "llms.txt"
 BASE_URL = "https://blog.pebblous.ai"

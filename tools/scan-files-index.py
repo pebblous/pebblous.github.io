@@ -12,8 +12,10 @@ import os
 from pathlib import Path
 from datetime import datetime
 
-# Configuration
-ROOT_DIR = Path(__file__).parent
+# Asset 1 (content repo) location.
+# Priority: BLOG_CONTENT_REPO env var → ROOT (parent of tools/, i.e. repo root)
+ROOT = Path(__file__).resolve().parent.parent
+ROOT_DIR = Path(os.environ.get("BLOG_CONTENT_REPO", str(ROOT)))
 OUTPUT_FILE = ROOT_DIR / 'files-index.json'
 ARTICLES_FILE = ROOT_DIR / 'articles.json'
 
