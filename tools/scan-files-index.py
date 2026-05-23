@@ -4,7 +4,7 @@
 HTML Files Scanner for Pebblous Blog
 Scans all HTML files in the repository and creates files-index.json
 
-Usage: python3 scan-html-files.py
+Usage: python3 tools/scan-files-index.py
 """
 
 import json

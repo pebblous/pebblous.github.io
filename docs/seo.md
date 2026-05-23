@@ -644,10 +644,10 @@ curl "https://www.google.com/ping?sitemap=https://blog.pebblous.ai/sitemap.xml"
 ### 2026-02-08: RSS 자동 생성 시스템 구축
 - ✅ **문제 발견**: sitemap.xml은 GitHub Actions로 자동 업데이트되지만, rss.xml은 수동 실행 필요
 - ✅ **해결**: `update-sitemap.yml` 워크플로우를 `Update Sitemap & RSS`로 확장
-  - `generate-rss.js`도 동시 실행
+  - `tools/generate-rss.js`도 동시 실행
   - sitemap.xml과 rss.xml 변경 여부를 개별 감지
   - 변경된 파일만 선택적 커밋
-- ✅ **트리거**: `articles.json`, `generate-sitemap.js`, `generate-rss.js` 변경 시 + 매일 00:00 UTC
+- ✅ **트리거**: `articles.json`, `tools/generate-sitemap.js`, `tools/generate-rss.js` 변경 시 + 매일 00:00 UTC
 - ✅ **rss.xml 최신화**: 67개 published 아티클 반영
 
 ### 2025-12-08: FAQPage Schema 중복 오류 방지 가이드 추가

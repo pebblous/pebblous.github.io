@@ -20,10 +20,11 @@ pebblous.github.io/  (현재)
 │   └─ docs/style.md, content-guidelines.md              ← 가이드
 │
 └─ [자산 3: 발행 도구 + Blog Service]
-    ├─ tools/generate-og-image.js, validate-articles.py  ← 결정론적 도구
-    ├─ scripts/scan-html-files.py, generate-rss.js       ← 인덱싱 도구
-    ├─ .github/workflows/*                               ← CI
-    └─ (미래) Blog Service API/MCP                       ← 추가 예정
+    ├─ tools/generate-og-image.js, validate-articles.py        ← 결정론적 도구
+    ├─ tools/scan-files-index.py, tools/scan-articles-meta.py  ← 인덱싱 도구
+    ├─ tools/generate-rss.js, tools/generate-sitemap.js        ← 피드/사이트맵 생성
+    ├─ .github/workflows/*                                     ← CI
+    └─ (미래) Blog Service API/MCP                             ← 추가 예정
 ```
 
 세 자산이 한 레포에 있는 이유는 역사적 편의 때문이다. 콘텐츠가 수백 건으로 늘어남에 따라 자산 1이 압도적으로 커지고 있어, 자산 2/3과 분리할 필요가 점점 명확해진다.

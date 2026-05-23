@@ -79,8 +79,8 @@ def applescript_imessage(phone: str, body: str) -> str:
     phone_q = phone.replace('"', '\\"')
     return (
         f'tell application "Messages"\n'
-        f'  set targetService to 1st account whose service type = iMessage\n'
-        f'  set targetBuddy to participant "{phone_q}" of targetService\n'
+        f'  set targetService to id of 1st service whose service type = iMessage\n'
+        f'  set targetBuddy to buddy "{phone_q}" of service id targetService\n'
         f'  send "{body_q}" to targetBuddy\n'
         f'end tell'
     )
@@ -92,6 +92,7 @@ def applescript_mail(to: str, subject: str, body: str) -> str:
     subject_q = subject.replace('"', '\\"')
     return (
         f'tell application "Mail"\n'
+        f'  activate\n'
         f'  set newMessage to make new outgoing message with properties '
         f'{{subject:"{subject_q}", content:"{body_q}", visible:false}}\n'
         f'  tell newMessage\n'

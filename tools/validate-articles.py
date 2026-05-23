@@ -18,7 +18,7 @@ Usage:
   6. date missing               → CI Validate Articles 실패
   7. publishDate→date 변환      → 필드명 불일치
   8. cardTitle without title    → title 필수 필드 누락
-  9. cardDescription w/o desc   → RSS generate-rss.js 에러
+  9. cardDescription w/o desc   → RSS tools/generate-rss.js 에러
   10. path ends with index.html → 디렉토리 형식 권장
   11. featured max 3 per cat    → 메인 카드 과다 표시
   12. image 필드 비어야 함       → 관례: 빈 문자열 기본
@@ -109,7 +109,7 @@ def validate_article(a, strict=True, auto_fix=False):
             fix_msg(aid, "publishDate 중복 제거 (date 이미 존재)")
             changed = True
 
-    # 4. description missing (RSS generate-rss.js 에러: undefined.replace())
+    # 4. description missing (RSS tools/generate-rss.js 에러: undefined.replace())
     if not a.get("description"):
         fallback = a.get("cardDescription") or a.get("subtitle") or a.get("title", "")
         src = "cardDescription" if a.get("cardDescription") else ("subtitle" if a.get("subtitle") else "title")

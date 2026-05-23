@@ -99,12 +99,12 @@ python3 -m http.server 8000
 open http://localhost:8000
 
 # Content pipeline
-python3 scripts/scan-html-files.py   # Re-index HTML → articles.json (publisher, wordCount, modified)
-python3 scripts/scan-html-files.py --clean  # + 비표준 필드 정리
-python3 scripts/scan-html-files.py --dry-run  # 변경 없이 미리보기
-node scripts/generate-rss.js         # Regenerate RSS feed
-node scripts/generate-sitemap.js     # Regenerate sitemap.xml
-python3 scripts/generate-llms-txt.py # Regenerate llms.txt (AI crawler index)
+python3 tools/scan-articles-meta.py   # Re-index HTML → articles.json (publisher, wordCount, modified)
+python3 tools/scan-articles-meta.py --clean  # + 비표준 필드 정리
+python3 tools/scan-articles-meta.py --dry-run  # 변경 없이 미리보기
+node tools/generate-rss.js            # Regenerate RSS feed
+node tools/generate-sitemap.js        # Regenerate sitemap.xml
+python3 tools/generate-llms-txt.py  # Regenerate llms.txt (AI crawler index)
 
 # OG image generation
 node tools/generate-og-image.js --from-html <path.html>  # Auto-extract title/subtitle/theme
@@ -221,11 +221,11 @@ Three themes: dark (default), light, beige. Use `themeable-*` CSS classes (e.g.,
 ```
 New HTML article
   → Register in articles.json (category, date, featured flag, etc.)
-  → python3 scripts/scan-html-files.py          (re-index: publisher, wordCount, modified 자동 추출)
-  → python3 scripts/scan-html-files.py --clean   (비표준 필드 정리 포함)
-  → node scripts/generate-rss.js
-  → node scripts/generate-sitemap.js
-  → python3 scripts/generate-llms-txt.py
+  → python3 tools/scan-articles-meta.py          (re-index: publisher, wordCount, modified 자동 추출)
+  → python3 tools/scan-articles-meta.py --clean   (비표준 필드 정리 포함)
+  → node tools/generate-rss.js
+  → node tools/generate-sitemap.js
+  → python3 tools/generate-llms-txt.py
   → git push → GitHub Pages auto-deploy
   (rss.xml, sitemap.xml, llms.txt 은 CI(`update-sitemap.yml`)가 push 후 자동 재생성 — 로컬에서 건드리지 않는다)
 ```
@@ -233,7 +233,7 @@ New HTML article
 **메타데이터 아키텍처** (Single Source of Truth):
 - `articles.json`이 메타데이터 DB 역할 (`publisher`, `wordCount`, `modified` 등)
 - `PebblousPage.init(config)`의 config가 렌더링 시점에 사용 (fetch 없이 즉시)
-- `scan-html-files.py`가 HTML → articles.json 동기화 보장
+- `tools/scan-articles-meta.py`가 HTML → articles.json 동기화 보장
 - HTML에 메타 하드코딩 금지 — JS가 config에서 동적 생성
 
 **articles.json structure** — MUST be a wrapper object, NEVER a bare array:
@@ -253,7 +253,7 @@ New HTML article
 - Article fields:
   - **필수**: `id`, `title`, `path` (relative), `date`, `category`, `published` (bool), `description`, `language`, `tags[]`
   - **선택**: `featured` (bool), `image` (relative, no leading `/`), `type` (`"hub"` for hub pages)
-  - **자동 생성** (`scan-html-files.py`가 HTML에서 추출): `publisher`, `wordCount`, `modified`
+  - **자동 생성** (`tools/scan-articles-meta.py`가 HTML에서 추출): `publisher`, `wordCount`, `modified`
   - `publisher`: PebblousPage.init() config에서 추출 — 메타 영역에 표시
   - `wordCount`: `<main>` 본문 글자 수 — readTime 계산용 (`Math.ceil(wordCount/500)`)
   - `modified`: git log 기반 최종 수정일 (YYYY-MM-DD)
@@ -341,8 +341,8 @@ The `key-insight` box provides the teal-bordered highlight. Content should be 3 
 /report/         # Report pages
 /event/          # Event pages
 /components/     # Reusable UI (header.html, footer.html)
-/scripts/        # JS modules + Python tools
-/tools/          # OG image generator, utilities
+/scripts/        # Site runtime JS modules (common-utils.js, index/*.js, generate-llms-txt.py)
+/tools/          # Build/deploy tools (OG image, RSS, sitemap, articles/files indexing, validation)
 /docs/           # Internal documentation (17 files)
 ```
 
