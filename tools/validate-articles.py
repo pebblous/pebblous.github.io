@@ -30,8 +30,11 @@ import os
 import sys
 from datetime import datetime, timedelta
 
+# Asset 1 (content repo) location.
+# Priority: BLOG_CONTENT_REPO env var → ROOT (legacy, when this tool lives next to articles.json)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ARTICLES_JSON = os.path.join(ROOT, "articles.json")
+BLOG_CONTENT_REPO = os.environ.get("BLOG_CONTENT_REPO", ROOT)
+ARTICLES_JSON = os.path.join(BLOG_CONTENT_REPO, "articles.json")
 
 errors = []
 warnings = []
