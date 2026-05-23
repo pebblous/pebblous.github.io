@@ -159,9 +159,9 @@ Args: story/[slug]-story-pb/en/index.html --auto
 
 ### Phase 3: OG 이미지 생성
 
-두 HTML 완성 후:
+두 HTML 완성 후 (콘텐츠 레포에서 실행 — `$BLOG_CONTENT_REPO` 또는 자산 1 사본 위치):
 ```bash
-cd /workspace/extra/repos/pebblous.github.io
+cd "$BLOG_CONTENT_REPO"   # 또는 자산 1 사본 경로
 PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
   node tools/generate-og-image.js --from-html story/[slug]-story-pb/ko/index.html --force
 PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \

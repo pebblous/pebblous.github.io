@@ -24,7 +24,7 @@ blog.pebblous.ai 블로그 포스트 전체 프로덕션 파이프라인.
 1. 사용자 입력 파악 — 주제, 카테고리, 언어(KO/EN/both), 특별 요구사항
 2. 작업 디렉토리 생성:
    ```bash
-   mkdir -p /workspace/extra/repos/pebblous.github.io/_workspace
+   mkdir -p $BLOG_CONTENT_REPO/_workspace
    ```
 3. 입력을 `_workspace/00_input.md`에 기록
 
@@ -47,14 +47,14 @@ Agent(
   model: "opus",
   prompt: """
     당신은 blog-researcher 에이전트입니다.
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/blog-researcher.md
-    스킬: /workspace/extra/repos/pebblous.github.io/.claude/skills/blog-research/skill.md
+    에이전트 정의: <repo-root>/.claude/agents/blog-researcher.md
+    스킬: <repo-root>/.claude/skills/blog-research/skill.md
 
     주제: [주제]
     카테고리: [category]
     특별 요구사항: [요구사항]
 
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     출력: _workspace/01_research.md (저장소 루트 기준)
   """
 )
@@ -71,17 +71,17 @@ Agent(
   model: "opus",
   prompt: """
     당신은 blog-writer 에이전트입니다.
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/blog-writer.md
-    스킬: /workspace/extra/repos/pebblous.github.io/.claude/skills/blog-write/skill.md
+    에이전트 정의: <repo-root>/.claude/agents/blog-writer.md
+    스킬: <repo-root>/.claude/skills/blog-write/skill.md
 
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     입력: _workspace/01_research.md
     언어: [KO 또는 both]
     출력 메타: _workspace/02_write_meta.json
 
-    CLAUDE.md 필독: /workspace/extra/repos/pebblous.github.io/CLAUDE.md
-    HTML 체크리스트: /workspace/extra/repos/pebblous.github.io/docs/blog-html-checklist.md (존재 시)
-    레이아웃 참고: /workspace/extra/repos/pebblous.github.io/report/blog-2026/index.html
+    CLAUDE.md 필독: <repo-root>/CLAUDE.md
+    HTML 체크리스트: <repo-root>/docs/blog-html-checklist.md (존재 시)
+    레이아웃 참고: $BLOG_CONTENT_REPO/report/blog-2026/index.html
   """
 )
 ```
@@ -97,10 +97,10 @@ Agent(
   model: "opus",
   prompt: """
     당신은 blog-publisher 에이전트입니다.
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/blog-publisher.md
-    스킬: /workspace/extra/repos/pebblous.github.io/.claude/skills/blog-publish/skill.md
+    에이전트 정의: <repo-root>/.claude/agents/blog-publisher.md
+    스킬: <repo-root>/.claude/skills/blog-publish/skill.md
 
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     메타데이터: _workspace/02_write_meta.json (저장소 루트 기준)
   """
 )

@@ -90,8 +90,8 @@ Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
 ### Phase 0: 준비
 
 ```bash
+cd "$BLOG_CONTENT_REPO"   # 콘텐츠 레포(자산 1, 사본 pebblous.github.io)
 mkdir -p _workspace/dc
-cd /workspace/extra/repos/pebblous.github.io
 git checkout main && git pull origin main
 git checkout -b feat/dc-story-{reportId}-pb
 ```

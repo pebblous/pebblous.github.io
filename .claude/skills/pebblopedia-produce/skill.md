@@ -25,7 +25,7 @@ PebbloPedia 시리즈 아티클 전체 제작 파이프라인. Sub-agent Pipelin
 2. slug 결정 — 영어 소문자, 하이픈 구분 (예: "하네스" → `harness`)
 3. 작업 디렉토리 생성:
    ```bash
-   mkdir -p /workspace/extra/repos/pebblous.github.io/_workspace
+   mkdir -p $BLOG_CONTENT_REPO/_workspace
    ```
 4. `_workspace/00_input.md` 작성:
 
@@ -34,7 +34,7 @@ PebbloPedia 시리즈 아티클 전체 제작 파이프라인. Sub-agent Pipelin
 
 - 주제: [주제]
 - slug: [slug]
-- 저장소 루트: /workspace/extra/repos/pebblous.github.io/
+- 콘텐츠 루트: $BLOG_CONTENT_REPO
 - 요청일: YYYY-MM-DD
 
 ## special_instructions
@@ -53,11 +53,11 @@ Agent(
   model: "opus",
   prompt: """
     당신은 pebblopedia-researcher 에이전트입니다.
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/pebblopedia-researcher.md
-    스킬: /workspace/extra/repos/pebblous.github.io/.claude/skills/pebblopedia-research/skill.md
+    에이전트 정의: <repo-root>/.claude/agents/pebblopedia-researcher.md
+    스킬: <repo-root>/.claude/skills/pebblopedia-research/skill.md
 
     주제: [주제]
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     출력: _workspace/01_research.md (저장소 루트 기준)
 
     5개 레벨 모두 충분한 재료를 수집하세요.
@@ -79,10 +79,10 @@ Agent(
   model: "opus",
   prompt: """
     당신은 pebblopedia-writer 에이전트입니다.
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/pebblopedia-writer.md
-    스킬: /workspace/extra/repos/pebblous.github.io/.claude/skills/pebblopedia-write/skill.md
+    에이전트 정의: <repo-root>/.claude/agents/pebblopedia-writer.md
+    스킬: <repo-root>/.claude/skills/pebblopedia-write/skill.md
 
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     입력: _workspace/00_input.md, _workspace/01_research.md
     HTML 구조 참조: .claude/skills/pebblopedia/SKILL.md
     레이아웃 참고: pebblopedia/physical-ai/ko/index.html
@@ -107,10 +107,10 @@ Agent(
   model: "opus",
   prompt: """
     당신은 pebblopedia-publisher 에이전트입니다.
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/pebblopedia-publisher.md
-    스킬: /workspace/extra/repos/pebblous.github.io/.claude/skills/blog-publish/skill.md
+    에이전트 정의: <repo-root>/.claude/agents/pebblopedia-publisher.md
+    스킬: <repo-root>/.claude/skills/blog-publish/skill.md
 
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     메타데이터: _workspace/02_write_meta.json
 
     PebbloPedia 특이사항:

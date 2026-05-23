@@ -148,7 +148,7 @@ Agent(
   model="haiku",
   run_in_background=True,
   prompt="""
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     대화 이력: /workspace/group/conversations/
 
     주제: [주제]
@@ -174,7 +174,7 @@ Agent(
   model="sonnet",
   run_in_background=True,
   prompt="""
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     주제: [주제]
 
@@ -229,8 +229,8 @@ JH가 "ㅇㅇ", "진행", "go" 등으로 승인하면 Phase 0으로 이동.
 JH 승인 후 실행:
 
 ```bash
-mkdir -p /workspace/extra/repos/pebblous.github.io/_workspace/report
-cd /workspace/extra/repos/pebblous.github.io
+mkdir -p $BLOG_CONTENT_REPO/_workspace/report
+cd "$BLOG_CONTENT_REPO"
 git checkout main && git pull origin main
 git checkout -b feat/report-[slug]-pb
 ```
@@ -249,8 +249,8 @@ Agent(
   subagent_type="Explore",
   model="opus",
   prompt="""
-    에이전트 정의: /workspace/extra/repos/pebblous.github.io/.claude/agents/report-planner.md
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    에이전트 정의: <repo-root>/.claude/agents/report-planner.md
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     주제: [주제]
     특별 요구사항: [요구사항]
@@ -294,7 +294,7 @@ Agent(
   prompt="""
     에이전트 정의: .claude/agents/arxiv-researcher.md
     기획 문서: _workspace/report/00_plan.md (트랙 A 조사 지시 참조)
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     출력: _workspace/report/02a_arxiv.md
   """
 )
@@ -307,7 +307,7 @@ Agent(
   prompt="""
     에이전트 정의: .claude/agents/industry-researcher.md
     기획 문서: _workspace/report/00_plan.md (트랙 B 조사 지시 참조)
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     출력: _workspace/report/02b_industry.md
   """
 )
@@ -320,7 +320,7 @@ Agent(
   prompt="""
     에이전트 정의: .claude/agents/data-researcher.md
     기획 문서: _workspace/report/00_plan.md (트랙 C 조사 지시 참조)
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
     출력: _workspace/report/02c_data.md
   """
 )
@@ -349,7 +349,7 @@ Agent(
   model="opus",
   prompt="""
     에이전트 정의: .claude/agents/report-synthesizer.md
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     입력 파일:
     - _workspace/report/00_plan.md
@@ -382,7 +382,7 @@ Agent(
   prompt="""
     에이전트 정의: .claude/agents/report-writer.md
     스킬: .claude/skills/blog-write/skill.md
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     입력 파일:
     - _workspace/report/00_plan.md
@@ -391,7 +391,7 @@ Agent(
     HTML 템플릿: report/korea-ai-fund-report-2026-03/ko/index.html
     체크리스트: docs/blog-html-checklist.md
     제목 전략: docs/title-strategy.md (§7 제목→Exec Summary 일관성 필수)
-    CLAUDE.md: /workspace/extra/repos/pebblous.github.io/CLAUDE.md
+    CLAUDE.md: <repo-root>/CLAUDE.md
 
     ⛔ 제목→Executive Summary 일관성 규칙 (title-strategy.md §7):
     - mainTitle의 핵심 주장이 Executive Summary 3문단 안에 근거 수치와 함께 등장해야 함
@@ -492,7 +492,7 @@ Agent(
   model="opus",
   prompt="""
     스킬: .claude/skills/bilingual/SKILL.md
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     소스: report/[slug]/ko/index.html (Phase 5 완료본)
 
@@ -562,7 +562,7 @@ Agent(
   prompt="""
     에이전트 정의: .claude/agents/blog-publisher.md
     스킬: .claude/skills/blog-publish/skill.md
-    저장소 루트: /workspace/extra/repos/pebblous.github.io/
+    콘텐츠 루트: $BLOG_CONTENT_REPO
 
     메타데이터: _workspace/report/04_write_meta.json
 
