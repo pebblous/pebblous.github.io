@@ -95,29 +95,79 @@ python3 tools/report-produce-logger.py note \
 ### Phase 8 — PR까지만
 
 표준 스킬의 blog-publisher가 push + PR 생성까지 한다. `gh pr merge` 호출 **금지**.
-PR URL을 `04_publish_meta.json` 또는 logger 노트에 기록한다.
+PR URL을 `_workspace/report/_express_pr_url.txt`(또는 `04_publish_meta.json`)에 저장한다.
+
+### Phase 8.5 — Preview tunnel 발급 (express 전용)
+
+⛔ **PR이 생성된 직후, Phase 9 알림 전에** cloudflared Quick Tunnel을 띄워 임시 공개 URL을 발급한다. 라이브 배포 전이라도 사용자가 모바일/원격에서 즉시 검토할 수 있게 한다.
+
+```bash
+# 1) Worktree(또는 publish 작업 디렉토리)에서 로컬 HTTP 서버
+cd <worktree-root>
+python3 -m http.server 8000 > /tmp/pebblous-http.log 2>&1 &
+
+# 2) cloudflared (Quick Tunnel — 계정 불필요)
+cloudflared tunnel --url http://localhost:8000 > /tmp/pebblous-cf.log 2>&1 &
+
+# 3) URL 추출 (등록 완료까지 대기)
+until grep -q "trycloudflare.com" /tmp/pebblous-cf.log 2>/dev/null; do sleep 2; done
+BASE_URL=$(grep -oE "https://[a-z0-9-]+\.trycloudflare\.com" /tmp/pebblous-cf.log | head -1)
+PREVIEW_KO="$BASE_URL/report/[slug]/ko/"
+PREVIEW_EN="$BASE_URL/report/[slug]/en/"
+
+# 4) 도달 검증 (DNS propagation 대기 후)
+sleep 5
+curl -s -o /dev/null -w "KO=%{http_code} EN=%{http_code}\n" --max-time 15 "$PREVIEW_KO" "$PREVIEW_EN"
+# 200/200 미달 시 nslookup으로 IP 조회 후 --resolve로 재시도
+
+# 5) logger에 기록 (영구 보관)
+python3 tools/report-produce-logger.py note --slug [slug] --kind info \
+  --content "Preview: KO=$PREVIEW_KO  EN=$PREVIEW_EN  (cloudflared, 세션 종료 시 만료)"
+```
+
+**주의**:
+- Quick Tunnel은 영속성 없음 (세션 종료/cloudflared kill 시 만료) — 알림에도 "임시" 표기.
+- 8000 포트 충돌 시: `lsof -ti :8000 | xargs kill` 후 재시작.
+- worktree에 node_modules가 없으면 OG 생성 등 부수 작업이 실패할 수 있음 — 메인 repo의 `node_modules`를 symlink하면 됨.
+- Preview tunnel 프로세스는 알림 발송 후에도 유지 (사용자가 링크를 클릭할 동안 살아있어야 함). 세션 끝낼 때 `pkill -f "cloudflared tunnel"` + `pkill -f "http.server 8000"` 정리.
 
 ### Phase 9 — 종료 알림
 
-표준 스킬의 finalize 호출 직후, 알림 발송:
+finalize 호출 직후, 알림 발송. **PR URL + Preview URL(KO+EN) + Live URL(KO+EN) 모두 포함**:
 
 ```bash
-# PR URL, 보고서 URL 등을 변수화
-PR_URL=$(...)         # publisher 결과에서 추출
-KO_URL="https://blog.pebblous.ai/report/[slug]/ko/"
-EN_URL="https://blog.pebblous.ai/report/[slug]/en/"
-DURATION=$(...)       # logger md에서 추출 또는 wall-clock
+# 모든 URL 변수화
+PR_URL=$(cat _workspace/report/_express_pr_url.txt 2>/dev/null || gh pr view --json url -q .url)
+PREVIEW_KO="$BASE_URL/report/[slug]/ko/"     # Phase 8.5에서 발급
+PREVIEW_EN="$BASE_URL/report/[slug]/en/"     # Phase 8.5에서 발급
+LIVE_KO="https://blog.pebblous.ai/report/[slug]/ko/"
+LIVE_EN="https://blog.pebblous.ai/report/[slug]/en/"
+DURATION=$(...)   # logger md에서 추출 또는 wall-clock
 
 python3 tools/report-produce-notify.py \
   --slug [slug] \
   --topic "[주제]" \
   --status success \
   --duration "$DURATION" \
-  --ko-url "$KO_URL" \
-  --en-url "$EN_URL" \
   --pr-url "$PR_URL" \
-  --adequity "[Pre note 요약 한 줄]"
+  --preview-ko-url "$PREVIEW_KO" \
+  --preview-en-url "$PREVIEW_EN" \
+  --ko-url "$LIVE_KO" \
+  --en-url "$LIVE_EN" \
+  --adequity "[Pre note 요약 한 줄]" \
+  --log-md "report/[slug]/log/report-produce-$(date +%Y-%m-%d).md" \
+  --meta "_workspace/report/04_write_meta.json"
 ```
+
+**`--log-md` + `--meta` 필수 (Mail 상세 내용 위해)**:
+- `--meta`: write_meta.json → 보고서 제목/분량/섹션/FAQ 수/refs/hub 등 (SMS 한 줄 요약 + Mail 메타 블록)
+- `--log-md`: finalize 직후 생성된 실행 로그 → Mail에 단계별 표 + 단계별 노트 + 자유 노트 포함
+
+이 두 인자를 빠뜨리면 알림이 빈약해진다 (PR/preview 링크만 + adequity 한 줄).
+
+알림 본문 구성 순서: PR → Preview KO/EN (임시) → Live KO/EN (배포 후) → adequity → 단계별 표 → 노트. PR 검토 → 모바일 미리보기 → 머지 → 배포 확인 → 세부 분석의 자연스러운 사용자 동선과 일치.
+
+`--preview-url` 단일 인자도 받음 (KO/EN 구분 없이 한 링크만 보낼 때).
 
 ### 실패 시 알림
 
