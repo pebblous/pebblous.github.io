@@ -10,6 +10,8 @@ Usage:
     --slug korea-ai-fund-2026 \
     --topic "한국 AI 펀드 2026" \
     --pr-url "https://github.com/.../pull/123" \
+    --preview-ko-url "https://xxx.trycloudflare.com/report/.../ko/" \
+    --preview-en-url "https://xxx.trycloudflare.com/report/.../en/" \
     --ko-url  "https://blog.pebblous.ai/report/.../ko/" \
     --en-url  "https://blog.pebblous.ai/report/.../en/" \
     --duration "32m 14s" \
@@ -17,6 +19,11 @@ Usage:
     --adequity "value=추천, coverage=신규" \
     [--phone +82-10-8719-3580] [--email joohaeng@pebblous.ai] \
     [--dry-run]
+
+알림 구성:
+  - PR URL: 가장 위 (검토용)
+  - Preview URLs: cloudflared 임시 (세션 종료 시 만료)
+  - Live URLs: 배포 후 (머지 전에는 미접속, 표시는 유지)
 
 설계 메모:
   - dry-run은 osascript를 실행하지 않고 stdout에 메시지를 출력. CI/유닛 테스트용.
@@ -40,12 +47,19 @@ def build_sms(args) -> str:
         f"주제: {args.topic}",
         f"소요: {args.duration}",
     ]
-    if args.ko_url:
-        lines.append(f"KO: {args.ko_url}")
-    if args.en_url:
-        lines.append(f"EN: {args.en_url}")
     if args.pr_url:
         lines.append(f"PR: {args.pr_url}")
+    if args.preview_url:
+        lines.append(f"Preview: {args.preview_url}")
+    elif args.preview_ko_url or args.preview_en_url:
+        if args.preview_ko_url:
+            lines.append(f"Preview KO: {args.preview_ko_url}")
+        if args.preview_en_url:
+            lines.append(f"Preview EN: {args.preview_en_url}")
+    if args.ko_url:
+        lines.append(f"Live KO: {args.ko_url}")
+    if args.en_url:
+        lines.append(f"Live EN: {args.en_url}")
     if args.adequity:
         lines.append(f"adequity: {args.adequity}")
     body = "\n".join(lines)
@@ -53,6 +67,16 @@ def build_sms(args) -> str:
 
 
 def build_email_body(args) -> str:
+    preview_block = ""
+    if args.preview_url or args.preview_ko_url or args.preview_en_url:
+        preview_block = "\n        Preview (cloudflared, 임시 — 세션 종료 시 만료):\n"
+        if args.preview_ko_url:
+            preview_block += f"          KO: {args.preview_ko_url}\n"
+        if args.preview_en_url:
+            preview_block += f"          EN: {args.preview_en_url}\n"
+        if args.preview_url and not (args.preview_ko_url or args.preview_en_url):
+            preview_block += f"          {args.preview_url}\n"
+
     return textwrap.dedent(f"""\
         report-produce --express 실행 종료
 
@@ -61,9 +85,11 @@ def build_email_body(args) -> str:
         slug: {args.slug}
         소요: {args.duration}
 
-        KO: {args.ko_url or '(없음)'}
-        EN: {args.en_url or '(없음)'}
         PR: {args.pr_url or '(없음)'}
+{preview_block}
+        Live (배포 후 — 머지 전에는 미접속):
+          KO: {args.ko_url or '(없음)'}
+          EN: {args.en_url or '(없음)'}
 
         Theme adequity (참고용 기록, 차단 아님):
           {args.adequity or '(기록 없음)'}
@@ -124,9 +150,12 @@ def main() -> int:
     p.add_argument("--topic", required=True)
     p.add_argument("--status", default="success", help="success | failure | partial")
     p.add_argument("--duration", default="—")
-    p.add_argument("--ko-url", default="")
-    p.add_argument("--en-url", default="")
-    p.add_argument("--pr-url", default="")
+    p.add_argument("--ko-url", default="", help="라이브 KO URL (머지 후 도달 가능)")
+    p.add_argument("--en-url", default="", help="라이브 EN URL (머지 후 도달 가능)")
+    p.add_argument("--pr-url", default="", help="GitHub PR URL")
+    p.add_argument("--preview-url", default="", help="단일 cloudflared preview URL (KO/EN 구분 없이)")
+    p.add_argument("--preview-ko-url", default="", help="cloudflared preview KO URL")
+    p.add_argument("--preview-en-url", default="", help="cloudflared preview EN URL")
     p.add_argument("--adequity", default="")
     p.add_argument("--phone", default=DEFAULT_PHONE)
     p.add_argument("--email", default=DEFAULT_EMAIL)
