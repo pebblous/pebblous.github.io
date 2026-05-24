@@ -116,6 +116,7 @@ python3 tools/report-produce-logger.py finalize \
         5-A: content + style review (자기검토, 위반 즉시 수정)
         5-B: text-reinforce (차트/표 앞 설명 문단 보강)
         5-C: image-reinforce (맥락 이미지 추가)
+        5-D: bibliography (references.json SSOT + BibTeX/RIS + Scholar 메타)
         ↓
 [Phase 6] 영문화 (단순 번역 금지, 영미권 문화 고려 재작성)
         → report/[slug]/en/index.html
@@ -435,7 +436,17 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 4 --agent repor
 
 ### Phase 5: 품질 검증 + 보강
 
-Phase 4.5 승인 후, 퍼블리싱 전에 반드시 아래 3단계를 실행한다. 각 서브단계별로 logger start/end를 호출 (5-A는 self-review, 5-B/C는 스킬).
+Phase 4.5 승인 후, 퍼블리싱 전에 반드시 아래 **4단계(5-A ~ 5-D)** 를 실행한다. 각 서브단계별로 logger start/end를 호출.
+
+⛔ **Skip 정책 (객관 기준 — 주관 판단 금지)**:
+| 서브단계 | 무조건 호출 | Skip 가능 조건 |
+|---------|-----------|---------------|
+| 5-A 자기검토 | ✅ 항상 | (skip 불가) |
+| 5-B text-reinforce | 항상 호출 | 결과적으로 보강할 곳이 0개여도 호출은 한다 |
+| 5-C image-reinforce | 항상 호출 | 본문 이미지가 4개 이상이고 핵심 주제 시각 자료가 포함된 경우만 skip 가능 — 그 외 일반론 / 본문 이미지 < 4 / 주제 매칭 부족 시 반드시 호출 |
+| 5-D bibliography | references 4개 이상이면 항상 호출 | references < 4면 skip 가능 |
+
+→ "본문이 충분히 풍부하니까", "이미 충분히 길어서" 같은 주관 판단으로 skip하지 말 것. 객관 조건만 사용.
 
 ```bash
 python3 tools/report-produce-logger.py start --slug [slug] --phase 5-A --agent self-review --model sonnet
@@ -446,7 +457,10 @@ python3 tools/report-produce-logger.py start --slug [slug] --phase 5-B --agent t
 python3 tools/report-produce-logger.py end --slug [slug] --phase 5-B --agent text-reinforce --status ok --notes "[보강 문단 수]"
 
 python3 tools/report-produce-logger.py start --slug [slug] --phase 5-C --agent image-reinforce --model haiku
-python3 tools/report-produce-logger.py end --slug [slug] --phase 5-C --agent image-reinforce --status ok --notes "[삽입 이미지 수]"
+python3 tools/report-produce-logger.py end --slug [slug] --phase 5-C --agent image-reinforce --status ok --notes "[삽입 이미지 수, 주제 매칭 여부]"
+
+python3 tools/report-produce-logger.py start --slug [slug] --phase 5-D --agent bibliography --model haiku
+python3 tools/report-produce-logger.py end --slug [slug] --phase 5-D --agent bibliography --status ok --notes "[references.json 항목 수]"
 ```
 
 #### 5-A: Content + Style Review (자기검토)
@@ -474,6 +488,38 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 5-C --agent ima
 # 스킬: .claude/skills/image-reinforce/SKILL.md
 # 본문 맥락에 맞는 이미지를 찾아 삽입 (CC 라이선스 또는 자체 생성)
 ```
+
+⛔ **주제 매칭 우선 모드**: 단순 추상 다이어그램(피드백 루프, 일반 아키텍처)만 채우지 말 것. 주제 고유 시각 자료를 우선 탐색:
+- 게임/제품 주제 → 실제 게임/제품 스크린샷 (CC, Wikimedia, 공식 press kit)
+- 학술 논문 인용 주제 → 원 논문의 figure (fair use 인용)
+- 인물 주제 → 공식 프로필 사진 (CC 또는 자체 촬영)
+- 사례/데이터 주제 → 해당 기관 공식 차트
+일반 추상 이미지로만 채우면 5-C 실행했어도 본 단계 미완료로 간주.
+
+#### 5-D: bibliography (신규 정식 편입 — 2026-05-24)
+
+```python
+# 스킬: .claude/skills/bibliography/SKILL.md
+# (1) references.json 생성 (CSL-JSON, SSOT) — report/[slug]/references.json
+# (2) HTML 참고문헌 섹션을 .reference-list 표준으로 렌더링
+#     - <span class="ref-num">N.</span><span class="ref-body">...</span>
+#     - 카테고리 분류 (학술 / 정책·통계 / 페블러스 인접) — 4건 이상이면 필수
+# (3) Download Citation 버튼 (BibTeX / RIS)
+#     - <button onclick="PebblousCitation.download('bibtex', '../references.json')">BibTeX</button>
+#     - <button onclick="PebblousCitation.download('ris', '../references.json')">RIS</button>
+# (4) </body> 직전: <script src="/scripts/citation-download.js?v=YYYYMMDD" defer></script>
+# (5) Google Scholar citation_* 메타 태그 (head)
+#     - citation_title, citation_author, citation_publication_date,
+#       citation_online_date, citation_journal_title, citation_language
+```
+
+⛔ **무조건 호출 조건**: Phase 2 리서치에서 학술 논문·정책 문서·보고서 인용이 4개 이상이면 무조건 5-D 호출. Phase 4 writer가 본문에 inline `<a href>`만 박은 상태라도 5-D에서 references.json SSOT를 만들고 다운로드 인프라를 추가해야 함.
+
+검증 grep (Phase 5-D 종료 직전):
+- `python3 -c "import json; print(len(json.load(open('report/[slug]/references.json'))))"` ≥ 4
+- `grep -c "PebblousCitation.download" report/[slug]/{ko,en}/index.html` → 각 2 (BibTeX + RIS)
+- `grep -c "citation-download.js" report/[slug]/{ko,en}/index.html` → 각 1
+- `grep -c 'name="citation_title"' report/[slug]/{ko,en}/index.html` → 각 1
 
 ---
 
