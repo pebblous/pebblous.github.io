@@ -94,6 +94,19 @@ python3 tools/report-produce-logger.py note \
   --content "Phase 4.5 자동 진행 — JH 리뷰 생략 (express)"
 ```
 
+### Phase 5 분기 — Skip 정책 강화 (express에서 특히 중요)
+
+JH가 없는 무인 모드이므로 5-B/5-C/5-D를 자의적 판단으로 skip하는 사고가 자주 났다 (예: ICLR run에서 "본문 충분히 풍부함"으로 5-B/5-C 둘 다 skip → image-reinforce/bibliography 누락). 베이스 스킬의 객관 skip 기준을 그대로 따르되 express에서는 다음을 추가:
+
+| 서브단계 | express에서의 호출 의무 |
+|---------|-----------------------|
+| 5-A | 항상 |
+| 5-B text-reinforce | 항상 호출. "충분히 풍부하다"는 표현 금지 — 호출 결과가 0개 보강이어도 호출은 한다 |
+| 5-C image-reinforce | 항상 호출 + 주제 매칭 우선 모드. 본문 이미지 < 4 이면 무조건 보강. 단순 추상 다이어그램으로만 채우면 미완료 |
+| 5-D bibliography | references ≥ 4면 무조건. references.json SSOT 생성 + BibTeX/RIS 버튼 + Scholar 메타 (KO+EN 양쪽). express의 거의 모든 보고서가 학술 인용 4개 이상이므로 사실상 항상 호출 |
+
+→ logger note에 skip 사유를 적을 때 "충분히 풍부하다 / 이미 잘 돼있다" 같은 주관어 사용 금지. 객관 조건 (`references<4`, `images>=4 with topic match`) 만 인용.
+
 ### Phase 8 — PR까지만
 
 표준 스킬의 blog-publisher가 push + PR 생성까지 한다. `gh pr merge` 호출 **금지**.
