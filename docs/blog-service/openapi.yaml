@@ -2,16 +2,42 @@ openapi: 3.1.0
 
 info:
   title: Pebblous Blog Service API
-  version: 0.1.0-draft
+  version: 0.2.0-draft
   description: |
-    HTTP API for executing the Pebblous blog repo's content pipelines (blog/report/dc-story)
-    and managing pipeline runs with async approval gates.
+    HTTP API for executing Pebblous blog content pipelines with async approval gates.
+    Shares the same underlying Pipeline Engine with the MCP server (`mcp-tools.md`).
 
-    This API and the MCP server (`mcp-tools.md`) share the same underlying Pipeline Engine.
-    See `architecture.md` for the system design and `decision-log.md` for major decisions.
+    ## Architecture (진본/사본 모델)
 
-    **Status:** Draft — derived from `docs/nanoclaw/blog-mcp-stdio.ts` (the existing MCP implementation
-    inside NanoClaw). The 9 MCP tools map 1:1 to REST endpoints below.
+    - **자산 1 (콘텐츠)**: `pebblous/pebblous.github.io` (사본) — live site `blog.pebblous.ai`
+    - **자산 2/3 (메서드론 + 도구)**: `joohaeng-pbls/blog-service` (진본) — source of truth
+      - 자산 2: skills (`.claude/skills/`), agents (`.claude/agents/`), policies, docs
+      - 자산 3: Pipeline Engine + this HTTP API + MCP server
+
+    See:
+    - `architecture.md` — 3-asset separation vision
+    - `decision-log.md` — major decisions (B/C/Phase 1+)
+    - `sync.md` — 진본↔사본 auto-sync workflow
+
+    ## Current State (2026-05-24)
+
+    - 9 endpoints below 1:1-map to MCP tools in `docs/nanoclaw/blog-mcp-stdio.ts`
+    - Pipeline Engine 위치: 현재 NanoClaw 컨테이너 내부 (stdio MCP만 노출)
+    - **Phase 1 작업**: Engine을 NanoClaw에서 추출 → 진본 자산 3로 이전 → HTTP transport 추가 (본 스펙 구현)
+    - Pipeline type 6종 (스펙) — 그중 3종이 NanoClaw에 구현됨 (blog/report/dc-story)
+
+    ## Pipeline Types (6종)
+
+    각 type은 진본 `.claude/skills/` 의 같은 이름 스킬에 매핑:
+
+    | API type | 진본 스킬 | NanoClaw 구현 |
+    |---|---|---|
+    | `blog` | `blog-produce` | ✅ |
+    | `report` | `report-produce` | ✅ |
+    | `dc-story` | `dc-story-produce` | ✅ |
+    | `pebblopedia` | `pebblopedia-produce` | ⏳ Phase 1 추가 |
+    | `pb-story` | `pb-story-produce` | ⏳ Phase 1 추가 |
+    | `biz-report` | `biz-produce` | ⏳ Phase 1 추가 |
 
   contact:
     name: Pebblous
@@ -458,10 +484,21 @@ components:
 
     PipelineType:
       type: string
-      enum: [blog, report, dc-story]
+      enum: [blog, report, dc-story, pebblopedia, pb-story, biz-report]
       description: |
-        Pipeline templates defined in `blog-mcp-stdio.ts` PIPELINES constant.
-        `pebblopedia` is reserved for future use.
+        Pipeline templates. 각 type은 진본 `.claude/skills/`의 같은 이름 스킬에 매핑:
+
+        | type | 진본 스킬 | NanoClaw 구현 |
+        |---|---|---|
+        | `blog` | `blog-produce` | ✅ |
+        | `report` | `report-produce` | ✅ |
+        | `dc-story` | `dc-story-produce` | ✅ |
+        | `pebblopedia` | `pebblopedia-produce` | ⏳ Phase 1 추가 |
+        | `pb-story` | `pb-story-produce` | ⏳ Phase 1 추가 |
+        | `biz-report` | `biz-produce` | ⏳ Phase 1 추가 |
+
+        현재 `blog-mcp-stdio.ts` PIPELINES에는 blog/report/dc-story 3종 구현.
+        나머지 3종은 자산 3 분리 시 Engine을 일반화해서 6종 모두 지원 예정.
 
     Model:
       type: string
