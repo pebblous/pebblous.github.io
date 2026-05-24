@@ -64,6 +64,43 @@ def _read_json(path: str) -> dict:
         return {}
 
 
+def _count_or_value(v):
+    """meta 필드 값 정규화 — dict/list면 의미 있는 정수, scalar면 그대로."""
+    if v is None:
+        return None
+    if isinstance(v, list):
+        return len(v)
+    if isinstance(v, dict):
+        # references 같은 카테고리 dict: total 우선, 없으면 모든 _count 합산, 없으면 len(keys)
+        if "total" in v:
+            return v["total"]
+        counts = [val for key, val in v.items() if key.endswith("_count") and isinstance(val, int)]
+        if counts:
+            return sum(counts)
+        return len(v)
+    return v  # int / str 그대로
+
+
+def _hub_name(v):
+    """hub_proposal — dict면 name key, 문자열이면 그대로."""
+    if v is None:
+        return None
+    if isinstance(v, dict):
+        return v.get("name") or v.get("slug_candidate") or "(hub 제안)"
+    return str(v)
+
+
+def _section_count(v):
+    """sections — list면 길이, 정수면 그대로."""
+    if v is None:
+        return None
+    if isinstance(v, list):
+        return len(v)
+    if isinstance(v, dict):
+        return v.get("total", len(v))
+    return v
+
+
 def build_sms(args, meta: dict) -> str:
     """SMS는 ~600자 — 한 손에 잡히는 핵심만."""
     lines = [
@@ -75,12 +112,15 @@ def build_sms(args, meta: dict) -> str:
         summary_bits.append(f"KO {meta['wordCount']:,}자")
     if meta.get("en_wordCount"):
         summary_bits.append(f"EN {meta['en_wordCount']:,}w")
-    if meta.get("sections"):
-        summary_bits.append(f"{meta['sections']}섹션")
-    if meta.get("faqs"):
-        summary_bits.append(f"FAQ{meta['faqs']}")
-    if meta.get("references"):
-        summary_bits.append(f"ref{meta['references']}")
+    sec = _section_count(meta.get("sections"))
+    if sec:
+        summary_bits.append(f"{sec}섹션")
+    faq = _count_or_value(meta.get("faqs"))
+    if faq:
+        summary_bits.append(f"FAQ{faq}")
+    ref = _count_or_value(meta.get("references"))
+    if ref:
+        summary_bits.append(f"ref{ref}")
     if summary_bits:
         lines.append(" · ".join(summary_bits))
     lines.append(f"소요: {args.duration}")
@@ -146,16 +186,20 @@ def build_email_body(args, meta: dict, log_md: str) -> str:
             size_bits.append(f"KO {meta['wordCount']:,}자")
         if meta.get("en_wordCount"):
             size_bits.append(f"EN {meta['en_wordCount']:,} words")
-        if meta.get("sections"):
-            size_bits.append(f"{meta['sections']} 섹션")
-        if meta.get("faqs"):
-            size_bits.append(f"FAQ {meta['faqs']}")
-        if meta.get("references"):
-            size_bits.append(f"refs {meta['references']}")
+        sec = _section_count(meta.get("sections"))
+        if sec:
+            size_bits.append(f"{sec} 섹션")
+        faq = _count_or_value(meta.get("faqs"))
+        if faq:
+            size_bits.append(f"FAQ {faq}")
+        ref = _count_or_value(meta.get("references"))
+        if ref:
+            size_bits.append(f"refs {ref}")
         if size_bits:
             parts.append(f"  Size          : {' / '.join(size_bits)}")
-        if meta.get("hub_proposal"):
-            parts.append(f"  Hub 제안      : {meta['hub_proposal']}")
+        hub = _hub_name(meta.get("hub_proposal"))
+        if hub:
+            parts.append(f"  Hub 제안      : {hub}")
         parts.append("")
 
     parts.append("─ 링크 ─")
