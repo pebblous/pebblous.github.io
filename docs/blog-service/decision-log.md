@@ -4,6 +4,63 @@
 
 ---
 
+## 2026-05-24 — B + C단계 완료, Phase 1 진입점 박음
+
+**상황**: 5/22~23 B단계 진입 후 5/24까지 자산 2/3 이전·정리·자동화 완료. 결과 영구 기록.
+
+### 완료된 작업
+
+진본 PR 9개 / 사본 동기화 PR 5개 (PR #190~#211).
+
+**B단계 (자산 2 이전 + 환경 종속성 제거)**:
+- PR #1 — `tools/` 통합 + duplicate 청소 (`generate-rss.py` 등 5개 도구를 `tools/`로)
+- PR #2 — `BLOG_CONTENT_REPO` 환경변수 도입 (5개 도구)
+- PR #3 — NanoClaw 절대경로(`/workspace/extra/repos/pebblous.github.io/`) → `<repo-root>`/`$BLOG_CONTENT_REPO` 명시 표현 (7개 스킬, 63 hits 1:1 치환)
+
+**자동 동기화 인프라**:
+- PR #4, #5 — `sync-to-sabon.yml` 워크플로우 + YAML fix
+- 동작: 진본 main의 자산 2/3 변경(tools/, .claude/skills/, .claude/agents/, CLAUDE.md, docs/) push → 사본에 auto-sync PR 자동 생성 → 사람 머지
+
+**Reverse-sync 사례 2건**:
+- PR #6 — 사본 PR #188 (`report-produce` Phase 로거 + 모델 매핑 + express)을 진본으로
+- PR #9 — 사본 commit `62fded3d` (5-D bibliography + skip 정책)을 진본으로
+
+**자산 2/3 정책 명시**:
+- PR #7 — CLAUDE.md에 진본/사본 모델 + "자산 2/3은 진본 우선" 정책 박음
+
+**C단계 (openapi.yaml 정리)**:
+- PR #8 — v0.1.0-draft → v0.2.0-draft. 진본/사본 맥락 추가 + `PipelineType` enum 3종 → 6종 (pebblopedia, pb-story, biz-report 추가)
+- 기존 openapi.yaml은 이미 NanoClaw `blog-mcp-stdio.ts`와 1:1 매핑된 9 endpoint 풀스택 — C단계 사실상 이번 PR로 완료
+
+### 검증 시나리오 1차 마일스톤 통과
+
+진본에서 `BLOG_CONTENT_REPO`를 외부 사본 clone으로 가리키며 5개 도구 dry-run 실행:
+- `generate-rss.js`: 439 items 정상
+- `generate-sitemap.js`: 438 published 정상
+- `generate-llms-txt.py`: 14,678 bytes 정상
+- `scan-files-index.py`: 정상 HTML 스캔
+- `scan-articles-meta.py --dry-run`: 451 articles loaded
+
+자산 2 이전 + 외부 호출 가능성 모두 검증.
+
+### 발견된 한계
+
+- Reverse-divergence 두 번 발생 (PR #6, #9). 정책 박기만으론 부족.
+- 다른 세션이 사본 자산 2/3 직접 수정 → 자동 sync에서 덮어쓰기 위험 → 수동 reverse-sync 필요.
+
+### 다음 Phase 진입점
+
+1. **우선순위 A — 사본 안전장치** (작음, 1시간): `.github/CODEOWNERS` 또는 pre-commit hook
+2. **우선순위 B — Phase 1 PoC** (큼, 여러 세션): NanoClaw `blog-mcp-stdio.ts`를 진본 자산 3로 이전 + HTTP transport 추가
+
+### 관련
+
+- Issue [#137](https://github.com/pebblous/pebblous.github.io/issues/137) 2026-05-24 코멘트 — 세션 종료 보고
+- `sync.md` — 자동 동기화 워크플로우 가이드
+- `openapi.yaml` v0.2.0-draft
+
+---
+
 ## 2026-05-22 — B단계 진입: 진본/사본 모델 + 자산 2/3 진본 위치 결정
 
 **상황**: C단계(스펙) 완료 후 B단계(코드 분리) 진입. "자산 2/3을 어떻게 분리하느냐"가 쟁점.
