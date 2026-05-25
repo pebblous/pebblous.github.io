@@ -6,48 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Pebblous Blog (`blog.pebblous.ai`) — a static site on GitHub Pages for Pebblous Inc., covering AI-Ready Data, Physical AI, and Data Quality topics. Built with vanilla JavaScript + TailwindCSS (build, not CDN).
 
-## 🌐 진본/사본 모델 — 자산 2/3은 진본 우선
-
-본 레포(`joohaeng-pbls/blog-service`)는 자산 2(메서드론)·자산 3(도구)의 **진본(source of truth)**. 사본(`pebblous/pebblous.github.io`)은 GitHub Pages가 호스팅하는 라이브 사이트 + 자산 2/3 미러.
-
-### 자산 분류
-
-| 자산 | 내용 | 진본 | 사본 |
-|---|---|---|---|
-| 1 | 콘텐츠 (HTML 글, 이미지, articles.json 등) | (없음) | source of truth — GitHub Pages 호스팅 |
-| 2 | 메서드론 (`.claude/skills/`, `.claude/agents/`, `CLAUDE.md`, `docs/`) | **source of truth** | 자동 미러 |
-| 3 | 도구 (`tools/` — 빌드/배포 스크립트, OG 생성, RSS·sitemap·인덱싱) | **source of truth** | 자동 미러 |
-
-### ⛔ 정책 — 자산 2/3은 진본에서만 수정
-
-**사본의 `tools/`, `.claude/skills/`, `.claude/agents/`, `CLAUDE.md`, `docs/` 파일을 직접 수정 금지.**
-
-이유: 사본에서 직접 수정하면 **reverse-divergence** 발생. 다음 자동 sync 시:
-- 진본 버전이 사본을 덮어쓰면 → 사본 변경 손실
-- 손실 막으려면 명시적 reverse-sync PR 작성 → 매번 수동 정리 부담
-
-예외: 콘텐츠 작업(자산 1: 블로그 글, articles.json, image 등)은 사본에서 직접 — 진본엔 콘텐츠 없음.
-
-### 자동 동기화
-
-진본 main에 자산 2/3 변경 push → [`sync-to-sabon.yml`](.github/workflows/sync-to-sabon.yml) 자동 트리거 → 사본에 `auto-sync: 진본 blog-service@<sha>` PR 자동 생성 → 사람이 검토 후 머지.
-
-상세: [`docs/blog-service/sync.md`](docs/blog-service/sync.md)
-
-### Reverse-divergence 발생 시 (이미 사본에서 수정된 변경이 있다면)
-
-1. 자동 sync PR이 그 변경을 덮어쓰려 함 (보수적 모드라 삭제는 안 하지만 덮어쓰기는 함)
-2. 그런 PR은 머지 보류
-3. 사본의 변경을 명시적으로 진본에 reverse-sync (PR로 — 사본 → 진본 수동)
-4. 그 후 자동 sync 재트리거 → 깨끗한 새 PR → 머지
-5. (사례: 2026-05-24 PR #6 — 사본 PR #188의 `report-produce/skill.md` 변경을 진본에 reverse-sync)
-
-### 관련 문서
-
-- [`docs/blog-service/decision-log.md`](docs/blog-service/decision-log.md) — 진본/사본 분리 결정 (2026-05-22)
-- [`docs/blog-service/architecture.md`](docs/blog-service/architecture.md) — 3-자산 분리 비전
-- [`docs/blog-service/sync.md`](docs/blog-service/sync.md) — 자동 동기화 워크플로우 + 트러블슈팅
-
 ## ⛔ Branch Policy — 새 작업 시작 시 반드시 확인
 
 여러 Claude 창이 병렬로 작업 중인 환경이다. 위험을 피하려면:
