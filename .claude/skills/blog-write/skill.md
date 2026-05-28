@@ -129,6 +129,34 @@ PebblousPage.init({
 </section>
 ```
 
+## 참고문헌 섹션 (조건부 — `references.json` 존재 시 **필수**)
+
+작성 시작 전에 article folder(`[category]/[slug]/`) 또는 run dir에 **`references.json` 파일이 있는지 반드시 확인**한다. 있으면:
+
+1. **HTML에 reference-list 섹션 추가** — FAQ 섹션 다음 (또는 FAQ 없으면 마지막 본문 섹션 다음):
+   ```html
+   <section id="references" class="mb-16 fade-in-card">
+       <div class="flex items-center gap-4 mb-8">
+           <span class="number-badge">R</span>
+           <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+       </div>
+       <ul class="reference-list mb-6">
+           <li><span class="ref-num">1.</span><span class="ref-body">저자. (연도). "<a href="URL" target="_blank" rel="noopener">제목</a>." 출처.</span></li>
+           ...
+       </ul>
+   </section>
+   ```
+   참고문헌이 4건 이상이면 **카테고리 분류** (학술 / 업계·보도 / 공식 문서) 필수 — 단일 리스트는 가독성 떨어짐.
+2. **TOC 사이드바에 항목 추가**: `<li><a href="#references" class="...">참고문헌</a></li>`
+3. **Google Scholar 메타 태그** — `<head>`에 `citation_*` 메타 추가 (상세: `bibliography` 스킬 §4)
+4. **citation-download 버튼** — 참고문헌 섹션 하단에 `PebblousCitation.download()` 호출 버튼
+
+상세 패턴·CSS 클래스·CSL-JSON 스키마는 `bibliography` 스킬 §2~§4 참조.
+
+**EN 버전도 동일** — 같은 `references.json`을 fetch해서 영어 라벨로 렌더링.
+
+> ⚠️ **누락 결함 (2026-05-26 PR #228 사례)**: research phase가 외부 사료 6건을 발견했으나 references.json이 없어 reference-list 누락. 학술·journalism 톤 글은 reference-list 부재가 신뢰도 손실 + SEO(Google Scholar) 누락으로 직결. `blog-produce` Phase 2.5 트리거 + 본 step이 결합되어야 chain 완성.
+
 ## 레이아웃
 
 레퍼런스 구현: `report/blog-2026/index.html`

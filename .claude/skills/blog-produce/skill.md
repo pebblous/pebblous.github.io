@@ -60,6 +60,27 @@ Agent(
 )
 ```
 
+### Phase 2.5: 참고문헌 정리 (조건부 — 외부 사료 ≥ 3건 시 **필수**)
+
+Phase 2 리서치 결과(`_workspace/01_research.md` 또는 `research_*.md`)에 아래 중 하나라도 **≥ 3건** surfaced 됐으면, **Phase 3 시작 전에 반드시 `bibliography` 스킬을 호출**해 `references.json` 생성:
+
+- **학술 논문** (arxiv, journals, conference papers, preprints)
+- **외부 사건 보도** (Rolling Stone, NYT, 회사 공식 블로그, 발표 보도자료 등)
+- **공식 문서** (정부 정책 문서, 종교 교의, 회사 공식 statement, 기업 백서, system card 등)
+- **인용 가능한 공개 데이터** (산업 보고서, 통계, 백서)
+
+이 조건은 **심층 보고서(report-produce)뿐 아니라 일반 블로그에도 동일하게 적용**된다. 글의 학술적·journalism 톤이 강할수록 참고문헌은 더 필수.
+
+호출 방법:
+```
+Skill(bibliography) — 입력: research markdown 경로
+```
+
+생성 결과: `[category]/[slug]/references.json` (article folder 바로 아래 — KO/EN 공유 SSOT)
+
+> ⚠️ **결함 #5 사례 (2026-05-26 PR #228 — 종교와 AI)**: research가 Dawkins-Claude 72시간 대화, Vatican Antiqua et Nova, Spiralism Rolling Stone 보도, Anthropic System Card "spiritual ecstasy", Chalmers Hard Problem, Pascal's Wager 등 외부 사료 6건을 surfaced 했으나 bibliography 스킬을 호출 안 함 → 학술적 톤 글에 reference-list 누락 + Google Scholar 메타 태그 누락 + citation-download 버튼 누락.
+> 이 Phase 2.5의 명시화가 그 방지.
+
 ### Phase 3: 작성
 
 Phase 2 완료 후 blog-writer 서브 에이전트 실행:
