@@ -375,6 +375,8 @@ The `key-insight` box provides the teal-bordered highlight. Content should be 3 
 - **Text-First, Visual-Second**: Always place explanation paragraph before any chart/card/diagram
 - Source MD documents are the narrative backbone — preserve original sentences
 - Featured articles: max 3 per category
+- **⛔ Stat-card 그리드 최대 4칸**: Executive Summary 등의 stat-card 그리드는 `grid-cols-2 sm:grid-cols-2 lg:grid-cols-4` 까지만 사용. 5칸(`lg:grid-cols-5`) 금지 — 데스크탑에서도 텍스트 캡션이 좁아져 카드 밖으로 넘침. 더 많은 지표가 필요하면 두 줄(grid 자체 wrap) 또는 본문 표로 분리.
+- **카드 내 텍스트 캡션 길이**: 카드 안의 `<p class="text-xs themeable-muted">` 보조 캡션은 **한 줄 30자(한글) / 40자(영어) 이내**가 안전. 더 길면 `word-break: keep-all` 적용된 themeable-card에서도 자연스러운 줄바꿈이 어렵다. 필요하면 핵심 한 줄로 압축하고 부가 설명은 본문 단락으로 옮긴다.
 
 ### ⛔ 한국어 본문 — 영어 용어 도입 규칙
 
