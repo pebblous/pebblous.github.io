@@ -1,4 +1,11 @@
-# 리서치 B: Vibe Coding & AI 연구 자동화 맥락
+# ⚠️ DEPRECATED — 이전 작업(Vibe Physics)의 잔재. 본 AlphaTransit 작업에서 무시할 것.
+
+> AlphaTransit 글의 정본 리서치는 `01_research.md`와 `01a_research_official.md`를 본다.
+> 본 파일의 아래 내용은 이전 세션의 Vibe Physics 리서치이며 현재 주제와 무관함.
+
+---
+
+# (구) 리서치 B: Vibe Coding & AI 연구 자동화 맥락
 
 ## Vibe Coding이란
 

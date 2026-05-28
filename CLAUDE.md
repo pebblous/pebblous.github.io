@@ -376,6 +376,35 @@ The `key-insight` box provides the teal-bordered highlight. Content should be 3 
 - Source MD documents are the narrative backbone — preserve original sentences
 - Featured articles: max 3 per category
 
+### ⛔ 한국어 본문 — 영어 용어 도입 규칙
+
+한국어 본문(`*/ko/index.html`)에서 학술·기술 용어를 **처음 등장시킬 때 영어를 단독으로 쓰지 않는다.** 반드시 한글 이름·정의를 먼저 쓰고 괄호로 영어를 보충한다. 두 번째 등장부터는 약어/영문 단독 사용 가능.
+
+```
+❌ 금지 (영어 단독 도입)
+- TRNDP(Transit Route Network Design Problem)
+- delayed feedback
+- long-horizon credit assignment
+- Policy Network / Value Network
+- sparse reward
+
+✅ 정답 (한글 이름·정의 우선)
+- 대중교통 노선망 설계 문제(TRNDP, Transit Route Network Design Problem)
+- 지연된 피드백(delayed feedback)
+- 긴 호흡 신용 할당(long-horizon credit assignment)
+- 정책망(Policy Network) / 가치망(Value Network)
+- 희소한 보상(sparse reward)
+```
+
+**예외**:
+- 고유명사·제품명(AlphaGo, AlphaTransit, MCTS, GPT, ChatGPT 등) — 한글 번역 강제 안 함
+- 코드/CLI 명령(`git`, `python`, `npm install`) — 영문 그대로
+- 약어가 학계 표준으로 정착된 경우 — 첫 등장 시 풀네임 한 번만, 이후 약어 OK
+
+**왜**: 한국어 독자의 가독성, 일반 독자(데이터 비전공자) 친화성, SEO(한글 키워드 노출), 페블러스 시그니처 톤(사색적·날카롭되 따뜻). 데이터 실무자도 한글 이름으로 한 번 통과해야 개념이 마음에 박힌다.
+
+세부: `docs/post-writing-lessons-for-pb.md` "한국어 본문 영어 용어 도입" 절 참조.
+
 ### File Structure
 ```
 /blog/           # Blog articles
