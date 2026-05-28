@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>AlphaTransit — AI가 도시 대중교통 노선을 설계한다 (MCTS + 정책가치망) | 페블러스</title>
+    <meta name="description" content="AlphaTransit이 보여준 MCTS와 정책가치망의 결합. Bloomington TRNDP에서 RL 단독 대비 +9.9%·+11.4% 서비스율 — AlphaGo 계보가 도시 인프라 설계로 도착한 사건을 페블러스 관점에서 읽는다.">
+    <meta name="keywords" content="AlphaTransit, AI 도시 설계, 강화학습, MCTS, 정책가치망, 대중교통, TRNDP, AlphaGo 계보, UrbanGPT, Spatial AI, PebbloSim, Pebblous, Bloomington, 버스 노선">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/alphatransit-rl-city-transit-design/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/alphatransit-rl-city-transit-design/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/alphatransit-rl-city-transit-design/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/alphatransit-rl-city-transit-design/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="당신이 타는 버스를 AI가 다시 그린다면 — AlphaTransit이 본 도시">
+    <meta property="og:description" content="MCTS와 정책가치망을 결합한 AlphaTransit이 Bloomington 도로망에서 16개 실존 노선을 어떻게 다시 그렸나. AlphaGo 계보가 도시 인프라에 도착한 사건을 페블러스가 읽는다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/alphatransit-rl-city-transit-design/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/alphatransit-rl-city-transit-design/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="AlphaTransit — AI가 도시 대중교통 노선을 설계한다">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="당신이 타는 버스를 AI가 다시 그린다면 — AlphaTransit이 본 도시">
+    <meta name="twitter:description" content="MCTS와 정책가치망을 결합한 AlphaTransit이 Bloomington 도로망에서 16개 실존 노선을 어떻게 다시 그렸나. AlphaGo 계보가 도시 인프라에 도착한 사건.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/alphatransit-rl-city-transit-design/ko/image/index.png">
+    <meta name="twitter:image:alt" content="AlphaTransit — AI가 도시 대중교통 노선을 설계한다">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260528">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260528">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260528">
+</head>
+<body class="antialiased themeable-bg themeable-text font-sans">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. TRNDP — 왜 풀기 어려운가</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. AlphaTransit의 작동</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Bloomington 벤치마크</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. AlphaGo가 도시에 도착하다</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 서울이라면 어떨까</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. UrbanGPT와 만나는 자리</a></li>
+                    <li><a href="#section-7" class="block pl-4 themeable-toc-link transition-colors duration-200">7. 다음 한 걸음</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">당신이 매일 타는 버스 노선은 어떻게 그 길을 가는가. 1970년대부터 도시 계획가와 운영자, 민원과 예산, 그리고 누적된 데이터가 만들어낸 결과물이다. 학계는 이를 <strong>TRNDP(Transit Route Network Design Problem)</strong>로 부르며 60년 동안 풀어 왔다. NP-hard 조합 최적화에 더해, 노선 하나의 가치가 다른 노선이 모두 그려진 뒤에야 평가되는 <strong>지연된 피드백(delayed feedback)</strong> — 강화학습의 가장 어려운 케이스다. 2026년 5월 27일, Bibek Poudel·Sai Swaminathan·Weizi Li 세 사람이 <a href="https://arxiv.org/abs/2605.28730" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline"><strong>AlphaTransit</strong>(arXiv:2605.28730)</a>이라는 이름의 논문을 공개했다. <strong>MCTS와 신경망 정책가치 함수의 결합</strong> — AlphaGo가 게임판에서 보여준 패턴이 도시 도로망 위에 도착했다.</p>
+                        <p class="themeable-text leading-relaxed mt-4">핵심 메커니즘은 두 갈래다. <strong>정책망(Policy)</strong>이 다음 노선 확장 후보를 제안하고, <strong>가치망(Value)</strong>이 그 선택이 가져올 다운스트림 품질을 추정한다. 둘이 함께 <strong>MCTS(Monte Carlo Tree Search)</strong>의 의사결정 단계 탐색을 안내한다. 결과는 단호하다. 인디애나주 Bloomington의 실제 도로망과 인구조사 기반 수요 데이터에서 — <strong>서비스율 54.6%(혼합 수요) · 82.1%(전면 대중교통 수요)</strong>. RL 단독 대비 <strong>+9.9%p · +11.4%p</strong>, MCTS 단독 대비 <strong>+2.5%p · +11.2%p</strong>. 학습된 안내(learned guidance)와 탐색을 결합한 쪽이, 둘 중 하나만 쓰는 것보다 더 효과적임을 정량으로 보였다.</p>
+                        <p class="themeable-text leading-relaxed mt-4">이 글은 두 독자를 위해 쓴다. 매일 버스를 타지만 그 노선이 어떻게 정해졌는지 궁금한 시민과, 강화학습·탐색 알고리즘의 우아함을 도시 인프라에서 다시 만나고 싶은 데이터 실무자. AlphaTransit이 푼 것과 풀지 못한 것을 정직하게 정리하고, 페블러스가 보는 <a href="/project/UrbanGPT/spatial-ai-pebblous/ko/" class="text-orange-500 hover:underline">Spatial AI 평가 5기준</a>의 자리에 그것을 놓는다. <strong>AI가 도시를 디자인한다</strong>는 헤드라인을, 우리는 좀 더 작게, 더 정확하게 읽어 보려 한다.</p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">54.6%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">혼합 수요 서비스율</p>
+                            <p class="text-xs themeable-muted mt-1">Bloomington mixed demand</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">82.1%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">전면 대중교통 서비스율</p>
+                            <p class="text-xs themeable-muted mt-1">full transit demand</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">+11.4%p</p>
+                            <p class="text-sm themeable-text-secondary mt-1">RL 단독 대비 개선</p>
+                            <p class="text-xs themeable-muted mt-1">full transit 시나리오</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">+11.2%p</p>
+                            <p class="text-sm themeable-text-secondary mt-1">MCTS 단독 대비 개선</p>
+                            <p class="text-xs themeable-muted mt-1">learned guidance 효과</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">3</p>
+                            <p class="text-sm themeable-text-secondary mt-1">저자 수</p>
+                            <p class="text-xs themeable-muted mt-1">Poudel·Swaminathan·Li</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1: TRNDP -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">TRNDP — 왜 풀기 어려운가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">버스 정류장에 서 있을 때, "왜 이 노선이 여기를 지나가는가"를 묻는 시민은 드물다. 하지만 한 번 이 질문을 시작하면, 답은 얕지 않다. 노선 한 가닥은 도시 계획가의 통근 데이터 분석, 주민의 청원, 운영자의 예산 협상, 그리고 수십 년 누적된 운행 패턴이 겹쳐 만든 산물이다. <strong>도시 위에 K개의 노선을 어떻게 배치할 것인가</strong> — 학계는 이를 TRNDP(Transit Route Network Design Problem)라고 부른다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">TRNDP는 1970년대부터 운영 연구(Operations Research)의 고전 문제다. 정수 계획법(MILP), 유전 알고리즘, 시뮬레이티드 어닐링이 차례로 시도되었지만, 도시 규모로 가면 모두 폭발한다. 이유는 단순하다. 도로망 노드가 100개만 되어도 가능한 노선 조합은 천문학적으로 늘어나고, 그중 한 노선의 가치는 다른 노선들과의 상호작용에 따라 달라진다. <strong>전형적인 NP-hard.</strong></p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">그러나 TRNDP의 진짜 어려움은 NP-hard보다 한 층 더 깊은 곳에 있다. <strong>"이 노선이 좋은가"는 모든 노선이 그려진 뒤 시뮬레이션을 돌려 봐야 알 수 있다.</strong> 한 가닥을 잘못 그려도 전체가 완성될 때까지 모른다. 강화학습 용어로는 <strong>long-horizon credit assignment</strong> — 60~100단계의 결정 중 어느 한 수가 최종 점수에 얼마나 기여했는지 역추적해야 하는 문제다. 이 한 줄이 TRNDP를 알고리즘으로 푸는 모든 시도의 발목을 잡았다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6">바둑·체스가 같은 어려움을 안고 있었다. 한 수의 가치는 게임이 끝날 때까지 알 수 없다. AlphaGo가 그것을 어떻게 풀었는지 우리는 안다 — <strong>탐색(MCTS)과 학습(신경망 정책가치 함수)을 함께 쓰는 것.</strong> AlphaTransit이 도시 도로망 위에서 시도한 것은 정확히 같은 패턴이다.</p>
+                </section>
+
+                <!-- Section 2: AlphaTransit의 작동 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">AlphaTransit의 작동 — MCTS + 정책가치망</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">AlphaTransit이 하는 일을 한 문장으로 줄이면 이렇다. <strong>도로망 그래프 위에서, 한 엣지씩 노선을 늘려 나가며 K개의 노선을 완성한다.</strong> 매 단계마다 어떤 엣지로 갈지 결정해야 하고, 그 결정의 누적이 최종 노선 네트워크가 된다. 게임으로 비유하면 — 한 수씩 두며 K번의 노선 결정을 완성하는 보드 게임에 가깝다.</p>
+
+                    <!-- Image: AlphaTransit system overview (MCTS pipeline) -->
+                    <figure class="my-8">
+                        <img src="./image/img-01-system-overview.png"
+                             alt="AlphaTransit 시스템 개요 — MCTS의 Select·Expand·Evaluate·Backpropagate 단계가 UXSim 시뮬레이터·리워드·버퍼·정책가치망 학습 루프와 연결된 파이프라인 다이어그램"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ AlphaTransit 시스템 다이어그램 — MCTS 사이클과 정책가치망 학습 루프 | Source: <a href="https://arxiv.org/html/2605.28730v1" target="_blank" rel="noopener" class="underline">Poudel et al., arXiv:2605.28730 (Fig. 1)</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>정책망과 가치망</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">에이전트의 두뇌는 두 개의 신경망이다. <strong>정책망(Policy Network)</strong>은 현재 상태(이미 그려진 노선 + 도로망 + 수요)에서 "다음에 어느 엣지로 노선을 확장해야 하는가"의 확률 분포를 출력한다. <strong>가치망(Value Network)</strong>은 같은 상태에서 "이 상태로부터 최종 성능이 얼마나 될 것 같은가"를 추정한다. 두 망은 같은 도로망·OD 수요·기존 노선 구조를 입력으로 받지만, 출력하는 답이 다르다 — 한쪽은 다음 한 수, 한쪽은 미래의 점수.</p>
+
+                    <!-- Image: Policy-Value network architecture (GATv2 backbone) -->
+                    <figure class="my-8">
+                        <img src="./image/img-02-policy-value-network.png"
+                             alt="AlphaTransit 정책가치망 구조 — 노드/엣지 특징을 GATv2 그래프 어텐션 블록으로 처리한 뒤 Actor Head는 노드 확률(정책), Critic Head는 가치를 출력하는 공유 백본 아키텍처"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 정책가치망 아키텍처 — GATv2 공유 백본 + Actor·Critic 헤드 분리 | Source: <a href="https://arxiv.org/html/2605.28730v1" target="_blank" rel="noopener" class="underline">Poudel et al., arXiv:2605.28730 (Fig. 2)</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>MCTS — 의사결정 시점의 lookahead</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">정책망과 가치망이 "직관"을 제공한다면, <strong>MCTS(Monte Carlo Tree Search)</strong>는 그 직관을 "심사숙고"로 끌어올린다. 매 결정 시점마다 정책망의 추천을 따라 트리를 펼치고, 가치망으로 잎 노드의 미래 가치를 평가한다. 가능성이 보이는 가지는 더 깊이 탐색하고, 가망 없는 가지는 빨리 가지치기한다. 충분히 시뮬레이션을 돌린 뒤 가장 신뢰할 만한 행동을 선택한다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">이것이 AlphaGo·AlphaZero·MuZero에서 검증된 <strong>"학습된 안내(learned guidance) + 탐색(search)"</strong>의 우아한 패턴이다. 학습만으로는 long-horizon에서 흔들리고, 탐색만으로는 거대한 행동 공간 앞에서 무력해진다. 둘이 손을 잡으면 — 한쪽이 길을 비춰주고 다른 한쪽이 그 길의 끝을 미리 본다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed"><strong>AlphaTransit의 진짜 기여는 두 가지의 시너지를 정량으로 보인 것이다.</strong> 논문이 명시하는 핵심 명제: <span class="font-semibold">"coupling learned guidance with MCTS is more effective than using either approach alone for transit network design."</span> RL 단독(가치망 없는 정책 학습)도 가능하고, MCTS 단독(학습 없는 순수 탐색)도 가능하지만 — 도시 노선 설계라는 long-horizon 문제에서는 둘을 결합해야 진가가 나온다. 다음 섹션의 수치가 이를 보여준다.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8"><span class="sub-number-badge">2.3</span>delayed feedback을 어떻게 푸는가</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">노선의 가치가 마지막에야 드러난다는 §1의 어려움 — AlphaTransit은 이걸 두 갈래로 푼다. 첫째, <strong>가치망이 중간 상태의 미래 가치를 추정</strong>한다. 학습이 진행될수록 가치망은 "이 정도 노선 구조로는 결국 서비스율 X%에 도달하더라"는 패턴을 익힌다. 둘째, <strong>MCTS의 lookahead가 가치망의 추정에 의존하지 않고 직접 trajectory를 펼쳐 본다.</strong> 두 신호가 합쳐지면, 60단계 뒤의 결과를 30단계 시점에서도 어느 정도 가늠할 수 있게 된다.</p>
+                </section>
+
+                <!-- Section 3: Bloomington 벤치마크 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Bloomington 벤치마크 — 54.6% / 82.1%</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">TRNDP 연구의 오랜 약점은 벤치마크의 빈약함이었다. Mumford 60·100·150, Mandl 15 같은 합성 도시가 학술 표준이었다 — 깔끔하지만 가짜 도시다. AlphaTransit은 다른 길을 택했다. <strong>인디애나주 Bloomington의 실제 도로 토폴로지와 인구조사(census) 기반 통근 수요</strong> 위에서 실험을 돌렸다. 16개 실존 노선이 운영 중인 도시 — Bloomington Transit이 실제로 서비스하는 그 도시 위에서.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>두 시나리오, 네 비교</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">실험은 두 수요 시나리오로 진행된다. <strong>혼합 수요(mixed demand)</strong>는 차량과 대중교통이 공존하는 현실적 가정 — 일부 시민은 어차피 차로 이동한다. <strong>전면 대중교통 수요(full transit demand)</strong>는 모든 통근이 대중교통으로 흡수되는 극한 가정 — 도시가 자동차에서 모드 전환할 때의 모습이다. 두 시나리오에서 AlphaTransit, RL 단독, MCTS 단독, 그리고 비교 휴리스틱들의 서비스율을 측정한다.</p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">방법</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">혼합 수요</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">전면 대중교통</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">핵심 메시지</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold" style="color:#F86825;">AlphaTransit (MCTS + 정책가치망)</td>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">54.6%</td>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">82.1%</td>
+                                    <td class="border themeable-border px-4 py-3">학습 + 탐색의 시너지</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">RL 단독 (학습만, 탐색 없음)</td>
+                                    <td class="border themeable-border px-4 py-3">44.7%</td>
+                                    <td class="border themeable-border px-4 py-3">70.7%</td>
+                                    <td class="border themeable-border px-4 py-3">long-horizon에서 흔들림</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">MCTS 단독 (탐색만, 학습 안내 없음)</td>
+                                    <td class="border themeable-border px-4 py-3">52.1%</td>
+                                    <td class="border themeable-border px-4 py-3">70.9%</td>
+                                    <td class="border themeable-border px-4 py-3">광활한 행동 공간에서 비효율</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">실제 운영망 (Bloomington Transit)</td>
+                                    <td class="border themeable-border px-4 py-3">기준선</td>
+                                    <td class="border themeable-border px-4 py-3">기준선</td>
+                                    <td class="border themeable-border px-4 py-3">인간 도시계획가의 누적 결과</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-sm themeable-muted mt-2">※ AlphaTransit 대비 RL/MCTS 단독의 격차: 혼합 수요에서 +9.9%p·+2.5%p, 전면 대중교통에서 +11.4%p·+11.2%p. (출처: arXiv:2605.28730)</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">표가 말해 주는 것은 두 가지다. 첫째, <strong>학습된 안내와 탐색은 서로의 약점을 보완한다.</strong> RL 단독은 long-horizon에서 가치 추정이 흐릿해지고, MCTS 단독은 정책 안내 없이 너무 많은 가지를 살펴봐야 한다. 둘째, <strong>혼합 수요와 전면 대중교통에서 시너지의 크기가 다르다.</strong> 전면 대중교통 시나리오에서 AlphaTransit이 RL/MCTS 단독을 11%p씩 압도한다는 사실은, <strong>도시가 대중교통 중심으로 모드 전환할 때 AI 설계의 가치가 비약적으로 커진다</strong>는 신호로 읽힌다.</p>
+
+                    <!-- Image: Bloomington route designs across methods -->
+                    <figure class="my-8">
+                        <img src="./image/img-06-bloomington-routes.png"
+                             alt="Bloomington 도로망 위에 그려진 8가지 방법의 노선 결과 비교 — Real World·Random Walk·Demand Center·Shortest Path·Genetic Algorithm·Bio Critic·Neural Evolutionary·Pure MCTS·Reinforcement Learning·AlphaTransit"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Bloomington 실제 도로망 위에 그려진 각 방법의 노선 — 우측 끝이 AlphaTransit | Source: <a href="https://arxiv.org/html/2605.28730v1" target="_blank" rel="noopener" class="underline">Poudel et al., arXiv:2605.28730 (Fig. 5)</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">기억할 한 줄: <strong>"AlphaTransit이 본 진실은 결합의 진실이다."</strong> 학습 하나로도, 탐색 하나로도 충분하지 않다. 도시 인프라처럼 long-horizon이고 보상이 sparse한 문제에서는 — 두 가지가 손을 잡을 때 비로소 의미 있는 차이가 생긴다. AlphaGo가 게임판에서 보여줬던 진실을, AlphaTransit이 도로망에서 다시 보여주었다.</p>
+                    </div>
+                </section>
+
+                <!-- Section 4: AlphaGo가 도시에 도착하다 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">AlphaGo가 도시에 도착하다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">"AlphaTransit"이라는 이름은 우연이 아니다. <strong>AlphaGo → AlphaZero → MuZero → AlphaFold</strong>로 이어진 DeepMind 계열의 패러다임 — <strong>학습된 정책가치 함수 + 탐색의 결합</strong> — 이 도시 인프라 설계에 도착한 것을 이름이 말해 준다. AlphaGo가 2016년 이세돌을 이긴 그 알고리즘의 본질은 "한 수씩 두면서 최종 결과를 보상으로 받는 순차 결정 문제"였다. 노선 설계는 정확히 같은 구조다 — 한 엣지씩 그리면서 마지막에 서비스율로 보상을 받는다.</p>
+
+                    <!-- Image: AlphaGo vs Lee Sedol Divine Move (Game 4) -->
+                    <figure class="my-8">
+                        <img src="./image/img-07-alphago-divine-move.jpg"
+                             alt="2016년 이세돌과 AlphaGo의 4국에서 이세돌이 둔 신의 한 수 78수가 표시된 바둑판 — AlphaGo 계보의 출발점이 된 역사적 대국"
+                             class="max-w-[560px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 2016년 AlphaGo vs 이세돌 4국 — 한 수씩 두며 최종 결과를 보상으로 받는 순차 결정 문제 | Source: <a href="https://commons.wikimedia.org/wiki/File:Lee-sedol-alphago-divine-move.jpg" target="_blank" rel="noopener" class="underline">Wikimedia Commons (CC BY-SA 4.0)</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>계보를 따라가 보면</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">DeepMind 계보의 시간순 정리. <strong>AlphaGo(2016)</strong> — 지도학습 + 자기대국 RL + MCTS의 결합으로 인간 챔피언을 이겼다. <strong>AlphaZero(2017)</strong> — 지도학습 없이 self-play만으로 같은 일을 했고, 바둑·체스·쇼기로 일반화됐다. <strong>MuZero(2019)</strong> — 환경 모델까지 학습해서 규칙을 모르는 게임도 풀었다. <strong>AlphaFold(2020)</strong> — 같은 패러다임의 변형이 단백질 접힘 문제를 풀었다. <strong>AlphaTransit(2026)</strong> — 도시 도로망 위에서 대중교통 노선을 설계한다. 진화의 방향은 점점 더 <strong>"규칙이 덜 명확하고 보상이 sparse한 실세계 문제"</strong>로 향한다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>도시 교통 RL의 흐름 속에서</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">도시 교통에 RL을 적용한 시도는 AlphaTransit이 처음은 아니다. <strong>신호등 제어</strong>는 2018년 이후 multi-agent RL의 표준 응용 분야가 됐다(SUMO·MATSim 기반 수많은 연구). <strong>차량 라우팅(vehicle routing)</strong>은 AlphaRouter 등 MCTS+RL 조합이 시도되었다. <strong>노선 휴리스틱 학습</strong>은 Lemoy 등(2024)이 GNN으로 evolutionary algorithm의 휴리스틱을 학습하는 하이브리드를 보였다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">AlphaTransit의 새로움은 <strong>"노선 자체를 처음부터 그린다"</strong>에 있다. 휴리스틱을 돕는 것이 아니라, 휴리스틱을 대체한다. 합성 벤치마크가 아닌 실제 도시에서. 그리고 <strong>AlphaGo 계보의 우아한 패턴</strong>을 도시 인프라 설계에 그대로 가져왔다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">학술적 함의는 한 줄이다. <strong>게임·바이오에서 검증된 "학습된 안내 + 탐색" 패러다임이, 도시 인프라라는 사회 시스템으로 확장되고 있다.</strong> 다음 차례는 무엇일까. 학군 배치? 응급실 입지? 우편 분류망? 폐기물 수거 노선? 각각 같은 구조의 문제이고, 같은 패러다임이 닿을 수 있다.</p>
+                    </div>
+                </section>
+
+                <!-- Section 5: 서울이라면 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">서울이라면 어떨까</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">Bloomington은 작다. 인구 약 8만, 16개 노선. 그 위에서 작동한 알고리즘이 서울에서도 작동할까. 이 질문을 정직하게 답하려면, 먼저 두 도시의 거리감을 봐야 한다.</p>
+
+                    <!-- Image: Seoul blue trunk bus (route 150) -->
+                    <figure class="my-8">
+                        <img src="./image/img-08-seoul-bus.jpg"
+                             alt="서울 시내를 달리는 파란색 간선버스 150번 — 2004년 버스 개편으로 도입된 4분류 체계(간선·지선·광역·순환)의 간선 노선"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 서울 간선버스 150번 — 2004년 개편 이래 350+ 노선이 도시 단위로 운영된다 | Source: <a href="https://commons.wikimedia.org/wiki/File:Seoul_Bus_150.jpg" target="_blank" rel="noopener" class="underline">Wikimedia Commons (CC BY-SA 3.0)</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">항목</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Bloomington, IN</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">서울특별시</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">인구</td>
+                                    <td class="border themeable-border px-4 py-3">약 8만</td>
+                                    <td class="border themeable-border px-4 py-3">약 940만 (120배)</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">버스 노선 수</td>
+                                    <td class="border themeable-border px-4 py-3">16개</td>
+                                    <td class="border themeable-border px-4 py-3">350+ 개 (20배 이상)</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">정류장 수</td>
+                                    <td class="border themeable-border px-4 py-3">수백 개</td>
+                                    <td class="border themeable-border px-4 py-3">8,200+ 개</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">다중 모드</td>
+                                    <td class="border themeable-border px-4 py-3">버스만</td>
+                                    <td class="border themeable-border px-4 py-3">버스 + 지하철 12개 노선 + 광역철도</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>2004년 서울 버스 개편이라는 선례</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">서울은 이미 도시 단위 버스망 재설계를 경험했다. <strong>2004년 7월 1일, 1년 반의 준비 끝에 서울시는 버스 시스템 전체를 한꺼번에 바꿨다.</strong> 간선·지선·광역·순환의 4분류 체계, 환승 할인 통합, 중앙버스전용차로, 그리고 도시 단위로 다시 그린 노선망. <strong>1년 후 일일 승객 +14%, 만족도 14.2%에서 36.9%로</strong> 상승했다. 인간 도시계획가들이 도시 단위 노선 개편이 실제로 가능하고, 효과가 있음을 증명한 역사적 사례다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">AlphaTransit이 서울에 적용된다면 마주칠 변수들은 단순하지 않다. <strong>규모</strong> — Bloomington 노드 수의 수십 배. 강화학습의 sample efficiency가 견딜 것인가. <strong>다중 모드</strong> — 지하철 12개 노선과의 환승 최적화는 본 논문의 범위 밖이다. <strong>정치적 변수</strong> — 노선 폐지는 종사자 일자리, 노선 인근 상권에 직결된다. 알고리즘이 다루지 않는다. <strong>형평성</strong> — 서비스율 최대화는 인구 밀집 지역에 노선을 몰아 넣을 수 있다. 변두리 노약자는 어디로 가나.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">그러나 부분 적용은 이미 가능한 것처럼 보인다. <strong>마을버스 같은 feeder 라인 재설계</strong>, <strong>신도시 초기 노선 설계</strong>(이미 그려진 노선이 없으므로 정치적 비용이 낮다), <strong>폐지 후보 노선의 영향 시뮬레이션</strong>. AlphaTransit은 "AI가 서울 버스를 다시 그린다"의 데모가 아니다. <strong>인간 도시계획가의 의사결정을 보조하는 시뮬레이터</strong>의 첫 진지한 모델이다. 그 거리감을 정직하게 인정할 때 응용이 시작된다.</p>
+                    </div>
+                </section>
+
+                <!-- Section 6: UrbanGPT와 만나는 자리 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">UrbanGPT와 만나는 자리 — 페블러스 관점</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">페블러스가 본 도시 설계 AI의 풍경은 두 갈래로 갈라진다. 한쪽은 <strong>텍스트로 도시를 그리는 흐름</strong> — Studio Tim Fu의 <a href="/project/UrbanGPT/urbangpt2-pebblous/ko/" class="text-orange-500 hover:underline">UrbanGPT 2.0</a>이 대표한다. "공원이 있고 학교 옆에 카페가 있는 거리"라는 한 줄을 3D 도시 레이아웃으로 바꾼다. 다른 한쪽은 <strong>강화학습으로 흐름을 그리는 길</strong> — 오늘의 AlphaTransit이다. "이 도시의 OD 수요가 이렇다"라는 데이터를 노선 네트워크로 바꾼다. 둘은 같은 큰 흐름의 다른 단면이다 — <strong>AI가 도시의 형태와 흐름을 생성한다.</strong></p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>Spatial AI 5기준으로 AlphaTransit을 읽으면</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">페블러스가 제안한 <a href="/project/UrbanGPT/spatial-ai-pebblous/ko/" class="text-orange-500 hover:underline">Spatial AI 평가 5기준</a>의 관점에서 AlphaTransit을 짚으면, 강점과 빈자리가 또렷이 보인다.</p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">평가 기준</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">AlphaTransit 평가</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">근거</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">Geo 정합성</td>
+                                    <td class="border themeable-border px-4 py-3">✓ 강함</td>
+                                    <td class="border themeable-border px-4 py-3">실제 도로망과 census 좌표 사용</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">Scale 일관성</td>
+                                    <td class="border themeable-border px-4 py-3">✓ 강함</td>
+                                    <td class="border themeable-border px-4 py-3">실제 Bloomington 인프라 1:1</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">시나리오 다양성</td>
+                                    <td class="border themeable-border px-4 py-3">△ 부분적</td>
+                                    <td class="border themeable-border px-4 py-3">혼합·전면 대중교통 2개. 출퇴근·심야·이벤트 미반영</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">Sim-to-Real Gap</td>
+                                    <td class="border themeable-border px-4 py-3">△ 부분적</td>
+                                    <td class="border themeable-border px-4 py-3">실제 운영망과 정량 비교. 그러나 시뮬레이션 한계 인정 필요</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">인간 협업 / 위험 추적</td>
+                                    <td class="border themeable-border px-4 py-3">✗ 부재</td>
+                                    <td class="border themeable-border px-4 py-3">형평성·접근성 패널티 없음. 시민 피드백 루프 없음</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">5기준 중 두 개에서 강하고, 두 개에서 부분적이며, 한 개에서 부재하다. <strong>AlphaTransit은 데이터 정합성·스케일 일관성에서는 모범적</strong>이다. 합성 도시가 아닌 실제 Bloomington 위에서 작동했다는 것이 그 자체로 가치다. 그러나 <strong>시민이 알고리즘에 어떻게 참여하는가, 형평성을 어떻게 보장하는가</strong>는 본 논문 범위 밖이다. 도시 설계 AI는 알고리즘 문제가 아니라 <strong>데이터 + 알고리즘 + 사회 시스템의 합산 문제</strong>임을 다시 한번 보여 준다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>페블러스가 그 자리에 있는 이유</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">페블러스는 <strong>학습 데이터의 품질</strong>이라는 자리를 노린다. AlphaTransit이 학습하는 OD 수요·도로망·census 데이터의 정합성이 보장될 때, 알고리즘의 출력도 신뢰할 수 있다. 학습 데이터가 편향되면 노선도 편향된다 — 변두리 인구가 OD에 덜 잡혀 있으면, 알고리즘은 그곳에 노선을 덜 그린다. <strong>데이터 품질이 도시의 형평성을 결정한다.</strong> 페블러스의 DataGreenhouse와 DataClinic은 그 지점에서 도시 설계 AI에 닿는다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">UrbanGPT가 도시의 <strong>형태(form)</strong>를 생성한다면, AlphaTransit은 도시의 <strong>흐름(flow)</strong>을 설계한다. 형태와 흐름은 떼어놓을 수 없다 — 공원이 어디에 있는지가 버스 노선을 결정하고, 버스가 어디로 가는지가 카페의 위치를 결정한다. 페블러스는 두 흐름이 만나는 자리에서, 데이터가 양쪽 모두를 받쳐 줄 수 있도록 돕는 역할을 본다.</p>
+                    </div>
+                </section>
+
+                <!-- Section 7: 다음 한 걸음 -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">도시 설계 AI의 다음 한 걸음</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">AlphaTransit이 푼 것을 한 문장으로 정리하면 — <strong>TRNDP를 실제 도시 데이터 위에서 MCTS와 정책가치망의 결합으로 풀 수 있음을 정량으로 보였다.</strong> AlphaGo 계보의 우아한 패턴이 도시 인프라 설계라는 사회 시스템에 닿은 사건이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">남은 일은 정직하게 길다. <strong>메가시티 스케일링</strong> — 서울·도쿄·NYC로 갈 때 sample efficiency와 탐색 비용이 폭발하지 않을 것인가. <strong>다중 모드 통합</strong> — 버스만이 아니라 지하철·자전거 공유·자율주행 셔틀까지 함께. <strong>동적 수요</strong> — 출퇴근·심야·축제·재난의 모든 시간대. <strong>형평성·접근성</strong> — 변두리 노약자가 보상 함수에 들어오게. <strong>시민 피드백</strong> — 알고리즘의 출력이 토론·청문·재학습으로 이어지게.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">그러나 첫발이 가벼운 것은 아니다. AlphaTransit이 보여 준 것은 <strong>"알고리즘이 도시를 더 잘 설계할 수 있을 가능성"</strong>이 아니라 <strong>"학습된 안내와 탐색의 결합이 도시 노선 설계에서 의미 있는 수치 차이를 만든다"</strong>이다. 그 사이의 거리는 크다 — 그러나 알고리즘이 도시에서 무엇을 할 수 있는지에 대한 우리의 지도는, 어제보다 한 칸 더 명확해졌다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">마지막 질문 하나. <strong>도시는 알고리즘이 설계하는가, 시민이 설계하는가, 둘이 함께 설계하는가?</strong> AlphaTransit은 그 대화의 시작이지, 답이 아니다. 페블러스는 그 대화가 데이터의 품질로부터 출발한다고 본다 — 알고리즘은 자기가 본 데이터만큼만 도시를 본다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6">당신이 매일 타는 버스 노선이 어떻게 그 길을 가게 되었는지, 이제는 조금 다르게 보일 것이다. 그것은 단순히 누군가의 결정이 아니라, 데이터·알고리즘·정치·역사가 누적된 산물이다. 그리고 그 위에 — 학습과 탐색을 함께 쓰는 작은 에이전트가 막 도착했다.</p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>페블러스 데이터 커뮤니케이션팀</strong><br>
+                        <span class="themeable-muted text-sm">2026년 5월 28일</span>
+                    </p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">참고문헌</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">본 글이 인용한 1차 출처와 주요 2차 자료를 정리한다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 1차 출처</h3>
+                    <ol class="reference-list space-y-2 mb-6 ml-6 themeable-text leading-relaxed">
+                        <li>Poudel, B., Swaminathan, S., &amp; Li, W. (2026). "AlphaTransit: Learning to Design City-scale Transit Routes." <span class="font-semibold">arXiv:2605.28730</span>. <a href="https://arxiv.org/abs/2605.28730" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">링크</a></li>
+                        <li>AlphaTransit 코드 저장소 (저자 GitHub). <a href="https://github.com/poudel-bibek/AlphaTransit" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">github.com/poudel-bibek/AlphaTransit</a></li>
+                        <li>Silver, D., et al. (2017). "Mastering the Game of Go without Human Knowledge" (AlphaZero). <span class="font-semibold">Nature, 550</span>. <a href="https://www.nature.com/articles/nature24270" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">링크</a></li>
+                        <li>Lemoy, R., et al. (2024/2025). "Learning Heuristics for Transit Network Design and Improvement with Deep Reinforcement Learning." <span class="font-semibold">arXiv:2404.05894 / Transportmetrica B 13(1)</span>. <a href="https://arxiv.org/abs/2404.05894" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">링크</a></li>
+                    </ol>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">서울 버스 개편 사례</h3>
+                    <ol class="reference-list space-y-2 mb-6 ml-6 themeable-text leading-relaxed" start="5">
+                        <li>Seoul Solution / Seoul Metropolitan Government. "Reforming Public Transportation in Seoul." <a href="https://www.seoulsolution.kr/en/content/1803" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">링크</a></li>
+                        <li>UN-Habitat (2013). "Bus Reform in Seoul, Republic of Korea." Case Study Report. <a href="https://unhabitat.org/sites/default/files/2013/06/GRHS.2013.Case_.Study_.Seoul_.Korea_.pdf" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">링크</a></li>
+                        <li>Streetsblog USA (2018). "What American Cities Can Learn From Seoul's 2004 Bus Redesign." <a href="https://usa.streetsblog.org/2018/09/04/what-american-cities-can-learn-from-seouls-2004-bus-redesign" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">링크</a></li>
+                    </ol>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스 시리즈</h3>
+                    <ol class="reference-list space-y-2 mb-6 ml-6 themeable-text leading-relaxed" start="8">
+                        <li>페블러스 (2026). "UrbanGPT 2.0 — 텍스트 한 줄로 도시를 설계하다." <a href="/project/UrbanGPT/urbangpt2-pebblous/ko/" class="text-orange-500 hover:underline">링크</a></li>
+                        <li>페블러스 (2026). "Spatial AI에 점수를 매긴다면 — PebbloSim 관점의 평가 5기준." <a href="/project/UrbanGPT/spatial-ai-pebblous/ko/" class="text-orange-500 hover:underline">링크</a></li>
+                    </ol>
+                </section>
+
+                <!-- FAQ Section (placeholder — config.faqs renders) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260528"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "당신이 타는 버스를 AI가 다시 그린다면",
+            subtitle: "AlphaTransit이 보여준 MCTS + 정책가치망의 도시 노선 설계 — Bloomington 54.6% / 82.1%",
+            pageTitle: "AlphaTransit — AI가 도시 대중교통 노선을 설계한다 (MCTS + 정책가치망) | 페블러스",
+            category: "tech",
+            publishDate: "2026-05-28",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/alphatransit-rl-city-transit-design/ko/",
+            tags: ["AlphaTransit", "AI 도시 설계", "강화학습", "MCTS", "대중교통", "TRNDP",
+                   "AlphaGo 계보", "UrbanGPT", "Spatial AI", "PebbloSim", "Pebblous"],
+            faqs: [
+                { question: "AlphaTransit이 정확히 무엇인가요?", answer: "Bibek Poudel, Sai Swaminathan, Weizi Li가 2026년 5월 27일 공개한 강화학습 기반 도시 대중교통 노선 설계 시스템입니다(arXiv:2605.28730). MCTS(Monte Carlo Tree Search)와 신경망 정책가치 함수를 결합해 도시 도로망 위에서 K개의 노선을 순차적으로 그려 나갑니다. AlphaGo·AlphaZero의 패러다임을 도시 인프라 설계에 적용한 첫 진지한 사례 중 하나입니다." },
+                { question: "MCTS와 정책가치망의 결합이 왜 중요한가요?", answer: "도시 노선 설계는 long-horizon credit assignment 문제입니다. 한 노선의 가치가 다른 모든 노선이 그려진 뒤에야 평가되기 때문입니다. 학습(정책가치망)만 쓰면 long-horizon에서 가치 추정이 흐릿해지고, 탐색(MCTS)만 쓰면 광활한 행동 공간을 비효율적으로 살펴봐야 합니다. AlphaTransit은 두 가지를 결합하는 쪽이 단독 사용보다 효과적임을 정량으로 보였습니다. 혼합 수요에서 +9.9%p, 전면 대중교통에서 +11.4%p의 차이입니다." },
+                { question: "Bloomington 결과의 54.6%와 82.1%는 무엇을 의미하나요?", answer: "Bloomington 도로망과 인구조사 기반 통근 수요 데이터에서 측정한 서비스율입니다. 54.6%는 차량과 대중교통이 공존하는 혼합 수요(mixed demand) 시나리오, 82.1%는 모든 통근이 대중교통으로 흡수되는 전면 대중교통(full transit demand) 극한 시나리오에서 AlphaTransit이 달성한 수치입니다. 두 시나리오 모두에서 RL 단독·MCTS 단독을 의미 있게 압도했습니다." },
+                { question: "AlphaTransit이 서울 버스 노선 설계에도 쓰일 수 있나요?", answer: "직접 적용은 어렵습니다. Bloomington은 인구 8만, 16개 노선의 작은 도시이고 서울은 940만, 350+ 노선에 지하철 12개와 통합 운영됩니다. 규모(sample efficiency), 다중 모드 환승, 정치적 변수(노선 폐지 비용), 형평성 모두 본 논문 범위 밖입니다. 그러나 부분 적용은 가능합니다 — 마을버스 같은 feeder 라인 재설계, 신도시 초기 노선 설계, 폐지 후보 노선의 영향 시뮬레이션 등이 현실적 첫 응용 후보입니다." },
+                { question: "AlphaGo 계보에서 AlphaTransit의 위치는?", answer: "AlphaGo(2016, 바둑) → AlphaZero(2017, 다중 게임) → MuZero(2019, 모델 학습) → AlphaFold(2020, 단백질) → AlphaTransit(2026, 도시 노선). 공통 패러다임은 '학습된 정책가치 함수 + 탐색의 결합으로 long-horizon 순차 결정 문제를 푼다'입니다. AlphaTransit은 그 패러다임이 게임·바이오를 거쳐 도시 인프라라는 사회 시스템에 닿은 사건입니다." },
+                { question: "TRNDP가 왜 그렇게 어려운 문제인가요?", answer: "TRNDP(Transit Route Network Design Problem)는 NP-hard 조합 최적화입니다. 도로망 노드가 100개만 되어도 가능한 노선 조합이 천문학적이고, 노선 간 상호작용이 존재합니다. 더 어려운 것은 delayed feedback입니다 — 한 노선의 가치는 모든 노선이 그려진 뒤 시뮬레이션해야 알 수 있어, 강화학습의 long-horizon credit assignment 문제가 됩니다. 1970년대부터 MILP·유전 알고리즘·시뮬레이티드 어닐링이 시도되었지만 도시 규모로 가면 폭발했습니다." },
+                { question: "페블러스의 Spatial AI 5기준으로 보면 AlphaTransit은?", answer: "Geo 정합성(실제 도로망/좌표)·Scale 일관성(실제 Bloomington 인프라)에서는 ✓ 강함. 시나리오 다양성(혼합/전면 2개만)·Sim-to-Real Gap(실제 운영망과 비교는 했으나 시뮬레이션 한계 존재)에서는 △ 부분적. 인간 협업/위험 추적(형평성·접근성 패널티 부재, 시민 피드백 루프 없음)에서는 ✗ 부재. 도시 설계 AI는 알고리즘만의 문제가 아니라 데이터 + 알고리즘 + 사회 시스템의 합산 문제임을 다시 보여 줍니다." },
+                { question: "AlphaTransit과 UrbanGPT 2.0의 관계는?", answer: "둘은 '도시 설계 AI'라는 큰 흐름의 다른 단면입니다. UrbanGPT 2.0(Studio Tim Fu)은 자연어로 도시의 형태(form) — 공원·건물·거리 — 를 생성합니다. AlphaTransit은 강화학습으로 도시의 흐름(flow) — 버스 노선 네트워크 — 을 설계합니다. 형태와 흐름은 떼어놓을 수 없습니다. 공원이 어디 있는지가 노선을 결정하고, 버스가 어디로 가는지가 카페 위치를 결정합니다. 페블러스는 두 흐름이 만나는 자리에서 데이터 품질이 양쪽을 받쳐 주는 역할을 봅니다." }
+            ]
+        });
+    </script>
+</body>
+</html>
