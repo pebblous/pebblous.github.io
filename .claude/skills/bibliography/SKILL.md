@@ -252,11 +252,29 @@ Phase 7 (SEO) → citation_* 메타 검증
 
 ### blog-produce에서 호출
 
-```
-Phase 4 (HTML 작성) → 참고문헌이 있는 경우만
-  - references.json 없으면 스킵
-  - 있으면 .reference-list로 렌더링
-```
+심층 보고서(report-produce)뿐 아니라 **일반 블로그도 외부 사료가 누적되면 동일하게 호출**한다. 트리거는 두 지점:
+
+1. **Phase 2.5 — references.json 생성 (research phase 마무리 시)**
+
+   리서치 결과(`_workspace/01_research.md` 또는 `research_*.md`)에 다음 중 하나라도 **≥ 3건** surfaced 됐으면 **필수**:
+   - 학술 논문 (arxiv, journals, preprints)
+   - 외부 사건 보도 (메이저 언론, 회사 공식 블로그, 보도자료)
+   - 공식 문서 (정부 정책, 종교 교의, 회사 statement, system card 등)
+   - 인용 가능한 공개 데이터 / 보고서
+
+   호출:
+   ```
+   Skill(bibliography) — 입력: research markdown
+   ```
+
+   출력: `[category]/[slug]/references.json` (KO/EN 공유 SSOT)
+
+2. **Phase 3/4 — HTML 렌더링 (write phase)**
+   - `references.json` 있으면 **반드시** `.reference-list` 섹션 렌더링 (FAQ 다음)
+   - TOC 항목 + Google Scholar 메타 + citation-download 버튼 함께
+   - 4건 이상이면 카테고리 분류 (학술 / 업계·보도 / 공식 문서)
+
+> ⚠️ 결함 사례 (2026-05-26 PR #228 종교와 AI): research가 외부 사료 6건(Dawkins-Claude 72시간 대화, Vatican Antiqua et Nova, Spiralism Rolling Stone, Anthropic System Card, Chalmers Hard Problem, Pascal's Wager) 발견했으나 Phase 2.5 트리거가 명시되지 않아 references.json 미생성 → reference-list + Scholar 메타 + citation-download 모두 누락. 본 트리거 명시(2026-05-28 fix)가 그 방지.
 
 ### dc-story-produce에서 호출
 
