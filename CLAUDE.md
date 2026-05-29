@@ -190,7 +190,12 @@ This auto-loads: Header, Footer, BreadcrumbList Schema, FAQ Schema (JSON-LD), Re
   렌더링 결과: `날짜 | 팀명 | ~N분 | English | [공유아이콘]` (1줄 가로, `.hero-meta-group`)
   - readTime은 `config.wordCount / 500`으로 자동 계산 (wordCount 없으면 `<main>` 텍스트에서 계산)
   - 언어 전환: fetch HEAD로 상대 언어 페이지 존재 확인, 없으면 한글로 fallback
-- FAQ: use ONLY `config.faqs` — NEVER add FAQPage JSON-LD in `<head>` (causes Google duplication errors)
+- **⛔ JSON-LD — 정적 `<head>` 삽입 금지, 전부 `PebblousSchema` 런타임 주입에 위임**:
+  `PebblousPage.init()`이 `PebblousSchema`(scripts/common-utils.js)를 통해 **Article/TechArticle, BreadcrumbList, FAQPage, Person 스키마를 모두 런타임에 동적 주입**한다. HTML `<head>`에 `<script type="application/ld+json">`로 스키마를 직접 박지 말 것.
+  - 정적 + 동적이 동시에 있으면 Google Rich Results가 **"Articles 2 items detected" 중복 경고**를 띄우고 둘 다 무효화될 수 있다.
+  - Article/TechArticle 동적 주입 조건: `config`에 `mainTitle` + `subtitle` 존재 (+ `category`, `publishDate` 권장). 이 조건만 충족하면 정적 블록은 불필요.
+  - FAQ는 `config.faqs`로만 정의 — `<head>`에 FAQPage JSON-LD 직접 추가 금지.
+  - 배경·103개 중복 현황·페이지별 제거 절차: [`docs/google-rich-results-memo.md`](docs/google-rich-results-memo.md) §4, 진단 도구 `tools/audit-jsonld.py`, 리포트 `tools/jsonld-audit-report.md`.
 - Always use `/scripts/common-utils.js` — never `/js/article-page.js` (deprecated)
 
 ### Module System (`scripts/common-utils.js`)
@@ -375,37 +380,6 @@ The `key-insight` box provides the teal-bordered highlight. Content should be 3 
 - **Text-First, Visual-Second**: Always place explanation paragraph before any chart/card/diagram
 - Source MD documents are the narrative backbone — preserve original sentences
 - Featured articles: max 3 per category
-- **⛔ Stat-card 그리드 최대 4칸**: Executive Summary 등의 stat-card 그리드는 `grid-cols-2 sm:grid-cols-2 lg:grid-cols-4` 까지만 사용. 5칸(`lg:grid-cols-5`) 금지 — 데스크탑에서도 텍스트 캡션이 좁아져 카드 밖으로 넘침. 더 많은 지표가 필요하면 두 줄(grid 자체 wrap) 또는 본문 표로 분리.
-- **카드 내 텍스트 캡션 길이**: 카드 안의 `<p class="text-xs themeable-muted">` 보조 캡션은 **한 줄 30자(한글) / 40자(영어) 이내**가 안전. 더 길면 `word-break: keep-all` 적용된 themeable-card에서도 자연스러운 줄바꿈이 어렵다. 필요하면 핵심 한 줄로 압축하고 부가 설명은 본문 단락으로 옮긴다.
-
-### ⛔ 한국어 본문 — 영어 용어 도입 규칙
-
-한국어 본문(`*/ko/index.html`)에서 학술·기술 용어를 **처음 등장시킬 때 영어를 단독으로 쓰지 않는다.** 반드시 한글 이름·정의를 먼저 쓰고 괄호로 영어를 보충한다. 두 번째 등장부터는 약어/영문 단독 사용 가능.
-
-```
-❌ 금지 (영어 단독 도입)
-- TRNDP(Transit Route Network Design Problem)
-- delayed feedback
-- long-horizon credit assignment
-- Policy Network / Value Network
-- sparse reward
-
-✅ 정답 (한글 이름·정의 우선)
-- 대중교통 노선망 설계 문제(TRNDP, Transit Route Network Design Problem)
-- 지연된 피드백(delayed feedback)
-- 긴 호흡 신용 할당(long-horizon credit assignment)
-- 정책망(Policy Network) / 가치망(Value Network)
-- 희소한 보상(sparse reward)
-```
-
-**예외**:
-- 고유명사·제품명(AlphaGo, AlphaTransit, MCTS, GPT, ChatGPT 등) — 한글 번역 강제 안 함
-- 코드/CLI 명령(`git`, `python`, `npm install`) — 영문 그대로
-- 약어가 학계 표준으로 정착된 경우 — 첫 등장 시 풀네임 한 번만, 이후 약어 OK
-
-**왜**: 한국어 독자의 가독성, 일반 독자(데이터 비전공자) 친화성, SEO(한글 키워드 노출), 페블러스 시그니처 톤(사색적·날카롭되 따뜻). 데이터 실무자도 한글 이름으로 한 번 통과해야 개념이 마음에 박힌다.
-
-세부: `docs/post-writing-lessons-for-pb.md` "한국어 본문 영어 용어 도입" 절 참조.
 
 ### File Structure
 ```
