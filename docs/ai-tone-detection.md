@@ -154,11 +154,26 @@ done
 | `blog-produce` | Phase 3.5 (작성 → 퍼블리싱 사이) | 항상 호출 |
 | `report-produce` | Phase 5-E (자기검증의 마지막 단계) | 항상 호출 (KO·EN) |
 | `report-produce-express` | Phase 5-A 직후 (express는 JH 검토 없음) | 항상 호출, 임계치 0.4 이상이면 자동 교정 |
+| `sns-write` | **7-B 단계** (작성 후 voice 검증 직후) | 항상 호출, SNS 임계치 적용 |
 | `dc-story-produce` | Phase 4 자기검증 단계 | 학술 톤 강한 경우만 |
 | `pb-story-produce` | Phase 2 직후 | 항상 호출 |
 
 검증 결과는 `_workspace/[slug]/0X_prose_diagnosis.md`에 보관.
 자동 교정 결과는 `_workspace/[slug]/0X_prose_humanized.md`에 보관 후 HTML에 적용.
+
+### SNS 임계치 — 본문보다 엄격하게 (2026-05-31 도입)
+
+SNS 카피는 본문보다 짧고 호흡이 빠르다. 같은 tell이 더 두드러지므로 임계치가 다르다:
+
+| Tell | 본문 임계치 | SNS 임계치 |
+|------|-----------|-----------|
+| T1 em-dash | 1/500자 이상 | **1/600자 이상** (LinkedIn/Facebook) / **0개** (Twitter/X) |
+| T8 수치 과적재 | 한 문장 4개 | **한 슬롯 2개** (Twitter), **한 단락 3개** (LinkedIn) |
+| T9 3단 병렬 | 모든 문단 | **슬롯당 1회만** |
+| T11 자사 점프 | 점프 금지 | **카피 톤 단언 0건** ("정조준한다·격상한다·5부작의 마지막" 류) |
+| T4 메타 예고문 | 0 권장 | **0 필수** |
+
+SNS 자기검증 자세한 룰은 `.claude/skills/sns-write/SKILL.md` 8절 참조.
 
 ---
 
@@ -187,6 +202,7 @@ done
 - **2026-05-31 v1**: Evans Nature 2026 글의 사후 교정 작업에서 도출된 11 tell 패턴을 정본화.
   - 직전 트리거: JH 피드백 "em-dash 좋게 생각 안 함" + "AI스러움 지우기"
   - 도입 직후 후순위 검수 대상: SkillOpt(2026-05-27), MUSE-Autoskill(2026-05-28), PIPEDA(2026-05-29), Evans Nature(2026-05-31) — em-dash 빈도 1/238~277자 시리즈 4편
+- **2026-05-31 v2** (같은 날 보강): Evans Nature 2026 SNS 카피 정제 경험에서 SNS 전용 임계치 도출. `sns-write` 7-B 단계에 ko-prose-humanizer 필수 호출 연결. SNS는 본문보다 엄격(em-dash 1/600자, 자사 점프 톤 0건). `sns-write/SKILL.md` 8절 "SNS 전용 추가 룰" 신설.
 
 ---
 
