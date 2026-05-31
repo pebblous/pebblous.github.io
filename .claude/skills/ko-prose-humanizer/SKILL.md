@@ -254,8 +254,23 @@ ALWAYS 다음 순서로 출력한다:
 | **ko-prose-humanizer** | 보이스가 정해진 글의 표면 질감 측정·교정 | 게시 전 마지막 검수 단계 |
 | **text-reinforce** | 본문 분량·깊이 보강 (사실 추가) | 초고 작성 후 |
 | **blog-polish** / **blog-polish-ko** | 제목·리드·소제목 다듬기 | 마무리 단계 |
+| **sns-write** | 블로그 글의 SNS 카피 생성 | 본문 발행 후. 7-B 단계에서 ko-prose-humanizer 필수 호출 |
 
-**호출 순서 권장**: 작성 → text-reinforce → voice-edit (필요 시) → **ko-prose-humanizer** → blog-polish → seo-check
+**호출 순서 권장**: 작성 → text-reinforce → voice-edit (필요 시) → **ko-prose-humanizer** → blog-polish → seo-check → (게시 후) sns-write → **ko-prose-humanizer** (SNS 슬롯별)
+
+### SNS 임계치 — 본문보다 엄격하게 (2026-05-31 추가)
+
+SNS 카피는 본문보다 짧고 호흡이 빠르므로 같은 tell이 더 두드러진다. `sns-write` 7-B 단계에서 ko-prose-humanizer를 호출할 때 다음 임계치를 사용:
+
+| Tell | 본문 임계치 | SNS 임계치 |
+|------|-----------|-----------|
+| T1 em-dash | 1/500자 이상 | **1/600자 이상** (LinkedIn/Facebook) / **0개** (Twitter/X) |
+| T8 수치 과적재 | 한 문장 4개 | **한 슬롯 2개** (Twitter), **한 단락 3개** (LinkedIn) |
+| T9 3단 병렬 | 모든 문단 | **슬롯당 1회만** |
+| T11 자사 점프 | 점프 금지 | **카피 톤 단언("정조준한다·격상한다·5부작의 마지막") 0건** |
+| T4 메타 예고문 | 0 권장 | **0 필수** (한 번이라도 나오면 카피 전체가 가벼워짐) |
+
+SNS 자기검증 자세한 룰은 `.claude/skills/sns-write/SKILL.md` 8절 "SNS 전용 추가 룰" 참조.
 
 ---
 
