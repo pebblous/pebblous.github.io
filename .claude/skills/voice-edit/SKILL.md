@@ -130,6 +130,7 @@ Read .claude/skills/voice-edit/voices/{voice}.md
 - **voice-essay**: 이 voice-edit의 alias. 기존 호출 호환을 위해 유지. 내부적으로 `--voice=default`로 위임.
 - **sns-write**: SNS 카피 생성 전용. voice 선택 시 `voices/sns-cover.md`(기본) 또는 `voices/reflective.md`(장문 에세이 슬롯) 참조.
 - **blog-polish**: 제목·리드·섹션 헤딩만 다듬는 가벼운 톤 변경. 본문 전체 리라이트가 아닐 때.
+- **ko-prose-humanizer**: voice-edit이 "어떤 보이스로 쓸지"를 다룬다면, ko-prose-humanizer는 글이 작성된 뒤 **"AI가 쓴 티"라는 표면 질감**을 측정·교정. voice-edit이 7원칙(거시적)을 본다면 ko-prose-humanizer는 11 tell(미시적 — em-dash 빈도, 명사형 종결, 메타 예고문, 자사 연결 작위성 등)을 본다. 호출 순서: voice-edit (작성 단계) → ko-prose-humanizer (게시 전 검수). 두 스킬의 grep 항목은 의도적으로 중복 — 같은 신호를 다른 단계에서 잡는다.
 
 ## 발전 방향
 

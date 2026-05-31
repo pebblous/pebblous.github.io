@@ -436,15 +436,16 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 4 --agent repor
 
 ### Phase 5: 품질 검증 + 보강
 
-Phase 4.5 승인 후, 퍼블리싱 전에 반드시 아래 **4단계(5-A ~ 5-D)** 를 실행한다. 각 서브단계별로 logger start/end를 호출.
+Phase 4.5 승인 후, 퍼블리싱 전에 반드시 아래 **5단계(5-A ~ 5-E)** 를 실행한다. 각 서브단계별로 logger start/end를 호출.
 
 ⛔ **Skip 정책 (객관 기준 — 주관 판단 금지)**:
 | 서브단계 | 무조건 호출 | Skip 가능 조건 |
 |---------|-----------|---------------|
 | 5-A 자기검토 | ✅ 항상 | (skip 불가) |
 | 5-B text-reinforce | 항상 호출 | 결과적으로 보강할 곳이 0개여도 호출은 한다 |
-| 5-C image-reinforce | 항상 호출 | 본문 이미지가 4개 이상이고 핵심 주제 시각 자료가 포함된 경우만 skip 가능 — 그 외 일반론 / 본문 이미지 < 4 / 주제 매칭 부족 시 반드시 호출 |
+| 5-C image-reinforce | 항상 호출 | 본문 이미지가 4개 이상이고 핵심 주제 시각 자료가 포함된 경우만 skip 가능. 그 외 일반론 / 본문 이미지 < 4 / 주제 매칭 부족 시 반드시 호출 |
 | 5-D bibliography | references 4개 이상이면 항상 호출 | references < 4면 skip 가능 |
+| 5-E ko-prose-humanizer | ✅ 항상 (KO·EN 둘 다) | (skip 불가) |
 
 → "본문이 충분히 풍부하니까", "이미 충분히 길어서" 같은 주관 판단으로 skip하지 말 것. 객관 조건만 사용.
 
@@ -461,6 +462,9 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 5-C --agent ima
 
 python3 tools/report-produce-logger.py start --slug [slug] --phase 5-D --agent bibliography --model haiku
 python3 tools/report-produce-logger.py end --slug [slug] --phase 5-D --agent bibliography --status ok --notes "[references.json 항목 수]"
+
+python3 tools/report-produce-logger.py start --slug [slug] --phase 5-E --agent ko-prose-humanizer --model sonnet
+python3 tools/report-produce-logger.py end --slug [slug] --phase 5-E --agent ko-prose-humanizer --status ok --notes "[KO 총점, em-dash 빈도, 자동 교정 적용 여부]"
 ```
 
 #### 5-A: Content + Style Review (자기검토)
@@ -520,6 +524,56 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 5-D --agent bib
 - `grep -c "PebblousCitation.download" report/[slug]/{ko,en}/index.html` → 각 2 (BibTeX + RIS)
 - `grep -c "citation-download.js" report/[slug]/{ko,en}/index.html` → 각 1
 - `grep -c 'name="citation_title"' report/[slug]/{ko,en}/index.html` → 각 1
+
+#### 5-E: ko-prose-humanizer (신규 정식 편입 — 2026-05-31)
+
+⛔ **무조건 호출 — KO 본문 작성 직후, EN은 Phase 6 직후**
+
+스킬: `.claude/skills/ko-prose-humanizer/SKILL.md`. AI가 쓴 산문의 11종 표면 tell
+(em-dash 재진술·명사형 종결·메타 예고문·자사 연결 작위성 등)을 측정·교정.
+
+호출 흐름:
+```python
+# (1) 진단
+Skill(ko-prose-humanizer) — 입력: report/[slug]/ko/index.html
+# 출력: _workspace/report/05e_prose_diagnosis_ko.md
+#       (11 tell 점수표 + 증거 문구 + 가장 두드러진 tell 3개)
+
+# (2) 임계치 판정
+#   총점 ≥ 0.5: 자동 교정 1회 실행 (Skill 재호출 with --apply)
+#   총점 0.3~0.5: 진단만 로그에 기록, 자동 진행 (express 모드) 또는 JH 보고 (수동)
+#   총점 < 0.3: 통과
+
+# (3) 별도 임계치 (점수 무관 강제 트리거)
+#   T1 em-dash 빈도 1/300자 미만: 자동 교정
+#   T11 자사 연결 작위성 감지: 본문 마지막 단락의 자사 그루는 Editor's Note로 분리
+
+# (4) 교정 후 재진단
+#   재진단 후 총점 < 0.5 충족 시 통과
+```
+
+EN 글(Phase 6 직후)도 동일 절차 — `ko-prose-humanizer`의 영어 추가 패턴
+(delve / moreover / furthermore / paradigm shift / em-dash 남용)으로 EN 본문 진단.
+
+검증 grep (Phase 5-E 종료 직전):
+```bash
+# KO em-dash 빈도
+python3 -c "
+import re
+for f in ['report/[slug]/ko/index.html', 'report/[slug]/en/index.html']:
+    t=open(f).read(); t=re.sub(r'<meta[^>]*>|<script[^>]*>.*?</script>','',t,flags=re.DOTALL)
+    text=re.sub(r'<[^>]+>','',t); text=re.sub(r'\s+',' ',text)
+    n=text.count('—'); c=len(text)
+    print(f'{f}: {c}자 / em-dash {n} / 1/{c//max(n,1)}자')
+"
+# 기준: KO 1/500자 이상, EN 1/500자 이상이면 통과
+```
+
+> ⚠️ **결함 #6 사례 (2026-05-31, Evans Nature 2026)**: report-produce-express로 발행된
+> KO 본문이 em-dash 117개·1/237자로 JH 보이스 정본(0개·∞) 대비 과다. T1·T4·T11이
+> 점수 0.45로 누적되며 자사 연결("페블러스를 카테고리 리더로 격상")이 본문에 직접 점프.
+> 이 Phase 5-E의 도입이 그 방지. 시리즈 4편(SkillOpt·MUSE·PIPEDA·Evans)이
+> 동일 패턴을 공유하므로 도입 직후 후순위 검수 대상.
 
 ---
 

@@ -107,9 +107,32 @@ Agent(
 )
 ```
 
+### Phase 3.5: 산문 질감 자기검증 (ko-prose-humanizer, 신규 — 항상 호출)
+
+Phase 3 작성 직후 **반드시** `ko-prose-humanizer` 스킬을 호출해 AI 문체 11 tell을 측정한다.
+
+```
+Skill(ko-prose-humanizer) — 입력: [category]/[slug]/ko/index.html
+```
+
+판정 분기:
+- **총점 < 0.3** (110 만점에 33 미만): 사람 글에 가까움. 결과만 로그에 기록하고 Phase 4로.
+- **총점 0.3 ~ 0.5**: 교정 권장. 진단 결과를 보고하고 자동 교정 1회 적용 후 재진단.
+- **총점 ≥ 0.5**: 교정 강권. 자동 교정 + 재진단. 그래도 0.5 이상이면 사용자에게 보고.
+
+특히 다음 두 신호는 점수와 무관하게 별도 점검:
+- **T1 em-dash 빈도**: 1/500자 미만이면 OK. 1/300자 미만이면 경고. 1/250자 미만이면 자동 교정.
+- **T11 자사 연결 작위성**: 본문 마지막 단락에 "그러므로 페블러스의 ...이 자리에 선다" 류 점프가
+  있으면 Editor's Note로 분리하도록 권고.
+
+EN 글이면 동일하게 EN 파일에 대해 호출 (영어 추가 패턴 — delve, moreover, em-dash 남용 등).
+
+호출 결과는 `_workspace/03_prose_diagnosis.md`로 저장. 교정 결과가 있으면
+`_workspace/03b_prose_humanized.md`에 보관 후 HTML에 적용.
+
 ### Phase 4: 퍼블리싱
 
-Phase 3 완료 후 blog-publisher 서브 에이전트 실행:
+Phase 3.5 통과 후 blog-publisher 서브 에이전트 실행:
 
 ```
 Agent(
@@ -146,6 +169,11 @@ Agent(
 [blog-writer (general-purpose)]
     → [category]/[slug]/ko/index.html
     → _workspace/02_write_meta.json
+    ↓
+[ko-prose-humanizer (Skill)]
+    → 11 tell 진단 + 자동 교정 (필요시)
+    → _workspace/03_prose_diagnosis.md
+    → _workspace/03b_prose_humanized.md (교정 시)
     ↓
 [blog-publisher (general-purpose)]
     → OG 이미지 생성
