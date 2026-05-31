@@ -94,6 +94,30 @@ Article 필수 필드:
 }
 ```
 
+#### `provenance` 필드 (증적 — Engine 자율 운영 시 필수)
+
+Blog Service Engine 이 이 단계(publish-prep)를 실행한 경우, **프롬프트의 "## Provenance (증적)" 섹션에 `provenance` JSON 객체**가 주어진다. 그 객체를 **값 변경 없이 그대로** KO·EN **두 항목 모두**의 `provenance` 필드로 넣는다.
+
+```json
+{
+  "id": "[slug]-ko",
+  "...": "위 필수 필드",
+  "provenance": {
+    "mode": "attended | unattended",
+    "humanReviewed": true,
+    "trigger": { "source": "manual|api|mcp|webhook|scheduled", "actor": "...", "at": "ISO8601" },
+    "gates": [ { "phase": "write-ko", "resolution": "human_resumed|auto_passed", "by": "...", "at": "ISO8601" } ],
+    "engine": { "runId": "run-...", "version": "0.1.0" },
+    "recordedAt": "ISO8601"
+  }
+}
+```
+
+- 이 글이 *어떻게 시작되고(trigger), 만들어지고(gates), 검토됐는지*에 대한 증적이다.
+- `humanReviewed`: `true` → blog.pebblous.ai 에 **"사람 검토"** 배지, `false` → **"완전 자동"** 배지.
+- **사람이 직접 publish 하는 경우**(Engine 없이 수동)에는 이 필드를 생략해도 된다. validator 가 optional 로 처리하며, 배지는 표시되지 않는다.
+- 절대 임의로 값을 만들어 넣지 말 것 — 증적의 신뢰성이 깨진다. Engine 이 준 JSON 만 그대로 사용한다.
+
 ### 2.5. articles.json 검증
 
 articles.json 업데이트 직후 반드시 실행:
