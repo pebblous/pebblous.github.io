@@ -23,6 +23,7 @@ Usage:
   11. featured max 3 per cat    → 메인 카드 과다 표시
   12. image 필드 비어야 함       → 관례: 빈 문자열 기본
   13. language 필드 필수          → 언어 필터·카드 렌더링에 필수 (ko/en)
+  14. provenance 형상(optional)  → 있으면 배지 진실 소스, 형상만 검증 (없어도 정상)
 """
 
 import json
@@ -195,6 +196,31 @@ def validate_article(a, strict=True, auto_fix=False):
                         err(aid, f"path가 redirect stub(noindex) → 실제 콘텐츠 경로로 변경 필요 (--fix)")
             except Exception:
                 pass
+
+    # 14. provenance(증적) 형상 검증 — optional. 없으면 정상(수동 발행). 있으면 형상만 확인.
+    prov = a.get("provenance")
+    if prov is not None:
+        if not isinstance(prov, dict):
+            err(aid, "provenance 가 객체가 아님 — Engine 이 준 JSON 을 그대로 넣을 것")
+        else:
+            mode = prov.get("mode")
+            if mode not in ("attended", "unattended"):
+                err(aid, f"provenance.mode 값 이상: {mode!r} (attended|unattended 만 허용)")
+            if not isinstance(prov.get("humanReviewed"), bool):
+                err(aid, "provenance.humanReviewed 는 boolean 이어야 함 (배지의 진실 소스)")
+            trig = prov.get("trigger") or {}
+            if trig.get("source") not in ("manual", "api", "mcp", "webhook", "scheduled"):
+                err(aid, f"provenance.trigger.source 값 이상: {trig.get('source')!r}")
+            gates = prov.get("gates")
+            if gates is not None and not isinstance(gates, list):
+                err(aid, "provenance.gates 는 배열이어야 함")
+            elif isinstance(gates, list):
+                for g in gates:
+                    if isinstance(g, dict) and g.get("resolution") not in ("human_resumed", "auto_passed"):
+                        err(aid, f"provenance.gates[].resolution 값 이상: {g.get('resolution')!r}")
+            # 일관성: 완전 자동인데 사람 검토 표시면 모순 (배지가 거짓이 됨)
+            if mode == "unattended" and prov.get("humanReviewed") is True:
+                warn(aid, "provenance: mode=unattended 인데 humanReviewed=true — 모순(배지 오표시 가능)")
 
     return changed
 

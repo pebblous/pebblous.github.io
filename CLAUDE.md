@@ -527,6 +527,7 @@ For deeper reference, see `docs/`:
 - `docs/sns-writing-tone.md` — SNS "Warm Expert Tone" with data-farming metaphors
 - `docs/index-renovation.md` — Index page renovation history (P0-P3)
 - `docs/post-writing-lessons-for-pb.md` — pb(Pebblo Claw) 전용 포스팅 작성 가이드 (PR#23 리뷰 교훈)
+- `docs/ai-tone-detection.md` — **AI 문체 검출·교정 가이드** (T1~T11 11종 tell, BlogScope·외부 평가 에이전트 참조용 공식 문서)
 
 ## Skill Workflow Chain
 
@@ -537,20 +538,52 @@ For deeper reference, see `docs/`:
 ```
 1. 콘텐츠 작업 (new-post, bilingual, text-reinforce, fix, feature 등)
    ↓
-2. /seo-check [수정된 HTML 경로]   ← SEO 4계층 검증
+2. /ko-prose-humanizer [수정된 HTML 경로]   ← AI 문체 진단·교정 (신규, 2026-05-31)
    ↓
-3. /changelog                       ← 변경 이력 기록
+3. /seo-check [수정된 HTML 경로]            ← SEO 4계층 검증
    ↓
-4. /publish                         ← Tailwind 빌드 + commit 준비
+4. /changelog                                ← 변경 이력 기록
    ↓
-5. /commit                          ← 커밋 + push
+5. /publish                                  ← Tailwind 빌드 + commit 준비
+   ↓
+6. /commit                                   ← 커밋 + push
 ```
 
 **핵심 규칙:**
+- `/ko-prose-humanizer`는 갓 생성한 긴 한국어·영어 산문에 **반드시** 실행 (게시 전 마지막 검수). 단순 오탈자 교정·소소한 fix는 생략 가능
 - `/seo-check`은 새 페이지 생성 또는 메타태그 변경 시 **반드시** 실행
 - `/changelog`은 모든 콘텐츠 변경 후 **반드시** 실행 (수동 echo 대신 스킬 사용 권장)
 - `/publish`는 Tailwind 클래스 변경이 없어도 실행하면 안전 (빌드 + diff 확인)
-- 단순 텍스트 수정은 2-3을 생략하고 4-5만 해도 됨
+- 단순 텍스트 수정은 2-4를 생략하고 5-6만 해도 됨
+
+### AI 문체 검사 (ko-prose-humanizer)
+
+⛔ **블로그·리포트 첫 발행 또는 산문 대량 수정 시 반드시 호출.**
+
+스킬: [`.claude/skills/ko-prose-humanizer/SKILL.md`](.claude/skills/ko-prose-humanizer/SKILL.md)
+
+11종 tell 점검 (T1~T11). 각 0~10점, 합계/110으로 점수화:
+
+| 코드 | 패턴 | 자동 검출 grep |
+|------|------|---------------|
+| T1 | em-dash 동격 재진술 | `grep -c "—" <file>` (본문 1/500자 이상 권장) |
+| T2 | 명사형 종결 일색 | `grep -cE "이다\.\|점이다\.\|것이다\." <file>` |
+| T3 | "한 X" 반복 | `grep -c "한 줄\|한 자리\|한 좌표\|한 화면" <file>` |
+| T4 | 메타 예고문 | `grep -cE "옮긴다\|풀어 쓰자면\|짚어 본다\|묶어 본다" <file>` |
+| T5 | 영어 병기 강박 | 한국어 정의·이름 우선 정책 위배 |
+| T6 | 규칙적 볼드 요약 | 모든 섹션이 볼드 한 줄로 닫힘 |
+| T7 | 번역투 | `grep -cE "에 있어서\|을 부른다\|라는 진단이다\|되어진" <file>` |
+| T8 | 수치·고유명사 과적재 | 한 문장에 4개 이상 |
+| T9 | 병렬·3단 강박 | "A·B·C" 패턴 모든 문단 |
+| T10 | 정보 구조 덤프 | 30초 안에 결론 파악 가능 여부 |
+| T11 | 자사 연결 작위성 | 본문 마지막에 "그러므로 페블러스" 점프 |
+
+페블러스 캘리브레이션:
+- JH 보이스 정본(`project/DAL/code-painting-essay/ko/`) em-dash **0개**
+- 2026-05 AI 생성 시리즈 평균 **1/238~277자** (과다)
+
+외부 참조 문서: [`docs/ai-tone-detection.md`](docs/ai-tone-detection.md) — BlogScope·외부 평가
+에이전트가 페블러스 글 평가 시 인용.
 
 ### Changelog (Post-Action Logging)
 
