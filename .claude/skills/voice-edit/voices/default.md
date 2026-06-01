@@ -62,11 +62,78 @@ write-manage-read 루프를 떠올려 보면, NanoClaw는
 
 | 변환 전 | 변환 후 |
 |--------|---------|
-| "본 보고서에서는 ~을 규명한다" | "이 글은 ~을 열어본다" / "이 보고서는 ~을 따라간다" |
+| "본 보고서에서는 ~을 규명한다" | "이 글은 ~을 열어본다" / "이 글은 ~을 따라간다" |
+| "본 보고서" | "이 글" (references 자기참조 "§N 참조"는 예외 보존) |
 | "혁신적", "획기적" | 사실만. "27,690 스타가 말해준다" |
 | "~되었다", "~된 것이다" (수동) | "~했다", "~이다" (능동) |
 | 무인칭 서술 | 1인칭 관찰자 ("열어보면", "따라가 보면", "처음 봤을 때") |
 | "X? 없다. Y? 없다." 연속 | "X가 없다. 이것은 의도된 선택이다." (맥락 부여) |
+| "~다 — ~다" 동격 재진술 | 마침표로 닫고 다음 문장 시작 |
+| "한 줄로 옮긴다 —", "옮겨 적어 본다" | "Evans는 이렇게 말한다." 또는 인용 바로 시작 |
+
+## 본문 구조 패턴 (2026-06-01 추가, 5편 사후 검수 학습)
+
+본문에서 일관되게 따라야 하는 두 가지 표준 패턴.
+
+### Editor's Note 분리 — Exec Summary 마지막 단락의 자사 점프는 별도 카드로
+
+Exec Summary 3단락에 자사 점프(페블러스 제품·시리즈 자기홍보)가 들어가면 카피 톤이 된다.
+이 부분은 별도의 Editor's Note 카드로 분리한다.
+
+**Before** (5편 공통 안티 패턴):
+```html
+<p class="themeable-text leading-relaxed mt-4">
+  ... 분석 내용 ... 페블러스는 이 공백을 정조준한다 — DataClinic 7번째 신호 "지식 다양성"
+  ... 이번 글은 페블러스를 ~ 카테고리 리더로 격상한다. AI 거버넌스 5부작의 마지막.
+</p>
+```
+
+**After** (5편 공통 표준):
+```html
+<!-- Exec Summary 3단락에서 자사 점프 제거 -->
+<p class="themeable-text leading-relaxed mt-4">
+  ... 분석 내용 + 이 글이 제안하는 다음 신호 (분석의 결론으로) ...
+</p>
+</div>  <!-- /key-insight -->
+
+<!-- Editor's Note 카드 (Exec Summary의 마지막 요소) -->
+<blockquote class="themeable-card rounded-xl p-5 my-6 themeable-text leading-relaxed">
+  <p><strong><em>편집자의 노트.</em></strong>
+  [동기 한 줄] + [시리즈 흐름 인라인 링크] + [이 글의 자리 한 줄]</p>
+</blockquote>
+```
+
+3가지 구성 요소:
+1. **동기** — "데이터와 AI의 편향을 측정하는 일이라면 페블러스는 늘 구미가 당긴다"
+2. **시리즈 흐름** — 4부작 또는 시리즈 인라인 링크 (자기 광고 아닌 사실 진술)
+3. **이 글의 자리** — "다섯 번째 글" / "마지막 좌표" 등 (좌표 단언 금지)
+
+### "주요 수치" h3 — Stat Cards 위 도입문 대신
+
+Stat Cards 위에 "한 결정문이 그은 좌표를 정량으로 풀어 두면..." 같은 메타 도입문을 두지
+않는다. **단순 h3 "주요 수치"만**.
+
+**Before**:
+```html
+<p class="themeable-text leading-relaxed mt-8 mb-6">
+  한 논문이 그은 좌표를 정량으로 풀어 두면 역설의 결이 또렷해진다. ...
+</p>
+<p class="themeable-text-secondary text-sm mb-3">출처: ...</p>
+<div class="grid ...">
+```
+
+**After**:
+```html
+<h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+<p class="themeable-text-secondary text-sm mb-3">출처: ... (외부 링크 포함)</p>
+<div class="grid ...">
+```
+
+도입문은 T4 메타 예고문의 변종("풀어 두면 또렷해진다", "한눈에 본다"). 제거.
+
+### Stat Cards 4개 max
+
+CLAUDE.md 정책. 5개를 만들고 싶어지면 한 카드는 본문에 풀어 넣을 수 있는지부터 확인.
 
 ## 자기검증 (default 전용 추가)
 
