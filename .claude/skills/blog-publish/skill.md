@@ -94,6 +94,30 @@ Article 필수 필드:
 }
 ```
 
+#### `provenance` 필드 (증적 — Engine 자율 운영 시 필수)
+
+Blog Service Engine 이 이 단계(publish-prep)를 실행한 경우, **프롬프트의 "## Provenance (증적)" 섹션에 `provenance` JSON 객체**가 주어진다. 그 객체를 **값 변경 없이 그대로** KO·EN **두 항목 모두**의 `provenance` 필드로 넣는다.
+
+```json
+{
+  "id": "[slug]-ko",
+  "...": "위 필수 필드",
+  "provenance": {
+    "mode": "attended | unattended",
+    "humanReviewed": true,
+    "trigger": { "source": "manual|api|mcp|webhook|scheduled", "actor": "...", "at": "ISO8601" },
+    "gates": [ { "phase": "write-ko", "resolution": "human_resumed|auto_passed", "by": "...", "at": "ISO8601" } ],
+    "engine": { "runId": "run-...", "version": "0.1.0" },
+    "recordedAt": "ISO8601"
+  }
+}
+```
+
+- 이 글이 *어떻게 시작되고(trigger), 만들어지고(gates), 검토됐는지*에 대한 증적이다.
+- `humanReviewed`: `true` → blog.pebblous.ai 에 **"사람 검토"** 배지, `false` → **"완전 자동"** 배지.
+- **사람이 직접 publish 하는 경우**(Engine 없이 수동)에는 이 필드를 생략해도 된다. validator 가 optional 로 처리하며, 배지는 표시되지 않는다.
+- 절대 임의로 값을 만들어 넣지 말 것 — 증적의 신뢰성이 깨진다. Engine 이 준 JSON 만 그대로 사용한다.
+
 ### 2.5. articles.json 검증
 
 articles.json 업데이트 직후 반드시 실행:
@@ -116,6 +140,36 @@ HTML에서 확인:
 - `<title>`, `<meta name="description">`, `<link rel="canonical">`
 - `og:title`, `og:description`, `og:image`, `og:url`
 - `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+
+### 3.5. BlogScope precheck 게이트 (결정론적 기술 컴플라이언스)
+
+Step 3 의 사람-눈 SEO 확인을 **결정론적 검사**로 못박는 게이트. BlogScope(`bloglens.precheck`)의 §4.4 호출 계약을 Engine 측 래퍼(`tools/precheck-gate.js`)로 호출한다. KO·EN HTML 을 **함께(배치)** 넘겨야 parity 검사가 평가된다.
+
+```bash
+node tools/precheck-gate.js \
+  "[category]/[slug]/ko/index.html" \
+  "[category]/[slug]/en/index.html"
+echo "exit=$?"
+```
+
+**exit code 해석 (계약 §4.4 — 절대 혼동 말 것):**
+
+| exit | 의미 | 처리 |
+|------|------|------|
+| 0 | blocking 없음 (warning 가능) | 게이트 통과 → 다음 단계 |
+| 1 | blocking ≥ 1 | **콘텐츠(HTML) 수정** 후 publish 재실행 |
+| 2 | 인자/사용법/도구 오류 | 파이프라인 설정 문제 — **콘텐츠 고치지 말 것**, 환경 점검 |
+| 3 | 입력 파일 없음/읽기 실패 | 경로 오류 — **콘텐츠 고치지 말 것**, 경로 점검 |
+
+> ⚠️ exit 2·3 은 "글이 나쁜 것"이 아니라 "도구/경로가 잘못된 것"이다. exit≠0 을 무조건 자가수정 신호로 받지 말 것 — 멀쩡한 글을 고치려다 재시도가 폭주한다.
+
+**롤아웃 상태:** `bloglens.precheck` 본체가 아직 배포되지 않았으면 게이트는 자동 **inert(스킵, exit 0)** 다 — 실행 파일이 없으면(ENOENT) 도구 오류(exit 2)가 아니라 통과로 처리하도록 래퍼가 환경변수로 제어한다.
+
+- `BLOG_PRECHECK_CMD` 미설정 → 기본값 `python3 -m bloglens.precheck` 시도. 미배포면 ENOENT → exit 2(도구 오류, 콘텐츠 무관).
+- 게이트를 명시적으로 끄려면 `BLOG_PRECHECK_SKIP=1` 또는 `BLOG_PRECHECK_CMD=""`.
+- precheck 배포 후 `BLOG_PRECHECK_CMD` 를 실제 진입점(서브프로세스 stdio, 목표는 MCP `blogscope.precheck`)으로 설정하면 게이트가 활성화된다.
+
+> 경계: BlogScope = HTML head/구조 축, `validate-articles.py`(Step 2.5) = articles.json 축. noindex/published 충돌 시 후자 우선.
 
 ### 4. Changelog 기록
 
