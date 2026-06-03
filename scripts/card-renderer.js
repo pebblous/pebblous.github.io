@@ -217,6 +217,33 @@ window.PebblousCardRenderer = (function() {
                 + '</svg></span>'
             : '';
 
+        // Provenance(증적) badge — driven by articles.json `provenance.humanReviewed`,
+        // recorded by the Blog Service Engine at publish time:
+        //   true  → "사람 검토" (HITL — a human resumed at least one review gate)
+        //   false → "완전 자동" (unattended — every gate auto-passed, no human in the loop)
+        // Posts without a `provenance` block (legacy / manual publishes) get no badge.
+        var prov = article.provenance;
+        var provenanceBadge = '';
+        if (prov && typeof prov.humanReviewed === 'boolean') {
+            var isEn = (article.language === 'en');
+            var provLabel = prov.humanReviewed
+                ? (isEn ? 'Human-reviewed' : '사람 검토')
+                : (isEn ? 'Fully automated' : '완전 자동');
+            var provClass = prov.humanReviewed ? 'prov-badge human' : 'prov-badge auto';
+            var provSource = (prov.trigger && prov.trigger.source) ? prov.trigger.source : '';
+            var provDate = prov.recordedAt ? String(prov.recordedAt).slice(0, 10) : '';
+            var provTitle = (isEn ? 'Provenance: ' : '증적: ') + provLabel
+                + (provSource ? ' · ' + provSource : '')
+                + (provDate ? ' · ' + provDate : '');
+            var provIcon = prov.humanReviewed
+                ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="12" height="12" aria-hidden="true">'
+                    + '<path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="12" height="12" aria-hidden="true">'
+                    + '<path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.4-.7C8.4 11.3 9.8 8.6 13 3h1l-1 7h3.5c.5 0 .56.33.47.51L11 21z"/></svg>';
+            provenanceBadge = '<span class="' + provClass + '" title="' + provTitle + '">'
+                + provIcon + '<span class="prov-badge-label">' + provLabel + '</span></span>';
+        }
+
         // Append lock notice to description for locked posts
         var descText = article.description || '';
         if (isLocked && descText.indexOf('암호') === -1 && descText.indexOf('password') === -1 && descText.indexOf('Password') === -1) {
@@ -230,6 +257,7 @@ window.PebblousCardRenderer = (function() {
             + '<span class="text-xs text-slate-500">' + article.date + '</span>'
             + featuredBadge
             + lockBadge
+            + provenanceBadge
             + '</div>'
             + tagsScrollHtml
             + '<h3 class="text-2xl font-bold text-white group-hover:accent-color transition-colors">' + (article.cardTitle || article.title) + '</h3>'
