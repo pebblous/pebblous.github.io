@@ -217,31 +217,40 @@ window.PebblousCardRenderer = (function() {
                 + '</svg></span>'
             : '';
 
-        // Provenance(증적) badge — driven by articles.json `provenance.humanReviewed`,
-        // recorded by the Blog Service Engine at publish time:
-        //   true  → "사람 검토" (HITL — a human resumed at least one review gate)
-        //   false → "완전 자동" (unattended — every gate auto-passed, no human in the loop)
-        // Posts without a `provenance` block (legacy / manual publishes) get no badge.
+        // Provenance(증적) badge — 카드는 좁아 disclosure 에 부적합(이슈 #39).
+        // 전체 고지는 본문 byline(.ai-disclosure)으로 이전. 카드에는 라벨 텍스트 없이
+        // 아이콘만 남겨 at-a-glance 신호 + 툴팁으로 축소한다.
+        // 진실 소스: provenance.humanReviewed (+ publishReview). 라벨/표준 매핑:
+        // docs/blog-service/ai-disclosure.md. byline 과 vocab·색상 일치.
+        //   humanReviewed:true                           → 'human'    AI 작성·사람 편집
+        //   humanReviewed:false + publishReview.reviewed  → 'reviewed' AI 생성·사람 검수
+        //   humanReviewed:false + 검토 없음               → 'auto'     AI 자동 생성
         var prov = article.provenance;
         var provenanceBadge = '';
         if (prov && typeof prov.humanReviewed === 'boolean') {
             var isEn = (article.language === 'en');
-            var provLabel = prov.humanReviewed
-                ? (isEn ? 'Human-reviewed' : '사람 검토')
-                : (isEn ? 'Fully automated' : '완전 자동');
-            var provClass = prov.humanReviewed ? 'prov-badge human' : 'prov-badge auto';
+            var reviewedBeforePublish = !!(prov.publishReview && prov.publishReview.reviewed === true);
+            var provState = prov.humanReviewed ? 'human' : (reviewedBeforePublish ? 'reviewed' : 'auto');
+            var provLabel = provState === 'human'
+                ? (isEn ? 'AI-assisted, human-edited' : 'AI 작성·사람 편집')
+                : provState === 'reviewed'
+                    ? (isEn ? 'AI-generated, editor-reviewed' : 'AI 생성·사람 검수')
+                    : (isEn ? 'AI-generated' : 'AI 자동 생성');
+            var provReviewer = (provState !== 'auto' && prov.publishReview && prov.publishReview.reviewedBy)
+                ? String(prov.publishReview.reviewedBy) : '';
             var provSource = (prov.trigger && prov.trigger.source) ? prov.trigger.source : '';
             var provDate = prov.recordedAt ? String(prov.recordedAt).slice(0, 10) : '';
             var provTitle = (isEn ? 'Provenance: ' : '증적: ') + provLabel
-                + (provSource ? ' · ' + provSource : '')
+                + (provReviewer ? ' · ' + provReviewer : (provSource ? ' · ' + provSource : ''))
                 + (provDate ? ' · ' + provDate : '');
-            var provIcon = prov.humanReviewed
+            // icon-only (라벨 텍스트 없음): auto → bolt, human/reviewed → check
+            var provIcon = (provState === 'auto')
                 ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="12" height="12" aria-hidden="true">'
-                    + '<path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+                    + '<path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.4-.7C8.4 11.3 9.8 8.6 13 3h1l-1 7h3.5c.5 0 .56.33.47.51L11 21z"/></svg>'
                 : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="12" height="12" aria-hidden="true">'
-                    + '<path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.4-.7C8.4 11.3 9.8 8.6 13 3h1l-1 7h3.5c.5 0 .56.33.47.51L11 21z"/></svg>';
-            provenanceBadge = '<span class="' + provClass + '" title="' + provTitle + '">'
-                + provIcon + '<span class="prov-badge-label">' + provLabel + '</span></span>';
+                    + '<path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+            provenanceBadge = '<span class="prov-badge prov-badge-icon ' + provState + '" title="' + provTitle + '" aria-label="' + provTitle + '">'
+                + provIcon + '</span>';
         }
 
         // Append lock notice to description for locked posts
