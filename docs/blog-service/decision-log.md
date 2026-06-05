@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-06-05 — AI 생성 콘텐츠 표시(disclosure): 카드 배지 → 본문 byline + 항상 고지
+
+**상황**: 이슈 [#39](https://github.com/joohaeng-pbls/blog-service/issues/39). 카드 `prov-badge`가 AI 고지에 너무 좁아 disclosure 방식 재검토. 표준 웹 조사(⛔ 게이트) 완료.
+
+**결정**:
+- 카드 `prov-badge` 축소/제거, provenance STATE 관리(PR #37)는 유지, disclosure는 hero-meta **byline**으로 이전.
+- **고지 정책 = 항상 자발적 고지** (EU AI Act §50(4) 면제 충족 여부 무관). 페블러스 *data provenance* 브랜드 정합.
+- 2축 직교 모델 확정: **생성 방식**(IPTC DST/C2PA) ⊥ **편집 책임**(EU §50(4)). provenance가 이미 두 축 분리.
+- 핵심 단서: §50(4) 면제는 **실질 검토**(내용 substance)만 인정 — 형식 QA는 미달. `publishReview.reviewedBy`에 실질 검토 기록 필요.
+
+**산출**: [`ai-disclosure.md`](./ai-disclosure.md) — 표준 레퍼런스 + provenance→고지 derive 명세(KO/EN) + 구현 계획.
+
+**다음**: byline 컴포넌트(common-utils.js) → 카드 배지 축소/제거(card-renderer.js) → (선택) OG 이미지 IPTC DST 임베드. 사본 `feat/badge-3state-reviewed`는 머지 보류.
+
+---
+
 ## 2026-05-24 — B + C단계 완료, Phase 1 진입점 박음
 
 **상황**: 5/22~23 B단계 진입 후 5/24까지 자산 2/3 이전·정리·자동화 완료. 결과 영구 기록.
