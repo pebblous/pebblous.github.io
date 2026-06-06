@@ -97,9 +97,10 @@ byline은 hero-meta 줄 끝에 1개 span으로 붙는다:
 ## 6. 구현 계획 (이슈 #39 다음 단계)
 
 1. ✅ 표준 웹 조사 → 본 문서 (2026-06-05).
-2. **byline 고지 컴포넌트** — 사본 `scripts/common-utils.js` hero-meta `parts[]`에 disclosure span 추가. **소스 = `config.provenance` 주입**(결정 2026-06-05, §7 참조): 엔진이 HTML 생성 시 `PebblousPage.init({ provenance })`에 주입, fetch 없이 즉시 렌더링. derive 함수 `PebblousProvenance.deriveDisclosure(provenance, isEn)`. 기존 글은 provenance 없으면 byline 미노출 → 필요 시 엔진 재생성/백필.
-3. **카드 `prov-badge` 축소/제거** — 사본 `scripts/card-renderer.js` + `css/card-styles.css`. `feat/badge-3state-reviewed` 브랜치는 머지하지 말 것(이 방향으로 대체).
-4. **(선택) 기계판독 메타 임베드** — `tools/generate-og-image.js` 또는 별도 단계에서 OG/hero 이미지에 IPTC DST 기록. C2PA는 후순위.
+2. ✅ **byline 고지 컴포넌트** — 사본 `scripts/common-utils.js` hero-meta `parts[]`에 disclosure span. `PebblousProvenance.deriveDisclosure(provenance, isEn)` 신규. 소스 = `config.provenance`(no-fetch). (사본 PR #276)
+3. ✅ **카드 `prov-badge` 축소** — 아이콘 전용. `card-renderer.js` + `css/card-styles.css`·`styles.css`. (사본 PR #276)
+4. ✅ **provenance → HTML init 주입 도구** — `tools/inject-provenance.js`(진본, **node** — publish-prep 가 Engine 컨테이너에서 돌고 python3 부재(#33)이므로). articles.json 의 `provenance` 를 글 HTML 의 `PebblousPage.init({...})` 에 동기화(멱등). `blog-publish` 스킬 Step 2.6 + 백필. *이게 있어야 byline 이 실제 라이브에 노출됨* — provenance 진실 소스는 articles.json, 도구가 HTML init 으로 sync.
+5. **(선택) 기계판독 메타 임베드** — `tools/generate-og-image.js` 또는 별도 단계에서 OG/hero 이미지에 IPTC DST 기록. C2PA는 후순위.
 
 ### 기존 작업과의 관계
 - ✅ **유지**: [PR #37](https://github.com/joohaeng-pbls/blog-service/pull/37) provenance.publishReview 검증 모델 — 상태 관리 층.
@@ -108,6 +109,6 @@ byline은 hero-meta 줄 끝에 1개 span으로 붙는다:
 
 ## 7. 열린 질문
 
-- ~~byline disclosure를 HTML init config로 주입할지 vs articles.json fetch할지~~ → **결정(2026-06-05): `config.provenance` 주입.** `no-fetch` 원칙 정합. 엔진이 HTML 생성 시 `PebblousPage.init` config에 주입하도록 `service/blog-service-engine` 측 변경 필요(진본). 기존 글은 provenance 미보유 시 byline 생략(또는 백필).
+- ~~byline disclosure를 HTML init config로 주입할지 vs articles.json fetch할지~~ → **결정(2026-06-05): `config.provenance` 주입.** `no-fetch` 원칙 정합. ~~엔진 측 변경~~ → **구현 = 결정적 도구 `tools/inject-provenance.js`**(node — #33 컨테이너 정합; LLM 편집 의존 대신): articles.json provenance 를 HTML init 으로 sync. `blog-publish` Step 2.6 에서 호출 + 기존 글 일괄 백필. 멱등.
 - 기계판독 임베드 범위 — OG 이미지만 vs hero 포함. §50(2) 기술 표준 확정(2026-08) 전까지는 OG부터.
 - §50(4) 면제 주장 여부 — 정책상 "항상 고지"이므로 면제에 의존하지 않으나, `publishReview.reviewedBy`에 **실질 검토**를 기록하는 운영 규칙은 별도로 정착시킬 것(엔진 게이트/스킬).

@@ -146,6 +146,22 @@ python3 tools/validate-articles.py --fix --id [new-article-id]
 
 검증 통과 후 다음 단계 진행.
 
+### 2.6. provenance → HTML init 주입 (byline 고지)
+
+`provenance` 가 있는 글이라면, articles.json 의 그 값을 **HTML 의 `PebblousPage.init({...})` config 에 동기화**한다. 본문 hero-meta 의 AI 고지 byline(`.ai-disclosure`)이 `config.provenance` 에서 derive 되기 때문이다(fetch 없음). 멱등.
+
+```bash
+node tools/inject-provenance.js --id [new-article-id-ko]
+node tools/inject-provenance.js --id [new-article-id-en]
+# 또는 전체 동기화: node tools/inject-provenance.js
+```
+
+- **런타임 = node** (의도적) — publish-prep 는 Engine 컨테이너(python3 부재, #33)에서 돌기 때문. precheck-gate.js 와 동형.
+- 기본 동작: init 에 `provenance` 가 없으면 삽입, 있으면 무변경(안전).
+- `publishReview` 를 나중에 추가/수정했다면 `--force` 로 재동기화.
+- `provenance` 없는 수동 글은 대상 아님(byline 미표시) — 실행해도 무영향.
+- 표준 근거·라벨 매핑: [`docs/blog-service/ai-disclosure.md`](../../../docs/blog-service/ai-disclosure.md).
+
 ### 3. SEO 검증
 
 HTML에서 확인:
