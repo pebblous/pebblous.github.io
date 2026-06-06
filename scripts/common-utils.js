@@ -604,6 +604,14 @@ const PebblousPage = {
                     if (publisher) parts.push(`<span>${publisher}</span>`);
                     if (readTime) parts.push(`<span>${readTime}</span>`);
 
+                    // AI 생성 콘텐츠 고지(disclosure) — provenance 에서 사람판독 라벨 derive.
+                    // 정책: 항상 고지(§50(4) 면제 충족 여부 무관). docs/blog-service/ai-disclosure.md
+                    const disclosure = PebblousProvenance.deriveDisclosure(config.provenance, isEn);
+                    if (disclosure) {
+                        const safeTitle = disclosure.title.replace(/"/g, '&quot;');
+                        parts.push(`<span class="ai-disclosure ai-disclosure-${disclosure.state}" title="${safeTitle}" data-iptc-source-type="${disclosure.iptcSourceType}">${disclosure.label}</span>`);
+                    }
+
                     // Language link with existence check
                     const langLink = document.createElement('a');
                     langLink.href = langPath;
@@ -2255,7 +2263,50 @@ const PebblousTabs = {
     }
 };
 
+// ===== PebblousProvenance — AI 생성 콘텐츠 고지(disclosure) =====
+// provenance(증적, articles.json/엔진 기록)에서 사람판독 byline 라벨 + 기계판독 IPTC
+// Digital Source Type 을 derive 한다. 2축 직교 모델:
+//   생성 방식(IPTC/C2PA) ⊥ 편집 책임(EU AI Act §50(4)).
+// 표준 근거·결정: docs/blog-service/ai-disclosure.md (이슈 #39)
+const PebblousProvenance = {
+    // provenance → { state, label, iptcSourceType, title } | null
+    //   state: 'human' | 'reviewed' | 'auto'
+    //   - humanReviewed:true                          → 'human'    AI 작성·사람 편집
+    //   - humanReviewed:false + publishReview.reviewed → 'reviewed' AI 생성·사람 검수
+    //   - humanReviewed:false + 검토 없음              → 'auto'     AI 자동 생성
+    // provenance 없거나 humanReviewed 불명 → null (수동·레거시: 고지 없음)
+    deriveDisclosure(prov, isEn) {
+        if (!prov || typeof prov.humanReviewed !== 'boolean') return null;
+        const reviewedBeforePublish = !!(prov.publishReview && prov.publishReview.reviewed === true);
+        const state = prov.humanReviewed ? 'human' : (reviewedBeforePublish ? 'reviewed' : 'auto');
+
+        let label, iptcSourceType;
+        if (state === 'human') {
+            label = isEn ? 'AI-assisted, human-edited' : 'AI 작성·사람 편집';
+            iptcSourceType = 'compositeWithTrainedAlgorithmicMedia';
+        } else if (state === 'reviewed') {
+            label = isEn ? 'AI-generated, editor-reviewed' : 'AI 생성·사람 검수';
+            iptcSourceType = 'trainedAlgorithmicMedia';
+        } else {
+            label = isEn ? 'AI-generated' : 'AI 자동 생성';
+            iptcSourceType = 'trainedAlgorithmicMedia';
+        }
+
+        // 툴팁: 증적 라벨 + 책임자(또는 trigger) + 기록일
+        const reviewer = (state !== 'auto' && prov.publishReview && prov.publishReview.reviewedBy)
+            ? String(prov.publishReview.reviewedBy) : '';
+        const source = (prov.trigger && prov.trigger.source) ? String(prov.trigger.source) : '';
+        const date = prov.recordedAt ? String(prov.recordedAt).slice(0, 10) : '';
+        const title = (isEn ? 'Provenance: ' : '증적: ') + label
+            + (reviewer ? ' · ' + reviewer : (source ? ' · ' + source : ''))
+            + (date ? ' · ' + date : '');
+
+        return { state, label, iptcSourceType, title };
+    }
+};
+
 // Export to global scope
+window.PebblousProvenance = PebblousProvenance;
 window.PebblousTheme = PebblousTheme;
 window.PebblousComponents = PebblousComponents;
 window.PebblousUI = PebblousUI;

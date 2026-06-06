@@ -218,9 +218,19 @@ def validate_article(a, strict=True, auto_fix=False):
                 for g in gates:
                     if isinstance(g, dict) and g.get("resolution") not in ("human_resumed", "auto_passed"):
                         err(aid, f"provenance.gates[].resolution 값 이상: {g.get('resolution')!r}")
-            # 일관성: 완전 자동인데 사람 검토 표시면 모순 (배지가 거짓이 됨)
+            # publishReview(발행 전 사람 검토) — 생성 자율성(mode/humanReviewed)과 직교하는 축. optional.
+            #   {reviewed: bool(필수), reviewedAt?: str, reviewedBy?: str}
+            pub_rev = prov.get("publishReview")
+            if pub_rev is not None:
+                if not isinstance(pub_rev, dict):
+                    err(aid, "provenance.publishReview 는 객체여야 함 {reviewed, reviewedAt?, reviewedBy?}")
+                elif not isinstance(pub_rev.get("reviewed"), bool):
+                    err(aid, "provenance.publishReview.reviewed 는 boolean 이어야 함")
+            # 일관성: 완전 자동(무인)인데 humanReviewed=true 면 모순.
+            #   '무인 생성 + 발행 전 검토'는 humanReviewed=false + publishReview.reviewed=true 로 표현할 것.
             if mode == "unattended" and prov.get("humanReviewed") is True:
-                warn(aid, "provenance: mode=unattended 인데 humanReviewed=true — 모순(배지 오표시 가능)")
+                warn(aid, "provenance: mode=unattended 인데 humanReviewed=true — 모순. "
+                          "발행 전 검토라면 humanReviewed=false + publishReview.reviewed=true 로 기록")
 
     return changed
 
