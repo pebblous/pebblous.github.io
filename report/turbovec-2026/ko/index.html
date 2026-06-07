@@ -11,7 +11,7 @@
     <meta name="revisit-after" content="7 days">
 
     <title>turbovec·TurboQuant 분석 2026 — 학습 없는 벡터 압축은 FAISS를 대체할까 | 페블러스</title>
-    <meta name="description" content="turbovec은 10M 임베딩 31GB를 4GB로 줄인다고 말한다. 어디까지 사실인가. TurboQuant 논문(arXiv:2504.19874)과 GitHub README를 1차 출처로 검증하고, 압축 산술·FAISS 비교·미검증 항목을 등급으로 분리한 냉정한 분석.">
+    <meta name="description" content="turbovec은 10M 임베딩 31GB를 4GB로 줄인다고 말한다. 어떻게 가능할까. TurboQuant 논문(arXiv:2504.19874)과 GitHub README를 따라 학습 없는 벡터 압축의 원리, 압축 산술, FAISS 비교, 확인된 범위까지 차근히 읽는 가이드.">
     <meta name="keywords" content="turbovec, TurboQuant, 벡터검색, RAG, 임베딩 압축, FAISS, 양자화, 벡터 양자화, data-oblivious, AI 인프라, RaBitQ, 페블러스">
 
     <link rel="canonical" href="https://blog.pebblous.ai/report/turbovec-2026/ko/">
@@ -21,13 +21,13 @@
 
     <!-- Open Graph -->
     <meta property="og:type" content="article">
-    <meta property="og:title" content="31GB를 4GB로 줄인다는 말, 어디까지 사실일까">
-    <meta property="og:description" content="turbovec과 TurboQuant의 주장을 1차 출처로 검증한다. 학습 없는 압축은 사실이고, '항상 FAISS보다 빠르다'는 거짓이며, 10M 규모 재현은 아직 미검증이다.">
+    <meta property="og:title" content="31GB를 4GB로 — 학습 없는 벡터 압축의 정체">
+    <meta property="og:description" content="turbovec과 TurboQuant을 논문과 코드로 읽는다. 진짜 차별점은 압축비가 아니라 학습이 필요 없다는 점. '항상 FAISS보다 빠르다'는 사실이 아니고, 10M 규모는 아직 제3자 재현이 없다.">
     <meta property="og:url" content="https://blog.pebblous.ai/report/turbovec-2026/ko/">
     <meta property="og:image" content="https://blog.pebblous.ai/report/turbovec-2026/ko/image/index.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="turbovec·TurboQuant 분석 — 학습 없는 벡터 압축의 검증">
+    <meta property="og:image:alt" content="turbovec·TurboQuant 분석 — 학습 없는 벡터 압축의 정체">
     <meta property="og:site_name" content="Pebblous Blog">
     <meta property="og:locale" content="ko_KR">
 
@@ -35,13 +35,13 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@pebblous_ai">
     <meta name="twitter:creator" content="@pebblous_ai">
-    <meta name="twitter:title" content="31GB를 4GB로 줄인다는 말, 어디까지 사실일까">
-    <meta name="twitter:description" content="turbovec·TurboQuant의 주장을 1차 출처로 검증한 냉정한 분석. 학습 없는 압축은 사실, '항상 빠르다'는 거짓, 10M 재현은 미검증.">
+    <meta name="twitter:title" content="31GB를 4GB로 — 학습 없는 벡터 압축의 정체">
+    <meta name="twitter:description" content="turbovec·TurboQuant을 논문과 코드로 읽는 가이드. 진짜 차별점은 학습이 필요 없다는 점. '항상 빠르다'는 사실이 아니고, 10M 재현은 아직 없다.">
     <meta name="twitter:image" content="https://blog.pebblous.ai/report/turbovec-2026/ko/image/index.png">
-    <meta name="twitter:image:alt" content="turbovec·TurboQuant 분석 — 학습 없는 벡터 압축의 검증">
+    <meta name="twitter:image:alt" content="turbovec·TurboQuant 분석 — 학습 없는 벡터 압축의 정체">
 
     <!-- Google Scholar Citation Meta -->
-    <meta name="citation_title" content="31GB를 4GB로 줄인다는 말, 어디까지 사실일까">
+    <meta name="citation_title" content="31GB를 4GB로 — 학습 없는 벡터 압축의 정체">
     <meta name="citation_author" content="Pebblous Data Communication Team">
     <meta name="citation_publication_date" content="2026/06/07">
     <meta name="citation_online_date" content="2026/06/07">
@@ -106,10 +106,10 @@
                     <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
                     <div class="key-insight">
                         <p class="themeable-text leading-relaxed">
-                            turbovec은 GitHub에서 짧은 시간에 약 6천 개의 별을 모은 오픈소스 벡터 압축 라이브러리다. README 첫 줄은 이렇게 말한다. "1천만 문서 코퍼스는 float32로 31GB의 메모리를 먹는다. turbovec은 그것을 4GB에 담고, FAISS보다 빠르게 검색한다." 이 글은 그 문장을 그대로 믿지 않고, TurboQuant 논문과 저장소 README를 1차 출처로 한 줄씩 검증한다.
+                            turbovec은 GitHub에서 짧은 시간에 약 6천 개의 별을 모은 오픈소스 벡터 압축 라이브러리다. README 첫 줄은 이렇게 말한다. "1천만 문서 코퍼스는 float32로 31GB의 메모리를 먹는다. turbovec은 그것을 4GB에 담고, FAISS보다 빠르게 검색한다." 이 글은 그 주장을 TurboQuant 논문과 저장소 코드를 따라 차근히 풀어 본다. 무엇이 어떻게 가능한지, 어디까지 확인됐는지 함께 본다.
                         </p>
                         <p class="themeable-text leading-relaxed mt-4">
-                            검증의 결론을 먼저 적는다. turbovec의 진짜 차별점은 압축비가 아니라 <strong>학습이 필요 없다</strong>는 점이다. FAISS의 곱 양자화(PQ)는 데이터로 k-means 코드북을 학습해야 하지만, TurboQuant은 벡터를 무작위로 회전시켜 좌표 분포를 알려진 형태로 수렴시킨 뒤 양자화 경계를 데이터가 아닌 수학으로 계산한다. 반면 "항상 FAISS보다 빠르다"는 주장은 사실이 아니다. 저자 자신이 README에서 일부 2비트 멀티스레드 구성은 FAISS보다 2~4% 느리다고 적었다.
+                            핵심을 먼저 적는다. turbovec의 진짜 차별점은 압축비가 아니라 <strong>학습이 필요 없다</strong>는 점이다. FAISS의 곱 양자화(PQ)는 데이터로 k-means 코드북을 학습해야 하지만, TurboQuant은 벡터를 무작위로 회전시켜 좌표 분포를 알려진 형태로 수렴시킨 뒤 양자화 경계를 데이터가 아닌 수학으로 계산한다. 반면 "항상 FAISS보다 빠르다"는 주장은 사실이 아니다. 저자 자신이 README에서 일부 2비트 멀티스레드 구성은 FAISS보다 2~4% 느리다고 적었다.
                         </p>
                         <p class="themeable-text leading-relaxed mt-4">
                             압축비와 속도 수치는 모두 저자 한 사람이 100K 벡터 규모에서 측정한 값이다. 헤드라인의 10M 규모를 제3자가 독립적으로 재현한 보고는 아직 없다. 개념이 처음이라면 <a href="/pebblopedia/turboquant/ko/" class="text-orange-500 hover:underline">터보퀀츠 입문</a>에서 시작하고, 이미 FAISS를 쓰고 있다면 이 글의 7절에서 언제 갈아탈지 판단 기준을 가져가면 된다.
@@ -151,7 +151,7 @@
                     </div>
 
                     <p class="themeable-text leading-relaxed mb-6">
-                        turbovec은 실재하는 저장소다. 주소는 <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="text-orange-500 hover:underline">github.com/RyanCodrai/turbovec</a>, 라이선스는 MIT, 2026년 6월 7일 기준 별은 약 5,974개다(GitHub API, 변동값) [verified]. RyanCodrai라는 개인 계정이 2026년 3월 26일에 만들었고, PyPI와 crates.io 양쪽에 `turbovec`이라는 이름으로 배포돼 있다 [verified]. README는 "Rust with Python bindings"라고 자기를 소개하지만, GitHub 언어 통계는 Python 385KB가 Rust 306KB보다 많다 — 핵심 SIMD 커널은 Rust, 바인딩·벤치마크·통합 레이어는 Python으로 보는 편이 정확하다 [verified].
+                        turbovec은 실재하는 저장소다. 주소는 <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="text-orange-500 hover:underline">github.com/RyanCodrai/turbovec</a>, 라이선스는 MIT, 2026년 6월 7일 기준 별은 약 5,974개다(GitHub API, 변동값). RyanCodrai라는 개인 계정이 2026년 3월 26일에 만들었고, PyPI와 crates.io 양쪽에 `turbovec`이라는 이름으로 배포돼 있다. README는 "Rust with Python bindings"라고 자기를 소개하지만, GitHub 언어 통계는 Python 385KB가 Rust 306KB보다 많다 — 핵심 SIMD 커널은 Rust, 바인딩·벤치마크·통합 레이어는 Python으로 보는 편이 정확하다.
                     </p>
 
                     <p class="themeable-text leading-relaxed mb-6">
@@ -159,7 +159,7 @@
                     </p>
 
                     <p class="themeable-text leading-relaxed mb-6">
-                        한 가지 출처를 분명히 해 둔다. turbovec이 구현하는 알고리즘 TurboQuant은 저자 본인의 발명이 아니라 구글 연구진의 논문이다. <strong>arXiv:2504.19874, "TurboQuant: Online Vector Quantization with Near-optimal Distortion Rate"</strong>, 저자는 Amir Zandieh·Majid Daliri·Majid Hadian·Vahab Mirrokni이며 2025년 4월 28일 게재됐다 [verified]. 소속은 Google Research·Google DeepMind·뉴욕대로 보도되나 abstract 본문에는 표기가 없어 2차 출처에 의존한다. ICLR 2026 채택도 복수 매체가 전하지만 arXiv 페이지 자체에는 게재처 표기가 없다. 즉 turbovec은 "구글 알고리즘의 오픈소스 구현"이고, 논문의 실재와 메커니즘은 단단한 토대다.
+                        한 가지 출처를 분명히 해 둔다. turbovec이 구현하는 알고리즘 TurboQuant은 저자 본인의 발명이 아니라 구글 연구진의 논문이다. <strong>arXiv:2504.19874, "TurboQuant: Online Vector Quantization with Near-optimal Distortion Rate"</strong>, 저자는 Amir Zandieh·Majid Daliri·Majid Hadian·Vahab Mirrokni이며 2025년 4월 28일 게재됐다. 소속은 Google Research·Google DeepMind·뉴욕대로 보도되나 abstract 본문에는 표기가 없어 2차 출처에 의존한다. ICLR 2026 채택도 복수 매체가 전하지만 arXiv 페이지 자체에는 게재처 표기가 없다. 즉 turbovec은 "구글 알고리즘의 오픈소스 구현"이고, 논문의 실재와 메커니즘은 단단한 토대다.
                     </p>
 
                     <!-- Image: word/sentence embeddings visualized as points in vector space -->
@@ -189,7 +189,7 @@
                     </div>
 
                     <p class="themeable-text leading-relaxed mb-6">
-                        turbovec을 이해하려면 압축률이 아니라 압축 방식을 봐야 한다. 같은 16배 압축이라도, 데이터를 학습해서 얻는지 수학으로 미리 계산하는지는 운영에서 전혀 다른 결과를 낳기 때문이다. TurboQuant의 핵심은 "data-oblivious", 즉 입력 데이터를 보지 않고도 좌표별 최적 양자화를 계산한다는 데 있다 [verified]. 그 방식은 네 단계로 나뉜다.
+                        turbovec을 이해하려면 압축률이 아니라 압축 방식을 봐야 한다. 같은 16배 압축이라도, 데이터를 학습해서 얻는지 수학으로 미리 계산하는지는 운영에서 전혀 다른 결과를 낳기 때문이다. TurboQuant의 핵심은 "data-oblivious", 즉 입력 데이터를 보지 않고도 좌표별 최적 양자화를 계산한다는 데 있다. 그 방식은 네 단계로 나뉜다.
                     </p>
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>네 단계 — 정규화에서 비트 패킹까지</h3>
@@ -215,7 +215,7 @@
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>FAISS PQ와의 결정적 차이 — 코드북 학습 유무</h3>
                     <p class="themeable-text leading-relaxed mb-6">
-                        이 메커니즘의 의미는 FAISS와 나란히 놓을 때 분명해진다. FAISS의 곱 양자화(PQ)는 코드북을 k-means로 학습해야 한다. 부분 공간마다 군집을 돌려 대표 벡터 집합을 만드는 과정이다. 이 점은 FAISS 공식 문서와 OpenSearch 문서가 모두 명시한다 [verified]. TurboQuant은 그 학습 단계 자체가 없다. 압축 품질의 차이가 아니라, "학습이 있느냐 없느냐"라는 종류의 차이다.
+                        이 메커니즘의 의미는 FAISS와 나란히 놓을 때 분명해진다. FAISS의 곱 양자화(PQ)는 코드북을 k-means로 학습해야 한다. 부분 공간마다 군집을 돌려 대표 벡터 집합을 만드는 과정이다. 이 점은 FAISS 공식 문서와 OpenSearch 문서가 모두 명시한다. TurboQuant은 그 학습 단계 자체가 없다. 압축 품질의 차이가 아니라, "학습이 있느냐 없느냐"라는 종류의 차이다.
                     </p>
 
                     <div class="overflow-x-auto mb-6">
@@ -230,8 +230,8 @@
                             <tbody>
                                 <tr class="themeable-border" style="border-bottom: 1px solid;">
                                     <td class="p-3 font-semibold">코드북</td>
-                                    <td class="p-3">k-means로 학습 필요 [verified]</td>
-                                    <td class="p-3">수학으로 사전 계산, 학습 없음 [verified]</td>
+                                    <td class="p-3">k-means로 학습 필요</td>
+                                    <td class="p-3">수학으로 사전 계산, 학습 없음</td>
                                 </tr>
                                 <tr class="themeable-border" style="border-bottom: 1px solid;">
                                     <td class="p-3 font-semibold">학습 데이터</td>
@@ -253,7 +253,7 @@
                     </div>
 
                     <p class="themeable-text leading-relaxed mb-6">
-                        한 가지는 정확히 해 둔다. turbovec도 완전한 zero-fit은 아니다. README의 TQ+ 모드는 첫 적재 시 좌표별 shift·scale 두 값을 한 번 맞춘다(step 3). 다만 그 값은 첫 add에서 고정된 뒤 재사용되며 "재학습·재빌드 없음"이라고 명시한다. FAISS식 반복 k-means와는 근본이 다르지만, "단 하나의 파라미터도 데이터에서 안 본다"는 식의 과장은 피하는 게 정직하다. 논문이 보증하는 것은 "이론적 하한의 작은 상수 인자(README는 2.7배) 이내의 왜곡을 모든 비트폭·차원에서 달성한다"는 것이다 [verified].
+                        한 가지는 정확히 해 둔다. turbovec도 완전한 zero-fit은 아니다. README의 TQ+ 모드는 첫 적재 시 좌표별 shift·scale 두 값을 한 번 맞춘다(step 3). 다만 그 값은 첫 add에서 고정된 뒤 재사용되며 "재학습·재빌드 없음"이라고 명시한다. FAISS식 반복 k-means와는 근본이 다르지만, "단 하나의 파라미터도 데이터에서 안 본다"는 식의 과장은 피하는 게 정직하다. 논문이 보증하는 것은 "이론적 하한의 작은 상수 인자(README는 2.7배) 이내의 왜곡을 모든 비트폭·차원에서 달성한다"는 것이다.
                     </p>
 
                     <div class="key-insight">
@@ -285,7 +285,7 @@
                         </p>
                     </div>
                     <p class="themeable-text leading-relaxed mb-6">
-                        따라서 "31GB"는 <strong>768차원 fp32를 가정할 때만</strong> 정확하다 [math-consistent]. README는 차원을 명시하지 않으므로, 이는 산술로 역산한 추정이다. OpenAI ada-002급 1536차원이라면 같은 1천만 개는 61GB가 맞고 31GB는 틀린다. 4GB라는 목표도 마찬가지로 차원·비트폭에 따라 갈린다. 768차원에서 4GB는 좌표당 약 4.17비트(약 7.4배, 즉 4비트 압축), 1536차원에서 4GB는 좌표당 약 2.08비트(약 15배, 즉 2비트 압축)다. README의 단일 벡터 예시("6,144바이트→384바이트=16배", "→768바이트=8배")는 순수 비트 산술이므로 벤치마크가 아니라 정의상 참이다.
+                        따라서 "31GB"는 <strong>768차원 fp32를 가정할 때만</strong> 정확하다. README는 차원을 명시하지 않으므로, 이는 산술로 역산한 추정이다. OpenAI ada-002급 1536차원이라면 같은 1천만 개는 61GB가 맞고 31GB는 틀린다. 4GB라는 목표도 마찬가지로 차원·비트폭에 따라 갈린다. 768차원에서 4GB는 좌표당 약 4.17비트(약 7.4배, 즉 4비트 압축), 1536차원에서 4GB는 좌표당 약 2.08비트(약 15배, 즉 2비트 압축)다. README의 단일 벡터 예시("6,144바이트→384바이트=16배", "→768바이트=8배")는 순수 비트 산술이므로 벤치마크가 아니라 정의상 참이다.
                     </p>
 
                     <figure class="my-6">
@@ -300,7 +300,7 @@
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>FAISS 대비 속도 — "항상 빠르다"는 거짓이다</h3>
                     <p class="themeable-text leading-relaxed mb-6">
-                        속도 주장은 가장 조심해서 다뤄야 한다. README의 "ARM 12~20% 빠름, x86 대등 이상"은 100K 벡터·1K 쿼리·k=64, 5회 중앙값, Apple M3 Max와 Intel Sapphire Rapids에서의 저자 측정이다 [author-benchmark]. 여기까지는 대체로 사실이다. 그러나 저자는 같은 README에서 <strong>2비트 멀티스레드 구성(d=1536, d=3072)에서는 FAISS보다 2~4% 느리다</strong>고 직접 적었다. 따라서 "검색 속도가 항상 FAISS 동등 이상"이라는 SNS식 주장은 <strong>일부 구성에서 거짓</strong>이다. 정확히 쓰면 "대부분 구성에서 빠르나, 일부 2비트 멀티스레드 구성은 FAISS가 우세"다.
+                        속도 주장은 가장 조심해서 다뤄야 한다. README의 "ARM 12~20% 빠름, x86 대등 이상"은 100K 벡터·1K 쿼리·k=64, 5회 중앙값, Apple M3 Max와 Intel Sapphire Rapids에서의 저자 측정이다. 여기까지는 대체로 사실이다. 그러나 저자는 같은 README에서 <strong>2비트 멀티스레드 구성(d=1536, d=3072)에서는 FAISS보다 2~4% 느리다</strong>고 직접 적었다. 따라서 "검색 속도가 항상 FAISS 동등 이상"이라는 SNS식 주장은 <strong>일부 구성에서 거짓</strong>이다. 정확히 쓰면 "대부분 구성에서 빠르나, 일부 2비트 멀티스레드 구성은 FAISS가 우세"다.
                     </p>
 
                     <figure class="my-6">
@@ -324,7 +324,7 @@
                     </figure>
 
                     <p class="themeable-text leading-relaxed mb-6">
-                        recall도 마찬가지로 저자 측정이다. 저자는 OpenAI d=1536·d=3072에서 R@1 기준 FAISS를 0.4~3.4점 앞섰다고 보고하는 한편, 저차원 GloVe d=200의 2비트에서는 FAISS에 1.2점 뒤진다고 불리한 결과까지 공개했다 [author-benchmark]. 불리한 수치를 README에 남긴 점은 신뢰를 더하는 정직한 서술이다. 비교 베이스라인은 FAISS IndexPQ(LUT256, nbits=8)이며, 저자는 이것이 논문의 커스텀 베이스라인보다 강하다고 스스로 밝힌다.
+                        recall도 마찬가지로 저자 측정이다. 저자는 OpenAI d=1536·d=3072에서 R@1 기준 FAISS를 0.4~3.4점 앞섰다고 보고하는 한편, 저차원 GloVe d=200의 2비트에서는 FAISS에 1.2점 뒤진다고 불리한 결과까지 공개했다. 불리한 수치를 README에 남긴 점은 신뢰를 더하는 정직한 서술이다. 비교 베이스라인은 FAISS IndexPQ(LUT256, nbits=8)이며, 저자는 이것이 논문의 커스텀 베이스라인보다 강하다고 스스로 밝힌다.
                     </p>
 
                     <figure class="my-6">
@@ -431,11 +431,11 @@
                     </p>
 
                     <p class="themeable-text leading-relaxed mb-6">
-                        여기서 학습 불필요가 운영에 주는 의미가 드러난다. RAG 코퍼스는 정적이지 않다. 문서가 매일 추가되고, 도메인이 바뀌고, 분포가 드리프트한다. FAISS PQ를 쓰면 분포가 충분히 변했을 때 코드북을 다시 학습하고 인덱스를 재빌드해야 하는데, 이는 운영 중단과 재계산 비용을 부른다. TurboQuant은 코드북이 데이터와 무관하므로, 새 벡터를 그냥 추가하면 된다 — 분포가 바뀌어도 회전 후 좌표 분포는 여전히 알려진 형태다. 논문이 "data-oblivious 알고리즘은 온라인 응용에 적합하다"고 적은 것이 이 지점이다 [verified].
+                        여기서 학습 불필요가 운영에 주는 의미가 드러난다. RAG 코퍼스는 정적이지 않다. 문서가 매일 추가되고, 도메인이 바뀌고, 분포가 드리프트한다. FAISS PQ를 쓰면 분포가 충분히 변했을 때 코드북을 다시 학습하고 인덱스를 재빌드해야 하는데, 이는 운영 중단과 재계산 비용을 부른다. TurboQuant은 코드북이 데이터와 무관하므로, 새 벡터를 그냥 추가하면 된다 — 분포가 바뀌어도 회전 후 좌표 분포는 여전히 알려진 형태다. 논문이 "data-oblivious 알고리즘은 온라인 응용에 적합하다"고 적은 것이 이 지점이다.
                     </p>
 
                     <p class="themeable-text leading-relaxed mb-6">
-                        한 가지 구분을 덧붙인다. TurboQuant 논문 본체는 벡터 검색뿐 아니라 LLM의 KV 캐시 압축도 다룬다. 2차 출처는 H100에서 KV 메모리 6배 절감, 어텐션 8배 가속을 전하지만 abstract에서 직접 확인되지 않아 보도 인용 수준이다 [unverified]. turbovec은 그 논문 중 <strong>벡터 검색(최근접 이웃) 적용만</strong> 구현한 것이다. 두 적용을 뭉뚱그리지 않는 것이 정확하다.
+                        한 가지 구분을 덧붙인다. TurboQuant 논문 본체는 벡터 검색뿐 아니라 LLM의 KV 캐시 압축도 다룬다. 2차 출처는 H100에서 KV 메모리 6배 절감, 어텐션 8배 가속을 전하지만 abstract에서 직접 확인되지 않아 보도 인용 수준이다. turbovec은 그 논문 중 <strong>벡터 검색(최근접 이웃) 적용만</strong> 구현한 것이다. 두 적용을 뭉뚱그리지 않는 것이 정확하다.
                     </p>
                 </section>
 
@@ -447,12 +447,12 @@
                     </div>
 
                     <p class="themeable-text leading-relaxed mb-6">
-                        냉정한 회계사의 일은 자산만큼 부채를 적는 것이다. turbovec의 약점은 알고리즘 결함이 아니라 검증의 공백에 있다. 채택을 고려한다면 아래 다섯 가지를 리스크로 명시해 두는 편이 좋다.
+                        좋은 가이드라면 강점만큼 한계도 분명히 적어야 한다. turbovec의 약점은 알고리즘 결함이 아니라 검증의 공백에 있다. 채택을 고려한다면 아래 다섯 가지를 리스크로 명시해 두는 편이 좋다.
                     </p>
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>100K와 10M 사이의 간극</h3>
                     <p class="themeable-text leading-relaxed mb-6">
-                        가장 큰 공백이다. 헤드라인 "31GB→4GB & FAISS보다 빠름"은 1천만 규모 주장이지만, README의 recall·속도 벤치마크는 100K 규모다. 100배 차이가 나는 규모에서 recall·속도·메모리를 동시에 측정한 값은 출처에서 직접 확인되지 않는다 [unverified]. 압축비처럼 규모와 무관하게 산술로 성립하는 항목과, recall처럼 규모에 따라 달라질 수 있는 항목을 섞어 읽으면 안 된다.
+                        가장 큰 공백이다. 헤드라인 "31GB→4GB & FAISS보다 빠름"은 1천만 규모 주장이지만, README의 recall·속도 벤치마크는 100K 규모다. 100배 차이가 나는 규모에서 recall·속도·메모리를 동시에 측정한 값은 출처에서 직접 확인되지 않는다. 압축비처럼 규모와 무관하게 산술로 성립하는 항목과, recall처럼 규모에 따라 달라질 수 있는 항목을 섞어 읽으면 안 된다.
                     </p>
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>"항상 빠르다"의 예외</h3>
@@ -462,17 +462,17 @@
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.3</span>제3자 프로덕션 검증 부재</h3>
                     <p class="themeable-text leading-relaxed mb-6">
-                        모든 성능 숫자가 저자 단독 측정이다 [author-benchmark]. 독립적인 제3자가 대규모로 재현·검증한 보고는 발견되지 않았다 [unverified]. 실서비스 도입 사례, 장기 운영 안정성, 대규모 부하 하에서의 recall 저하 곡선 같은 운영 데이터가 없다. 커뮤니티 반응은 Show HN 89점·댓글 6개 수준이고, 댓글 수가 적어 심층 동료 검토라고 보기는 어렵다 [verified]. Redis 창시자 antirez가 분포가 알려져 있어 min/max 없이 4비트 중심점을 쓸 수 있다는 수학적 우아함을 언급한 정도가 눈에 띄는 반응이다.
+                        모든 성능 숫자가 저자 단독 측정이다. 독립적인 제3자가 대규모로 재현·검증한 보고는 아직 발견되지 않았다. 실서비스 도입 사례, 장기 운영 안정성, 대규모 부하 하에서의 recall 저하 곡선 같은 운영 데이터가 없다. 커뮤니티 반응은 Show HN 89점·댓글 6개 수준이고, 댓글 수가 적어 심층 동료 검토라고 보기는 어렵다. Redis 창시자 antirez가 분포가 알려져 있어 min/max 없이 4비트 중심점을 쓸 수 있다는 수학적 우아함을 언급한 정도가 눈에 띄는 반응이다.
                     </p>
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.4</span>2차 출처에 의존하는 항목들</h3>
                     <p class="themeable-text leading-relaxed mb-6">
-                        ICLR 2026 채택은 복수 매체가 전하나 arXiv 페이지 자체에는 게재처 표기가 없다 [unverified by primary]. 저자 소속(Google Research·DeepMind·NYU)도 abstract 본문에는 없어 보도·요약 기준이다. KV 캐시의 H100 가속 수치도 2차 출처 인용이다. 이 항목들은 "아마 맞을 것"이지만 1차 확인은 안 된 상태로 표시해 둔다. 한편 다중 독립 구현(Zig·PyTorch·WASM·Apple MLX 등)이 등장한 것은 생태계가 형성 중이라는 긍정 신호다 [verified] — 다만 이는 인기의 신호이지 성능 검증은 아니다.
+                        ICLR 2026 채택은 복수 매체가 전하나 arXiv 페이지 자체에는 게재처 표기가 없다. 저자 소속(Google Research·DeepMind·NYU)도 abstract 본문에는 없어 보도·요약 기준이다. KV 캐시의 H100 가속 수치도 2차 출처 인용이다. 이 항목들은 "아마 맞을 것"이지만 1차 확인은 안 된 상태로 읽어 두면 된다. 한편 다중 독립 구현(Zig·PyTorch·WASM·Apple MLX 등)이 등장한 것은 생태계가 형성 중이라는 긍정 신호다 — 다만 이는 인기의 신호이지 성능 검증은 아니다.
                     </p>
 
                     <div class="key-insight">
                         <p class="themeable-text leading-relaxed">
-                            요약하면, turbovec의 약점은 "틀렸다"가 아니라 "아직 충분히 검증되지 않았다"다. 알고리즘의 이론적 토대는 단단하고(논문 verified), 정직성도 높다(불리한 결과 공개). 그러나 10M 규모 독립 재현과 프로덕션 사례라는 두 칸이 비어 있다. 그 두 칸을 채우기 전까지, 헤드라인은 "가능성"이지 "보증"이 아니다.
+                            요약하면, turbovec의 약점은 "틀렸다"가 아니라 "아직 충분히 검증되지 않았다"다. 알고리즘의 이론적 토대는 논문으로 단단하고, 정직성도 높다(불리한 결과 공개). 그러나 10M 규모 독립 재현과 프로덕션 사례라는 두 칸이 비어 있다. 그 두 칸을 채우기 전까지, 헤드라인은 "가능성"이지 "보증"이 아니다.
                         </p>
                     </div>
                 </section>
@@ -594,8 +594,8 @@
     <script src="/scripts/citation-download.js?v=20260607" defer></script>
     <script>
         PebblousPage.init({
-            mainTitle: "31GB를 4GB로 줄인다는 말, 어디까지 사실일까",
-            subtitle: "turbovec·TurboQuant — 학습 없는 벡터 압축을 1차 출처로 검증한다",
+            mainTitle: "31GB를 4GB로 — 학습 없는 벡터 압축의 정체",
+            subtitle: "turbovec·TurboQuant — 논문과 코드로 읽는 학습 없는 벡터 압축",
             pageTitle: "turbovec·TurboQuant 분석 2026 — 학습 없는 벡터 압축은 FAISS를 대체할까 | 페블러스",
             category: "tech",
             publishDate: "2026-06-07",
@@ -604,12 +604,12 @@
             articlePath: "report/turbovec-2026/ko/",
             tags: ["turbovec", "TurboQuant", "벡터검색", "RAG", "임베딩압축", "FAISS", "양자화", "AI인프라", "페블러스"],
             faqs: [
-                { question: "turbovec이 말하는 31GB→4GB는 사실인가요?", answer: "조건부로 사실입니다. 1천만 개의 768차원 fp32 임베딩은 정확히 30.72GB(약 31GB)이고, 이를 4비트로 압축하면 약 7.4배가 되어 4GB대에 들어갑니다. 다만 README가 차원을 명시하지 않으므로 768차원은 산술로 역산한 추정이며(math-consistent), 1536차원이라면 같은 1천만 개는 61GB가 맞고 31GB는 틀립니다. 압축비 자체는 비트 산술상 정의로 참이지만, 그 압축에서 검색 품질(recall)이 얼마나 유지되는지는 별개의 문제입니다." },
+                { question: "turbovec이 말하는 31GB→4GB는 사실인가요?", answer: "조건부로 사실입니다. 1천만 개의 768차원 fp32 임베딩은 정확히 30.72GB(약 31GB)이고, 이를 4비트로 압축하면 약 7.4배가 되어 4GB대에 들어갑니다. 다만 README가 차원을 명시하지 않으므로 768차원은 산술로 역산한 추정이며, 1536차원이라면 같은 1천만 개는 61GB가 맞고 31GB는 틀립니다. 압축비 자체는 비트 산술상 정의로 참이지만, 그 압축에서 검색 품질(recall)이 얼마나 유지되는지는 별개의 문제입니다." },
                 { question: "turbovec은 정말 FAISS보다 빠른가요?", answer: "대부분 구성에서는 그렇지만, 항상 그런 것은 아닙니다. 저자 측정으로 ARM에서 12~20% 빠르고 x86에서 대등 이상이라고 README에 적혀 있습니다(100K 벡터 규모, 저자 단독 측정). 그러나 같은 README가 2비트 멀티스레드 구성(d=1536, d=3072)에서는 FAISS보다 2~4% 느리다고 직접 밝힙니다. 따라서 '항상 FAISS 동등 이상'이라는 주장은 일부 구성에서 거짓입니다." },
                 { question: "TurboQuant은 왜 학습이 필요 없나요?", answer: "벡터를 무작위 직교행렬로 회전시키면 좌표 분포가 입력과 무관하게 알려진 형태(Beta 분포, 고차원에서 가우시안)로 수렴하기 때문입니다. 분포를 미리 알면 양자화 경계와 중심을 데이터가 아니라 수학으로 계산할 수 있습니다. 이것이 data-oblivious의 핵심입니다. 반면 FAISS의 곱 양자화(PQ)는 코드북을 k-means로 학습해야 합니다." },
                 { question: "TurboQuant은 누가 만든 알고리즘인가요?", answer: "구글 연구진의 논문입니다(arXiv:2504.19874). 저자는 Amir Zandieh, Majid Daliri, Majid Hadian, Vahab Mirrokni이고 2025년 4월 28일 게재됐습니다. 소속은 Google Research·Google DeepMind·뉴욕대로 보도되나 abstract 본문에는 표기가 없어 2차 출처에 의존합니다. turbovec(github.com/RyanCodrai/turbovec)은 이 논문을 오픈소스로 구현한 별개 프로젝트입니다." },
                 { question: "turbovec은 FAISS를 대체할 수 있나요?", answer: "상황에 따라 다릅니다. 코퍼스가 자주 바뀌어 재색인이 부담스럽거나, 신규 벡터를 온라인으로 계속 적재하거나, 메모리가 빠듯한 환경이거나, 학습 데이터를 준비하기 어려운 콜드 스타트라면 turbovec의 학습 없는 성질이 값을 합니다. 반대로 대규모 프로덕션 안정성, 정적 코퍼스, IVF-PQ·HNSW 같은 풍부한 옵션과 GPU 가속, 10M+ 검증된 recall 곡선이 필요하면 FAISS를 유지하는 편이 안전합니다." },
-                { question: "turbovec의 성능 수치는 믿을 만한가요?", answer: "모든 성능 숫자가 저자 한 사람의 100K 규모 측정입니다(author-benchmark). 제3자가 대규모로 독립 재현·검증한 보고는 발견되지 않았습니다. 헤드라인이 말하는 10M 규모에서 recall·속도·메모리를 동시에 측정한 값도 README에서 직접 확인되지 않습니다(unverified). 다만 저자가 불리한 결과(저차원에서 FAISS에 뒤짐, 일부 구성서 느림)까지 README에 공개한 점은 신뢰를 더합니다." },
+                { question: "turbovec의 성능 수치는 믿을 만한가요?", answer: "모든 성능 숫자가 저자 한 사람의 100K 규모 측정입니다. 제3자가 대규모로 독립 재현·검증한 보고는 아직 발견되지 않았습니다. 헤드라인이 말하는 10M 규모에서 recall·속도·메모리를 동시에 측정한 값도 README에서 직접 확인되지 않습니다. 다만 저자가 불리한 결과(저차원에서 FAISS에 뒤짐, 일부 구성서 느림)까지 README에 공개한 점은 신뢰를 더합니다." },
                 { question: "RAG에서 벡터 압축이 왜 중요한가요?", answer: "RAG는 문서를 임베딩 벡터로 바꿔 메모리에 올려 두고 질의마다 가장 가까운 벡터를 찾습니다. 코퍼스가 커지면 이 인덱스가 메모리를 통째로 먹는 병목이 됩니다. 압축하면 더 작은(저렴한) 서버에 같은 인덱스를 올릴 수 있고, 적은 바이트를 읽으니 메모리 대역폭 병목도 완화돼 검색이 빨라집니다. 즉 압축은 용량 절약을 넘어 인프라 비용과 검색 속도를 동시에 건드리는 지렛대입니다." },
                 { question: "turbovec과 RaBitQ는 어떤 관계인가요?", answer: "같은 계보입니다. RaBitQ(arXiv:2405.12497, SIGMOD 2024)는 '이론적 오차 한계를 가진 회전+양자화'라는 선행 연구이고, turbovec README는 단계 5의 길이 재정규화 기법을 RaBitQ에서 차용했다고 명시합니다. 무작위 회전으로 기하 구조를 보존한 뒤 양자화한다는 큰 발상을 공유합니다." }
             ]
