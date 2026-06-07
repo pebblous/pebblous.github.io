@@ -20,7 +20,7 @@ pebblous.github.io/  (현재)
 │   └─ docs/style.md, content-guidelines.md              ← 가이드
 │
 └─ [자산 3: 발행 도구 + Blog Service]
-    ├─ tools/generate-og-image.js, validate-articles.py        ← 결정론적 도구
+    ├─ tools/generate-og-image.js, validate-articles.js        ← 결정론적 도구
     ├─ tools/scan-files-index.py, tools/scan-articles-meta.py  ← 인덱싱 도구
     ├─ tools/generate-rss.js, tools/generate-sitemap.js        ← 피드/사이트맵 생성
     ├─ .github/workflows/*                                     ← CI

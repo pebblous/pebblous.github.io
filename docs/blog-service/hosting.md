@@ -23,7 +23,7 @@
 
 | 미포함 (의도) | 영향 |
 |---|---|
-| **python3** | publish-prep의 python3 의존 단계(`validate-articles.py` 등)는 컨테이너 내 실행 불가. → 추적 이슈 [#33](https://github.com/joohaeng-pbls/blog-service/issues/33). precheck 게이트(`tools/precheck-gate.js`)는 ENOENT를 inert로 처리해 1차 완충. |
+| **python3** | publish-prep는 이제 **python hard-dep 없음** — `validate-articles`(Step 2.5)·`inject-provenance`(Step 2.6)를 node로 포팅(#33). precheck 게이트(`tools/precheck-gate.js`)의 외부 precheck CLI만 python일 수 있으나 ENOENT를 inert로 처리해 완충. 콘텐츠 인덱싱 python 도구(`scan-articles-meta.py` 등)는 사본 CI에서 돌아 영향 없음. |
 
 - `EXPOSE 8910`, 기본 CMD = `node dist/http-server.js`.
 - 컨테이너 기본값: `BLOG_SERVICE_HTTP_HOST=0.0.0.0`(앞단 프록시 전제), `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`.
