@@ -398,6 +398,7 @@ Agent(
     - mainTitle의 핵심 주장이 Executive Summary key-insight에 산문으로 등장해야 함
     - ⛔ 수치는 stat-card 담당 — key-insight에 수치 4개 이상 나열 금지 (역피라미드 산문, html-conventions.md §5)
     - stat-card에 mainTitle 관련 지표 포함 필수 (3~4개, 5개 이상 금지)
+    - ⛔ stat-card는 주제를 정량으로 이해시키는 수치(능력·규모·변화량·한계)여야 함. 메타데이터(논문 페이지 수·분류 축 개수·발표일·버전) 카드 금지 — 초안엔 placeholder로 두고 Phase 5-D.5에서 본문 역추출로 확정 (html-conventions.md §5 "stat-card 자격")
     - 외부 보고서 기반 글: mainTitle에 외부 브랜드명 금지, subtitle에 배치
 
     출력:
@@ -446,9 +447,16 @@ Phase 4.5 승인 후, 퍼블리싱 전에 반드시 아래 **5단계(5-A ~ 5-E)*
 | 5-B text-reinforce | 항상 호출 | 결과적으로 보강할 곳이 0개여도 호출은 한다 |
 | 5-C image-reinforce | 항상 호출 | 본문 이미지가 4개 이상이고 핵심 주제 시각 자료가 포함된 경우만 skip 가능. 그 외 일반론 / 본문 이미지 < 4 / 주제 매칭 부족 시 반드시 호출 |
 | 5-D bibliography | references 4개 이상이면 항상 호출 | references < 4면 skip 가능 |
+| 5-D.5 stat-card 역추출 | ✅ 항상 (KO·EN 둘 다) | (skip 불가) |
 | 5-E ko-prose-humanizer | ✅ 항상 (KO·EN 둘 다) | (skip 불가) |
 
 → "본문이 충분히 풍부하니까", "이미 충분히 길어서" 같은 주관 판단으로 skip하지 말 것. 객관 조건만 사용.
+
+⛔ **5-D.5 stat-card 역추출 (메타데이터 카드 방지)**: 초안 단계의 Executive Summary stat-card는 본문이 없어 거의 항상 "메타데이터 카드"(논문 페이지 수·분류 개수·발표일)로 채워진다. **본문·이미지·참고문헌이 모두 확정된 이 시점**에, 완성된 본문을 다시 읽어 가장 강한 정량 신호 3~4개를 역추출해 stat-card를 **재작성**한다.
+- 카드 자격: 주제를 정량으로 이해시키는 수치 (능력·규모·변화량·한계). 메타데이터(페이지 수·축 개수·버전) 금지. 상세 기준·예시는 `html-conventions.md §5` "stat-card 자격" 표.
+- 카드↔본문 일관성: 카드의 수치가 본문에 실제로 등장·설명되는지 확인.
+- 후보가 메타데이터뿐이면 stat-card 섹션을 **삭제**한다 (형식적으로 채우지 않는다).
+- KO 확정 후 EN도 동일 수치로 동기화.
 
 ```bash
 python3 tools/report-produce-logger.py start --slug [slug] --phase 5-A --agent self-review --model sonnet
