@@ -29,7 +29,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # PAT 우선(미설정 시 GITHUB_TOKEN). pebblous org 정책이 GITHUB_TOKEN 의
+          # PR 생성을 막으므로(#289), 인덱스 PR 생성·머지는 PAT(INDEX_PUSH_TOKEN)로 한다.
+          token: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
           fetch-depth: 0  # Fetch full history for better git operations
 
       - name: Set up Node.js
@@ -88,7 +90,8 @@ jobs:
       - name: Commit & merge index updates via PR
         if: steps.check_changes.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PAT(INDEX_PUSH_TOKEN) 로 PR 생성·머지 — org 정책이 GITHUB_TOKEN PR 생성을 막음(#289).
+          GH_TOKEN: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
@@ -113,10 +116,16 @@ jobs:
           git commit -m "chore(index): auto-update $COMMIT_FILES [skip ci]"
           git push origin "$BRANCH"
 
-          gh pr create --base main --head "$BRANCH" \
+          # 실패 시 방금 push 한 브랜치 정리(orphan 누적 방지).
+          cleanup() { git push origin --delete "$BRANCH" >/dev/null 2>&1 || true; }
+
+          if ! gh pr create --base main --head "$BRANCH" \
             --title "chore(index): auto-update $COMMIT_FILES [skip ci]" \
-            --body "자동 인덱스 갱신(sitemap/rss/llms). update-sitemap.yml 가 발행 후 생성·자체 머지. #289" \
-            || { echo "::error::인덱스 PR 생성 실패 — Settings→Actions→General 의 'Allow GitHub Actions to create and approve pull requests' 활성화 필요(#289)."; exit 1; }
+            --body "자동 인덱스 갱신(sitemap/rss/llms). update-sitemap.yml 가 발행 후 생성·자체 머지. #289"; then
+            cleanup
+            echo "::error::인덱스 PR 생성 실패 — INDEX_PUSH_TOKEN 시크릿(사본 contents+PR write PAT) 확인 필요. pebblous org 정책이 GITHUB_TOKEN PR 생성을 막음(#289)."
+            exit 1
+          fi
 
           # 머지(승인0·코드오너無 → 즉시 가능). mergeability 계산 지연 대비 재시도.
           merged=false
@@ -125,7 +134,8 @@ jobs:
             sleep 5
           done
           if [ "$merged" != "true" ]; then
-            echo "::error::인덱스 PR 머지 실패 — ruleset/권한 확인 필요(#289)."
+            gh pr close "$BRANCH" --delete-branch >/dev/null 2>&1 || cleanup
+            echo "::error::인덱스 PR 머지 실패 — INDEX_PUSH_TOKEN 권한/ruleset 확인 필요(#289)."
             exit 1
           fi
 
