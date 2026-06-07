@@ -22,7 +22,8 @@ jobs:
   update-sitemap-and-rss:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Required for pushing changes
+      contents: write        # 브랜치 push + 머지
+      pull-requests: write   # 인덱스 갱신 PR 생성·머지 (main ruleset 우회, #289)
 
     steps:
       - name: Checkout repository
@@ -84,42 +85,47 @@ jobs:
           [ "$RSS_CHANGED" = "true" ] && echo "📝 RSS feed has changes" && git diff --stat rss.xml || echo "✅ No changes in RSS feed"
           [ "$LLMS_CHANGED" = "true" ] && echo "📝 llms.txt has changes" && git diff --stat llms.txt || echo "✅ No changes in llms.txt"
 
-      - name: Commit and push if changed
+      - name: Commit & merge index updates via PR
         if: steps.check_changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
+          # main 직접 push 는 ruleset(pull_request 필수, bypass 없음)이 GH013 으로 거부(#289).
+          # sitemap/rss/llms 는 CODEOWNERS 무소속 + 승인 0 → 봇이 PR 만들어 자체 머지하면
+          # 거버넌스(모든 변경 PR 경유)를 지키면서 인덱싱 자동화 유지.
+          BRANCH="auto/index-update-${{ github.run_id }}-${{ github.run_attempt }}"
+          git checkout -b "$BRANCH"
+
           COMMIT_FILES=""
-          COMMIT_MSG="Auto-update"
-
           if [ "${{ steps.check_changes.outputs.sitemap_changed }}" = "true" ]; then
-            git add sitemap.xml
-            COMMIT_FILES="sitemap.xml"
+            git add sitemap.xml; COMMIT_FILES="sitemap.xml"
           fi
-
           if [ "${{ steps.check_changes.outputs.rss_changed }}" = "true" ]; then
-            git add rss.xml
-            [ -n "$COMMIT_FILES" ] && COMMIT_FILES="$COMMIT_FILES, rss.xml" || COMMIT_FILES="rss.xml"
+            git add rss.xml; COMMIT_FILES="${COMMIT_FILES:+$COMMIT_FILES, }rss.xml"
           fi
-
           if [ "${{ steps.check_changes.outputs.llms_changed }}" = "true" ]; then
-            git add llms.txt
-            [ -n "$COMMIT_FILES" ] && COMMIT_FILES="$COMMIT_FILES, llms.txt" || COMMIT_FILES="llms.txt"
+            git add llms.txt; COMMIT_FILES="${COMMIT_FILES:+$COMMIT_FILES, }llms.txt"
           fi
 
-          git commit -m "Auto-update $COMMIT_FILES [skip ci]" || exit 0
+          git commit -m "chore(index): auto-update $COMMIT_FILES [skip ci]"
+          git push origin "$BRANCH"
 
-          # Retry push; FAIL loudly if all attempts rejected.
-          # 이전엔 마지막 명령이 `sleep`(exit 0)이라 push 거부(ruleset GH013)에도
-          # step 이 success 로 끝나 silent fail → 인덱스 누락. 이제 명시적으로 실패시킨다. (#289)
-          pushed=false
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore(index): auto-update $COMMIT_FILES [skip ci]" \
+            --body "자동 인덱스 갱신(sitemap/rss/llms). update-sitemap.yml 가 발행 후 생성·자체 머지. #289" \
+            || { echo "::error::인덱스 PR 생성 실패 — Settings→Actions→General 의 'Allow GitHub Actions to create and approve pull requests' 활성화 필요(#289)."; exit 1; }
+
+          # 머지(승인0·코드오너無 → 즉시 가능). mergeability 계산 지연 대비 재시도.
+          merged=false
           for i in 1 2 3; do
-            if git pull --rebase origin main && git push; then pushed=true; break; fi
-            sleep 2
+            if gh pr merge "$BRANCH" --merge --delete-branch; then merged=true; break; fi
+            sleep 5
           done
-          if [ "$pushed" != "true" ]; then
-            echo "::error::인덱스(sitemap/rss/llms) push 가 거부됨 — main 직접 push 차단(ruleset GH013 가능성). 인덱스 미반영. → 이슈 #289 (봇 bypass 또는 PR 경로 필요)."
+          if [ "$merged" != "true" ]; then
+            echo "::error::인덱스 PR 머지 실패 — ruleset/권한 확인 필요(#289)."
             exit 1
           fi
 
