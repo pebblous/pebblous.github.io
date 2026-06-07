@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>Data Clinic 엔진 Apple Silicon 재현 2026 — device-aware로 sovereign AI 이식하기 | 페블러스</title>
+    <meta name="description" content="NVIDIA·vLLM 전제의 Pebblous Data Clinic 엔진을 Apple Silicon Mac에서 재현하다. 벽 12개를 근본 수정으로 뚫고, 가장 깊은 .cuda() 한 줄을 device-aware로 풀어 콩잎 밀도맵을 살린 기록.">
+    <meta name="keywords" content="DataClinic, AADS, Apple Silicon, MPS, device-aware, vendor-neutral, sovereign AI, 온프렘, 데이터품질, automatic-config, Wolfram, 페블러스">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/automatic-config-apple-silicon-2026/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/automatic-config-apple-silicon-2026/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/automatic-config-apple-silicon-2026/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/automatic-config-apple-silicon-2026/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="한 줄도 안 돌던 엔진이 콩잎 밀도맵을 그리기까지">
+    <meta property="og:description" content="NVIDIA·vLLM 전제의 Data Clinic 엔진을 Apple Silicon에서 재현하다. 벽 12개를 우회가 아닌 근본 수정으로 뚫었고, 가장 깊은 벽은 .cuda() 한 줄이었다. device-aware와 vendor-neutral이 sovereign 이식의 핵심.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/automatic-config-apple-silicon-2026/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/automatic-config-apple-silicon-2026/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Data Clinic 엔진 Apple Silicon 재현 — device-aware로 sovereign AI 이식하기">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="한 줄도 안 돌던 엔진이 콩잎 밀도맵을 그리기까지">
+    <meta name="twitter:description" content="NVIDIA·vLLM 전제의 Data Clinic 엔진을 Apple Silicon에서 재현하다. 벽 12개를 근본 수정으로 뚫고, 가장 깊은 벽 .cuda() 한 줄을 device-aware로 풀어 밀도맵을 살린 기록.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/automatic-config-apple-silicon-2026/ko/image/index.png">
+    <meta name="twitter:image:alt" content="Data Clinic 엔진 Apple Silicon 재현 — device-aware로 sovereign AI 이식하기">
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="한 줄도 안 돌던 엔진이 콩잎 밀도맵을 그리기까지 — Data Clinic 엔진 Apple Silicon 재현">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/06/07">
+    <meta name="citation_online_date" content="2026/06/07">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260607">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260607">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260607">
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 한 줄도 안 돌던 엔진</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. NVIDIA·vLLM이라는 암묵 전제</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 벽 12개 — 우회가 아닌 근본 수정</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 가장 깊은 벽 — .cuda() 한 줄</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 다섯 개의 렌즈와 3계층 라우팅</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 진단이 콩잎에 대해 말한 것</a></li>
+                    <li><a href="#section-7" class="block pl-4 themeable-toc-link transition-colors duration-200">7. 페블러스 관점</a></li>
+                    <li><a href="#section-8" class="block pl-4 themeable-toc-link transition-colors duration-200">8. 끝까지 추적해 전부 닫았다</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            한 줄도 안 돌던 엔진이 있었다. <strong>automatic-config</strong>는 페블러스가 AADS 과제에서 <a href="/project/DataGreenhouse/data-greenhouse-strategy/ko/" class="text-orange-500 hover:underline">데이터그린하우스(DataGreenhouse)</a>를 개발하며 만든 Data Clinic의 진단 엔진, 우리 팀의 사내 핵심 자산이다. 빠르게 동작하는 엔진을 먼저 만든 팀의 합리적 선택대로, 이 엔진은 NVIDIA GPU 한 대와 vLLM 서버가 켜진 사내 환경에 맞춰 쓰여 있었다. Apple Silicon Mac에는 그 셋 중 무엇도 없다. 우리는 우리 손으로 만든 이 엔진을 처음부터 끝까지 Mac에서 다시 돌려 보기로 했다. 도착점은 콩잎 한 장의 밀도맵, 데이터의 품질을 눈으로 보는 그림이었다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            막힌 자리는 모두 열두 군데였다. 우리는 그 벽들을 우회하지 않았다. 매 벽마다 "1 커밋 = 1 처방"으로 근본을 고쳤다. 가장 깊었던 벽은 의외로 단순했다. 밀도맵을 통째로 무너뜨린 것은 보조 스크립트 안의 <code>.cuda()</code> 한 줄이었다. 그 한 줄을 device-aware(cuda→mps→cpu)로 바꾸자 밀도맵이 살아났다. 그렇게 <strong>preprocessing → recommendation → diagnosis 풀 파이프라인이 Mac에서 처음으로 끝까지 완주</strong>했다. 우리 엔진이 NVIDIA 바깥에서 end-to-end로 돈 첫 기록이다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            완주의 끝에서 엔진은 스스로 판단도 했다. 콩잎 데이터에 어떤 임베딩 렌즈가 맞는지 묻자, 추천 단계가 <code>openai/clip-vit-base-patch32</code>를 자동으로 골랐다. 진단은 그 위에서 다섯 가지 거리 메트릭으로 같은 데이터를 다섯 번 들여다봤다. 사람이 손으로 모델을 지정하지 않아도, 엔진이 데이터에 맞는 렌즈를 스스로 고르고 여러 각도로 데이터의 모양을 읽었다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            이 글은 성공기이되 절제된 성공기다. 하드코딩을 "제거"가 아니라 "라우팅 가능한 백엔드"로 일반화한 발상, 그 발상이 엔진을 어떻게 vendor-neutral하게 만드는지, 다섯 렌즈가 콩잎 데이터에 대해 무엇을 말했는지, 그리고 끝까지 추적해 닫은 마지막 잔여까지 함께 적는다. 우리 팀이 만든 엔진을 우리 손으로 다시 읽고, 어디에서나 돌아가는 sovereign 자리로 옮긴다는 것이 무엇인지에 대한 기록이다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards — 본문 역추출 (작업 규모·능력·구조·결과). 모든 수치는 본문에서 다룬다. -->
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">숫자로 보면</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">M5 Max / 128GB / macOS, 2026-06-07. 출처: Pebblous Data Clinic 로컬 재현 기록.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">12개 벽</p>
+                            <p class="text-sm themeable-text-secondary mt-1">1 커밋 = 1 처방</p>
+                            <p class="text-xs themeable-muted mt-1">우회가 아니라 근본 수정으로 하나씩 통과</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1.9 → 46</p>
+                            <p class="text-sm themeable-text-secondary mt-1">임베딩 img/s (MPS)</p>
+                            <p class="text-xs themeable-muted mt-1">device-aware로 CPU에서 Apple Silicon GPU 경로 전환</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">3계층</p>
+                            <p class="text-sm themeable-text-secondary mt-1">vendor-neutral 라우팅</p>
+                            <p class="text-xs themeable-muted mt-1">지각·추론·분석을 env로 갈아끼우는 백엔드로</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">5/5 렌즈</p>
+                            <p class="text-sm themeable-text-secondary mt-1">메트릭 밀도맵 전부 렌더</p>
+                            <p class="text-xs themeable-muted mt-1">막혔던 조합 메트릭까지 끝까지 추적해 전부 해결</p>
+                        </div>
+                    </div>
+
+                    <blockquote class="themeable-card rounded-xl p-5 my-6 themeable-text leading-relaxed">
+                        <p><strong><em>편집자의 노트.</em></strong> 페블러스가 AADS 과제에서 데이터그린하우스를 개발하며 만든 우리 엔진을 굳이 Mac에서 다시 돌려 본 데는 전략적인 이유가 있다. <a href="/project/DataClinic/ko/" class="text-orange-500 hover:underline">DataClinic</a>이 다루는 데이터 진단은 결국 고객의 환경에서 돌아야 한다. 그 환경은 늘 NVIDIA 클러스터가 아니다. 규제 산업의 온프렘 서버일 수도, 데이터를 외부로 내보낼 수 없는 sovereign 환경일 수도 있다. 데이터가 고객의 울타리를 벗어날 수 없는 영역으로 진단이 닿으려면, sovereign·온프렘 운영은 페블러스가 가야 할 방향이다. 우리 엔진을 우리 손으로 한 번 끝까지 돌려 봐야, AADS가 어디에서나 돌아가게 만들 청사진을 실측으로 얻는다. 이 글은 그 첫 실측이다.</p>
+                    </blockquote>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">한 줄도 안 돌던 엔진</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        우리가 손에 쥔 것은 문서가 아니라 동작하는 코드였다. <code>automatic-config</code>는 페블러스가 AADS 과제에서 데이터그린하우스를 개발하며 만든 진단 엔진이고, 그 안의 <code>vision_agent</code>는 Pebblous Data Clinic 2.0의 실제 엔진으로 다섯 도메인이 하나의 파이프라인으로 묶여 있다. 데이터를 씻어 임베딩으로 바꾸는 전처리(preprocessing), 데이터셋에 맞는 임베딩 렌즈를 자동으로 고르는 추천(recommendation), 밀도와 거리와 N-지표로 데이터의 모양을 재는 진단(diagnosis), 그리고 데이터를 덜거나 보태는 다이어트(diet)와 벌크업(bulkup)이다. 진단 엔진이라는 말이 추상적으로 들리지만, 그 끝에는 콩잎 이미지의 밀도를 그린 한 장의 지도가 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 엔진에는 두 가지 구조적 특징이 있고, 그 둘이 그대로 이식의 부담이 된다. 하나는 이중 트랙이다. 결정론적으로 단계를 밟는 graph(StateGraph)와, LLM이 단계를 오케스트레이션하는 react가 함께 들어 있다. 다른 하나는 하이브리드 언어다. 신경망과 feature 추출은 Python이 맡고, 밀도와 기하의 수학 그리고 차트 렌더는 Wolfram(.wl)이 맡는다. Python과 Wolfram이 한 파이프라인 안에서 서로를 호출한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그리고 device와 모델이 코드 곳곳에 고정돼 있었다. 이것은 사내 GPU 환경에 맞춰 빠르게 동작하도록 짠 코드의 자연스러운 결과다. 추론용 LLM으로 61GB짜리 Qwen2.5-32B가 박혀 있었고, 역할별 모델(VLM·RAG)도 고정돼 있었다. LLM 엔드포인트는 <code>localhost:11211</code>의 vLLM을 가리켰고, device는 곳곳에서 <code>"cuda"</code> 혹은 <code>.cuda()</code>였다. MPS로 분기하는 자리는 한 곳도 없었다. 한 줄로 요약하면, 그 엔진이 만들어진 자리, 곧 "NVIDIA 한 대와 vLLM이 켜진 사내 서버"에 충실한 코드였다. 그 위에 sovereign 레이어를 더하는 것이 이번 작업이다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            그래서 Mac에서는 첫 줄부터 멈췄다. <code>python</code>도 우리가 원하는 자리에 없었고, <code>cuda</code>는 존재하지 않았고, <code>11211</code> 포트의 vLLM도 켜져 있지 않았다. 한 줄도 안 돌던 엔진. 출발점은 거기였다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">NVIDIA·vLLM이라는 암묵 전제</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        코드를 읽다 보면, 명시되지 않은 전제일수록 더 깊이 박혀 있다는 걸 알게 된다. automatic-config의 전제는 어디에도 "이 엔진은 NVIDIA에서만 돕니다"라고 적혀 있지 않았다. 다만 모든 줄이 그것을 가정하고 있었다. 전제는 선언이 아니라 습관으로 코드에 스민다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 무거운 전제는 모델의 크기였다. 추론 LLM으로 후보를 추려 놓고도 61GB짜리 Qwen2.5-32B를 별도로 내려받게 돼 있었다. 노트북에서 그 한 줄은 곧 디스크와 다운로드 시간의 벽이 된다. 그 옆으로 역할별 모델(VLM-2B·RAG-meta-7B·RAG-emb-8B)이 고정값으로 박혀 있었다. 어떤 모델을 쓸지가 코드 안에 굳어 있으면, 환경이 바뀌어도 모델은 바뀌지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 번째 전제는 엔드포인트였다. 결정용 LLM은 <code>localhost:11211</code>의 vLLM을 호출했다. Mac에는 그 포트에 아무것도 없으니 돌아오는 것은 <code>Connection refused</code> 한 줄이다. 세 번째 전제는 가장 깊었다. device가 곳곳에서 <code>"cuda"</code>였다. CUDA가 없는 기계에서 그 줄은 분기 없이 그대로 크래시한다. 네 번째 전제는 Wolfram이었다. 밀도와 기하의 수학을 Wolfram(.wl)이 맡았는데, 이는 독점 런타임이고 라이선스가 필요하며 콜드스타트에 약 40초가 걸린다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 전제들은 비난할 대상이 아니다. 사내 서버에서 빠르게 동작하는 엔진을 만들려면 합리적인 선택이었다. 다만 그 엔진을 다른 자리로 옮기려는 순간, 암묵 전제 하나하나가 벽이 된다. 이식이란 결국 누군가 당연하게 여긴 것을 다시 질문하는 일이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">벽 12개 — 우회가 아닌 근본 수정</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        막힌 자리는 모두 열두 군데였다. 우회하는 길은 늘 있었다. 차원을 줄이거나, 단계를 건너뛰거나, 임시 패치로 덮을 수 있었다. 그러나 우리는 매번 근본을 고치기로 했다. 원칙은 단순했다. "1 커밋 = 1 처방". 벽 하나에 처방 하나, 그리고 그 처방이 왜 정당한 portability 수정인지가 커밋 메시지에 남도록 했다. 아래 표가 그 열두 벽의 전모다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="themeable-border" style="border-bottom: 2px solid;">
+                                    <th class="text-left p-3 font-bold themeable-heading">#</th>
+                                    <th class="text-left p-3 font-bold themeable-heading">벽</th>
+                                    <th class="text-left p-3 font-bold themeable-heading">증상</th>
+                                    <th class="text-left p-3 font-bold themeable-heading">처방</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">1</td>
+                                    <td class="p-3">추론 LLM 61GB</td>
+                                    <td class="p-3">Qwen2.5-32B 하드코딩 다운로드</td>
+                                    <td class="p-3">env 라우팅 (<code>RECOMMEND_REASONING_MODEL</code>)</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">2</td>
+                                    <td class="p-3">역할별 모델 하드코딩</td>
+                                    <td class="p-3">VLM·RAG 모델 고정</td>
+                                    <td class="p-3">env 라우팅</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">3</td>
+                                    <td class="p-3">hf 소켓 hang</td>
+                                    <td class="p-3">큰 모델 다운로드가 0/N에서 정지</td>
+                                    <td class="p-3"><code>hf_transfer</code> (Rust 다운로더)</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">4</td>
+                                    <td class="p-3">fork DataLoader 데드락</td>
+                                    <td class="p-3">macOS에서 <code>num_workers&gt;0</code> 충돌</td>
+                                    <td class="p-3">비-CUDA면 <code>num_workers=0</code></td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">5</td>
+                                    <td class="p-3">MPS 미사용</td>
+                                    <td class="p-3">cuda-or-cpu만 분기 → CPU 1.9 img/s</td>
+                                    <td class="p-3">device-aware mps (15~46 img/s)</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">6</td>
+                                    <td class="p-3">OMP libomp 3중복</td>
+                                    <td class="p-3">faiss+torch+sklearn 세그폴트</td>
+                                    <td class="p-3"><code>KMP_DUPLICATE_LIB_OK=TRUE</code> 외</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">7</td>
+                                    <td class="p-3">거리/밀도 <code>device="cuda"</code></td>
+                                    <td class="p-3">gaussian-rbf 경로 크래시</td>
+                                    <td class="p-3">device-aware</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">8</td>
+                                    <td class="p-3">N-지표 인덱스</td>
+                                    <td class="p-3"><code>n_candidates</code>(512&gt;N) 순회 → 파일 부재</td>
+                                    <td class="p-3"><code>valid_n</code> 순회</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">9</td>
+                                    <td class="p-3">결정 LLM 11211 하드코딩</td>
+                                    <td class="p-3"><code>Connection refused</code></td>
+                                    <td class="p-3">env 라우팅 (LM Studio 1234)</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">10</td>
+                                    <td class="p-3">Wolfram→python</td>
+                                    <td class="p-3"><code>RunProcess["python"]</code>이 시스템 python</td>
+                                    <td class="p-3">PATH에 <code>.venv/bin</code> 주입</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">11</td>
+                                    <td class="p-3">feature.mx stale 캐시</td>
+                                    <td class="p-3">깨진 .mx + 존재-가드가 재생성 차단</td>
+                                    <td class="p-3">깨진 캐시 삭제 후 재생성</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold">12</td>
+                                    <td class="p-3">norm/nearest_set <code>.cuda()</code></td>
+                                    <td class="p-3">밀도맵 x축 <code>$Failed</code></td>
+                                    <td class="p-3">device-aware</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표를 다시 읽어 보면 한 가지 결이 보인다. 처방의 절반 이상이 같은 종류다. 하드코딩된 무언가를 env로 빼거나, <code>"cuda"</code> 한 자리를 device-aware로 바꾸는 것이다. 벽들은 서로 다른 모양이었지만, 그 뿌리는 놀랄 만큼 비슷했다. 이 닮음이 다음 절의 통찰로 이어진다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 가지 효과는 숫자로도 또렷했다. 벽 5번, MPS를 켜기 전 임베딩 속도는 초당 1.9장이었다. Apple Silicon의 Metal Performance Shaders로 device 경로를 열자 초당 15장에서 46장으로 올라갔다. 같은 코드, 같은 기계, 바뀐 것은 device 분기 한 군데였다. 도구 스택은 Mac 위에서 이렇게 정리됐다. 전처리 임베딩은 SigLIP(MPS), 진단 feature 렌즈는 CLIP, 결정 LLM은 LM Studio의 qwen3.6-35b, 분석 수학과 차트는 Wolfram, 대형 모델 다운로드는 hf_transfer가 맡았다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">가장 깊은 벽 — .cuda() 한 줄이 무너뜨린 밀도맵</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        벽 열둘 중 가장 오래 붙잡은 것은 마지막이었다. 진단이 다 끝난 뒤, 밀도맵이 그려져야 할 자리에 그림 대신 텍스트가 떴다. <code>Flatten[$Failed]</code>로 채워진 그리드. Wolfram의 <code>$Failed</code>는 "계산을 시도했으나 결과가 없다"는 표식이다. 차트는 멀쩡한데 밀도가 통째로 비어 있었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        양파를 까는 추적이었다. 한 겹을 벗기면 멀쩡한 줄이 나오고, 그 줄을 따라가면 또 다른 벽이 기다렸다. 밀도맵은 <code>density.mx</code>를 읽고, <code>density.mx</code>는 <code>norm.mx</code>를 전제하고, <code>norm.mx</code>는 다시 <code>feature.mx</code>에 기댄다. 의심 가는 곳을 차례로 짚어 가며 다층 의존을 한 겹씩 벗기자, 가장 안쪽에 norm이 통째로 생성되지 않은 자리가 있었다. 거기서 추적이 멈췄다. 그 norm을 만드는 <code>norm.py</code> 안에, macOS에서 크래시하는 줄이 하나 있었다. 바로 <code>.cuda()</code>. 며칠을 따라온 끝이 고작 한 줄이라는 사실이 허탈하면서도 통쾌했다. CUDA가 없는 기계에서 그 한 줄이 norm 산출을 통째로 무너뜨렸고, 그 위에 쌓인 밀도맵이 전부 <code>$Failed</code>가 된 것이다. 같은 패턴이 <code>nearest_set.py</code>에도 한 줄 더 숨어 있었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        처방은 벽 5번, 7번과 똑같았다. device-aware. <code>cuda → mps → cpu</code>로 분기하도록 두 줄을 고쳤다. 그러자 norm이 정상으로 산출됐고, 그 위로 밀도가 다시 계산됐다. 한 줄이 무너뜨린 그림을, 한 줄이 다시 세웠다. 아래가 그렇게 살아난 밀도맵이다. 한 줄도 안 돌던 엔진이 끝까지 살아남았다는 증거다.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/norm-density-heatmap.png"
+                             alt="콩잎 임베딩의 밀도 히트맵 — 노란 고밀도 중심에서 바깥으로 등고선이 퍼지고, 점으로 표시된 샘플들 사이로 가장자리에 이상치 고리가 보인다"
+                             class="w-full max-h-[520px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 밀도 히트맵(SmoothDensityHistogram) — 노란 고밀도 중심에서 등고선이 퍼지고, 점은 개별 샘플, 가장자리의 고리는 이상치다. <code>.cuda()</code> 한 줄을 device-aware로 고치자 norm이 정상 산출됐고 이 그림이 살아났다. | 출처: Pebblous Data Clinic 로컬 재현, 2026-06-07
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            가장 깊은 벽이 가장 단순한 줄이었다는 사실이 이 작업의 교훈을 압축한다. 진단 차트가 <code>$Failed</code>로 깨질 때, 원인은 화려한 알고리즘이 아니라 보조 스크립트 끝에 박힌 device 하드코딩 한 줄인 경우가 많았다. device-aware는 macOS와 sovereign 환경 이식의 1번 과제다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">다섯 개의 렌즈와 3계층 라우팅</h2>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>같은 데이터를 다섯 개의 렌즈로 본다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        밀도맵이 살아난 뒤, 진단은 한 장의 그림으로 끝나지 않았다. 진단 엔진은 같은 콩잎 임베딩을 다섯 가지 거리 메트릭으로 다섯 번 들여다봤다. 거리 메트릭이란 "두 데이터가 얼마나 가까운가"를 재는 자다. 자를 바꾸면 같은 데이터도 다르게 보인다. 다섯 개의 메트릭은 곧 같은 데이터를 비추는 다섯 개의 렌즈인 셈이다. 렌즈가 읽어 내는 임베딩 자체를 어떻게 다루느냐도 한 갈래의 자매 주제인데, 이를테면 <a href="/report/turbovec-2026/ko/" class="text-orange-500 hover:underline">학습 없이 벡터를 압축하는 방법</a>은 같은 임베딩 공간을 다른 각도에서 들여다본다.
+                    </p>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>euclidean</strong>은 직선 거리다. 가장 직관적인 자로, 두 점 사이를 곧장 잰다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>gaussian-rbf</strong>는 국소 밀도 커널이다. 가까운 이웃에 더 큰 가중을 줘서 "주변이 얼마나 붐비는가"를 본다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>linear-cosine</strong>은 방향을 본다. 거리가 아니라 벡터가 같은 쪽을 보는지를 재는, "닮은 방향인가"를 묻는 렌즈다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>rbf×cosine</strong>은 두 렌즈의 곱이다. "가깝고(공) 동시에 같은 방향(원뿔)"을 둘 다 만족해야 높은 점수를 준다. <strong style="color: #F86825;">엔진이 콩잎 데이터에 자동으로 선택한 메트릭</strong>이다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>norm-rbf×cosine</strong>은 rbf×cosine의 정규화 변형이다. 스케일 차이를 눌러 분포의 모양을 더 또렷이 드러낸다.</span>
+                        </li>
+                    </ul>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        아래 다섯 장이 같은 콩잎 데이터를 다섯 렌즈로 비춘 결과다. euclidean이 넓고 둥근 구름이라면, rbf×cosine은 중심이 십자로 날카롭게 모인다. 같은 데이터인데 렌즈에 따라 코어의 모양이 이렇게 달라진다. 그리고 진단 엔진은 그중 하나를 데이터에 맞게 스스로 골랐다. 사람이 "이 데이터엔 이 자를 써라"라고 지시하지 않아도, 엔진이 데이터의 결을 보고 렌즈를 선택한다는 것이 이 단계의 핵심이다.
+                    </p>
+
+                    <figure class="my-8">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div>
+                                <img src="./image/metric-euclidean.png" alt="euclidean 메트릭 밀도맵 — 넓고 둥근 빨간 고밀도 구름" class="w-full rounded-xl border themeable-border" loading="lazy" onerror="this.parentElement.style.display='none'">
+                                <p class="text-xs themeable-muted mt-1 text-center">euclidean — 직선 거리</p>
+                            </div>
+                            <div>
+                                <img src="./image/metric-gaussian-rbf.png" alt="gaussian-rbf 메트릭 밀도맵 — 국소 밀도가 더 모인 코어" class="w-full rounded-xl border themeable-border" loading="lazy" onerror="this.parentElement.style.display='none'">
+                                <p class="text-xs themeable-muted mt-1 text-center">gaussian-rbf — 국소 밀도</p>
+                            </div>
+                            <div>
+                                <img src="./image/metric-linear-cosine.png" alt="linear-cosine 메트릭 밀도맵 — 방향 기반의 좁은 코어" class="w-full rounded-xl border themeable-border" loading="lazy" onerror="this.parentElement.style.display='none'">
+                                <p class="text-xs themeable-muted mt-1 text-center">linear-cosine — 방향</p>
+                            </div>
+                            <div>
+                                <img src="./image/metric-rbf-x-cosine.png" alt="rbf×cosine 메트릭 밀도맵 — 십자로 날카롭게 모인 코어, 엔진이 선택한 렌즈" class="w-full rounded-xl border-2 mx-auto" style="border-color: #F86825;" loading="lazy" onerror="this.parentElement.style.display='none'">
+                                <p class="text-xs mt-1 text-center font-semibold" style="color: #F86825;">rbf×cosine — 엔진 선택 ★</p>
+                            </div>
+                            <div>
+                                <img src="./image/metric-norm-rbf-x-cosine.png" alt="norm-rbf×cosine 메트릭 밀도맵 — 정규화로 가로로 늘어난 코어" class="w-full rounded-xl border themeable-border" loading="lazy" onerror="this.parentElement.style.display='none'">
+                                <p class="text-xs themeable-muted mt-1 text-center">norm-rbf×cosine — 정규화 변형</p>
+                            </div>
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-3">
+                            ▲ 같은 콩잎 데이터, 다섯 개의 렌즈 — 각 메트릭은 "가까움"을 재는 서로 다른 자다. euclidean은 넓고 둥글게, rbf×cosine은 중심을 십자로 날카롭게 본다. 엔진이 콩잎 데이터에 자동으로 고른 렌즈는 rbf×cosine이다. | 출처: Pebblous Data Clinic 로컬 재현, 2026-06-07
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>하드코딩을 라우팅 가능한 백엔드로</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        벽들을 다 뚫고 나서야 핵심 통찰이 또렷해졌다. 우리가 한 일은 하드코딩을 "제거"한 것이 아니었다. 하드코딩을 "라우팅 가능한 백엔드"로 일반화한 것이었다. 61GB 모델을 지운 게 아니라 모델을 env로 갈아끼울 수 있게 했고, vLLM 엔드포인트를 버린 게 아니라 엔드포인트를 env로 가리킬 수 있게 했다. 하드코딩된 값은 결함이 아니라 "라우팅 포인트의 후보"였던 셈이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 시각으로 보면 엔진이 세 개의 층으로 나뉜다. 지각·추론·분석이다. 신경망의 지각은 무늬를 읽는 눈에 가깝고, LLM의 추론은 그 무늬에 판단을 더하며, Wolfram의 분석은 수학으로 구조를 재고 그림으로 옮긴다. 세 층 각각에 라우팅 포인트가 하나씩 있다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="themeable-border" style="border-bottom: 2px solid;">
+                                    <th class="text-left p-3 font-bold themeable-heading">계층</th>
+                                    <th class="text-left p-3 font-bold themeable-heading">맡은 일</th>
+                                    <th class="text-left p-3 font-bold themeable-heading">라우팅 포인트</th>
+                                    <th class="text-left p-3 font-bold themeable-heading">상태</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">지각 (perception)</td>
+                                    <td class="p-3">Python 렌즈 — CLIP·SigLIP</td>
+                                    <td class="p-3">모델 라우팅 (<code>RECOMMEND_*_MODEL</code>)</td>
+                                    <td class="p-3">완료</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">추론 (reasoning)</td>
+                                    <td class="p-3">LLM 엔드포인트 — qwen3.6-35b</td>
+                                    <td class="p-3">엔드포인트 라우팅 (<code>LLM_BASE_URL</code>)</td>
+                                    <td class="p-3">완료</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold">분석 (analysis)</td>
+                                    <td class="p-3">Wolfram(.wl) 수학·차트</td>
+                                    <td class="p-3">엔진 라우팅 (<code>DIAGNOSIS_ENGINE</code>) — 제안</td>
+                                    <td class="p-3">아직 적용 아님 (#112)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 층 가운데 둘은 이미 vendor-neutral이 됐다. 지각의 모델은 env로 고를 수 있고, 추론의 LLM 엔드포인트도 env로 가리킬 수 있다. 그 모든 Python 보조 스크립트에는 device-aware(<code>cuda → mps → cpu</code>)가 적용됐다. 이것이 macOS sovereign 운영의 핵심이다. 남은 한 층은 분석이다. Wolfram은 강점이자 부담이다. 밀도와 기하의 수학을 우아하게 풀지만 독점 런타임이라 sovereign 환경에서 가장 무겁다. 분석 층은 <strong>아직 env로 갈아끼울 수 없다.</strong> 이 층에 <code>DIAGNOSIS_ENGINE</code>이라는 향후 라우팅 포인트를 두고, Wolfram을 열린 Python(numpy·scipy·matplotlib)으로 점진 이식하자는 것은 지금은 구현이 아니라 <strong>제안</strong>이다. 별도 이슈(#112)로 남겼고, 적용은 다음 작업이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 3계층 라우팅이 곧 이식의 청사진이다. 모델도, LLM도, 그리고 머지않아 분석 엔진까지 env로 갈아끼울 수 있다면, 같은 엔진이 NVIDIA 클러스터에서도 Apple Silicon에서도 규제 산업의 온프렘 서버에서도 똑같이 돈다. 아래는 그 청사진이 실제로 그려낸 결과물이다. 임베딩 공간에서 조밀한 샘플과 희소한 샘플을 한눈에 보여 주는 콩잎 몽타주다.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/beans-density-montage.png"
+                             alt="콩잎 샘플 몽타주 — 위쪽은 밀도가 높은 샘플, 아래쪽은 밀도가 낮은 샘플로 한글 라벨이 붙어 임베딩 공간의 조밀·희소를 한눈에 보여 준다"
+                             class="w-full max-h-[560px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 콩잎 고/저밀도 샘플 몽타주(한글 라벨: "밀도가 높은 샘플" / "밀도가 낮은 샘플") — 임베딩 공간에서 조밀한 샘플과 희소한 샘플을 나란히 놓았다. 이것이 데이터 품질을 눈으로 보는 한 가지 방법이다. | 출처: Pebblous Data Clinic 로컬 재현, 2026-06-07
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            하드코딩은 결함이 아니라 라우팅 포인트의 후보다. 모델·LLM·device·분석 엔진을 차례로 env와 라우팅으로 풀면, 그 엔진은 그대로 vendor-neutral해진다. 이 한 문장이 이번 재현의 척추다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 6: 진단이 콩잎에 대해 말한 것 (해석) -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">진단이 콩잎에 대해 말한 것</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        엔진을 살려내는 일에 집중하다 보면 정작 한 가지를 놓치기 쉽다. Data Clinic의 본질은 차트를 그리는 것이 아니라 데이터를 진단하는 것이다. 그렇다면 이 콩잎 데이터에 대해 진단은 무엇이라고 말했을까. 밀도맵과 두 장의 보조 차트를 함께 읽으면 한 문장으로 정리된다. <strong>이 콩잎 데이터셋은 비교적 균질하다.</strong>
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        먼저 밀도맵이다. 고밀도 코어가 가운데에 단단히 모여 있고, 그 바깥으로 등고선이 매끄럽게 퍼진다. 동떨어진 작은 고리 몇 개가 가장자리에 보이는데, 이것이 소수의 이상치다. 코어 하나에 이상치 소수 — 데이터가 한 덩어리로 잘 뭉쳐 있다는 신호다. 밀도 분포를 막대로 펼친 히스토그램도 같은 이야기를 한다. 대부분의 샘플이 밀도 0.55~0.65 구간에 봉우리를 이루고, 양극단으로 갈수록 꼬리가 얇아진다. 극단적으로 동떨어진 샘플이 드물다는 뜻이다.
+                    </p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-3" style="background-color: #0f172a;">
+                            <img src="./image/density-histogram.png"
+                                 alt="밀도 히스토그램 — 대부분의 샘플이 밀도 0.55~0.65 구간에 봉우리를 이루고 양극단으로 꼬리가 얇아진다"
+                                 class="w-full max-h-[420px] object-contain rounded-lg mx-auto"
+                                 loading="lazy"
+                                 onerror="this.parentElement.parentElement.style.display='none'">
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 콩잎 샘플의 밀도 분포 히스토그램 — 봉우리가 밀도 0.55~0.65 구간에 모이고 양극단으로 꼬리가 얇아진다. 극단적으로 동떨어진 샘플이 드물다는 뜻이다. | 출처: Pebblous Data Clinic 로컬 재현, 2026-06-07
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 발 더 들어가면 클래스 사이의 균형도 읽힌다. 이 데이터셋은 세 개의 클래스로 나뉜다. 건강한 잎(healthy), 콩 녹병(bean_rust), 각진 잎점무늬병(angular_leaf_spot)이다. 클래스별로 임베딩 공간의 원점에서 평균 거리를 재 보면, 세 클래스의 점이 거의 같은 높이에 나란히 놓인다. 어느 한 클래스만 외따로 떨어져 있지 않다는 뜻이다.
+                    </p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-3" style="background-color: #0f172a;">
+                            <img src="./image/class-density-boxplot.png"
+                                 alt="클래스별 밀도 분포 박스플롯 — healthy, bean_rust, angular_leaf_spot 세 클래스의 밀도 분포가 평균선 부근에 비슷하게 모여 있다"
+                                 class="w-full max-h-[420px] object-contain rounded-lg mx-auto"
+                                 loading="lazy"
+                                 onerror="this.parentElement.parentElement.style.display='none'">
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 세 콩잎 클래스(a: healthy · b: bean_rust · c: angular_leaf_spot)의 밀도 분포. 세 박스의 중앙값(오렌지 선)이 모두 평균 밀도(점선, 약 0.58) 부근에 모여 있다 — 어느 클래스도 외따로 떨어지지 않은, 균형 잡힌 분포다. | 출처: Pebblous Data Clinic 로컬 재현, 2026-06-07
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 클래스가 임베딩 공간에서 비슷하게 분포한다는 것은 실무로 옮기면 이런 의미다. 클래스 사이에 학습 난이도의 큰 편향이 없다. 어떤 병만 유난히 인식하기 쉽거나 어렵게 분포해 있지 않다. 데이터를 덜어내는 다이어트나 보태는 벌크업으로 한쪽 클래스를 급히 보정해야 할 이유가, 적어도 이 분포에서는 보이지 않는다. 진단이 데이터에 내린 결론은 "이 데이터는 지금 상태로도 비교적 건강하다"는 것이다. 진단이 끝내 묻는 것은 결국 <a href="/project/DataClinic/data-quality/ko/" class="text-orange-500 hover:underline">데이터 품질</a>이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        N-지표도 같은 균질성을 다른 각도에서 보여 준다. 진단은 밀도를 한 번이 아니라 여러 스케일에서 잰다. n_local=1은 가장 가까운 이웃 한 명만 보는 미시 스케일이고, n_meso=16은 중간 규모의 이웃, n_global=299는 전체 샘플을 보는 거시 스케일이다. 이렇게 이웃 수 N을 바꿔 가며 밀도가 얼마나 안정적으로 유지되는지(stability/churn)를 보면, 데이터의 모양이 스케일에 따라 얼마나 흔들리는지가 드러난다. 다중 스케일에서 밀도가 크게 출렁이지 않는다면, 그 데이터는 어느 배율로 봐도 비슷한 한 덩어리라는 뜻이다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            차트는 도착점이 아니라 진단의 언어다. 이 콩잎 데이터에 대해 엔진은 "고밀도 코어 하나 + 소수 이상치, 세 클래스가 균형, 다중 스케일에서 안정"이라고 말했다. 한마디로 비교적 균질한 데이터다. 데이터그린하우스가 하려는 일이 바로 이것 — 데이터의 건강 상태를 사람이 읽을 수 있는 그림과 수치로 옮기는 것이다. 데이터를 우연히 만나 모으는 대신 <a href="/project/DataClinic/data-greenhouse/ko/" class="text-orange-500 hover:underline">의도를 갖고 길러 낸다는 발상</a>이 그 밑에 깔려 있다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 7: 페블러스 관점 (editor's note) -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스 관점 — 우리 엔진을 sovereign 자리로 옮긴다는 것</h2>
+                    </div>
+
+                    <blockquote class="themeable-card rounded-xl p-5 my-6 themeable-text leading-relaxed">
+                        <p><strong><em>편집자의 노트.</em></strong> 우리 팀이 만든 엔진을 끝까지 다시 읽고 sovereign 아키텍처로 옮기면서 무엇이 보였는지를 적어 둔다. "Pebble Beach로 옮긴다"는 우리 안의 표현은, 데이터가 머무는 어느 자리에서든 같은 진단이 똑같이 돌아야 한다는 다짐이다. 우리에게 sovereign·온프렘은 듣기 좋은 속성이 아니라, 데이터가 고객의 환경을 벗어날 수 없는 규제 영역까지 진단을 가져가려는 전략의 방향이다.</p>
+                    </blockquote>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        DataClinic이 다루는 일은 데이터의 건강을 재는 것이다. 그런데 진단은 데이터가 있는 자리에서 이뤄져야 한다. 의료·금융·공공처럼 데이터를 밖으로 내보낼 수 없는 영역일수록 그렇다. 우리 엔진이 NVIDIA 클러스터에서만 돈다면, 그 진단은 데이터가 그 클러스터로 올 수 있는 고객에게만 닿는다. 데이터가 고객의 환경을 떠날 수 없는 sovereign 영역에서는 진단 자체가 닿지 못한다. vendor-neutral은 마케팅 단어가 아니라, 진단이 닿을 수 있는 범위의 문제이고, 그 범위를 규제 산업의 온프렘까지 넓히는 것이 페블러스의 전략 방향이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이번 재현이 확인해 준 것은 device-aware와 라우팅이 그 범위를 넓히는 두 개의 손잡이라는 사실이다. device-aware는 같은 코드가 NVIDIA·Apple Silicon·CPU 어디서든 깨지지 않게 한다. 라우팅은 모델과 LLM과 분석 엔진을 환경에 맞게 갈아끼우게 한다. 둘을 합치면, 데이터를 진단이 있는 자리로 옮기는 대신 데이터가 있는 자리에 진단을 가져갈 수 있다. sovereign AI 운영의 토대가 거기에 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 작업이 닿는 자리도 분명히 해 둔다. 우리는 이번에 새 알고리즘을 만들지 않았다. 우리 팀이 만든 엔진을 한 줄도 안 돌던 상태에서 끝까지 살려냈고, 그 과정에서 "무엇을 어떤 라우팅으로 대체하거나 개선해야 하는가"라는 이식의 지도를 실측으로 얻었다. 어디에서나 돌아가는 sovereign 진단은 <a href="/project/AADS/korea-ai-strategy-aads-alignment/ko/" class="text-orange-500 hover:underline">대한민국 AI 행동계획과 페블러스 AADS의 전략적 정합성</a>과도 같은 결을 이룬다. AADS와 <a href="/project/DataClinic/ko/" class="text-orange-500 hover:underline">DataClinic</a>이 더 많은 환경으로 가려면 필요한 것이 바로 이 지도다. 콩잎 밀도맵 한 장은 그 지도의 첫 좌표다.
+                    </p>
+                </section>
+
+                <!-- Section 8 -->
+                <section id="section-8" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">8</span>
+                        <h2 class="text-3xl font-bold themeable-heading">끝까지 추적해 전부 닫았다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 글에는 한 차례 중간 매듭이 있었다. 풀 파이프라인이 처음 완주했을 때, 두 칸이 비어 있었다. 다섯 메트릭 중 일부의 밀도가 산출되지 않아 그 렌즈의 밀도맵만 <code>$Failed</code>로 남았고, 최종 패키징 단계 pebbloscope가 <code>status=error</code>로 끝났다. 거기서 멈췄다면 "대부분 됐다"는 절반의 성공기로 끝났을 것이다. 우리는 멈추지 않고 두 칸을 끝까지 따라갔다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        빈 밀도의 뿌리는 익숙한 자리였다. 조합 메트릭의 거리·밀도를 계산하는 <code>norm.py</code>와 <code>nearest_set.py</code>가, 벽 12번에서 한 번 고친 그 파일들이, 또 다른 경로에서 device를 고려하지 않고 텐서를 옮기고 있었다. CUDA가 없는 기계에서 그 경로가 조용히 빈 결과를 흘렸다. 두 스크립트를 끝까지 device-aware로 손보고 조합 메트릭의 거리와 밀도를 다시 생성하자, 막혔던 칸이 차례로 채워졌다. <strong>다섯 메트릭(euclidean · gaussian-rbf · linear-cosine · rbf×cosine · norm-rbf×cosine)이 모두 정상으로 렌더</strong>됐고, 그 위에서 pebbloscope의 최종 패키징도 <code>status=done</code>으로 닫혔다. 한 칸도 비우지 않은 채 파이프라인이 끝났다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            가장 깊은 벽이 device 하드코딩 한 줄이었듯, 마지막 두 칸의 뿌리도 같은 패턴이었다. 한 번 고친 파일이라도 다른 호출 경로에 device 가정이 또 숨어 있을 수 있다. 끝까지 따라가면, 그 뿌리는 결국 같다. device-aware는 한 곳이 아니라 모든 경로에 적용되어야 비로소 끝난다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">8.1</span>완주한 환경</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전처리에서 추천, 진단 CORE, 그리고 차트까지 Mac 로컬에서 끝까지 돌았다. 추천 결과는 콩잎 데이터에 맞는 렌즈로 <code>openai/clip-vit-base-patch32</code>가 자동 선정됐고, 진단 N-지표는 n_local=1·n_meso=16·n_global=299로 나왔다. 진단 한 번이 남기는 산출은 결코 작지 않다. 차트 약 520장, 데이터 파일(.mx·.csv·.json) 약 1,257개를 합쳐 한 번의 진단이 약 1,777개의 파일을 쏟아 낸다. 그 가운데 이 글이 실은 다섯 장의 메트릭 밀도맵과 두 장의 콩잎 차트, 그리고 두 장의 해석 차트가 있다. 재현에 필요한 환경 변수는 아래와 같다.
+                    </p>
+                    <div class="formula-box mb-6">
+                        <p class="themeable-text leading-relaxed" style="font-family: var(--font-mono, monospace);">
+                            KMP_DUPLICATE_LIB_OK=TRUE OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1<br>
+                            LLM_BASE_URL=http://localhost:1234/v1 &nbsp;LLM_MODEL=qwen/qwen3.6-35b-a3b &nbsp;LLM_API_KEY=lm-studio<br>
+                            PATH=.venv/bin:$PATH &nbsp;PYTORCH_ENABLE_MPS_FALLBACK=1 &nbsp;HF_HUB_ENABLE_HF_TRANSFER=1
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">8.2</span>다음 자리</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        파이프라인은 닫혔지만, 더 좋게 만들 자리는 두 개의 이슈로 남겼다. 이것은 막힌 잔여가 아니라 다음 발걸음이다. 하나는 <strong>#111</strong>이다. 추천 단계에서 후보 모델 인덱스를 매 실행마다 다시 만드는데, 이를 사전 구축한 벡터DB로 옮기면 추천이 빨라진다. 다른 하나는 <strong>#112</strong>다. 분석 층의 Wolfram을 env로 갈아끼울 수 있는 라우팅(<code>DIAGNOSIS_ENGINE</code>)으로 추상화하자는 <strong>제안</strong>이다. 앞서 적었듯 이 라우팅은 아직 구현된 것이 아니라 향후 작업이고, 열린 Python으로 점진 이식하는 길의 출발점이다. 이 둘이 채워지면 3계층이 모두 vendor-neutral해진다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">8.3</span>가볍게 열린 한 칸</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        막힌 칸은 더 이상 없다. 다섯 메트릭의 밀도맵도, pebbloscope의 최종 패키징도 모두 정상으로 닫혔다. 다만 한 가지를 정직하게 적어 둔다. 결정용 LLM(qwen-35b)은 연결되어 잘 동작했지만, 일부 JSON 응답을 파싱할 때 fallback 경로로 빠지는 작은 거칠음이 있었다. 차트 산출에는 아무 영향이 없었고, 프롬프트와 파서를 다듬으면 정리될 비차단 항목이다. 끝을 비우지 않으려 적되, 이것이 결말을 깎지는 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        끝까지 읽어 주셔서 감사하다. 이 글은 화제를 만들기 위한 성공기가 아니라, 우리 팀이 만든 엔진을 우리 손으로 한 번 끝까지 돌려 본 기록이다. 한 줄이 막힐 때마다 "계속 가자"가 콩잎 밀도맵을 살렸고, 마지막 두 칸까지 같은 마음으로 끝까지 따라가 닫았다. 같은 발상으로, AADS에서 자라난 우리 엔진을 데이터가 머무는 어디에서나 돌게 만드는 sovereign 작업을 계속 이어 가려 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>페블러스 데이터 커뮤니케이션팀</strong><br>
+                        <span class="themeable-muted text-sm">2026년 6월 7일</span>
+                    </p>
+                </section>
+
+                <!-- Hub Series Notice -->
+                <div class="themeable-card rounded-xl p-6 mt-8 mb-8" style="border-left: 4px solid #F86825;">
+                    <p class="text-sm font-bold themeable-heading mb-2">🏥 DataClinic</p>
+                    <p class="text-sm themeable-text leading-relaxed">
+                        이 글은 <a href="/project/DataClinic/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">DataClinic</a> 허브와 함께 읽기를 권합니다. 데이터의 건강을 진단하고, 그 진단을 어디에서나 가능하게 만드는 페블러스의 데이터 품질 작업을 모아 둔 자리입니다.
+                    </p>
+                </div>
+
+                <!-- FAQ Section -->
+                <section id="faq" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">자주 묻는 질문 (FAQ)</h2>
+                    <p class="themeable-text leading-relaxed mb-8">
+                        이번 재현을 두고 자주 나오는 질문을 모았다. automatic-config가 무엇인지, 왜 Mac에서 한 줄도 안 돌았는지, device-aware가 무엇이고 왜 핵심인지, 다섯 개의 거리 메트릭은 왜 필요하며 진단이 콩잎 데이터에 대해 무엇이라고 말했는지, 그리고 vendor-neutral과 sovereign AI가 운영에서 어떤 의미인지까지. 핵심은 하나다. 하드코딩은 결함이 아니라 라우팅 포인트의 후보다.
+                    </p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <!-- Download Citation Buttons -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">
+                            RIS
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">논문</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Zhai, X., Mustafa, B., Kolesnikov, A., &amp; Beyer, L. (2023). "Sigmoid Loss for Language Image Pre-Training." <em>ICCV 2023</em>. arXiv:2303.15343. SigLIP — 전처리 임베딩 렌즈(MPS). <a href="https://arxiv.org/abs/2303.15343" target="_blank" rel="noopener">arxiv.org/abs/2303.15343</a></span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Radford, A., Kim, J. W., Hallacy, C., &amp; Sutskever, I. (2021). "Learning Transferable Visual Models From Natural Language Supervision." <em>ICML 2021</em>. arXiv:2103.00020. CLIP ViT-B/32 — 진단 feature 렌즈(자동 추천 결과). <a href="https://arxiv.org/abs/2103.00020" target="_blank" rel="noopener">arxiv.org/abs/2103.00020</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">도구 · 런타임</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">3.</span><span class="ref-body">PyTorch. (2024). "MPS backend — PyTorch documentation." Apple Silicon Metal Performance Shaders 백엔드 — device-aware mps 경로. <a href="https://pytorch.org/docs/stable/notes/mps.html" target="_blank" rel="noopener">pytorch.org/docs/stable/notes/mps.html</a></span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Hugging Face. (2023). "hf_transfer — high-performance Rust downloader for the Hugging Face Hub." 대형 모델 다운로드 소켓 hang 해소(Rust). <a href="https://github.com/huggingface/hf_transfer" target="_blank" rel="noopener">github.com/huggingface/hf_transfer</a></span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">LLVM / Intel OpenMP. (2024). "KMP_DUPLICATE_LIB_OK — Intel OpenMP runtime." faiss+torch+sklearn libomp 3중복 세그폴트 회피 env. <a href="https://github.com/llvm/llvm-project/tree/main/openmp" target="_blank" rel="noopener">github.com/llvm/llvm-project/tree/main/openmp</a></span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Wolfram Research. (2024). "Wolfram Engine for Developers." 분석 층(.wl) 밀도·기하 수학 + 차트 렌더. <a href="https://www.wolfram.com/engine/" target="_blank" rel="noopener">wolfram.com/engine/</a></span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <!-- Scripts -->
+    <script src="/scripts/common-utils.js?v=20260607"></script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260607" defer></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "한 줄도 안 돌던 엔진이 콩잎 밀도맵을 그리기까지",
+            subtitle: "NVIDIA·vLLM 엔진을 Apple Silicon에서 — device-aware·vendor-neutral로 sovereign AI 이식하기",
+            pageTitle: "Data Clinic 엔진 Apple Silicon 재현 2026 — device-aware로 sovereign AI 이식하기 | 페블러스",
+            category: "tech",
+            publishDate: "2026-06-07",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/automatic-config-apple-silicon-2026/ko/",
+            tags: ["DataClinic", "AADS", "Apple Silicon", "MPS", "device-aware", "vendor-neutral", "sovereign AI", "온프렘", "데이터품질", "페블러스"],
+            faqs: [
+                { question: "automatic-config가 무엇인가요?", answer: "Pebblous Data Clinic 2.0의 실제 진단 엔진입니다. 문서가 아니라 동작하는 코드이고, 다섯 도메인(preprocessing·recommendation·diagnosis·diet·bulkup)이 하나의 파이프라인으로 묶여 있습니다. 데이터를 씻어 임베딩으로 바꾸고, 데이터셋에 맞는 임베딩 렌즈를 자동으로 고르고, 밀도·거리·N-지표로 데이터의 모양을 재서 밀도맵 같은 진단 차트를 그립니다." },
+                { question: "왜 Mac에서는 한 줄도 안 돌았나요?", answer: "엔진이 NVIDIA GPU 한 대와 vLLM 서버(localhost:11211)가 켜진 사내 환경을 암묵적으로 전제하고 쓰여 있었기 때문입니다. Apple Silicon Mac에는 CUDA가 없고, 11211 포트의 vLLM도 없으며, device가 곳곳에서 'cuda'로 하드코딩돼 분기 없이 크래시했습니다. 이 전제들은 어디에도 명시돼 있지 않았지만 모든 줄에 습관처럼 박혀 있었습니다." },
+                { question: "device-aware가 무엇이고 왜 핵심인가요?", answer: "device를 'cuda'로 고정하지 않고 cuda → mps → cpu 순으로 사용 가능한 장치를 골라 분기하는 방식입니다. Apple Silicon에서는 MPS(Metal Performance Shaders)가 선택됩니다. 진단 차트가 $Failed로 깨질 때 원인의 다수가 보조 스크립트의 device 하드코딩 한 줄이었기 때문에, device-aware는 macOS와 sovereign 환경 이식의 1번 과제입니다. 실제로 임베딩 속도가 CPU 1.9 img/s에서 MPS 15~46 img/s로 올랐습니다." },
+                { question: "벽 12개를 우회하지 않고 근본 수정했다는 게 무슨 뜻인가요?", answer: "막힌 자리마다 임시 패치로 덮거나 단계를 건너뛰는 대신, 'why'가 커밋에 남도록 정당한 portability 수정을 했다는 뜻입니다. 원칙은 '1 커밋 = 1 처방'이었습니다. 예를 들어 61GB 모델 하드코딩은 env 라우팅으로, device='cuda'는 device-aware로, vLLM 엔드포인트는 env(LM Studio 1234)로 바꿨습니다. 이렇게 하면 같은 수정이 다른 환경에서도 재사용됩니다." },
+                { question: "가장 깊은 벽은 무엇이었나요?", answer: "밀도맵이 Flatten[$Failed] 텍스트 그리드로 깨진 문제였습니다. 추적해 보니 density.mx → norm.mx → feature.mx로 이어지는 다층 의존이었고, 근본은 norm.py의 .cuda() 한 줄이 macOS에서 크래시해 norm 산출이 통째로 $Failed가 된 것이었습니다. nearest_set.py에도 같은 줄이 하나 더 있었습니다. 두 줄을 device-aware로 고치자 밀도맵이 살아났습니다." },
+                { question: "3계층 라우팅이란 무엇인가요?", answer: "엔진을 지각·추론·분석 세 층으로 나누고, 각 층의 하드코딩된 백엔드를 env로 갈아끼울 수 있게 한 구조입니다. 지각은 Python 렌즈(CLIP·SigLIP)를 RECOMMEND_*_MODEL로, 추론은 LLM 엔드포인트를 LLM_BASE_URL로 라우팅합니다(둘 다 완료). 분석 층의 Wolfram을 DIAGNOSIS_ENGINE으로 env 라우팅하자는 것은 아직 구현이 아니라 제안(이슈 #112)입니다. 지금은 분석 층이 env로 갈아끼워지지 않으며, 열린 Python으로 점진 이식하는 것이 향후 작업입니다." },
+                { question: "다섯 개의 거리 메트릭은 왜 필요한가요?", answer: "거리 메트릭은 '두 데이터가 얼마나 가까운가'를 재는 자입니다. 자를 바꾸면 같은 데이터도 다르게 보입니다. euclidean(직선 거리), gaussian-rbf(국소 밀도), linear-cosine(방향), rbf×cosine(가깝고+같은 방향 둘 다), norm-rbf×cosine(정규화 변형)의 다섯 렌즈로 같은 콩잎 데이터를 다섯 번 들여다봅니다. 핵심은 진단 엔진이 그중 데이터에 맞는 렌즈를 스스로 고른다는 점입니다. 콩잎 데이터에는 rbf×cosine이 자동 선택됐습니다." },
+                { question: "진단은 콩잎 데이터에 대해 무엇이라고 말했나요?", answer: "비교적 균질한 데이터라고 진단했습니다. 밀도맵은 고밀도 코어 하나에 소수의 이상치 고리가 있는 모양이고, 밀도 히스토그램은 0.55~0.65 구간에 봉우리가 모입니다. 세 클래스(healthy·bean_rust·angular_leaf_spot)의 원점 평균 거리가 거의 같아 클래스 간 분포가 균형 잡혀 있습니다. 다중 스케일 N-지표(n_local=1·n_meso=16·n_global=299)에서도 밀도가 크게 출렁이지 않아, 어느 배율로 봐도 비슷한 한 덩어리입니다. 클래스 간 학습 난이도 편향이 크지 않다는 뜻입니다." },
+                { question: "vendor-neutral과 sovereign AI는 운영에서 어떤 의미인가요?", answer: "vendor-neutral은 특정 하드웨어·LLM·런타임에 묶이지 않고 환경에 맞게 갈아끼울 수 있다는 뜻입니다. sovereign AI는 데이터를 외부로 내보내지 않고 데이터가 있는 자리에서 AI를 돌리는 운영입니다. 의료·금융·공공처럼 데이터를 밖으로 보낼 수 없는 영역에서는, 진단을 데이터가 있는 자리로 가져갈 수 있어야 합니다. device-aware와 라우팅이 그 범위를 넓히는 두 손잡이입니다." },
+                { question: "이번 재현은 어디까지 완주했나요?", answer: "preprocessing → recommendation → diagnosis 풀 파이프라인이 Mac에서 끝까지 완주했습니다. 한때 일부 조합 메트릭의 밀도가 비고 pebbloscope 패키징이 status=error로 멈췄지만, norm.py·nearest_set.py의 device 가정을 끝까지 device-aware로 손보고 거리·밀도를 재생성해 전부 해결했습니다. 다섯 메트릭의 밀도맵이 모두 정상 렌더되고 pebbloscope도 status=done으로 닫혔습니다. 다음 자리로 #111(벡터DB)·#112(분석 엔진 라우팅 제안)를 남겼고, 결정 LLM의 JSON 파싱 fallback이 가벼운 비차단 항목으로 남아 있습니다." }
+            ]
+        });
+    </script>
+</body>
+</html>
