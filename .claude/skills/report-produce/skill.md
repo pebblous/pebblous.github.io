@@ -17,7 +17,7 @@ HTML 작성 단계(Phase 4) 시작 전, report-writer 에이전트에게 다음 
 2. `.claude/skills/blog-write/references/html-conventions.md` — HTML 정본 (CSS 순서, Hero, 메타)
 3. `docs/blog-html-checklist.md` — 완성 후 대조 체크리스트
 
-Push 전 검증: `python3 tools/validate-articles.py` 실행 필수.
+Push 전 검증: `node tools/validate-articles.js` 실행 필수.
 
 ### ⛔ Phase 4 작성 시 반복 오류 방지 (에이전트 필독)
 

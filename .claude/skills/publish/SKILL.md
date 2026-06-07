@@ -15,7 +15,7 @@ When this skill is invoked:
 
 3. **articles.json 검증** (필수 — 모든 퍼블리시 전 실행):
    ```bash
-   python3 tools/validate-articles.py --fix
+   node tools/validate-articles.js --fix
    ```
    - 필수 필드 누락 (title, date, language, published, description) 자동 수정
    - path 형식 오류, 중복 ID, featured 초과 검출

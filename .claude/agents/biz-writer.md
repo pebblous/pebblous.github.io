@@ -78,5 +78,5 @@ model: opus
 - "그래서 페블러스에게 이게 어떤 의미인가?" 흐름 유지
 
 ## 에러 핸들링
-- validate-articles.py 오류 시: 즉시 수정 후 재검증
+- validate-articles.js 오류 시: 즉시 수정 후 재검증
 - HTML 구조 오류 시: html-conventions.md 재확인 후 수정

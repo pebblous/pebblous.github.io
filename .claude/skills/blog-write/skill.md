@@ -25,7 +25,7 @@ Read: docs/blog-html-checklist.md                  # 완성 후 대조용
 ## ⛔ Push 전 필수 검증
 
 ```bash
-python3 tools/validate-articles.py                 # 구조 검증
+node tools/validate-articles.js                 # 구조 검증
 ```
 
 ### SEO-check (새 페이지마다 필수 — 예외 없음)

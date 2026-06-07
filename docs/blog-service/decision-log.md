@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-06-07 — 사본 인덱싱(sitemap/rss/llms): 직접 push → 봇-PR 경로
+
+**상황**: 사본 [#289](https://github.com/pebblous/pebblous.github.io/issues/289). 글 머지 후 `update-sitemap.yml`이 success인데 인덱스 미반영. **로그 확정 원인**: 사본 main ruleset #16801588("Asset 2/3 path protection", `pull_request` 필수, bypass 없음)이 `github-actions[bot]` 직접 push를 **GH013로 거부**. retry 루프 마지막이 `sleep`(exit 0)이라 **silent success**. → 2026-05-24 이후 auto-indexing 사실상 중단(수동 재생성으로만 반영).
+
+**결정**:
+- 인덱싱을 **PR 자체머지 경로**로 전환. `auto/index-update-*` 브랜치 → PR → `gh pr merge`. sitemap/rss/llms는 CODEOWNERS 무소속 + 승인 0이라 자체머지 가능 → **거버넌스(모든 main 변경 PR 경유) 유지**하면서 인덱싱 자동화 복구.
+- **PR 생성·머지는 PAT(`INDEX_PUSH_TOKEN`)로 (C)**. ⚠️ 선택지 변천: A(봇 bypass)=ruleset picker에 GitHub Actions 없어 불가 → B(GITHUB_TOKEN PR)=**`pebblous` org 정책이 GITHUB_TOKEN PR 생성을 조직 전체로 차단(repo override 불가)** → **C(PAT) 채택**(org 정책 무수정, 진본→사본 sync 의 `SABON_SYNC_TOKEN` 과 동일 패턴).
+- **전제(사본 설정 1회)**: 시크릿 `INDEX_PUSH_TOKEN`(fine-grained PAT, 사본 Contents+PR write).
+- silent-fail 제거(실패 시 `::error`+exit 1) + `concurrency` 직렬화 + 실패 시 orphan 브랜치 정리.
+
+**진본/사본 경계**: 워크플로 **파일**은 사본 고유 인프라(`.github/workflows/`, sync 대상 아님) → 사본 PR [#295]에만. **운영 사실**(인덱싱=봇-PR + 토글 전제)은 무인 발행 파이프라인이 인덱싱에 의존하므로 본 진본 로그에 기록.
+
+**관련**: 사본 #289 / 사본 PR #295 / (인프라 동류) #33.
+
+---
+
 ## 2026-06-05 — AI 생성 콘텐츠 표시(disclosure): 카드 배지 → 본문 byline + 항상 고지
 
 **상황**: 이슈 [#39](https://github.com/joohaeng-pbls/blog-service/issues/39). 카드 `prov-badge`가 AI 고지에 너무 좁아 disclosure 방식 재검토. 표준 웹 조사(⛔ 게이트) 완료.
