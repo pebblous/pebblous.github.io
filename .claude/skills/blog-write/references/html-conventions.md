@@ -157,32 +157,46 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 
 모든 아티클 필수. Hero 직후, 섹션 1 이전.
 
-**⛔ 순서 고정: h2 → key-insight(3문단) → stat-card.** key-insight가 stat-card보다 **반드시 먼저** 온다.
+**⛔ 순서 고정: h2 → key-insight(2~3문단) → stat-card.** key-insight가 stat-card보다 **반드시 먼저** 온다.
 stat-card에는 수치 + 라벨 + 맥락 설명(text-xs) 3줄 구조를 사용한다.
+
+### ⛔ key-insight 산문 원칙 — 수치 덤프·전문 용어 나열 금지
+
+key-insight는 **독자가 30초 안에 이 글의 핵심을 잡을 수 있는 산문**이다. 수치와 전문 용어를 나열하는 공간이 아니다. **수치는 stat-card가 담당한다.**
+
+| 금지 패턴 | 이유 | 대안 |
+|-----------|------|------|
+| 한 문단에 수치 4개 이상 | 독자가 결론을 못 잡음 | 가장 충격적인 수치 1개만, 나머지는 stat-card·본문으로 |
+| 버전·커밋·기여자 수 나열 | 릴리즈 노트가 됨 | 의미 중심 요약 ("두 달 만에 안정 릴리즈") |
+| 전문 용어 무설명 연속 | 일반 독자 이탈 | 첫 등장만 짧게 설명, 이후 생략 |
+| "A, B, C가 측정됐다" 수동 종결 3연속 | AI 문체 | 능동 주어 + 동사 |
+
+**역피라미드 구조 (신문 리드형)**:
+- 문단 1 (2~3문장): 가장 중요한 사실 1개 + 조건/배경. "이 글은 ~를 본다"로 맺어도 됨.
+- 문단 2 (2~3문장): 핵심 수치 1개 + 그 수치가 나온 이유 + 반전/한계 1문장.
+- 문단 3 (선택, 1~2문장): 독자 행동 또는 이 글의 범위.
 
 ```html
 <section id="executive-summary" class="mb-16 fade-in-card">
     <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
     <div class="key-insight">
         <p class="themeable-text leading-relaxed">
-            [문단 1: 핵심 문제 + 해결책 요약]
+            [리드: 핵심 사실 1개 + 조건/배경. "이 글은 ~를 다룬다"로 맺기]
         </p>
         <p class="themeable-text leading-relaxed mt-4">
-            [문단 2: 기술적 접근 + 근거]
+            [본론: 가장 중요한 수치 1개 + 그 수치가 나온 이유 1문장 + 반전/한계 1문장]
         </p>
-        <p class="themeable-text leading-relaxed mt-4">
-            [문단 3: 비즈니스/실무적 의미]
-        </p>
+        <!-- 선택: 독자 행동 또는 글의 범위 1~2문장 -->
     </div>
 
-    <!-- Stat Cards — key-insight 뒤에 배치 -->
+    <!-- Stat Cards — 수치는 여기서 보여준다. key-insight에 수치 덤프 금지 -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-8">
         <div class="themeable-card rounded-xl p-4 text-center">
             <p class="text-2xl font-bold" style="color: #F86825;">[수치]</p>
             <p class="text-sm themeable-text-secondary mt-1">[라벨]</p>
             <p class="text-xs themeable-muted mt-1">[맥락 설명]</p>
         </div>
-        <!-- 3~5개 반복 -->
+        <!-- 3~4개 반복. 5개 이상 금지 -->
     </div>
 </section>
 ```
