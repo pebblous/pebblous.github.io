@@ -288,16 +288,14 @@
                         따라서 "31GB"는 <strong>768차원 fp32를 가정할 때만</strong> 정확하다 [math-consistent]. README는 차원을 명시하지 않으므로, 이는 산술로 역산한 추정이다. OpenAI ada-002급 1536차원이라면 같은 1천만 개는 61GB가 맞고 31GB는 틀린다. 4GB라는 목표도 마찬가지로 차원·비트폭에 따라 갈린다. 768차원에서 4GB는 좌표당 약 4.17비트(약 7.4배, 즉 4비트 압축), 1536차원에서 4GB는 좌표당 약 2.08비트(약 15배, 즉 2비트 압축)다. README의 단일 벡터 예시("6,144바이트→384바이트=16배", "→768바이트=8배")는 순수 비트 산술이므로 벤치마크가 아니라 정의상 참이다.
                     </p>
 
-                    <!-- Image: quantization — original vs quantized signal and the resulting error -->
-                    <figure class="my-8">
-                        <img src="./image/img-03-quantization-error.png"
-                             alt="원본 신호와 양자화된 신호, 그리고 둘의 차이인 양자화 오차를 함께 보여주는 그래프"
-                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
-                             loading="lazy"
-                             onerror="this.parentElement.style.display='none'">
-                        <figcaption class="text-xs themeable-muted text-center mt-2">
-                            ▲ 양자화의 본질. 연속적인 원본 값(초록)을 적은 비트로 근사하면(노랑) 그 차이만큼 오차(빨강)가 생긴다. 비트를 줄일수록 압축비는 커지지만 오차도 커진다 — TurboQuant이 다투는 전장이 바로 이 오차다. | Source: <a href="https://commons.wikimedia.org/wiki/File:Quantization_error.png" target="_blank" rel="noopener" class="underline">Wikimedia Commons (Gregory Maxwell, CC BY 3.0)</a>
-                        </figcaption>
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-compression.svg"
+                                 alt="비트폭별 인덱스 크기와 압축비 — 1536차원 fp32 벡터 6,144바이트가 2비트에서 384바이트로 16배 줄어든다"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ 압축비 — 1536차원 fp32 벡터 6,144바이트가 2비트에서 384바이트로 16배 줄어든다. 압축비는 어느 양자화든 동일한 비트 산술이며, 진짜 쟁점은 그 압축에서 recall을 얼마나 지키느냐다. | 출처: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, 저자 자체 벤치마크)</figcaption>
                     </figure>
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>FAISS 대비 속도 — "항상 빠르다"는 거짓이다</h3>
@@ -305,9 +303,49 @@
                         속도 주장은 가장 조심해서 다뤄야 한다. README의 "ARM 12~20% 빠름, x86 대등 이상"은 100K 벡터·1K 쿼리·k=64, 5회 중앙값, Apple M3 Max와 Intel Sapphire Rapids에서의 저자 측정이다 [author-benchmark]. 여기까지는 대체로 사실이다. 그러나 저자는 같은 README에서 <strong>2비트 멀티스레드 구성(d=1536, d=3072)에서는 FAISS보다 2~4% 느리다</strong>고 직접 적었다. 따라서 "검색 속도가 항상 FAISS 동등 이상"이라는 SNS식 주장은 <strong>일부 구성에서 거짓</strong>이다. 정확히 쓰면 "대부분 구성에서 빠르나, 일부 2비트 멀티스레드 구성은 FAISS가 우세"다.
                     </p>
 
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-arm_speed_mt.svg"
+                                 alt="Apple M3 Max(ARM) 멀티스레드 검색 속도 비교 — 모든 구성에서 TurboQuant이 FAISS FastScan을 12~20% 앞선다"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ ARM(M3 Max) 멀티스레드 속도 — TurboQuant이 모든 구성에서 FAISS FastScan을 12~20% 앞선다. | 출처: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, 저자 자체 벤치마크)</figcaption>
+                    </figure>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-x86_speed_st.svg"
+                                 alt="Intel Sapphire Rapids(x86) 단일스레드 검색 속도 비교 — 4비트 구성은 1~6% 앞서고 2비트 단일스레드는 약 1% 이내로 대등하다"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ x86(Sapphire Rapids) 단일스레드 속도 — 4비트는 매번 1~6% 앞서고, 2비트 단일스레드는 약 1% 이내로 대등하다. 2~4% 뒤지는 경우는 그래프에 없는 2비트 멀티스레드 구성뿐이다. | 출처: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, 저자 자체 벤치마크)</figcaption>
+                    </figure>
+
                     <p class="themeable-text leading-relaxed mb-6">
                         recall도 마찬가지로 저자 측정이다. 저자는 OpenAI d=1536·d=3072에서 R@1 기준 FAISS를 0.4~3.4점 앞섰다고 보고하는 한편, 저차원 GloVe d=200의 2비트에서는 FAISS에 1.2점 뒤진다고 불리한 결과까지 공개했다 [author-benchmark]. 불리한 수치를 README에 남긴 점은 신뢰를 더하는 정직한 서술이다. 비교 베이스라인은 FAISS IndexPQ(LUT256, nbits=8)이며, 저자는 이것이 논문의 커스텀 베이스라인보다 강하다고 스스로 밝힌다.
                     </p>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-recall_d1536.svg"
+                                 alt="d=1536 임베딩에서 k 값을 늘려 가며 측정한 recall 곡선 — TurboQuant(2비트·4비트)이 R@1에서 FAISS를 앞서고 k=4부터 양쪽 모두 1.0에 수렴한다"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ d=1536 recall — TurboQuant이 R@1에서 FAISS를 0.4~3.4점 앞서고, k=4부터는 양쪽 모두 1.0으로 수렴한다(이긴 경우). | 출처: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, 저자 자체 벤치마크)</figcaption>
+                    </figure>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-recall_glove.svg"
+                                 alt="저차원 GloVe d=200에서의 recall 곡선 — 2비트 TurboQuant이 R@1에서 FAISS에 1.2점 뒤지고 k≈16부터 격차가 좁혀진다"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ GloVe d=200 recall — 저차원의 까다로운 영역. 4비트는 R@1에서 0.3점 앞서지만 2비트는 1.2점 뒤진다(졌다고 솔직히 공개한 경우). k≈16부터 격차가 좁혀진다. | 출처: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, 저자 자체 벤치마크)</figcaption>
+                    </figure>
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>주장별 등급표</h3>
                     <p class="themeable-text leading-relaxed mb-6">
@@ -457,18 +495,6 @@
                     <p class="themeable-text leading-relaxed mb-6">
                         turbovec이 "어떤 데이터든 회전시키면 분포가 예측 가능해진다"고 가정할 수 있는 이유는, 입력이 단위 벡터로 정규화된 뒤 고차원의 기하학적 성질을 따르기 때문이다. 현실의 학습·검색 데이터는 그렇게 깨끗하지 않다. 중복 임베딩, 깨진 벡터, 한쪽으로 쏠린 분포, 출처가 불분명한 문서가 섞여 있다. 압축 이전에 데이터 자체가 이미 왜곡돼 있다면, 아무리 near-optimal한 양자화라도 그 왜곡을 충실히 보존할 뿐이다. 압축은 데이터를 정제하지 않는다.
                     </p>
-
-                    <!-- Image: high-dimensional clusters — clean vs noisy embedding space -->
-                    <figure class="my-8">
-                        <img src="./image/img-05-tsne-mnist-clusters.png"
-                             alt="고차원 임베딩을 2차원으로 투영한 t-SNE 군집 — 깨끗하게 분리된 군집과 경계에 섞인 노이즈가 함께 보인다"
-                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
-                             loading="lazy"
-                             onerror="this.parentElement.style.display='none'">
-                        <figcaption class="text-xs themeable-muted text-center mt-2">
-                            ▲ 잘 분리된 군집도 경계에는 노이즈가 섞인다. 압축은 이 구조를 충실히 보존할 뿐 정제하지는 않는다 — 검색 품질의 다음 질문은 "어떤 벡터를 남기고 어떤 벡터를 버릴 것인가"다. | Source: <a href="https://commons.wikimedia.org/wiki/File:T-SNE_Embedding_of_MNIST.png" target="_blank" rel="noopener" class="underline">Wikimedia Commons (Kyle McDonald, CC BY 2.0)</a>
-                        </figcaption>
-                    </figure>
 
                     <p class="themeable-text leading-relaxed mb-6">
                         그래서 우리는 단언 대신 질문을 남긴다. 임베딩 코퍼스 안에서 검색 품질에 기여하지 않는 중복·노이즈 벡터를 미리 걸러낼 수 있을까. 압축으로 줄인 메모리를, 더 깨끗한 데이터를 더 많이 담는 데 쓰는 편이 나을까. "더 적게 쓰면서 같은 품질"이라는 목표를 압축(turbovec)과 정제(데이터 품질) 양쪽에서 동시에 추구하면 어떤 그림이 될까. 이 질문들은 아직 우리에게도 열려 있다. 다만 학습 없는 압축이라는 발상이, 데이터를 적게 쓰면서 품질을 지키려는 우리의 관심사와 같은 방향을 본다는 것만은 분명하다.

@@ -288,16 +288,14 @@
                         So "31GB" is accurate <strong>only when you assume 768-dimensional fp32</strong> [math-consistent]. The README does not name the dimension, so this is an estimate reverse-derived by arithmetic. At an OpenAI ada-002-class 1536 dimensions, the same ten million vectors come to 61GB, and 31GB is wrong. The 4GB target splits the same way along dimension and bit-width. At 768 dimensions, 4GB is about 4.17 bits per coordinate (roughly 7.4×, i.e. 4-bit compression); at 1536 dimensions, 4GB is about 2.08 bits per coordinate (roughly 15×, i.e. 2-bit compression). The README's single-vector example ("6,144 bytes → 384 bytes = 16×", "→ 768 bytes = 8×") is pure bit-arithmetic, so it is true by definition, not a benchmark.
                     </p>
 
-                    <!-- Image: quantization — original vs quantized signal and the resulting error -->
-                    <figure class="my-8">
-                        <img src="./image/img-03-quantization-error.png"
-                             alt="A chart showing an original signal, its quantized version, and the difference between them — the quantization error"
-                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
-                             loading="lazy"
-                             onerror="this.parentElement.style.display='none'">
-                        <figcaption class="text-xs themeable-muted text-center mt-2">
-                            ▲ The essence of quantization. Approximating a continuous original value (green) with fewer bits (yellow) produces error (red) equal to the gap. Fewer bits buy a higher compression ratio but also larger error — and that error is exactly the battlefield TurboQuant fights on. | Source: <a href="https://commons.wikimedia.org/wiki/File:Quantization_error.png" target="_blank" rel="noopener" class="underline">Wikimedia Commons (Gregory Maxwell, CC BY 3.0)</a>
-                        </figcaption>
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-compression.svg"
+                                 alt="Index size and compression ratio by bit-width — a 1536-dimensional fp32 vector of 6,144 bytes shrinks to 384 bytes at 2-bit, a 16× reduction"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ Compression — a 1536-dimensional fp32 vector of 6,144 bytes shrinks to 384 bytes at 2-bit, a 16× reduction. The ratio is the same bit-arithmetic for any quantizer; the real question is how much recall survives that compression. | Source: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, author's own benchmark)</figcaption>
                     </figure>
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>Speed vs FAISS — "always faster" is false</h3>
@@ -305,9 +303,49 @@
                         The speed claim is the one to handle most carefully. The README's "12–20% faster on ARM, parity or better on x86" comes from the author's own measurement at 100K vectors, 1K queries, k=64, median of 5 runs, on an Apple M3 Max and an Intel Sapphire Rapids [author-benchmark]. That much is broadly true. But in the same README the author writes plainly that <strong>the 2-bit multithreaded configurations (d=1536, d=3072) run 2–4% slower than FAISS</strong>. So the social-media-style claim that "search speed always matches or beats FAISS" is <strong>false in some configurations</strong>. Stated precisely: "faster in most configurations, but FAISS wins in some 2-bit multithreaded ones."
                     </p>
 
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-arm_speed_mt.svg"
+                                 alt="Multithreaded search speed comparison on Apple M3 Max (ARM) — TurboQuant beats FAISS FastScan by 12–20% across every configuration"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ ARM (M3 Max) multithreaded speed — TurboQuant beats FAISS FastScan by 12–20% across every configuration. | Source: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, author's own benchmark)</figcaption>
+                    </figure>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-x86_speed_st.svg"
+                                 alt="Single-threaded search speed comparison on Intel Sapphire Rapids (x86) — 4-bit configurations win by 1–6% and 2-bit single-threaded is within about 1%"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ x86 (Sapphire Rapids) single-threaded speed — 4-bit wins every time by 1–6%, and 2-bit single-threaded is within about 1%. The only 2–4% slower cases are the 2-bit multithreaded configs, which are not shown here. | Source: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, author's own benchmark)</figcaption>
+                    </figure>
+
                     <p class="themeable-text leading-relaxed mb-6">
                         Recall is likewise an author measurement. The author reports beating FAISS by 0.4–3.4 points on R@1 at OpenAI d=1536 and d=3072, while also publishing the unfavorable result that at a low-dimensional GloVe d=200 in 2-bit it trails FAISS by 1.2 points [author-benchmark]. Leaving an unfavorable number in the README is an honest touch that adds credibility. The comparison baseline is FAISS IndexPQ (LUT256, nbits=8), which the author states is stronger than the paper's own custom baseline.
                     </p>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-recall_d1536.svg"
+                                 alt="Recall curve over increasing k at d=1536 — TurboQuant (2-bit and 4-bit) beats FAISS at R@1, and both converge to 1.0 from k=4 onward"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ Recall at d=1536 — TurboQuant beats FAISS by 0.4–3.4 points at R@1, and both converge to 1.0 from k=4 (the win case). | Source: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, author's own benchmark)</figcaption>
+                    </figure>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-recall_glove.svg"
+                                 alt="Recall curve at low-dimensional GloVe d=200 — 2-bit TurboQuant trails FAISS by 1.2 points at R@1, with the gap closing from k≈16"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ Recall at GloVe d=200 — the harder low-dimensional regime. 4-bit wins by 0.3 points at R@1, but 2-bit trails by 1.2 points (the loss the author honestly published). The gap closes from k≈16. | Source: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, author's own benchmark)</figcaption>
+                    </figure>
 
                     <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>Claim-by-claim grade table</h3>
                     <p class="themeable-text leading-relaxed mb-6">
@@ -457,18 +495,6 @@
                     <p class="themeable-text leading-relaxed mb-6">
                         The reason turbovec can assume that "any data, once rotated, becomes distributionally predictable" is that the input is normalized to a unit vector and then obeys the geometric properties of high dimensions. Real training and retrieval data are not that clean. Duplicate embeddings, broken vectors, skewed distributions, and documents of unclear provenance are all mixed in. If the data is already distorted before compression, even a near-optimal quantizer will faithfully preserve that distortion. Compression does not clean data.
                     </p>
-
-                    <!-- Image: high-dimensional clusters — clean vs noisy embedding space -->
-                    <figure class="my-8">
-                        <img src="./image/img-05-tsne-mnist-clusters.png"
-                             alt="A t-SNE projection of high-dimensional embeddings into two dimensions — cleanly separated clusters together with noise mixed at the boundaries"
-                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
-                             loading="lazy"
-                             onerror="this.parentElement.style.display='none'">
-                        <figcaption class="text-xs themeable-muted text-center mt-2">
-                            ▲ Even well-separated clusters carry noise at their boundaries. Compression faithfully preserves this structure but does not refine it — the next question for search quality is "which vectors to keep and which to discard." | Source: <a href="https://commons.wikimedia.org/wiki/File:T-SNE_Embedding_of_MNIST.png" target="_blank" rel="noopener" class="underline">Wikimedia Commons (Kyle McDonald, CC BY 2.0)</a>
-                        </figcaption>
-                    </figure>
 
                     <p class="themeable-text leading-relaxed mb-6">
                         So we leave a question rather than an assertion. Can the duplicate and noise vectors that do not contribute to search quality be filtered out of an embedding corpus in advance? Would it be better to spend the memory freed by compression on holding more clean data? What picture emerges if you pursue "same quality from less" on both fronts at once — compression (turbovec) and refinement (data quality)? These questions remain open for us too. What is clear is only this: the idea of compression without training looks in the same direction as our own concern — keeping quality while using less data.
