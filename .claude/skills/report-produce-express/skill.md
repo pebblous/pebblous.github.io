@@ -36,7 +36,7 @@ end-to-end 동작 가능성을 측정하기 위한 실험 트랙이며, 미래 M
 | 로그 위치 | `_workspace/report/*.md` | **`report/[slug]/log/report-produce-*.{jsonl,md}` (영구, 비색인)** |
 | theme adequity | 차단 기준 | **기록 전용** ("비추천이지만 진행" 그대로 로깅) |
 | SNS 글 (Phase 7-B) | sns-write 실행 | **동일 — 자동 실행** |
-| validate-articles.py | push 전 필수 | **Phase 8 push 직전 실행** |
+| validate-articles.js | push 전 필수 | **Phase 8 push 직전 실행** |
 
 ## 의존성
 
@@ -121,12 +121,12 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 7-B --agent sns
   --output-path report/[slug]/sns/posts.md --notes "[생성된 채널 수]"
 ```
 
-### Phase 8 — validate-articles.py 후 PR까지만
+### Phase 8 — validate-articles.js 후 PR까지만
 
-push 직전에 반드시 validate-articles.py를 실행한다:
+push 직전에 반드시 validate-articles.js를 실행한다:
 
 ```bash
-python3 tools/validate-articles.py
+node tools/validate-articles.js
 # 오류 0개 확인 후 push
 ```
 

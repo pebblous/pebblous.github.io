@@ -31,5 +31,5 @@ Step 6: git commit + push
 
 ## 참고
 
-- `tools/validate-articles.py` 실행으로 articles.json 검증 필수
+- `tools/validate-articles.js` 실행으로 articles.json 검증 필수
 - 이 스킬의 정본은 레포 파일입니다. 시스템 등록 스킬은 레포의 미러입니다.

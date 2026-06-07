@@ -46,13 +46,13 @@ with open('articles.json', 'w', encoding='utf-8') as f:
 articles.json 업데이트 직후 반드시 실행:
 
 ```bash
-python3 tools/validate-articles.py --id [new-article-id]
+node tools/validate-articles.js --id [new-article-id]
 ```
 
 오류가 있으면 즉시 수정. `--fix` 로 자동 수정 가능:
 
 ```bash
-python3 tools/validate-articles.py --fix --id [new-article-id]
+node tools/validate-articles.js --fix --id [new-article-id]
 ```
 
 ✅ 오류 0개 확인 후 다음 단계.
