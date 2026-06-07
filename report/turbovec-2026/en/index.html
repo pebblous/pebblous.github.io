@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>turbovec &amp; TurboQuant Analysis 2026 — Can Training-Free Vector Compression Replace FAISS? | Pebblous</title>
+    <meta name="description" content="turbovec claims 10M embeddings from 31GB to 4GB, faster than FAISS. How does it work? A guide to TurboQuant from paper and code: the edge is training-free, not the ratio.">
+    <meta name="keywords" content="turbovec, TurboQuant, vector search, RAG, embedding compression, FAISS, quantization, vector quantization, data-oblivious, AI infrastructure, RaBitQ, Pebblous">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/turbovec-2026/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/turbovec-2026/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/turbovec-2026/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/turbovec-2026/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="31GB to 4GB — The Training-Free Way to Compress Vectors">
+    <meta property="og:description" content="A guide to turbovec and TurboQuant from the paper and the code. The real edge is that it needs no training; 'always faster than FAISS' is not true; and the headline 10M scale has not been reproduced by a third party yet.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/turbovec-2026/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/turbovec-2026/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="turbovec &amp; TurboQuant analysis — explaining training-free vector compression">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="31GB to 4GB — The Training-Free Way to Compress Vectors">
+    <meta name="twitter:description" content="A guide to turbovec and TurboQuant from the paper and the code. The real edge is training-free, 'always faster' is not true, and 10M scale is not yet reproduced.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/turbovec-2026/en/image/index.png">
+    <meta name="twitter:image:alt" content="turbovec &amp; TurboQuant analysis — explaining training-free vector compression">
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="31GB to 4GB — The Training-Free Way to Compress Vectors">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/06/07">
+    <meta name="citation_online_date" content="2026/06/07">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (fixed order) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260607">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260607">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260607">
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. What appeared</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. How TurboQuant works</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Verifying the numbers</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Why it matters</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Limits &amp; unverified</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. Pebblous perspective</a></li>
+                    <li><a href="#section-7" class="block pl-4 themeable-toc-link transition-colors duration-200">7. What to watch now</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            turbovec is an open-source vector compression library that gathered roughly six thousand GitHub stars in a short window. Its README opens with a hook: "A corpus of 10 million documents takes 31GB of memory in float32. turbovec fits it in 4GB and searches faster than FAISS." This article follows the TurboQuant paper and the repository code to explain how it works and how far it's been shown — what is possible, and what has been confirmed so far.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Here is the key point up front. turbovec's real differentiator is not its compression ratio but the fact that it needs <strong>no training</strong>. FAISS product quantization (PQ) has to learn a k-means codebook from data; TurboQuant randomly rotates each vector so its coordinates converge to a known distribution, then computes quantization boundaries from mathematics rather than from the data. The claim that it is "always faster than FAISS," by contrast, is false. The author's own README records that some 2-bit multithreaded configurations run 2–4% slower than FAISS.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Every compression and speed figure here comes from one person's benchmark at 100K vectors. No third party has independently reproduced the headline 10M scale. New to the concept? Start with <a href="/pebblopedia/turboquant/en/" class="text-orange-500 hover:underline">the TurboQuant intro</a>; if you already run FAISS, jump to Section 7 for a decision rule on when to switch.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards — reverse-extracted from the body (capability / scale / limit). Every figure is discussed in the text. -->
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">By the numbers</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Compression and speed figures are the author's own benchmark at 100K scale. Source: turbovec README, TurboQuant (arXiv:2504.19874).</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">31GB → 4GB</p>
+                            <p class="text-sm themeable-text-secondary mt-1">10M embedding memory</p>
+                            <p class="text-xs themeable-muted mt-1">31GB is math-consistent for fp32; 4GB is the bit-arithmetic of 8× compression</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0 training steps</p>
+                            <p class="text-sm themeable-text-secondary mt-1">data-oblivious compression</p>
+                            <p class="text-xs themeable-muted mt-1">Unlike FAISS PQ — no codebook training, no re-indexing. The real differentiator</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">−2 to 4%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">vs FAISS speed (some configs)</p>
+                            <p class="text-xs themeable-muted mt-1">"Always faster" is false — the author logs 2-bit multithreaded as slower</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">100K</p>
+                            <p class="text-sm themeable-text-secondary mt-1">verified benchmark scale</p>
+                            <p class="text-xs themeable-muted mt-1">No third party has reproduced the headline 10M scale yet</p>
+                        </div>
+                    </div>
+
+                    <blockquote class="themeable-card rounded-xl p-5 my-6 themeable-text leading-relaxed">
+                        <p><strong><em>Editor's note.</em></strong> Why Pebblous returns to vector compression is simple: doing the same work with less data is, in the end, an AI-Ready Data question. We unpacked the concept earlier in <a href="/pebblopedia/turboquant/en/" class="text-orange-500 hover:underline">the TurboQuant intro</a>; this article looks at how far the claim holds once that concept ships as a real library. The point where shrinking data turns into using data better is one we mean to keep watching.</p>
+                    </blockquote>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What appeared — turbovec and its claims</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        turbovec is a real repository. The address is <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="text-orange-500 hover:underline">github.com/RyanCodrai/turbovec</a>, the license is MIT, and as of June 7, 2026 it carries roughly 5,974 stars (GitHub API, a moving number). A solo account named RyanCodrai created it on March 26, 2026, and published it under the name <code>turbovec</code> on both PyPI and crates.io. The README introduces the project as "Rust with Python bindings," but GitHub's language stats show Python at 385KB against Rust's 306KB — it is more accurate to read the core SIMD kernels as Rust and the bindings, benchmarks, and integration layer as Python.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Stated precisely, the README makes four claims. First, ten million documents stored in float32 take 31GB, and turbovec fits them in 4GB. Second, hand-written NEON (ARM) and AVX-512 kernels beat FAISS's IndexPQFastScan by 12–20% on ARM and match or beat it on x86. Third, a single 1536-dimensional vector shrinks from 6,144 bytes to 384 bytes, a 16× compression. Fourth, data-oblivious quantization with no codebook and no separate training step lands close to the Shannon lower bound on distortion. This article sorts each of the four into a different grade.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One source point deserves to be clear. The algorithm turbovec implements, TurboQuant, is not the author's own invention — it is a paper from Google researchers. <strong>arXiv:2504.19874, "TurboQuant: Online Vector Quantization with Near-optimal Distortion Rate"</strong>, by Amir Zandieh, Majid Daliri, Majid Hadian, and Vahab Mirrokni, was posted on April 28, 2025. The affiliations are reported as Google Research, Google DeepMind, and NYU, but the abstract itself carries no affiliation line, so this rests on secondary sources. An ICLR 2026 acceptance is likewise reported by multiple outlets, though the arXiv page does not state a venue. In short, turbovec is "an open-source implementation of a Google algorithm," and the paper's existence and mechanism are solid ground.
+                    </p>
+
+                    <!-- Image: word/sentence embeddings visualized as points in vector space -->
+                    <figure class="my-8">
+                        <img src="./image/img-01-word-embeddings-tsne.png"
+                             alt="A t-SNE projection of sentences and words turned into embedding vectors onto two dimensions — semantically similar items cluster together"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Embeddings turn documents into high-dimensional vectors. The closer two items are in meaning, the closer they sit in vector space — these are exactly the vectors turbovec compresses. | Source: <a href="https://commons.wikimedia.org/wiki/File:T-SNE_visualisation_of_word_embeddings_generated_using_19th_century_literature.png" target="_blank" rel="noopener" class="underline">Wikimedia Commons (Siobhán Grayson, CC BY-SA 4.0)</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            To put it plainly, neither turbovec (the repository) nor TurboQuant (the paper) is fabricated. Both check out against primary sources. What differs is the weight of the README's performance figures versus the algorithm's theoretical guarantee. From the next section on, the analysis separates "what the paper guarantees," "what the author measured," "what is only math-consistent," and "what has not yet been confirmed."
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">How TurboQuant works — compression without training</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To understand turbovec, look at the method, not the ratio. The same 16× compression behaves very differently in production depending on whether you reach it by learning from data or by computing it in advance from math. TurboQuant's core property is that it is "data-oblivious" — it derives the coordinate-wise optimal quantization without ever looking at the input data. The method splits into four steps.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>Four steps — from normalize to bit-packing</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        First, <strong>normalize</strong>. The vector's length (its norm) is peeled off and stored separately as a single float, leaving only the unit direction vector. Second, <strong>random rotation</strong>. Every vector is multiplied by the same random orthogonal matrix. After this, each rotated coordinate follows a Beta distribution, and as the dimension grows it converges to an N(0, 1/d) Gaussian. The paper puts it this way: rotating the input vectors at random induces a concentrated Beta distribution on the coordinates. This is the heart of being data-oblivious — whatever the input is, after rotation the distribution converges to a predictable shape.
+                    </p>
+
+                    <!-- Image: high-dimensional Gaussian — the distribution random rotation converges to -->
+                    <figure class="my-8">
+                        <img src="./image/img-02-multivariate-gaussian.png"
+                             alt="A multivariate normal (Gaussian) surface — the known shape that randomly rotated vector coordinates converge to in high dimensions"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ This is where the magic of random rotation lives. Any input, once rotated, sees its coordinate distribution converge to a Gaussian like this one — and because the distribution is known in advance, the quantization boundaries can be computed from math instead of from data. | Source: <a href="https://commons.wikimedia.org/wiki/File:Multivariate_Gaussian.png" target="_blank" rel="noopener" class="underline">Wikimedia Commons (CC BY-SA 3.0)</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Third, <strong>coordinate-wise scalar quantization (Lloyd–Max)</strong>. Because the distribution is already known, the optimal quantization boundaries and centroids for each coordinate are precomputed from math rather than from the data. In the paper's phrasing, they are computed once, from mathematics rather than from data. Fourth, <strong>bit-packing</strong>. Coordinates are rounded to 2 bits (4 buckets) or 4 bits (16 buckets) and packed together. The README notes that it borrows RaBitQ's (arXiv:2405.12497) length re-normalization here — RaBitQ is prior work in the same lineage, a "rotation-plus-quantization with a theoretical error bound."
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>The decisive difference from FAISS PQ — whether a codebook is trained</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The meaning of this mechanism becomes clear when you set it beside FAISS. FAISS product quantization (PQ) has to learn a codebook with k-means — running clustering on each subspace to build a set of representative vectors. Both the FAISS documentation and OpenSearch's docs state this explicitly. TurboQuant has no such training step at all. The difference is not one of compression quality; it is a difference in kind — learning versus no learning.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="themeable-border" style="border-bottom: 2px solid;">
+                                    <th class="text-left p-3 font-bold themeable-heading">Property</th>
+                                    <th class="text-left p-3 font-bold themeable-heading">FAISS PQ / IVF</th>
+                                    <th class="text-left p-3 font-bold themeable-heading">TurboQuant (turbovec)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">Codebook</td>
+                                    <td class="p-3">Must be learned with k-means</td>
+                                    <td class="p-3">Precomputed from math, no training</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">Training data</td>
+                                    <td class="p-3">Required (IVF recommends a large set scaled to nlist)</td>
+                                    <td class="p-3">Not needed (data-oblivious)</td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">As data grows</td>
+                                    <td class="p-3">Distribution drift risks retraining and re-indexing</td>
+                                    <td class="p-3">Online ingestion, no retrain or rebuild</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold">Adding new vectors</td>
+                                    <td class="p-3">Encoded against the existing codebook (quality degrades under drift)</td>
+                                    <td class="p-3">Added instantly, guarantee preserved</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One nuance, stated precisely. turbovec is not a perfect zero-fit either. The README's TQ+ mode fits two values per coordinate — a shift and a scale — once, on first load (step 3). But those values are fixed at the first add and then reused, and the README states there is "no retrain or rebuild." This is fundamentally unlike FAISS-style iterative k-means, but the honest framing avoids the exaggeration that "not a single parameter is read from the data." What the paper guarantees is that it achieves distortion within a small constant factor of the theoretical lower bound (the README cites 2.7×) across all bit-widths and dimensions.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            turbovec's genuine novelty is not "16× compression." Cutting to 2 bits yields 16× by simple bit-arithmetic. The novelty is that it earns a <strong>near-optimal distortion guarantee at that compression without any training or re-indexing</strong>. That single sentence is the spine of this report. Any quantizer can boast a compression ratio; eliminating training is another matter.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Verifying the numbers — how much is true</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Now we check the headline figures with arithmetic. In short: the compression ratio itself is true by definition, but for it to hold as "31GB → 4GB" you have to assume a dimension and a bit-width, and the speed and recall figures are one person's measurements at 100K scale. The purpose of this section is to keep those grades from blending together.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>The arithmetic of 31GB — it only holds once you name the dimension</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Where does 31GB come from? Multiply ten million 768-dimensional fp32 embeddings.
+                    </p>
+                    <div class="formula-box mb-6">
+                        <p class="themeable-text leading-relaxed" style="font-family: var(--font-mono, monospace);">
+                            10,000,000 × 768 × 4 bytes = 30.72 GB ≈ 31 GB<br>
+                            10,000,000 × 1536 × 4 bytes = 61.44 GB
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So "31GB" is accurate <strong>only when you assume 768-dimensional fp32</strong>. The README does not name the dimension, so this is an estimate reverse-derived by arithmetic. At an OpenAI ada-002-class 1536 dimensions, the same ten million vectors come to 61GB, and 31GB is wrong. The 4GB target splits the same way along dimension and bit-width. At 768 dimensions, 4GB is about 4.17 bits per coordinate (roughly 7.4×, i.e. 4-bit compression); at 1536 dimensions, 4GB is about 2.08 bits per coordinate (roughly 15×, i.e. 2-bit compression). The README's single-vector example ("6,144 bytes → 384 bytes = 16×", "→ 768 bytes = 8×") is pure bit-arithmetic, so it is true by definition, not a benchmark.
+                    </p>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-compression.svg"
+                                 alt="Index size and compression ratio by bit-width — a 1536-dimensional fp32 vector of 6,144 bytes shrinks to 384 bytes at 2-bit, a 16× reduction"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ Compression — a 1536-dimensional fp32 vector of 6,144 bytes shrinks to 384 bytes at 2-bit, a 16× reduction. The ratio is the same bit-arithmetic for any quantizer; the real question is how much recall survives that compression. | Source: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, author's own benchmark)</figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>Speed vs FAISS — "always faster" is false</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The speed claim is the one to handle most carefully. The README's "12–20% faster on ARM, parity or better on x86" comes from the author's own measurement at 100K vectors, 1K queries, k=64, median of 5 runs, on an Apple M3 Max and an Intel Sapphire Rapids. That much is broadly true. But in the same README the author writes plainly that <strong>the 2-bit multithreaded configurations (d=1536, d=3072) run 2–4% slower than FAISS</strong>. So the social-media-style claim that "search speed always matches or beats FAISS" is <strong>false in some configurations</strong>. Stated precisely: "faster in most configurations, but FAISS wins in some 2-bit multithreaded ones."
+                    </p>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-arm_speed_mt.svg"
+                                 alt="Multithreaded search speed comparison on Apple M3 Max (ARM) — TurboQuant beats FAISS FastScan by 12–20% across every configuration"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ ARM (M3 Max) multithreaded speed — TurboQuant beats FAISS FastScan by 12–20% across every configuration. | Source: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, author's own benchmark)</figcaption>
+                    </figure>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-x86_speed_st.svg"
+                                 alt="Single-threaded search speed comparison on Intel Sapphire Rapids (x86) — 4-bit configurations win by 1–6% and 2-bit single-threaded is within about 1%"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ x86 (Sapphire Rapids) single-threaded speed — 4-bit wins every time by 1–6%, and 2-bit single-threaded is within about 1%. The only 2–4% slower cases are the 2-bit multithreaded configs, which are not shown here. | Source: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, author's own benchmark)</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Recall is likewise an author measurement. The author reports beating FAISS by 0.4–3.4 points on R@1 at OpenAI d=1536 and d=3072, while also publishing the unfavorable result that at a low-dimensional GloVe d=200 in 2-bit it trails FAISS by 1.2 points. Leaving an unfavorable number in the README is an honest touch that adds credibility. The comparison baseline is FAISS IndexPQ (LUT256, nbits=8), which the author states is stronger than the paper's own custom baseline.
+                    </p>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-recall_d1536.svg"
+                                 alt="Recall curve over increasing k at d=1536 — TurboQuant (2-bit and 4-bit) beats FAISS at R@1, and both converge to 1.0 from k=4 onward"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ Recall at d=1536 — TurboQuant beats FAISS by 0.4–3.4 points at R@1, and both converge to 1.0 from k=4 (the win case). | Source: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, author's own benchmark)</figcaption>
+                    </figure>
+
+                    <figure class="my-6">
+                        <div style="background:#ffffff; border-radius:0.75rem; padding:0.5rem;">
+                            <img src="./image/turbovec-recall_glove.svg"
+                                 alt="Recall curve at low-dimensional GloVe d=200 — 2-bit TurboQuant trails FAISS by 1.2 points at R@1, with the gap closing from k≈16"
+                                 loading="lazy"
+                                 class="w-full max-h-[460px] object-contain mx-auto">
+                        </div>
+                        <figcaption class="text-xs themeable-muted mt-2 text-center">▲ Recall at GloVe d=200 — the harder low-dimensional regime. 4-bit wins by 0.3 points at R@1, but 2-bit trails by 1.2 points (the loss the author honestly published). The gap closes from k≈16. | Source: <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener" class="underline">turbovec README</a> (100K vectors, k=64, author's own benchmark)</figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>Claim-by-claim grade table</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here is the verification so far in one table. Even among "facts," the things that are true by definition, guaranteed by the paper, measured by the author, only math-consistent, or not yet confirmed carry different weight.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="themeable-border" style="border-bottom: 2px solid;">
+                                    <th class="text-left p-3 font-bold themeable-heading">Claim</th>
+                                    <th class="text-left p-3 font-bold themeable-heading">Verdict</th>
+                                    <th class="text-left p-3 font-bold themeable-heading">Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">No training needed (data-oblivious)</td>
+                                    <td class="p-3">Stated in the paper. The firmest differentiator</td>
+                                    <td class="p-3"><strong>verified</strong></td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">2-bit = 16× compression</td>
+                                    <td class="p-3">True by definition of bit-arithmetic</td>
+                                    <td class="p-3"><strong>math-consistent</strong></td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">10M × 768 fp32 = 31GB</td>
+                                    <td class="p-3">Accurate assuming 768 dim (30.72GB)</td>
+                                    <td class="p-3"><strong>math-consistent</strong></td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">12–20% faster on ARM</td>
+                                    <td class="p-3">Author measurement at 100K scale</td>
+                                    <td class="p-3"><strong>author-benchmark</strong></td>
+                                </tr>
+                                <tr class="themeable-border" style="border-bottom: 1px solid;">
+                                    <td class="p-3 font-semibold">Always matches or beats FAISS</td>
+                                    <td class="p-3">2–4% slower in 2-bit MT configs — false</td>
+                                    <td class="p-3"><strong>false</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold">Recall &amp; speed at 10M scale</td>
+                                    <td class="p-3">README benchmarks are 100K. No concurrent 10M measurement</td>
+                                    <td class="p-3"><strong>unverified</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The compression ratio is nothing to brag about — cut the bits and anyone gets the same multiple. The real question is "how much recall survives the cut to 4GB," and that recall figure is an author benchmark at 100K scale. A measurement of recall, speed, and memory taken together at the headline 10M scale is not directly confirmed in the README.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why it matters — the cost structure of RAG and the memory bottleneck</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If the compression ratio is nothing to brag about, why did this library collect six thousand stars? The answer lies in the cost structure of RAG (retrieval-augmented generation). A RAG system turns documents into embedding vectors, holds them in memory, and finds the nearest vectors for every incoming query. As the corpus grows, this vector index becomes a bottleneck that swallows memory whole. Holding ten million documents as 768-dimensional fp32 is 31GB — a scale that starts to exceed a single server's RAM.
+                    </p>
+
+                    <!-- Image: data center server rack — the physical cost behind vector index memory -->
+                    <figure class="my-8">
+                        <img src="./image/img-04-data-center-rack.jpg"
+                             alt="A data center server rack packed with hard drives and network cables — the physical cost of the memory a vector index occupies"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ The number 31GB is not an abstraction but a bill. The larger the corpus, the more RAM and the pricier the instance a vector index demands. Compression means putting the same index on a smaller server. | Source: <a href="https://commons.wikimedia.org/wiki/File:EFTA00002518_-_Server_rack_with_multiple_hard_drives_and_network_cables_connected_in_a_data_center_environment.jpg" target="_blank" rel="noopener" class="underline">Wikimedia Commons (Public domain)</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Shrinking memory unlocks two things. First, the same index fits on a smaller, cheaper instance — at 8× compression, 31GB becomes 4GB, so the index can sit on a low-RAM server or alongside a single GPU. Second, quantized vectors scan faster under SIMD — reading fewer bytes eases the memory bandwidth bottleneck. Compression is not merely "saving capacity"; it is a lever that touches both search speed and infrastructure cost at once.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This is where the operational meaning of "no training" surfaces. A RAG corpus is not static. Documents are added daily, domains shift, distributions drift. With FAISS PQ, once the distribution has moved enough you must relearn the codebook and rebuild the index — which brings downtime and recomputation cost. Because TurboQuant's codebook is independent of the data, you just add new vectors — even if the distribution changes, the post-rotation coordinate distribution is still a known shape. This is the point at which the paper notes that "data-oblivious algorithms are well-suited to online applications."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One distinction to add. The TurboQuant paper itself covers not only vector search but also LLM KV-cache compression. Secondary sources report a 6× cut in KV memory and an 8× attention speedup on H100, but these are not confirmed directly in the abstract, so they stand at the level of press citation. turbovec implements <strong>only the vector-search (nearest-neighbor) application</strong> from that paper. It is more accurate not to lump the two applications together.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Limits &amp; unverified — the weaknesses, stated honestly</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A good guide names the limits as clearly as the strengths. turbovec's weaknesses lie not in algorithmic flaws but in gaps in verification. If you are weighing adoption, it is worth flagging the following five as risks.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>The gap between 100K and 10M</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This is the largest gap. The headline "31GB → 4GB and faster than FAISS" is a ten-million-scale claim, but the README's recall and speed benchmarks are at 100K. A measurement of recall, speed, and memory taken together at a scale 100× larger is not directly confirmed in the sources. Do not read together the items that hold by arithmetic regardless of scale (like the compression ratio) and the items that can shift with scale (like recall).
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>The exception to "always faster"</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        As seen earlier, in 2-bit multithreaded d=1536/3072 the author records trailing FAISS by 2–4%. The speed advantage varies by configuration. A further limit is that the recall comparison rests on a single FAISS IndexPQ configuration — there is no comparison in the README against other FAISS setups like IVF-PQ or HNSW. The author's claim that the chosen baseline is strong is reasonable, but it does not mean "it beats every FAISS."
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.3</span>No third-party production validation</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Every performance number is a single author's measurement. No independent third party has reproduced and validated the results at large scale yet. There is no operational data — production deployments, long-term stability, or recall-degradation curves under heavy load. The community response is at the level of Show HN with 89 points and 6 comments, and the small comment count makes it hard to call this deep peer review. The most notable reaction was from Redis creator antirez, who remarked on the mathematical elegance of using 4-bit centroids without min/max because the distribution is known.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.4</span>Items that rest on secondary sources</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The ICLR 2026 acceptance is reported by multiple outlets, but the arXiv page itself states no venue. The author affiliations (Google Research, DeepMind, NYU) are likewise absent from the abstract body and rest on press and summaries. The H100 KV-cache speedup figures are also secondary-source citations. These items are "probably correct" but worth reading as not yet confirmed by primary sources. On the other hand, the appearance of multiple independent implementations (Zig, PyTorch, WASM, Apple MLX, and others) is a positive sign that an ecosystem is forming — though this signals popularity, not performance validation.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            In short, turbovec's weakness is not "it is wrong" but "it has not yet been verified enough." The algorithm's theoretical foundation is solid in the paper, and its honesty is high (it publishes unfavorable results). But two cells remain empty: independent reproduction at 10M scale and production case studies. Until those two cells fill, the headline is a "possibility," not a "guarantee."
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 6: Pebblous perspective (editor's note) -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Pebblous perspective — same quality from less data</h2>
+                    </div>
+
+                    <blockquote class="themeable-card rounded-xl p-5 my-6 themeable-text leading-relaxed">
+                        <p><strong>Editor's note.</strong> This section is not a sales pitch. It is closer to a memo on what caught our eye as a data-quality company reading through a vector-compression library. We do not build vector indexes. We work on the quality of the data that AI learns from and searches over. From that vantage point, the most interesting thing about turbovec is not the compression ratio — it is the phrase "without training."</p>
+                    </blockquote>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The proposition "produce the same quality from less data" touches how Pebblous defines AI-Ready Data. TurboQuant solves that proposition in the domain of compression, by replacing prior knowledge of the data distribution with mathematics. It cuts the bits while keeping the distortion guarantee. Carry the same idea over to data quality and one question arises — to get the same model quality from less data, which data do you keep and which do you discard?
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The reason turbovec can assume that "any data, once rotated, becomes distributionally predictable" is that the input is normalized to a unit vector and then obeys the geometric properties of high dimensions. Real training and retrieval data are not that clean. Duplicate embeddings, broken vectors, skewed distributions, and documents of unclear provenance are all mixed in. If the data is already distorted before compression, even a near-optimal quantizer will faithfully preserve that distortion. Compression does not clean data.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So we leave a question rather than an assertion. Can the duplicate and noise vectors that do not contribute to search quality be filtered out of an embedding corpus in advance? Would it be better to spend the memory freed by compression on holding more clean data? What picture emerges if you pursue "same quality from less" on both fronts at once — compression (turbovec) and refinement (data quality)? These questions remain open for us too. What is clear is only this: the idea of compression without training looks in the same direction as our own concern — keeping quality while using less data.
+                    </p>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What to watch now</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For a practitioner, it is faster to ask whether turbovec fits your situation than to ask the binary "does it replace FAISS." The two tools are strong in different places.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <strong>When to look at turbovec first.</strong> When your corpus changes often and re-indexing cost is a burden; when you must keep ingesting new vectors online; when you need to put the index on a memory-tight single server or edge environment; and when you face a cold start with no training data to prepare. The "no training" property pays off directly in these scenarios.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <strong>When to stay on FAISS.</strong> When you need stability already proven in large-scale production; when your corpus is static enough to reuse one learned codebook for a long time; when you need the rich index options and GPU acceleration of IVF-PQ and HNSW; and when a recall curve verified at 10M+ scale is a premise of your decision. Here the empty 10M cell in turbovec carries weight.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Three signals are worth watching now. First, whether an independent benchmark emerges that measures recall, speed, and memory together at 10M scale from a third party. Second, whether production deployments and long-term operational data accumulate. Third, whether the multiple independent implementations (Zig, PyTorch, WASM, MLX) go beyond simple ports to cross-validate performance across different environments. When those three cells fill, the headline moves from "possibility" to "guarantee." Until then, remember that turbovec's firmest asset is not its compression ratio but the one line "it needs no training."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Thank you for reading to the end. This article was an attempt to cool the excitement by a notch and separate the claim from the verification. Whenever a new tool makes headlines, asking the same two questions first will keep you from losing your way — who measured this number, and at what scale, and has a third party reproduced it?
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>Pebblous Data Communication Team</strong><br>
+                        <span class="themeable-muted text-sm">June 7, 2026</span>
+                    </p>
+                </section>
+
+                <!-- Hub Series Notice -->
+                <div class="themeable-card rounded-xl p-6 mt-8 mb-8" style="border-left: 4px solid #F86825;">
+                    <p class="text-sm font-bold themeable-heading mb-2">📚 PebbloPedia: TurboQuant</p>
+                    <p class="text-sm themeable-text leading-relaxed">
+                        This article pairs with <a href="/pebblopedia/turboquant/en/" class="text-orange-500 hover:text-orange-400 font-semibold">the TurboQuant intro</a>. PebbloPedia reads one concept at five depths.
+                    </p>
+                </div>
+
+                <!-- FAQ Section -->
+                <section id="faq" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Frequently Asked Questions (FAQ)</h2>
+                    <p class="themeable-text leading-relaxed mb-8">
+                        These are the questions readers ask most about turbovec and TurboQuant — whether 31GB → 4GB is true, whether it really beats FAISS, why no training is needed, and which tool to use when. The core is one idea: even among "facts," the things true by definition, measured by the author, and not yet verified carry different weight.
+                    </p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <!-- Download Citation Buttons -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">
+                            RIS
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Papers</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Zandieh, A., Daliri, M., Hadian, M., &amp; Mirrokni, V. (2025). "TurboQuant: Online Vector Quantization with Near-optimal Distortion Rate." <em>arXiv preprint</em>. arXiv:2504.19874 (2025-04-28); ICLR 2026 acceptance per secondary sources. <a href="https://arxiv.org/abs/2504.19874" target="_blank" rel="noopener">arxiv.org/abs/2504.19874</a></span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Douze, M., Guzhva, A., Deng, C., Johnson, J., Szilvasy, G., Mazaré, P.-E., Lomeli, M., Hosseini, L., &amp; Jégou, H. (2024). "The Faiss library." <em>arXiv preprint</em>. arXiv:2401.08281. <a href="https://arxiv.org/abs/2401.08281" target="_blank" rel="noopener">arxiv.org/abs/2401.08281</a></span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Gao, J., &amp; Long, C. (2024). "RaBitQ: Quantizing High-Dimensional Vectors with a Theoretical Error Bound for Approximate Nearest Neighbor Search." <em>Proceedings of the ACM on Management of Data (SIGMOD)</em>. arXiv:2405.12497. <a href="https://arxiv.org/abs/2405.12497" target="_blank" rel="noopener">arxiv.org/abs/2405.12497</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Open source &amp; community</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">4.</span><span class="ref-body">Codrai, R. (2026). "turbovec: A vector index built on TurboQuant, written in Rust with Python bindings." <em>GitHub</em>. MIT License; ~5,974 stars (as of 2026-06-07); PyPI/crates.io: turbovec. <a href="https://github.com/RyanCodrai/turbovec" target="_blank" rel="noopener">github.com/RyanCodrai/turbovec</a></span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">"Show HN: TurboQuant for vector search – 2-4 bit compression." (2026). <em>Hacker News</em>. 89 points, 6 comments; participants include antirez. <a href="https://news.ycombinator.com/item?id=47562135" target="_blank" rel="noopener">news.ycombinator.com/item?id=47562135</a></span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <!-- Scripts -->
+    <script src="/scripts/common-utils.js?v=20260607"></script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260607" defer></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "31GB to 4GB — The Training-Free Way to Compress Vectors",
+            subtitle: "turbovec & TurboQuant — reading training-free vector compression from the paper and the code",
+            pageTitle: "turbovec & TurboQuant Analysis 2026 — Can Training-Free Vector Compression Replace FAISS? | Pebblous",
+            category: "tech",
+            publishDate: "2026-06-07",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/turbovec-2026/en/",
+            tags: ["turbovec", "TurboQuant", "vector search", "RAG", "embedding compression", "FAISS", "quantization", "AI infrastructure", "Pebblous"],
+            faqs: [
+                { question: "Is turbovec's 31GB → 4GB claim true?", answer: "Conditionally true. Ten million 768-dimensional fp32 embeddings come to exactly 30.72GB (about 31GB), and compressing them to 4 bits is roughly 7.4×, landing in the 4GB range. But because the README does not name the dimension, 768 is an estimate reverse-derived by arithmetic; at 1536 dimensions the same ten million vectors are 61GB and 31GB is wrong. The compression ratio itself is true by bit-arithmetic, but how much search quality (recall) survives that compression is a separate question." },
+                { question: "Is turbovec really faster than FAISS?", answer: "In most configurations, yes — but not always. The author's measurements put it 12–20% faster on ARM and at parity or better on x86 (at 100K vectors, single-author measurement). But the same README states plainly that in 2-bit multithreaded configurations (d=1536, d=3072) it runs 2–4% slower than FAISS. So the claim that it 'always matches or beats FAISS' is false in some configurations." },
+                { question: "Why does TurboQuant need no training?", answer: "Because rotating a vector by a random orthogonal matrix makes its coordinate distribution converge to a known shape (a Beta distribution, Gaussian in high dimensions) regardless of the input. When the distribution is known in advance, the quantization boundaries and centroids can be computed from math rather than from data. That is the heart of being data-oblivious. FAISS product quantization (PQ), by contrast, must learn a codebook with k-means." },
+                { question: "Who created the TurboQuant algorithm?", answer: "It is a paper from Google researchers (arXiv:2504.19874). The authors are Amir Zandieh, Majid Daliri, Majid Hadian, and Vahab Mirrokni, posted on April 28, 2025. The affiliations are reported as Google Research, Google DeepMind, and NYU, but the abstract carries no affiliation line, so this rests on secondary sources. turbovec (github.com/RyanCodrai/turbovec) is a separate project that implements this paper as open source." },
+                { question: "Can turbovec replace FAISS?", answer: "It depends on the situation. If your corpus changes often and re-indexing is a burden, if you keep ingesting new vectors online, if you run in a memory-tight environment, or if you face a cold start with no training data to prepare, turbovec's training-free property pays off. Conversely, if you need large-scale production stability, a static corpus, the rich options and GPU acceleration of IVF-PQ and HNSW, or a recall curve verified at 10M+ scale, staying on FAISS is the safer choice." },
+                { question: "Are turbovec's performance numbers trustworthy?", answer: "Every performance number is one person's measurement at 100K scale. No independent third party has reproduced and validated them at large scale yet. A measurement of recall, speed, and memory taken together at the headline 10M scale is also not directly confirmed in the README. That said, the author publishing unfavorable results — trailing FAISS in low dimensions, running slower in some configurations — does add credibility." },
+                { question: "Why does vector compression matter in RAG?", answer: "RAG turns documents into embedding vectors, holds them in memory, and finds the nearest vectors for every query. As the corpus grows, this index becomes a bottleneck that swallows memory whole. Compression lets the same index fit on a smaller, cheaper server, and reading fewer bytes eases the memory bandwidth bottleneck so search runs faster. So compression is a lever that touches both infrastructure cost and search speed, not just storage." },
+                { question: "How are turbovec and RaBitQ related?", answer: "They are in the same lineage. RaBitQ (arXiv:2405.12497, SIGMOD 2024) is prior work on 'rotation-plus-quantization with a theoretical error bound,' and the turbovec README states it borrows RaBitQ's length re-normalization in step 5. They share the larger idea of preserving geometric structure through random rotation before quantizing." }
+            ]
+        });
+    </script>
+</body>
+</html>
