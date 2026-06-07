@@ -395,8 +395,9 @@ Agent(
     CLAUDE.md: <repo-root>/CLAUDE.md
 
     ⛔ 제목→Executive Summary 일관성 규칙 (title-strategy.md §7):
-    - mainTitle의 핵심 주장이 Executive Summary 3문단 안에 근거 수치와 함께 등장해야 함
-    - stat-card에 mainTitle 관련 지표 포함 필수
+    - mainTitle의 핵심 주장이 Executive Summary key-insight에 산문으로 등장해야 함
+    - ⛔ 수치는 stat-card 담당 — key-insight에 수치 4개 이상 나열 금지 (역피라미드 산문, html-conventions.md §5)
+    - stat-card에 mainTitle 관련 지표 포함 필수 (3~4개, 5개 이상 금지)
     - 외부 보고서 기반 글: mainTitle에 외부 브랜드명 금지, subtitle에 배치
 
     출력:
