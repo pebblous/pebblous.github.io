@@ -1,7 +1,7 @@
-# SNS 홍보 글: NVIDIA Omniverse를 떠받치는 OpenUSD 데이터 표준
+# SNS 홍보 글: 표준이 깔린 뒤, 누가 데이터의 품질을 보증하는가
 
 > 소스: report/nvidia-omniverse-openusd-data-standard-2026-06/ko/index.html
-> 생성일: 2026-06-08
+> 생성일: 2026-06-10
 > URL (KO): https://blog.pebblous.ai/report/nvidia-omniverse-openusd-data-standard-2026-06/ko/
 > URL (EN): https://blog.pebblous.ai/report/nvidia-omniverse-openusd-data-standard-2026-06/en/
 > voice: sns-cover (LinkedIn/Twitter) · reflective (Facebook)
@@ -10,130 +10,154 @@
 
 ## LinkedIn (KO)
 
-OpenUSD Core Specification 1.0이 2025년 12월 국제 표준으로 공식화됐다.
+NVIDIA GR00T N1은 합성 궤적 78만 개를 11시간에 생성하고도 RoboCasa 벤치마크 49.6%에서 멈췄다.
 
-Pixar가 25년간 다듬어 온 이 표준은 도구마다 갈라져 있던 3D 데이터 형식을 하나의 공통 문법 아래 묶는다. SQL이 관계형 데이터에 했던 일을 3D 데이터에 하는 것이다.
+2025년 12월 OpenUSD Core Specification 1.0이 Linux Foundation 공식 표준이 됐다. 25년간 Pixar의 내부 언어였던 3D 씬 기술 문법이 처음으로 "결정적 문법"으로 확정됐고, NVIDIA Omniverse는 렌더링 도구에서 물리 AI의 데이터 표준 계층으로 무게중심을 옮겼다.
 
-SQL 비유는 한 지점에서 깨진다 — SQL은 무결성 제약으로 품질을 강제했지만, USD는 씬의 형식만 통일할 뿐 데이터 충분성은 묻지 않는다. GR00T N1이 78만 궤적을 써도 주방 조작 32.1%에 머문 이유가 그 공백이다.
+OpenUSD는 데이터의 형식을 표준화했다. 학습 충분성은 보장하지 않는다. LIBERO에서 97.3%를 찍던 VLA 모델이 분포 밖 환경에서 34.4%로 내려앉는 것이 그 증거다.
 
-형식 표준이 닫힌 자리에서, 충분성을 측정하고 보증하는 계층은 아직 비어 있다. 페블러스는 DataClinic으로 Physical AI 학습 데이터의 충분성을 진단한다.
+표준이 커질수록 그 위에서 독립적으로 데이터를 진단하는 레이어의 가치가 높아진다. 페블러스는 DataClinic으로 이 품질 공백을 다루고 있다.
+
+물리 AI 시대의 다음 승부처는 더 많은 합성데이터가 아니라 더 정확한 데이터 품질 보증이다.
 
 ↗ 링크는 댓글에
-#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘 #PhysicalAI #AIReadyData #디지털트윈 #합성데이터 #NVIDIA #OpenUSD #데이터거버넌스
+
+#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘 #DataClinic #PhysicalAI #합성데이터 #디지털트윈 #NVIDIAOmniverse #OpenUSD #IsaacSim
 
 ---
 
 ## LinkedIn (EN)
 
-NVIDIA Omniverse is widely described as a simulation platform. Its more consequential layer is one step down: OpenUSD, the data standard Pixar refined over 25 years, which became a formally ratified international specification in December 2025.
+NVIDIA's GR00T N1 generated 780,000 synthetic trajectories in 11 hours. It then hit a 49.6% ceiling on the RoboCasa benchmark.
 
-The parallel to SQL is apt — and instructive about where it breaks. SQL standardized relational data as an independent asset that multiple tools could query and combine. OpenUSD does the same for 3D, physical, and robotics data that previously lived in incompatible silos.
+OpenUSD Core Specification 1.0 became an official Linux Foundation standard in December 2025. For the first time in 25 years, the grammar Pixar used to describe 3D scenes was fixed as a normative reference. NVIDIA Omniverse has repositioned accordingly — from rendering platform to the data operating layer for physical AI.
 
-But SQL didn't stop at format: it enforced data integrity through constraints. The database rejects a bad value. OpenUSD standardizes the grammar of 3D scenes but says nothing about whether those scenes are physically accurate or adequate for training.
+That is the event. Here is the gap it reveals: OpenUSD standardizes format, not sufficiency. A VLA model posting 97.3% on LIBERO falls to 34.4% under out-of-distribution stress. Volume does not close the gap.
 
-NVIDIA's GR00T N1 deployed 780,000 synthetic trajectories and achieved 32.1% success on kitchen manipulation tasks. Volume was not sufficiency.
+The wider a standard spreads, the more valuable an independent quality layer becomes — one that diagnoses coverage gaps and distributional bias above the format. Pebblous addresses this through DataClinic.
 
-The format layer is now closed. The data quality and sufficiency layer above it remains open — Pebblous builds DataClinic to diagnose and certify Physical AI training data at that layer.
+The next battleground in physical AI is not more synthetic data. It is a verified quality guarantee above the standard.
 
-↗ Link in comments
-#Pebblous #DataClinic #DataQuality #DataJournalism #PhysicalAI #AIReadyData #DigitalTwin #SyntheticData #NVIDIA #OpenUSD #DataGovernance
+↗ Full report in the comments
+
+#Pebblous #DataClinic #DataQuality #DataJournalism #PhysicalAI #SyntheticData #DigitalTwin #NVIDIAOmniverse #OpenUSD #IsaacSim #AIReadyData
 
 ---
 
 ## Twitter/X (KO)
 
-GR00T N1은 78만 궤적으로도 주방 조작 32.1%. OpenUSD는 3D 데이터의 형식을 표준화했지만, 충분성은 그 위 계층의 몫이다.
+합성 궤적 78만 개를 11시간에 쏟아내도 RoboCasa 49.6%에서 멈췄다.
+
+OpenUSD 1.0 표준화 이후 물리 AI의 진짜 병목은 데이터의 양이 아니라 품질이다.
 
 https://blog.pebblous.ai/report/nvidia-omniverse-openusd-data-standard-2026-06/ko/
 
-#페블러스 #데이터품질 #OpenUSD #NVIDIA #PhysicalAI
+#NVIDIAOmniverse #OpenUSD #합성데이터 #데이터품질 #페블러스
 
 ---
 
 ## Twitter/X (EN)
 
-GR00T N1 deployed 780,000 synthetic trajectories and achieved 32.1% on kitchen tasks. OpenUSD standardizes the format of Physical AI data. Data quality and sufficiency? Still an open layer.
+780K synthetic trajectories in 11 hours. Still a 49.6% ceiling.
+
+After OpenUSD 1.0, physical AI's real bottleneck is not data volume. It is quality.
 
 https://blog.pebblous.ai/report/nvidia-omniverse-openusd-data-standard-2026-06/en/
 
-#Pebblous #DataQuality #OpenUSD #NVIDIA #PhysicalAI
+#NVIDIAOmniverse #OpenUSD #PhysicalAI #SyntheticData #DataQuality
 
 ---
 
 ## Facebook (KO)
 
-<!-- voice=reflective -->
+NVIDIA가 처음 그 숫자를 발표했을 때, 저는 잠깐 멈췄습니다.
 
-"형식 표준이 깔리면 데이터가 흐른다."
+합성 궤적 78만 개를 11시간에 생성했다고 했습니다.
 
-이 말이 얼마나 많은 것을 이미 전제하고 있는지, 처음엔 보이지 않았습니다.
+인간 시연으로 따지면 약 9개월치입니다.
 
-지난해 12월, AOUSD가 OpenUSD Core Specification 1.0을 발표했습니다.
+그리고 그 모델은 RoboCasa 벤치마크에서 49.6%의 벽을 넘지 못했습니다.
 
-Pixar가 애니메이션 파이프라인을 위해 25년간 다듬어 온 표준이, 그날 PDF나 HTML처럼 문서화된 국제 표준의 지위에 올랐습니다.
+---
 
-Apple, Adobe, Autodesk, NVIDIA, Siemens까지 30개사 이상이 이미 그 안에 있습니다.
+"양을 부으면 풀리지 않는다."
 
-SQL 비유가 여기서 자연스럽게 나옵니다.
+이 한 문장이 저에게 한참 남았습니다.
 
-1970년대까지 기업 데이터는 애플리케이션마다 갇혀 있었습니다. SQL이 공통 문법을 깔고 나서야 데이터가 특정 도구의 부속품이 아닌 독립 자산이 됐습니다. OpenUSD가 지금 3D·물리·로보틱스 데이터에 같은 역할을 합니다.
+---
 
-그런데 비유는 중요한 지점에서 갈라집니다.
+2025년 12월, OpenUSD Core Specification 1.0이 Linux Foundation 공식 표준으로 확정됐습니다.
 
-SQL은 형식만 통일한 것이 아니었습니다. 무결성 제약으로 잘못된 값을 거부했습니다. 데이터베이스 자체가 품질을 강제했습니다.
+Pixar가 25년 동안 다듬어 온 3D 씬 기술 언어가 처음으로 "결정적 문법"으로 못 박힌 날이었습니다.
 
-OpenUSD는 씬의 문법을 통일합니다.
+AOUSD에 참여한 조직은 현재 138개 — 자주 인용되는 "350+"와는 다른 실제 수치입니다.
 
-그러나 그 씬이 물리적으로 정확한지, 로봇 학습에 쓸 만큼 분포가 다양한지, 라벨이 맞는지는 아무것도 묻지 않습니다.
+표준이 깔렸습니다.
 
-"형식 표준화"와 "충분성 보증" 사이에는, 아직 채워지지 않은 계층이 있습니다.
+---
 
-NVIDIA GR00T N1은 78만 궤적을 학습 데이터로 썼습니다. 그중 98~99%가 합성데이터였습니다. 그리고 주방 조작 태스크에서 32.1%에 머물렀습니다.
+그러나 표준은 형식의 문제를 풀었을 뿐입니다.
 
-양이 충분성을 보장하지 않았습니다.
+LIBERO에서 97.3%를 기록하던 VLA 모델이 분포 밖 환경에서 34.4%로 내려앉습니다.
 
-페블러스가 DataClinic을 통해 Physical AI 학습 데이터의 품질 진단을 시작한 것도, 바로 그 계층 위에서였습니다.
+커버리지, 분포의 균형, 데이터의 품질 — 이것은 형식 위에 남겨진 다른 차원의 과제입니다.
+
+페블러스가 DataClinic으로 물리 AI 학습 데이터의 품질을 들여다보는 이유도 여기서 나옵니다.
+
+---
+
+"표준이 깔린 뒤, 누가 데이터의 품질을 보증하는가."
+
+이 질문에 이르기까지의 흐름을 리포트로 정리했습니다.
 
 https://blog.pebblous.ai/report/nvidia-omniverse-openusd-data-standard-2026-06/ko/
 
-#페블러스 #OpenUSD #NVIDIA #DataClinic #PhysicalAI #PebbloSim #DataGreenhouse
+#페블러스 #NVIDIAOmniverse #OpenUSD #PhysicalAI #DataClinic #PebbloSim #데이터품질
 
 ---
 
 ## Facebook (EN)
 
-<!-- voice=reflective -->
+When NVIDIA first published the number, I stopped.
 
-"When a standard takes hold, data flows."
+Seven hundred eighty thousand synthetic trajectories in eleven hours.
 
-That phrase kept coming up as I read through this report. And I kept wondering how much it assumes.
+The equivalent, they noted, of roughly nine months of human demonstrations.
 
-In December 2025, the Alliance for OpenUSD published Core Specification 1.0.
+And the model hit a wall at 49.6% on the RoboCasa benchmark.
 
-The data standard that Pixar spent 25 years refining for animation pipelines became, on that day, a formally ratified international specification — owned by no single vendor, documented like HTML or PDF.
+---
 
-More than 30 companies signed on: Apple, Adobe, Autodesk, NVIDIA, Siemens.
+"More volume won't solve it."
 
-The SQL comparison shows up naturally here.
+That sentence stayed with me for a while.
 
-Before SQL, enterprise data was locked inside individual applications. When a common grammar emerged, data became an independent asset — something multiple tools could query, join, and reason over. OpenUSD is attempting the same thing for 3D, physical, and robotics data that previously lived in incompatible silos.
+---
 
-But the analogy starts to pull apart at a specific seam.
+In December 2025, OpenUSD Core Specification 1.0 was ratified as an official Linux Foundation standard.
 
-SQL didn't just standardize format. It enforced integrity constraints. The database refuses a bad value. Quality is built into the grammar.
+The 3D scene description language that Pixar had refined over 25 years was, for the first time, fixed as a normative reference: a definitive grammar.
 
-OpenUSD standardizes the grammar of 3D scenes.
+One hundred thirty-eight organizations now belong to AOUSD, the standard's governing alliance. Not the "350+" figure that has circulated widely.
 
-But it says nothing about whether those scenes are physically accurate, whether the distribution of training environments is representative, whether the labels are correct.
+The standard has been laid.
 
-There is a layer between "format standardization" and "sufficiency assurance" that nobody has filled yet.
+---
 
-NVIDIA's GR00T N1 trained on 780,000 trajectories — 98–99% synthetic. It reached 32.1% success on kitchen manipulation tasks.
+But the standard addresses form, not sufficiency.
 
-Volume was not sufficiency.
+A VLA model posting 97.3% on LIBERO falls to 34.4% under out-of-distribution stress.
 
-Pebblous has been working in that gap through DataClinic — measuring and certifying whether Physical AI training data is actually ready for deployment.
+Coverage, distributional balance, the quality of data — these are problems that live above the format layer, not within it.
+
+That is where Pebblous, through DataClinic, works to diagnose what the standard cannot see.
+
+---
+
+"Once the standard is laid, who guarantees the quality of the data?"
+
+This is the question the report tries to hold.
 
 https://blog.pebblous.ai/report/nvidia-omniverse-openusd-data-standard-2026-06/en/
 
-#Pebblous #OpenUSD #NVIDIA #DataClinic #PhysicalAI #PebbloSim #DataGreenhouse
+#Pebblous #NVIDIAOmniverse #OpenUSD #PhysicalAI #DataClinic #PebbloSim #DataQuality
