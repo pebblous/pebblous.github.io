@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="&copy; 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>KAIST Visual-RRT: Navigate from a Single Image | Pebblous</title>
+    <meta name="description" content="KAIST's CVPR 2026 Highlight Visual-RRT plans robot paths from a goal image alone. What it means for synthetic-data curation and VLA.">
+    <meta name="keywords" content="Visual-RRT, Motion Planning, Differentiable Rendering, Physical AI, KAIST, Robot Synthetic Data, VLA, CVPR 2026, RRT, 3D Gaussian Splatting, sim-to-real, synthetic data, data quality, Pebblous, DataClinic">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/kaist-visual-rrt/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/kaist-visual-rrt/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/kaist-visual-rrt/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/kaist-visual-rrt/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="One Picture Tells the Robot Where to Go — KAIST Visual-RRT">
+    <meta property="og:description" content="Coordinates to pixels — what CVPR 2026 Highlight Visual-RRT reveals about visual-goal motion planning and the next layer of synthetic-data curation.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/kaist-visual-rrt/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/kaist-visual-rrt/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="KAIST Visual-RRT - Visual-Goal Motion Planning">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="One Picture Tells the Robot Where to Go — KAIST Visual-RRT">
+    <meta name="twitter:description" content="Coordinates to pixels — what CVPR 2026 Highlight Visual-RRT adds to synthetic-data curation.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/kaist-visual-rrt/en/image/index.png">
+    <meta name="twitter:image:alt" content="KAIST Visual-RRT Report">
+
+    <!-- Article Metadata -->
+    <meta property="article:published_time" content="2026-06-10T00:00:00+09:00">
+    <meta property="article:author" content="Pebblous Data Communication Team">
+    <meta property="article:section" content="Tech">
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="One Picture Tells the Robot Where to Go — KAIST Visual-RRT and Visual-Goal Motion Planning">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/06/10">
+    <meta name="citation_online_date" content="2026/06/10">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+    <meta name="citation_fulltext_html_url" content="https://blog.pebblous.ai/report/kaist-visual-rrt/en/">
+
+    <!-- JSON-LD (Article/TechArticle, BreadcrumbList, FAQPage) auto-injected by PebblousSchema (scripts/common-utils.js) -->
+
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (fixed order) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260610">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260610">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260610">
+</head>
+<body class="antialiased themeable-bg themeable-text font-sans">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. When Coordinates Step Aside</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The One Assumption RRT Held for 28 Years</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Two Components Multiply</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Differentiable Rendering Enters Robotics — 24 Months</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Industry Still on Sampling</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. A Pebblous Read — Goal Representation Is Data</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            For twenty-eight years, telling a robot where to go has meant typing in numbers. A 6-DoF pose or a vector of joint angles — the goal had to be a number, and the RRT family of planners drew collision-free paths on top of those numbers. <strong>Visual-RRT</strong>, presented as a CVPR 2026 Highlight by KAIST's SGVR Lab, breaks that assumption. The input is a single goal image, no coordinates required, and the robot still finds a way toward the pose in the picture.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The method is the product of two components. Differentiable robot rendering supplies a pixel-level gradient by drawing the robot's current pose and comparing it to the goal image, while a frontier-based explore-exploit policy steers tree expansion toward the visually most promising nodes. Ablations show the two are not additive but multiplicative. Remove frontier sampling and the success rate collapses to near zero; lower inertial momentum β₁ from 0.9 to 0.5 and 79.8% drops to 29.6%. The result is not a one-line tweak to an algorithm. It is the inflection point at which the "goal representation" inside robot training data shifts from coordinate vectors to images.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            From where Pebblous sits, the shift asks two questions at once. Does synthetic-data curation need a new axis called "goal-image consistency," and should data-quality diagnostics descend one level further, down to the pixel? This report follows both questions.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards (Phase 5-D.5 placeholder) -->
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Metrics</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: Lee et al., <em>Visual-RRT</em>, CVPR 2026 Highlight (arXiv:2604.16388).</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">75–80%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Visual-goal success rate</p>
+                            <p class="text-xs themeable-muted mt-1">Average across Franka, UR5e, Fetch — ~3x the 19–26% of gradient-only baselines</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">79.8 → 29.6%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Inertial β₁ ablation gap</p>
+                            <p class="text-xs themeable-muted mt-1">Lower β₁ from 0.9 to 0.5 and success more than halves</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.083 rad</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Real-world joint error</p>
+                            <p class="text-xs themeable-muted mt-1">Panda-3CAM-Azure real RGB-D — about 4.75°</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">22,297</p>
+                            <p class="text-sm themeable-text-secondary mt-1">3DGS GitHub stars</p>
+                            <p class="text-xs themeable-muted mt-1">In 2.9 years — differentiable rendering arriving inside robotics</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">When Coordinates Step Aside — A Robot Goal as an Image</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If you have never questioned the input specification of robot motion planning, the crack Visual-RRT opens can look minor. It is not. Once the input shifts from a 6-DoF coordinate to a pixel, every layer that sits on top of that input shakes. The unit of training data changes, the basis for curation changes, and ultimately so does the language we use to diagnose data quality.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The existing pipeline had stabilized around "observation → policy → coordinate output." During training, the robot saw camera observations and produced actions, but the goal those actions reached for was always a coordinate. A human operator wrote that coordinate by hand, and scenes synthesized in simulation were eventually reduced to coordinates before they entered training. Visual-RRT puts an image, not a coordinate, in the goal slot at inference time. In that moment, an assumption that had been quietly built in — that the representation of training data and the representation of inference input must match — comes to the surface.
+                    </p>
+
+                    <!-- Image: Visual-RRT teaser comparing RRT, gradient-only, vRRT -->
+                    <figure class="my-8">
+                        <img src="./image/img-01-vrrt-teaser.png"
+                             alt="Concept diagram comparing RRT, visual-gradient-only optimization, and Visual-RRT path search, with planning progression over time"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ (a) RRT — random tree from coordinate goal, (b) Visual gradient-only optimization — local minima trap, (c) Visual-RRT — gradient of visual loss combined with tree expansion, (d) Planning progression over time. | Source: <a href="https://sgvr.kaist.ac.kr/Visual-RRT/" target="_blank" rel="noopener" class="underline">KAIST SGVR Lab — Visual-RRT project page</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>From Observation Data to Goal Images — Expanding the Simulator's Role</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Scenes that simulators like Isaac Sim or PebbloSim have produced were mostly "observation candidates" — frames that go into a training set so a policy can imitate the distribution. Visual-RRT opens the possibility of also using a simulator-rendered scene as a "goal candidate" at inference time. When an operator says "grasp it in this pose," a single rendered image of that pose becomes the input.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This extension is not small, because the unit of responsibility in data curation shifts. When you are producing observation candidates, the central question is "is the training distribution diverse enough?" When you are producing goal candidates, a new question follows: "is the viewpoint, lighting, and object pose of this image inside the training distribution?" Even the same scene from the same simulator now has different things to verify depending on which capacity it enters.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>The takeaway.</strong> The moment a coordinate becomes a pixel, data quality no longer ends at training-distribution problems. The visual distribution of the goal image at inference time becomes part of it too. "Garbage in, garbage out" has just dropped one level lower, down to the pixel.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The One Assumption RRT Held for 28 Years</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Since LaValle proposed Rapidly-exploring Random Trees in Iowa State University Technical Report TR 98-11 in 1998, the RRT family has gone through variant after variant. In 2011, Karaman and Frazzoli's RRT* guaranteed asymptotic optimality; RRT-Connect pushed up speed with a bidirectional search; BIT* improved cost optimality using informed heuristics. Twenty-eight years polished success rate, connectivity, and path optimality alike. One input assumption was never broken.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        "q_goal is an explicit number." Whether a joint angle or a 6-DoF pose, the goal had to be a number. Visual-RRT flips that premise directly. It receives a goal image I_goal instead of q_goal, renders the current pose with a differentiable renderer at every node, and uses the gradient of pixel-level differences as the direction for tree expansion. Within a 28-year lineage, the texture of the change can look thin. As the first case to break the input specification, it is thick.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>The Assumption No One Rewrote for 28 Years</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Lay the 28-year history of RRT variants out as a single table and the picture becomes vivid. The algorithm name and the contribution column changed almost every time a new row was added. The rightmost column, "goal input," never did. Visual-RRT is the first paper to rewrite the word fixed in that single column.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Year</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Algorithm</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Contribution</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Goal Input</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">1998</td>
+                                    <td class="border themeable-border px-3 py-2">RRT (LaValle, TR 98-11)</td>
+                                    <td class="border themeable-border px-3 py-2">Random tree exploration in high-dimensional configuration space</td>
+                                    <td class="border themeable-border px-3 py-2">Joint angle q_goal</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">2000</td>
+                                    <td class="border themeable-border px-3 py-2">RRT-Connect</td>
+                                    <td class="border themeable-border px-3 py-2">Bidirectional trees for faster planning</td>
+                                    <td class="border themeable-border px-3 py-2">Joint angle q_goal</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">2011</td>
+                                    <td class="border themeable-border px-3 py-2">RRT* (Karaman &amp; Frazzoli)</td>
+                                    <td class="border themeable-border px-3 py-2">Asymptotic optimality guarantee</td>
+                                    <td class="border themeable-border px-3 py-2">Joint angle q_goal</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">2015</td>
+                                    <td class="border themeable-border px-3 py-2">BIT*</td>
+                                    <td class="border themeable-border px-3 py-2">Cost optimality via informed heuristics</td>
+                                    <td class="border themeable-border px-3 py-2">Joint angle q_goal</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors" style="background-color: rgba(248,104,37,0.06);">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">2026</td>
+                                    <td class="border themeable-border px-3 py-2"><strong>Visual-RRT (KAIST)</strong></td>
+                                    <td class="border themeable-border px-3 py-2"><strong>Visual goals via differentiable rendering</strong></td>
+                                    <td class="border themeable-border px-3 py-2"><strong>Image I_goal</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Read down the last column and one fact becomes sharp. Over twenty-eight years, the three left columns were updated frequently. The rightmost column was not updated once. From a data perspective, a change in that narrow column is anything but small. When the goal at inference time stops being a coordinate and becomes an image, the roles of the simulators, synthetic-data factories, and VLA training sets that produce those images are redefined too.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>Why Now — The Possibility Differentiable Rendering Created</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Visual-RRT arrived in 2026 because three technical prerequisites had finally settled. First, differentiable robot rendering — the ability to draw a robot in pixels and backpropagate a gradient from those pixels to pose parameters — became a general framework in 2024 with Dr.Robot (Columbia and Stanford). Second, 3D Gaussian Splatting appeared in 2023 and exploded to 22,297 GitHub stars in 2.9 years, stabilizing the real-time backend for differentiable rendering. Third, Prof.Robot (CVPR 2025) showed that collision-aware differentiable rendering can handle self- and static-collisions.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Visual-RRT showed up after all three currents had stabilized. On top of a differentiable rendering backend, a pixel representation of robot appearance, and collision-aware capability, it added the last piece, "tree expansion toward a visual goal." It is more accurate to say that what 1998 RRT could not do on its own was not an algorithmic limit but a limit of timing: differentiable rendering did not exist back then.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why the Two Components Multiply, Not Add</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Two mechanisms make Visual-RRT work: a frontier-based explore-exploit strategy and inertial gradient tree expansion. On the surface they look like two modules bolted onto an RRT skeleton. The ablation table tells a different story. The two modules are not add-ons. They behave like a multiplication. Strip one out, and the other loses its meaning too.
+                    </p>
+
+                    <!-- Image: Visual-RRT overview (frontier + inertial) -->
+                    <figure class="my-8">
+                        <img src="./image/img-03-vrrt-overview.png"
+                             alt="Overview of the Visual-RRT algorithm — frontier-based explore-exploit strategy and inertial gradient tree expansion combined into one tree"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Visual-RRT overview: frontier-based random sampling (Exploration) and visual-gradient frontier steering (Exploitation) operate multiplicatively within a single tree. | Source: <a href="https://arxiv.org/abs/2604.16388" target="_blank" rel="noopener" class="underline">Lee et al., Visual-RRT (CVPR 2026 Highlight), Fig. 2</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>Frontier Sampling — Prioritize the Visually Promising</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Frontier sampling does not expand every node in the tree equally. It scores each node by visual loss — "how close is this pose to the goal image?" — and prioritizes the most promising changes (the frontier). While plain random sampling sweeps the configuration space, the frontier strategy aligns that sweep along the gradient of the visual signal. The ratio η, which trades off exploration and exploitation, is the key hyperparameter of this stage.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>Inertial Gradient — Carrying Optimization State Forward</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Inertial gradient tree expansion lets each tree node inherit the gradient state (the momentum) of its parent. When the visual-loss optimization that started at a single node falls into a local minimum, other candidate nodes route around that wall. A momentum coefficient β₁ determines how strong that inertia is. Multiple branches grow simultaneously in different directions, dispersing the single-path optimization trap of local minima.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>Ablation — Pull One Out and the Other Falls With It</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        How tightly the two mechanisms are coupled shows up most clearly in the ablation table. Turn frontier sampling off and the method effectively stops working. Lower the inertial β₁ and the success rate falls to less than half. The "79.8% with both" result is closer to a product of two components than to a sum.
+                    </p>
+
+                    <!-- Image: Ablation plots — exploration ratio & frontier sampling ratio -->
+                    <figure class="my-8">
+                        <img src="./image/img-02-ablation-plots.png"
+                             alt="Visual-RRT ablation curves — success rate as a function of exploration ratio and frontier-based sampling ratio"
+                             class="max-w-[640px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ (a) Exploration ratio η and (b) Frontier-based sampling ratio versus success rate — performance collapses when either ratio is pushed to an extreme. | Source: <a href="https://arxiv.org/abs/2604.16388" target="_blank" rel="noopener" class="underline">Lee et al., Visual-RRT, Fig. 7</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Configuration</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">UR5e success rate</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Reading</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">frontier η = 0.0 (frontier removed)</td>
+                                    <td class="border themeable-border px-3 py-2"><strong>≈ 0%</strong></td>
+                                    <td class="border themeable-border px-3 py-2">Without visual-signal alignment, only a random tree remains</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">inertial β₁ = 0.5</td>
+                                    <td class="border themeable-border px-3 py-2"><strong>29.6%</strong></td>
+                                    <td class="border themeable-border px-3 py-2">Weak inertia cannot climb out of local minima</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors" style="background-color: rgba(248,104,37,0.06);">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">inertial β₁ = 0.9 (optimal)</td>
+                                    <td class="border themeable-border px-3 py-2"><strong>79.8%</strong></td>
+                                    <td class="border themeable-border px-3 py-2">The stable operating point with both modules active</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">inertial β₁ = 0.99</td>
+                                    <td class="border themeable-border px-3 py-2">Mid</td>
+                                    <td class="border themeable-border px-3 py-2">Excess inertia becomes insensitive to new signal</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">Source: Visual-RRT ablation in main text (arXiv preprint).</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.4</span>Success by Distance — The Gap Widens as the Goal Moves Farther</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        As the configuration-space distance between start and goal grows, gradient-based single-path optimization collapses fast. Visual-RRT, with its tree structure and parallel candidate exploration, degrades more gently. Even with the same visual loss, "descend along one path" and "branch out into many paths descending in parallel" produce different outcomes.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Method</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Franka</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">UR5e</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Fetch</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Dr.Robot (gradient-only)</td>
+                                    <td class="border themeable-border px-3 py-2">19–26%</td>
+                                    <td class="border themeable-border px-3 py-2">19–26%</td>
+                                    <td class="border themeable-border px-3 py-2">19–26%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Prof.Robot</td>
+                                    <td class="border themeable-border px-3 py-2">22–28%</td>
+                                    <td class="border themeable-border px-3 py-2">22–28%</td>
+                                    <td class="border themeable-border px-3 py-2">22–28%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Dr.Robot + RRT* (naïve combination)</td>
+                                    <td class="border themeable-border px-3 py-2">22–28%</td>
+                                    <td class="border themeable-border px-3 py-2">22–28%</td>
+                                    <td class="border themeable-border px-3 py-2">22–28%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors" style="background-color: rgba(248,104,37,0.06);">
+                                    <td class="border themeable-border px-3 py-2 font-semibold"><strong>Visual-RRT</strong></td>
+                                    <td class="border themeable-border px-3 py-2"><strong>75–80%</strong></td>
+                                    <td class="border themeable-border px-3 py-2"><strong>75–80%</strong></td>
+                                    <td class="border themeable-border px-3 py-2"><strong>75–80%</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">Source: Visual-RRT baseline comparison in main text (arXiv preprint). Average success-rate ranges.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Whether the same gap survives the move into the real world is its own validation problem. The authors took an actual Fetch robot and showed that a single goal image produces a collision-free path that the robot executes. On the Panda-3CAM-Azure real RGB-D dataset, the average joint error against a learning-based pose regressor came in at 0.083 rad — about 4.75°. Two facts are worth holding together: this is not a simulation-only result, and a training-free method outperformed a learning-based comparison. A small sim-to-real gap also suggests the same algorithm can be lifted into the KPIs of synthetic-data evaluation.
+                    </p>
+
+                    <!-- Image: Real-world Fetch robot deployment -->
+                    <figure class="my-8">
+                        <img src="./image/img-05-fetch-realworld.png"
+                             alt="Real-world deployment on a Fetch robot — collision-free path generated and executed from a single goal image"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Real-world Fetch deployment: (top) collision-free execution from start to goal image, (bottom) temporal visualization of Exploration and Exploitation samples. | Source: <a href="https://arxiv.org/abs/2604.16388" target="_blank" rel="noopener" class="underline">Lee et al., Visual-RRT, Fig. 4</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>The takeaway.</strong> Bolting RRT* onto Dr.Robot leaves you around 25%. Both frontier-based explore-exploit and inertial momentum have to be in the loop to reach 75–80%. The idea of "RRT plus differentiable rendering" is not hard to come up with — <em>how</em> you combine the two is what separates the two-digit difference in outcomes.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Differentiable Rendering Enters Robotics — A 24-Month Timeline</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Place Visual-RRT on a 24-month timeline and the current it sits at the end of becomes visible. Right after 3D Gaussian Splatting was published at SIGGRAPH 2023, differentiable rendering shed its graphics-tool jacket and migrated into robotics as an input representation. In a little over two years, Dr.Robot, Prof.Robot, GS-Planner, Splat-Nav, and Visual-RRT lined up one after another.
+                    </p>
+
+                    <!-- Image: Qualitative comparison across baselines -->
+                    <figure class="my-8">
+                        <img src="./image/img-04-qualitative-results.png"
+                             alt="Qualitative path comparison among Dr.Robot, Prof.Robot, and Visual-RRT across Franka, UR5e, and Fetch scenarios"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Qualitative trajectories from Dr.Robot, Prof.Robot, and Visual-RRT: which method reaches the goal pose without collision when given only an image of the target. | Source: <a href="https://arxiv.org/abs/2604.16388" target="_blank" rel="noopener" class="underline">Lee et al., Visual-RRT, Fig. 3</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Date</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Work</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Venue</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Contribution</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">2023.07</td>
+                                    <td class="border themeable-border px-3 py-2">3D Gaussian Splatting (Kerbl et al.)</td>
+                                    <td class="border themeable-border px-3 py-2">SIGGRAPH 2023</td>
+                                    <td class="border themeable-border px-3 py-2">Standard real-time differentiable-rendering backend</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">2024.10</td>
+                                    <td class="border themeable-border px-3 py-2">Dr.Robot</td>
+                                    <td class="border themeable-border px-3 py-2">CoRL 2024</td>
+                                    <td class="border themeable-border px-3 py-2">Differentiating robot appearance directly with control parameters</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">2025.06</td>
+                                    <td class="border themeable-border px-3 py-2">Prof.Robot</td>
+                                    <td class="border themeable-border px-3 py-2">CVPR 2025</td>
+                                    <td class="border themeable-border px-3 py-2">Collision-aware differentiable rendering (self- and static-)</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">2025</td>
+                                    <td class="border themeable-border px-3 py-2">GS-Planner / Splat-Nav</td>
+                                    <td class="border themeable-border px-3 py-2">IROS 2024 / TRO 2025</td>
+                                    <td class="border themeable-border px-3 py-2">3DGS-based motion planning and navigation</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors" style="background-color: rgba(248,104,37,0.06);">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">2026.06</td>
+                                    <td class="border themeable-border px-3 py-2"><strong>Visual-RRT</strong></td>
+                                    <td class="border themeable-border px-3 py-2"><strong>CVPR 2026 Highlight</strong></td>
+                                    <td class="border themeable-border px-3 py-2"><strong>RRT plus differentiable rendering for visual goals</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>Ecosystem Signals — The Gravity 3DGS Created</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Translate the timeline's acceleration into code-ecosystem terms and it becomes clearer. The 3DGS original repository gathered 22,297 stars and 3,256 forks in 2.9 years after its July 2023 release, with nerfstudio and OpenUSD growing alongside it. That code momentum, from both academia and industry, has pulled differentiable rendering out of "graphics research" and into "robotics and simulation infrastructure."
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Repository</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">GitHub Stars</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Contribution</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">graphdeco-inria/gaussian-splatting</td>
+                                    <td class="border themeable-border px-3 py-2"><strong>22,297</strong></td>
+                                    <td class="border themeable-border px-3 py-2">3DGS original implementation — real-time differentiable rendering</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">nerfstudio</td>
+                                    <td class="border themeable-border px-3 py-2">11,668</td>
+                                    <td class="border themeable-border px-3 py-2">Unified framework for NeRF-family methods</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">PixarAnimationStudios/OpenUSD</td>
+                                    <td class="border themeable-border px-3 py-2">7,316</td>
+                                    <td class="border themeable-border px-3 py-2">3D data standard — flow of simulation assets</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">Source: Public GitHub repositories (as of 2026-06).</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The acceleration across 24 months says this current is not a coincidence of one or two labs. Differentiable rendering is filling in the answer to "how do we send gradients from pixels back to robots?" Visual-RRT now sits on one branch of that answer. In the next 24 months, adjacent branches like natural-language goals combined with image generation and motion planning are likely to appear.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Industry Is Still Stuck on Sampling</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Twenty-four months in academia and twenty-four months in industry do not run on the same clock. The motion-planning industrial standard is still sampling-based. The RRT / RRT* family inside OMPL and MoveIt is the de facto standard for BMW, Volkswagen, Toyota, Schaeffler, Mitsubishi, and startups such as Realtime Robotics (Series B). KavrakiLab's 2024 comparative review put RRT-Connect at the top in five out of six standard scenarios with 100% success.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On the other side sit learning-based planners. Policies like DRL/SAC topped the Deusto/TECNALIA 2025 benchmark in both success rate and time over sampling, but the deployment share in industry remains below 5% (estimated), held back by real-world generalization limits. The "academic performance does not transfer to industrial performance" gap has persisted for more than five years.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>Paradigm Adoption Tilts One Way</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Place each paradigm and how deeply it penetrates the shop floor in one frame and the asymmetry becomes obvious. While sampling occupies what is effectively the standard slot, learning-based planners have multiplied their share of conference papers without much progress in deployment. The hybrid cell where Visual-RRT sits is the new doorway opening between the two.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Paradigm</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Representative algorithms</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Industrial adoption</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Limit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Sampling-based</td>
+                                    <td class="border themeable-border px-3 py-2">RRT, RRT*, RRT-Connect, BIT*</td>
+                                    <td class="border themeable-border px-3 py-2"><strong>De facto standard</strong> (BMW · VW · Toyota · Realtime Robotics)</td>
+                                    <td class="border themeable-border px-3 py-2">Goal must be supplied as a number</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Optimization-based</td>
+                                    <td class="border themeable-border px-3 py-2">CHOMP, STOMP</td>
+                                    <td class="border themeable-border px-3 py-2">Limited adoption</td>
+                                    <td class="border themeable-border px-3 py-2">Local minima and initial-path dependence</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Learning-based</td>
+                                    <td class="border themeable-border px-3 py-2">DRL (SAC), VLA (OpenVLA, π0)</td>
+                                    <td class="border themeable-border px-3 py-2">Under 5% (estimated)</td>
+                                    <td class="border themeable-border px-3 py-2">Real-world generalization gap</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors" style="background-color: rgba(248,104,37,0.06);">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Hybrid</td>
+                                    <td class="border themeable-border px-3 py-2"><strong>Visual-RRT</strong> (sampling × differentiable rendering)</td>
+                                    <td class="border themeable-border px-3 py-2">Research stage</td>
+                                    <td class="border themeable-border px-3 py-2">Differentiable-renderer construction cost</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>Market Gap — Single-Digit Planning SW vs Triple-Digit Humanoids</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The motion-planning software market is estimated at about $17.86B in 2025 (Research Nester), with projections reaching $101.71B by 2035 at a CAGR around 19%. Meanwhile, Goldman Sachs places humanoids at $38B by 2035 (a 6x upward revision in 2024), while Morgan Stanley sees $5T by 2050. The gap between single-digit billions and trillions is the gap between "long-term TAM" (investment banks) and "realized revenue" (market-research firms), but as long as motion-planning software lies in the infrastructure layer of humanoids, the co-growth signal is clear.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        IFR World Robotics 2025 reports industrial robot installations of 542,000 units in 2024 — over 500,000 for the fourth year running — with 4.664 million robots in operation (+9%). South Korea's robot density at 1,220 per 10,000 workers leads the world. The market grows, and the volume of training data running on it grows too, yet the household-task success rate reported in Stanford HAI AI Index 2026 remains at 12%. Generalist Robotics estimates that "100 million more hours of demonstration data" are still needed.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One reading of that gap is that there is not enough data. The other reading Visual-RRT offers is that the goal representation inside the data is not enough. The same 1M trajectories (Open X-Embodiment) will likely generalize differently depending on whether the dataset contains only coordinate goals or coordinates plus goal images plus demonstration video. The era when learning gets stacked on top of sampling will be decided by which of those two hypotheses gets validated more rigorously.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A Pebblous Read — Goal Representation Is Data, Too</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Translating all of the above into the seat Pebblous sits in, two questions remain. Do we add a new axis called "goal-image consistency" to synthetic-data curation, and do we expand the field of data-quality diagnostics one level deeper, down to the pixel? Rather than answering both at once, we lay out checklists that a practitioner on the ground can use.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>Synthetic-Data Curation — Three Things to Check</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For pipelines that have treated simulator-rendered scenes purely as "observation data," three new items follow.
+                    </p>
+
+                    <div class="space-y-3 mb-8">
+                        <div class="data-card-alt flex items-start gap-3 themeable-card rounded-xl p-5">
+                            <span class="number-badge" style="background-color: #F86825; color: white; flex-shrink: 0;">1</span>
+                            <div>
+                                <p class="font-semibold themeable-heading mb-1">Do you emit observation-time and goal-time images together?</p>
+                                <p class="text-sm themeable-text">Is the simulation pipeline designed to emit both kinds of images (observation, goal) from a single scene? They need to be separable for goal images to be curated independently as inference-time input.</p>
+                            </div>
+                        </div>
+                        <div class="data-card-alt flex items-start gap-3 themeable-card rounded-xl p-5">
+                            <span class="number-badge" style="background-color: #F86825; color: white; flex-shrink: 0;">2</span>
+                            <div>
+                                <p class="font-semibold themeable-heading mb-1">Is the goal image's viewpoint and lighting inside the training distribution?</p>
+                                <p class="text-sm themeable-text">Measure whether the viewpoint and lighting of the goal image at inference time match the training-data distribution quantitatively. A goal image with a large distribution shift is not just "a different image" — it is a direct cause of generalization failure.</p>
+                            </div>
+                        </div>
+                        <div class="data-card-alt flex items-start gap-3 themeable-card rounded-xl p-5">
+                            <span class="number-badge" style="background-color: #F86825; color: white; flex-shrink: 0;">3</span>
+                            <div>
+                                <p class="font-semibold themeable-heading mb-1">Is sim-to-real transferability tracked as a KPI?</p>
+                                <p class="text-sm themeable-text">Track the difference in joint error between simulation and reality on real RGB-D datasets such as Panda-3CAM-Azure. Visual-RRT achieving 0.083 rad (about 4.75°) in the real world signals that the same metric can be pulled into synthetic-data evaluation.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>DataClinic Diagnostics — Should We Go One Level Down to the Pixel?</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The dimensions DataClinic has been diagnosing so far — distribution, freshness, label consistency — were mostly distributional. As visual-goal motion planning starts landing in industry, the unit of diagnosis slides one level lower, down to pixels. Even for the same training set, which viewpoint distribution it covers, which lighting conditions are absent, and at which poses the visual-loss landscape is flat all become new diagnostic dimensions.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The language DataClinic uses for distributional diagnostics today is in effect the same language as the academic line of work decomposing digital-twin accuracy with KL divergence. The fact that Visual-RRT's result depends heavily on its two modules (frontier and inertial) means the operating conditions of those two modules belong inside data-quality diagnostics. The next three items are the natural next step.
+                    </p>
+
+                    <div class="space-y-3 mb-8">
+                        <div class="data-card-alt flex items-start gap-3 themeable-card rounded-xl p-5">
+                            <span class="number-badge" style="background-color: var(--accent-color); color: white; flex-shrink: 0;">A</span>
+                            <div>
+                                <p class="font-semibold themeable-heading mb-1">Viewpoint distribution diagnostics</p>
+                                <p class="text-sm themeable-text">Quantify the camera-pose distribution of training data and measure whether the inference-time goal image lies within that distribution.</p>
+                            </div>
+                        </div>
+                        <div class="data-card-alt flex items-start gap-3 themeable-card rounded-xl p-5">
+                            <span class="number-badge" style="background-color: var(--accent-color); color: white; flex-shrink: 0;">B</span>
+                            <div>
+                                <p class="font-semibold themeable-heading mb-1">Visual-loss landscape diagnostics</p>
+                                <p class="text-sm themeable-text">For a given goal image, map at which poses the visual-loss function is flat and at which it is steep.</p>
+                            </div>
+                        </div>
+                        <div class="data-card-alt flex items-start gap-3 themeable-card rounded-xl p-5">
+                            <span class="number-badge" style="background-color: var(--accent-color); color: white; flex-shrink: 0;">C</span>
+                            <div>
+                                <p class="font-semibold themeable-heading mb-1">Sim-to-real joint-error transferability</p>
+                                <p class="text-sm themeable-text">Accumulate the joint-error gap between policies trained in synthetic environments and their behavior on real datasets as a quantitative indicator.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note.</strong> The center of gravity of this report is rereading the meaning of KAIST's Visual-RRT through a data practitioner's eyes. Pebblous products are mentioned to show that the meaning need not stay abstract — that someone will actually have to handle it on the ground. Please read the assessment of the research and the positioning of our company as separate things.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ Section (populated by config.faqs) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex items-center gap-4">
+                            <span class="number-badge">R</span>
+                            <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1.5 rounded-lg border themeable-border hover:border-orange-500 transition-colors themeable-text" title="Download BibTeX">BibTeX</button>
+                            <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1.5 rounded-lg border themeable-border hover:border-orange-500 transition-colors themeable-text" title="Download RIS">RIS</button>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic (Papers)</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Sebin Lee, Jumin Lee, Taeyeon Kim, Youngju Na, Woobin Im, Sung-Eui Yoon. "Visual-RRT: Finding Paths toward Visual-Goals via Differentiable Rendering." CVPR 2026 Highlight. <a href="https://arxiv.org/abs/2604.16388" target="_blank" rel="noopener">arXiv: 2604.16388</a>. Project page: <a href="https://sgvr.kaist.ac.kr/Visual-RRT" target="_blank" rel="noopener">sgvr.kaist.ac.kr/Visual-RRT</a></span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Steven M. LaValle. "Rapidly-Exploring Random Trees: A New Tool for Path Planning." Computer Science Department, Iowa State University, TR 98-11 (1998).</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Sertac Karaman, Emilio Frazzoli. "Sampling-based Algorithms for Optimal Motion Planning." IJRR (2011).</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Bernhard Kerbl, Georgios Kopanas, Thomas Leimkühler, George Drettakis. "3D Gaussian Splatting for Real-Time Radiance Field Rendering." SIGGRAPH 2023. <a href="https://arxiv.org/abs/2308.04079" target="_blank" rel="noopener">arXiv: 2308.04079</a></span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Ruoshi Liu, Alper Canberk, Carl Vondrick et al. "Differentiable Robot Rendering (Dr.Robot)." CoRL 2024. <a href="https://arxiv.org/abs/2410.13851" target="_blank" rel="noopener">arXiv: 2410.13851</a></span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">"Prof. Robot: Collision-aware Differentiable Robot Rendering." CVPR 2025. <a href="https://arxiv.org/abs/2503.11269" target="_blank" rel="noopener">arXiv: 2503.11269</a></span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Mohit Shridhar, Lucas Manuelli, Dieter Fox. "CLIPort: What and Where Pathways for Robotic Manipulation." CoRL 2021. <a href="https://arxiv.org/abs/2109.12098" target="_blank" rel="noopener">arXiv: 2109.12098</a></span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Suraj Nair, Aravind Rajeswaran, Vikash Kumar, Chelsea Finn, Abhinav Gupta. "R3M: A Universal Visual Representation for Robot Manipulation." CoRL 2022. <a href="https://arxiv.org/abs/2203.12601" target="_blank" rel="noopener">arXiv: 2203.12601</a></span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Open X-Embodiment Collaboration. "Open X-Embodiment: Robotic Learning Datasets and RT-X Models." ICRA 2024. <a href="https://arxiv.org/abs/2310.08864" target="_blank" rel="noopener">arXiv: 2310.08864</a></span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">"DROID: A Large-Scale In-the-Wild Robot Manipulation Dataset." RSS 2024. <a href="https://arxiv.org/abs/2403.12945" target="_blank" rel="noopener">arXiv: 2403.12945</a></span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">"Motion Planning for Robotics: A Review for Sampling-based Planners." (2024). <a href="https://arxiv.org/abs/2410.19414" target="_blank" rel="noopener">arXiv: 2410.19414</a></span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">"Vision-Language-Action Models: A Survey." (2025). <a href="https://arxiv.org/abs/2505.04769" target="_blank" rel="noopener">arXiv: 2505.04769</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Policy and Statistics</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">13.</span><span class="ref-body">Stanford HAI. "AI Index Report 2026." <a href="https://hai.stanford.edu/ai-index/2026-ai-index-report" target="_blank" rel="noopener">hai.stanford.edu</a></span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">International Federation of Robotics. "World Robotics Report 2025 — Industrial Robots." <a href="https://ifr.org/ifr-press-releases/news/global-robot-demand-in-factories-doubles-over-10-years" target="_blank" rel="noopener">ifr.org</a></span></li>
+                        <li><span class="ref-num">15.</span><span class="ref-body">Goldman Sachs. "The Global Market for Robots Could Reach $38 Billion by 2035" (2024 revision). <a href="https://www.goldmansachs.com/insights/articles/the-global-market-for-robots-could-reach-38-billion-by-2035" target="_blank" rel="noopener">goldmansachs.com</a></span></li>
+                        <li><span class="ref-num">16.</span><span class="ref-body">Morgan Stanley. "Humanoid Robot Market — $5 Trillion by 2050." <a href="https://www.morganstanley.com/insights/articles/humanoid-robot-market-5-trillion-by-2050" target="_blank" rel="noopener">morganstanley.com</a></span></li>
+                        <li><span class="ref-num">17.</span><span class="ref-body">Research Nester. "Motion Control Software in Robotics Market." 2025 — $17.86B, 2035 — $101.71B (CAGR ~19%).</span></li>
+                        <li><span class="ref-num">18.</span><span class="ref-body">MarketsandMarkets. "Humanoid Robot Market Forecast 2025–2030." $2.92B (2025) → $15.26B (2030), CAGR 39.2%.</span></li>
+                        <li><span class="ref-num">19.</span><span class="ref-body">MDPI Sensors. "Comparative Benchmark of Sampling-Based and DRL Motion Planners." 25/17/5282 (2025).</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Pebblous Adjacent (Internal Cross-References)</h3>
+                    <ul class="reference-list">
+                        <li><span class="ref-num">20.</span><span class="ref-body"><a href="/report/isaac-sim-3dgs-vla-synthetic-data-2026-04/en/" target="_blank" rel="noopener">Isaac Sim 3DGS · VLA Synthetic Data Report</a></span></li>
+                        <li><span class="ref-num">21.</span><span class="ref-body"><a href="/report/vla-architecture-comparison/en/" target="_blank" rel="noopener">VLA Architecture Comparison</a></span></li>
+                        <li><span class="ref-num">22.</span><span class="ref-body"><a href="/report/physical-ai-industry-landscape/en/" target="_blank" rel="noopener">Physical AI Industry Landscape</a></span></li>
+                    </ul>
+                </section>
+
+                <!-- Hub Series Notice -->
+                <div class="themeable-card rounded-xl p-6 mt-8 mb-8" style="border-left: 4px solid #F86825;">
+                    <p class="text-sm font-bold themeable-heading mb-2">📚 Physical AI Series</p>
+                    <p class="text-sm themeable-text leading-relaxed">
+                        This piece is part of the <a href="/project/PhysicalAI/en/" class="text-orange-500 hover:text-orange-400 font-semibold">Physical AI</a> series — a place to read, side by side, the world robots will learn from and the representations of data piled on top of it.
+                    </p>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <!-- Scripts -->
+    <script src="/scripts/common-utils.js?v=20260610"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "operator",
+                "at": "2026-06-10T00:26:45.287Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-06-10T00:30:11.596Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-06-10T01:02:12.151Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1781051205288-czld6x",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-06-10T02:04:07.842Z"
+            },
+            mainTitle: "One Picture Tells the Robot Where to Go",
+            subtitle: "CVPR 2026 Highlight Visual-RRT — Visual-Goal Motion Planning and What It Means for the Data Pipeline",
+            pageTitle: "KAIST Visual-RRT: Navigate from a Single Image | Pebblous",
+            category: "tech",
+            publishDate: "2026-06-10",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/kaist-visual-rrt/en/",
+            tags: ["Visual-RRT", "Motion Planning", "Differentiable Rendering", "Physical AI", "KAIST", "Robot Synthetic Data", "VLA", "CVPR 2026", "3D Gaussian Splatting", "sim-to-real", "data quality", "DataClinic"],
+            faqs: [
+                { question: "Does Visual-RRT require training?", answer: "No. It is a training-free approach. With a differentiable renderer (URDF and camera intrinsics) plus the two components — frontier sampling and inertial gradient — it runs. Building the differentiable renderer does require modeling the robot's mesh, materials, and lighting, so it is not strictly 'zero data,' but no learned policy is needed." },
+                { question: "How much slower is inference than plain RRT*?", answer: "Franka 21.6s, UR5e 13.8s, Fetch 27.4s (averaged over successful trials, arXiv preprint). Slower than RRT* itself, but the comparison is asymmetric — Visual-RRT is finding a comparable-quality path without knowing the 6-DoF target coordinates in the first place." },
+                { question: "How much does goal-image resolution and viewpoint affect the result?", answer: "The paper does not publish a direct ablation on this, but achieving 0.083 rad (~4.75°) joint error on the Panda-3CAM-Azure real RGB-D dataset suggests the method works at realistic RGB-D quality. Viewpoint generalization remains an open follow-up." },
+                { question: "Can renderers other than 3DGS (Mitsuba, nvdiffrast) deliver the same result?", answer: "Visual-RRT follows the general framework of differentiable robot rendering, so nvdiffrast, Mitsuba 3, and PyTorch3D are candidates. The numerical stability and speed of the gradients differ, however, so frontier and inertial hyperparameters will likely need retuning." },
+                { question: "Is an era coming where shop-floor operators direct robots with a photograph?", answer: "Partially. Precision assembly tasks with micron-level tolerances will still favor coordinate input. For pick-and-place, light handling, and teleoperation, however, visual-goal instructions are likely to become standard UX over the next two to three years. Until then, visual goals and coordinate goals will coexist." },
+                { question: "Are VLA models (OpenVLA, π0) competing with Visual-RRT or complementary?", answer: "Complementary. VLA handles a wide range of tasks with a single learned policy but does not guarantee a precise path to a given goal image. Visual-RRT is strong at collision-free arrival at a clearly defined motion. In industrial deployment, VLA deciding 'what to do' and a Visual-RRT-class planner guaranteeing 'how to get there' is a natural division of labor." },
+                { question: "What should Pebblous synthetic-data customers change in their curation criteria today?", answer: "Three things. (1) Configure the simulation pipeline to emit both observation-time and goal-time images. (2) Add a criterion that the goal image's viewpoint and lighting match the training distribution quantitatively. (3) Promote sim-to-real joint-error transferability (e.g., Panda-3CAM-Azure class) into the KPI set." },
+                { question: "Where is the KAIST SGVR Lab's follow-up work likely heading?", answer: "Given Visual-RRT's strong dependence on its two components (frontier and inertial), the natural next steps are (a) hybridizing by replacing one or both components with learned models, (b) generalizing to higher-DoF structures such as bimanual and humanoid platforms, and (c) extending the visual goal toward multimodal goals — natural language or demonstration video." }
+            ]
+        });
+    </script>
+    <script src="/scripts/citation-download.js?v=20260610" defer></script>
+</body>
+</html>
