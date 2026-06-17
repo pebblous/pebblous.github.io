@@ -1,0 +1,99 @@
+name: PR Conflict Auto-Heal (articles.json)
+
+# articles.json 은 모든 글 PR이 같은 파일에 append 하는 단일 레지스트리라 동시 PR이면 충돌한다.
+# 우리 articles-union 드라이버는 *로컬* git merge 에서만 돌고, GitHub 서버 머지는 .gitattributes
+# 머지 드라이버(커스텀/내장 union 모두)를 실행하지 않으므로 GitHub은 항상 CONFLICTING으로 표시한다.
+# 이 워크플로가 그 수동 해소를 자동화한다: main이 갱신될 때마다(=충돌이 새로 생기는 시점) 열린 PR 중
+# CONFLICTING 인 것들에 origin/main 을 union 드라이버로 머지해 PR 브랜치를 갱신한다.
+# (근본 해결 Phase 1 = articles.json 을 생성형 인덱스로 전환 — 별도 마일스톤. 이건 그 전까지의 무인 치유.)
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '*/30 * * * *'   # backstop: main push 없이 열린 충돌 PR도 30분마다 치유
+  workflow_dispatch:
+
+concurrency:
+  group: pr-conflict-autoheal
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  heal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # org 정책이 GITHUB_TOKEN 의 PR 재트리거/푸시를 막으므로 PAT(INDEX_PUSH_TOKEN) 우선(#289).
+          token: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Register custom merge drivers (articles-union)
+        run: bash tools/setup-merge-drivers.sh
+
+      - name: Heal CONFLICTING open PRs
+        env:
+          GH_TOKEN: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git fetch origin main --quiet
+
+          # 열린 PR 중 base=main 이고 GitHub이 CONFLICTING 으로 판정한 것만 대상
+          mapfile -t rows < <(gh pr list --base main --state open \
+            --json number,headRefName,mergeable \
+            --jq '.[] | select(.mergeable=="CONFLICTING") | [.number, .headRefName] | @tsv')
+
+          if [ "${#rows[@]}" -eq 0 ]; then
+            echo "치유 대상 CONFLICTING PR 없음."
+            exit 0
+          fi
+
+          healed=0; skipped=0
+          for row in "${rows[@]}"; do
+            num="${row%%$'\t'*}"
+            branch="${row#*$'\t'}"
+            echo "::group::PR #$num ($branch)"
+
+            if ! git fetch origin "$branch" --quiet; then
+              echo "::warning::PR #$num 브랜치 fetch 실패 — 건너뜀"; skipped=$((skipped+1)); echo "::endgroup::"; continue
+            fi
+
+            git checkout -B _heal "origin/$branch" --quiet
+
+            if git merge origin/main -m "auto-heal: merge main into PR #$num (articles-union driver)" --quiet; then
+              # 머지 성공(드라이버가 articles.json/changelog 충돌 해소). 변화 없으면 푸시 생략.
+              if [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$branch")" ]; then
+                echo "변경 없음 — 푸시 생략"
+              elif jq empty articles.json >/dev/null 2>&1 \
+                   && ! grep -q '<<<<<<<' articles.json \
+                   && ! { [ -f history/changelog.jsonl ] && grep -q '<<<<<<<' history/changelog.jsonl; }; then
+                if git push origin "HEAD:$branch"; then
+                  echo "✅ PR #$num 자동 치유 완료"; healed=$((healed+1))
+                else
+                  echo "::warning::PR #$num 푸시 실패(권한/PAT 확인)"; skipped=$((skipped+1))
+                fi
+              else
+                echo "::warning::PR #$num 머지 결과 articles.json 무효 — 건너뜀"; skipped=$((skipped+1))
+              fi
+            else
+              # 드라이버로 못 푸는 실제 콘텐츠 충돌 → 사람에게 남김
+              unmerged="$(git diff --name-only --diff-filter=U | tr '\n' ' ')"
+              git merge --abort 2>/dev/null || true
+              echo "::warning::PR #$num — articles.json 외 충돌($unmerged) → 사람 검토 필요"
+              gh pr comment "$num" --body "🤖 자동치유 보류 — articles.json 외 충돌 파일이 있어 수동 머지가 필요합니다: \`${unmerged:-?}\`" 2>/dev/null || true
+              skipped=$((skipped+1))
+            fi
+
+            git checkout main --quiet 2>/dev/null || git checkout --detach origin/main --quiet
+            git branch -D _heal --quiet 2>/dev/null || true
+            echo "::endgroup::"
+          done
+
+          echo "요약: 치유 $healed · 보류/건너뜀 $skipped"
