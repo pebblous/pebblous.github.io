@@ -163,9 +163,9 @@ PebbloPedia 포스트 리뷰 시:
 - [ ] 캐시 버스팅: CSS/JS에 `?v=YYYYMMDD`
 - [ ] **작성 완료 후 반드시 `/seo-check` 실행** — 4계층 검증
 
-### articles.json
+### articles.json (등록은 사이드카 `articles.d/<id>.json` — ⛔ articles.json 직접편집 금지, 샤딩: `docs/articles-sharding.md`)
 - [ ] category: "tech" (PebbloPedia는 교육 콘텐츠이므로 tech)
-- [ ] cardTitle에 [페블로피디아] 포함
+- [ ] title 에 [페블로피디아] 포함 (필드명은 `title` — `cardTitle` 금지)
 - [ ] image, language 필드 존재
 
 ## 참조 구현

@@ -90,11 +90,11 @@ When this skill is invoked:
    - Output goes to `{html-dir}/image/{html-name}.png`
    - Skips if image already exists (use `--force` to override)
 
-9. **Register** both language versions in `articles.json` with all required fields.
-   - **CRITICAL**: `articles.json` MUST be `{ "categories": {...}, "articles": [...] }` — NEVER a bare array `[...]`.
-   - When adding entries, append to the `"articles"` array inside the wrapper. Do NOT strip the wrapper.
+9. **Register** both language versions via **sidecar files** — write each entry object to `articles.d/<id>.json` (one per language). ⛔ Do NOT edit `articles.json` directly (it is a CI-generated artifact; sharding — see `docs/articles-sharding.md`). Distinct sidecar files mean no merge conflicts.
+   - Each sidecar is a single JSON object with all required fields (`id`, `title`, `path`, `date`, `category`, `published`, `description`, `language`, `tags`).
    - Do NOT set `"type": "hub"` — that field is reserved for hub pages only (see `/new-hub` skill).
-   - **Password-protected pages**: If the page uses `PebblousAuth` / `content-locked`, MUST set `"locked": true` in articles.json. This enables the lock badge icon on blog main page cards. Without it, the card appears unlocked despite requiring a password.
+   - **Password-protected pages**: If the page uses `PebblousAuth` / `content-locked`, MUST set `"locked": true` in the sidecar. This enables the lock badge icon on blog main page cards.
+   - Validate locally: `python3 tools/assemble-articles.py` then `node tools/validate-articles.js`, then `git checkout -- articles.json` (don't commit articles.json).
 
 10. **Reference implementations**:
    - Single-language: `project/DataClinic/data-quality.html`

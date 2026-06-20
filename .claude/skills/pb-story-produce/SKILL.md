@@ -170,22 +170,20 @@ PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
 
 실패 시: 1회 재시도. 실패해도 계속 진행.
 
-### Phase 4: articles.json 등록
+### Phase 4: 사이드카 등록 (articles.d/<id>.json) — ⛔ articles.json 직접 편집 금지
 
-`_workspace/02_pb_write_meta.json`의 두 항목을 `articles.json` 맨 앞에 삽입:
+샤딩 모델(`docs/articles-sharding.md`): `_workspace/02_pb_write_meta.json`의 두 항목(KO·EN)을
+각각 **사이드카 파일**로 저장한다. articles.json 은 CI 가 생성하므로 직접 편집하지 않는다.
 
 ```python
-import json
-with open('articles.json') as f:
-    data = json.load(f)
-# EN 먼저, KO 두 번째 순서로 insert(0)
-data['articles'].insert(0, ko_entry)
-data['articles'].insert(0, en_entry)
-with open('articles.json', 'w', encoding='utf-8') as f:
-    json.dump(data, f, ensure_ascii=False, indent=2)
+import json, os
+os.makedirs('articles.d', exist_ok=True)
+for entry in (ko_entry, en_entry):
+    with open(f"articles.d/{entry['id']}.json", 'w', encoding='utf-8') as f:
+        json.dump(entry, f, ensure_ascii=False, indent=2)
 ```
 
-CRITICAL: `{"categories": {...}, "articles": [...]}` wrapper 유지.
+⛔ articles.json 을 열어 편집·삽입하지 말 것. 커밋엔 사이드카 파일만(검증·절차는 blog-publish §2.5/2.7).
 
 ### Phase 5: Git Push
 

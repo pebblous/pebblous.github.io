@@ -199,12 +199,12 @@ Every hub page MUST follow this exact structure:
 5. **Update root redirect** (if exists):
    - Change `project/{Project}/index.html` to redirect to `./ko/` (or `./en/`)
 
-6. **Register in `articles.json`**:
-   - Add both KO and EN hub entries to the `"articles"` array
+6. **Register via sidecar files** (⛔ do NOT edit `articles.json` — CI-generated; sharding, see `docs/articles-sharding.md`):
+   - Write both KO and EN hub entries as `articles.d/<id>.json` (one object per file). Distinct files → no merge conflicts.
    - **CRITICAL**: Set `"type": "hub"` — this auto-excludes the hub from other hubs' card grids (no `excludePaths` needed)
    - Hub articles typically use `"category": "tech"` or `"business"` depending on topic
    - Set `"published": true`
-   - **CRITICAL**: Preserve `{ "categories": {...}, "articles": [...] }` wrapper
+   - Validate locally: `python3 tools/assemble-articles.py` → `node tools/validate-articles.js` → `git checkout -- articles.json` (don't commit articles.json)
 
 7. **Post-Task Chain** (MUST follow after completion):
    1. **OG image**: `node tools/generate-og-image.js --from-html {hub-html-path} --light`
