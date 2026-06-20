@@ -1,0 +1,99 @@
+name: Assemble articles.json (sharding)
+
+# 샤딩 모델: 글마다 사이드카 articles.d/<id>.json. articles.json 은 CI 생성 산출물.
+# 사이드카가 추가/수정되면(=articles.d/** push) assemble-articles.py 가 base(기존 articles.json) ∪
+# 사이드카로 재조립해 articles.json 을 갱신한다(PR+자체머지). 결과 articles.json 변경은
+# update-sitemap.yml(articles.json 트리거)이 이어받아 sitemap/rss/llms 를 갱신한다.
+# no-op 가드: 사이드카가 0개면 assemble 이 articles.json 을 건드리지 않는다 → 마이그레이션 전 안전.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'articles.d/**'
+      - 'articles.categories.json'
+      - 'tools/assemble-articles.py'
+  workflow_dispatch:
+
+# update-sitemap 와 같은 직렬화 그룹 — 인덱스 push 경합 방지(#289).
+concurrency:
+  group: update-indexes
+  cancel-in-progress: false
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # org 정책이 GITHUB_TOKEN 의 PR 생성을 막으므로 PAT 우선(#289).
+          token: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Assemble articles.json (base ∪ sidecars)
+        run: |
+          python3 tools/assemble-articles.py
+          echo "assemble 완료"
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --exit-code --quiet articles.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "✅ articles.json 변경 없음 (사이드카 없음/이미 최신)"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "📝 articles.json 변경:" && git diff --stat articles.json
+          fi
+
+      - name: Commit & merge via PR
+        if: steps.check_changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # main 직접 push 는 ruleset 이 거부(#289) → 봇 PR 자체머지.
+          BRANCH="auto/assemble-articles-${{ github.run_id }}-${{ github.run_attempt }}"
+          git checkout -b "$BRANCH"
+          git add articles.json
+          git commit -m "chore(index): assemble articles.json from sidecars [skip ci]"
+          git push origin "$BRANCH"
+
+          cleanup() { git push origin --delete "$BRANCH" >/dev/null 2>&1 || true; }
+          if ! gh pr create --base main --head "$BRANCH" \
+            --title "chore(index): assemble articles.json [skip ci]" \
+            --body "articles.d/ 사이드카 → articles.json 재조립(assemble-articles.yml). base ∪ 사이드카."; then
+            cleanup
+            echo "::error::assemble PR 생성 실패 — INDEX_PUSH_TOKEN 확인(#289)."
+            exit 1
+          fi
+
+          merged=false
+          for i in 1 2 3; do
+            if gh pr merge "$BRANCH" --merge --delete-branch; then merged=true; break; fi
+            sleep 5
+          done
+          if [ "$merged" != "true" ]; then
+            gh pr close "$BRANCH" --delete-branch >/dev/null 2>&1 || cleanup
+            echo "::error::assemble PR 머지 실패 — INDEX_PUSH_TOKEN 권한/ruleset 확인(#289)."
+            exit 1
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Assemble articles.json" >> $GITHUB_STEP_SUMMARY
+          echo "- **Changed**: ${{ steps.check_changes.outputs.changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

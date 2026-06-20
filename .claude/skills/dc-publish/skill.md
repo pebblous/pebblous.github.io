@@ -17,7 +17,7 @@ argument-hint: "[slug]"
 ```
 Step 0: KO + EN HTML 존재 확인
 Step 1: OG 이미지 생성 (KO, EN --force)
-Step 2: articles.json 검증 + 등록
+Step 2: 사이드카 등록(articles.d/<id>.json, KO/EN) + 로컬 조립 검증 — ⛔ articles.json 직접 편집 금지
 Step 3: sitemap 업데이트
 Step 4: changelog 기록
 Step 5: Tailwind CSS 빌드
@@ -31,5 +31,8 @@ Step 6: git commit + push
 
 ## 참고
 
-- `tools/validate-articles.js` 실행으로 articles.json 검증 필수
+- **사이드카 등록(샤딩)**: 글 항목은 `articles.d/<id>.json`(글당 1, KO/EN 각각)에 쓴다. articles.json 은
+  직접 편집하지 않는다(CI 가 base ∪ 사이드카로 생성). 절차·검증은 `blog-publish` §2/2.5/2.7 과 동일.
+  검증은 로컬 `python3 tools/assemble-articles.py` 후 `tools/validate-articles.js`, 커밋 전 `git checkout -- articles.json`.
+- 상세: [`docs/articles-sharding.md`](../../../docs/articles-sharding.md).
 - 이 스킬의 정본은 레포 파일입니다. 시스템 등록 스킬은 레포의 미러입니다.
