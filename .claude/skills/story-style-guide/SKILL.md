@@ -216,7 +216,7 @@ EN 버전:
 3. `<title>` 태그 수정
 4. `og:title` + `twitter:title` 수정
 5. `og:image:alt` + `twitter:image:alt` 수정
-6. `articles.json` title + description 수정
+6. **사이드카** `articles.d/<id>.json` 의 title + description 수정 (⛔ articles.json 직접편집 금지 — 사이드카가 없으면 그 글의 항목으로 새로 생성. CI가 base에 overlay. 샤딩: `docs/articles-sharding.md`)
 7. OG 이미지 재생성 (`node tools/generate-og-image.js --from-html ... --force`)
 
 ## 7-1. PebblousPage.init
