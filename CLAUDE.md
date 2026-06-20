@@ -281,13 +281,6 @@ New HTML article
   → python3 tools/generate-llms-txt.py
   → git push → GitHub Pages auto-deploy
   (rss.xml, sitemap.xml, llms.txt 은 CI(`update-sitemap.yml`)가 push 후 자동 재생성 — 로컬에서 건드리지 않는다)
-  → python3 tools/scan-articles-meta.py          (re-index: publisher, wordCount, modified 자동 추출)
-  → python3 tools/scan-articles-meta.py --clean   (비표준 필드 정리 포함)
-  → node tools/generate-rss.js
-  → node tools/generate-sitemap.js
-  → python3 tools/generate-llms-txt.py
-  → git push → GitHub Pages auto-deploy
-  (rss.xml, sitemap.xml, llms.txt 은 CI(`update-sitemap.yml`)가 push 후 자동 재생성 — 로컬에서 건드리지 않는다)
 ```
 
 **메타데이터 아키텍처** (Single Source of Truth):
