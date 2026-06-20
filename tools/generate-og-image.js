@@ -421,31 +421,17 @@ async function generateOGImage(title, subtitle, outputPath, category, projectRoo
 
     const browser = await puppeteer.launch({
         headless: 'new',
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-software-rasterizer',
-            '--disable-extensions',
-            '--disable-background-networking',
-            '--mute-audio'
-        ],
-        protocolTimeout: 300000
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
     try {
         const page = await browser.newPage();
-        page.setDefaultTimeout(120000);
         await page.setViewport({ width: 1200, height: 630 });
         await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
-        // Wait for embedded fonts to render (with 5s fallback)
-        await Promise.race([
-            page.evaluate(() => document.fonts.ready),
-            new Promise(resolve => setTimeout(resolve, 5000))
-        ]);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait for embedded fonts to render
+        await page.evaluate(() => document.fonts.ready);
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // Ensure output directory exists
         const outputDir = path.dirname(outputPath);
