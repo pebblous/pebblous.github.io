@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>LLM Benchmark Contamination — How MMLU Data Leakage Inflates Scores | Pebblous</title>
+    <meta name="description" content="Public benchmarks leak into LLM training data and inflate scores: MMLU is 29.1% contaminated, C-Eval 45.8%, and GSM8K drops 13 points on clean tests. It's an evaluation-data integrity problem, not a model one.">
+    <meta name="keywords" content="LLM benchmark contamination, benchmark contamination, data contamination, data integrity, MMLU, GSM8K, AI evaluation reliability, LiveBench, MMLU-CF, evaluation set integrity, LLM benchmark data leakage">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/llm-benchmark-contamination/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/llm-benchmark-contamination/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/llm-benchmark-contamination/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/llm-benchmark-contamination/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="The Test Was Already in the Training Data">
+    <meta property="og:description" content="From 29% MMLU contamination to a 13-point GSM8K drop — the evaluation-set integrity problem the leaderboard hides.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/llm-benchmark-contamination/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/llm-benchmark-contamination/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-06-20">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Test Was Already in the Training Data">
+    <meta name="twitter:description" content="MMLU 29% contaminated, GSM8K 13-point drop — the data-integrity problem that inflates LLM scores.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/llm-benchmark-contamination/en/image/index.png">
+    <meta name="twitter:image:alt" content="Pebblous blog cover explaining how benchmark contamination inflates LLM scores">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="The Test Was Already in the Training Data">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/06/20">
+    <meta name="citation_online_date" content="2026/06/20">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+
+    <!-- Stylesheets (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260620">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260620">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260620">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="themeable-bg themeable-text font-sans">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">What the Leaderboard Hides</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">The Scale of Contamination</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">A Data Problem, Not a Model Problem</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">Three Industry Responses</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">The Boundary of Clean Data</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">Frequently Asked Questions</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Every quarter, another model at the top of the leaderboard is announced as having surpassed human experts. Yet much of the test it solved was already sitting inside its training data before any grading began. Public benchmarks are free to download, and the pretraining process that scrapes the entire internet to build training corpora pulls in the questions and their answers along with everything else. This article looks at how that leaked evaluation data inflates scores, and why this is a problem of data rather than of models.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Johns Hopkins researchers, measuring at NAACL 2024, found that 29.1% of MMLU test items showed signs of contamination. When contaminated items are swapped for clean mirrors and re-solved, the same model's score falls — Mistral dropped by as much as 13 percentage points on a clean GSM8K test. In other words, part of the numbers we were comparing reflected memorization, not ability.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            For anyone who works on data quality, the implication is direct: the definition of "clean data" cannot stop at the training set. What a model was measured with shapes the score as much as what it was trained with.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">29.1%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">MMLU contamination</p>
+                            <p class="text-xs themeable-muted mt-1">Test items showing contamination signals (JHU, NAACL 2024)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">45.8%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">C-Eval contamination</p>
+                            <p class="text-xs themeable-muted mt-1">Chinese benchmark, same study</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">13pt</p>
+                            <p class="text-sm themeable-text-secondary mt-1">GSM8K score drop</p>
+                            <p class="text-xs themeable-muted mt-1">Mistral, re-measured on a clean mirror</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">22.9%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Inflation removed</p>
+                            <p class="text-xs themeable-muted mt-1">MMLU, with inference-time decontamination (ITD)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What the Leaderboard Hides</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Benchmarks are the LLM industry's shared exam paper. MMLU holds multiple-choice questions across 57 subjects, GSM8K holds grade-school word problems, and HumanEval holds coding tasks. When a new model ships, it is graded on these papers, and those numbers set the rankings. The trouble is that the exam paper is public. Datasets posted to GitHub and Hugging Face are free for anyone to download — and "anyone" includes the pretraining crawlers that vacuum up the entire web.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So the model reads the exam before it ever sits for it. Not just the questions, but the answers too, end up inside the training data. Even when the score comes back high, there is no way to tell whether it reflects reasoning or the memory of an item already seen. The simple fact that the model had the paper in hand is enough to shake the meaning of the number.
+                    </p>
+
+                    <!-- Image: Benchmark evolution from static (MMLU, GSM8K) to dynamic (LiveBench) 2021-2025 -->
+                    <figure class="my-8">
+                        <img src="./image/img-01-benchmark-progress.png"
+                             alt="Timeline of LLM benchmark evolution from 2021 to 2025: static benchmarks like MMLU and HumanEval gave way to dynamic ones like LiveBench and DyCodeEval"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ The LLM benchmark landscape 2021–2025: static benchmarks (MMLU, GSM8K) dominated early; dynamic benchmarks (LiveBench, DyCodeEval) emerged in response to growing contamination concerns. | Source: <a href="https://arxiv.org/abs/2502.17521" target="_blank" rel="noopener" class="underline">arXiv 2502.17521</a>
+                        </figcaption>
+                    </figure>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Model makers know this. To deal with it, they run filters that strip out passages overlapping with benchmarks. GPT-3 cut anything matching 13 consecutive words (a 13-gram), and GPT-4 raised the bar to 40-grams. But filters only fire when the text matches exactly. Reword a sentence slightly, translate it into another language, or reshape a table, and the same problem becomes a different string that slips past the filter. Contamination is not removed; it survives by changing form.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Scale of Contamination</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That contamination is not an abstract worry is shown by the measured numbers. Johns Hopkins researchers cross-checked several models and benchmarks to estimate which items had been exposed to training data. On MMLU, roughly 29.1% showed contamination signals; on the Chinese benchmark C-Eval, 45.8% did. Meta's own Llama 2 report found that 16% of MMLU items overlapped with its training data, some of them severely — with more than 80% of tokens matching. The ones pointing out contamination are not only outside critics. In its GPT-4 technical report, OpenAI itself disclosed that, across 34 academic and professional exams it checked directly, 9 had more than 20% of items overlapping with training data.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        It gets worse in multilingual settings. One analysis reported contamination rates of up to 91.8% on some multilingual benchmarks. As English source questions are translated into many languages and spread across the web, the same item ends up scattered through training data in varied forms. A single exam paper, copied tenfold, settles into the model's memory.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So how much does contamination actually lift a score? The cleanest experiment is to build fresh, uncontaminated "mirror" questions and have the same model solve them again. Re-measuring Mistral on a clean GSM8K mirror dropped its accuracy by as much as 13 percentage points. On MMLU, an inference-time decontamination technique (ITD) that screens out contaminated items shaved off 22.9% of the inflated score. On MMLU-CF, which Microsoft rebuilt with a private test set, GPT-4o scored 73.4% — lower than its score on the public MMLU.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>Contamination by Benchmark</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        Even the same contamination varies sharply by benchmark and by model. The table below gathers the published measurements in one place.
+                    </p>
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-toc-border">
+                                    <th class="py-3 pr-4 themeable-heading font-semibold">Target</th>
+                                    <th class="py-3 pr-4 themeable-heading font-semibold">Contamination / drop</th>
+                                    <th class="py-3 themeable-heading font-semibold">Source</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-toc-border">
+                                    <td class="py-3 pr-4">MMLU</td>
+                                    <td class="py-3 pr-4">29.1% of items contaminated</td>
+                                    <td class="py-3">JHU, NAACL 2024</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border">
+                                    <td class="py-3 pr-4">C-Eval</td>
+                                    <td class="py-3 pr-4">45.8% of items contaminated</td>
+                                    <td class="py-3">JHU, NAACL 2024</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border">
+                                    <td class="py-3 pr-4">Llama 2 / MMLU</td>
+                                    <td class="py-3 pr-4">16% overlap, some severe</td>
+                                    <td class="py-3">Meta Llama 2 report</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border">
+                                    <td class="py-3 pr-4">GPT-4 / 34 academic exams</td>
+                                    <td class="py-3 pr-4">9 exams with 20%+ items contaminated</td>
+                                    <td class="py-3">OpenAI GPT-4 report</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border">
+                                    <td class="py-3 pr-4">Multilingual benchmarks</td>
+                                    <td class="py-3 pr-4">Up to 91.8% contaminated</td>
+                                    <td class="py-3">Contamination-resistance research</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border">
+                                    <td class="py-3 pr-4">Mistral / GSM8K</td>
+                                    <td class="py-3 pr-4">13pt drop on clean mirror</td>
+                                    <td class="py-3">Contamination-resistance research</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4">MMLU (with ITD)</td>
+                                    <td class="py-3 pr-4">22.9% of inflation removed</td>
+                                    <td class="py-3">Inference-Time Decontamination</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Image: Contamination rate increase 2020 vs 2023 across major benchmarks -->
+                    <figure class="my-8">
+                        <img src="./image/img-02-contamination-timeline.png"
+                             alt="Bar chart comparing LLM benchmark contamination rates in December 2020 vs October 2023 — MMLU jumped from 9% to 29.4% in three years"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Contamination rates compared between December 2020 and October 2023. MMLU tripled from 9% to 29.4% in three years; C-EVAL shows a similar trajectory. | Source: <a href="https://arxiv.org/html/2605.19999v1" target="_blank" rel="noopener" class="underline">arXiv 2605.19999</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A Data Problem, Not a Model Problem</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        It is easy to read contamination as a flaw in the model. But changing the model architecture or improving the training algorithm does not make the leaking exam paper go away. What is broken is not the model but the procedure for handling evaluation data — specifically, the lifecycle management that creates the exam, distributes it, and keeps it isolated from model training.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Contamination enters at two main points. The first is pretraining: benchmark questions and answers get mixed into the internet-crawl data, and because most models never disclose their training data, it is nearly impossible to verify from the outside. The second is post-training: during alignment and fine-tuning, data resembling the benchmark slips in unintentionally, or test sets released after the knowledge cutoff flow straight in.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Detection being hard makes the problem worse. The n-gram method that counts character overlap misses paraphrased items. An indirect signal that asks the model to guess the answer choice (TS-Guessing) hints at contamination — ChatGPT guesses MMLU answers as often as 57% of the time — but that is inference, not proof. Membership inference attacks are imprecise too. The root cause keeps converging on one thing: when training data is not disclosed, no one can honestly confirm what leaked in.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Put in the language of data quality, this is a problem of measurement-tool integrity. The evaluation set is the ruler that measures the model — and if that ruler was raised on the same data as the model, the reading is a tick mark taken with a contaminated instrument. Fixing the model does not straighten a bent ruler.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Three Industry Responses</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Once the problem showed up in hard numbers, efforts to change the evaluation method itself followed. They split into three broad directions: keep printing a fresh exam, lock the exam away, or distribute it in a form the model cannot read.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>Dynamic benchmarks — print a new exam every month</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        LiveBench draws fresh questions each month from the latest math competitions, newly posted arXiv papers, and recent news. When the moment a question becomes public falls later than a model's training cutoff, the model has no way to memorize it in advance. This approach, co-authored by Yann LeCun, turns the freshness of the exam itself into a line of defense against contamination.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>Private test sets — lock the exam away</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Microsoft's MMLU-CF keeps the test set private and offers only grading. With the questions never released to the web, there is nothing for a crawler to collect. At the same difficulty, scores come out lower than on the public version — and GPT-4o's 73.4% on this private test is closer to the more honest coordinate left once contamination is stripped away.
+                    </p>
+
+                    <!-- Image: MMLU memorization vs MMLU-CF fresh questions -->
+                    <figure class="my-8">
+                        <img src="./image/img-04-mmlu-cf-leakage.png"
+                             alt="Comparison showing an LLM producing identical answer choices on the original MMLU (memorization) versus different choices on the contamination-free MMLU-CF (genuine reasoning)"
+                             class="max-w-[560px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ (Top) On original MMLU, the LLM echoes the exact same answer choices as the training data — evidence of memorization. (Bottom) On MMLU-CF, questions are rephrased so the model cannot recall memorized answers. | Source: <a href="https://arxiv.org/abs/2412.15194" target="_blank" rel="noopener" class="underline">MMLU-CF arXiv 2412.15194</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>Contamination-resistant distribution — release it in a form the model can't read</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The third is more fundamental: distribute the benchmark in a form a human can use for grading but a model cannot use for training. One research group proposed encoding questions into a form such as a KV cache, so that even if they are crawled as plaintext, the training pipeline cannot swallow them directly. Instead of hiding the exam, the idea is to make it unmemorizable even when it leaks.
+                    </p>
+
+                    <!-- Image: CRD (Contamination-Resistant Deployment) framework pipeline -->
+                    <figure class="my-8">
+                        <img src="./image/img-03-crd-framework.png"
+                             alt="Contamination-Resistant Deployment (CRD) pipeline: benchmark is projected into latent space by anchor models, distributed via Hugging Face, then translated back by the evaluated model at inference time"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Contamination-Resistant Deployment (CRD) pipeline. The benchmark is projected into a latent space and distributed; only a model that learns the inverse translation (Discovery) can perform inference — making raw crawling useless for training. | Source: <a href="https://arxiv.org/html/2605.19999v1" target="_blank" rel="noopener" class="underline">arXiv 2605.19999</a>
+                        </figcaption>
+                    </figure>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>What they share</strong> — none of the three touch the model. What they change is the procedure for creating and distributing evaluation data.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>The trade-offs</strong> — dynamic benchmarks carry operating cost, private test sets sacrifice reproducibility and transparency, and contamination-resistant distribution leaves standardization unsolved.</span>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Boundary of Clean Data</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The ability of an AI system is decided by two kinds of data: what it was trained with, and what it was measured with. The data-quality conversation has long stayed on the first. Is the training data clean, are the labels accurate, is it free of bias? Benchmark contamination turns that gaze toward the second. If the data used for measurement is contaminated, then however carefully the first is groomed, the resulting number cannot be trusted.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So the definition of "clean data" widens by one notch. Training-set integrity is no longer enough; evaluation-set integrity becomes a managed asset of the same grade. Tracking when an evaluation set was created, whether its timing overlaps with model training data, and whether it has ever been exposed externally enters the scope of data-quality work. Just as training data carries provenance and license history, evaluation data should carry exposure history too.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For practitioners who translate leaderboard numbers into business decisions, one extra line of questioning becomes a habit worth keeping. Has the model ever seen the exam this score came from? That single line is the boundary between an illusion the data created and real ability.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>In one line.</strong> Part of the scores we trust may be an illusion created not by a model's ability but by contamination in the evaluation data. Widening the boundary of clean data from the training set to the evaluation set is the task ahead.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ (rendered by PebblousPage.init faqs[]) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">
+                            RIS
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Detection &amp; Measurement</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">New, J., Marone, M., &amp; Van Durme, B. (2024). "<a href="https://arxiv.org/abs/2311.09783" target="_blank" rel="noopener">Investigating Data Contamination in Modern Benchmarks for Large Language Models</a>." <em>NAACL 2024</em>. MMLU 29.1%, C-Eval 45.8% contamination; TS-Guessing method.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Chen, S. et al. (2025). "<a href="https://arxiv.org/abs/2502.17521" target="_blank" rel="noopener">Recent Advances in Large Language Model Benchmarks against Data Contamination: From Static to Dynamic Evaluation</a>." arXiv:2502.17521. Comprehensive survey on static-to-dynamic benchmark transition.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Xu, A. et al. (2026). "<a href="https://arxiv.org/abs/2601.19334" target="_blank" rel="noopener">When Benchmarks Leak: Inference-Time Decontamination for LLMs</a>." arXiv:2601.19334. ITD removes 22.9% of MMLU score inflation.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Contamination-Resistant Evaluation</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">4.</span><span class="ref-body">White, C., Dooley, S., LeCun, Y. et al. (2024). "<a href="https://openreview.net/forum?id=sKYHBTAxVa" target="_blank" rel="noopener">LiveBench: A Challenging, Contamination-Limited LLM Benchmark</a>." OpenReview:sKYHBTAxVa. Monthly-refresh dynamic benchmark.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Gema, A. P. et al. (2024). "<a href="https://arxiv.org/abs/2412.15194" target="_blank" rel="noopener">MMLU-CF: A Contamination-Free Multi-Task Language Understanding Benchmark</a>." arXiv:2412.15194. Closed test set; GPT-4o scores 73.4%.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Al-Lawati, H. et al. (2026). "<a href="https://arxiv.org/abs/2605.19999" target="_blank" rel="noopener">LLM Benchmark Datasets Should Be Contamination-Resistant</a>." arXiv:2605.19999. KV-cache contamination-resistant deployment (CRD); Mistral GSM8K drops 13 pp on clean mirror.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260620"></script>
+    <script src="/scripts/citation-download.js?v=20260620" defer></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "The Test Was Already in the Training Data",
+            subtitle: "From 29% MMLU contamination to a 13-point GSM8K drop — the real problem is evaluation-set integrity",
+            pageTitle: "LLM Benchmark Contamination — How MMLU Data Leakage Inflates Scores | Pebblous",
+            category: "tech",
+            publishDate: "2026-06-20",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/llm-benchmark-contamination/en/",
+            tags: ["LLM", "benchmark contamination", "data quality", "data integrity", "MMLU", "GSM8K", "AI evaluation", "LiveBench"],
+            faqs: [
+                {
+                    question: "What is benchmark contamination?",
+                    answer: "It is when the questions and answers of a public evaluation benchmark leak into an LLM's training data. Because building training corpora means crawling the internet, datasets published on GitHub and Hugging Face get pulled in along the way, so the model effectively studies the exam paper before it ever takes the test."
+                },
+                {
+                    question: "How contaminated is MMLU?",
+                    answer: "Johns Hopkins researchers, measuring at NAACL 2024, found that about 29.1% of MMLU test items showed contamination signals. The Chinese benchmark C-Eval was 45.8%, and Meta's Llama 2 report found 16% of MMLU items overlapping with its training data."
+                },
+                {
+                    question: "How much does contamination inflate scores?",
+                    answer: "Re-measuring on uncontaminated 'mirror' questions lowers the score. Mistral dropped by as much as 13 percentage points on a clean GSM8K mirror, and on MMLU an inference-time decontamination technique (ITD) removed 22.9% of the inflated score. That gap is the bubble contamination created."
+                },
+                {
+                    question: "Why is this a data problem rather than a model problem?",
+                    answer: "Changing the model architecture or training algorithm does not make the leaking exam go away. What is broken is the lifecycle management that creates, distributes, and isolates evaluation data from training. The evaluation set is the ruler that measures the model, and if that ruler was built from the same data as the model, the measurement itself loses trust."
+                },
+                {
+                    question: "How is contamination detected, and what are the limits?",
+                    answer: "The most common method, an n-gram count of character overlap, misses paraphrased items. Indirect signals that ask the model to guess the answer choice, and membership inference attacks, exist but are imprecise. The fundamental limit is that most models never disclose their training data, so what leaked in cannot be verified from the outside."
+                },
+                {
+                    question: "How is the industry responding?",
+                    answer: "In three directions. First, dynamic benchmarks like LiveBench that print a fresh exam from the latest questions every month. Second, private approaches like MMLU-CF that never release the test set. Third, contamination-resistant distribution, such as releasing in a KV-cache form so the data cannot be used for training even if crawled. All three change the evaluation-data procedure, not the model."
+                },
+                {
+                    question: "What should data-quality teams do?",
+                    answer: "Widen the definition of 'clean data' from the training set to the evaluation set. That means folding into data-quality work the tracking of when an evaluation set was created, whether its timing overlaps with model training data, and whether it has been exposed externally. Before citing a leaderboard score, the key habit is to ask whether the model has ever seen that exam."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
