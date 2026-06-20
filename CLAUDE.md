@@ -265,9 +265,22 @@ Three themes: dark (default), light, beige. Use `themeable-*` CSS classes (e.g.,
 
 ## Content Pipeline
 
+> ⭐ **articles.json 샤딩 (2026-06-20~)** — 글 등록은 **사이드카** `articles.d/<id>.json`(글당 1, KO/EN 각각)에
+> 한다. **articles.json 을 직접 편집하지 말 것** — CI(`assemble-articles.yml`)가 base ∪ 사이드카로 생성한다.
+> 사이드카는 서로 다른 파일이라 동시 PR 충돌이 원천 차단된다. 검증은 로컬 `python3 tools/assemble-articles.py`
+> 후 `validate-articles.js`, 단 articles.json 은 커밋에서 제외(`git checkout -- articles.json`).
+> 상세: [`docs/articles-sharding.md`](docs/articles-sharding.md). (전환 중엔 옛 articles.json 항목도 base로 유지돼 안전.)
+
 ```
 New HTML article
-  → Register in articles.json (category, date, featured flag, etc.)
+  → 사이드카 등록: articles.d/<id>.json (글당 1, KO/EN 각각) — ⛔ articles.json 직접 편집 금지
+  → python3 tools/scan-articles-meta.py          (re-index: publisher, wordCount, modified 자동 추출)
+  → python3 tools/scan-articles-meta.py --clean   (비표준 필드 정리 포함)
+  → node tools/generate-rss.js
+  → node tools/generate-sitemap.js
+  → python3 tools/generate-llms-txt.py
+  → git push → GitHub Pages auto-deploy
+  (rss.xml, sitemap.xml, llms.txt 은 CI(`update-sitemap.yml`)가 push 후 자동 재생성 — 로컬에서 건드리지 않는다)
   → python3 tools/scan-articles-meta.py          (re-index: publisher, wordCount, modified 자동 추출)
   → python3 tools/scan-articles-meta.py --clean   (비표준 필드 정리 포함)
   → node tools/generate-rss.js
