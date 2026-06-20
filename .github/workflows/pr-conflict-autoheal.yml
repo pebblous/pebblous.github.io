@@ -45,6 +45,13 @@ jobs:
           git config user.email "actions@github.com"
           git fetch origin main --quiet
 
+          # GitHub은 mergeability를 lazy하게 계산해, 막 만들어진 PR은 한동안 UNKNOWN으로 남는다.
+          # gh pr list 의 mergeable 필터는 UNKNOWN을 CONFLICTING으로 못 잡아 적체 PR을 놓친다(사각지대).
+          # → 각 열린 PR을 gh pr view로 한 번 찔러 계산을 강제(트리거)한 뒤, 잠깐 기다렸다가 다시 조회한다.
+          mapfile -t allnums < <(gh pr list --base main --state open --json number --jq '.[].number')
+          for n in "${allnums[@]}"; do gh pr view "$n" --json mergeable >/dev/null 2>&1 || true; done
+          sleep 15
+
           # 열린 PR 중 base=main 이고 GitHub이 CONFLICTING 으로 판정한 것만 대상
           mapfile -t rows < <(gh pr list --base main --state open \
             --json number,headRefName,mergeable \
