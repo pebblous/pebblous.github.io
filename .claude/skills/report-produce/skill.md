@@ -504,7 +504,7 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 5-E --agent ko-
 
 ⛔ **주제 매칭 우선 모드**: 단순 추상 다이어그램(피드백 루프, 일반 아키텍처)만 채우지 말 것. 주제 고유 시각 자료를 우선 탐색:
 - 게임/제품 주제 → 실제 게임/제품 스크린샷 (CC, Wikimedia, 공식 press kit)
-- 학술 논문 인용 주제 → 원 논문의 figure (fair use 인용)
+- 학술 논문 인용 주제 → **논문 핵심 figure를 원본 인라인 SVG로 재해석**(저작권 안전·테마 일관 우선; 원 figure 직접 삽입은 재해석 불가 시 fair-use 차선). image-reinforce 스킬 "논문 figure 재해석" 참조
 - 인물 주제 → 공식 프로필 사진 (CC 또는 자체 촬영)
 - 사례/데이터 주제 → 해당 기관 공식 차트
 일반 추상 이미지로만 채우면 5-C 실행했어도 본 단계 미완료로 간주.
