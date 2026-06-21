@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터 큐레이션이 다시 병목이 된 이유 — 파운데이션 모델 시대의 데이터 품질 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="Chinchilla 이후 모델 크기 경쟁이 한계에 부딪히면서, FineWeb-Edu의 38B 토큰이 미필터 350B와 맞먹고 Phi는 소형 모델로 GPT-3.5를 넘었습니다. 더 큰 모델이 아니라 더 나은 데이터가 성능을 가르는 이유와, 데이터 큐레이션이 다시 병목이 된 구조를 수치로 짚습니다.">
+    <meta name="keywords" content="데이터 큐레이션, 파운데이션 모델, scaling law, data wall, 데이터 품질, FineWeb-Edu, DCLM, Phi, Llama 3, 합성 데이터, model collapse, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/data-curation-bottleneck-foundation-models/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/data-curation-bottleneck-foundation-models/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/data-curation-bottleneck-foundation-models/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/data-curation-bottleneck-foundation-models/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="38B 토큰이 350B 토큰을 이겼다">
+    <meta property="og:description" content="모델 크기 경쟁이 끝나가는 자리에서 성능을 가르는 건 데이터 큐레이션이다 — FineWeb·Phi·Llama 3가 보여준 증거와, 큐레이션이 다시 병목이 된 이유.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/data-curation-bottleneck-foundation-models/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/data-curation-bottleneck-foundation-models/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="38B 토큰이 350B 토큰을 이겼다 — 데이터 큐레이션이 다시 병목이 된 이유">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-06-21">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="38B 토큰이 350B 토큰을 이겼다">
+    <meta name="twitter:description" content="모델 크기 경쟁이 끝나가는 자리에서 성능을 가르는 건 데이터 큐레이션이다. 9배 적은 데이터로 같은 성능을 낸 증거를 따라간다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/data-curation-bottleneck-foundation-models/ko/image/index.png">
+    <meta name="twitter:image:alt" content="데이터 큐레이션이 다시 병목이 된 이유">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260621"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260621">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260621">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260621">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#scaling-curve-bent" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 모델은 커졌는데 곡선은 꺾였다</a></li>
+                    <li><a href="#data-wall" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Data Wall, 고품질 데이터가 바닥났다</a></li>
+                    <li><a href="#better-beats-bigger" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 38B가 350B를 이긴다</a></li>
+                    <li><a href="#llama3-curation" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 프런티어 모델은 모델로 데이터를 거른다</a></li>
+                    <li><a href="#synthetic-data" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 합성 데이터는 탈출구인가 함정인가</a></li>
+                    <li><a href="#pipeline-bottleneck" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 큐레이션이 다시 병목인 진짜 이유</a></li>
+                    <li><a href="#not-separable" class="block pl-4 themeable-toc-link transition-colors duration-200">7. 데이터와 모델은 분리되지 않는다</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            2024년을 지나며 사전학습 쪽의 뉴스가 조용해졌습니다. 모델을 더 키워도 손실 곡선이 예전처럼 가파르게 내려가지 않았고, 눈에 띄는 성능 향상은 대부분 사후학습과 추론 시점 연산에서 나왔습니다. 파라미터를 늘리는 전략이 한계에 가까워진 자리에서 성능을 다시 가르기 시작한 변수는 데이터의 품질입니다. 이 글은 그 전환이 왜 일어났고, 데이터 큐레이션이 어떻게 새 병목으로 돌아왔는지를 공개된 수치로 따라갑니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            가장 또렷한 증거는 허깅페이스의 FineWeb-Edu에서 나왔습니다. 모델 기반 분류기로 교육적 가치가 높은 텍스트만 남기자, 38B 토큰으로 학습한 모델이 필터링하지 않은 350B 토큰 모델과 맞먹었습니다. 9배 적은 데이터로 같은 성능을 낸 것입니다. 그런데 이 큐레이션은 공짜가 아닙니다. 고품질 인간 텍스트는 빠르게 고갈되고 있고, 그 빈자리를 채우는 합성 데이터는 잘못 쓰면 모델을 망가뜨립니다. 성능의 레버가 데이터로 옮겨간 바로 그 순간, 데이터를 고르는 일 자체가 다음 병목이 되었습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            이 글은 Chinchilla의 20:1 비율이 어떻게 깨졌는지에서 시작해 data wall, 큐레이션의 정량적 증거, Llama 3의 실제 레시피, 합성 데이터의 model collapse 위험, 그리고 현장 라벨링 파이프라인의 병목까지 하나의 인과 사슬로 잇습니다. 데이터 엔지니어가 자기 파이프라인에서 무엇을 먼저 점검해야 하는지를 가늠하는 기준으로 읽으셔도 좋습니다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6">
+                        큐레이션이 모델 크기를 대체하기 시작한 양상은 네 개의 숫자에 압축돼 있습니다. 큐레이션의 효율, 실무가 Chinchilla 최적점을 넘어선 폭, 소형 모델이 도달한 성능, 그리고 데이터를 다시 위험하게 만드는 오염의 규모입니다.
+                    </p>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">38B = 350B</p>
+                            <p class="text-sm themeable-text-secondary mt-1">FineWeb-Edu 효율</p>
+                            <p class="text-xs themeable-muted mt-1">큐레이션한 38B가 미필터 350B와 동급, 9배 효율</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1,875:1</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Llama 3 토큰/파라미터</p>
+                            <p class="text-xs themeable-muted mt-1">Chinchilla 최적 20:1의 약 94배 over-training</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">50.6%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Phi-1 HumanEval</p>
+                            <p class="text-xs themeable-muted mt-1">1.3B 소형 모델이 훨씬 큰 모델을 능가</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">74%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">신규 웹의 AI 생성 비율</p>
+                            <p class="text-xs themeable-muted mt-1">2025년 4월 기준, 큐레이션 없으면 오염 가속</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="scaling-curve-bent" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">모델은 커졌는데 곡선은 꺾였다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        파운데이션 모델의 성능을 예측하는 출발점은 오랫동안 scaling law였습니다. 2022년 딥마인드의 <a href="https://www.jonvet.com/blog/llm-scaling-in-2025" target="_blank" rel="noopener">Chinchilla</a> 연구는 같은 컴퓨트라면 모델 크기와 데이터 양을 함께 키워야 손실이 가장 낮아진다는 점을 보였습니다. 70B 모델이 같은 예산의 280B Gopher를 능가했고, 컴퓨트 최적 비율은 파라미터 하나당 약 20개 토큰으로 정리됐습니다. 한동안 이 20:1은 모델을 설계하는 사람들의 나침반이었습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 실무는 이 최적점에서 멀어졌습니다. 학습 비용만이 아니라 배포 후의 추론 비용까지 따지면, 같은 성능을 더 작은 모델로 내는 편이 운영에 유리하기 때문입니다. 그래서 작은 모델에 데이터를 훨씬 더 오래 부어 넣는 over-training이 표준이 됐습니다. 비율의 변화는 가파릅니다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Llama 1 (7B): 약 <strong>142</strong> 토큰/파라미터에서 출발</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Llama 2 (7B): 약 <strong>284</strong> 토큰/파라미터로 한 세대 만에 두 배</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Llama 3 (8B, 15T 토큰): <strong>1,875</strong> 토큰/파라미터, Chinchilla 최적의 약 94배</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Qwen3-0.6B (36T 토큰): <strong>60,000:1</strong>, 비율이 세 자릿수를 넘어 다섯 자릿수로</span>
+                        </li>
+                    </ul>
+
+                    <!-- Figure 1: Over-training progression -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 280" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:rgba(248,104,37,0.03)">
+                            <text x="330" y="26" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="#64748b">over-training 비율 진화 (로그 스케일, Chinchilla 최적 20:1 기준)</text>
+                            <text x="133" y="70" text-anchor="end" font-family="Pretendard,sans-serif" font-size="12" fill="#94a3b8">Chinchilla</text>
+                            <rect x="140" y="52" width="131" height="30" fill="#cbd5e1" rx="4"/>
+                            <text x="279" y="72" font-family="Pretendard,sans-serif" font-size="11" fill="#475569" font-weight="700">20:1</text>
+                            <text x="133" y="114" text-anchor="end" font-family="Pretendard,sans-serif" font-size="12" fill="#94a3b8">Llama 1 (7B)</text>
+                            <rect x="140" y="96" width="216" height="30" fill="#94a3b8" rx="4"/>
+                            <text x="248" y="116" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#fff" font-weight="700">142:1</text>
+                            <text x="133" y="158" text-anchor="end" font-family="Pretendard,sans-serif" font-size="12" fill="#94a3b8">Llama 2 (7B)</text>
+                            <rect x="140" y="140" width="247" height="30" fill="#94a3b8" rx="4"/>
+                            <text x="264" y="160" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#fff" font-weight="700">284:1</text>
+                            <text x="133" y="202" text-anchor="end" font-family="Pretendard,sans-serif" font-size="12" fill="#64748b">Llama 3 (8B)</text>
+                            <rect x="140" y="184" width="329" height="30" fill="#F86825" rx="4"/>
+                            <text x="305" y="204" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#fff" font-weight="700">1,875:1</text>
+                            <text x="133" y="246" text-anchor="end" font-family="Pretendard,sans-serif" font-size="12" fill="#64748b">Qwen3-0.6B</text>
+                            <rect x="140" y="228" width="480" height="30" fill="#F86825" rx="4" opacity="0.8"/>
+                            <text x="380" y="248" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#fff" font-weight="700">60,000:1</text>
+                            <line x1="271" y1="42" x2="271" y2="270" stroke="#94a3b8" stroke-dasharray="5 3" stroke-width="1.5"/>
+                            <text x="275" y="47" font-family="Pretendard,sans-serif" font-size="10" fill="#94a3b8">← Chinchilla 최적</text>
+                            <text x="330" y="272" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#94a3b8">막대 길이 = log₁₀(토큰/파라미터 비율) 기준</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 — Chinchilla 최적(20:1) 대비 over-training 비율의 세대별 가속 | 수치 출처: 각 모델 기술보고서
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델은 이렇게 더 오래, 더 많은 데이터로 배웠습니다. 그런데도 2024년 이후 사전학습에서 나오는 성능 뉴스는 눈에 띄게 줄었습니다. 화제의 중심은 사후학습과 추론 시점 연산으로 옮겨갔습니다. 사전학습 scaling law가 한계에 부딪혔다는 추정이 이 침묵에서 나옵니다. 파라미터를 늘리고 데이터를 더 부어도 과거 같은 성능 증가가 돌아오지 않는다면, 다음 질문은 자연스럽게 데이터의 양이 아니라 질로 향합니다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="data-wall" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Data Wall, 고품질 데이터가 바닥났다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터를 더 부어도 곡선이 안 오르는 이유 중 하나는 단순합니다. 부을 데이터가 동나고 있기 때문입니다. 웹에서 사람이 직접 쓴 고품질 텍스트는 유한하고, 프런티어 모델들은 이미 그 대부분을 학습에 써 버렸습니다. 남은 것은 품질이 낮거나, 갈수록 빠르게 늘어나는 기계 생성물입니다. 연구자들은 이 한계를 data wall이라 부릅니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        오염의 속도는 가볍지 않습니다. 한 분석에 따르면 2025년 4월 기준 새로 만들어지는 웹페이지의 74% 이상이 AI가 생성한 텍스트를 포함합니다. 다음 모델이 별다른 필터 없이 웹을 긁어 학습한다면, 그 학습 데이터에는 이전 모델이 쏟아낸 출력이 점점 더 큰 비중으로 섞여 듭니다. 양으로 질을 덮던 과거의 가정이 약해지는 지점입니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            병목의 자리가 바뀐 셈입니다. GPU와 컴퓨트가 부족하던 시절에는 더 큰 클러스터가 성능을 갈랐습니다. 이제는 컴퓨트를 확보해도, 그 컴퓨트에 먹일 만한 고품질 데이터가 충분한가가 더 까다로운 질문이 됐습니다. 성능을 가르는 전장이 '얼마나 많이 계산하느냐'에서 '남은 데이터 중 무엇을 골라 먹이느냐'로 이동한 것입니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="better-beats-bigger" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">38B가 350B를 이긴다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        '더 나은 데이터가 더 많은 데이터를 이긴다'는 말은 구호로 들리기 쉽습니다. 그러나 최근 몇 년간 이 명제를 정량으로 뒷받침하는 결과가 쌓였습니다. 가장 선명한 사례가 허깅페이스의 <a href="https://www.emergentmind.com/topics/fineweb-edu-dataset" target="_blank" rel="noopener">FineWeb-Edu</a>입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        FineWeb-Edu는 Llama-70B 기반 분류기로 웹 텍스트의 '교육적 가치'를 점수화한 뒤, 최상위만 남기고 하위 90%를 버렸습니다. 그렇게 추린 38B 토큰으로 학습한 모델이, 필터링하지 않은 350B 토큰으로 학습한 모델과 같은 성능을 냈습니다. 1.82B 모델은 같은 방식으로 만든 1.3T 토큰 서브셋으로 학습했을 때 FineWeb 전체, MassiveText, Dolma로 학습한 모델을 앞섰습니다. 데이터를 더 넣은 쪽이 아니라 잘 고른 쪽이 이겼습니다.
+                    </p>
+
+                    <!-- Figure 2: FineWeb-Edu curation efficiency -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 195" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:rgba(248,104,37,0.03)">
+                            <text x="330" y="26" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="#64748b">FineWeb-Edu: 9배 적은 데이터로 동일한 성능</text>
+                            <text x="240" y="52" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#94a3b8">데이터 양</text>
+                            <text x="533" y="52" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#94a3b8">벤치마크 성능</text>
+                            <text x="87" y="90" text-anchor="end" font-family="Pretendard,sans-serif" font-size="12" fill="#94a3b8">미필터</text>
+                            <rect x="92" y="72" width="296" height="32" fill="#cbd5e1" rx="4"/>
+                            <text x="240" y="93" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="#475569" font-weight="700">350B 토큰</text>
+                            <rect x="415" y="72" width="213" height="32" fill="#94a3b8" rx="4"/>
+                            <text x="522" y="93" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="#fff" font-weight="700">기준 성능</text>
+                            <text x="87" y="144" text-anchor="end" font-family="Pretendard,sans-serif" font-size="12" fill="#64748b">큐레이션</text>
+                            <rect x="92" y="125" width="32" height="32" fill="#F86825" rx="4"/>
+                            <text x="134" y="146" font-family="Pretendard,sans-serif" font-size="12" fill="#F86825" font-weight="700">38B 토큰</text>
+                            <rect x="415" y="125" width="213" height="32" fill="#F86825" rx="4"/>
+                            <text x="522" y="146" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="#fff" font-weight="700">동급 성능 ✓</text>
+                            <text x="52" y="113" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="18" fill="#F86825" font-weight="700">9×</text>
+                            <text x="52" y="127" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#94a3b8">효율</text>
+                            <text x="400" y="115" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="26" fill="#F86825" font-weight="300">≈</text>
+                            <text x="330" y="184" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#94a3b8">두 막대의 벤치마크 성능은 동급 — 큐레이션이 9배 데이터 효율 달성 (HuggingFace FineWeb-Edu, 2024)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 (FineWeb-Edu 결과 재해석) | 출처: Penedo et al., HuggingFace, 2024
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>소형 모델이 대형 모델을 넘은 순간</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        마이크로소프트의 Phi 계열은 이 논리를 더 멀리 밀었습니다. <a href="https://arxiv.org/pdf/2306.11644" target="_blank" rel="noopener">"Textbooks Are All You Need"</a>의 Phi-1은 1.3B 파라미터에 불과한데도, 정제된 교과서 품질 데이터로 학습해 HumanEval에서 50.6%, MBPP에서 55.5%를 기록했습니다. 훨씬 큰 모델들을 코드 생성에서 앞선 수치입니다. 이어진 Phi-3-mini(3.8B)는 GPT-3.5나 총 45B 파라미터의 Mixtral 수준에 도달했습니다. scaling law의 곡선에서 의도적으로 이탈해, 데이터의 질로 체급을 끌어올린 것입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Phi가 체급을 끌어올린 비결은 데이터를 고르는 두 가지 결정에 있었습니다. 먼저 웹 텍스트를 '지식이 담겼는가'와 '추론 능력을 키울 만한가'라는 기준으로 추려 냈고, 거기에 모델이 직접 생성한 교과서 품질의 합성 데이터를 더했습니다. <a href="https://arxiv.org/html/2404.14219v2" target="_blank" rel="noopener">Phi-3</a>는 이 과정을 두 단계로 나눠, 1단계에서 일반 지식을 웹에서 익히고 2단계에서 정제된 합성 데이터로 추론을 집중 훈련했습니다. 작은 모델이 큰 모델을 앞선 동력은 파라미터 수가 아니라 무엇을 먹일지에 대한 설계였던 셈입니다. 모델이 만든 데이터를 학습에 끌어들였다는 점은 뒤에서 다룰 합성 데이터의 양면성과도 곧장 맞닿습니다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>필터링은 휴리스틱에서 모델로 진화했다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        큐레이션 전략을 공정하게 비교하려는 표준도 생겼습니다. <a href="https://arxiv.org/html/2406.11794v1" target="_blank" rel="noopener">DCLM(DataComp-LM)</a>은 같은 풀에서 서로 다른 큐레이션을 겨루게 하는 벤치마크로, 단순한 binary fastText 분류기만으로도 정교한 전략에 버금가는 성능을 낼 수 있음을 보였습니다. 데이터셋의 진화 방향도 일관됩니다. perplexity 필터(Dolma)에서 휴리스틱(FineWeb)으로, 다시 모델·분류기 기반 필터(FineWeb-Edu, DCLM)로 옮겨갔습니다. 규모는 RefinedWeb 600B에서 FineWeb 15T, DCLM 240T 토큰까지 커졌지만, 거듭 확인된 교훈은 같습니다. 정밀한 필터링이 대량의 미필터 데이터를 압도합니다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="llama3-curation" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">프런티어 모델은 모델로 데이터를 거른다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        큐레이션이 변두리 기법이 아니라는 사실은, 최정상 모델의 레시피를 보면 분명해집니다. <a href="https://ar5iv.labs.arxiv.org/html/2407.21783" target="_blank" rel="noopener">Llama 3</a>는 15T 멀티링구얼 토큰으로 학습했습니다. Llama 2의 1.8T에서 여덟 배 넘게 늘어난 양인데, 정작 보고서가 공들여 설명하는 부분은 양이 아니라 거르는 과정입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        파이프라인은 여러 단계로 짜여 있습니다. 휴리스틱 필터와 NSFW 필터로 명백한 쓰레기를 걷어내고, 의미 기반 중복 제거로 같은 내용을 솎아내고, 텍스트 품질 분류기로 남길 글을 점수화합니다. 특히 눈여겨볼 대목은 이 품질 분류기입니다. 위키피디아에서 참조될 만한 글인지를 예측하는 fastText와, Llama 2의 판단으로 학습한 RoBERTa 계열 분류기를 함께 썼습니다. 다시 말해, <strong>Llama 2가 자기 후속 모델의 학습 데이터를 큐레이션</strong>한 것입니다. 모델로 데이터를 거르고, 그 데이터로 더 나은 모델을 만드는 재귀 구조입니다.
+                    </p>
+
+                    <!-- Figure 3: Llama 3 data curation pipeline -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 165" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:rgba(248,104,37,0.03)">
+                            <text x="330" y="24" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="#64748b">Llama 3 데이터 큐레이션 파이프라인</text>
+                            <!-- Box 1: Raw web -->
+                            <rect x="20" y="42" width="96" height="52" fill="#e2e8f0" rx="6" stroke="#cbd5e1" stroke-width="1"/>
+                            <text x="68" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#64748b">원본</text>
+                            <text x="68" y="76" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#64748b">웹 크롤</text>
+                            <text x="68" y="108" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#94a3b8">수십 T 토큰</text>
+                            <!-- Arrow -->
+                            <path d="M116,68 L136,68" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowKo)"/>
+                            <!-- Box 2: Heuristic+NSFW -->
+                            <rect x="136" y="42" width="96" height="52" fill="#e2e8f0" rx="6" stroke="#cbd5e1" stroke-width="1"/>
+                            <text x="184" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#64748b">휴리스틱</text>
+                            <text x="184" y="76" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#64748b">필터·NSFW</text>
+                            <text x="184" y="108" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#94a3b8">명백한 노이즈 제거</text>
+                            <!-- Arrow -->
+                            <path d="M232,68 L252,68" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowKo)"/>
+                            <!-- Box 3: Dedup -->
+                            <rect x="252" y="42" width="96" height="52" fill="#e2e8f0" rx="6" stroke="#cbd5e1" stroke-width="1"/>
+                            <text x="300" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#64748b">의미 기반</text>
+                            <text x="300" y="76" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#64748b">중복 제거</text>
+                            <text x="300" y="108" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#94a3b8">동일 내용 솎아내기</text>
+                            <!-- Arrow -->
+                            <path d="M348,68 L368,68" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowKo)"/>
+                            <!-- Box 4: Quality classifier (Llama 2) — highlighted -->
+                            <rect x="368" y="42" width="110" height="52" fill="#fff3ed" rx="6" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="423" y="60" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#F86825" font-weight="600">품질 분류기</text>
+                            <text x="423" y="74" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#F86825">(Llama 2 학습)</text>
+                            <text x="423" y="108" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#F86825">재귀 구조 핵심</text>
+                            <!-- Arrow -->
+                            <path d="M478,68 L498,68" stroke="#F86825" stroke-width="1.5" marker-end="url(#arrowOrangeKo)"/>
+                            <!-- Box 5: Final 15T -->
+                            <rect x="498" y="42" width="140" height="52" fill="#F86825" rx="6"/>
+                            <text x="568" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#fff" font-weight="600">도메인 믹스</text>
+                            <text x="568" y="76" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#fff">최종 15T 토큰</text>
+                            <text x="568" y="108" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#ffd4b8">50% 일반 / 25% 추론 / 17% 코드</text>
+                            <!-- Recursive arrow: from box5 bottom back to box4 bottom -->
+                            <path d="M568,94 Q568,135 423,135 Q368,135 368,94" fill="none" stroke="#F86825" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrowOrangeKo)"/>
+                            <text x="490" y="150" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#F86825">Llama 2가 Llama 3의 데이터를 큐레이션 (재귀)</text>
+                            <!-- Arrow markers -->
+                            <defs>
+                                <marker id="arrowKo" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                                    <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                                </marker>
+                                <marker id="arrowOrangeKo" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                                    <polygon points="0 0, 8 3, 0 6" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 — Llama 3 데이터 파이프라인 재해석 | 출처: Meta AI, Llama 3 Technical Report, 2024
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>데이터 믹스는 설계의 결과다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        무엇을 얼마나 섞느냐도 우연이 아니라 결정입니다. Llama 3의 최종 데이터 믹스는 대략 일반지식 50%, 수학·추론 25%, 코드 17%, 멀티링구얼 8%로 맞춰졌습니다. 예술이나 엔터테인먼트처럼 웹에 과대표집된 영역은 의도적으로 다운샘플했고, 코드와 추론 데이터는 별도 추출 파이프라인으로 따로 챙겼습니다. 데이터의 품질이 개별 문서의 문제만이 아니라, 도메인 사이의 비율을 어떻게 설계하느냐의 문제이기도 하다는 점을 보여 줍니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            여기서 데이터 품질의 정의가 한 단계 넓어집니다. 좋은 데이터는 단지 깨끗한 문장이 아니라, 모델이 무엇을 잘하게 만들지를 겨냥해 도메인 비율까지 조율된 데이터입니다. 큐레이션은 청소를 넘어 설계에 가까워집니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="synthetic-data" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">합성 데이터는 탈출구인가 함정인가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        고품질 인간 텍스트가 동난다면, 모델이 직접 데이터를 만들어 쓰면 되지 않을까요. 합성 데이터는 data wall의 가장 유력한 우회로로 떠올랐습니다. Phi의 교과서 품질 데이터 상당량도 사실 모델이 생성한 것입니다. 그러나 같은 합성 데이터가 모델을 망가뜨리는 방향으로도 작동합니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2024년 <a href="https://www.informacnigramotnost.cz/teorie/model-collapse-when-ai-training-on-synthetic-data-threatens-knowledge-integrity/" target="_blank" rel="noopener">네이처에 실린 model collapse</a> 연구는 그 위험을 또렷이 보여 줬습니다. AI가 만든 데이터로 다시 AI를 학습시키기를 반복하면, 분포의 꼬리에 있던 드문 패턴부터 먼저 사라집니다. 세대를 거듭할수록 모델은 평균적인 출력만 되풀이하게 되고, 일부 분석은 순수 재귀 환경에서 다섯 세대 안에 측정 가능한 열화가 나타난다고 봅니다. 이 현상은 특정 구조에 국한되지 않고 VAE, GMM, LLM 전반에서 관찰됐습니다.
+                    </p>
+
+                    <!-- Figure 4: Model collapse cascade -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 250" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:rgba(248,104,37,0.03)">
+                            <text x="330" y="26" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="#64748b">합성 데이터 반복 학습 시 분포 붕괴 (Model Collapse)</text>
+                            <!-- Gen 1 -->
+                            <text x="88" y="63" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="#64748b">세대 1</text>
+                            <rect x="95" y="48" width="340" height="26" fill="#94a3b8" rx="4"/>
+                            <text x="265" y="66" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#fff">인간 데이터 기반 — 꼬리 분포 풍부</text>
+                            <!-- Gen 2 -->
+                            <text x="88" y="105" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="#64748b">세대 2</text>
+                            <rect x="130" y="90" width="268" height="26" fill="#94a3b8" rx="4" opacity="0.85"/>
+                            <text x="264" y="108" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#fff">꼬리 패턴 일부 소실 시작</text>
+                            <!-- Gen 3 -->
+                            <text x="88" y="147" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="#64748b">세대 3</text>
+                            <rect x="165" y="132" width="198" height="26" fill="#F86825" rx="4" opacity="0.7"/>
+                            <text x="264" y="150" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#fff">희귀 패턴 급감</text>
+                            <!-- Gen 4 -->
+                            <text x="88" y="189" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="#64748b">세대 4</text>
+                            <rect x="195" y="174" width="140" height="26" fill="#F86825" rx="4" opacity="0.85"/>
+                            <text x="265" y="192" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#fff">평균 출력만 반복</text>
+                            <!-- Gen 5 -->
+                            <text x="88" y="231" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="#64748b">세대 5</text>
+                            <rect x="220" y="216" width="88" height="26" fill="#F86825" rx="4"/>
+                            <text x="264" y="234" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#fff">측정 가능한 열화</text>
+                            <!-- Tail loss annotation -->
+                            <line x1="435" y1="61" x2="435" y2="229" stroke="#F86825" stroke-dasharray="4 2" stroke-width="1.5"/>
+                            <text x="440" y="80" font-family="Pretendard,sans-serif" font-size="10" fill="#F86825">꼬리 분포</text>
+                            <text x="440" y="94" font-family="Pretendard,sans-serif" font-size="10" fill="#F86825">소실 영역</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 — 무분별한 합성 데이터 반복 학습 시 분포 붕괴 재해석 | 출처: Shumailov et al., Nature, 2024
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>문제는 합성이 아니라 무분별함이다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다만 결론을 '합성 데이터는 위험하다'로 줄이면 핵심을 놓칩니다. collapse 연구가 지목한 핵심어는 '무분별한(indiscriminate)' 사용입니다. 출처를 따지지 않고, 다양성을 잃은 채, 인간 데이터를 합성물로 통째로 대체할 때 붕괴가 일어납니다. 반대로 다양성을 높이고 provenance를 추적하며 큐레이션 규율을 지킨 합성 데이터는, 소형 모델의 벤치마크 성능을 실제로 끌어올렸습니다. Phi가 내건 '교과서 품질'이라는 표현은, 합성 데이터를 쓰되 그 질을 보증하겠다는 공개 성명서에 가깝습니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            그래서 합성 데이터 시대에 큐레이션은 덜 중요해지는 게 아니라 더 중요해집니다. 무엇을 생성할지, 생성한 것 중 무엇을 남길지, 어디서 왔는지를 어떻게 추적할지가 collapse와 도약을 가르기 때문입니다. 큐레이션의 규율이 곧 합성 데이터의 안전장치입니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="pipeline-bottleneck" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">큐레이션이 다시 병목인 진짜 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기까지는 사전학습 데이터셋의 이야기였습니다. 그러나 큐레이션이 '병목'이라 불리는 더 직접적인 이유는 현장의 파이프라인에 있습니다. 데이터를 고르고 라벨링하는 작업은 여전히 비싸고, 느리고, 오류가 잦습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        규모부터 만만치 않습니다. 데이터 라벨링·큐레이션 시장은 2024년 약 37억 달러에서 2030년 170억 달러 이상으로, 연 25%를 넘는 속도로 커지고 있습니다. 바운딩 박스 하나에 약 4센트라는 단가는 작아 보이지만, 중간 규모 프로젝트만 돼도 비용이 쉽게 여섯 자리를 넘깁니다. 가트너는 저품질 데이터로 조직당 연 1,290만 달러가 새어 나간다고 추산합니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 까다로운 건 품질입니다. 잘 정돈됐다는 벤치마크조차 3~6%의 라벨 오류를 안고 있고, 실무 파이프라인은 보통 그보다 나쁩니다. 오류가 학습 몇 주 뒤에야 드러나면 값비싼 재작업으로 이어집니다. 병목은 한 곳이 아니라 여러 갈래입니다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>확장성</strong>: 수천 명의 라벨러를 동시에 관리하면서 일관성을 유지하기 어렵다</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>가이드라인 드리프트</strong>: 시간이 지나며 라벨링 기준이 조금씩 흔들린다</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>속도와 정확도의 상충</strong>, 도메인 전문 라벨러 부족, 자동화의 한계</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-teal-400 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>툴 사일로</strong>: 수집·검수·학습 도구가 끊겨 있어 데이터가 매끄럽게 흐르지 못한다</span>
+                        </li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>해법의 방향, 라벨링 전에 큐레이션</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        현장이 찾은 답은 순서를 바꾸는 것입니다. 모은 데이터를 전부 라벨링한 뒤 골라내는 대신, 라벨링 이전에 먼저 큐레이션해 군더더기를 줄입니다. <a href="https://voxel51.com/blog/curation-annotation-efficient-ml-workflows-fiftyone" target="_blank" rel="noopener">Voxel51</a>이 소개한 사례에서 Automotus는 이 방식으로 데이터셋을 35% 줄이고 라벨링 비용을 33% 넘게 절감했습니다. 같은 곳의 VAL은 전문가 라벨과 약 95% 일치하면서 비용을 크게 낮췄습니다. 물론 long-tail의 희귀 클래스에서는 여전히 사람의 손길이 필요합니다. 그래도 방향은 분명합니다. 잘 고르는 일을 앞당길수록 뒤따르는 비용과 오류가 줄어듭니다.
+                    </p>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="not-separable" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">데이터와 모델은 분리되지 않는다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        '더 큰 모델이냐, 더 나은 데이터냐'는 이분법은 편리하지만 정확하지 않습니다. 최근 이론은 둘을 함께 다뤄야 한다고 말합니다. 전통적인 scaling law는 데이터가 균질하게 고품질이고 서로 대체 가능하다고 가정했는데, 실제 데이터에는 중복과 불균형, 개념 커버리지의 공백이 있습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 2025년의 <a href="https://arxiv.org/html/2510.03313v1" target="_blank" rel="noopener">quality-aware scaling law</a>는 데이터 품질을 나타내는 차원 없는 파라미터 Q를 도입해, Chinchilla의 손실 함수를 모델 크기·데이터 양·데이터 품질의 결합 함수로 확장했습니다. 같은 맥락에서 <a href="https://arxiv.org/pdf/2404.07177" target="_blank" rel="noopener">"Data curation cannot be compute-agnostic"</a>는 최적의 필터링 전략이 컴퓨트 예산에 따라 달라진다는 점을 보였습니다. 큐레이션과 스케일을 따로 떼어 최적화하면 답이 어긋난다는 뜻입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        반대 방향의 증거도 있습니다. <a href="https://arxiv.org/pdf/2511.03492" target="_blank" rel="noopener">LIMO와 s1</a> 같은 연구는 작지만 유효하고 도전적인 예제만 잘 추리면, 데이터를 대량으로 붓는 것보다 추론 성능이 더 오를 수 있음을 보였습니다. '많을수록 좋다'는 직관과 정면으로 부딪히는 결과입니다. 언제 큐레이션이 이기고 언제 전량 학습이 최적인가는 이제 그 자체로 핵심 연구 질문이 됐습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        하나로 모으면 결론은 단순합니다. 모델 크기 경쟁이 한계에 가까워진 자리에서 성능을 가르는 변수는 데이터의 품질로 옮겨갔고, 그 품질을 만드는 큐레이션은 컴퓨트·스케일과 분리할 수 없는 일급 엔지니어링 과제가 됐습니다. 데이터 큐레이션 역량이 곧 모델 성능의 경쟁력입니다.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-6 mt-8" style="border-left: 4px solid #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2" style="color: #F86825;">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed">
+                            페블러스는 학습에 들어가기 전 데이터의 품질을 진단하고 정비하는 일을 다룹니다. 이 글이 따라간 증거를 우리의 언어로 옮기면 이렇습니다. 데이터 큐레이션은 모델이 완성된 뒤의 정리 작업이 아니라, 무엇을 먹일지 정하는 사전 투입입니다. 더 큰 모델을 좇기 전에 더 나은 데이터를 만드는 일, 즉 AI-Ready Data가 성능의 다음 레버라는 것이 이 글이 닿은 자리입니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260621"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "joohaeng (worktree-hardening E2E test)",
+                "at": "2026-06-21T10:37:26.341Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-06-21T10:44:50.827Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1782038246342-gcbanh",
+                "version": "0.1.0"
+              }
+            },
+            mainTitle: "38B 토큰이 350B 토큰을 이겼다",
+            subtitle: "FineWeb·Phi·Llama 3가 보여준, 모델 크기 대신 데이터 큐레이션이 성능을 가르는 지점",
+            pageTitle: "데이터 큐레이션이 다시 병목이 된 이유 — 파운데이션 모델 시대의 데이터 품질 | 페블러스",
+            category: "tech",
+            publishDate: "2026-06-21",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/data-curation-bottleneck-foundation-models/ko/",
+            tags: ["데이터 큐레이션", "파운데이션 모델", "Scaling Law", "데이터 품질", "합성 데이터", "FineWeb", "Llama 3", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "왜 지금 다시 데이터가 파운데이션 모델 성능의 병목이 되었나요?",
+                    answer: "두 가지가 겹쳤습니다. 첫째, 모델 크기를 키우는 전략이 한계에 가까워져 2024년 이후 사전학습 쪽 성능 향상이 둔화됐습니다. 둘째, 웹의 고품질 인간 텍스트가 사실상 고갈되는 data wall에 부딪혔습니다. 컴퓨트를 확보해도 그에 먹일 좋은 데이터가 충분한가가 더 까다로운 질문이 되면서, 성능을 가르는 레버가 데이터 품질과 큐레이션으로 옮겨갔습니다."
+                },
+                {
+                    question: "FineWeb-Edu의 38B가 350B를 이겼다는 건 무슨 뜻인가요?",
+                    answer: "허깅페이스는 Llama-70B 기반 분류기로 웹 텍스트의 교육적 가치를 점수화한 뒤 하위 90%를 버렸습니다. 그렇게 추린 38B 토큰으로 학습한 모델이, 필터링하지 않은 350B 토큰으로 학습한 모델과 같은 성능을 냈습니다. 9배 적은 데이터로 동급 성능을 낸 셈이라, 데이터의 양보다 큐레이션의 질이 성능을 더 크게 좌우할 수 있음을 보여 줍니다."
+                },
+                {
+                    question: "Chinchilla의 20:1 비율은 왜 더 이상 안 지켜지나요?",
+                    answer: "Chinchilla는 학습 컴퓨트만 고려한 최적점이었습니다. 실무는 배포 후 추론 비용까지 따지기 때문에, 같은 성능을 더 작은 모델로 내는 편이 운영에 유리합니다. 그래서 작은 모델에 데이터를 훨씬 오래 부어 넣는 over-training이 표준이 됐고, Llama 3는 1,875:1, Qwen3는 60,000:1까지 비율이 올라갔습니다."
+                },
+                {
+                    question: "합성 데이터를 쓰면 model collapse가 반드시 일어나나요?",
+                    answer: "아닙니다. 2024년 네이처 연구가 지목한 핵심은 '합성 그 자체'가 아니라 '무분별한 사용'입니다. 출처를 따지지 않고 다양성을 잃은 채 인간 데이터를 합성물로 통째로 대체할 때 분포의 꼬리부터 무너집니다. 반대로 다양성을 높이고 provenance를 추적하며 큐레이션 규율을 지킨 합성 데이터는 오히려 성능을 끌어올렸습니다. Phi의 '교과서 품질'이 그 사례입니다."
+                },
+                {
+                    question: "Llama 3가 '모델로 데이터를 거른다'는 건 어떤 구조인가요?",
+                    answer: "Llama 3는 텍스트 품질 분류기로 학습 데이터를 점수화하는데, 그 분류기 일부가 Llama 2의 판단으로 학습됐습니다. 즉 이전 세대 모델이 다음 세대의 학습 데이터를 큐레이션하는 재귀 구조입니다. 휴리스틱·중복 제거·NSFW 필터에 더해 이 분류기가 작동하며, 최종 데이터 믹스도 일반지식 50%, 수학·추론 25%, 코드 17%, 멀티링구얼 8%로 의도적으로 설계됐습니다."
+                },
+                {
+                    question: "데이터 큐레이션 파이프라인에서 병목은 정확히 어디서 생기나요?",
+                    answer: "확장성(수천 명의 라벨러 관리), 가이드라인 드리프트, 속도와 정확도의 상충, 도메인 전문 라벨러 부족, 자동화의 한계, 그리고 수집·검수·학습 도구가 끊긴 툴 사일로가 대표적입니다. 잘 정돈된 벤치마크조차 3~6%의 라벨 오류를 안고 있고, 오류가 학습 몇 주 뒤에 드러나면 값비싼 재작업으로 이어집니다."
+                },
+                {
+                    question: "'라벨링 전에 큐레이션'은 구체적으로 어떤 효과가 있나요?",
+                    answer: "모은 데이터를 전부 라벨링한 뒤 골라내는 대신, 라벨링 이전에 먼저 군더더기를 줄이는 방식입니다. Voxel51이 소개한 사례에서 Automotus는 데이터셋을 35% 줄이고 라벨링 비용을 33% 넘게 절감했습니다. 같은 곳의 VAL은 전문가 라벨과 약 95% 일치하면서 비용을 크게 낮췄습니다. 다만 희귀 클래스에서는 여전히 사람의 검수가 필요합니다."
+                },
+                {
+                    question: "결국 더 큰 모델과 더 나은 데이터 중 무엇에 투자해야 하나요?",
+                    answer: "둘을 분리해서 보면 안 된다는 것이 최근 이론의 결론입니다. quality-aware scaling law는 데이터 품질 파라미터 Q를 손실 함수에 넣었고, 'curation cannot be compute-agnostic'은 최적 필터링이 컴퓨트 예산에 따라 달라진다고 봅니다. 모델 크기 경쟁이 한계에 가까워진 지금, 데이터 큐레이션은 컴퓨트·스케일과 함께 최적화해야 하는 일급 엔지니어링 과제입니다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
