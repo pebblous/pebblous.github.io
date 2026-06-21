@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO 기본 -->
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="keywords" content="diffusion models, curse of dimensionality, subspace clustering, intrinsic dimension, manifold hypothesis, mixture of low-rank Gaussians, sample complexity, controllable generation, data efficiency, data quality, AI-Ready Data, JMLR, Yi Ma, Qing Qu">
+
+    <title>Breaking the Curse of Dimensionality: How Diffusion Learns Low-Dim Distributions (JMLR) | Pebblous</title>
+    <meta name="description" content="A single ImageNet photo has 150,528 pixels, yet only a few dozen directions actually vary. This is a precise walkthrough of the JMLR paper (arXiv:2409.02426) showing how diffusion training discovers that low-dimensional structure via subspace clustering, with sample complexity scaling linearly in the intrinsic dimension (N≈d).">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/diffusion-low-dim-distributions-jmlr/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/diffusion-low-dim-distributions-jmlr/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/diffusion-low-dim-distributions-jmlr/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/diffusion-low-dim-distributions-jmlr/ko/">
+
+    <!-- OG -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Breaking the Curse of Dimensionality — How Diffusion Models Efficiently Learn Low-Dimensional Distributions">
+    <meta property="og:description" content="Learning a high-dimensional distribution from scratch is nearly impossible in principle. So why does diffusion work? The low-dimensional structure data lives on, subspace clustering, and a fresh lens on data efficiency.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/diffusion-low-dim-distributions-jmlr/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/diffusion-low-dim-distributions-jmlr/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="A thin low-dimensional subspace inside a high-dimensional pixel space — an infographic of the data structure diffusion learns">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-06-21T00:00:00+09:00">
+    <meta property="article:modified_time" content="2026-06-21T00:00:00+09:00">
+    <meta property="article:author" content="Pebblous Data Communication Team">
+    <meta property="article:section" content="Technology">
+    <meta property="article:tag" content="diffusion models">
+    <meta property="article:tag" content="curse of dimensionality">
+    <meta property="article:tag" content="subspace clustering">
+    <meta property="article:tag" content="data quality">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Breaking the Curse of Dimensionality — Diffusion's Low-Dimensional Learning (JMLR)">
+    <meta name="twitter:description" content="One ImageNet photo: 150,528 pixels, but only a few dozen directions of variation. The math behind how diffusion finds low-dim structure, and N≈d sample complexity.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/diffusion-low-dim-distributions-jmlr/en/image/index.png">
+    <meta name="twitter:image:alt" content="A thin low-dimensional subspace inside a high-dimensional pixel space — an infographic of the data structure diffusion learns">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- GTM -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <!-- Stylesheets (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260607">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260607">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260607">
+
+    <!-- KaTeX (수식 포함) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+            onload="renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ]
+            });"></script>
+
+    <style>
+        /* 아티클 전용 보조 스타일 */
+        .data-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 2px solid var(--accent-color);
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .data-table tr:hover td { background-color: var(--bg-secondary); }
+        .data-table thead tr { background-color: var(--bg-card); }
+        .formula-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: -0.25rem;
+            margin-bottom: 1.5rem;
+        }
+        /* 비교 2열 카드 */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 640px) { .compare-grid { grid-template-columns: 1fr; } }
+        .compare-col {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            background-color: var(--bg-card);
+        }
+        .compare-col h4 { font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary); }
+        .compare-col .tag {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            margin-bottom: 0.75rem;
+        }
+        .tag-amb { background: rgba(71,85,105,0.15); color: var(--text-muted); }
+        .tag-id  { background: rgba(248,104,37,0.15); color: #F86825; }
+        /* 표본 폭발 막대 */
+        .gap-row { margin-bottom: 0.9rem; }
+        .gap-label {
+            display: flex; justify-content: space-between;
+            font-size: 0.85rem; margin-bottom: 0.3rem;
+            color: var(--text-primary);
+        }
+        .gap-track { background: var(--bg-secondary); border-radius: 999px; height: 0.7rem; overflow: hidden; }
+        .gap-fill { height: 100%; background: #F86825; border-radius: 999px; }
+        /* 상전이 도해 */
+        .pt-wrap { margin: 1.5rem 0; }
+        .pt-axis-label { font-size: 0.75rem; color: var(--text-muted); }
+        .pt-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
+        .pt-rowlabel { width: 3.2rem; font-size: 0.78rem; color: var(--text-muted); text-align: right; }
+        .pt-cells { display: flex; gap: 0.25rem; }
+        .pt-cell { width: 1.55rem; height: 1.1rem; border-radius: 4px; }
+        .pt-fail { background: var(--bg-secondary); border: 1px solid var(--border-color); }
+        .pt-ok { background: #F86825; }
+        /* 확립 vs 열린질문 2분할 */
+        .twobox { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+        @media (max-width: 640px) { .twobox { grid-template-columns: 1fr; } }
+        .box-settled, .box-open { border-radius: 12px; padding: 1.25rem 1.5rem; border: 1px solid var(--border-color); }
+        .box-settled { border-left: 4px solid #F86825; background: var(--bg-card); }
+        .box-open { border-left: 4px solid var(--text-muted); background: var(--bg-secondary); }
+        .box-settled h4, .box-open h4 { font-weight: 700; margin-bottom: 0.6rem; color: var(--text-primary); }
+    </style>
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="Breaking the Curse of Dimensionality — How Diffusion Models Efficiently Learn Low-Dimensional Distributions">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/06/21">
+    <meta name="citation_online_date" content="2026/06/21">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. The Curse of Dimensionality</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Data Lives in Low Dimensions</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. The MoLRG Data Model</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. The Core Equivalence — Subspace Clustering</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Sample Complexity N≈d</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. Experiments — The Phase Transition</a></li>
+                    <li><a href="#section-7" class="block pl-4 themeable-toc-link transition-colors duration-200">7. Subspace ↔ Semantics</a></li>
+                    <li><a href="#section-8" class="block pl-4 themeable-toc-link transition-colors duration-200">8. Theoretical Context and Lineage</a></li>
+                    <li><a href="#section-9" class="block pl-4 themeable-toc-link transition-colors duration-200">9. The Lens of Data Efficiency</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">Why Pebblous Cares</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Learning the probability distribution of high-dimensional data from scratch is, in principle, nearly impossible. To learn an unstructured distribution with diffusion, the number of samples you need blows up exponentially in the data's ambient dimension — the pixel count, for images. That is the curse of dimensionality. But real images don't vary freely along every pixel. A single ImageNet photo has 150,528 pixels (224×224×3), yet the number of directions that actually change — its intrinsic dimension — is estimated at only 26 to 43. Data lives on a thin, low-dimensional structure inside a vast high-dimensional space. arXiv:2409.02426 (accepted to JMLR; Wang, Zhang, Zhang, Chen, Ma, Qu) formalizes that structure as a mixture of low-rank Gaussians and works out the mathematics of how diffusion training discovers it automatically — a mechanism the authors identify as subspace clustering.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The paper has two central results. First, under an appropriate network parameterization, the training objective of a diffusion model (minimizing reconstruction error) is shown to be exactly equivalent to the canonical subspace clustering problem from classical statistics. In other words, for diffusion to reconstruct data well it must find the precise low-dimensional subspace each data mode lives on — and so training is subspace clustering. Second, as a consequence, sample complexity scales linearly in the intrinsic dimension $d$ ($N\approx d$) and is independent of the ambient dimension $n$. Recovering a single subspace is possible once $N\ge d$ and information-theoretically impossible when $N<d$ — a sharp phase transition that occurs right at $N\approx d$.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The implication is clean. The amount of data needed for a given model quality depends not on pixel count but on the number of meaningful directions of variation. With data-licensing prices and training-compute costs climbing at the same time, this is a theoretical basis for shifting strategy from "more data" toward "data whose structure is intact." Why DreamBooth and LoRA work from a handful of samples, and why failing to preserve low-dimensional structure in synthetic data causes model collapse, turn out to be two faces of the same principle. From the Pebblous point of view, this paper converges naturally with the agendas of AI-Ready data and data-quality diagnostics.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~3,500×</p>
+                            <p class="text-sm themeable-text-secondary mt-1">ambient ÷ intrinsic dim</p>
+                            <p class="text-xs themeable-muted mt-1">ImageNet 150,528 pixels vs. ID estimate ~38–43 (MLE, method-dependent)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">N ≈ d</p>
+                            <p class="text-sm themeable-text-secondary mt-1">sample-complexity scale</p>
+                            <p class="text-xs themeable-muted mt-1">Recovering one subspace is linear in intrinsic dim d, independent of ambient n</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~10¹⁰ samples</p>
+                            <p class="text-sm themeable-text-secondary mt-1">the curse at dim 16</p>
+                            <p class="text-xs themeable-muted mt-1">Samples needed to learn d=16 to ε=0.01 by nonparametric estimation (theory, s=2)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">N≈d transition</p>
+                            <p class="text-sm themeable-text-secondary mt-1">verified in synthetic exps</p>
+                            <p class="text-xs themeable-muted mt-1">Independent of ambient n=48; sharp fail↔success flip at the intrinsic-d boundary (paper's synthetic experiments)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Curse of Dimensionality — Why Learning High-Dimensional Distributions Is Nearly Impossible to Begin With</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A diffusion model works in two phases. In the forward process, noise is added to clean data in small increments until it becomes pure noise; in the reverse process, that noise is removed step by step to recover the data. Training means learning, by regression, a function $x_\theta(x_t, t)$ that takes a noisy sample $x_t$ at each time $t$ and produces the most plausible estimate of the original data $x_0$. The objective is the expected reconstruction error.
+                    </p>
+
+                    <div class="my-6 text-center">
+                        $$\mathcal{L}(\theta) = \mathbb{E}\big\lVert x_\theta(x_t, t) - x_0 \big\rVert^2$$
+                    </div>
+                    <p class="formula-label">Eq. 1. The diffusion denoising objective — a regression that predicts the original from a noisy sample.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The optimal denoiser is the posterior mean $\mathbb{E}[x_0 \mid x_t]$, which by Tweedie's formula corresponds one-to-one with the score function $\nabla \log p_t(x)$. So "denoising well = estimating the score well = knowing the data distribution" all collapse into one statement. The trouble is the cost of learning that distribution from scratch. With no assumption about structure, estimating the score of an $n$-dimensional distribution to $\epsilon$ accuracy requires a number of samples that explodes exponentially in the dimension $n$, as $O(\epsilon^{-n})$. In the paper's words, "$\epsilon$-accurate score estimation requires $O(\epsilon^{-n})$ training samples."
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>The Root of the Curse — the Minimax Limit of Nonparametric Estimation</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This exponential blow-up is not a weakness peculiar to diffusion; it comes from a long-standing limit in statistics. When you estimate an $s$-smooth function in $d$ dimensions, the best achievable error decays with the number of samples $N$ only as $N^{-s/(2s+d)}$. To hit a target accuracy $\epsilon$ you need roughly $N \sim \epsilon^{-(2s+d)/s}$ samples, and because the dimension $d$ sits in the exponent's denominator, the sample requirement explodes as the dimension grows. The intuition is a grid: split each axis into 100 cells and a $d=10$ dimensional space already has $10^{20}$ cells. Filling all of them with samples to trace out the distribution is effectively impossible.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The numbers make it starker. Fix the smoothness at $s=2$ and the target accuracy at $\epsilon=0.01$, then grow only the dimension $d$, and you see how uncontrollably the sample requirement balloons. Merely doubling the dimension from 8 to 16 multiplies the requirement by roughly ten thousand.
+                    </p>
+
+                    <div class="mb-8">
+                        <p class="themeable-text text-sm themeable-muted mb-4">Samples needed for $\epsilon=0.01$ accuracy in nonparametric estimation (theoretical, $s=2$) — bars on a log scale.</p>
+                        <div class="gap-row">
+                            <div class="gap-label"><span>d = 2</span><span>~1,000</span></div>
+                            <div class="gap-track"><div class="gap-fill" style="width:9%;"></div></div>
+                        </div>
+                        <div class="gap-row">
+                            <div class="gap-label"><span>d = 8</span><span>~10⁶</span></div>
+                            <div class="gap-track"><div class="gap-fill" style="width:27%;"></div></div>
+                        </div>
+                        <div class="gap-row">
+                            <div class="gap-label"><span>d = 16</span><span>~10¹⁰</span></div>
+                            <div class="gap-track"><div class="gap-fill" style="width:45%;"></div></div>
+                        </div>
+                        <div class="gap-row">
+                            <div class="gap-label"><span>d = 32</span><span>~10¹⁸</span></div>
+                            <div class="gap-track"><div class="gap-fill" style="width:73%;"></div></div>
+                        </div>
+                        <div class="gap-row">
+                            <div class="gap-label"><span>d = 64</span><span>~10³⁴</span></div>
+                            <div class="gap-track"><div class="gap-fill" style="width:100%;"></div></div>
+                        </div>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed">
+                        But the data we actually use isn't 16-dimensional. The ambient dimension of one ImageNet photo is 150,528. Apply the table above literally and a diffusion model would have to demand more samples than there are atoms in the universe. Yet real diffusion models work just fine on a few million images. That contradiction is the paper's starting point. The answer is simple — data actually leaves that enormous space almost entirely empty and clusters in a far narrower region.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Key Intuition — Data Actually Lives in Low Dimensions</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A 224×224 image with randomly colored pixels is almost always meaningless noise. Natural photographs occupy only a vanishingly small region of the full pixel space. The directions along which a face photo varies are a limited set of factors — expression, angle, lighting, hairstyle — and the number of such factors is overwhelmingly smaller than the number of pixels. This is the manifold hypothesis: high-dimensional data concentrates near a low-dimensional manifold (a curved surface) inside the high-dimensional space. It is one of the pillars of modern machine learning, hardened by Tenenbaum et al.'s Isomap (2000) and by Fefferman, Mitter, and Narayanan's statistical formalization (2016).
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The "number of directions of variation" is quantified by the intrinsic dimension (ID). Several estimation studies report that the ID of standard image datasets is two to three orders of magnitude smaller than the pixel count. The table below shows representative estimates. Because the same dataset can yield very different values depending on the estimation method (MLE / TwoNN / GeoMLE) and the neighborhood size $k$, every figure should be read as an estimate.
+                    </p>
+
+                    <div class="overflow-x-auto mb-4 rounded-lg" style="border: 1px solid var(--border-color);">
+                        <table class="w-full text-sm data-table">
+                            <thead>
+                                <tr>
+                                    <th>Dataset</th>
+                                    <th>Ambient dim (pixels)</th>
+                                    <th>Intrinsic dim estimate (MLE)</th>
+                                    <th>Approx. compression</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><strong>MNIST</strong></td><td>784 (28²)</td><td>~11</td><td>~71×</td></tr>
+                                <tr><td><strong>CIFAR-10</strong></td><td>3,072 (32²×3)</td><td>~21 (11–96, method-dependent)</td><td>~146×</td></tr>
+                                <tr><td><strong>CelebA</strong></td><td>—</td><td>~17</td><td>—</td></tr>
+                                <tr><td><strong>ImageNet</strong></td><td>150,528 (224²×3)</td><td>~38 (26–43)</td><td>~3,961×</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="formula-label">Table 1. Ambient vs. intrinsic dimension estimates for image datasets — per Pope et al. (ICLR 2021). All values are estimates that depend on method and neighborhood size.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>An honesty note.</strong> Intrinsic dimension is not a measured quantity but an estimate. The same CIFAR-10 ranges anywhere from 11 to 96 depending on the method. So every ID figure in this article should be read with the caveat "estimated, method-dependent." That said, the core message is robust even as the estimates wobble — by any method, the intrinsic dimension comes out hundreds to thousands of times smaller than the pixel count.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper takes three empirical observations as its starting point. First, the low intrinsic dimension of images. Second, that images lie not on a single manifold but on a union of multiple manifolds, one per class or mode (Brown et al., ICLR 2023). Third, that the denoising autoencoder inside a trained diffusion model is empirically low-rank. These three observations underpin the data model in the next section. The second is the crux — data is split into several surface patches rather than one curved surface, and each patch can be locally approximated by a flat plane, i.e., a low-dimensional subspace.
+                    </p>
+
+                    <!-- Image: union of low-dim subspaces in ambient space -->
+                    <figure class="my-8">
+                        <img src="./image/img-01-union-of-subspaces.png"
+                             alt="Diagram of data structure as a union of several low-dimensional subspaces inside a high-dimensional ambient space"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Data leaves the high-dimensional pixel space almost empty and clusters near a union of several low-dimensional subspaces (planar patches) — a local linear approximation of the union-of-manifolds structure.
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Mixture-of-Low-Rank-Gaussians — Formalizing the Data Model</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To translate the intuition into mathematics, you need a tractable data model. The paper assumes data is drawn from a mixture of $K$ low-rank Gaussians (mixture of low-rank Gaussians, MoLRG hereafter). Component $k$ has mean $\mu_k^\star$ and a covariance of rank $d_k < n$. Equivalently, a sample from component $k$ is generated as follows.
+                    </p>
+
+                    <div class="my-6 text-center">
+                        $$x = \mu_k^\star + U_k^\star\, z, \qquad U_k^\star \in \mathbb{R}^{n \times d_k},\ \ z \in \mathbb{R}^{d_k}$$
+                    </div>
+                    <p class="formula-label">Eq. 2. Generating a sample from MoLRG component k — a latent variable $z$ mapped through the low-dimensional subspace basis $U_k^\star$ onto the mean $\mu_k^\star$.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here $n$ is the ambient dimension (pixel count), and $U_k^\star$ is an $n\times d_k$ column-orthogonal matrix — the basis of the low-dimensional subspace that component $k$ lives on. $d_k$ is the dimension of that subspace, i.e., the intrinsic dimension of component $k$. The intrinsic dimension of the whole dataset is taken to be $d = \max_k d_k$. Pictorially, each component is a single flat plane sitting tilted inside the high-dimensional space, and the data is scattered near $K$ such planes.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This model is reasonable for two reasons. First, it matches the empirical finding that the ID of images is overwhelmingly smaller than the ambient dimension ($d_k \ll n$). Second, locally linearizing a "union of manifolds" gives exactly this form. MoLRG is, in other words, a statistically tractable translation of "a union of locally flat, low-dimensional manifolds." Simple as it is, it captures the essential structure — low-dimensionality and multimodality — and so becomes the minimal stage on which the essence of diffusion training can be analyzed.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Core Equivalence — Diffusion Training Is Subspace Clustering</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here is the paper's first central result. Under the MoLRG assumption, training a diffusion model is exactly equivalent to the canonical subspace clustering problem from classical statistics. Subspace clustering is the classical problem of looking at points scattered across several low-dimensional subspaces and simultaneously (1) clustering each point into the subspace it belongs to and (2) finding the orientation (basis) of each subspace. It is precisely the problem that GPCA and SSC, in the lineage of Yi Ma, have been solving for decades.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>A Theoretically Principled Parameterization</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For the equivalence to hold, the diffusion network can't be set up arbitrarily. Starting from the fact that under MoLRG the optimal denoiser of each component is a "shrunken orthogonal projection onto the corresponding subspace," the paper derives the following parameterization.
+                    </p>
+
+                    <div class="my-6 text-center">
+                        $$x_\theta(x_t, t) = \sum_{k} w_k(x_t)\Big(\mu_k + U_k D_k U_k^\top\big(\tfrac{x_t}{s_t} - \mu_k\big)\Big)$$
+                    </div>
+                    <p class="formula-label">Eq. 3. The diffusion parameterization derived from the MoLRG optimal denoiser — $U_k$ is the subspace basis to be learned.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here $U_k$ is the subspace basis training must find, $D_k$ is the shrinkage diagonal matrix set by the noise level, $w_k(x_t)$ is the soft responsibility for which component the sample belongs to, and $s_t$ is the noise scale. The point is that what training effectively searches for is $U_k$ — the orientation of the subspace each data mode lives on. This parameterization is not chosen arbitrarily; it is derived from the optimal denoiser, and it is consistent with the third empirical observation from the previous section (the low-rank nature of the denoiser).
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>The Equivalence Theorem</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Substituting this parameterization into the reconstruction objective of Eq. 1 and working through the Gaussian integral, minimizing the diffusion training objective becomes equivalent to the following maximization problem (the equivalence theorem, in the family of the paper's Theorem 3).
+                    </p>
+
+                    <div class="my-6 text-center">
+                        $$\max_{\{U_k\}}\ \frac{1}{N}\sum_{k}\sum_{i \in C_k}\big\lVert U_k^\top x^{(i)} \big\rVert^2$$
+                    </div>
+                    <p class="formula-label">Eq. 4. The equivalent objective — assign each sample to the subspace where its projection energy is maximal, and maximize the sum of that energy (= canonical subspace clustering).</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Read it this way. Assign each sample $x^{(i)}$ to the subspace $C_k$ where its projection energy $\lVert U_k^\top x \rVert^2$ is largest, and find the basis $U_k$ that maximizes the total projection energy of the samples so assigned. That is exactly the definition of K-subspace / subspace clustering. Put differently, diffusion reconstructing data well is the same thing as it having found the precise subspace each data mode lives on. Reconstruction and clustering become two sides of the same coin.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>The Proof Skeleton</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The proof boils down to four steps. (1) Show that under MoLRG the optimal denoiser of each component is a shrunken projection onto the subspace (Tweedie's formula + Gaussian integral → the form of $D_k$). (2) Substituting Eq. 3 into the regression loss and tidying the Gaussian integral turns the loss into "$-\sum \lVert U_k^\top x \rVert^2 +$ const," so minimizing the loss flips into maximizing projection energy. (3) In a particular signal-to-noise-ratio (SNR) regime, the soft responsibilities $w_k$ converge to hard assignments, so each sample is assigned to its nearest subspace and the clusters $C_k$ are well defined. (4) As a result, the training landscape of diffusion coincides with that of subspace clustering. The conclusion: optimizing diffusion is the same as solving the classical problem GPCA and SSC have long solved.
+                    </p>
+
+                    <div class="compare-grid">
+                        <div class="compare-col">
+                            <span class="tag tag-amb">Conventional view</span>
+                            <h4>Diffusion = black-box regression</h4>
+                            <p class="themeable-text text-sm leading-relaxed">A giant function that recovers the original from a noisy input, fit by gradient descent. Why it works is understood only empirically.</p>
+                        </div>
+                        <div class="compare-col">
+                            <span class="tag tag-id">This paper's view</span>
+                            <h4>Diffusion = subspace clustering</h4>
+                            <p class="themeable-text text-sm leading-relaxed">Training is the classical statistical problem of finding the orientation of the low-dimensional subspace each data mode lives on. Reconstruction quality = subspace accuracy.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Sample-Complexity Theorem — Linear in Intrinsic Dim, Independent of Ambient</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If diffusion training is equivalent to subspace clustering, you can import subspace clustering's recovery theory wholesale. This is the paper's second central result and the most practically powerful part — sample complexity is determined by the intrinsic dimension, not the ambient dimension.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>Single-Subspace Recovery — a Sharp Phase Transition</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Start with the simplest case of a single component ($K=1$) (the single-Gaussian recovery theorem, in the family of the paper's Theorem 2). If the number of samples is at least the subspace dimension ($N \ge d$), the subspace can be recovered exactly when noise is small, and the estimation error shrinks as samples grow. Conversely, if there are fewer samples than the dimension ($N < d$), recovery is information-theoretically impossible — the samples simply don't carry enough information to pin down the subspace. Recovery error is measured by the Frobenius distance between the projection matrices of the estimated and true subspaces.
+                    </p>
+
+                    <div class="my-6 text-center">
+                        $$\big\lVert \hat{U}\hat{U}^\top - U^\star U^{\star\top} \big\rVert_F \ \le\ \frac{c_1\,\sqrt{\sum_i \lVert e_i \rVert^2}}{\sqrt{N} - \sqrt{d-1}} \quad (N > d)$$
+                    </div>
+                    <p class="formula-label">Eq. 5. Upper bound on single-subspace recovery error — the denominator's $\sqrt{N}-\sqrt{d-1}$ creates the $N\approx d$ threshold ($c_1$ is an absolute constant).</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Look at the denominator of Eq. 5. As $N$ approaches $d$, $\sqrt{N}-\sqrt{d-1}$ goes to zero and the error bound blows up; as $N$ exceeds $d$, the error rapidly stabilizes. That denominator is the mathematical identity of the sharp phase transition at $N \approx d$. What matters is that this threshold is entirely independent of the ambient dimension $n$. Whether there are 48 pixels or 150,000, the samples needed to recover the subspace depend only on the intrinsic dimension $d$. The constant $c_1$ is stated as an absolute constant independent of the data and dimension, but its exact value is not specified (a qualitative guarantee).
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>Mixture Recovery — Extending to K Components</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The conclusion holds for the general MoLRG with $K$ components as well (the mixture recovery theorem, in the family of the paper's Theorem 4). If each component has $N_k \ge d$ samples, every subspace can be recovered with the same error bound, and the success probability approaches 1 exponentially as samples grow. The total sample complexity is roughly $N \approx K \cdot d$ — linear in the intrinsic dimension $d$, roughly linear in the number of components $K$, and non-exponential in the ambient dimension $n$. In one line: sample complexity is on the order of $\tilde{O}(K \cdot d)$ and independent of pixel count.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            This theorem resolves the contradiction of §1. The astronomical $O(\epsilon^{-n})$ samples nonparametric estimation demanded collapse to $\tilde{O}(K\cdot d)$ when the data has low-dimensional structure. Even with ImageNet's ambient $n$ of 150,000, if the intrinsic dimension $d$ is a few dozen, diffusion can recover the structure with a number of samples proportional to those few dozen. That is exactly where the curse of dimensionality breaks. And since pinning down the correct subspace determines the entire MoLRG distribution, subspace recovery leads straight to distribution recovery.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed">
+                        Where parallel theory (e.g., Gatmiry et al.) handles complexity via the total-variation (TV) distance between distributions, this paper's strength is that it pins down an explicit phase transition for subspace recovery. By drawing the "works or doesn't" boundary precisely in terms of sample count, it becomes more than theory — it becomes a prediction testable by experiment.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Experiments — The Phase Transition in Synthetic and Real Images</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The $N \approx d$ phase transition that the theory predicts is observed directly in experiments. The paper confirms it on two stages: controlled synthetic data, and diffusion models trained on real images.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>Synthetic Experiments — the Critical Line Is Visible</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The synthetic experiments fix the ambient dimension at $n=48$ and vary the intrinsic dimension $d$ over 2–8, the sample count $N$ over 2–15, and the number of components $K$ over 1–3, repeating each setting 20 times (per the paper's synthetic experiments). When you color whether subspace recovery succeeded onto a grid of sample count against intrinsic dimension, the failure and success regions split cleanly along the $N \approx d$ diagonal. Crucially, this boundary appears solely at $d$ with no relation to the ambient dimension of 48 — exactly as the theory predicts.
+                    </p>
+
+                    <div class="pt-wrap">
+                        <p class="themeable-text text-sm themeable-muted mb-3">Subspace recovery success/failure (orange = success, gray = failure) — horizontal axis sample count $N$, vertical axis intrinsic dimension $d$. The boundary follows the $N\approx d$ diagonal (schematic, reproducing the trend of the paper's synthetic experiments).</p>
+                        <div class="pt-row">
+                            <span class="pt-rowlabel">d=8</span>
+                            <div class="pt-cells">
+                                <div class="pt-cell pt-fail"></div><div class="pt-cell pt-fail"></div><div class="pt-cell pt-fail"></div><div class="pt-cell pt-fail"></div><div class="pt-cell pt-fail"></div><div class="pt-cell pt-fail"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div>
+                            </div>
+                        </div>
+                        <div class="pt-row">
+                            <span class="pt-rowlabel">d=6</span>
+                            <div class="pt-cells">
+                                <div class="pt-cell pt-fail"></div><div class="pt-cell pt-fail"></div><div class="pt-cell pt-fail"></div><div class="pt-cell pt-fail"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div>
+                            </div>
+                        </div>
+                        <div class="pt-row">
+                            <span class="pt-rowlabel">d=4</span>
+                            <div class="pt-cells">
+                                <div class="pt-cell pt-fail"></div><div class="pt-cell pt-fail"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div>
+                            </div>
+                        </div>
+                        <div class="pt-row">
+                            <span class="pt-rowlabel">d=2</span>
+                            <div class="pt-cells">
+                                <div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div><div class="pt-cell pt-ok"></div>
+                            </div>
+                        </div>
+                        <div class="pt-row">
+                            <span class="pt-rowlabel"></span>
+                            <span class="pt-axis-label">N=2 &nbsp; 3 &nbsp;&nbsp; 4 &nbsp;&nbsp; 5 &nbsp;&nbsp; 6 &nbsp;&nbsp; 7 &nbsp;&nbsp; 8 &nbsp;&nbsp; 9 →</span>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>Real Images — the Abrupt Shift from Memorization to Generalization</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Train a U-Net diffusion model on real images (MNIST, CIFAR-10, CelebA/FFHQ, etc.) and the theory's phase transition shows up as an abrupt shift in generalization. With little training data, the model essentially memorizes the training samples (memorization). But the moment the number of training samples crosses a threshold proportional to the intrinsic dimension, the model begins producing new images it never saw in training (generalization). The paper quantifies the degree of generalization with a metric $GL$ measured via self-supervised copy-detection features — if the generations differ enough from the training samples, $GL \to 1$ (generalization); if they nearly copy, $GL \to 0$ (memorization).
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The observation is clear. The number of samples at which generalization begins scales linearly with the dataset's intrinsic dimension. The "recovery succeeds the moment $N$ exceeds $d$" seen in the synthetic experiments reappears on real data as "generalization begins the moment $N$ crosses a threshold proportional to the intrinsic dimension." With controlled mathematics and messy real data pointing to the same boundary, this phase transition is not an artifact but a real phenomenon created by the low-dimensional structure of data.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            This experiment delivers a message that lands directly in practice. The amount of data a diffusion model needs to cross into "genuinely creating something new" is set by the data's intrinsic dimension. Structurally simple (low-dimensional) data reaches generalization with few samples; structurally complex data demands proportionally more. The answer to "how much data do we need" shifts from "how large are the images" to "how complex is the structure."
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Subspace ↔ Semantics — a Principled Path to Controllable Generation</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The subspace basis $U_k$ that diffusion discovers is not just a mathematical direction. The paper shows that this basis aligns with human-readable semantic attributes. Analyzing the principal components of the trained denoiser's Jacobian — i.e., the basis directions of the discovered subspace — on FFHQ face data, each direction corresponds to a semantic attribute such as gender, hairstyle, or color. Moving along one axis of the subspace changes only that attribute.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This provides the mathematical foundation for controllable generation. If a subspace basis is itself a semantic axis, then on top of a pretrained diffusion model you can edit an attribute with no additional training, simply by shifting the latent variable along a particular basis direction. Why an operation like "change only this face's hairstyle and keep everything else" works is explained in a single sentence: subspace alignment.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>A principled bridge (not causation).</strong> Many industry techniques — unsupervised direction discovery in h-space (InterpretDiffusion, CVPR 2024), training-free attribute sliders (Concept Sliders), a single interface for multiple attributes (All-in-One Slider), and product features like Adobe Firefly's style panel or Midjourney's character consistency — all amount to discovering and manipulating particular directions in latent space. This paper did not design any of them directly. What it provides is the mathematical grounding for "why such directions exist and why manipulating them works." To be clear: this is alignment, not causation.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 8 -->
+                <section id="section-8" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">8</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Theoretical Context and Lineage — Where Three Streams Meet</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To place this paper, you have to look at three research streams together: the manifold hypothesis and intrinsic dimension; the theory of low-dimensional learning in diffusion; and subspace clustering in the lineage of Yi Ma. The paper's originality lies not in starting a new stream but in building a bridge that connects two separately developed streams — modern diffusion and classical subspace clustering — as an exact equivalence.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">8.1</span>The Manifold Hypothesis and Diffusion Low-Dim Theory</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The manifold hypothesis was hardened by Tenenbaum et al. (Isomap, Science 2000) and Fefferman et al. (J. AMS 2016), while intrinsic-dimension estimation runs from Levina-Bickel's MLE estimator (NeurIPS 2004) through Pope et al. (ICLR 2021) to Brown et al.'s verification of the union-of-manifolds hypothesis (ICLR 2023). There were already several theories that diffusion adapts to low-dimensional data — Chen (Minshuo) et al. (ICML 2023), Oko et al.'s minimax optimality (ICML 2023), De Bortoli's manifold convergence (TMLR 2022), Shah et al.'s analysis of the DDPM objective (NeurIPS 2023), Gatmiry et al.'s Gaussian-mixture complexity, and more. This paper differentiates itself, on top of that lineage, by presenting an explicit phase transition for subspace recovery rather than a distributional distance (TV).
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">8.2</span>Subspace Clustering in the Yi Ma Lineage</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Subspace clustering is the lifelong theme of co-author Yi Ma. It runs through GPCA (Vidal-Ma-Sastry, TPAMI 2005), Sparse Subspace Clustering (Elhamifar-Vidal, CVPR 2009 / TPAMI 2013), and on to ReduNet (Chan et al., JMLR 2022) and MCR² (Yu et al., NeurIPS 2020). The delight of this paper is that it reduces the diffusion training objective right back to the canonical subspace clustering that GPCA and SSC have solved. Classical representation-learning theory and a modern generative model meet in a single equation — and that is what distinguishes this from "yet another diffusion theory."
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">8.3</span>Score Matching and the Foundations of Diffusion</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The foundational classics are worth noting too: score matching (Hyvärinen, JMLR 2005) and its connection to denoising autoencoders (Vincent, Neural Computation 2011), generation based on nonequilibrium thermodynamics (Sohl-Dickstein et al., ICML 2015), DDPM (Ho-Jain-Abbeel, NeurIPS 2020), Score-SDE (Song et al., ICLR 2021), NCSN (Song-Ermon, NeurIPS 2019), and EDM (Karras et al., NeurIPS 2022), which organized the design space. The equivalence theorem of this paper stands on the foundation they built — "denoising = score estimation."
+                    </p>
+                </section>
+
+                <!-- Section 9 -->
+                <section id="section-9" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">9</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Implications — Data Efficiency as a New Lens</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Where these theorems touch industry is cost. The market for AI training-data licensing is projected to grow from about $4.8B in 2025 to roughly $22.6B by 2034 (18.8% CAGR), and the average license contract for an enterprise proprietary dataset rose about 34% over 2023–2025 to roughly $1.2M per deal. Video training data trades at $1–4 per minute. At the same time, training-compute costs are exploding — some forecasts put the cost of a single frontier training run at $1B around 2027. It is an environment where data and compute are getting expensive at once.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">9.1</span>From "More" to "More Structured"</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The theorem that sample complexity is linear in the intrinsic dimension says that the data you need depends not on pixel count but on the "number of directions of variation." Why DreamBooth and LoRA can teach a new concept from as few as 3–15 images and a few hundred megabytes is an expression of the same principle — both presuppose the data's low-dimensional structure and quickly fit just that narrow structure. This is the macro backdrop behind the industry's shift from "more data" to "more structured data." Mass-scraped data carries legal risk too (more than 70 copyright lawsuits, with a settlement of roughly $1.5B in one case), so the strategic value of small, well-structured data only grows.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">9.2</span>Synthetic Data and Model Collapse</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Gartner projects that around 2026 roughly 75% of the data used for AI will be synthetic. Yet repeatedly training on synthetic data loses diversity and collapses modes — "model collapse." Through this article's lens the essence is sharp: if the synthesis process fails to preserve the original's low-dimensional structure, the distribution gets distorted and some subspaces vanish. So the quality of synthetic data cannot be measured by statistical fidelity alone. You must also measure whether it "estimates the original's intrinsic dimension and keeps the same low-dimensional structure." The trade-off where strong differential privacy (DP) damages correlation structure (i.e., low-dimensional structure) is understood in the same vein.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">9.3</span>Structural Health as a Diagnostic Metric</h3>
+                    <p class="themeable-text leading-relaxed">
+                        Intrinsic dimension becomes a metric that quantifies a dataset's complexity and structure. Recent work that detects out-of-distribution (OOD) samples or anomalies via diffusion-based local intrinsic-dimension estimation shows that this metric can serve as a diagnostic tool. To the question "is this dataset structured enough for training," intrinsic dimension gives one quantitative answer. A diagnosis that measures the health of structure rather than the volume of data — that is the new lens this paper offers to data practice.
+                    </p>
+                </section>
+
+                <!-- Pebblous Angle -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">P</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Cares</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This paper may look like distant pure theory, but it lands right in the middle of treating data as an asset. Here are four angles on why Pebblous pays attention to this result. Each follows naturally from the paper's result to a general implication and then to a Pebblous agenda — an honest alignment, not a connection forced into place.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1</span>Business/Technical Link — the Definition of Good Data Becomes Mathematics</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That "intrinsic low-dimensional structure determines learning efficiency" has been proven as a theorem means the agendas of AI-Ready data and data quality now have theoretical backing. Good data is not abundant data but data whose structure is alive — sample complexity $N \approx d$ says exactly that in an equation. The grounds are in place to shift the center of gravity of data strategy from volume to structure.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2</span>Data-Quality View — Structural Health as a Diagnostic Axis</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Intrinsic dimension is a candidate diagnostic metric quantifying a dataset's "structural health." Set alongside research that catches anomalies and OOD via diffusion-based local intrinsic-dimension estimation, it dovetails immediately with the diagnostic philosophy of Pebblous DataClinic — reading the structure of data to diagnose its health. Beyond missingness, duplication, and label errors, it adds a diagnostic axis that asks "is this data structured enough for training."
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3</span>Practical Implication — the First Principle of Synthetic Pipelines</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Preserving low-dimensional structure is the core of utility in synthetic data. Synthesis that fails to preserve structure distorts the distribution and leads to model collapse. So a synthetic-data simulation pipeline should make "estimate the original's intrinsic dimension and verify the synthetic output keeps the same structure" its first principle. Measuring structural similarity alongside — not just statistical resemblance — is what separates useful synthetic data from synthetic data that ruins models.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4</span>Positioning — Toward Understandable, Controllable Assets</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The result that subspaces align with semantic attributes (controllable generation) is the generative-model counterpart of the Data Greenhouse vision of "treating data as an understandable, controllable asset." Being able to separate and control semantic axes means seeing data not as a black lump but as a structure you can read and handle. This paper shows that this view is mathematically justified inside diffusion generative models too.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-sm themeable-muted">
+                        <strong>Editor's Note.</strong> Through DataClinic, which diagnoses and corrects data quality, and through synthetic-data pipelines, Pebblous has been measuring how the structure of training data affects model quality. The result this report covers — that intrinsic dimension determines learning efficiency — is the theoretical backdrop for why that work carries asset value.
+                    </p>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Below are the sources that form the core basis of this article's account. Because the formal JMLR citation (volume, year, pages) is not yet confirmed at the time of writing, the original paper is cited only by its arXiv identifier and "accepted to JMLR" (no claims about volume or pages).
+                    </p>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">
+                            RIS
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">The Original Paper</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Wang, P., Zhang, H., Zhang, Z., Chen, S., Ma, Y., &amp; Qu, Q. <a href="https://arxiv.org/abs/2409.02426" target="_blank" rel="noopener">Breaking the Curse of Dimensionality: Diffusion Models Efficiently Learn Low-Dimensional Distributions</a>. Accepted to JMLR. arXiv:2409.02426. (v1 title: "Diffusion Models Learn Low-Dimensional Distributions via Subspace Clustering")</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Intrinsic Dimension &middot; Manifold Hypothesis</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">Pope, P., Zhu, C., Abdelkader, A., Goldblum, M., &amp; Goldstein, T. (2021). <a href="https://arxiv.org/abs/2104.08894" target="_blank" rel="noopener">The Intrinsic Dimension of Images and Its Impact on Learning</a>. <em>ICLR 2021</em>. arXiv:2104.08894.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Fefferman, C., Mitter, S., &amp; Narayanan, H. (2016). Testing the Manifold Hypothesis. <em>Journal of the American Mathematical Society</em>. DOI:10.1090/jams/879.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Tenenbaum, J. B., de Silva, V., &amp; Langford, J. C. (2000). A Global Geometric Framework for Nonlinear Dimensionality Reduction (Isomap). <em>Science</em>. DOI:10.1126/science.290.5500.2319.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Brown, B. C. A., Caterini, A. L., Ross, B. L., Cresswell, J. C., &amp; Loaiza-Ganem, G. (2023). Verifying the Union of Manifolds Hypothesis for Image Data. <em>ICLR 2023</em>.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Levina, E., &amp; Bickel, P. J. (2005). Maximum Likelihood Estimation of Intrinsic Dimension. <em>NeurIPS 2004</em>.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Facco, E., d'Errico, M., Rodriguez, A., &amp; Laio, A. (2017). Estimating the intrinsic dimension of datasets by a minimal neighborhood information. <em>Scientific Reports</em> 7, 12140. DOI:10.1038/s41598-017-11873-y.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Diffusion Low-Dim / Manifold Learning Theory</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">8.</span><span class="ref-body">Chen, M., Huang, K., Zhao, T., &amp; Wang, M. (2023). Score Approximation, Estimation and Distribution Recovery of Diffusion Models on Low-Dimensional Data. <em>ICML 2023</em>.</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Oko, K., Akiyama, S., &amp; Suzuki, T. (2023). Diffusion Models are Minimax Optimal Distribution Estimators. <em>ICML 2023</em>.</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">De Bortoli, V. (2022). Convergence of Denoising Diffusion Models under the Manifold Hypothesis. <em>Transactions on Machine Learning Research (TMLR)</em>.</span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">Shah, K., Chen, S., &amp; Klivans, A. (2023). Learning Mixtures of Gaussians Using the DDPM Objective. <em>NeurIPS 2023</em>.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Subspace Clustering (Yi Ma Lineage)</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">12.</span><span class="ref-body">Vidal, R., Ma, Y., &amp; Sastry, S. (2005). Generalized Principal Component Analysis (GPCA). <em>IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI)</em>. DOI:10.1109/TPAMI.2005.244.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">Elhamifar, E., &amp; Vidal, R. (2013). Sparse Subspace Clustering: Algorithm, Theory, and Applications. <em>IEEE TPAMI</em>. DOI:10.1109/TPAMI.2013.57. (First presented at CVPR 2009.)</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">Chan, K. H. R., Yu, Y., You, C., Yang, H., Wright, J., &amp; Ma, Y. (2022). <a href="https://arxiv.org/abs/2105.10446" target="_blank" rel="noopener">ReduNet: A White-box Deep Network from the Principle of Maximizing Rate Reduction</a>. <em>JMLR 2022</em>.</span></li>
+                        <li><span class="ref-num">15.</span><span class="ref-body">Yu, Y., Chan, K. H. R., You, C., Song, C., &amp; Ma, Y. (2020). <a href="https://arxiv.org/abs/2006.08558" target="_blank" rel="noopener">Learning Diverse and Discriminative Representations via the Principle of Maximal Coding Rate Reduction (MCR²)</a>. <em>NeurIPS 2020</em>.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Score Matching &middot; DDPM &middot; Nonparametric Statistics</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">16.</span><span class="ref-body">Hyvärinen, A. (2005). Estimation of Non-Normalized Statistical Models by Score Matching. <em>JMLR</em> 6, 695–709.</span></li>
+                        <li><span class="ref-num">17.</span><span class="ref-body">Vincent, P. (2011). A Connection Between Score Matching and Denoising Autoencoders. <em>Neural Computation</em>. DOI:10.1162/NECO_a_00142.</span></li>
+                        <li><span class="ref-num">18.</span><span class="ref-body">Sohl-Dickstein, J., Weiss, E. A., Maheswaranathan, N., &amp; Ganguli, S. (2015). <a href="https://arxiv.org/abs/1503.03585" target="_blank" rel="noopener">Deep Unsupervised Learning using Nonequilibrium Thermodynamics</a>. <em>ICML 2015</em>.</span></li>
+                        <li><span class="ref-num">19.</span><span class="ref-body">Ho, J., Jain, A., &amp; Abbeel, P. (2020). <a href="https://arxiv.org/abs/2006.11239" target="_blank" rel="noopener">Denoising Diffusion Probabilistic Models (DDPM)</a>. <em>NeurIPS 2020</em>.</span></li>
+                        <li><span class="ref-num">20.</span><span class="ref-body">Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., &amp; Poole, B. (2021). <a href="https://arxiv.org/abs/2011.13456" target="_blank" rel="noopener">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR 2021</em>.</span></li>
+                        <li><span class="ref-num">21.</span><span class="ref-body">Karras, T., Aittala, M., Aila, T., &amp; Laine, S. (2022). <a href="https://arxiv.org/abs/2206.00364" target="_blank" rel="noopener">Elucidating the Design Space of Diffusion-Based Generative Models (EDM)</a>. <em>NeurIPS 2022</em>.</span></li>
+                        <li><span class="ref-num">22.</span><span class="ref-body">Tsybakov, A. B. (2009). <em>Introduction to Nonparametric Estimation</em>. Springer. DOI:10.1007/b13794. (Standard reference for the minimax rate $N^{-2s/(2s+d)}$.)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Controllable Generation &middot; Synthetic Data</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">23.</span><span class="ref-body">Kwon, M., Jeong, J., &amp; Uh, Y. (2023). <a href="https://arxiv.org/abs/2210.05559" target="_blank" rel="noopener">Diffusion Models Already Have a Semantic Latent Space</a>. <em>ICLR 2023</em>. (Unsupervised discovery of semantic directions in h-space.)</span></li>
+                        <li><span class="ref-num">24.</span><span class="ref-body">Gandikota, R., Orgad, H., Belinkov, Y., Materzyńska, J., &amp; Bau, D. (2023). <a href="https://arxiv.org/abs/2311.12092" target="_blank" rel="noopener">Concept Sliders: LoRA Adaptors for Precise Control in Diffusion Models</a>. arXiv:2311.12092.</span></li>
+                        <li><span class="ref-num">25.</span><span class="ref-body">Gerstgrasser, M. et al. (2024). <a href="https://arxiv.org/abs/2404.01413" target="_blank" rel="noopener">Is Model Collapse Inevitable? Breaking the Curse of Recursion by Accumulating Real and Synthetic Data</a>. arXiv:2404.01413.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260607"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "Breaking the Curse of Dimensionality: How Diffusion Models Efficiently Learn Low-Dimensional Distributions",
+            subtitle: "From mixture-of-low-rank-Gaussians to subspace clustering, and a new lens on data efficiency",
+            pageTitle: "Breaking the Curse of Dimensionality: How Diffusion Learns Low-Dim Distributions (JMLR) | Pebblous",
+            category: "tech",
+            publishDate: "2026-06-21",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/diffusion-low-dim-distributions-jmlr/en/",
+            tags: ["diffusion models", "curse of dimensionality", "subspace clustering", "intrinsic dimension", "manifold hypothesis", "mixture of low-rank Gaussians", "sample complexity", "controllable generation", "data efficiency", "data quality", "AI-Ready Data", "JMLR", "generative models"],
+            faqs: [
+                {
+                    question: "What exactly is the curse of dimensionality?",
+                    answer: "It's the phenomenon where, to learn a high-dimensional distribution without any structural assumption, the number of samples needed explodes exponentially in the dimension. For diffusion, estimating the score of an n-dimensional distribution to ε accuracy requires on the order of O(ε^{−n}) samples. The root is the minimax limit of nonparametric estimation: the estimation error for an s-smooth d-dimensional function decays only as N^{−s/(2s+d)}."
+                },
+                {
+                    question: "So why does diffusion actually work in practice?",
+                    answer: "Because real data lives not on the whole high-dimensional space but on a thin low-dimensional manifold (or manifolds) inside it. Diffusion training automatically finds those low-dimensional subspaces, and this paper proves that process is exactly the same as subspace clustering from classical statistics."
+                },
+                {
+                    question: "What is intrinsic dimension?",
+                    answer: "It's the number of directions along which data actually varies. A single ImageNet image has 150,528 pixels, but its intrinsic dimension is estimated at only 26 to 43. Note that this is an estimate that varies considerably with the method (MLE / TwoNN / GeoMLE) and the neighborhood size, so it should always be read as 'estimated, method-dependent.'"
+                },
+                {
+                    question: "What does it mean that N≈d samples suffice?",
+                    answer: "To recover a single low-dimensional subspace of dimension d, having at least d samples suffices, and fewer than d makes it information-theoretically impossible. Crucially, this threshold is entirely independent of the ambient dimension (pixel count n). Whether there are 48 pixels or 150,000, the samples needed depend only on the intrinsic dimension d."
+                },
+                {
+                    question: "What does subspace clustering have to do with diffusion?",
+                    answer: "Under an appropriate network parameterization, solving the diffusion training objective (minimizing reconstruction error) becomes exactly equivalent to the problem of assigning each sample to the subspace where its projection energy is maximal and maximizing the sum of that energy — i.e., canonical subspace clustering (the equivalence theorem). That's because reconstructing well requires finding the subspace well."
+                },
+                {
+                    question: "How does this connect to controllable generation?",
+                    answer: "The subspace bases that training discovers align with semantic attributes like gender and hairstyle. So shifting the latent variable along a particular basis direction edits only that attribute, which gives a mathematical grounding for why latent-direction editing works. That said, this paper did not design any specific product or technique directly — it's a principled alignment that explains 'why it works.'"
+                },
+                {
+                    question: "What are the implications for synthetic data?",
+                    answer: "Synthesis that fails to preserve low-dimensional structure distorts the distribution and invites model collapse (loss of diversity, mode collapse). So synthetic-data quality should be measured not only by statistical fidelity but also by whether it 'keeps the original's intrinsic dimension and low-dimensional structure.' The trade-off where strong differential privacy damages low-dimensional structure is in the same vein."
+                },
+                {
+                    question: "What is the formal JMLR citation?",
+                    answer: "Acceptance to JMLR is confirmed, but the exact volume, year, and page numbers are not yet finalized at the time of writing. So the citation uses only arXiv:2409.02426 and 'accepted to JMLR,' without asserting volume or pages."
+                },
+                {
+                    question: "How does this differ from Yi Ma's GPCA/SSC?",
+                    answer: "GPCA and SSC are classical techniques that solve subspace clustering itself. The originality of this paper is that it reduces the training objective of a modern diffusion model right back to that canonical subspace clustering. It builds a direct crossing point where classical representation-learning theory and a modern generative model meet in a single equation."
+                }
+            ]
+        });
+    </script>
+
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260607" defer></script>
+</body>
+</html>
