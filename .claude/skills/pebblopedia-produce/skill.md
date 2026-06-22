@@ -96,6 +96,21 @@ Agent(
 )
 ```
 
+### Phase 3.5: seo-check (게이트 — 항상 호출)
+
+Phase 4(퍼블리싱) 전 **반드시** `seo-check` 스킬로 작성된 파일(KO, 있으면 EN)의 4계층을 검증한다.
+**4계층 전부 PASS여야 Phase 4로 진행** (report-produce·dc-story-produce와 동일한 게이트).
+
+```
+스킬: .claude/skills/seo-check/SKILL.md
+- 4계층(메타 · OG/Twitter · JSON-LD&FAQ · 기술) 전부 PASS여야 진행
+- ⛔ FAQ 게이트: config.faqs 가 있는데 <section id="faq"> 가 HTML에 없으면 FAIL →
+  </main> 앞에 <section id="faq" class="mb-16 fade-in-card"></section> 추가 후 재검.
+  (이 게이트 누락이 pebblopedia 글에서 FAQ 미렌더의 원인이었다 — 2026-06-22.)
+```
+
+FAIL 항목은 수정 후 통과할 때까지 재검.
+
 ### Phase 4: 퍼블리싱
 
 Phase 3 완료 후 pebblopedia-publisher 서브 에이전트 실행:

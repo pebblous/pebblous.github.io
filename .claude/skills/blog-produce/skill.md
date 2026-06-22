@@ -130,6 +130,21 @@ EN 글이면 동일하게 EN 파일에 대해 호출 (영어 추가 패턴 — d
 호출 결과는 `_workspace/03_prose_diagnosis.md`로 저장. 교정 결과가 있으면
 `_workspace/03b_prose_humanized.md`에 보관 후 HTML에 적용.
 
+### Phase 3.6: seo-check (KO + EN, 게이트 — 항상 호출)
+
+Phase 4(퍼블리싱) 전 **반드시** `seo-check` 스킬로 KO·EN 각 파일의 4계층을 검증한다.
+**4계층 전부 PASS여야 Phase 4로 진행** (report-produce·dc-story-produce와 동일한 게이트).
+
+```
+스킬: .claude/skills/seo-check/SKILL.md
+- KO와 EN 각각 실행 (4계층: 메타 · OG/Twitter · JSON-LD&FAQ · 기술)
+- ⛔ FAQ 게이트: config.faqs 가 있는데 <section id="faq"> 가 HTML에 없으면 FAIL →
+  </main> 앞에 <section id="faq" class="mb-16 fade-in-card"></section> 추가 후 재검.
+  (이 게이트 누락이 blog 글에서 FAQ 미렌더의 원인이었다 — 2026-06-22.)
+```
+
+FAIL 항목은 수정 후 통과할 때까지 재검. 결과는 `_workspace/03c_seo_check.md`에 기록.
+
 ### Phase 4: 퍼블리싱
 
 Phase 3.5 통과 후 blog-publisher 서브 에이전트 실행:
