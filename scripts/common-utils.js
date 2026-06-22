@@ -800,7 +800,18 @@ const PebblousPage = {
      * @param {Array} faqs - Array of {question, answer} objects
      */
     renderFAQ(faqs) {
-        const container = document.getElementById('faq-container');
+        let container = document.getElementById('faq-container');
+        // 표준 패턴은 빈 <section id="faq"></section> (CLAUDE.md). #faq-container 가 없으면
+        // #faq 섹션 안에 heading + container 를 만들어 렌더한다 — 이게 없어서 빈 <section id="faq">
+        // 패턴(374개 페이지)에서 가시 FAQ 가 안 그려지고 JSON-LD 스키마만 주입됐다.
+        // (레거시 페이지는 자체 #faq-container 를 가져 위 getElementById 에서 바로 잡힘.)
+        if (!container) {
+            const section = document.getElementById('faq');
+            if (section) {
+                section.innerHTML = '<h2 class="text-3xl font-bold themeable-heading mb-8">FAQ</h2><div id="faq-container"></div>';
+                container = section.querySelector('#faq-container');
+            }
+        }
         if (!container || !faqs || faqs.length === 0) return;
 
         container.innerHTML = faqs.map((faq, i) => `
