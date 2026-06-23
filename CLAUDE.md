@@ -351,8 +351,9 @@ New HTML article
 
 ### Brand Colors
 - Orange `#F86825` (primary/CTA), Slate `#475569` (neutral), Deep Blue `#020617` (dark bg)
-- **⛔ 색상 원칙**: 흰색 + 검정 + 오렌지만. 틸(#14b8a6) 신규 사용 금지, 그라데이션 금지 (중간색 탁함)
-- 기존 코드의 틸은 유지하되 새 작업에서는 오렌지로 대체
+- **⛔ 색상 원칙**: 흰색 + 검정 + 오렌지만. **틸·파랑·보라·범용 빨강/초록 금지**(틸 #14b8a6은 페블러스 토큰도 아님). 그라데이션 금지.
+- **틸은 site-wide 전면 제거→오렌지 정규화 완료(2026-06-22, 사본 #508; `--teal-color`도 오렌지로 재정의).** 신규 틸 절대 금지.
+- 차트·SVG 도식 색: 오렌지 `#F86825` + 중립 램프(`#171719·#808080·#585858·#BDBDBD`) 기본. 부득이만 공식 파랑 `#0066FF`·초록 `#51C57A`. 진짜 위험/실패만 빨강 `#CF1D21`. (정본 design-tokens 기반)
 
 ### Typography & Fonts
 - **글꼴 체계** (`css/theme-variables.css`):
@@ -380,7 +381,7 @@ Every article/report page should include an **Executive Summary** section placed
 </section>
 ```
 
-The `key-insight` box provides the teal-bordered highlight. Content should be 3 paragraphs: (1) core problem + solution, (2) technical approach + evidence, (3) business/regulatory urgency.
+The `key-insight` box provides the **orange-bordered** highlight (`border-left: 4px solid #F86825` — 틸 아님). Content should be 3 paragraphs: (1) core problem + solution, (2) technical approach + evidence, (3) business/regulatory urgency.
 
 ### Content Writing
 - **Text-First, Visual-Second**: Always place explanation paragraph before any chart/card/diagram

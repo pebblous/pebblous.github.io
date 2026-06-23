@@ -27,6 +27,8 @@ argument-hint: "[주제명] e.g. 'Linux', 'GPS', 'WiFi'"
     ↓
 [Phase 2.5] image-reinforce --auto (KO + EN 각각)
     ↓
+[Phase 2.6] seo-check (KO + EN, 4계층 PASS 게이트 — FAQ placeholder 포함)
+    ↓
 [Phase 3] OG 이미지 생성 (KO + EN)
     ↓
 [Phase 4] articles.json 등록
@@ -156,6 +158,21 @@ Args: story/[slug]-story-pb/en/index.html --auto
 - 실패한 슬롯은 조용히 스킵, 결과만 보고
 - 이미지는 `ko/image/` `en/image/` 에 다운로드 (로컬 저장)
 - 완료 후 오케스트레이터에게 결과 보고
+
+### Phase 2.6: seo-check (KO + EN, 게이트 — 항상 호출)
+
+Phase 3(OG)·이후 발행 전 **반드시** `seo-check` 스킬로 KO·EN 각 파일의 4계층을 검증한다.
+**4계층 전부 PASS여야 진행** (report-produce·dc-story-produce와 동일한 게이트).
+
+```
+스킬: .claude/skills/seo-check/SKILL.md
+- KO와 EN 각각 실행 (4계층: 메타 · OG/Twitter · JSON-LD&FAQ · 기술)
+- ⛔ FAQ 게이트: config.faqs 가 있는데 <section id="faq"> 가 HTML에 없으면 FAIL →
+  </main> 앞에 <section id="faq" class="mb-16 fade-in-card"></section> 추가 후 재검.
+  (이 게이트 누락이 story 글에서 FAQ 미렌더의 원인이었다 — 2026-06-22.)
+```
+
+FAIL 항목은 수정 후 통과할 때까지 재검.
 
 ### Phase 3: OG 이미지 생성
 
