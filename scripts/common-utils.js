@@ -1679,20 +1679,22 @@ const PebblousSchema = {
 // Chart Utilities (Chart.js Wrapper)
 // ========================================
 const PebblousChart = {
-    // Default color palette (Pebblous brand colors)
+    // Default color palette (Pebblous design-system tokens)
+    // 정책(2026-06-22): 오렌지 강조 + 중립 램프가 기본. 부득이 색이 필요할 때만 공식 파랑/초록.
+    // ⛔ 틸(#14B8A6)·보라·빨강(범용 부정용)은 페블러스 토큰 아님 — 사용 금지.
     colors: {
-        orange: '#F86825',
-        teal: '#14B8A6',
-        purple: '#A855F7',
-        blue: '#3B82F6',
-        emerald: '#10B981',
-        amber: '#F59E0B',
-        slate: '#64748B',
-        violet: '#7C3AED'
+        orange:      '#F86825', // orange-50 (brand primary, 강조)
+        ink:         '#171719', // 보조 시리즈 1
+        neutral:     '#808080', // neutral-50
+        orangeTint:  '#FFB092', // orange-70 (오렌지 음영)
+        neutralDark: '#585858', // neutral-30
+        neutralLight:'#BDBDBD', // neutral-60
+        blue:        '#0066FF', // blue-40 — 부득이: 정보
+        green:       '#51C57A'  // pgreen-50 — 부득이: 성공/긍정
     },
 
-    // Default palette array for datasets
-    palette: ['#F86825', '#14B8A6', '#A855F7', '#3B82F6', '#10B981', '#F59E0B', '#7C3AED', '#64748B'],
+    // Default palette array for datasets (오렌지+중립 우선, 파랑/초록은 부득이할 때 자동 확장)
+    palette: ['#F86825', '#171719', '#808080', '#FFB092', '#585858', '#BDBDBD', '#0066FF', '#51C57A'],
 
     // Common Chart.js options
     baseOptions: {
