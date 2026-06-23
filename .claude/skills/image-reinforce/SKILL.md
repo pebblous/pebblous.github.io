@@ -76,7 +76,12 @@ Read the HTML post and identify:
 2. 각 figure의 **메시지**를 한 줄로 추출 → 그 메시지를 전달하는 **원본 도식을 직접 그린다**(논문 그림 모사 X, 재해석 O).
 3. **인라인 SVG**로 본문에 삽입(외부 파일 X). 규칙:
    - `viewBox` + `class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"`, 배경 옅게.
-   - 색: 강조=오렌지 `#F86825`, 보조=중립 회색(`#94a3b8`/`#cbd5e1`/`#334155`). 그라데이션·틸 금지.
+   - 색: 강조=오렌지 `#F86825`(고정 OK). **⛔ 보조 텍스트·연결선에 회색 하드코딩 금지** —
+     `#94a3b8` 등은 *다크테마 값*이라 light/beige 흰 바탕에서 안 보인다(2026-06-22 대비 사고, 23글 일괄수정).
+     **테마 변수 필수**: 보조 텍스트 `fill="var(--text-secondary)"`, 연결선·외곽 `stroke="var(--text-muted)"`
+     (3테마 자동 적응 — light=#4B5563, dark=#94a3b8). 예외: **다크 박스**(`fill="#1e293b"`/`#334155` 등) *위에
+     얹는* 텍스트만 `#e2e8f0`/`#cbd5e1` 고정 허용(박스가 항상 다크라 안전). SVG 배경은 `style="background:var(--card-bg,…)"`.
+     그라데이션·틸 금지.
    - 폰트: KO `Pretendard`, EN `Outfit`. 라벨은 해당 언어로(KO/EN 각각).
    - `<figcaption>`에 **"페블러스 원본 도식 (Fig. N 재해석)"** 명기 — 원본임을 분명히.
    - 단순 CSS 도식(표·막대·grid)으로 충분한 정량 비교는 CSS로, 공간/구조/관계 개념은 SVG로.
