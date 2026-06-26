@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>Mistral OCR 4 분석 — 단어별 신뢰도 점수와 자체 호스팅 데이터 파이프라인 | 페블러스</title>
+    <meta name="description" content="미스트랄 OCR 4는 170개 언어 문서를 단어별 신뢰도 점수와 함께 구조화 데이터로 바꾼다. 추출과 품질 측정이 한 단계에서 일어나고, 자체 호스팅으로 RAG 출처 추적과 데이터 주권이 한 제품에서 만난다.">
+    <meta name="keywords" content="Mistral OCR 4, 미스트랄 OCR, 단어별 신뢰도 점수, confidence score, 비정형 데이터 구조화, 자체 호스팅 OCR, RAG 파이프라인, AI-Ready Data, 데이터 품질, 문서 AI">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/mistral-ocr-4-confidence-score-pipeline/ko/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/mistral-ocr-4-confidence-score-pipeline/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/mistral-ocr-4-confidence-score-pipeline/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/mistral-ocr-4-confidence-score-pipeline/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="미스트랄 OCR가 단어마다 신뢰도 점수를 붙여 돌려준다">
+    <meta property="og:description" content="추출이 곧 데이터 품질 평가가 되는 시대. 170개 언어, 단어 단위 confidence score, 자체 호스팅으로 RAG 출처 추적과 데이터 주권이 한 제품에서 해결된다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/mistral-ocr-4-confidence-score-pipeline/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/mistral-ocr-4-confidence-score-pipeline/ko/image/index.png">
+    <meta property="og:locale" content="ko_KR">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="미스트랄 OCR가 단어마다 신뢰도 점수를 붙여 돌려준다">
+    <meta name="twitter:description" content="추출이 곧 데이터 품질 평가가 되는 시대. confidence score가 파이프라인 안으로 들어왔다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/mistral-ocr-4-confidence-score-pipeline/ko/image/index.png">
+    <meta name="twitter:image:alt" content="Mistral OCR 4의 단어별 신뢰도 점수와 구조화 데이터 파이프라인">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260626">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260626">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260626">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+    <!-- End Google Tag Manager -->
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">비정형 데이터가 첫 관문이다</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">텍스트에서 구조로</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">신뢰도 점수가 바꾸는 것</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">출처와 주권, 한 단계에서</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">무엇을 선택할 것인가</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            미스트랄이 2026년 6월 23일 문서 인텔리전스용 OCR 4를 내놓았다. 새 모델이 출력하는 것은 텍스트만이 아니다. 단어 하나하나에 신뢰도 점수가 붙고, 글자가 페이지 어디에 있었는지 좌표가 따라오며, 그 블록이 제목인지 표인지 수식인지까지 분류돼 나온다. 그중에서도 데이터 파이프라인을 가장 깊이 흔드는 것은 단어 단위 신뢰도 점수다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            기존 OCR은 문서나 페이지 단위로만 "이 정도면 믿을 만하다"를 알려줬다. OCR 4는 단어마다 점수를 매긴다. 그래서 추출 결과가 곧 품질 평가표가 된다. 다운스트림 파이프라인은 점수 임계값 하나로 고신뢰 텍스트는 자동 승인하고 저신뢰 텍스트만 사람에게 넘길 수 있다. 별도 품질 검증 단계가 사라지는 셈이다. 다만 자체 호스팅 가격은 공개되지 않았고, OCR 3 대비 API 단가는 두 배로 올랐다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            여기에 위치 좌표와 블록 분류가 더해지면 RAG 답변의 출처를 원본 문서의 표 한 칸까지 역추적할 수 있고, 단일 컨테이너 자체 호스팅은 민감 문서를 인프라 밖으로 내보내지 않는다. 추출·품질·출처·주권. 그동안 따로 풀던 네 과제가 한 제품 안에서 맞물리기 시작했다.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">단어 단위</p>
+                            <p class="text-sm themeable-text-secondary mt-1">신뢰도 점수</p>
+                            <p class="text-xs themeable-muted mt-1">페이지가 아닌 단어마다 confidence 출력</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">170개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">지원 언어</p>
+                            <p class="text-xs themeable-muted mt-1">10개 언어군, 저자원 언어 포함</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">85.20</p>
+                            <p class="text-sm themeable-text-secondary mt-1">OlmOCRBench 1위</p>
+                            <p class="text-xs themeable-muted mt-1">600+ 문서 평가에서 72% 승률</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">컨테이너 1개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">자체 호스팅</p>
+                            <p class="text-xs themeable-muted mt-1">클라우드 전송 없이 온프레미스 배포</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">비정형 데이터가 첫 관문이다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기업이 가진 데이터의 약 80%는 비정형이다. PDF 계약서, 스캔한 인보이스, 표가 빽빽한 보고서, 손글씨가 섞인 양식. 이 문서들을 LLM에 연결하려면 반드시 거쳐야 하는 단계가 있다. 사람이 읽던 종이를 기계가 다룰 수 있는 구조로 바꾸는 일, 곧 문서 추출이다. AI-Ready Data로 가는 길의 첫 관문이 여기에 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 이 첫 관문이 오랫동안 가장 허술했다는 점이다. 전통적인 OCR은 텍스트를 뱉어 놓을 뿐, 그 텍스트를 얼마나 믿어도 되는지는 알려주지 않았다. 흐릿하게 스캔된 숫자 "3"을 "8"로 잘못 읽어도, 출력만 보면 멀쩡한 "8"이다. 다운스트림에서는 어느 글자가 위험한지 알 길이 없다. 결국 사람이 전체를 다시 검수하거나, 검수를 포기하고 오류를 안고 가야 했다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            RAG에서 흔히 말하는 "garbage in, garbage out"은 검색 단계가 아니라 바로 이 추출 단계에서 시작된다. 원본 문서를 잘못 읽으면, 그 위에 아무리 좋은 임베딩과 검색을 얹어도 답변 품질은 추출 오류를 넘지 못한다. 첫 관문의 품질이 파이프라인 전체의 상한선이다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">텍스트에서 구조로</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        OCR 4가 기존 도구와 갈라지는 지점은 정확도 숫자가 아니다. 출력의 형태다. 같은 문서를 넣어도 돌려주는 것이 다르다. 전통적 OCR이 글자의 나열을 주는 반면, OCR 4는 글자에 더해 세 가지를 함께 붙인다. 텍스트 요소의 위치 좌표(bounding box), 블록 유형 분류(제목·표·수식·서명·단락), 그리고 페이지와 단어 단위의 신뢰도 점수다. 출력 형식도 Markdown·JSON에 더해 사용자가 정의한 스키마로 필드를 뽑아내는 방식까지 지원한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        성능 자체도 뒤처지지 않는다. OlmOCRBench에서 85.20으로 전체 1위, OmniDocBench 93.07을 기록했고, 600개가 넘는 문서와 12개 이상 언어를 대상으로 한 독립 평가자 선호도 비교에서 72% 승률을 보였다. 지원 언어는 170개, 10개 언어군에 이른다. 저자원 언어에서도 경쟁 도구만큼 성능이 무너지지 않는다는 점이 다국어 문서를 다루는 조직에는 특히 중요하다.
+                    </p>
+
+                    <!-- Image: Mistral OCR 4 win rate over competitors -->
+                    <figure class="my-8">
+                        <img src="./image/img-01-model-win-rate.webp"
+                             alt="Mistral OCR 4의 경쟁사 대비 승률 차트 — AWS Textract 대비 82.3%, Azure 대비 74.5%, Gemini 3.1 Pro 대비 70%, GPT 5.5 Pro 대비 66.4%"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 독립 평가자 선호도 비교에서 OCR 4는 주요 경쟁 모델 대비 66~82% 승률을 기록했다 | Source: <a href="https://mistral.ai/news/ocr-4/" target="_blank" rel="noopener" class="underline">Mistral AI</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        핵심은 "읽기"에서 "구조로 이해하기"로의 이동이다. 글자만 뽑아내던 작업이, 문서가 어떻게 생겼고 각 조각이 무엇이며 얼마나 믿을 만한지를 함께 출력하는 작업으로 바뀌었다. 이 차이가 다음 두 섹션에서 데이터 품질과 RAG로 이어진다.
+                    </p>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">신뢰도 점수가 바꾸는 것</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        단어 단위 신뢰도 점수의 의미는 작아 보여도 결과가 크다. 추출과 품질 측정이 같은 단계에서 일어난다는 뜻이기 때문이다. 예전 파이프라인은 문서를 OCR로 텍스트화한 뒤, 그 텍스트가 쓸 만한지를 가리는 품질 검증 단계를 따로 두고, 그다음 사람이 검토한 뒤에야 DB에 넣었다. OCR 4는 이 흐름을 압축한다. 추출 결과에 이미 단어별 점수가 박혀 있으니, 임계값 하나로 곧장 분기할 수 있다.
+                    </p>
+
+                    <!-- Diagram: legacy vs OCR 4 pipeline (original Pebblous SVG) -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 360" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <text x="340" y="30" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="14" font-weight="700" fill="var(--text-secondary,#374151)">문서 추출 파이프라인 — 기존 OCR vs OCR 4</text>
+
+                            <!-- Legacy row -->
+                            <text x="24" y="84" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#808080">기존 OCR</text>
+                            <rect x="24" y="96" width="96" height="40" rx="6" fill="none" stroke="#808080" stroke-width="1.5"/>
+                            <text x="72" y="120" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary,#374151)">문서</text>
+                            <rect x="148" y="96" width="110" height="40" rx="6" fill="none" stroke="#808080" stroke-width="1.5"/>
+                            <text x="203" y="115" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary,#374151)">OCR</text>
+                            <text x="203" y="129" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted,#6B7280)">(텍스트만)</text>
+                            <rect x="286" y="96" width="110" height="40" rx="6" fill="none" stroke="#808080" stroke-width="1.5"/>
+                            <text x="341" y="115" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary,#374151)">품질 검증</text>
+                            <text x="341" y="129" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted,#6B7280)">(별도 단계)</text>
+                            <rect x="424" y="96" width="110" height="40" rx="6" fill="none" stroke="#808080" stroke-width="1.5"/>
+                            <text x="479" y="120" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary,#374151)">전수 인간 검토</text>
+                            <rect x="562" y="96" width="94" height="40" rx="6" fill="none" stroke="#808080" stroke-width="1.5"/>
+                            <text x="609" y="120" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary,#374151)">DB</text>
+                            <!-- arrows legacy -->
+                            <line x1="120" y1="116" x2="146" y2="116" stroke="#808080" stroke-width="1.5" marker-end="url(#arrowG)"/>
+                            <line x1="258" y1="116" x2="284" y2="116" stroke="#808080" stroke-width="1.5" marker-end="url(#arrowG)"/>
+                            <line x1="396" y1="116" x2="422" y2="116" stroke="#808080" stroke-width="1.5" marker-end="url(#arrowG)"/>
+                            <line x1="534" y1="116" x2="560" y2="116" stroke="#808080" stroke-width="1.5" marker-end="url(#arrowG)"/>
+
+                            <!-- divider -->
+                            <line x1="24" y1="180" x2="656" y2="180" stroke="var(--text-muted,#D1D5DB)" stroke-width="1" stroke-dasharray="4 4"/>
+
+                            <!-- OCR 4 row -->
+                            <text x="24" y="224" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#F86825">OCR 4</text>
+                            <rect x="24" y="236" width="96" height="40" rx="6" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="72" y="260" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary,#374151)">문서</text>
+                            <rect x="148" y="236" width="150" height="40" rx="6" fill="#F86825" opacity="0.12" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="223" y="255" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#F86825">OCR + 단어별 점수</text>
+                            <text x="223" y="269" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted,#6B7280)">(추출=품질 측정)</text>
+                            <rect x="326" y="236" width="110" height="40" rx="6" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="381" y="255" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary,#374151)">임계값 분기</text>
+                            <text x="381" y="269" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted,#6B7280)">(자동 라우팅)</text>
+                            <!-- branch: high / low -->
+                            <rect x="464" y="208" width="116" height="34" rx="6" fill="none" stroke="#51C57A" stroke-width="1.5"/>
+                            <text x="522" y="229" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#51C57A">고신뢰 → 자동 승인</text>
+                            <rect x="464" y="270" width="116" height="34" rx="6" fill="none" stroke="#808080" stroke-width="1.5"/>
+                            <text x="522" y="291" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary,#374151)">저신뢰 → 인간 검토</text>
+                            <rect x="606" y="236" width="50" height="40" rx="6" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="631" y="260" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary,#374151)">DB</text>
+                            <!-- arrows OCR4 -->
+                            <line x1="120" y1="256" x2="146" y2="256" stroke="#F86825" stroke-width="1.5" marker-end="url(#arrowO)"/>
+                            <line x1="298" y1="256" x2="324" y2="256" stroke="#F86825" stroke-width="1.5" marker-end="url(#arrowO)"/>
+                            <line x1="436" y1="250" x2="462" y2="226" stroke="#51C57A" stroke-width="1.5" marker-end="url(#arrowGr)"/>
+                            <line x1="436" y1="262" x2="462" y2="286" stroke="#808080" stroke-width="1.5" marker-end="url(#arrowG)"/>
+                            <line x1="580" y1="225" x2="624" y2="234" stroke="#F86825" stroke-width="1.5" marker-end="url(#arrowO)"/>
+                            <line x1="580" y1="287" x2="624" y2="278" stroke="#F86825" stroke-width="1.5" marker-end="url(#arrowO)"/>
+
+                            <text x="340" y="344" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted,#9CA3AF)">페블러스 원본 도식 — 단어별 confidence가 별도 품질 검증 단계를 흡수한다</text>
+
+                            <defs>
+                                <marker id="arrowG" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#808080"/></marker>
+                                <marker id="arrowO" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#F86825"/></marker>
+                                <marker id="arrowGr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#51C57A"/></marker>
+                            </defs>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 기존 파이프라인은 추출과 품질 검증이 따로였다. OCR 4는 단어별 신뢰도를 추출에 내장해 전수 검토를 임계값 분기로 대체한다
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        효과는 인간 검토의 위치가 바뀌는 데 있다. "모든 문서"를 사람이 훑던 방식이, "점수가 낮은 단어가 있는 문서"만 사람에게 가는 방식으로 옮겨간다. 검토 인력을 정말 위험한 곳에 집중시킬 수 있고, 어떤 단어가 왜 검토 대상이 됐는지가 점수로 남으니 감사 추적도 자연스럽게 따라온다. 금융·의료·법무처럼 오독 한 글자가 규정 위반으로 이어지는 분야에서 이 구분은 비용이 아니라 안전장치다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        미스트랄이 공개한 초기 도입 사례도 같은 방향을 가리킨다. 한 금융 서비스 고객은 기존 대비 페이지당 처리 속도가 네 배 빨라졌다고 한다. 또 다른 고객은 에이전트형 문서 파서를 쓰던 때와 비교해 비용을 여덟 배 줄이고 지연을 열일곱 배 낮췄다. 별도 검증 단계를 걷어내고 구조화된 출력을 파이프라인으로 그대로 흘려보낼 때 생기는 차이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터 품질의 관점에서 보면 변화는 더 분명하다. 그동안 품질 점수는 추출이 끝난 뒤 별도 도구로 사후에 매기는 지표였다. OCR 4에서는 그 점수가 추출 출력에 처음부터 들어 있다. 품질이 파이프라인 바깥의 검사 항목이 아니라, 데이터가 태어나는 순간 함께 박히는 속성이 된 것이다.
+                    </p>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">출처와 주권, 한 단계에서 풀린다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        위치 좌표와 블록 분류는 RAG에서 곧장 쓸모를 낸다. bounding box가 있으면 추출된 텍스트가 원본의 몇 페이지, 어느 위치에서 왔는지 역추적할 수 있다. 블록 유형까지 알면 본문 문장과 표 안의 수치를 구분해 검색에 반영할 수 있다. "이 답변은 계약서 3페이지 표의 두 번째 행에서 나왔습니다" 수준의 출처 추적이 가능해지는 이유다. 미스트랄은 OCR 4를 자사 Search Toolkit의 문서 수집 레이어로 연결해, 추출에서 검색까지 한 줄로 잇는 그림을 그리고 있다.
+                    </p>
+
+                    <!-- Image: RAG architecture schema -->
+                    <figure class="my-8">
+                        <img src="./image/img-03-rag-schema.svg"
+                             alt="RAG(검색 증강 생성) 아키텍처 도식 — 문서 인덱싱, 벡터 데이터베이스, LLM 추론 단계를 보여주는 흐름도"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ RAG 파이프라인: 문서는 인덱싱 단계에서 벡터로 변환되고, 질문과의 유사도로 관련 문서를 검색한 뒤 LLM이 답변을 생성한다 | Source: <a href="https://commons.wikimedia.org/wiki/File:RAG_schema.svg" target="_blank" rel="noopener" class="underline">Wikimedia Commons</a>, Gknor, CC BY-SA 4.0
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        또 하나의 축은 자체 호스팅이다. OCR 4는 단일 컨테이너로 온프레미스 배포가 가능하다. AWS Textract나 Google Document AI가 클라우드 전용이라 문서를 반드시 외부로 전송해야 하는 것과 갈라지는 지점이다. 미스트랄은 프랑스 법인이라 관할권도 EU 안에 있다. 민감 문서가 조직 인프라를 떠나지 않는다는 것은 GDPR이나 한국 개인정보보호법 아래에서 움직이는 금융·의료·공공·법무 조직에는 결정적 조건이다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            출처 추적과 데이터 주권은 보통 따로 푸는 문제였다. 출처는 RAG 설계로, 주권은 인프라 정책으로. OCR 4는 두 문제를 추출 단계 하나로 끌어와 동시에 다룬다. 답변의 근거를 표 한 칸까지 짚으면서도, 그 문서가 클라우드로 나가지 않게 한다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">무엇을 선택할 것인가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        OCR 4가 모든 상황의 정답은 아니다. 선택은 조직이 이미 어디에 발을 들여놓았는지, 무엇을 가장 중요하게 보는지에 달린다. AWS 생태계에 깊이 묶여 있다면 Textract가, BigQuery 중심으로 데이터를 운영한다면 Google Document AI가 자연스럽다. 특히 화질이 나쁜 스캔 처리에서는 Document AI가 여전히 강점을 보인다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        OCR 4가 또렷하게 앞서는 자리는 따로 있다. 멀티언어 문서를 다루면서, 자체 호스팅이 필요하고, 단어 단위 품질 신호를 파이프라인에 직접 쓰려는 조직이다. 가격은 표준 API가 1,000페이지당 $4, 배치가 $2, 스키마 기반 Document AI가 $5다. OCR 3의 $2에서 두 배로 올랐다는 점, 자체 호스팅 단가는 영업 문의로 비공개라는 점은 도입 전에 따져야 할 변수다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결국 판단의 기준은 하나로 모인다. 데이터 품질을 파이프라인의 부가 기능으로 보는가, 아니면 설계의 중심에 두는가. 추출 단계에서부터 품질 신호를 출력에 박아 두려는 조직이라면, OCR 4가 제시한 방향은 단순한 OCR 교체 이상의 의미를 가진다.
+                    </p>
+
+                    <div class="key-insight" style="border-left: 4px solid #F86825;">
+                        <p class="themeable-text leading-relaxed mb-2"><strong>Editor's Note</strong></p>
+                        <p class="themeable-text leading-relaxed">
+                            페블러스가 이 발표를 데이터 품질의 관점에서 읽는 이유는 분명하다. 비정형 문서를 AI에 연결하는 일은 늘 추출의 품질에서 막혀 왔고, 그 품질을 어떻게 측정하고 어디서 사람의 손을 빌릴지가 실제 현장의 난제였다. 단어 단위 신뢰도가 추출 출력에 들어온다는 것은, 품질 측정이 파이프라인의 별도 단계가 아니라 데이터의 속성으로 옮겨간다는 신호다. 추출이 곧 품질 평가가 되는 흐름은, 페블러스가 데이터 품질 진단을 다루며 마주하는 문제와 정확히 같은 자리에 있다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">공식 문서</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Mistral AI. (2026년 6월 23일). "<a href="https://mistral.ai/news/ocr-4/" target="_blank" rel="noopener">Mistral OCR 4: SOTA OCR for Document Intelligence</a>." Mistral AI.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">업계·보도</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">MarkTechPost. (2026년 6월 23일). "<a href="https://www.marktechpost.com/2026/06/23/mistral-ocr-4/" target="_blank" rel="noopener">Mistral Releases OCR 4 for Structure-Aware Document Intelligence</a>." MarkTechPost.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">VentureBeat. (2026년 6월 23일). "<a href="https://venturebeat.com/data/mistral-launches-ocr-4-turning-document-extraction-into-a-full-enterprise-ai-play" target="_blank" rel="noopener">Mistral launches OCR 4, turning document extraction into a full enterprise AI play</a>." VentureBeat.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">TechTimes. (2026년 6월 24일). "<a href="https://www.techtimes.com/articles/318978/20260624/mistral-ocr-4-ships-structure-aware-document-ai-runs-your-own-infrastructure.htm" target="_blank" rel="noopener">Mistral OCR 4 Ships Structure-Aware Document AI That Runs on Your Own Infrastructure</a>." TechTimes.</span></li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260626"></script>
+    <script src="/scripts/citation-download.js?v=20260626" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-06-26T00:10:43.207Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-06-26T00:21:07.102Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1782432643208-0tmsid",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-06-26T00:53:09.912Z"
+            },
+            mainTitle: "미스트랄 OCR가 단어마다 신뢰도 점수를 붙여 돌려준다",
+            subtitle: "추출이 곧 데이터 품질 평가가 되는 순간. 단어마다 신뢰도가 붙고, 문서는 인프라 밖으로 나가지 않는다",
+            pageTitle: "Mistral OCR 4 분석 — 단어별 신뢰도 점수와 자체 호스팅 데이터 파이프라인 | 페블러스",
+            category: "tech",
+            publishDate: "2026-06-26",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/mistral-ocr-4-confidence-score-pipeline/ko/",
+            tags: ["Mistral OCR", "OCR", "비정형 데이터", "데이터 품질", "RAG", "confidence score", "자체 호스팅", "AI-Ready Data", "문서 AI"],
+            faqs: [
+                { question: "Mistral OCR 4는 어떤 문서 형식을 지원하는가?", answer: "PDF, DOC, PPT, OpenDocument 형식을 입력으로 받는다. 출력은 Markdown, JSON에 더해 사용자가 정의한 JSON 스키마로 특정 필드를 추출하는 방식까지 지원한다. 170개 언어, 10개 언어군을 다룬다." },
+                { question: "단어별 신뢰도 점수를 파이프라인에서 어떻게 활용하는가?", answer: "단어마다 confidence 점수가 출력에 함께 나오므로, 임계값을 기준으로 자동 분기할 수 있다. 점수가 높은 텍스트는 자동 승인하고, 낮은 단어가 포함된 문서만 사람에게 검토를 넘긴다. 전수 검토가 필요한 곳에만 인력을 집중하는 구조다." },
+                { question: "기존 OCR과 가장 큰 차이는 무엇인가?", answer: "기존 OCR은 텍스트만 출력하고 품질 정보는 문서·페이지 단위로만 제공했다. OCR 4는 텍스트에 더해 위치 좌표(bounding box), 블록 유형 분류, 단어 단위 신뢰도 점수를 함께 출력한다. 추출과 품질 측정이 같은 단계에서 일어난다." },
+                { question: "AWS Textract, Google Document AI와 어떻게 다른가?", answer: "Textract와 Document AI는 클라우드 전용이라 문서를 외부로 전송해야 한다. OCR 4는 단일 컨테이너로 온프레미스 자체 호스팅이 가능하고, 미스트랄이 EU 법인이라 관할권도 EU 안에 있다. 저화질 스캔 처리에서는 Document AI가 여전히 강점을 보인다." },
+                { question: "가격 구조는 어떻게 되는가?", answer: "표준 OCR API는 1,000페이지당 $4, 배치 처리는 $2(50% 할인), 스키마 기반 Document AI는 $5다. OCR 3의 $2에서 두 배로 올랐다. 자체 호스팅 단가는 공개되지 않았고 영업 문의가 필요하다." },
+                { question: "RAG 시스템에 OCR 4를 통합하면 무엇이 좋아지는가?", answer: "bounding box로 답변의 원본 위치를 역추적할 수 있고, 블록 유형 분류로 본문과 표 데이터를 구분해 검색 품질을 높일 수 있다. 미스트랄 Search Toolkit과 연동하면 문서 수집부터 검색까지 한 흐름으로 이어진다." },
+                { question: "저자원 언어에서도 잘 동작하는가?", answer: "170개 언어, 10개 언어군을 지원하며 저자원 언어에서도 경쟁 도구만큼 성능이 무너지지 않는다고 미스트랄은 밝혔다. OlmOCRBench 85.20으로 전체 1위, 600개 이상 문서·12개 이상 언어 평가에서 72% 승률을 기록했다." },
+                { question: "의료·금융 규정 준수 환경에서 사용할 수 있는가?", answer: "단일 컨테이너 자체 호스팅으로 문서가 인프라를 벗어나지 않게 할 수 있어, GDPR이나 개인정보보호법 아래 민감 문서를 다루는 환경에 적합하다. 단어 단위 신뢰도 점수는 어떤 데이터를 왜 검토했는지에 대한 감사 추적도 자연스럽게 남긴다." }
+            ]
+        });
+    </script>
+</body>
+</html>
