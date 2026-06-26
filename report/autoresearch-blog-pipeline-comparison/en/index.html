@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>Autoresearch vs. Multi-Agent Content Pipeline | Pebblous</title>
+    <meta name="description" content="Karpathy's Autoresearch vs. Pebblous's multi-agent pipeline: what we have, what's missing, and a design to port the self-improving loop.">
+    <meta name="keywords" content="Autoresearch, prompt optimization, multi-agent, Claude Skills, LLM-as-Judge, content pipeline, eval-driven, AI-Ready Data, self-improving loop, evaluation function">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="We Measure. We Just Don't Self-Correct Yet.">
+    <meta property="og:description" content="What Autoresearch and self-improving loops reveal about the gap in Pebblous's content pipeline — and a design for porting a measurement-driven self-improvement loop into it.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Comparing the Autoresearch self-improving loop with the Pebblous multi-agent pipeline">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="We Measure. We Just Don't Self-Correct Yet.">
+    <meta name="twitter:description" content="The gap in Pebblous's content pipeline, seen through Autoresearch and self-improving loops — and a design to close it.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/en/image/index.png">
+    <meta name="twitter:image:alt" content="Comparing the evaluation function with the self-improving loop">
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="We Measure. We Just Don't Self-Correct Yet.">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/06/25">
+    <meta name="citation_online_date" content="2026/06/25">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Stylesheets (fixed order) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260625">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260625">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260625">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. What Autoresearch Is</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Anatomy of the Pebblous Pipeline</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Head-to-Head</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. What Each System Misses</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. The Path Forward: Porting the Loop</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">The frontier of AI writing is shifting. It is moving away from the skill of crafting good prompts and toward the ability to measure output quality and then use that measurement to fix the prompt automatically. Autoresearch, the pattern Andrej Karpathy proposed for optimizing machine-learning code, is disarmingly simple: inside a loop, keep only the changes that beat the current best. Ole Lehmann took that same pattern and applied it not to code but to Claude's content skills, reporting that he raised a copy-quality pass rate from 56% to 92%. One line he left behind is where this report starts: "Good Autoresearch depends not on a good prompt, but on a good eval."</p>
+                        <p class="themeable-text leading-relaxed mt-4">Look at Pebblous's multi-agent pipeline through that lens and you find that we already run half of the evaluation function. ko-prose-humanizer, which scores Korean prose against eleven stylistic markers, and seo-check, which audits four layers of SEO, are in effect the Judge that Autoresearch describes. That evaluation function is not theoretical: across five articles in our AI-governance series, it cut em-dash overuse by 46.6% — a concrete case of measurement catching a defect. What is missing is the other half. We have no golden test set, no mutation engine to vary a skill's prompt, no score-based automatic rollback, and no meta-loop that improves the skill itself. Our pipeline enriches a single article beautifully, but the skill that produced it never gets better on its own.</p>
+                        <p class="themeable-text leading-relaxed mt-4">The conclusion of this report is that the two systems are not competitors but complements. Autoresearch is narrow, deep automated optimization; Pebblous is broad, rich, one-pass generation with human judgment and multilingual rewriting layered on top. The path forward is not to remove the human checkpoints but to add quantitative scores at the points where humans already look. This report proposes that port, step by step, from an operator's seat.</p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">56% → 92%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Autoresearch copy pass rate</p>
+                            <p class="text-xs themeable-muted mt-1">4 rounds, ~$15; Ole Lehmann self-report (2026)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~+20pp</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Higher binary-judgment agreement</p>
+                            <p class="text-xs themeable-muted mt-1">LLM–human agreement when scales become pass/fail</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">-46.6%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">em-dash reduction (5 articles)</p>
+                            <p class="text-xs themeable-muted mt-1">Measured by Pebblous via ko-prose-humanizer</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">40–60%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Cost saved by model routing</p>
+                            <p class="text-xs themeable-muted mt-1">Top tier only for heavy reasoning; lower tier for the rest</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What Autoresearch Is: Treating the Prompt as a Production Loop</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">Autoresearch is not a heavy framework. The code Karpathy released on March 7, 2026 is 630 lines of Python, and the core idea fits in a sentence: an agent makes one change to the code, runs a time-boxed experiment, measures a validation metric, keeps the change if things improved and reverts it if they got worse — then repeats. Karpathy ran this loop 700 times over two days on a single GPU, found 20 genuine improvements, and, applied to a larger model, lifted training speed by 11%. The loop caught defects a human had missed by hand for two decades, such as a missing normalization step.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">What made the loop catch on so quickly is that it worked beyond Karpathy's own experiments — in someone else's production code. Shopify's Tobi Lütke reported running the same pattern on his company's template engine, Liquid, nearly halving a rendering speed that humans had already tuned and cutting memory use substantially. The result kept only the changes that passed every unit test across hundreds of automated experiments. That is a second piece of evidence that, in real product code rather than a toy model, the loop found improvements seasoned developers had missed. So the next question follows naturally: what if the artifact were not code, but prose?</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The direct source for this report is not the code. It is Ole Lehmann moving the same pattern to a content skill. He started from the fact that his landing-page copy skill failed 44% of its quality checks, then had an agent revise the skill's prompt, compare scores, and repeat keep-or-rollback unattended. After four rounds and roughly $15 in cost, the pass rate reached 92%. Three changes survived: a rule to put a concrete number or outcome in the headline, a banned-buzzword list, and — more powerful than any rule — a worked example dropped directly into the prompt. One change was rolled back: a rule that capped character count too tightly, because the copy thinned out and the call to action weakened.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">One caveat to state plainly: the 56%-to-92% figure is Ole Lehmann's own self-report, with no independent reproduction and no disclosed test-set size. The pass rate measures how much copy clears a pre-filter that screens out low quality — not an actual lift in conversion. Cite it as a striking case, but do not treat it as a verified, general effect.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">The Five Pieces That Make Up the Loop</h3>
+                    <p class="themeable-text leading-relaxed mb-6">Break the pattern into parts and five remain: <strong>Mutation</strong>, which proposes one candidate change at a time; <strong>Execution</strong>, which produces the artifact under that change; the <strong>Judge</strong>, which scores the artifact; the <strong>Orchestrator</strong>, which keeps the change if the score rises and reverts it if the score falls; and the <strong>Changelog</strong>, which records what was changed and why. The real product here is not the prompt — it is the Judge. If the Judge wobbles, the whole loop optimizes in the wrong direction.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">That is why Ole's checklist design rules matter. Keep items as three to six binary questions: Does the headline contain a concrete number? Is it free of buzzwords? Is the call to action specific? Consistent judgment, not precise scoring, is the design principle. Too few items and you miss quality; more than six and the model games the item scores while real reader quality drops — overfitting. An evaluation function should be a floor that blocks low quality, not a ceiling that suppresses creativity.</p>
+
+                    <!-- Image: Autoresearch 5-piece self-improving loop -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 910 215" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#f8fafc)" role="img" aria-label="The five pieces of the Autoresearch self-improving loop">
+                            <defs>
+                                <marker id="arG-en" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3z" fill="var(--text-muted,#9ca3af)"/>
+                                </marker>
+                                <marker id="arO-en" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                            <!-- Title -->
+                            <text x="455" y="22" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">The Autoresearch Self-Improving Loop — Five Pieces</text>
+                            <!-- Arrows left-to-right -->
+                            <line x1="147" y1="80" x2="207" y2="80" stroke="var(--text-muted,#9ca3af)" stroke-width="2" marker-end="url(#arG-en)"/>
+                            <line x1="322" y1="80" x2="392" y2="80" stroke="var(--text-muted,#9ca3af)" stroke-width="2" marker-end="url(#arG-en)"/>
+                            <line x1="507" y1="80" x2="562" y2="80" stroke="#F86825" stroke-width="2.5" marker-end="url(#arO-en)"/>
+                            <line x1="715" y1="80" x2="752" y2="80" stroke="var(--text-muted,#9ca3af)" stroke-width="2" marker-end="url(#arG-en)"/>
+                            <!-- Return arc (loop back) -->
+                            <path d="M820,104 Q820,168 455,168 Q90,168 90,104" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5" fill="none" stroke-dasharray="6,3" marker-end="url(#arG-en)"/>
+                            <!-- Keep/rollback annotation -->
+                            <text x="455" y="197" text-anchor="middle" font-size="10" fill="var(--text-secondary,#6B7280)" font-family="Outfit,sans-serif">Score ↑ → keep / Score ↓ → roll back</text>
+                            <!-- Node 0: Mutation -->
+                            <ellipse cx="90" cy="80" rx="57" ry="24" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="90" y="84" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">Mutation</text>
+                            <!-- Node 1: Execution -->
+                            <ellipse cx="265" cy="80" rx="57" ry="24" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="265" y="84" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">Execution</text>
+                            <!-- Node 2: Judge (orange — the key) -->
+                            <ellipse cx="450" cy="80" rx="57" ry="24" fill="#FFF3EC" stroke="#F86825" stroke-width="2.5"/>
+                            <text x="450" y="75" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825" font-family="Outfit,sans-serif">Judge</text>
+                            <text x="450" y="92" text-anchor="middle" font-size="10" font-weight="600" fill="#F86825" font-family="Outfit,sans-serif">★ the real product</text>
+                            <!-- Node 3: Orchestrator -->
+                            <ellipse cx="640" cy="80" rx="75" ry="24" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="640" y="84" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">Orchestrator</text>
+                            <!-- Node 4: Changelog -->
+                            <ellipse cx="820" cy="80" rx="65" ry="24" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="820" y="84" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">Changelog</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ The five pieces of the Autoresearch self-improving loop — the Judge is the real product; if it wobbles, the whole loop optimizes in the wrong direction | Pebblous original diagram (Fig. 1 reinterpretation)</figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">The Academic Lineage: Not a New Invention, a Simplification</h3>
+                    <p class="themeable-text leading-relaxed mb-6">The discipline of "one change at a time, then keep or roll back by score" is a practical simplification of a line of work already validated in academia. DSPy, which compiles and optimizes prompts as declarative modules, raised accuracy by 32% on multi-hop reasoning and 45% on math reasoning. OPRO, where a meta-LLM iteratively generates new prompts; EvoPrompt, which evolves prompts through crossover and mutation; and TextGrad, which treats natural-language feedback like a gradient, all belong to the same family. Effect sizes range widely with the task — from 7% to 45% — and show up most strongly in structured reasoning. Ole's reported +36pp sits at the high end of that range, but it bears repeating that it remains a single self-report.</p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Anatomy of the Pebblous Pipeline: Multi-Agent Plus Human Confirmation</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">The process Pebblous uses to produce a deep-research report is not a single block of prompt but a pipeline of agents working in sequence. When a topic comes in, duplication and value are reviewed in parallel; a human confirms once; then planning begins. From there the work forks three ways to research academic papers, industry developments, and data simultaneously, and a synthesis stage binds those into one document. Writing, a second human review, five stages of quality reinforcement, English rewriting, SEO and social, and finally publishing follow in turn. The very article you are reading went through that process.</p>
+
+                    <!-- Image: Pebblous multi-agent pipeline 3-block -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 720 185" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#f8fafc)" role="img" aria-label="Pebblous multi-agent pipeline in three stages">
+                            <defs>
+                                <marker id="arPG-en" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3z" fill="var(--text-muted,#9ca3af)"/>
+                                </marker>
+                            </defs>
+                            <!-- Block 1: Research & Planning -->
+                            <rect x="8" y="28" width="213" height="148" rx="10" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="114" y="50" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">① Research &amp; Planning</text>
+                            <line x1="30" y1="57" x2="200" y2="57" stroke="var(--text-muted,#9ca3af)" stroke-width="0.8"/>
+                            <text x="114" y="76" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Outfit,sans-serif">Topic input</text>
+                            <text x="114" y="93" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Outfit,sans-serif">Duplication · value pre-check</text>
+                            <rect x="35" y="103" width="159" height="22" rx="5" fill="var(--text-muted,#9ca3af)" fill-opacity="0.15" stroke="var(--text-muted,#9ca3af)" stroke-width="1"/>
+                            <text x="114" y="118" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">Human confirm ①</text>
+                            <text x="114" y="139" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Outfit,sans-serif">Planning → 3-track parallel</text>
+                            <text x="114" y="155" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Outfit,sans-serif">(papers | industry | data)</text>
+                            <!-- Arrow 1→2 -->
+                            <line x1="224" y1="102" x2="250" y2="102" stroke="var(--text-muted,#9ca3af)" stroke-width="2" marker-end="url(#arPG-en)"/>
+                            <!-- Block 2: Synthesis & Writing -->
+                            <rect x="254" y="28" width="207" height="148" rx="10" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="357" y="50" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">② Synthesis &amp; Writing</text>
+                            <line x1="275" y1="57" x2="445" y2="57" stroke="var(--text-muted,#9ca3af)" stroke-width="0.8"/>
+                            <text x="357" y="76" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Outfit,sans-serif">Synthesis agent</text>
+                            <text x="357" y="93" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Outfit,sans-serif">First draft</text>
+                            <rect x="278" y="103" width="158" height="22" rx="5" fill="var(--text-muted,#9ca3af)" fill-opacity="0.15" stroke="var(--text-muted,#9ca3af)" stroke-width="1"/>
+                            <text x="357" y="118" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">Human confirm ②</text>
+                            <text x="357" y="139" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Outfit,sans-serif">EN rewriting (KO / EN)</text>
+                            <text x="357" y="155" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Outfit,sans-serif">Image reinforcement</text>
+                            <!-- Arrow 2→3 -->
+                            <line x1="464" y1="102" x2="490" y2="102" stroke="var(--text-muted,#9ca3af)" stroke-width="2" marker-end="url(#arPG-en)"/>
+                            <!-- Block 3: Judge Layer & Deploy (orange) -->
+                            <rect x="494" y="28" width="218" height="148" rx="10" fill="#FFF7F2" stroke="#F86825" stroke-width="2"/>
+                            <text x="603" y="50" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825" font-family="Outfit,sans-serif">③ Judge Layer · Deploy</text>
+                            <line x1="515" y1="57" x2="695" y2="57" stroke="#F86825" stroke-width="0.8" stroke-opacity="0.5"/>
+                            <text x="603" y="76" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">ko-prose-humanizer</text>
+                            <text x="603" y="93" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">seo-check</text>
+                            <text x="603" y="110" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)" font-family="Outfit,sans-serif">articles.json validation</text>
+                            <text x="603" y="130" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Outfit,sans-serif">OG image · RSS · sitemap</text>
+                            <rect x="527" y="143" width="151" height="22" rx="5" fill="#F86825"/>
+                            <text x="603" y="158" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff" font-family="Outfit,sans-serif">Publish</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Pebblous multi-agent pipeline in three stages — Stage ③, the Judge layer, is where Autoresearch's evaluation function already runs | Pebblous original diagram (Fig. 2 reinterpretation)</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">Two design choices are worth noting. The first is tiered model assignment. Only the reasoning-heavy nodes — planning, paper research, synthesis, writing — use a top-tier model, while collection, execution, and publishing are handed to a lower tier. The top and lower tiers differ by roughly fivefold in price per output token, yet the gap on coding benchmarks is only a few percentage points. So routing only the heavy-reasoning nodes to the top tier saves 40–60% versus a single model while holding planning quality steady; add caching and batching and the savings grow further. This is Pebblous's implementation of the Autoresearch idea: plan well once, then execute cheaply, many times.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The second is the human confirmation gate. Right after the initial review and right after the first draft, the pipeline stops and waits for human judgment at two points. Reading that as unfinished automation is a mistake. Pebblous's aim is not maximal automation but measurement-driven iteration that keeps human judgment as a core gate. The gate is not a weakness; it is intended design.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">We Already Have a Judge</h3>
+                    <p class="themeable-text leading-relaxed mb-6">Inside the pipeline, two tools already run that correspond to Autoresearch's Judge. ko-prose-humanizer catches the tells of AI-written prose across eleven markers and scores them out of 110 — patterns like em-dash restatement, a monotony of nominal sentence endings, meta-announcements, and the contrived pivot to the company at the end of a piece. If the score crosses a threshold, it forces an automatic correction; if it falls in the passing band, it lets the text through. seo-check audits four layers — meta tags, OG and Twitter cards, JSON-LD schema, and Search Console — and everything must pass before the work moves on.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">The proof that this evaluation function is more than talk lives in our own writing. When five articles in the AI-governance series were corrected with ko-prose-humanizer, the total em-dash count fell from 545 to 291 — a 46.6% drop. Meta-announcements, which appeared five to ten times per article, disappeared entirely, and the closing pivot to the company was split out into a separate editor's note. Measurement actually caught the defect. It is self-referential, but it is honest evidence.</p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Head-to-Head: A Symmetry of Philosophy and Architecture</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">Put the two systems on the same axes and what emerges is not a ranking but a difference in character. Autoresearch is a tool for automatically drilling deep into a single prompt; the Pebblous pipeline is a process for completing one article broadly with human judgment woven in. The table below lays out how the two diverge across eight axes.</p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Axis</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Autoresearch self-improving loop</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Pebblous pipeline</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Unit of improvement</td>
+                                    <td class="border themeable-border px-3 py-2">The skill prompt (the evaluation function itself)</td>
+                                    <td class="border themeable-border px-3 py-2">A single article (the artifact)</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Evaluation method</td>
+                                    <td class="border themeable-border px-3 py-2">Automatic scoring of a binary checklist</td>
+                                    <td class="border themeable-border px-3 py-2">11 stylistic markers + 4-layer SEO</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Who iterates</td>
+                                    <td class="border themeable-border px-3 py-2">An unattended loop (the agent)</td>
+                                    <td class="border themeable-border px-3 py-2">Agent generation + human confirmation</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Rollback</td>
+                                    <td class="border themeable-border px-3 py-2">Automatic revert when the score drops</td>
+                                    <td class="border themeable-border px-3 py-2">Manual revision based on human review</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Multilingual</td>
+                                    <td class="border themeable-border px-3 py-2">Single output (bound to the target)</td>
+                                    <td class="border themeable-border px-3 py-2">Parallel KO/EN rewriting</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Narrative quality</td>
+                                    <td class="border themeable-border px-3 py-2">Strong on short-copy, sentence-level optimization</td>
+                                    <td class="border themeable-border px-3 py-2">Strong on multi-stage narrative and contextual coherence</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Human involvement</td>
+                                    <td class="border themeable-border px-3 py-2">Minimal (only at design time)</td>
+                                    <td class="border themeable-border px-3 py-2">Constant, via two confirmation gates</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">Reproducibility</td>
+                                    <td class="border themeable-border px-3 py-2">Tracked via scores and a changelog</td>
+                                    <td class="border themeable-border px-3 py-2">Tracked via run logs (no skill-improvement history)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">The difference between the two systems comes down to a single sentence: Autoresearch drills narrow and deep through automated optimization, while Pebblous completes one article broadly, layering human judgment and multiple languages onto a single pass. One is good at fixing the evaluation function itself; the other is good at carrying one long article through to the end, fitted to its context. The two are not competing over the same job.</p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What Each System Misses: The Other's Blind Spot</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">The real value of the comparison is in exposing each system's blind spot. Each one misses something precise, in the shadow of what it does well.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="themeable-bg-card border themeable-border rounded-lg p-6 border-l-4" style="border-left-color: #F86825;">
+                            <h3 class="text-xl font-bold themeable-heading mb-3">What Pebblous lacks</h3>
+                            <ul class="themeable-text leading-relaxed space-y-2" style="list-style:none;margin-left:0;line-height:2.0;">
+                                <li>• A golden test set of representative inputs</li>
+                                <li>• A mutation engine that varies skill prompts automatically</li>
+                                <li>• Automatic rollback when the score drops</li>
+                                <li>• A meta-loop that improves the skill itself</li>
+                                <li>• A methodology-level changelog (today's changelog is only a content log)</li>
+                            </ul>
+                        </div>
+                        <div class="themeable-bg-card border themeable-border rounded-lg p-6 border-l-4" style="border-left-color: #585858;">
+                            <h3 class="text-xl font-bold themeable-heading mb-3">What Autoresearch lacks</h3>
+                            <ul class="themeable-text leading-relaxed space-y-2" style="list-style:none;margin-left:0;line-height:2.0;">
+                                <li>• The flow and completeness of a multi-stage narrative</li>
+                                <li>• Factual coherence and contextual judgment</li>
+                                <li>• Multilingual rewriting (localization, not literal translation)</li>
+                                <li>• The editor's final call</li>
+                                <li>• The reader experience a narrow checklist can't see</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">To put it plainly: Pebblous measures, but it does not use that measurement to fix the skill. We score the prose of a single article, but the step that takes that score and mutates and validates ko-prose-humanizer itself into a better version is empty. Conversely, Autoresearch optimizes a narrow checklist quickly, but the grain of a narrative or an error of fact that the checklist cannot catch will never come into view. Each empty space is precisely the other's strength.</p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Path Forward: Porting a Self-Improving Loop into the Pipeline</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">If we already hold half of the evaluation function, the way to fill the other half is not to build from scratch but to close the loop around the judges we already have. No heavy infrastructure is needed — remember that Ole's case cost about $15. The five steps below add quantitative scores at the points where humans already look, without removing the human confirmation gates.</p>
+
+                    <div class="space-y-6 mb-8">
+                        <div class="border-l-4 pl-6 pb-2" style="border-color: #F86825;">
+                            <h3 class="text-xl font-bold themeable-heading mb-2">Step 1. Formalize the judges into binary evaluation functions</h3>
+                            <p class="themeable-text leading-relaxed">Rewrite ko-prose-humanizer, seo-check, and articles.json validation as binary checklists with clear pass/fail. The finding that switching from scales to binary raises LLM–human judgment agreement by about 20pp backs this choice.</p>
+                        </div>
+                        <div class="border-l-4 pl-6 pb-2" style="border-color: #F86825;">
+                            <h3 class="text-xl font-bold themeable-heading mb-2">Step 2. Build a golden input set</h3>
+                            <p class="themeable-text leading-relaxed">Pick 10–20 inputs from representative topics and existing articles and freeze them as a golden set. Every time a skill changes, re-score against this set to check regressively that a change which helped one article doesn't break another.</p>
+                        </div>
+                        <div class="border-l-4 pl-6 pb-2" style="border-color: #F86825;">
+                            <h3 class="text-xl font-bold themeable-heading mb-2">Step 3. Mutate one rule at a time</h3>
+                            <p class="themeable-text leading-relaxed">Change the skill prompt one rule at a time. Touch several rules at once and you can't tell which change moved the score. This single line is Autoresearch's simplest and most important discipline.</p>
+                        </div>
+                        <div class="border-l-4 pl-6 pb-2" style="border-color: #585858;">
+                            <h3 class="text-xl font-bold themeable-heading mb-2">Step 4. Keep or roll back by golden-set score</h3>
+                            <p class="themeable-text leading-relaxed">After a mutation, keep the change if the golden-set score rises and revert it if it falls. At the confirmation gate, the human verifies the result of that automatic decision with scores and evidence, not gut feel.</p>
+                        </div>
+                        <div class="border-l-4 pl-6" style="border-color: #585858;">
+                            <h3 class="text-xl font-bold themeable-heading mb-2">Step 5. Accumulate a methodology changelog</h3>
+                            <p class="themeable-text leading-relaxed">Record what was changed and why, and how the score moved, separately from the content log. As this history builds, the pipeline becomes a system that can explain how it improved itself.</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">Cost and Failure Modes</h3>
+                    <p class="themeable-text leading-relaxed mb-6">The scale is small. You start not with a heavy platform but with a handful of binary checklists, 10–20 golden inputs, and the discipline of comparing scores after one change at a time. The failure modes, though, are clear. First, overfitting: only the items the evaluation function catches improve, and the articles all start to look alike. That is why the evaluation function must be a floor, and the golden set must be refreshed each quarter to prevent the criteria from aging. Second, judge reliability: LLM judgment agrees with humans in the low 80s on general tasks but drops to the mid-to-high 60s in specialist domains, and the verdict shifts when you merely reorder the answers. So the core items keep a human in the loop, and a correction that swaps order and averages is needed.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">The market has agent frameworks that generate well and observability tools that evaluate well, and they sit apart. Evaluation tooling has already been elevated to strategic infrastructure: one such company was valued at $800 million, and another was acquired by a model lab. What makes Pebblous rare is that it runs the generation pipeline, its own evaluation function, and a human confirmation gate as a single body. Add a self-improving loop and it becomes a content process that gets better on its own, by measurement. And the same skeleton transfers directly to a data-quality pipeline: the discipline of measuring output, changing one thing at a time, and keeping or rolling back by score works as-is for synthetic-data generation and label-quality correction. The content evaluation function is simply swapped for a data-quality metric.</p>
+                    </div>
+
+                    <div class="border-l-4 border-orange-500 pl-4 mt-8" style="border-color: #F86825;">
+                        <p class="text-sm themeable-muted leading-relaxed"><strong>Editor's note.</strong> This report took the pipeline Pebblous operates as both the object of comparison and the object of improvement. Pebblous's data-quality work — AI-Ready Data, DataClinic, synthetic data — and its content pipeline share the same skeleton: measure the output and fix it inside a loop. We used our own system as the example not to promote it, but to show exactly how an operator diagnoses and fills the empty spaces in their own system.</p>
+                    </div>
+                </section>
+
+                <!-- FAQ Section -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Primary sources: the Autoresearch original and its application</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Lehmann, O. (2026). "Karpathy's Autoresearch method for Claude Skills." <a href="https://www.threads.com/@itsolelehmann/post/DWHFWK0CY4R" target="_blank" rel="noopener">Threads @itsolelehmann</a>. (Original 56%→92% self-report.)</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Karpathy, A. (2026). "<a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">autoresearch</a>." GitHub (MIT License, released 2026-03-07).</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Agent Cookbook. (2026). "<a href="https://agent-cookbook.com/tutorial/how-to-10x-your-claude-skills-using-karpathy-s-autoresearch-method" target="_blank" rel="noopener">How to 10x your Claude Skills using Karpathy's Autoresearch method</a>." (Reproduction details.)</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">VentureBeat. (2026). "<a href="https://venturebeat.com/technology/andrej-karpathys-new-open-source-autoresearch-lets-you-run-hundreds-of-ai" target="_blank" rel="noopener">Andrej Karpathy's new open-source autoresearch</a>." <em>VentureBeat</em>; cross-checked with Fortune and NextBigFuture (700 experiments, 11% improvement).</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic: automatic prompt optimization and LLM-as-Judge</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">5.</span><span class="ref-body">Yang, C. et al. (2023). "<a href="https://arxiv.org/abs/2309.03409" target="_blank" rel="noopener">Large Language Models as Optimizers (OPRO)</a>." arXiv.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Khattab, O. et al. (2023). "<a href="https://arxiv.org/abs/2310.03714" target="_blank" rel="noopener">DSPy: Compiling Declarative Language Model Calls</a>." Stanford NLP. (HotpotQA +32%, GSM-8K +45%.)</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Zheng, L. et al. (2024). "<a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener">Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</a>." NeurIPS.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Evidently AI. "<a href="https://www.evidentlyai.com/llm-guide/llm-as-a-judge" target="_blank" rel="noopener">LLM-as-a-judge: a complete guide</a>." (Binary vs. scale reliability, +20pp.)</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Galileo AI. "<a href="https://galileo.ai/blog/llm-as-a-judge-vs-human-evaluation" target="_blank" rel="noopener">LLM-as-a-Judge vs Human Evaluation</a>." (General 80%+, specialist domains 60–68%.)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Industry, market, and tooling</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">10.</span><span class="ref-body">Caylent. (2026). "<a href="https://caylent.com/blog/claude-haiku-4-5-deep-dive-cost-capabilities-and-the-multi-agent-opportunity" target="_blank" rel="noopener">Claude Haiku deep dive: cost, capabilities, and the multi-agent opportunity</a>." (Tiered models, routing savings.)</span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">Braintrust. (2025). "<a href="https://www.braintrust.dev/articles/best-prompt-evaluation-tools-2025" target="_blank" rel="noopener">Best prompt evaluation tools 2025</a>." (Eval-tool ecosystem; Series B $80M, $800M valuation.)</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">Precedence Research. "<a href="https://www.precedenceresearch.com/generative-ai-in-content-creation-market" target="_blank" rel="noopener">Generative AI in Content Creation Market</a>." ($19.75B → $143.09B, CAGR 21.9%.)</span></li>
+                    </ul>
+
+                    <p class="text-sm themeable-muted mt-2">Note: the 56%→92% figure is Ole Lehmann's single self-report, with no independent reproduction; every in-text citation marks it as a self-report. Model prices and performance are described by tier and price ratio to avoid naming a specific version. Some market sizes vary by source depending on the definition (broad vs. narrow scope).</p>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <!-- Scripts -->
+    <script src="/scripts/citation-download.js?v=20260625" defer></script>
+    <script src="/scripts/common-utils.js?v=20260625"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": true,
+              "trigger": {
+                "source": "api",
+                "actor": "operator",
+                "at": "2026-06-25T09:23:59.304Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-06-25T09:26:48.086Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-06-25T09:48:04.806Z"
+                },
+                {
+                  "phase": "publish-prep",
+                  "resolution": "human_resumed",
+                  "by": "operator",
+                  "at": "2026-06-26T02:07:58.438Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1782379439304-bz4y7z",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-06-26T02:07:58.445Z"
+            },
+            mainTitle: "We Measure. We Just Don't Self-Correct Yet.",
+            subtitle: "Comparing Karpathy's Autoresearch and Ole Lehmann's self-improving loop for Claude Skills against Pebblous's multi-agent content pipeline — and a design for porting the evaluation function, mutation, and rollback into it",
+            pageTitle: "Autoresearch vs. Multi-Agent Content Pipeline | Pebblous",
+            category: "tech",
+            publishDate: "2026-06-25",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/autoresearch-blog-pipeline-comparison/en/",
+            tags: ["Autoresearch", "prompt optimization", "multi-agent", "Claude Skills", "LLM-as-Judge", "content pipeline", "eval-driven", "AI-Ready Data"],
+            faqs: [
+                { question: "How is Autoresearch different from ordinary prompt tuning?", answer: "Instead of a human tweaking a prompt by feel, a binary evaluation function assigns a score and a closed loop keeps only the changes that raise it automatically. One change at a time, then keep-or-rollback after measuring, are the core disciplines." },
+                { question: "Can you trust an LLM to evaluate an LLM?", answer: "Conditionally, yes. It agrees with humans more than 80% of the time on general tasks but drops to the mid-to-high 60s in specialist domains, and it carries order, self-preference, and verbosity biases. So binary verdicts, order-swap averaging, and keeping a human in the loop on core items are recommended." },
+                { question: "How many checklist items are right?", answer: "Between three and six. Too few and you miss quality; more than six and the model overfits by gaming item scores, so real reader quality falls. Making them binary (pass/fail) raises agreement by about 20pp over scales." },
+                { question: "So can we remove the human confirmation?", answer: "Pebblous's answer is no. Human confirmation is not a weakness but intended design. The path forward is not to remove the gate but to add quantitative scores where humans already look, so they judge with scores and evidence rather than gut feel." },
+                { question: "Why hasn't Pebblous added an automatic improvement loop yet?", answer: "The evaluation functions — ko-prose-humanizer and seo-check — already exist, but there is no meta-loop that takes their scores and mutates and rolls back the skill prompt automatically, and no golden test set. We measure, but the step that uses the measurement to fix the skill is empty." },
+                { question: "Is the 56%→92% figure trustworthy?", answer: "The direction matches academia (automatic optimization improving 7–45%), but this specific figure is Ole Lehmann's single self-report, with no independent reproduction or disclosed test-set size. Cite it as a striking case, but flag that it is a self-report." },
+                { question: "Can a small team do this?", answer: "Yes. Ole's case cost about $15. It starts not with heavy infrastructure but with six binary checklist items, a golden set of 10–20 representative inputs, and the discipline of comparing scores after one change at a time." },
+                { question: "Does it apply to data pipelines, not just content?", answer: "Same skeleton. The discipline of measuring output, changing one thing at a time, and keeping or rolling back by score transfers directly to synthetic-data generation and label-quality correction loops. The content evaluation function is simply swapped for a data-quality metric." },
+                { question: "Won't an automatic loop make all the articles look alike?", answer: "That is the overfitting risk. An evaluation function must be a floor that screens out low quality, not a ceiling that suppresses creativity. That is why ko-prose-humanizer leaves facts, figures, and structure untouched and corrects only prose texture, and why the golden set is refreshed each quarter to keep the criteria from aging." }
+            ]
+        });
+    </script>
+</body>
+</html>
