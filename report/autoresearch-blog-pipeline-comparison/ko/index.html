@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>Autoresearch vs 멀티 에이전트 콘텐츠 파이프라인 — 자기개선 루프 비교 | 페블러스</title>
+    <meta name="description" content="Karpathy의 Autoresearch와 Ole Lehmann의 Claude Skills 자가개선 루프를 페블러스 멀티 에이전트 콘텐츠 파이프라인과 비교한다. 우리가 이미 가진 평가 함수, 아직 비어 있는 자동 변이·롤백 루프, 그리고 이식 설계를 운영자 시각으로 정리했다.">
+    <meta name="keywords" content="Autoresearch, 프롬프트 최적화, 멀티 에이전트, Claude Skills, LLM-as-Judge, 콘텐츠 파이프라인, eval-driven, AI-Ready Data, 자기개선 루프, 평가 함수">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="측정은 하는데, 스스로 고치지는 않는다">
+    <meta property="og:description" content="Autoresearch와 자가개선 루프로 본 페블러스 콘텐츠 파이프라인의 빈 곳, 그리고 측정 기반 자기개선 루프를 이식하는 발전 설계.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Autoresearch 자기개선 루프와 페블러스 멀티 에이전트 파이프라인 비교">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="측정은 하는데, 스스로 고치지는 않는다">
+    <meta name="twitter:description" content="Autoresearch와 자가개선 루프로 본 페블러스 콘텐츠 파이프라인의 빈 곳과 발전 설계.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/autoresearch-blog-pipeline-comparison/ko/image/index.png">
+    <meta name="twitter:image:alt" content="평가 함수와 자기개선 루프 비교">
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="측정은 하는데, 스스로 고치지는 않는다">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/06/25">
+    <meta name="citation_online_date" content="2026/06/25">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Stylesheets (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260625">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260625">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260625">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Autoresearch란 무엇인가</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 페블러스 파이프라인 해부</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 정면 비교</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 두 시스템의 빈 곳</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 발전 방향: 루프 이식</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">AI 글쓰기의 경쟁점이 옮겨가고 있다. 프롬프트를 잘 쓰는 능력에서, 출력 품질을 측정하고 그 측정값으로 프롬프트를 자동으로 고치는 능력으로. Andrej Karpathy가 머신러닝 코드 최적화에서 제안한 Autoresearch는 루프 안에서 현재 최선을 이기는 변경만 남기는 단순한 패턴인데, Ole Lehmann은 이 패턴을 코드가 아니라 Claude의 콘텐츠 스킬에 적용해 카피 품질 통과율을 56%에서 92%까지 끌어올렸다고 보고했다. 그가 남긴 한 줄이 이 글의 출발점이다. "좋은 Autoresearch는 좋은 프롬프트가 아니라 좋은 평가(eval)에 달려 있다."</p>
+                        <p class="themeable-text leading-relaxed mt-4">페블러스의 멀티 에이전트 파이프라인을 이 렌즈로 보면, 우리는 이미 평가 함수의 절반을 가동 중이다. 한국어 문체를 11종 지표로 채점하는 ko-prose-humanizer와 SEO 4계층을 검사하는 seo-check는 사실상 Autoresearch가 말하는 Judge다. 실제로 이 평가 함수는 AI 거버넌스 시리즈 다섯 편에서 em-dash 남용을 46.6% 줄이며 측정이 결함을 잡아낸 사례를 만들었다. 비어 있는 것은 나머지 절반이다. 골든 테스트셋, 스킬 프롬프트를 변형하는 변이 엔진, 점수 기반 자동 롤백, 그리고 스킬 자체를 고치는 메타 루프가 없다. 우리 파이프라인은 글 한 편을 풍부하게 만들지만, 그 글을 만든 스킬은 스스로 나아지지 않는다.</p>
+                        <p class="themeable-text leading-relaxed mt-4">이 보고서의 결론은 두 시스템이 경쟁이 아니라 상보 관계라는 것이다. Autoresearch는 좁고 깊은 자동 최적화이고, 페블러스는 넓고 풍부한 1회 생성에 사람 판단과 다국어를 더한 공정이다. 발전 방향은 사람 컨펌을 없애는 쪽이 아니라, 사람이 보는 지점에 정량 점수를 보태는 데 있다. 이 글은 그 이식 설계를 운영자 시각에서 단계별로 제안한다.</p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">56% → 92%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Autoresearch 카피 통과율</p>
+                            <p class="text-xs themeable-muted mt-1">4라운드·약 $15, Ole Lehmann 자가보고(2026)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">약 +20%p</p>
+                            <p class="text-sm themeable-text-secondary mt-1">이진 판정 일치율 향상</p>
+                            <p class="text-xs themeable-muted mt-1">척도형을 합격/불합격으로 바꿀 때 LLM-인간 일치</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">-46.6%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">em-dash 감소(5편)</p>
+                            <p class="text-xs themeable-muted mt-1">ko-prose-humanizer가 잡아낸 페블러스 실측</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">40~60%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">모델 라우팅 비용 절감</p>
+                            <p class="text-xs themeable-muted mt-1">고추론만 상위 티어, 수집·실행은 하위 티어</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Autoresearch란 무엇인가: 프롬프트를 공정으로 보는 루프</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">Autoresearch는 무거운 프레임워크가 아니다. Karpathy가 2026년 3월 7일 공개한 코드는 Python 630줄짜리이고, 핵심 아이디어는 한 문장으로 줄어든다. 에이전트가 코드를 한 군데 고치고, 시간 제한을 둔 실험을 돌리고, 검증 지표를 측정하고, 좋아졌으면 그 변경을 남기고 나빠졌으면 되돌린다. 그리고 반복한다. Karpathy는 이 루프를 단일 GPU에서 이틀간 700회 돌려 20개의 진짜 개선을 찾았고, 더 큰 모델에 적용했을 때 학습 속도를 11% 끌어올렸다. 20년 동안 사람이 손으로 놓쳤던 정규화 누락 같은 결함을 루프가 대신 잡아낸 것이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">이 루프가 단숨에 주목받은 건, Karpathy 자신의 실험을 넘어 남의 운영 코드에서도 통했기 때문이다. Shopify의 Tobi Lütke는 같은 패턴을 자사 템플릿 엔진 Liquid에 돌려, 사람이 다듬어 온 렌더링 속도를 절반 가까이 끌어올리고 메모리 사용을 크게 줄였다고 전했다. 수백 번의 자동 실험 중 단위 테스트를 모두 통과한 변경만 남긴 결과였다. 장난감 모델이 아니라 실제 제품 코드에서, 루프가 숙련된 개발자가 놓친 개선을 찾아낸 두 번째 증거다. 그래서 다음 질문은 자연스럽게 따라온다. 코드가 아니라 글이라면 어떨까.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">이 글의 직접 출처는 코드가 아니다. Ole Lehmann이 같은 패턴을 콘텐츠 스킬에 옮긴 사례다. 그는 자신의 랜딩 페이지 카피 스킬이 품질 체크의 44%를 통과하지 못한다는 점에서 출발해, 에이전트가 스킬 프롬프트를 수정하고 점수를 비교하며 유지·롤백을 무인으로 반복하게 했다. 네 라운드, 약 15달러 비용 끝에 통과율은 92%가 됐다. 유지된 변경은 셋이었다. 헤드라인에 구체적 숫자나 결과를 넣으라는 규칙, 금지 버즈워드 목록, 그리고 규칙보다 강력했던 완성 예시(worked example)의 직접 삽입이다. 롤백된 변경은 하나, 글자 수를 너무 빡빡하게 묶은 규칙이었다. 카피가 얇아지고 행동 유도가 약해졌기 때문이다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">한 가지 단서를 분명히 해두자. 56%에서 92%라는 수치는 Ole Lehmann 본인의 자가보고이며, 독립 재현이나 테스트셋 크기 공개가 없다. 통과율은 실제 전환율 상승이 아니라 저품질을 걸러내는 사전 필터를 통과한 비율이다. 인상적인 사례로 인용하되, 검증된 일반 효과로 단정하지는 않는다.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">루프를 이루는 다섯 조각</h3>
+                    <p class="themeable-text leading-relaxed mb-6">패턴을 부품으로 분해하면 다섯 개가 남는다. 변경 후보를 한 번에 하나씩 만드는 <strong>변이(Mutation)</strong>, 그 변경으로 산출물을 만드는 <strong>실행(Execution)</strong>, 산출물을 채점하는 <strong>판정(Judge)</strong>, 점수가 오르면 남기고 떨어지면 되돌리는 <strong>오케스트레이터(Orchestrator)</strong>, 그리고 무엇을 왜 바꿨는지 남기는 <strong>변경 이력(Changelog)</strong>이다. 이 중 진짜 제품은 프롬프트가 아니라 판정이다. 판정이 흔들리면 루프 전체가 잘못된 방향으로 최적화된다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">그래서 Ole의 체크리스트 설계 규칙이 중요하다. 항목은 세 개에서 여섯 개 사이의 이진 질문으로 둔다. 헤드라인에 구체적 수치가 있는가, 버즈워드가 없는가, 행동 유도가 구체적인가 같은 식이다. 정확한 점수보다 일관된 판정이 설계 원칙이다. 항목이 너무 적으면 품질을 못 잡고, 여섯 개를 넘으면 모델이 항목 점수만 노리고 실제 독자 품질은 떨어지는 과적합이 생긴다. 평가 함수는 저품질을 막는 하한이어야지, 창의성을 누르는 상한이 되어서는 안 된다.</p>
+
+                    <!-- Image: Autoresearch 5-piece self-improving loop -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 910 215" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#f8fafc)" role="img" aria-label="Autoresearch 자기개선 루프 다섯 조각 흐름도">
+                            <defs>
+                                <marker id="arG-ko" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3z" fill="var(--text-muted,#9ca3af)"/>
+                                </marker>
+                                <marker id="arO-ko" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                            <!-- Title -->
+                            <text x="455" y="22" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">Autoresearch 자기개선 루프 — 다섯 조각</text>
+                            <!-- Arrows left-to-right -->
+                            <line x1="147" y1="80" x2="207" y2="80" stroke="var(--text-muted,#9ca3af)" stroke-width="2" marker-end="url(#arG-ko)"/>
+                            <line x1="322" y1="80" x2="392" y2="80" stroke="var(--text-muted,#9ca3af)" stroke-width="2" marker-end="url(#arG-ko)"/>
+                            <line x1="507" y1="80" x2="562" y2="80" stroke="#F86825" stroke-width="2.5" marker-end="url(#arO-ko)"/>
+                            <line x1="715" y1="80" x2="752" y2="80" stroke="var(--text-muted,#9ca3af)" stroke-width="2" marker-end="url(#arG-ko)"/>
+                            <!-- Return arc (loop back) -->
+                            <path d="M820,104 Q820,168 455,168 Q90,168 90,104" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5" fill="none" stroke-dasharray="6,3" marker-end="url(#arG-ko)"/>
+                            <!-- Keep/rollback annotation -->
+                            <text x="455" y="197" text-anchor="middle" font-size="10" fill="var(--text-secondary,#6B7280)" font-family="Pretendard,sans-serif">점수 ↑ → 유지 / 점수 ↓ → 롤백</text>
+                            <!-- Node 0: 변이 -->
+                            <ellipse cx="90" cy="80" rx="57" ry="24" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="90" y="77" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">변이</text>
+                            <text x="90" y="93" text-anchor="middle" font-size="10" fill="var(--text-muted,#9ca3af)" font-family="Pretendard,sans-serif">Mutation</text>
+                            <!-- Node 1: 실행 -->
+                            <ellipse cx="265" cy="80" rx="57" ry="24" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="265" y="77" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">실행</text>
+                            <text x="265" y="93" text-anchor="middle" font-size="10" fill="var(--text-muted,#9ca3af)" font-family="Pretendard,sans-serif">Execution</text>
+                            <!-- Node 2: 판정 (orange — the key) -->
+                            <ellipse cx="450" cy="80" rx="57" ry="24" fill="#FFF3EC" stroke="#F86825" stroke-width="2.5"/>
+                            <text x="450" y="75" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825" font-family="Pretendard,sans-serif">판정</text>
+                            <text x="450" y="91" text-anchor="middle" font-size="10" font-weight="600" fill="#F86825" font-family="Pretendard,sans-serif">Judge ★</text>
+                            <!-- Node 3: 오케스트레이터 -->
+                            <ellipse cx="640" cy="80" rx="75" ry="24" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="640" y="75" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">오케스트레이터</text>
+                            <text x="640" y="91" text-anchor="middle" font-size="10" fill="var(--text-muted,#9ca3af)" font-family="Pretendard,sans-serif">Orchestrator</text>
+                            <!-- Node 4: 변경 이력 -->
+                            <ellipse cx="820" cy="80" rx="65" ry="24" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="820" y="75" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">변경 이력</text>
+                            <text x="820" y="91" text-anchor="middle" font-size="10" fill="var(--text-muted,#9ca3af)" font-family="Pretendard,sans-serif">Changelog</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Autoresearch 자기개선 루프 다섯 조각 — 판정(Judge)이 루프의 실질 제품이다. 점수가 오르면 유지, 내리면 롤백 | 페블러스 원본 도식 (Fig. 1 재해석)</figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">학계 계보: 새 발명이 아니라 단순화</h3>
+                    <p class="themeable-text leading-relaxed mb-6">"한 번에 한 변경 후 점수로 유지·롤백"이라는 규율은 학계에서 이미 검증된 흐름의 실무 단순화 버전이다. 프롬프트를 선언적 모듈로 컴파일·최적화하는 DSPy는 다단계 추론 과제에서 32%, 수학 추론에서 45% 정확도를 올렸다. 메타 LLM이 새 프롬프트를 반복 생성하는 OPRO, 교차·변이로 프롬프트를 진화시키는 EvoPrompt, 자연어 피드백을 기울기처럼 쓰는 TextGrad도 같은 가족이다. 효과 크기는 과제에 따라 7%에서 45%까지 폭이 넓고, 구조적 추론에서 크게 나타난다. Ole가 보고한 +36%p는 이 범위의 상단에 걸쳐 있지만, 어디까지나 단일 자가보고라는 점은 거듭 새겨둘 필요가 있다.</p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스 파이프라인 해부: 멀티 에이전트와 사람 컨펌</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">페블러스가 심층조사 보고서를 만드는 공정은 한 덩어리의 프롬프트가 아니라 여러 에이전트가 줄지어 일하는 파이프라인이다. 주제가 들어오면 중복과 가치를 병렬로 검토하고, 사람이 한 번 확인한 뒤 기획으로 넘어간다. 거기서 세 갈래로 갈라져 논문·업계·데이터를 동시에 조사하고, 합성 단계가 이를 한 문서로 묶는다. 작성, 사람의 두 번째 리뷰, 다섯 단계 품질 보강, 영문화, SEO와 SNS, 그리고 퍼블리싱이 이어진다. 지금 당신이 읽는 이 글도 그 공정을 거쳤다.</p>
+
+                    <!-- Image: Pebblous multi-agent pipeline 3-block -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 720 185" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#f8fafc)" role="img" aria-label="페블러스 멀티 에이전트 파이프라인 세 단계">
+                            <defs>
+                                <marker id="arPG-ko" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3z" fill="var(--text-muted,#9ca3af)"/>
+                                </marker>
+                            </defs>
+                            <!-- Block 1: 기획·연구 -->
+                            <rect x="8" y="28" width="213" height="148" rx="10" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="114" y="50" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">① 기획 · 연구</text>
+                            <line x1="30" y1="57" x2="200" y2="57" stroke="var(--text-muted,#9ca3af)" stroke-width="0.8"/>
+                            <text x="114" y="76" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Pretendard,sans-serif">주제 입력</text>
+                            <text x="114" y="93" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Pretendard,sans-serif">중복 · 가치 사전검토</text>
+                            <rect x="35" y="103" width="159" height="22" rx="5" fill="var(--text-muted,#9ca3af)" fill-opacity="0.15" stroke="var(--text-muted,#9ca3af)" stroke-width="1"/>
+                            <text x="114" y="118" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">사람 컨펌 ①</text>
+                            <text x="114" y="139" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Pretendard,sans-serif">기획 → 병렬 3트랙</text>
+                            <text x="114" y="155" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Pretendard,sans-serif">(논문 | 업계 | 데이터)</text>
+                            <!-- Arrow 1→2 -->
+                            <line x1="224" y1="102" x2="250" y2="102" stroke="var(--text-muted,#9ca3af)" stroke-width="2" marker-end="url(#arPG-ko)"/>
+                            <!-- Block 2: 합성·작성 -->
+                            <rect x="254" y="28" width="207" height="148" rx="10" fill="var(--card-bg,#f1f5f9)" stroke="var(--text-muted,#9ca3af)" stroke-width="1.5"/>
+                            <text x="357" y="50" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">② 합성 · 작성</text>
+                            <line x1="275" y1="57" x2="445" y2="57" stroke="var(--text-muted,#9ca3af)" stroke-width="0.8"/>
+                            <text x="357" y="76" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Pretendard,sans-serif">합성 에이전트</text>
+                            <text x="357" y="93" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Pretendard,sans-serif">초고 작성</text>
+                            <rect x="278" y="103" width="158" height="22" rx="5" fill="var(--text-muted,#9ca3af)" fill-opacity="0.15" stroke="var(--text-muted,#9ca3af)" stroke-width="1"/>
+                            <text x="357" y="118" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">사람 컨펌 ②</text>
+                            <text x="357" y="139" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Pretendard,sans-serif">영문화 (KO / EN)</text>
+                            <text x="357" y="155" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Pretendard,sans-serif">이미지 보강</text>
+                            <!-- Arrow 2→3 -->
+                            <line x1="464" y1="102" x2="490" y2="102" stroke="var(--text-muted,#9ca3af)" stroke-width="2" marker-end="url(#arPG-ko)"/>
+                            <!-- Block 3: Judge층·배포 (orange) -->
+                            <rect x="494" y="28" width="218" height="148" rx="10" fill="#FFF7F2" stroke="#F86825" stroke-width="2"/>
+                            <text x="603" y="50" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825" font-family="Pretendard,sans-serif">③ Judge층 · 배포</text>
+                            <line x1="515" y1="57" x2="695" y2="57" stroke="#F86825" stroke-width="0.8" stroke-opacity="0.5"/>
+                            <text x="603" y="76" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">ko-prose-humanizer</text>
+                            <text x="603" y="93" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">seo-check</text>
+                            <text x="603" y="110" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)" font-family="Pretendard,sans-serif">articles.json 검증</text>
+                            <text x="603" y="130" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)" font-family="Pretendard,sans-serif">OG 이미지 · RSS · sitemap</text>
+                            <rect x="527" y="143" width="151" height="22" rx="5" fill="#F86825"/>
+                            <text x="603" y="158" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff" font-family="Pretendard,sans-serif">퍼블리싱</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ 페블러스 멀티 에이전트 파이프라인 3단계 — ③ Judge층이 Autoresearch의 판정에 해당한다 | 페블러스 원본 도식 (Fig. 2 재해석)</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">눈여겨볼 설계가 둘 있다. 첫째는 모델 차등 배정이다. 기획·논문 조사·합성·작성처럼 추론이 핵심인 노드에만 상위 티어 모델을 쓰고, 수집·실행·퍼블리싱은 하위 티어에 맡긴다. 상위와 하위 티어는 출력 토큰 기준 가격이 다섯 배 차이 나지만 코딩 벤치마크 격차는 한 자릿수 퍼센트포인트에 그친다. 그래서 고추론 노드만 상위 티어로 올리는 라우팅은 단일 모델 대비 40~60%를 아끼면서 기획 품질은 유지한다. 캐싱과 배치를 더하면 절감폭은 더 커진다. 이것은 Autoresearch가 말하는 "한 번 잘 기획하고, 실행은 값싸게 여러 번"의 페블러스식 구현이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">둘째는 사람 컨펌 게이트다. 사전 검토 직후와 초고 완성 직후, 두 지점에서 파이프라인은 멈추고 사람의 판단을 기다린다. 이것을 자동화의 미완성으로 읽으면 오해다. 페블러스의 지향은 자동화 극대화가 아니라, 사람 판단을 핵심 게이트로 남긴 측정 기반 반복이다. 게이트는 약점이 아니라 의도된 설계다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">우리는 이미 Judge를 가지고 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">파이프라인 안에는 Autoresearch의 판정에 해당하는 도구가 이미 두 개 돈다. ko-prose-humanizer는 AI가 쓴 티가 나는 문체를 열한 가지 지표로 잡아 110점 만점으로 채점한다. 줄표 재진술, 명사형 종결 일색, 메타 예고문, 본문 끝의 작위적 자사 연결 같은 패턴이다. 점수가 임계치를 넘으면 자동 교정을 강권하고, 통과 구간이면 그냥 지나간다. seo-check는 메타 태그, OG와 트위터 카드, JSON-LD 스키마, 검색 콘솔의 4계층을 검사해 전부 통과해야 다음으로 넘긴다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">이 평가 함수가 빈말이 아니라는 증거가 우리 자신의 글에 있다. AI 거버넌스 시리즈 다섯 편을 ko-prose-humanizer로 교정했을 때 em-dash 총수는 545개에서 291개로, 46.6% 줄었다. 메타 예고문은 글마다 다섯에서 열 곳씩 있던 것이 모두 사라졌고, 본문 끝의 자사 점프는 별도 편집자 노트로 분리됐다. 측정이 실제로 결함을 잡아낸 것이다. 자기참조적이지만 정직한 실증이다.</p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">정면 비교: 철학과 아키텍처의 대칭</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">두 시스템을 같은 축에 놓고 보면 우열이 아니라 성격 차이가 드러난다. Autoresearch는 하나의 프롬프트를 자동으로 깊게 파고드는 도구이고, 페블러스 파이프라인은 한 편의 글을 사람 판단을 끼워 넓게 완성하는 공정이다. 다음 표는 여덟 개 축에서 둘이 어떻게 갈리는지 보여준다.</p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">비교 축</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">Autoresearch 자가개선 루프</th>
+                                    <th class="border themeable-border px-3 py-2 text-left font-semibold">페블러스 파이프라인</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">개선 단위</td>
+                                    <td class="border themeable-border px-3 py-2">스킬 프롬프트(평가 함수 자체)</td>
+                                    <td class="border themeable-border px-3 py-2">개별 글 한 편(산출물)</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">평가 방식</td>
+                                    <td class="border themeable-border px-3 py-2">이진 체크리스트 자동 채점</td>
+                                    <td class="border themeable-border px-3 py-2">11종 문체 지표 + SEO 4계층</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">반복 주체</td>
+                                    <td class="border themeable-border px-3 py-2">무인 루프(에이전트)</td>
+                                    <td class="border themeable-border px-3 py-2">에이전트 생성 + 사람 컨펌</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">롤백</td>
+                                    <td class="border themeable-border px-3 py-2">점수 하락 시 자동 되돌림</td>
+                                    <td class="border themeable-border px-3 py-2">사람 리뷰 기반 수동 수정</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">다국어</td>
+                                    <td class="border themeable-border px-3 py-2">단일 산출(대상에 한정)</td>
+                                    <td class="border themeable-border px-3 py-2">KO/EN 병렬 재작성</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">서사 품질</td>
+                                    <td class="border themeable-border px-3 py-2">단문·카피 단위 최적화에 강함</td>
+                                    <td class="border themeable-border px-3 py-2">다단계 서사·맥락 정합성에 강함</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">사람 개입</td>
+                                    <td class="border themeable-border px-3 py-2">최소(설계 시점에만)</td>
+                                    <td class="border themeable-border px-3 py-2">두 개의 컨펌 게이트로 상시</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-3 py-2 font-semibold">재현성</td>
+                                    <td class="border themeable-border px-3 py-2">점수·변경 이력으로 추적</td>
+                                    <td class="border themeable-border px-3 py-2">실행 로그로 추적(스킬 개선 이력은 없음)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">두 시스템의 차이는 결국 한 문장으로 모인다. Autoresearch는 좁고 깊은 자동 최적화이고, 페블러스는 사람 판단과 다국어를 더해 한 편을 넓게 완성하는 공정이다. 한쪽은 평가 함수를 스스로 고치는 데 능하고, 다른 쪽은 한 편의 긴 글을 맥락에 맞게 끝까지 책임지는 데 능하다. 둘은 같은 일을 두고 경쟁하지 않는다.</p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">두 시스템의 빈 곳: 서로가 못 보는 것</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">비교의 진짜 가치는 서로의 맹점을 드러내는 데 있다. 두 시스템은 각자 잘하는 것의 그림자에서 정확히 무언가를 놓치고 있다.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="themeable-bg-card border themeable-border rounded-lg p-6 border-l-4" style="border-left-color: #F86825;">
+                            <h3 class="text-xl font-bold themeable-heading mb-3">페블러스에 없는 것</h3>
+                            <ul class="themeable-text leading-relaxed space-y-2" style="list-style:none;margin-left:0;line-height:2.0;">
+                                <li>• 대표 입력을 모아둔 골든 테스트셋</li>
+                                <li>• 스킬 프롬프트를 자동으로 변형하는 변이 엔진</li>
+                                <li>• 점수가 떨어지면 되돌리는 자동 롤백</li>
+                                <li>• 스킬 자체를 고치는 메타 루프</li>
+                                <li>• 방법론 수준의 변경 이력(현재 changelog는 콘텐츠 이력일 뿐)</li>
+                            </ul>
+                        </div>
+                        <div class="themeable-bg-card border themeable-border rounded-lg p-6 border-l-4" style="border-left-color: #585858;">
+                            <h3 class="text-xl font-bold themeable-heading mb-3">Autoresearch에 없는 것</h3>
+                            <ul class="themeable-text leading-relaxed space-y-2" style="list-style:none;margin-left:0;line-height:2.0;">
+                                <li>• 다단계 서사의 흐름과 완결성</li>
+                                <li>• 사실 정합성과 맥락 판단</li>
+                                <li>• 다국어 재작성(직역이 아닌 현지화)</li>
+                                <li>• 편집자의 최종 판단</li>
+                                <li>• 좁은 체크리스트가 못 보는 독자 경험</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">정리하면 페블러스는 측정은 하는데 그 측정값으로 스킬을 고치지는 않는다. 글 한 편의 문체 점수는 매기지만, 그 점수를 받아 ko-prose-humanizer라는 스킬 자체를 더 나은 버전으로 변형하고 검증하는 단계가 비어 있다. 반대로 Autoresearch는 좁은 체크리스트를 빠르게 최적화하지만, 그 체크리스트가 잡지 못하는 서사의 결이나 사실의 오류는 끝내 보지 못한다. 두 빈 곳은 정확히 상대의 강점이다.</p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">발전 방향: 자기개선 루프를 파이프라인에 이식하기</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">우리가 평가 함수의 절반을 이미 가졌다면, 나머지 절반을 채우는 길은 처음부터 새로 짓는 것이 아니라 기존 판정기를 루프로 닫는 것이다. 무거운 인프라는 필요 없다. Ole의 사례가 약 15달러였다는 점을 기억하자. 아래 다섯 단계는 사람 컨펌을 없애지 않으면서 그 지점에 정량 점수를 보태는 설계다.</p>
+
+                    <div class="space-y-6 mb-8">
+                        <div class="border-l-4 pl-6 pb-2" style="border-color: #F86825;">
+                            <h3 class="text-xl font-bold themeable-heading mb-2">1단계. 판정기를 이진 평가 함수로 형식화</h3>
+                            <p class="themeable-text leading-relaxed">ko-prose-humanizer, seo-check, articles.json 검증을 합격/불합격이 분명한 이진 체크리스트로 다시 적는다. 척도형을 이진으로 바꾸면 LLM과 사람의 판정 일치율이 약 20%p 올라간다는 결과가 이 선택을 뒷받침한다.</p>
+                        </div>
+                        <div class="border-l-4 pl-6 pb-2" style="border-color: #F86825;">
+                            <h3 class="text-xl font-bold themeable-heading mb-2">2단계. 골든 입력셋 구축</h3>
+                            <p class="themeable-text leading-relaxed">대표 토픽과 기존 글에서 10~20개의 입력을 골라 골든셋으로 고정한다. 스킬을 바꿀 때마다 이 입력셋으로 점수를 재서, 한 글에서 좋아진 변경이 다른 글을 망치지 않는지 회귀적으로 확인한다.</p>
+                        </div>
+                        <div class="border-l-4 pl-6 pb-2" style="border-color: #F86825;">
+                            <h3 class="text-xl font-bold themeable-heading mb-2">3단계. 한 번에 한 규칙만 변이</h3>
+                            <p class="themeable-text leading-relaxed">스킬 프롬프트의 규칙을 한 번에 하나씩만 바꾼다. 여러 규칙을 동시에 손대면 어느 변경이 점수를 움직였는지 알 수 없다. Autoresearch의 가장 단순하면서 가장 중요한 규율이 바로 이 한 줄이다.</p>
+                        </div>
+                        <div class="border-l-4 pl-6 pb-2" style="border-color: #585858;">
+                            <h3 class="text-xl font-bold themeable-heading mb-2">4단계. 골든셋 점수로 유지·롤백</h3>
+                            <p class="themeable-text leading-relaxed">변이 후 골든셋 점수가 오르면 그 변경을 남기고, 떨어지면 되돌린다. 사람은 이 자동 판단의 결과를 컨펌 게이트에서 느낌이 아니라 점수와 근거로 확인한다.</p>
+                        </div>
+                        <div class="border-l-4 pl-6" style="border-color: #585858;">
+                            <h3 class="text-xl font-bold themeable-heading mb-2">5단계. 방법론 변경 이력 축적</h3>
+                            <p class="themeable-text leading-relaxed">무엇을 왜 바꿨고 점수가 어떻게 움직였는지를 콘텐츠 이력과 별도로 기록한다. 이 이력이 쌓이면 파이프라인은 스스로 어떻게 나아졌는지 설명할 수 있는 시스템이 된다.</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">비용과 실패 모드</h3>
+                    <p class="themeable-text leading-relaxed mb-6">규모는 작다. 무거운 플랫폼이 아니라 이진 체크리스트 몇 개, 골든 입력 10~20개, 그리고 한 번에 한 변경 후 점수를 비교하는 규율이면 시작된다. 다만 실패 모드는 분명하다. 첫째, 과적합이다. 평가 함수가 잡는 항목만 좋아지고 글이 다 비슷해질 수 있다. 그래서 평가 함수는 하한이어야 하고, 골든셋은 분기마다 갱신해 기준 노후화를 막아야 한다. 둘째, 판정기 신뢰도다. LLM 판정은 일반 과제에서 사람과 80%대 일치하지만 전문 도메인에서는 60% 중후반으로 떨어지고, 답변 순서만 바꿔도 판정이 흔들린다. 그래서 핵심 항목은 사람 검토를 남기고, 순서를 교환해 평균 내는 보정이 필요하다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">시장에는 잘 생성하는 에이전트 프레임워크와, 잘 평가하는 관측 도구가 따로 있다. 평가 도구는 이미 전략 인프라로 격상돼, 한 곳은 8억 달러 가치를 평가받았고 다른 한 곳은 모델 회사에 인수됐다. 페블러스가 드문 이유는 생성 파이프라인과 자체 평가 함수와 사람 컨펌 게이트를 한 몸으로 굴리기 때문이다. 여기에 자기개선 루프를 더하면 측정 기반으로 스스로 나아지는 콘텐츠 공정이 된다. 그리고 같은 골격은 그대로 데이터 품질 파이프라인으로 옮겨간다. 출력을 측정하고, 한 번에 한 변경을 하고, 점수로 유지·롤백하는 규율은 합성데이터 생성과 라벨 품질 교정에 그대로 작동한다. 콘텐츠의 평가 함수가 데이터 품질 지표로 치환될 뿐이다.</p>
+                    </div>
+
+                    <div class="border-l-4 border-orange-500 pl-4 mt-8" style="border-color: #F86825;">
+                        <p class="text-sm themeable-muted leading-relaxed"><strong>편집자 노트.</strong> 이 보고서는 페블러스가 운영하는 파이프라인 자체를 비교 대상이자 개선 대상으로 삼았다. AI-Ready Data, DataClinic, 합성데이터 같은 페블러스의 데이터 품질 작업과 콘텐츠 파이프라인은 "출력을 측정하고 루프 안에서 고친다"는 같은 골격을 공유한다. 자사 시스템을 사례로 든 것은 홍보가 아니라, 운영자가 자기 시스템의 빈 곳을 어떻게 진단하고 메우는지를 그대로 보이기 위함이다.</p>
+                    </div>
+                </section>
+
+                <!-- FAQ Section -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">1차 출처: Autoresearch 원전과 적용</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Lehmann, O. (2026). "Karpathy's Autoresearch method for Claude Skills." <a href="https://www.threads.com/@itsolelehmann/post/DWHFWK0CY4R" target="_blank" rel="noopener">Threads @itsolelehmann</a>. (56%→92% 자가보고 원문)</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Karpathy, A. (2026). "<a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">autoresearch</a>." GitHub (MIT License, 2026-03-07 공개).</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Agent Cookbook. (2026). "<a href="https://agent-cookbook.com/tutorial/how-to-10x-your-claude-skills-using-karpathy-s-autoresearch-method" target="_blank" rel="noopener">How to 10x your Claude Skills using Karpathy's Autoresearch method</a>." (재현 상세)</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">VentureBeat. (2026). "<a href="https://venturebeat.com/technology/andrej-karpathys-new-open-source-autoresearch-lets-you-run-hundreds-of-ai" target="_blank" rel="noopener">Andrej Karpathy's new open-source autoresearch</a>." <em>VentureBeat</em>; Fortune; NextBigFuture 교차 확인(700회 실험·11% 향상).</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술: 자동 프롬프트 최적화와 LLM-as-Judge</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">5.</span><span class="ref-body">Yang, C. et al. (2023). "<a href="https://arxiv.org/abs/2309.03409" target="_blank" rel="noopener">Large Language Models as Optimizers (OPRO)</a>." arXiv.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Khattab, O. et al. (2023). "<a href="https://arxiv.org/abs/2310.03714" target="_blank" rel="noopener">DSPy: Compiling Declarative Language Model Calls</a>." Stanford NLP. (HotpotQA +32%, GSM-8K +45%)</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Zheng, L. et al. (2024). "<a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener">Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</a>." NeurIPS.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Evidently AI. "<a href="https://www.evidentlyai.com/llm-guide/llm-as-a-judge" target="_blank" rel="noopener">LLM-as-a-judge: a complete guide</a>." (이진 vs 척도 신뢰도, +20%p)</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Galileo AI. "<a href="https://galileo.ai/blog/llm-as-a-judge-vs-human-evaluation" target="_blank" rel="noopener">LLM-as-a-Judge vs Human Evaluation</a>." (일반 80%+, 전문 도메인 60~68%)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">업계·시장·도구</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">10.</span><span class="ref-body">Caylent. (2026). "<a href="https://caylent.com/blog/claude-haiku-4-5-deep-dive-cost-capabilities-and-the-multi-agent-opportunity" target="_blank" rel="noopener">Claude Haiku deep dive: cost, capabilities, and the multi-agent opportunity</a>." (모델 차등·라우팅 절감)</span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">Braintrust. (2025). "<a href="https://www.braintrust.dev/articles/best-prompt-evaluation-tools-2025" target="_blank" rel="noopener">Best prompt evaluation tools 2025</a>." (eval 도구 생태계, Series B $8천만·$8억 가치)</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">Precedence Research. "<a href="https://www.precedenceresearch.com/generative-ai-in-content-creation-market" target="_blank" rel="noopener">Generative AI in Content Creation Market</a>." ($19.75B→$143.09B, CAGR 21.9%)</span></li>
+                    </ul>
+
+                    <p class="text-sm themeable-muted mt-2">※ 56%→92% 수치는 Ole Lehmann의 단일 자가보고이며 독립 재현이 없다. 본문 인용은 모두 "자가보고"로 명시했다. 모델 가격·성능은 티어와 가격비로 서술해 특정 버전 표기를 피했다. 일부 시장 규모는 정의(광의/협의)에 따라 기관별 편차가 있다.</p>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <!-- Scripts -->
+    <script src="/scripts/citation-download.js?v=20260625" defer></script>
+    <script src="/scripts/common-utils.js?v=20260625"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": true,
+              "trigger": {
+                "source": "api",
+                "actor": "operator",
+                "at": "2026-06-25T09:23:59.304Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-06-25T09:26:48.086Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-06-25T09:48:04.806Z"
+                },
+                {
+                  "phase": "publish-prep",
+                  "resolution": "human_resumed",
+                  "by": "operator",
+                  "at": "2026-06-26T02:07:58.438Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1782379439304-bz4y7z",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-06-26T02:07:58.445Z"
+            },
+            mainTitle: "측정은 하는데, 스스로 고치지는 않는다",
+            subtitle: "Karpathy의 Autoresearch와 Ole Lehmann의 Claude Skills 자가개선 루프를 페블러스 멀티 에이전트 콘텐츠 파이프라인과 비교하고, 평가 함수·변이·롤백을 이식하는 발전 설계",
+            pageTitle: "Autoresearch vs 멀티 에이전트 콘텐츠 파이프라인 — 자기개선 루프 비교 | 페블러스",
+            category: "tech",
+            publishDate: "2026-06-25",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/autoresearch-blog-pipeline-comparison/ko/",
+            tags: ["Autoresearch", "프롬프트 최적화", "멀티 에이전트", "Claude Skills", "LLM-as-Judge", "콘텐츠 파이프라인", "eval-driven", "AI-Ready Data"],
+            faqs: [
+                { question: "Autoresearch는 일반 프롬프트 튜닝과 무엇이 다른가요?", answer: "사람이 감으로 프롬프트를 고치는 게 아니라, 이진 평가 함수가 점수를 매기고 점수가 오르는 변경만 자동으로 남기는 닫힌 루프입니다. 한 번에 한 변경, 그리고 측정 후 유지·롤백이 핵심 규율입니다." },
+                { question: "LLM이 LLM을 평가하는 것을 믿어도 되나요?", answer: "조건부로 그렇습니다. 일반 과제는 사람과 80% 이상 일치하지만 전문 도메인은 60% 중후반으로 떨어지고, 답변 순서·자기선호·장황함 편향이 있습니다. 그래서 이진 판정, 순서 교환 평균, 핵심 항목의 사람 검토 유지가 권장됩니다." },
+                { question: "체크리스트는 몇 개가 적당한가요?", answer: "세 개에서 여섯 개 사이입니다. 너무 적으면 품질을 못 잡고, 여섯 개를 넘으면 모델이 항목 점수만 노리는 과적합이 생겨 실제 독자 품질이 떨어집니다. 이진(합격/불합격)으로 만들면 척도형보다 일치율이 약 20%p 높습니다." },
+                { question: "그럼 사람 컨펌을 없애도 되나요?", answer: "페블러스의 답은 아니오입니다. 사람 컨펌은 약점이 아니라 의도된 설계입니다. 발전 방향은 컨펌을 없애는 게 아니라, 사람이 보는 지점에 정량 점수를 보태 느낌이 아닌 점수와 근거로 판단하게 하는 것입니다." },
+                { question: "페블러스는 왜 아직 자동 개선 루프를 안 붙였나요?", answer: "평가 함수인 ko-prose-humanizer와 seo-check는 이미 있지만, 그 점수를 받아 스킬 프롬프트를 자동으로 변형·롤백하는 메타 루프와 골든 테스트셋이 없기 때문입니다. 측정은 하는데 그 측정값으로 스킬을 고치는 단계가 비어 있습니다." },
+                { question: "56%→92%라는 수치는 믿을 만한가요?", answer: "방향성은 학계(자동 최적화 7~45% 향상)와 일치하지만, 이 특정 수치는 Ole Lehmann의 단일 자가보고이며 독립 재현이나 테스트셋 크기 공개가 없습니다. 인상적 사례로 인용하되 자가보고임을 명시해야 합니다." },
+                { question: "작은 팀도 이걸 할 수 있나요?", answer: "가능합니다. Ole 사례는 약 15달러였습니다. 무거운 인프라가 아니라 이진 체크리스트 여섯 개, 대표 입력 10~20개의 골든셋, 그리고 한 번에 한 변경 후 점수를 비교하는 규율이면 시작됩니다." },
+                { question: "콘텐츠 말고 데이터 파이프라인에도 적용되나요?", answer: "같은 골격입니다. 출력을 측정하고, 한 번에 한 변경을 하고, 점수로 유지·롤백하는 규율은 합성데이터 생성과 라벨 품질 교정 루프에 그대로 옮겨집니다. 콘텐츠 평가 함수가 데이터 품질 지표로 치환될 뿐입니다." },
+                { question: "자동 루프를 붙이면 글이 다 비슷해지지 않나요?", answer: "그것이 과적합 위험입니다. 평가 함수는 저품질을 거르는 하한이어야지 창의성을 누르는 상한이 되어서는 안 됩니다. 그래서 ko-prose-humanizer도 사실·수치·구조는 건드리지 않고 산문 질감만 교정하며, 골든셋을 분기마다 갱신해 기준 노후화를 막습니다." }
+            ]
+        });
+    </script>
+</body>
+</html>
