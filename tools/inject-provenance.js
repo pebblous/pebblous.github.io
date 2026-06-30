@@ -38,6 +38,8 @@ const path = require('path');
 
 const ROOT = process.env.BLOG_CONTENT_REPO || path.resolve(__dirname, '..');
 const ARTICLES_JSON = path.join(ROOT, 'articles.json');
+// DEBUG
+if (process.env.DEBUG_INJECT) { console.error('[DEBUG] __dirname:', __dirname, 'ROOT:', ROOT, 'ARTICLES_JSON:', ARTICLES_JSON); }
 
 // ── HTML init 파싱/주입 (순수 함수 — 테스트 용이) ──────────────────────────────
 
