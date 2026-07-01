@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protein Structure Prediction Without MSA — How TDFold Cut the Homolog Dependency | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="rating" content="general">
+    <meta name="revisit-after" content="7 days">
+    <meta name="distribution" content="global">
+
+    <meta name="description" content="Much of AlphaFold's accuracy came from searching databases for homologous sequences (MSA). TDFold cut that data dependency, treating protein geometry like an image with a diffusion model, and reached the best accuracy among single-sequence methods. A case for rethinking data quality from volume to representation.">
+    <meta name="keywords" content="protein structure prediction, MSA-free protein prediction, AlphaFold limits, TDFold, single sequence, multiple sequence alignment, orphan protein, diffusion model, Stable Diffusion protein, bioinformatics, AI-Ready Data, data representation, Pebblous">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/ko/">
+
+    <!-- Open Graph -->
+    <meta name="og-image-title" content="They Stopped Looking for Similar Proteins — and Prediction Got Better">
+    <meta property="og:title" content="They Stopped Looking for Similar Proteins — and Prediction Got Better">
+    <meta property="og:description" content="Nobody added more data. Once geometry was treated like an image, that representation replaced the MSA dependency — and single-sequence accuracy went up.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Protein structure prediction without MSA — TDFold treating geometry like an image">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-07-02">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="They Stopped Looking for Similar Proteins — and Prediction Got Better">
+    <meta name="twitter:description" content="Much of AlphaFold's power came from homologous sequence (MSA) data. TDFold removed that data, treated geometry like an image, and accuracy went up instead of down.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/en/image/index.png">
+    <meta name="twitter:image:alt" content="They stopped looking for similar proteins — and prediction got better">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260702"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260702">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260702">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260702">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* Post-specific component — comparison table (not defined in common-styles) */
+        .cmp-table { width: 100%; border-collapse: collapse; }
+        .cmp-table th,
+        .cmp-table td {
+            text-align: left;
+            padding: 0.9rem 1.1rem;
+            border-bottom: 1px solid var(--border-color, rgba(120,120,120,0.25));
+            vertical-align: top;
+            line-height: 1.8;
+        }
+        .cmp-table thead th {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .cmp-table .row-head { font-weight: 600; white-space: nowrap; }
+        .cmp-table .col-emph { font-weight: 500; }
+        .cmp-table .col-emph-head { color: #F86825; }
+        .cmp-table .tdfold-row td { color: #F86825; font-weight: 600; }
+    </style>
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#msa-behind" class="block pl-4 themeable-toc-link transition-colors duration-200">1. What Stood Behind AlphaFold</a></li>
+                    <li><a href="#geometry-as-image" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Geometry as an Image</a></li>
+                    <li><a href="#results" class="block pl-4 themeable-toc-link transition-colors duration-200">3. The Results in Numbers</a></li>
+                    <li><a href="#representation-over-volume" class="block pl-4 themeable-toc-link transition-colors duration-200">4. When Representation Replaces Data</a></li>
+                    <li><a href="#editors-note" class="block pl-4 themeable-toc-link transition-colors duration-200">Editor's Note</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            We usually credit AlphaFold's uncanny accuracy at protein folding to the cleverness of the model. Yet a large share of that accuracy came from somewhere else: its ability to comb through vast databases and pull in hundreds to thousands of "look-alike proteins," a step known as multiple sequence alignment (MSA). This article looks at a 2026 <em class="not-italic" style="font-weight:600;">Nature Machine Intelligence</em> study that cut that data dependency head-on.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Strip those homologous sequences away and AlphaFold2's average TM-score collapses from about 0.80 to 0.41 — close to a halving. In other words, the bottleneck on accuracy was never model size; it was the richness of the reference data. TDFold uses none of that data. Instead it redefines a protein's geometry as a two-dimensional image and lets an image-generation model (a diffusion model) construct those relationships. The result reached the best accuracy among methods that use no MSA, and it pulled ahead by the largest margin on orphan proteins, which have no homologous sequences at all.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            One caveat has to be stated plainly. TDFold did not surpass an AlphaFold that had every homologous sequence at its disposal. "Removing the data made it more accurate" is a claim about the comparison with other single-sequence methods under the same conditions. Holding to that distinction, this article asks a broader question: can the gap we usually fill with more data be filled instead by how we represent the problem?
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.80 → 0.41</p>
+                            <p class="text-sm themeable-text-secondary mt-1">AlphaFold2 TM-score when MSA is removed</p>
+                            <p class="text-xs themeable-muted mt-1">Without homologs, accuracy collapses by nearly half — that was the real bottleneck</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">71.91</p>
+                            <p class="text-sm themeable-text-secondary mt-1">TDFold CASP16 GDT-TS</p>
+                            <p class="text-xs themeable-muted mt-1">Best among MSA-free single-sequence methods (ESMFold 70.33, OmegaFold 61.55)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">10–100×</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Inference speed</p>
+                            <p class="text-xs themeable-muted mt-1">Versus language-model methods on long sequences — no database search either</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">RTX 4090 · 1 week</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Full training cost</p>
+                            <p class="text-xs themeable-muted mt-1">A single GPU stands in for the weeks a TPU cluster once took</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="msa-behind" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What Stood Behind AlphaFold — Homologous Sequences</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A protein is a chain of amino acids strung in a single line that folds on its own into a three-dimensional shape. Guessing that final shape from the sequence alone is the structure-prediction problem. When people say AlphaFold2 essentially solved this decades-old challenge, they tend to overlook a quiet accomplice: multiple sequence alignment (MSA).
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        An MSA is, put simply, a "list of similar proteins." Proteins that branched from a common evolutionary root have sequences that resemble one another, and lining that list up side by side reveals a telling signal. Two positions that sit close together in the folded structure tend to change in tandem: when one mutates, the other mutates to match, preserving the fold. Read that co-evolution pattern and you can infer, indirectly, which two points along the sequence lie near each other in space. AlphaFold2's core engine is built precisely to extract that signal.
+                    </p>
+
+                    <!-- Image: MSA co-evolution concept diagram -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 190" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="#F86825">Co-evolution Signal — What the MSA Tells AlphaFold</text>
+                            <text x="118" y="40" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)" font-weight="600">Homolog list (MSA)</text>
+                            <rect x="104" y="47" width="24" height="100" rx="2" fill="#F86825" opacity="0.13"/>
+                            <rect x="155" y="47" width="24" height="100" rx="2" fill="#F86825" opacity="0.13"/>
+                            <text x="58" y="62" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">position →</text>
+                            <text x="88" y="62" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">1</text>
+                            <text x="116" y="62" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="#F86825" font-weight="700">i</text>
+                            <text x="142" y="62" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">3</text>
+                            <text x="167" y="62" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="#F86825" font-weight="700">j</text>
+                            <text x="193" y="62" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">5</text>
+                            <text x="30" y="82" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)">sp.1</text>
+                            <text x="88" y="82" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">A</text>
+                            <text x="116" y="82" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">K</text>
+                            <text x="142" y="82" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">L</text>
+                            <text x="167" y="82" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">E</text>
+                            <text x="193" y="82" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">V</text>
+                            <text x="30" y="103" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)">sp.2</text>
+                            <text x="88" y="103" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">G</text>
+                            <text x="116" y="103" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">R</text>
+                            <text x="142" y="103" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">V</text>
+                            <text x="167" y="103" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">D</text>
+                            <text x="193" y="103" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">I</text>
+                            <text x="30" y="124" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)">sp.3</text>
+                            <text x="88" y="124" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">G</text>
+                            <text x="116" y="124" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">H</text>
+                            <text x="142" y="124" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">L</text>
+                            <text x="167" y="124" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">Q</text>
+                            <text x="193" y="124" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">I</text>
+                            <text x="30" y="145" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)">sp.4</text>
+                            <text x="88" y="145" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">A</text>
+                            <text x="116" y="145" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">K</text>
+                            <text x="142" y="145" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">I</text>
+                            <text x="167" y="145" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">E</text>
+                            <text x="193" y="145" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">V</text>
+                            <text x="142" y="163" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">i changes → j changes too (K↔E · R↔D · H↔Q)</text>
+                            <line x1="217" y1="44" x2="217" y2="178" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3 2" opacity="0.4"/>
+                            <text x="232" y="112" text-anchor="middle" font-family="sans-serif" font-size="24" fill="#F86825">→</text>
+                            <text x="445" y="40" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)" font-weight="600">What AlphaFold2 reads from this</text>
+                            <rect x="255" y="50" width="380" height="60" rx="8" fill="none" stroke="#F86825" stroke-width="1.5" stroke-dasharray="5 3"/>
+                            <text x="445" y="74" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="#F86825">Co-evolution = spatial proximity signal</text>
+                            <text x="445" y="92" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">i and j change together → close in the 3D fold</text>
+                            <text x="445" y="106" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">(core material for AlphaFold2's pairwise representation)</text>
+                            <rect x="255" y="124" width="380" height="42" rx="8" fill="#F86825" opacity="0.10"/>
+                            <text x="445" y="143" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="700" fill="#F86825">No MSA → no signal → TM-score 0.80 → 0.41</text>
+                            <text x="445" y="158" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)">Why homologous sequences were AlphaFold's accuracy engine</text>
+                            <text x="330" y="183" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">Pebblous original diagram (Fig. 1 reinterpretation)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Reading co-evolution patterns from homolog lists to infer spatial proximity between residues — why AlphaFold2 depended on MSA | Pebblous original diagram
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The trouble lies in building the list in the first place. Searching giant databases such as UniRef and BFD for similar sequences usually takes tens of minutes on its own, and memory balloons as the sequence grows longer. And performance rides directly on how deep that list is.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-2 sm:p-4 mb-6 overflow-x-auto">
+                        <table class="cmp-table themeable-text">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-heading">Input condition</th>
+                                    <th class="col-emph-head">Average TM-score</th>
+                                    <th class="themeable-heading">What it means</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="row-head themeable-heading">Full MSA + templates</td>
+                                    <td class="col-emph">~0.98</td>
+                                    <td>Nearly matches the experimentally determined structure</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">Full MSA (no templates)</td>
+                                    <td class="col-emph">~0.80</td>
+                                    <td>Homologs alone are accurate enough</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">Single sequence (no MSA)</td>
+                                    <td class="col-emph">~0.41</td>
+                                    <td>Remove the homologs and accuracy collapses by nearly half</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The numbers are unambiguous. Take the homologs out of AlphaFold2 and accuracy sinks from 0.80 to 0.41. The model is untouched; only the data has been removed. The single biggest determinant of accuracy, then, was not the model's architecture but how many similar proteins it could find and attach as reference.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For certain proteins that dependency becomes a wall outright. Orphan proteins, which have no known relatives, and synthetic proteins freshly designed in the lab have no list to build in the first place. This is what spawned the many attempts to predict without an MSA. Protein language models like ESMFold and OmegaFold pretrain on hundreds of millions to billions of sequences, folding evolutionary information into model weights instead of a runtime database lookup. That does not remove the data dependency so much as shift it from search time to training time. And so their limits on orphan proteins remained stark.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            To sum up: much of AlphaFold's power lay in its data-retrieval knack for "finding and attaching similar things," and without that data it fell apart. Which turns the question around. Must that gap be filled only with more data, or can we represent the problem differently and cover it another way?
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="geometry-as-image" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Geometry as an Image — TDFold's Shift</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        TDFold, presented in <em class="not-italic" style="font-weight:600;">Nature Machine Intelligence</em> by the team of Xudong Wang, changed the angle on the problem rather than hunting for more data. It begins with a single observation. Write down every distance and orientation between residue <em class="not-italic" style="font-weight:600;">i</em> and residue <em class="not-italic" style="font-weight:600;">j</em> in a protein, and the result is an N×N table. And such a table can naturally be seen as a single two-dimensional image.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Stack one distance map and a few orientation maps and you get a multi-channel image — one that carries geometric relationships rather than color. Once the representation is recast this way, the tools built for images can be borrowed wholesale. What TDFold borrowed is the image-generation model that turns text into pictures: Stable Diffusion.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The whole pipeline runs in two stages. The first generates a geometric map from the sequence; the second raises that map into an actual three-dimensional structure.
+                    </p>
+
+                    <!-- Image: TDFold 2-stage pipeline diagram -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 155" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <text x="330" y="18" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="#F86825">TDFold Two-Stage Pipeline — Structure Without MSA</text>
+                            <!-- Box 1: Input -->
+                            <rect x="8" y="30" width="148" height="88" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5" opacity="0.6"/>
+                            <text x="82" y="58" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)">Input</text>
+                            <text x="82" y="75" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">Amino-acid sequence</text>
+                            <text x="82" y="93" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">Single sequence (no MSA)</text>
+                            <text x="82" y="109" text-anchor="middle" font-family="monospace" font-size="10" fill="var(--text-muted)">A-G-T-K-L-E-V…</text>
+                            <!-- Arrow 1 -->
+                            <line x1="156" y1="74" x2="252" y2="74" stroke="#F86825" stroke-width="2"/>
+                            <polygon points="252,69 263,74 252,79" fill="#F86825"/>
+                            <text x="210" y="62" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" font-weight="700" fill="#F86825">Stage 1</text>
+                            <text x="210" y="88" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)">Diffusion model</text>
+                            <text x="210" y="100" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">(fine-tuned SD)</text>
+                            <!-- Box 2: Geometry template (highlighted) -->
+                            <rect x="264" y="30" width="148" height="88" rx="8" fill="#F86825" opacity="0.08" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="338" y="56" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="700" fill="#F86825">Geometric template</text>
+                            <text x="338" y="73" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="#F86825">N×N distance &amp; orientation</text>
+                            <text x="338" y="90" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)">geometry treated as image</text>
+                            <text x="338" y="107" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">generated — no search</text>
+                            <!-- Arrow 2 -->
+                            <line x1="412" y1="74" x2="500" y2="74" stroke="#F86825" stroke-width="2"/>
+                            <polygon points="500,69 511,74 500,79" fill="#F86825"/>
+                            <text x="456" y="62" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" font-weight="700" fill="#F86825">Stage 2</text>
+                            <text x="456" y="88" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)">Lightweight network</text>
+                            <text x="456" y="100" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">(coordinate refinement)</text>
+                            <!-- Box 3: Output -->
+                            <rect x="512" y="30" width="140" height="88" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5" opacity="0.6"/>
+                            <text x="582" y="58" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)">Output</text>
+                            <text x="582" y="75" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">3D atomic coordinates</text>
+                            <text x="582" y="93" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">protein 3D structure</text>
+                            <text x="582" y="108" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">no database search</text>
+                            <text x="330" y="148" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">Pebblous original diagram (Fig. 2 reinterpretation) — TDFold pipeline structure</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ TDFold two-stage pipeline — Stage 1 generates the geometric image via diffusion; Stage 2 lifts it into 3D coordinates | Pebblous original diagram
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>"Generating" a geometric template</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The first stage fine-tunes Stable Diffusion for proteins. Just as the original model takes a sentence and imagines a scene, here it takes an amino-acid sequence and draws the distance and orientation maps between residues. The information AlphaFold2 read out of its list of homologs — which position sits near which — TDFold imagines into being with a diffusion model, no search required. That imagination is not arbitrary, of course. Because training uses the distance and orientation maps of experimentally determined structures as ground truth, the model is disciplined, given a sequence, to draw plausible geometry. The generative model stands in for the step of trawling a database.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>Meshing sequence and geometry into 3D</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The second stage is a lightweight network that carries the generated geometric map into actual three-dimensional coordinates. It re-aligns the relationships between the sequence and its residues in a co-evolutionary fashion and factors in how side-chain atoms shape the backbone, settling the final structure. Because no heavy large language model is running, this stage is light on both memory and speed.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The point is not "they gathered more data" but "they rewrote the problem as an image." The moment geometric relationships are cast as an image, all the knowledge already accumulated in Stable Diffusion within the image domain can be pulled straight over. The gap once filled with homolog data was instead covered by changing the representation and borrowing knowledge from another domain.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="results" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Results in Numbers</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Protein structure prediction methods are tested at CASP, an open competition held every two years. How close a predicted structure comes to the real one is measured by the GDT-TS score (0–100, higher is better). The table below gathers the single-sequence methods from the two most recent competitions, alongside the full-homolog methods included for reference.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-2 sm:p-4 mb-6 overflow-x-auto">
+                        <table class="cmp-table themeable-text">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-heading">Model</th>
+                                    <th class="themeable-heading">CASP15 GDT-TS</th>
+                                    <th class="themeable-heading">CASP16 GDT-TS</th>
+                                    <th class="themeable-heading">Input</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="tdfold-row">
+                                    <td class="row-head">TDFold</td>
+                                    <td>63.52</td>
+                                    <td>71.91</td>
+                                    <td>Single sequence (no MSA)</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">ESMFold</td>
+                                    <td>62.99</td>
+                                    <td>70.33</td>
+                                    <td>Single sequence (no MSA)</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">OmegaFold</td>
+                                    <td>57.37</td>
+                                    <td>61.55</td>
+                                    <td>Single sequence (no MSA)</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">AlphaFold2</td>
+                                    <td>73.24</td>
+                                    <td>74.05</td>
+                                    <td>Homologs + templates</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">AlphaFold3</td>
+                                    <td>73.26</td>
+                                    <td>79.59</td>
+                                    <td>Homologs + templates</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Image: CASP16 performance bar chart -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 242" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <text x="330" y="20" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="#F86825">CASP16 GDT-TS Performance Comparison</text>
+                            <text x="330" y="36" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">GDT-TS: 0–100, higher is better · single-sequence vs full-homolog methods</text>
+                            <!-- Group 1 label -->
+                            <text x="10" y="54" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-secondary)" font-weight="600">Single sequence (no MSA)</text>
+                            <!-- TDFold bar -->
+                            <text x="175" y="71" text-anchor="end" font-family="Outfit,sans-serif" font-size="11" font-weight="700" fill="#F86825">TDFold</text>
+                            <rect x="185" y="57" width="373" height="22" rx="3" fill="#F86825"/>
+                            <text x="563" y="73" font-family="Outfit,sans-serif" font-size="11" font-weight="700" fill="#F86825">71.91</text>
+                            <!-- ESMFold bar -->
+                            <text x="175" y="104" text-anchor="end" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">ESMFold</text>
+                            <rect x="185" y="90" width="365" height="22" rx="3" fill="var(--text-muted)" opacity="0.35"/>
+                            <text x="555" y="106" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">70.33</text>
+                            <!-- OmegaFold bar -->
+                            <text x="175" y="137" text-anchor="end" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">OmegaFold</text>
+                            <rect x="185" y="123" width="319" height="22" rx="3" fill="var(--text-muted)" opacity="0.22"/>
+                            <text x="509" y="139" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">61.55</text>
+                            <!-- Divider -->
+                            <line x1="10" y1="155" x2="650" y2="155" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="4 2" opacity="0.5"/>
+                            <text x="330" y="166" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">── below: full homologs used — different condition, shown for reference ──</text>
+                            <!-- Group 2 label -->
+                            <text x="10" y="181" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)" font-weight="600">Full homologs (MSA used)</text>
+                            <!-- AlphaFold2 bar (outline only) -->
+                            <text x="175" y="198" text-anchor="end" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-muted)">AlphaFold2</text>
+                            <rect x="185" y="184" width="384" height="22" rx="3" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.5"/>
+                            <text x="574" y="200" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-muted)">74.05</text>
+                            <!-- AlphaFold3 bar (outline only) -->
+                            <text x="175" y="231" text-anchor="end" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-muted)">AlphaFold3</text>
+                            <rect x="185" y="217" width="413" height="22" rx="3" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.5"/>
+                            <text x="603" y="232" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-muted)">79.59</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ CASP16 GDT-TS — TDFold leads among MSA-free single-sequence methods. AlphaFold2/3 use full homologs (dashed, different condition) | Pebblous original diagram
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The table has to be read in two layers. First, among the single-sequence methods that share the same conditions, TDFold leads both ESMFold and OmegaFold with 63.52 on CASP15 and 71.91 on CASP16. On pLDDT, the model's self-confidence measure, it scores 72.06 on CASP14, well above ESMFold's 67.14 and OmegaFold's 53.25. Among methods that use no homologs, it is the most accurate class to date.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The second layer matters just as much. AlphaFold2 and AlphaFold3, with every homolog at their disposal, still lead in the 73–79 range. So saying "TDFold beat AlphaFold" would misstate the facts. The accurate sentence is this: under the condition where the data has been removed, TDFold was more accurate than other methods under that same condition.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        TDFold's real strength shows up where there is no data at all. On a benchmark of 77 orphan proteins with not a single known relative, TDFold outpaced ESMFold, OmegaFold, and the other existing single-sequence methods by a wide margin. This is territory where even AlphaFold effectively gives up, having no list to build. A design that produces geometric maps through generation rather than search shines brightest precisely when there is no reference data to be found.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The cost is striking too. Because TDFold skips the database-search stage entirely, inference runs 10 to 100 times faster than language-model methods on long sequences. Training the full model finishes within a week on a single RTX 4090 GPU. Set against a previous generation that ran for weeks on TPU clusters, the barrier to entry has dropped markedly.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="representation-over-volume" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">When Representation Replaces Data</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here we return to the vantage point of people who work with data. The default of the past few years was clear: if performance disappoints, gather more data. Deeper MSAs, more training sequences, bigger databases. AlphaFold's success reinforced that direction, since accuracy scaled with the richness of the reference data.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        TDFold answered the same bottleneck differently. It did not find more data; it rewrote the problem to be solved in the form of an image. And with that, the knowledge already piled up in the image domain flowed over to the protein side. Rather than topping up scarce data, it borrowed a different kind of knowledge that already existed by changing the representation. Set three vantage points side by side and the difference sharpens.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-2 sm:p-4 mb-6 overflow-x-auto">
+                        <table class="cmp-table themeable-text">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-heading">Vantage point</th>
+                                    <th class="themeable-heading">Central question</th>
+                                    <th class="col-emph-head">What this case leaves us</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="row-head themeable-heading">Volume</td>
+                                    <td>How much reference data can we gather?</td>
+                                    <td class="col-emph">AlphaFold's strength and its limit. It collapsed where the data ran out.</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">Weights</td>
+                                    <td>Should we bake the data into the model?</td>
+                                    <td class="col-emph">The protein-language-model path. The dependency did not vanish; it moved to training time.</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">Representation</td>
+                                    <td>How should we rewrite the problem?</td>
+                                    <td class="col-emph">TDFold's path. Change the representation and knowledge from another domain stands in for data.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This shift is not confined to proteins. Whether you view a body of data as a time series, an image, or a graph changes what you can draw out of the same information. What TDFold showed is a possibility: a problem that looks short on data may in fact be short on representation. Before gathering more, it is worth asking first whether there is room to write it down differently.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Representation, of course, does not always replace data. TDFold, too, never reached the accuracy of an AlphaFold running on full homologs. Even so, this case is valuable because it surfaces one other question worth asking before the answer defaults to "we need more data." The gap we set out to fill with sheer volume — could we cover it instead by representing the problem another way?
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Editor's Note (Pebblous connection — kept apart from the main conclusion) -->
+                <section id="editors-note" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Editor's Note</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The point Pebblous keeps returning to when we talk about AI-Ready Data lands right here. More than piling up data indiscriminately, it is the form in which the data is prepared and represented that changes a model's outcome. TDFold adds one more piece of evidence to that argument, from outside our own lab. It reconfirms that the axis of scaling data volume and the axis of representing data point in different directions — and that the latter remains the less explored of the two.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            RIS
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">Key</span>Key paper</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Wang, X., Zhang, T., Cui, Z. et al. (2026). "<a href="https://www.nature.com/articles/s42256-026-01210-2" target="_blank" rel="noopener">Two-dimensional geometric template diffusion for boosting single-sequence protein structure prediction</a>." <em class="not-italic" style="font-weight:600;">Nature Machine Intelligence</em>, 8, 545–558. DOI: 10.1038/s42256-026-01210-2. (<a href="https://www.biorxiv.org/content/10.1101/2025.07.03.662909v2" target="_blank" rel="noopener">bioRxiv 2025.07.03.662909</a>)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">Bg</span>Comparison &amp; background</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">Jumper, J., Evans, R., Pritzel, A. et al. (2021). "<a href="https://www.nature.com/articles/s41586-021-03819-2" target="_blank" rel="noopener">Highly accurate protein structure prediction with AlphaFold</a>." <em class="not-italic" style="font-weight:600;">Nature</em>, 596, 583–589.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Lin, Z., Akin, H., Rao, R. et al. (2023). "<a href="https://www.science.org/doi/10.1126/science.ade2574" target="_blank" rel="noopener">Evolutionary-scale prediction of atomic-level protein structure with a language model</a>." <em class="not-italic" style="font-weight:600;">Science</em>, 379, 1123–1130. (ESMFold)</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Wu, R., Ding, F., Wang, R. et al. (2022). "<a href="https://www.biorxiv.org/content/10.1101/2022.07.21.500999v1" target="_blank" rel="noopener">High-resolution de novo structure prediction from primary sequence</a>." <em class="not-italic" style="font-weight:600;">bioRxiv</em>. (OmegaFold)</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/citation-download.js?v=20260702" defer></script>
+    <script src="/scripts/common-utils.js?v=20260702"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-01T22:04:50.794Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-01T22:13:30.368Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1782943490794-dkpfkz",
+                "version": "0.1.0"
+              }
+            },
+            mainTitle: "They Stopped Looking for Similar Proteins — and Prediction Got Better",
+            subtitle: "Nobody added more data. A representation that treats geometry like an image replaced the MSA dependency",
+            pageTitle: "Protein Structure Prediction Without MSA — How TDFold Cut the Homolog Dependency | Pebblous",
+            category: "tech",
+            publishDate: "2026-07-02",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/protein-structure-prediction-without-msa/en/",
+            tags: ["protein structure prediction", "AlphaFold", "MSA", "TDFold", "single sequence", "diffusion model", "orphan protein", "AI-Ready Data", "bioinformatics", "data representation"],
+            faqs: [
+                {
+                    question: "What is MSA (multiple sequence alignment) and why does it matter?",
+                    answer: "An MSA is a 'list of similar proteins' that are evolutionarily related to the one being predicted. Reading the co-evolution pattern in that list — positions that change in tandem — tells you which two points along the sequence lie near each other in space. AlphaFold2 uses this signal as a core ingredient of its accuracy. Remove the MSA and AlphaFold2's average TM-score falls from about 0.80 to 0.41, close to a halving."
+                },
+                {
+                    question: "How is TDFold different from existing methods?",
+                    answer: "TDFold does not search a database for homologous sequences. Instead it redefines the distance and orientation information between residues as a two-dimensional image, then fine-tunes the image-generation model Stable Diffusion to 'generate' that geometric map. The key difference is that information once retrieved by search is now imagined into being by a diffusion model."
+                },
+                {
+                    question: "What does \"treating geometry like an image\" actually mean?",
+                    answer: "Write down every distance and orientation between residue i and residue j in a protein and you get an N×N table. That table can naturally be seen as a single two-dimensional image, and stacking a distance map with orientation maps yields a multi-channel image. Recast the representation this way and you can borrow the capabilities of an image-generation model wholesale."
+                },
+                {
+                    question: "Is TDFold more accurate than AlphaFold?",
+                    answer: "No. AlphaFold2 and AlphaFold3, drawing on every homologous sequence, still lead with CASP GDT-TS scores in the 73–79 range. TDFold being more accurate is a claim about the comparison with single-sequence methods (ESMFold, OmegaFold) that use no MSA under the same conditions."
+                },
+                {
+                    question: "So how strong is TDFold's performance in concrete terms?",
+                    answer: "Among single-sequence methods, TDFold leads with a CASP15 GDT-TS of 63.52 and a CASP16 of 71.91, ahead of ESMFold (62.99, 70.33) and OmegaFold (57.37, 61.55). Its prediction confidence (pLDDT) also reaches 72.06 on CASP14, well above ESMFold's 67.14 and OmegaFold's 53.25."
+                },
+                {
+                    question: "Why is it especially strong on orphan proteins?",
+                    answer: "Orphan proteins have no known relative sequences, so an MSA cannot be built at all. Methods that lean on search, like AlphaFold, effectively give up in this territory. Because TDFold produces geometric maps through generation rather than search, it works even with no reference data whatsoever — and on a benchmark of 77 relative-free proteins it outpaced existing single-sequence methods by a wide margin."
+                },
+                {
+                    question: "How much does TDFold cost to train and run?",
+                    answer: "Because it skips the database-search stage entirely, inference runs 10 to 100 times faster than language-model methods on long sequences. Training the full model finishes within a week on a single RTX 4090 GPU — a far lower barrier to entry than a previous generation that ran for weeks on TPU clusters."
+                },
+                {
+                    question: "What does this study imply for people who work with data?",
+                    answer: "Don't always read a performance bottleneck as a shortage of data. Rather than topping up scarce data, TDFold re-represented the problem as an image and borrowed knowledge from another domain. Since a problem that looks short on data may in fact be short on representation, it is worth asking first — before gathering more — whether there is room to write it down differently."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>

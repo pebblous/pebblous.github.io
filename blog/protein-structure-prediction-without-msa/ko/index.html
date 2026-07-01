@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSA 없이 단백질 구조 예측 — TDFold가 동종 서열 의존을 끊은 법 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="rating" content="general">
+    <meta name="revisit-after" content="7 days">
+    <meta name="distribution" content="global">
+
+    <meta name="description" content="AlphaFold의 정확도는 상당 부분 동종 서열(MSA) 데이터 검색에서 나왔습니다. TDFold는 그 데이터 의존을 끊고 단백질 기하학을 이미지처럼 다루는 확산 모델로 대체해, MSA 없는 단일 서열 방법 중 최고 정확도를 냈습니다. 데이터 품질을 양에서 표현으로 다시 봅니다.">
+    <meta name="keywords" content="단백질 구조 예측, MSA 없이 단백질 예측, AlphaFold 한계, TDFold, 단일 서열, 다중 서열 정렬, 고아 단백질, diffusion model, Stable Diffusion 단백질, 생물정보학, AI-Ready Data, 데이터 표현, 페블러스">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/ko/">
+
+    <!-- Open Graph -->
+    <meta name="og-image-title" content="비슷한 단백질을 찾지 않았더니, 구조 예측이 더 정확해졌다">
+    <meta property="og:title" content="비슷한 단백질을 찾지 않았더니, 구조 예측이 더 정확해졌다">
+    <meta property="og:description" content="데이터를 더 찾은 게 아니다. 기하학을 이미지처럼 다루는 표현 설계가 MSA 의존을 대신하자 단일 서열만으로 정확도가 올라갔다.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="MSA 없이 단백질 구조 예측 — 기하학을 이미지처럼 다룬 TDFold">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-07-02">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="비슷한 단백질을 찾지 않았더니, 구조 예측이 더 정확해졌다">
+    <meta name="twitter:description" content="AlphaFold의 힘은 상당 부분 동종 서열(MSA) 데이터에서 나왔다. TDFold는 그 데이터를 걷어내고 기하학을 이미지처럼 다뤘더니 오히려 정확도가 올랐다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/protein-structure-prediction-without-msa/ko/image/index.png">
+    <meta name="twitter:image:alt" content="비슷한 단백질을 찾지 않았더니, 구조 예측이 더 정확해졌다">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260702"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260702">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260702">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260702">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* 이 글 고유 컴포넌트 — 비교 표 (common-styles 미정의) */
+        .cmp-table { width: 100%; border-collapse: collapse; }
+        .cmp-table th,
+        .cmp-table td {
+            text-align: left;
+            padding: 0.9rem 1.1rem;
+            border-bottom: 1px solid var(--border-color, rgba(120,120,120,0.25));
+            vertical-align: top;
+            line-height: 1.8;
+        }
+        .cmp-table thead th {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .cmp-table .row-head { font-weight: 600; white-space: nowrap; }
+        .cmp-table .col-emph { font-weight: 500; }
+        .cmp-table .col-emph-head { color: #F86825; }
+        .cmp-table .tdfold-row td { color: #F86825; font-weight: 600; }
+    </style>
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#msa-behind" class="block pl-4 themeable-toc-link transition-colors duration-200">1. AlphaFold 뒤에 있던 것</a></li>
+                    <li><a href="#geometry-as-image" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 기하학을 이미지로</a></li>
+                    <li><a href="#results" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 수치로 보는 결과</a></li>
+                    <li><a href="#representation-over-volume" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 표현이 데이터를 대신할 때</a></li>
+                    <li><a href="#editors-note" class="block pl-4 themeable-toc-link transition-colors duration-200">Editor's Note</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            AlphaFold이 단백질 구조를 그토록 잘 맞히는 이유를 우리는 흔히 모델의 영리함에서 찾습니다. 그런데 그 정확도의 상당 부분은 다른 데서 나왔습니다. 거대한 데이터베이스를 뒤져 "비슷하게 생긴 단백질"을 수백에서 수천 개까지 찾아 붙이는 능력, 곧 동종 서열 정렬(MSA)입니다. 이 글은 그 데이터 의존을 정면으로 끊어 낸 2026년 <em class="not-italic" style="font-weight:600;">Nature Machine Intelligence</em> 연구를 봅니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            AlphaFold2는 이 동종 서열을 걷어내면 평균 TM-score가 약 0.80에서 0.41로 반 토막에 가깝게 무너집니다. 정확도의 병목이 모델 크기가 아니라 참조 데이터의 풍부함에 있었다는 뜻입니다. TDFold는 그 데이터를 아예 쓰지 않는 대신, 단백질의 기하학을 2차원 이미지처럼 다시 정의하고 이미지 생성 모델(확산 모델)로 그 관계를 만들어 냈습니다. 그 결과 MSA를 쓰지 않는 단일 서열 방법 중 최고 정확도에 올랐고, 동종 서열이 아예 없는 고아 단백질에서 특히 앞섰습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            다만 오해는 피해야 합니다. TDFold가 동종 서열을 전부 동원한 AlphaFold를 넘어선 것은 아닙니다. "데이터를 걷어냈더니 더 정확해졌다"는 것은, 같은 조건인 다른 단일 서열 방법들과 비교했을 때의 이야기입니다. 이 글은 그 구분을 지키면서, 데이터의 양으로 메우던 자리를 문제의 표현 방식이 대신할 수 있는지 묻습니다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.80 → 0.41</p>
+                            <p class="text-sm themeable-text-secondary mt-1">MSA 제거 시 AlphaFold2 TM-score</p>
+                            <p class="text-xs themeable-muted mt-1">동종 서열이 없으면 정확도 절반 가까이 붕괴 — 그게 진짜 병목이었다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">71.91</p>
+                            <p class="text-sm themeable-text-secondary mt-1">TDFold CASP16 GDT-TS</p>
+                            <p class="text-xs themeable-muted mt-1">MSA 없는 단일 서열 방법 중 최고 (ESMFold 70.33, OmegaFold 61.55)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">10~100배</p>
+                            <p class="text-sm themeable-text-secondary mt-1">추론 속도</p>
+                            <p class="text-xs themeable-muted mt-1">긴 서열에서 언어 모델 기반 방법 대비 — 데이터베이스 검색도 생략</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">RTX 4090·1주</p>
+                            <p class="text-sm themeable-text-secondary mt-1">전체 학습 비용</p>
+                            <p class="text-xs themeable-muted mt-1">TPU 클러스터로 수 주가 걸리던 자리를 GPU 한 장이 대신</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="msa-behind" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">AlphaFold 뒤에 있던 것 — 동종 서열</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        단백질은 아미노산이 한 줄로 이어진 사슬이 스스로 접혀 3차원 모양을 갖춥니다. 그 최종 모양을 서열만 보고 알아맞히는 것이 구조 예측 문제입니다. AlphaFold2가 이 오래된 난제를 사실상 풀었다고 평가받는 데는, 잘 알려지지 않은 조력자가 있습니다. 다중 서열 정렬(MSA, Multiple Sequence Alignment)입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        MSA는 쉽게 말해 "비슷한 단백질들의 목록"입니다. 진화적으로 한 뿌리에서 갈라진 단백질들은 서열이 서로 닮아 있고, 그 목록을 나란히 세워 보면 흥미로운 신호가 보입니다. 구조상 가까이 붙어 있는 두 자리는, 한쪽이 돌연변이로 바뀌면 다른 쪽도 짝을 맞춰 함께 바뀝니다. 접힌 모양을 유지하려는 보상입니다. 이 함께-바뀜(공진화) 패턴을 읽으면, 서열의 어느 두 지점이 공간에서 가까운지를 간접적으로 알 수 있습니다. AlphaFold2의 핵심 엔진은 바로 이 신호를 뽑아내도록 설계돼 있습니다.
+                    </p>
+
+                    <!-- Image: MSA 공진화 신호 개념도 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 190" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="#F86825">공진화 신호 — MSA가 AlphaFold에 알려주는 것</text>
+                            <text x="118" y="40" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)" font-weight="600">동종 서열 목록 (MSA)</text>
+                            <rect x="104" y="47" width="24" height="100" rx="2" fill="#F86825" opacity="0.13"/>
+                            <rect x="155" y="47" width="24" height="100" rx="2" fill="#F86825" opacity="0.13"/>
+                            <text x="58" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">위치 →</text>
+                            <text x="88" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">1</text>
+                            <text x="116" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#F86825" font-weight="700">i</text>
+                            <text x="142" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">3</text>
+                            <text x="167" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#F86825" font-weight="700">j</text>
+                            <text x="193" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">5</text>
+                            <text x="30" y="82" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">종1</text>
+                            <text x="88" y="82" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">A</text>
+                            <text x="116" y="82" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">K</text>
+                            <text x="142" y="82" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">L</text>
+                            <text x="167" y="82" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">E</text>
+                            <text x="193" y="82" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">V</text>
+                            <text x="30" y="103" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">종2</text>
+                            <text x="88" y="103" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">G</text>
+                            <text x="116" y="103" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">R</text>
+                            <text x="142" y="103" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">V</text>
+                            <text x="167" y="103" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">D</text>
+                            <text x="193" y="103" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">I</text>
+                            <text x="30" y="124" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">종3</text>
+                            <text x="88" y="124" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">G</text>
+                            <text x="116" y="124" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">H</text>
+                            <text x="142" y="124" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">L</text>
+                            <text x="167" y="124" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">Q</text>
+                            <text x="193" y="124" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">I</text>
+                            <text x="30" y="145" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">종4</text>
+                            <text x="88" y="145" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">A</text>
+                            <text x="116" y="145" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">K</text>
+                            <text x="142" y="145" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">I</text>
+                            <text x="167" y="145" text-anchor="middle" font-family="monospace" font-size="13" fill="#F86825" font-weight="700">E</text>
+                            <text x="193" y="145" text-anchor="middle" font-family="monospace" font-size="13" fill="var(--text-secondary)">V</text>
+                            <text x="142" y="163" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">i가 바뀔 때 j도 함께 바뀜 (K↔E · R↔D · H↔Q)</text>
+                            <line x1="217" y1="44" x2="217" y2="178" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3 2" opacity="0.4"/>
+                            <text x="232" y="112" text-anchor="middle" font-family="sans-serif" font-size="24" fill="#F86825">→</text>
+                            <text x="445" y="40" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)" font-weight="600">AlphaFold2가 읽어내는 것</text>
+                            <rect x="255" y="50" width="380" height="60" rx="8" fill="none" stroke="#F86825" stroke-width="1.5" stroke-dasharray="5 3"/>
+                            <text x="445" y="74" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">공진화 패턴 = 공간 근접 신호</text>
+                            <text x="445" y="92" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">i와 j가 함께 바뀐다 → 3D 구조에서 서로 가깝다</text>
+                            <text x="445" y="106" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">(AlphaFold2 pairwise 표현의 핵심 재료)</text>
+                            <rect x="255" y="124" width="380" height="42" rx="8" fill="#F86825" opacity="0.10"/>
+                            <text x="445" y="143" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#F86825">MSA 없음 → 신호 없음 → TM-score 0.80 → 0.41</text>
+                            <text x="445" y="158" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">동종 서열이 AlphaFold 정확도의 핵심 원천이었던 이유</text>
+                            <text x="330" y="183" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">페블러스 원본 도식 (Fig. 1 재해석)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 동종 서열에서 공진화 패턴을 읽어 잔기 간 공간 근접을 추론 — AlphaFold2가 MSA에 의존하는 핵심 이유 | 페블러스 원본 도식
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 이 목록을 만드는 일 자체입니다. UniRef, BFD 같은 거대 데이터베이스를 뒤져 유사 서열을 검색하는 데만 보통 수십 분이 걸리고, 서열이 길수록 메모리도 급격히 늘어납니다. 그리고 이 목록이 얼마나 깊은가에 성능이 그대로 좌우됩니다.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-2 sm:p-4 mb-6 overflow-x-auto">
+                        <table class="cmp-table themeable-text">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-heading">입력 조건</th>
+                                    <th class="col-emph-head">평균 TM-score</th>
+                                    <th class="themeable-heading">의미</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="row-head themeable-heading">전체 MSA + 템플릿</td>
+                                    <td class="col-emph">~0.98</td>
+                                    <td>실험으로 밝힌 구조에 거의 근접</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">전체 MSA (템플릿 없음)</td>
+                                    <td class="col-emph">~0.80</td>
+                                    <td>동종 서열만으로도 충분히 정확</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">단일 서열 (MSA 없음)</td>
+                                    <td class="col-emph">~0.41</td>
+                                    <td>동종 서열을 걷어내자 절반 가까이 붕괴</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        수치가 말하는 바는 분명합니다. AlphaFold2에서 동종 서열을 빼면 정확도가 0.80에서 0.41로 주저앉습니다. 모델은 그대로인데 데이터만 걷어냈을 뿐인데도 그렇습니다. 정확도의 가장 큰 결정 요인은 모델의 구조가 아니라, 참조할 만한 비슷한 단백질을 얼마나 찾아 붙이느냐였던 셈입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 의존은 특정 단백질 앞에서 아예 벽이 됩니다. 알려진 친척이 하나도 없는 고아 단백질(orphan protein), 실험실에서 새로 설계한 합성 단백질에는 애초에 만들 목록이 없습니다. 이 대목이 MSA 없이도 예측하려는 여러 시도를 낳았습니다. ESMFold나 OmegaFold 같은 단백질 언어 모델은 수억에서 수십억 개의 서열로 미리 학습해, 진화 정보를 데이터베이스 검색 대신 모델 가중치 안에 녹여 넣었습니다. 데이터 의존을 없앤 게 아니라, 런타임 검색에서 학습 데이터로 자리를 옮긴 것에 가깝습니다. 그래서 고아 단백질에서는 여전히 한계가 뚜렷했습니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            정리하면 이렇습니다. AlphaFold의 힘은 상당 부분 "비슷한 것을 찾아 붙이는" 데이터 검색력에 있었고, 그 데이터가 없으면 무너졌습니다. 그렇다면 질문은 이렇게 바뀝니다. 그 자리를 반드시 더 많은 데이터로만 메워야 할까요, 아니면 문제를 다르게 표현해서 대신할 수 있을까요.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="geometry-as-image" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">기하학을 이미지로 — TDFold의 전환</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        왕(Xudong Wang) 연구팀이 <em class="not-italic" style="font-weight:600;">Nature Machine Intelligence</em>에 발표한 TDFold는 데이터를 더 찾는 대신, 문제를 보는 각도를 바꿨습니다. 출발점은 하나의 관찰입니다. 단백질에서 잔기(residue) <em class="not-italic" style="font-weight:600;">i</em>와 잔기 <em class="not-italic" style="font-weight:600;">j</em> 사이의 거리와 방향을 전부 행렬에 적으면, 그 결과는 N×N 크기의 표가 됩니다. 그리고 이런 표는 자연스럽게 한 장의 2차원 이미지로 볼 수 있습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        거리 지도 한 장, 방향 지도 몇 장을 겹치면 여러 채널을 가진 이미지가 됩니다. 색이 아니라 기하 관계를 담은 이미지입니다. 이렇게 표현을 바꾸고 나면, 그다음은 이미지를 다루는 도구를 그대로 빌려올 수 있습니다. TDFold가 빌려 온 것은 텍스트를 받아 그림을 그려 내는 이미지 생성 모델, 스테이블 디퓨전(Stable Diffusion)입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전체 과정은 두 단계입니다. 첫 단계가 서열에서 기하 지도를 만들어 내고, 둘째 단계가 그 지도를 실제 3차원 구조로 세웁니다.
+                    </p>
+
+                    <!-- Image: TDFold 2단계 파이프라인 도식 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 155" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <text x="330" y="18" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="#F86825">TDFold 2단계 파이프라인 — MSA 없이 구조를 만드는 법</text>
+                            <!-- Box 1: Input -->
+                            <rect x="8" y="30" width="148" height="88" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5" opacity="0.6"/>
+                            <text x="82" y="58" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">입력</text>
+                            <text x="82" y="75" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">아미노산 서열</text>
+                            <text x="82" y="93" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">단일 서열 (MSA 없음)</text>
+                            <text x="82" y="109" text-anchor="middle" font-family="monospace" font-size="10" fill="var(--text-muted)">A-G-T-K-L-E-V…</text>
+                            <!-- Arrow 1 with Stage 1 label -->
+                            <line x1="156" y1="74" x2="252" y2="74" stroke="#F86825" stroke-width="2"/>
+                            <polygon points="252,69 263,74 252,79" fill="#F86825"/>
+                            <text x="210" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="#F86825">Stage 1</text>
+                            <text x="210" y="88" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">확산 모델</text>
+                            <text x="210" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">(SD 미세조정)</text>
+                            <!-- Box 2: Geometry template (highlighted) -->
+                            <rect x="264" y="30" width="148" height="88" rx="8" fill="#F86825" opacity="0.08" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="338" y="56" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#F86825">기하 템플릿</text>
+                            <text x="338" y="73" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">N×N 거리·방향 행렬</text>
+                            <text x="338" y="90" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">"이미지처럼 다룬" 기하</text>
+                            <text x="338" y="107" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">MSA 없이 생성</text>
+                            <!-- Arrow 2 with Stage 2 label -->
+                            <line x1="412" y1="74" x2="500" y2="74" stroke="#F86825" stroke-width="2"/>
+                            <polygon points="500,69 511,74 500,79" fill="#F86825"/>
+                            <text x="456" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="#F86825">Stage 2</text>
+                            <text x="456" y="88" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">경량 네트워크</text>
+                            <text x="456" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">(좌표 최적화)</text>
+                            <!-- Box 3: 3D output -->
+                            <rect x="512" y="30" width="140" height="88" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5" opacity="0.6"/>
+                            <text x="582" y="58" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">출력</text>
+                            <text x="582" y="75" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">3D 원자 좌표</text>
+                            <text x="582" y="93" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">단백질 3차원 구조</text>
+                            <text x="582" y="108" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">데이터베이스 검색 없음</text>
+                            <text x="330" y="148" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">페블러스 원본 도식 (Fig. 2 재해석) — TDFold 논문 파이프라인 구조</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ TDFold 2단계 파이프라인 — Stage 1에서 확산 모델이 기하 이미지를 생성하고, Stage 2에서 경량 네트워크가 3D 좌표로 변환 | 페블러스 원본 도식
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>기하 템플릿을 "생성"한다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        첫 단계는 스테이블 디퓨전을 단백질용으로 미세조정하는 것입니다. 원래 모델이 문장을 받아 장면을 상상하듯, 여기서는 아미노산 서열을 받아 잔기 사이의 거리·방향 지도를 그려 냅니다. AlphaFold2가 동종 서열 목록에서 찾아 읽던 "어느 자리가 어느 자리와 가까운가"라는 정보를, TDFold는 검색 없이 확산 모델로 상상해 만들어 냅니다. 물론 이 상상은 제멋대로가 아닙니다. 학습 단계에서 실험으로 밝혀진 단백질 구조의 거리·방향 지도를 정답으로 삼아 훈련했기 때문에, 모델은 서열이 주어지면 그럴듯한 기하를 그리도록 길들여져 있습니다. 데이터베이스를 뒤지는 자리를 생성 모델이 대신하는 셈입니다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>서열과 기하를 맞물려 3차원으로</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 번째 단계는 앞서 생성한 기하 지도를 실제 3차원 좌표로 옮기는 경량 네트워크입니다. 서열과 잔기 사이 관계를 공진화 방식으로 다시 정렬하고, 곁사슬 원자가 주쇄의 모양에 주는 영향까지 반영해 최종 구조를 확정합니다. 무거운 대형 언어 모델을 돌리지 않기 때문에, 이 단계는 메모리와 속도 면에서 가볍습니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            핵심은 "데이터를 더 모았다"가 아니라 "문제를 이미지로 다시 적었다"입니다. 기하 관계를 이미지로 표현하는 순간, 이미지 도메인에서 이미 축적된 스테이블 디퓨전의 지식을 그대로 끌어다 쓸 수 있게 됩니다. 동종 서열이라는 데이터로 메우던 자리를, 표현을 바꿔 다른 도메인의 지식으로 대신한 것입니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="results" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">수치로 보는 결과</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        단백질 구조 예측 방법은 CASP라는 2년 주기 공개 대회에서 검증됩니다. 예측한 구조가 실제 구조에 얼마나 가까운지를 GDT-TS 점수(0~100, 높을수록 좋음)로 잽니다. 아래 표는 최근 두 대회에서 단일 서열 방법들과, 참고를 위한 동종 서열 전체 사용 방법을 함께 정리한 것입니다.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-2 sm:p-4 mb-6 overflow-x-auto">
+                        <table class="cmp-table themeable-text">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-heading">모델</th>
+                                    <th class="themeable-heading">CASP15 GDT-TS</th>
+                                    <th class="themeable-heading">CASP16 GDT-TS</th>
+                                    <th class="themeable-heading">입력</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="tdfold-row">
+                                    <td class="row-head">TDFold</td>
+                                    <td>63.52</td>
+                                    <td>71.91</td>
+                                    <td>단일 서열 (MSA 없음)</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">ESMFold</td>
+                                    <td>62.99</td>
+                                    <td>70.33</td>
+                                    <td>단일 서열 (MSA 없음)</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">OmegaFold</td>
+                                    <td>57.37</td>
+                                    <td>61.55</td>
+                                    <td>단일 서열 (MSA 없음)</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">AlphaFold2</td>
+                                    <td>73.24</td>
+                                    <td>74.05</td>
+                                    <td>동종 서열 + 템플릿</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">AlphaFold3</td>
+                                    <td>73.26</td>
+                                    <td>79.59</td>
+                                    <td>동종 서열 + 템플릿</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Image: CASP16 성능 비교 바 차트 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 242" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <text x="330" y="20" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="#F86825">CASP16 GDT-TS 성능 비교</text>
+                            <text x="330" y="36" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">GDT-TS: 0–100, 높을수록 정확 · 단일 서열 방법 vs 동종 서열 전체 사용 방법</text>
+                            <!-- Group 1 label -->
+                            <text x="10" y="54" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)" font-weight="600">단일 서열 (MSA 없음)</text>
+                            <!-- TDFold bar: 71.91 * 5.19 = 373px -->
+                            <text x="175" y="71" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#F86825">TDFold</text>
+                            <rect x="185" y="57" width="373" height="22" rx="3" fill="#F86825"/>
+                            <text x="563" y="73" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#F86825">71.91</text>
+                            <!-- ESMFold bar: 70.33 * 5.19 = 365px -->
+                            <text x="175" y="104" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">ESMFold</text>
+                            <rect x="185" y="90" width="365" height="22" rx="3" fill="var(--text-muted)" opacity="0.35"/>
+                            <text x="555" y="106" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">70.33</text>
+                            <!-- OmegaFold bar: 61.55 * 5.19 = 319px -->
+                            <text x="175" y="137" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">OmegaFold</text>
+                            <rect x="185" y="123" width="319" height="22" rx="3" fill="var(--text-muted)" opacity="0.22"/>
+                            <text x="509" y="139" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">61.55</text>
+                            <!-- Divider -->
+                            <line x1="10" y1="155" x2="650" y2="155" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="4 2" opacity="0.5"/>
+                            <text x="330" y="166" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">── 아래: 동종 서열 전체 사용 — 다른 조건, 참고용 ──</text>
+                            <!-- Group 2 label -->
+                            <text x="10" y="181" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)" font-weight="600">동종 서열 전체 (MSA 사용)</text>
+                            <!-- AlphaFold2 bar: 74.05 * 5.19 = 384px (outline only) -->
+                            <text x="175" y="198" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted)">AlphaFold2</text>
+                            <rect x="185" y="184" width="384" height="22" rx="3" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.5"/>
+                            <text x="574" y="200" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted)">74.05</text>
+                            <!-- AlphaFold3 bar: 79.59 * 5.19 = 413px (outline only) -->
+                            <text x="175" y="231" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted)">AlphaFold3</text>
+                            <rect x="185" y="217" width="413" height="22" rx="3" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.5"/>
+                            <text x="603" y="232" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted)">79.59</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ CASP16 GDT-TS 비교 — TDFold는 MSA 없는 단일 서열 방법 중 최고. 동종 서열을 전부 쓰는 AlphaFold2/3와는 조건이 다름(점선) | 페블러스 원본 도식
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표를 두 층으로 나눠 읽어야 합니다. 먼저 같은 조건인 단일 서열 방법들 사이에서, TDFold는 CASP15에서 63.52, CASP16에서 71.91로 ESMFold와 OmegaFold를 모두 앞섭니다. 예측의 자기 신뢰도를 재는 pLDDT에서도 CASP14 기준 72.06으로, ESMFold 67.14와 OmegaFold 53.25를 크게 웃돕니다. 동종 서열을 쓰지 않는 방법들 안에서는 지금까지 가장 정확한 축입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그다음 층이 중요합니다. 동종 서열을 전부 동원한 AlphaFold2·AlphaFold3는 여전히 73~79점대로 앞서 있습니다. 그러니 "TDFold가 AlphaFold를 이겼다"고 말하면 사실과 어긋납니다. 정확한 문장은 이렇습니다. 데이터를 걷어낸 조건에서, TDFold가 같은 조건의 다른 방법들보다 더 정확했다는 것입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        TDFold의 진짜 강점은 데이터가 아예 없는 자리에서 드러납니다. 알려진 친척이 하나도 없는 고아 단백질 77개로 꾸린 시험대에서, TDFold는 ESMFold·OmegaFold를 비롯한 기존 단일 서열 방법들을 큰 차이로 앞섰습니다. 여기서는 AlphaFold도 만들 목록이 없어 사실상 손을 놓는 영역입니다. 기하 지도를 검색이 아니라 생성으로 만든다는 설계가, 참조할 데이터가 전혀 없을 때 가장 크게 빛납니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비용도 눈에 띕니다. TDFold는 데이터베이스 검색 단계를 통째로 건너뛰기 때문에, 긴 서열에서 언어 모델 기반 방법보다 추론이 10배에서 100배까지 빠릅니다. 전체 모델 학습도 RTX 4090 GPU 한 장으로 일주일 안에 끝납니다. TPU 클러스터로 몇 주를 돌리던 이전 세대와 비교하면 진입 문턱이 확연히 낮아졌습니다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="representation-over-volume" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">표현이 데이터를 대신할 때</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 데이터를 다루는 사람의 관점으로 돌아옵니다. 지난 몇 년의 기본값은 명확했습니다. 성능이 아쉬우면 데이터를 더 모은다. 더 깊은 MSA, 더 많은 학습 서열, 더 큰 데이터베이스. AlphaFold의 성공도 이 방향을 강하게 뒷받침했습니다. 정확도가 참조 데이터의 풍부함에 비례했으니까요.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        TDFold는 같은 병목에 다른 답을 냈습니다. 데이터를 더 찾은 게 아니라, 풀어야 할 문제를 이미지라는 형식으로 다시 적었습니다. 그러자 이미지 도메인에 이미 쌓여 있던 지식이 단백질 쪽으로 흘러 들어왔습니다. 부족한 데이터를 새로 채운 게 아니라, 이미 존재하던 다른 종류의 지식을 표현을 바꿔 끌어다 쓴 것입니다. 세 관점을 나란히 놓으면 차이가 또렷해집니다.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-2 sm:p-4 mb-6 overflow-x-auto">
+                        <table class="cmp-table themeable-text">
+                            <thead>
+                                <tr>
+                                    <th class="themeable-heading">관점</th>
+                                    <th class="themeable-heading">핵심 질문</th>
+                                    <th class="col-emph-head">이 사례가 남기는 것</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="row-head themeable-heading">양 (volume)</td>
+                                    <td>참조 데이터를 얼마나 많이 모을까?</td>
+                                    <td class="col-emph">AlphaFold의 강점이자 한계. 데이터가 없는 자리에서 무너졌다.</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">내재화 (weights)</td>
+                                    <td>데이터를 모델 안에 넣어 둘까?</td>
+                                    <td class="col-emph">단백질 언어 모델의 길. 의존이 사라진 게 아니라 학습 시점으로 옮겨졌다.</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-head themeable-heading">표현 (representation)</td>
+                                    <td>문제를 어떻게 다시 적을까?</td>
+                                    <td class="col-emph">TDFold의 길. 표현을 바꾸자 다른 도메인의 지식이 데이터를 대신했다.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 전환은 단백질에만 갇힌 이야기가 아닙니다. 어떤 데이터를 시계열로 볼지 이미지로 볼지 그래프로 볼지에 따라, 같은 정보에서 끌어낼 수 있는 것이 달라집니다. TDFold가 보여 준 것은, 데이터가 부족해 보이는 문제가 실은 표현이 부족한 문제일 수 있다는 가능성입니다. 더 많이 모으기 전에, 다르게 적어 볼 여지가 있는지 먼저 물어볼 만합니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            물론 표현이 데이터를 늘 대신하지는 못합니다. TDFold도 동종 서열을 전부 쓴 AlphaFold의 정확도까지는 닿지 못했습니다. 그럼에도 이 사례가 값진 이유는, "데이터가 더 필요하다"는 답이 나오기 전에 던질 수 있는 다른 질문 하나를 보여 줬기 때문입니다. 우리가 데이터의 양으로 메우려던 그 자리를, 문제를 다르게 표현해 대신할 수는 없는가.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Editor's Note (자사 연결 — 본문 결론과 분리) -->
+                <section id="editors-note" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Editor's Note</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            페블러스가 AI-Ready Data를 이야기할 때 되짚어 온 지점도 결국 여기에 맞닿습니다. 데이터를 무작정 더 모으는 것보다, 그 데이터를 어떤 형태로 준비하고 어떻게 표현하느냐가 모델의 결과를 바꾼다는 것입니다. TDFold는 그 논지에 실험실 밖의 증거를 하나 더합니다. 데이터의 양을 늘리는 축과, 데이터를 표현하는 축은 다른 방향을 가리키며, 후자가 아직 덜 탐색됐다는 사실을 다시 확인시켜 줍니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            RIS
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">핵심</span>핵심 논문</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Wang, X., Zhang, T., Cui, Z. et al. (2026). "<a href="https://www.nature.com/articles/s42256-026-01210-2" target="_blank" rel="noopener">Two-dimensional geometric template diffusion for boosting single-sequence protein structure prediction</a>." <em class="not-italic" style="font-weight:600;">Nature Machine Intelligence</em>, 8, 545–558. DOI: 10.1038/s42256-026-01210-2. (<a href="https://www.biorxiv.org/content/10.1101/2025.07.03.662909v2" target="_blank" rel="noopener">bioRxiv 2025.07.03.662909</a>)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">비교</span>비교·배경 연구</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">Jumper, J., Evans, R., Pritzel, A. et al. (2021). "<a href="https://www.nature.com/articles/s41586-021-03819-2" target="_blank" rel="noopener">Highly accurate protein structure prediction with AlphaFold</a>." <em class="not-italic" style="font-weight:600;">Nature</em>, 596, 583–589.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Lin, Z., Akin, H., Rao, R. et al. (2023). "<a href="https://www.science.org/doi/10.1126/science.ade2574" target="_blank" rel="noopener">Evolutionary-scale prediction of atomic-level protein structure with a language model</a>." <em class="not-italic" style="font-weight:600;">Science</em>, 379, 1123–1130. (ESMFold)</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Wu, R., Ding, F., Wang, R. et al. (2022). "<a href="https://www.biorxiv.org/content/10.1101/2022.07.21.500999v1" target="_blank" rel="noopener">High-resolution de novo structure prediction from primary sequence</a>." <em class="not-italic" style="font-weight:600;">bioRxiv</em>. (OmegaFold)</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/citation-download.js?v=20260702" defer></script>
+    <script src="/scripts/common-utils.js?v=20260702"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-01T22:04:50.794Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-01T22:13:30.368Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1782943490794-dkpfkz",
+                "version": "0.1.0"
+              }
+            },
+            mainTitle: "비슷한 단백질을 찾지 않았더니, 구조 예측이 더 정확해졌다",
+            subtitle: "데이터를 더 찾은 게 아니다. 기하학을 이미지처럼 다룬 표현 설계가 MSA 의존을 대신했다",
+            pageTitle: "MSA 없이 단백질 구조 예측 — TDFold가 동종 서열 의존을 끊은 법 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-02",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/protein-structure-prediction-without-msa/ko/",
+            tags: ["단백질 구조 예측", "AlphaFold", "MSA", "TDFold", "단일 서열", "diffusion model", "고아 단백질", "AI-Ready Data", "생물정보학", "데이터 표현"],
+            faqs: [
+                {
+                    question: "MSA(다중 서열 정렬)가 무엇이고 왜 중요한가요?",
+                    answer: "MSA는 예측하려는 단백질과 진화적으로 닮은 '비슷한 단백질들의 목록'입니다. 이 목록에서 함께 바뀌는 자리(공진화) 패턴을 읽으면 서열의 어느 두 지점이 공간에서 가까운지를 알 수 있습니다. AlphaFold2는 이 신호를 정확도의 핵심 재료로 씁니다. MSA를 걷어내면 AlphaFold2의 평균 TM-score는 약 0.80에서 0.41로 절반 가까이 떨어집니다."
+                },
+                {
+                    question: "TDFold는 기존 방법과 무엇이 다른가요?",
+                    answer: "TDFold는 데이터베이스에서 동종 서열을 검색하지 않습니다. 대신 잔기 사이의 거리·방향 정보를 2차원 이미지처럼 다시 정의하고, 이미지 생성 모델인 스테이블 디퓨전을 미세조정해 그 기하 지도를 '생성'합니다. 검색으로 찾던 정보를 확산 모델로 상상해 만들어 낸다는 점이 핵심 차이입니다."
+                },
+                {
+                    question: "\"기하학을 이미지처럼 다룬다\"는 게 무슨 뜻인가요?",
+                    answer: "단백질에서 잔기 i와 잔기 j 사이의 거리와 방향을 전부 행렬에 적으면 N×N 크기의 표가 됩니다. 이 표는 자연스럽게 한 장의 2차원 이미지로 볼 수 있고, 거리 지도와 방향 지도를 겹치면 여러 채널을 가진 이미지가 됩니다. 표현을 이렇게 바꾸면 이미지 생성 모델의 능력을 그대로 빌려 쓸 수 있습니다."
+                },
+                {
+                    question: "TDFold가 AlphaFold보다 정확한가요?",
+                    answer: "아닙니다. 동종 서열을 전부 동원한 AlphaFold2·AlphaFold3는 CASP GDT-TS 73~79점대로 여전히 앞섭니다. TDFold가 더 정확하다는 것은 MSA를 쓰지 않는 같은 조건의 단일 서열 방법들(ESMFold, OmegaFold)과 비교했을 때의 이야기입니다."
+                },
+                {
+                    question: "그럼 TDFold의 성능은 구체적으로 어느 정도인가요?",
+                    answer: "단일 서열 방법 중에서 TDFold는 CASP15 GDT-TS 63.52, CASP16 71.91로 ESMFold(62.99, 70.33)와 OmegaFold(57.37, 61.55)를 앞섭니다. 예측 신뢰도(pLDDT)도 CASP14 기준 72.06으로 ESMFold 67.14, OmegaFold 53.25를 크게 웃돕니다."
+                },
+                {
+                    question: "고아 단백질(orphan protein)에서 왜 특히 강한가요?",
+                    answer: "고아 단백질은 알려진 친척 서열이 하나도 없어 MSA를 아예 만들 수 없습니다. AlphaFold처럼 검색에 기대는 방법은 이 영역에서 손을 놓게 됩니다. TDFold는 기하 지도를 검색이 아니라 생성으로 만들기 때문에 참조할 데이터가 전혀 없어도 작동하고, 친척이 없는 77개 단백질 시험대에서 기존 단일 서열 방법들을 큰 차이로 앞섰습니다."
+                },
+                {
+                    question: "TDFold는 학습과 추론에 비용이 얼마나 드나요?",
+                    answer: "데이터베이스 검색 단계를 통째로 건너뛰기 때문에 긴 서열에서 언어 모델 기반 방법보다 추론이 10배에서 100배까지 빠릅니다. 전체 모델 학습도 RTX 4090 GPU 한 장으로 일주일 안에 끝납니다. TPU 클러스터로 몇 주가 걸리던 이전 세대보다 진입 문턱이 크게 낮습니다."
+                },
+                {
+                    question: "이 연구가 데이터를 다루는 사람에게 주는 시사점은 무엇인가요?",
+                    answer: "성능의 병목을 늘 데이터의 양으로만 보지 말라는 것입니다. TDFold는 부족한 데이터를 새로 채우는 대신, 문제를 이미지로 다시 표현해 다른 도메인의 지식을 끌어다 썼습니다. 데이터가 부족해 보이는 문제가 실은 표현이 부족한 문제일 수 있으므로, 더 많이 모으기 전에 다르게 적어 볼 여지가 있는지 먼저 물어볼 만합니다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
