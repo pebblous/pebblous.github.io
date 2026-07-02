@@ -19,98 +19,26 @@ const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
 
-// Category color themes (dark variant)
+// Category themes — Pebblous 디자인 토큰만 사용 (오렌지 단일 accent·플랫 배경·중립 텍스트).
+// ⛔ 파랑·틸·그라데이션 금지(2026-07-01 교정: 옛 tech=#3B82F6 파랑, story=#14B8A6 틸, gradient 제거).
+const ACCENT = '#F86825';
 const THEMES_DARK = {
-    tech: {
-        gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-        accent: '#3B82F6',
-        badge: 'Tech Insight',
-        titleColor: 'white',
-        subtitleColor: '#94a3b8',
-        logoTextColor: 'white',
-        urlColor: '#64748b',
-        decorationOpacity: '20'
-    },
-    business: {
-        gradient: 'linear-gradient(135deg, #1a1a2e 0%, #2d1810 100%)',
-        accent: '#F86825',
-        badge: 'Business Insight',
-        titleColor: 'white',
-        subtitleColor: '#94a3b8',
-        logoTextColor: 'white',
-        urlColor: '#64748b',
-        decorationOpacity: '20'
-    },
-    story: {
-        gradient: 'linear-gradient(135deg, #1a1a2e 0%, #0d2818 100%)',
-        accent: '#14B8A6',
-        badge: 'Data Story',
-        titleColor: 'white',
-        subtitleColor: '#94a3b8',
-        logoTextColor: 'white',
-        urlColor: '#64748b',
-        decorationOpacity: '20'
-    },
-    art: {
-        gradient: 'linear-gradient(135deg, #1a1a2e 0%, #2e1a0e 100%)',
-        accent: '#F86825',
-        badge: 'Data Art Lab',
-        titleColor: 'white',
-        subtitleColor: '#94a3b8',
-        logoTextColor: 'white',
-        urlColor: '#64748b',
-        decorationOpacity: '20'
-    }
+    tech:     { gradient: '#171719', accent: ACCENT, badge: 'Tech Insight',     titleColor: '#FFFFFF', subtitleColor: '#A9A9AD', logoTextColor: '#FFFFFF', urlColor: '#808080', decorationOpacity: '20' },
+    business: { gradient: '#171719', accent: ACCENT, badge: 'Business Insight', titleColor: '#FFFFFF', subtitleColor: '#A9A9AD', logoTextColor: '#FFFFFF', urlColor: '#808080', decorationOpacity: '20' },
+    story:    { gradient: '#171719', accent: ACCENT, badge: 'Data Story',       titleColor: '#FFFFFF', subtitleColor: '#A9A9AD', logoTextColor: '#FFFFFF', urlColor: '#808080', decorationOpacity: '20' },
+    art:      { gradient: '#171719', accent: ACCENT, badge: 'Data Art Lab',     titleColor: '#FFFFFF', subtitleColor: '#A9A9AD', logoTextColor: '#FFFFFF', urlColor: '#808080', decorationOpacity: '20' }
 };
 
-// Category color themes (light variant)
 const THEMES_LIGHT = {
-    tech: {
-        gradient: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-        accent: '#3B82F6',
-        badge: 'Tech Insight',
-        titleColor: '#0f172a',
-        subtitleColor: '#475569',
-        logoTextColor: '#1e293b',
-        urlColor: '#94a3b8',
-        decorationOpacity: '15'
-    },
-    business: {
-        gradient: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-        accent: '#F86825',
-        badge: 'Business Insight',
-        titleColor: '#0f172a',
-        subtitleColor: '#475569',
-        logoTextColor: '#1e293b',
-        urlColor: '#94a3b8',
-        decorationOpacity: '12',
-        sectionBar: true
-    },
-    story: {
-        gradient: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
-        accent: '#14B8A6',
-        badge: 'Data Story',
-        titleColor: '#0f172a',
-        subtitleColor: '#475569',
-        logoTextColor: '#1e293b',
-        urlColor: '#94a3b8',
-        decorationOpacity: '15'
-    },
-    art: {
-        gradient: 'linear-gradient(135deg, #fffbf5 0%, #ffedd5 100%)',
-        accent: '#F86825',
-        badge: 'Data Art Lab',
-        titleColor: '#0f172a',
-        subtitleColor: '#475569',
-        logoTextColor: '#1e293b',
-        urlColor: '#94a3b8',
-        decorationOpacity: '15'
-    }
+    tech:     { gradient: '#FFFFFF', accent: ACCENT, badge: 'Tech Insight',     titleColor: '#171719', subtitleColor: '#808080', logoTextColor: '#171719', urlColor: '#808080', decorationOpacity: '15' },
+    business: { gradient: '#FFFFFF', accent: ACCENT, badge: 'Business Insight', titleColor: '#171719', subtitleColor: '#808080', logoTextColor: '#171719', urlColor: '#808080', decorationOpacity: '12' },
+    story:    { gradient: '#FFFFFF', accent: ACCENT, badge: 'Data Story',       titleColor: '#171719', subtitleColor: '#808080', logoTextColor: '#171719', urlColor: '#808080', decorationOpacity: '15' },
+    art:      { gradient: '#FFFFFF', accent: ACCENT, badge: 'Data Art Lab',     titleColor: '#171719', subtitleColor: '#808080', logoTextColor: '#171719', urlColor: '#808080', decorationOpacity: '15' }
 };
 
 function getTheme(category, light) {
     const themes = light ? THEMES_LIGHT : THEMES_DARK;
-    return themes[category] || themes.tech;
+    return { ...(themes[category] || themes.tech), light };
 }
 
 function parseArgs(args) {
@@ -143,8 +71,54 @@ function parseArgs(args) {
     return { category, title, subtitle, output, light };
 }
 
-function generatePebbles(title, accent, opacity) {
-    // Simple hash from title for consistent but "random" pebbles
+// 정품 조약돌 SVG (디자인 시스템 assets/pebble → tools/assets/pebbles) 로드·캐시
+let _pebbleShapes = null;
+function loadPebbleShapes() {
+    if (_pebbleShapes) return _pebbleShapes;
+    const dir = path.join(__dirname, 'assets', 'pebbles');
+    const out = [];
+    for (const n of [1, 2, 3, 5]) { // 둥글고 귀여운 조약돌만 (4·6·7 각짐 제외)
+        try {
+            const svg = fs.readFileSync(path.join(dir, `Pebble-${n}.svg`), 'utf-8');
+            const vb = svg.match(/viewBox="([^"]+)"/);
+            const d = svg.match(/<path[^>]*\sd="([^"]+)"/);
+            if (vb && d) out.push({ viewBox: vb[1], d: d[1] });
+        } catch { /* asset 없으면 건너뜀 */ }
+    }
+    _pebbleShapes = out;
+    return out;
+}
+
+/**
+ * 매끈한 조약돌(블롭) path 생성 — 원 둘레의 점들을 catmull-rom→베지어로 이어 부드러운 곡선.
+ * 다각형(공식 SVG)의 각진 면 없이, 크게 써도 매끈한 유기적 형태. viewBox 0 0 200 200.
+ */
+function smoothBlobPath(seed) {
+    const cx = 100, cy = 100, R = 84;
+    const n = 6 + seed(3);                 // 6~8 꼭짓점
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+        const ang = (i / n) * Math.PI * 2 + (seed(24) - 12) / 100; // 각도 살짝 흔들기
+        const rr = R * (0.80 + seed(34) / 100);                    // 반지름 0.80~1.14 변주
+        pts.push([cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr]);
+    }
+    const P = (i) => pts[((i % n) + n) % n];
+    const f = (v) => v.toFixed(1);
+    let d = `M${f(P(0)[0])},${f(P(0)[1])}`;
+    for (let i = 0; i < n; i++) {
+        const p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
+        const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+        d += ` C${f(c1x)},${f(c1y)} ${f(c2x)},${f(c2y)} ${f(p2[0])},${f(p2[1])}`;
+    }
+    return d + 'Z';
+}
+
+/**
+ * 우하단에 매끈한 조약돌(블롭) 2~3개를 정돈되게 겹침. 반투명 주황 → 겹침이 부드럽게 깊어짐.
+ * 제목 해시로 시드 → 글마다 다른 조약돌.
+ */
+function generatePebbles(title, isLight) {
     let hash = 0;
     for (let i = 0; i < title.length; i++) {
         hash = ((hash << 5) - hash) + title.charCodeAt(i);
@@ -155,25 +129,29 @@ function generatePebbles(title, accent, opacity) {
         return hash % n;
     };
 
-    const pebbles = [];
-    const count = 4 + seed(3); // 4~6 pebbles
+    // 매끈한 블롭 여러 개를 반투명 주황으로 우하단에 부드럽게 겹침 → airy·소프트, 겹침이 자연스레 깊어짐
+    const tones = ['#F86825', '#F86825', '#C64900', '#FFA24E']; // 기본 위주 + 딥·라이트
+    const blend = isLight ? 'multiply' : 'normal'; // 라이트: 겹치는 곳이 진해짐
+    const count = 3;                        // 딱 3개
+    const focalRight = -70 - seed(120);     // 오른쪽으로 크게 bleed (본문과 안 겹침)
+    const topBase = 120 + seed(70);         // 시작 높이(url 아래) — 위로 올려 오른쪽을 세로로 채움
+    const vgap = 135 + seed(50);            // 세로 간격(서로 겹치게)
+    const items = [];
     for (let i = 0; i < count; i++) {
-        const size = 50 + seed(180); // 50~230px
-        const right = -20 + seed(350); // -20~330px from right
-        const top = 20 + seed(500); // 20~520px from top
-        const op = (6 + seed(12)) / 100; // 0.06~0.18 opacity
-        // Irregular but convex border-radius (pebble-like)
-        const r1 = 40 + seed(20); // 40~60%
-        const r2 = 40 + seed(20);
-        const r3 = 40 + seed(20);
-        const r4 = 40 + seed(20);
-        const r5 = 40 + seed(20);
-        const r6 = 40 + seed(20);
-        const r7 = 40 + seed(20);
-        const r8 = 40 + seed(20);
-        pebbles.push(`<div style="position:absolute;right:${right}px;top:${top}px;width:${size}px;height:${size * (0.8 + seed(40)/100)}px;background:${accent};opacity:${op};border-radius:${r1}% ${r2}% ${r3}% ${r4}% / ${r5}% ${r6}% ${r7}% ${r8}%;"></div>`);
+        const d = smoothBlobPath(seed);
+        const size = 220 + seed(220);              // 220~440px
+        const right = focalRight + (-30 + seed(100));
+        const top = topBase + i * vgap + (seed(60) - 30);  // 위→아래로 오른쪽을 채우며 겹침
+        const rot = seed(360);                     // 자유 회전(매끈 블롭이라 자연스러움)
+        const tone = tones[seed(tones.length)];
+        const op = (44 + seed(36)) / 100;          // 0.44~0.80 반투명
+        items.push(
+            `<div style="position:absolute;right:${right}px;top:${top}px;width:${size}px;height:${size}px;transform:rotate(${rot}deg);opacity:${op};mix-blend-mode:${blend};">` +
+            `<svg viewBox="0 0 200 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><path d="${d}" fill="${tone}"/></svg>` +
+            `</div>`
+        );
     }
-    return pebbles.join('\n        ');
+    return items.join('\n        ');
 }
 
 // Split words into 2 balanced lines (minimize length difference)
@@ -200,26 +178,65 @@ function balancedSplit(words) {
 // OG image: 1200px wide, 60px padding each side = 1080px content
 // At 56px font, ~25 English chars or ~20 Korean chars per line
 function calcTitleFontSize(title) {
-    // Count "visual width" — CJK chars count as ~1.8 Latin chars
-    function visualLen(str) {
-        let len = 0;
-        for (const ch of str) {
-            len += /[\u3000-\u9fff\uac00-\ud7af]/.test(ch) ? 1.8 : 1;
+    // 한 글자의 대략적 폭(폰트크기 대비): 한글 1.0em, 영문/숫자 0.60em(TT Firs Neue 볼드),
+    // 공백 0.30em, 기타 0.55em. 어절(단어) 단위 픽셀 폭.
+    function wordPx(w, F) {
+        let u = 0;
+        for (const c of w) {
+            if (/[\uac00-\ud7af\u3000-\u9fff\u3040-\u30ff]/.test(c)) u += 1.0;
+            else if (/[A-Za-z0-9]/.test(c)) u += 0.60;
+            else u += 0.55;
         }
-        return len;
+        return u * F;
     }
 
-    // Split by <br> to get the longest line
-    const lines = title.replace(/\n/g, '<br>').split('<br>');
-    const maxLineLen = Math.max(...lines.map(l => visualLen(l.trim())));
+    // 수동 <br>/\n·nbsp를 공백으로 펴서 어절로 나눔. 수동 줄 수는 하한으로 존중.
+    const plain = title.replace(/<br\s*\/?>/gi, ' ').replace(/\n/g, ' ').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+    const forced = title.replace(/\n/g, '<br>').split(/<br\s*\/?>/i).length;
+    const words = plain.split(' ').filter(Boolean);
 
-    // At 56px, max ~28 visual units fit per line
-    const maxUnitsPerLine = 28;
-    if (maxLineLen <= maxUnitsPerLine) return 56;
-
-    // Scale down proportionally, floor to 40px minimum
-    const scaled = Math.floor(56 * maxUnitsPerLine / maxLineLen);
-    return Math.max(scaled, 40);
+    // 유튜브 커버처럼 큼직하게: 폰트는 크게 고정(76)하고 길이는 "줄 수"로 흡수.
+    // 줄 수는 어절을 720px 폭에 greedy 패킹해 실제 줄바꿈(및 text-wrap:balance의 최소 줄 수)과
+    // 일치시킨다 — 긴 단어(예: "Colonization")를 무시하던 총량-추정 버그를 없앤다. 넘칠 때만 축소.
+    const AVAIL = 720, SPACE = 0.30, LH = 1.3, HBUD = 250, MAXF = 76, MINF = 40;
+    for (let F = MAXF; F >= MINF; F -= 2) {
+        let lines = 1, cur = 0;
+        for (const w of words) {
+            const ww = wordPx(w, F);
+            const add = cur > 0 ? SPACE * F + ww : ww;
+            if (cur > 0 && cur + add > AVAIL) { lines++; cur = ww; }
+            else cur += add;
+        }
+        lines = Math.max(lines, forced);
+        if (lines * F * LH <= HBUD) return F;
+    }
+    return MINF;
+}
+// 부제를 2줄 한도에서 문장/문구 경계로 깔끔히 끝낸다(단어 중간 절단 방지).
+// 문장 종결(마침표·물음표·느낌표)로 끝나면 말줄임표 없이, 아니면 절/어절 경계 + "…".
+function fitSubtitle(s) {
+    if (!s) return '';
+    s = s.replace(/\s+/g, ' ').trim();
+    const AVAIL = 720, LINES = 2;
+    // em-폭 근사: 한글 1.0 · 영문/기호 0.5 · 공백 0.3 (Pretendard 본문 28px)
+    const ulen = str => { let l = 0; for (const c of str) l += (c === ' ' || c === ' ') ? 0.3 : (/[가-힣ぁ-ヿ一-鿿]/.test(c) ? 1.0 : 0.5); return l; };
+    const budget = (AVAIL / 27) * LINES;   // ≈ 53 단위(2줄)
+    if (ulen(s) <= budget) return s;       // 통째로 2줄 안에 들어감
+    // 말줄임표 자리(1.2) 남기고 예산 안 최장 prefix
+    let cut = s.length;
+    while (cut > 0 && ulen(s.slice(0, cut)) > budget - 1.2) cut--;
+    const head = s.slice(0, cut);
+    // 1) 문장 종결부호가 예산 내 있으면 거기까지 — 완결 문장이라 말줄임표 없음
+    let end = -1;
+    for (let i = 0; i < head.length; i++) if ('.!?…。'.includes(head[i])) end = i;
+    if (end >= 0 && ulen(head.slice(0, end + 1)) >= budget * 0.5) return head.slice(0, end + 1).trim();
+    // 2) 절 경계(쉼표·가운뎃점·세미콜론·콜론·줄표)까지 + "…"
+    let cl = -1;
+    for (let i = 0; i < head.length; i++) if (',、·;:—'.includes(head[i])) cl = i;
+    if (cl >= 0 && ulen(head.slice(0, cl)) >= budget * 0.4) return head.slice(0, cl).replace(/[\s,、·;:—]+$/, '').trim() + '…';
+    // 3) 마지막 어절(공백) 경계 + "…"
+    const sp = head.lastIndexOf(' ');
+    return (sp > 0 ? head.slice(0, sp) : head).trim() + '…';
 }
 
 function getFontFaces(projectRoot) {
@@ -232,46 +249,44 @@ function getFontFaces(projectRoot) {
         { weight: 400, file: 'Pretendard-Regular.woff2' },
     ];
 
-    return weights.map(({ weight, file }) => {
+    const faces = weights.map(({ weight, file }) => {
         const fontPath = path.join(fontsDir, file);
         if (fs.existsSync(fontPath)) {
             const b64 = fs.readFileSync(fontPath).toString('base64');
             return `@font-face { font-family: 'Pretendard'; font-weight: ${weight}; font-display: block; src: url('data:font/woff2;base64,${b64}') format('woff2'); }`;
         }
         return '';
-    }).filter(Boolean).join('\n        ');
+    }).filter(Boolean);
+
+    // TT Firs Neue (영문 디스플레이/강조) — 브랜드 폰트(가변 OTF). 한글은 Pretendard로 폴백.
+    const firsPath = path.join(fontsDir, 'TT-Firs-Neue-Variable.otf');
+    if (fs.existsSync(firsPath)) {
+        const b64 = fs.readFileSync(firsPath).toString('base64');
+        faces.push(`@font-face { font-family: 'TT Firs Neue'; font-weight: 100 900; font-display: block; src: url('data:font/otf;base64,${b64}') format('opentype'); }`);
+    }
+    return faces.join('\n        ');
 }
 
 function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
-    // Handle manual line breaks first
+    // 괄호 묶음 "(AI BOM)"·"（…）"은 줄바꿈에서 절대 안 쪼개지게 내부 공백을 nbsp로 보호
+    title = title.replace(/[（(]([^）)]*)[）)]/g, (m) => m.replace(/ /g, '\u00A0'));
+
+    // 수동 줄바꿈만 존중(og-image-title의 \n). 그 외 줄나눔은 브라우저의
+    // text-wrap: balance 가 균형 있게 처리 — 수동 분할이 폰트 크기와 어긋나
+    // 4줄 넘침을 일으키던 문제를 없앤다.
     let displayTitle = title.replace(/\n/g, '<br>');
 
-    // Split long titles into max 2 lines with balanced distribution
-    // (only if no manual breaks via \n or og-image-title)
-    const maxCharsPerLine = 30;
-    if (!title.includes('\n') && title.length > maxCharsPerLine) {
-        const words = title.split(' ');
-
-        // Try em-dash split first: "A — B" → natural 2-line break
-        const dashIndex = words.findIndex(w => w === '—' || w === '-' || w === '–');
-        if (dashIndex > 0 && dashIndex < words.length - 1) {
-            const line1 = words.slice(0, dashIndex + 1).join(' ');
-            const line2 = words.slice(dashIndex + 1).join(' ');
-            // Accept if both lines fit and neither is too short
-            if (line1.length <= 36 && line2.length <= 36) {
-                displayTitle = line1 + '<br>' + line2;
-            } else {
-                displayTitle = balancedSplit(words);
-            }
-        } else {
-            displayTitle = balancedSplit(words);
-        }
-    }
+    // 부제는 2줄 한도에서 문장/문구 경계로 깔끔히 끝낸다(단어 중간 절단 방지)
+    subtitle = fitSubtitle(subtitle);
 
     const titleFontSize = calcTitleFontSize(displayTitle);
-    const titleLineHeight = titleFontSize <= 44 ? 1.35 : 1.3;
+    // 영문(TT Firs Neue)은 줄간격이 넓어 보여 타이트하게, 한글은 넉넉히 유지
+    const cjkCount = (displayTitle.match(/[가-힯　-鿿]/g) || []).length;
+    const latinCount = (displayTitle.match(/[A-Za-z]/g) || []).length;
+    const isEnglish = cjkCount === 0 || latinCount > cjkCount * 2;
+    const titleLineHeight = isEnglish ? 1.14 : (titleFontSize <= 44 ? 1.35 : 1.3);
 
-    const pebbleHTML = generatePebbles(title, theme.accent, theme.decorationOpacity);
+    const pebbleHTML = generatePebbles(title, theme.light);
     const sectionBar = theme.sectionBar
         ? `<div style="position:absolute;top:0;left:0;right:0;height:6px;background:${theme.accent};"></div>`
         : '';
@@ -308,12 +323,21 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
             overflow: hidden;
         }
 
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 2;
+        }
+
         .badge {
             display: inline-block;
             background: ${theme.accent};
             color: white;
+            font-family: 'TT Firs Neue', 'Pretendard', sans-serif;
             font-size: 18px;
-            font-weight: 600;
+            font-weight: 700;
             padding: 8px 20px;
             border-radius: 20px;
             letter-spacing: 1px;
@@ -323,15 +347,23 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;   /* 중앙정렬 아님 — 배지에서 고정 간격 아래 */
+            padding-top: 64px;             /* 섹션명(배지)과 제목 사이 고정 간격 */
+            max-width: 720px;              /* 제목/부제는 왼쪽에 머문다 — 우하단 조약돌 칸 침범 방지 */
+            position: relative;
+            z-index: 2;
         }
 
         .title {
             color: ${theme.titleColor};
+            font-family: 'TT Firs Neue', 'Pretendard', -apple-system, sans-serif;
             font-size: ${titleFontSize}px;
             font-weight: 800;
             line-height: ${titleLineHeight};
             margin-bottom: 20px;
+            word-break: keep-all;   /* 한글 낱말 중간 안 끊김 + 영문 단어 보존 */
+            overflow-wrap: break-word;
+            text-wrap: balance;     /* 브라우저가 줄을 균형 있게 나눔(수동 분할 대체) */
         }
 
         .title span {
@@ -343,6 +375,10 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
             font-size: 28px;
             font-weight: 400;
             line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;      /* 2줄 안전망 — fitSubtitle이 이미 문구 경계로 자름 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .footer {
@@ -380,7 +416,10 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
         ${sectionBar}
         ${pebbleHTML}
 
-        <div class="badge">${theme.badge}</div>
+        <div class="topbar">
+            <div class="badge">${theme.badge}</div>
+            <span class="url">blog.pebblous.ai</span>
+        </div>
 
         <div class="content">
             <h1 class="title">${displayTitle}</h1>
@@ -391,7 +430,6 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
             <div class="logo">
                 <img src="${logoPath}" alt="Pebblous">
             </div>
-            <span class="url">blog.pebblous.ai</span>
         </div>
     </div>
 </body>
@@ -482,6 +520,18 @@ function extractFromHTML(htmlPath, projectRoot) {
         title = ogImageTitleMatch[1].replace(/&#10;/g, '\n');
         console.log(`  [og-image-title] Using custom OG image title`);
     }
+    // 본문 제목(mainTitle) = 글의 진짜 제목 → OG 이미지는 이걸 그린다.
+    // SEO 메타(og:title·<title>)는 검색엔진용이라 뒤로. (2026-07-01: AI BOM stale-og 재발 방지)
+    if (!title) {
+        const mtMatch = htmlContent.match(/mainTitle:\s*(["'])((?:\\.|(?!\1).)*)\1/);
+        if (mtMatch) {
+            title = mtMatch[2]
+                .replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+                .replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, '\\')
+                .replace(/<br\s*\/?>/gi, ' ').trim();
+            console.log(`  [mainTitle] Using body title`);
+        }
+    }
     const ogTitleMatch = htmlContent.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
     if (!title && ogTitleMatch) {
         title = ogTitleMatch[1];
@@ -527,10 +577,8 @@ function extractFromHTML(htmlPath, projectRoot) {
         console.log(`  [fallback] Using description from articles.json`);
     }
 
-    // Truncate if too long
-    if (subtitle && subtitle.length > 80) {
-        subtitle = subtitle.substring(0, 77) + '...';
-    }
+    // 자르지 않고 전체를 넘긴다 — generateHTML의 fitSubtitle이 2줄 한도에서 문구 경계로 정리
+    subtitle = (subtitle || '').trim();
 
     // Determine category: articles.json → HTML config.category → path-based fallback
     let category = 'tech';
@@ -565,6 +613,11 @@ function extractFromHTML(htmlPath, projectRoot) {
     return { title, subtitle, category, output: outputPath, light };
 }
 
+// 다른 도구(리뷰 서버 등)가 함수를 재사용할 수 있게 export
+module.exports = { extractFromHTML, generateOGImage, generateHTML, getTheme, getFontFaces, calcTitleFontSize };
+
+// CLI로 직접 실행될 때만 아래 main 로직 수행 (require 시엔 skip)
+if (require.main === module) {
 // Main
 const args = process.argv.slice(2);
 
@@ -649,3 +702,4 @@ Examples:
     const projectRoot = path.resolve(__dirname, '..');
     generateOGImage(title, subtitle, output, category, projectRoot, light).catch(console.error);
 }
+} // end require.main === module
