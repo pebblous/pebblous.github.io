@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 데이터 분석 에이전트, 작업 길수록 정확도 47%p 급락 — LongDS-Bench | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="실제 Kaggle 기반 68개 과제, 2,225턴을 돌려보니 최고 모델도 정확도 48%에 그쳤고 후반 턴에서 47%p 급락했다. LongDS-Bench가 짚은 실패 원인은 스텝 부족이 아니라 '분석 상태(state)' 유지 실패였다. 데이터 팀이 지금 점검해야 할 신호.">
+    <meta name="keywords" content="AI 에이전트 데이터 분석, 롱 호라이즌 에이전트, long-horizon agent, 분석 상태 유지, state management, LongDS-Bench, 정확도 붕괴, cascade error, 캐스케이드 에러, 에이전트 벤치마크, AI-Ready Data, 데이터 품질">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/longds-bench-agentic-data-analysis-failure/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/longds-bench-agentic-data-analysis-failure/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/longds-bench-agentic-data-analysis-failure/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/longds-bench-agentic-data-analysis-failure/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="AI는 데이터 분석을 갈수록 조용히 틀린다">
+    <meta property="og:description" content="68개 과제 2,225턴을 돌려보니 최고 모델도 후반 턴에서 47%p 무너졌다. 원인은 스텝 부족이 아니라 분석 상태 유지 실패였다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/longds-bench-agentic-data-analysis-failure/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/longds-bench-agentic-data-analysis-failure/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="AI는 데이터 분석을 갈수록 조용히 틀린다">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-07-04">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI는 데이터 분석을 갈수록 조용히 틀린다">
+    <meta name="twitter:description" content="최고 모델도 정확도 48%, 후반 턴에서 47%p 급락. 문제는 스텝이 아니라 분석 상태 유지였다 — LongDS-Bench 68과제 분석.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/longds-bench-agentic-data-analysis-failure/ko/image/index.png">
+    <meta name="twitter:image:alt" content="긴 데이터 분석에서 무너지는 AI 에이전트">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="AI는 데이터 분석을 갈수록 조용히 틀린다">
+    <meta name="citation_author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="citation_publication_date" content="2026/07/04">
+    <meta name="citation_online_date" content="2026/07/04">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260704"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260704">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260704">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260704">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#the-benchmark" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 실제 분석을 닮은 68개 과제</a></li>
+                    <li><a href="#the-collapse" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 최고 모델도 절반을 못 넘겼다</a></li>
+                    <li><a href="#why-it-breaks" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 무너지는 건 기억이 아니라 상태다</a></li>
+                    <li><a href="#more-steps-fail" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 스텝을 늘려도 정확도는 안 온다</a></li>
+                    <li><a href="#third-warning" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 데이터 팀에게 남는 세 번째 경고</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            실제 Kaggle 노트북에서 뽑아낸 68개 데이터 분석 과제를 다섯 개의 최신 모델에게 시켜 봤습니다. 과제당 평균 33턴, 모두 합쳐 2,225턴에 걸친 긴 분석이었습니다. 결과는 냉정했습니다. 가장 잘한 모델의 평균 정확도가 48.45%, 절반을 넘지 못했습니다. 짧은 질문 하나는 곧잘 풀던 모델들이, 분석이 길어지자 조용히 틀려 갔습니다. 이 글은 그 붕괴가 어디서, 왜 시작되는지를 데이터 팀의 눈으로 읽습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            가장 뼈아픈 숫자는 초반과 후반의 낙차입니다. 같은 과제 안에서 앞쪽 턴과 뒤쪽 턴의 정확도 차이가 거의 47%p에 달했습니다. 무너진 이유는 정보를 잊어서가 아니었습니다. 이전에 세운 정의와 필터, 가정 같은 '분석 상태'를 제때 유지·수정·복원하지 못하면서, 한 번 어긋난 중간 결과가 뒤따르는 모든 계산을 오염시킨 탓이었습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            더 많은 스텝은 답이 아니었습니다. 가장 많은 스텝을 쓴 모델이 오히려 1위 모델보다 낮은 점수를 받았습니다. 병목은 얼마나 많이 시도하느냐가 아니라, 분석 상태를 얼마나 올바르게 붙잡느냐였습니다. 지금 데이터 작업을 에이전트에게 넘긴 팀이라면, 그 작업이 길어질수록 조용히 틀려 가고 있지는 않은지 점검할 때입니다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2605.30434" target="_blank" rel="noopener" class="underline">LongDS-Bench (arXiv:2605.30434)</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        아래 네 숫자를 함께 보면 이야기가 선명해집니다. 앞의 둘은 붕괴가 얼마나 큰지를, 뒤의 둘은 그 붕괴가 왜 기억이 아니라 상태 관리의 문제인지를 가리킵니다.
+                    </p>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">48.45%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">최고 모델 정확도</p>
+                            <p class="text-xs themeable-muted mt-1">1위 Gemini-3.1-Pro도 절반을 못 넘겼다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">47%p</p>
+                            <p class="text-sm themeable-text-secondary mt-1">후반 턴 급락</p>
+                            <p class="text-xs themeable-muted mt-1">같은 과제 초반 대비 후반 정확도 낙차</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">52–69%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">롱 호라이즌 에러</p>
+                            <p class="text-xs themeable-muted mt-1">전체 실패 중 상태 관리류가 차지한 비중</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">11.3턴</p>
+                            <p class="text-sm themeable-text-secondary mt-1">평균 상태 의존 거리</p>
+                            <p class="text-xs themeable-muted mt-1">한 요청이 평균 11.3턴 전 상태에 기댔다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="the-benchmark" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">실제 분석을 닮은 68개 과제</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2026년 5월 저장대학교와 앤트그룹 공동 연구진이 공개한 LongDS-Bench는 이제까지의 데이터 분석 벤치마크와 결이 다릅니다. 기존 벤치마크는 대체로 독립된 질문 하나를 던지고 답을 채점합니다. 하지만 현실의 데이터 분석은 그렇게 흘러가지 않습니다. 코호트를 정의하고, 필터를 걸고, 중간 지표를 만들고, 그 정의를 며칠 뒤에 슬쩍 바꾸고, 어제 고정해 둔 버전으로 되돌아가 답하는 일이 여러 턴에 걸쳐 얽힙니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진은 이 흐름을 재현하려고 실제 Kaggle 노트북에서 68개 과제를 뽑아 멀티턴 대화로 재구성했습니다. 지구과학, 비즈니스, 교육, 스포츠, 사회공헌, 커뮤니티까지 여섯 개 도메인에 걸쳐 있고, 과제당 평균 33턴, 전체 2,225턴 규모입니다. 중요한 것은 이 턴들이 서로 독립적이지 않다는 점입니다. 한 요청은 평균 11.3턴 이전의 상태에 의존했고, 한 턴은 평균 2.9개의 앞선 상태를 동시에 참조해야 했습니다. 앞에서 무엇을 어떻게 정의했는지 놓치는 순간 뒤가 통째로 흔들리는 구조입니다.
+                    </p>
+
+                    <!-- SVG 1: 분석 상태 의존성 체인 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 185" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <defs>
+                                <marker id="ko1-dep-o" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="#F86825"/>
+                                </marker>
+                                <marker id="ko1-dep-m" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="var(--text-muted)"/>
+                                </marker>
+                            </defs>
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)" font-weight="600">분석 상태 의존성 체인 — 한 요청이 평균 11.3턴 이전을 참조</text>
+                            <line x1="45" y1="90" x2="615" y2="90" stroke="var(--text-muted)" stroke-width="1"/>
+                            <circle cx="60" cy="90" r="20" fill="#1e293b"/><text x="60" y="95" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#e2e8f0" font-weight="600">T1</text>
+                            <circle cx="155" cy="90" r="20" fill="#1e293b"/><text x="155" y="95" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#e2e8f0" font-weight="600">T5</text>
+                            <circle cx="250" cy="90" r="20" fill="#1e293b"/><text x="250" y="95" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#e2e8f0" font-weight="600">T11</text>
+                            <circle cx="345" cy="90" r="20" fill="#F86825"/><text x="345" y="95" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#fff" font-weight="600">T17</text>
+                            <circle cx="430" cy="90" r="20" fill="#1e293b"/><text x="430" y="95" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#e2e8f0" font-weight="600">T22</text>
+                            <circle cx="520" cy="90" r="20" fill="#F86825"/><text x="520" y="95" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#fff" font-weight="600">T28</text>
+                            <circle cx="600" cy="90" r="20" fill="#1e293b"/><text x="600" y="95" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#e2e8f0" font-weight="600">T33</text>
+                            <path d="M504,72 Q425,38 361,72" fill="none" stroke="#F86825" stroke-width="2" marker-end="url(#ko1-dep-o)"/>
+                            <text x="430" y="40" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#F86825" font-weight="700">← 11턴 전 참조</text>
+                            <path d="M413,109 Q335,135 267,109" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#ko1-dep-m)"/>
+                            <text x="60" y="126" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">Initial</text>
+                            <text x="345" y="126" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#F86825">Update</text>
+                            <text x="520" y="126" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#F86825">Rollback</text>
+                            <text x="155" y="152" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">평균 의존 거리</text>
+                            <text x="155" y="170" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="15" font-weight="700" fill="#F86825">11.3턴</text>
+                            <text x="330" y="152" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">동시 참조 상태</text>
+                            <text x="330" y="170" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="15" font-weight="700" fill="#F86825">2.9개</text>
+                            <text x="505" y="152" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">과제당 평균 턴</text>
+                            <text x="505" y="170" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="15" font-weight="700" fill="#F86825">33턴</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 분석 상태 의존성 체인 — Turn 간 상태 참조 구조 | 페블러스 원본 도식 (LongDS-Bench 재해석)
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진은 이렇게 이어지는 작업을 지탱하는 것을 '분석 상태(analytical state)'라고 부릅니다. 단순히 이전에 나온 숫자가 아니라, 어떤 범위에서 어떤 정의와 가정을 걸고 계산했는지의 맥락 전체입니다. 이를테면 "지난 분기 북미 고객 중 재구매자를 제외한 신규 고객의 LTV" 같은 조건들이 턴마다 쌓이면, 에이전트는 지금 어떤 조건이 유효한지를 계속 추적해야 합니다. 과제는 이 상태를 다루는 방식에 따라 다섯 가지 패턴을 담고 있었습니다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 themeable-heading font-semibold">상태 진화 패턴</th>
+                                    <th class="text-left py-3 themeable-heading font-semibold">에이전트가 해야 하는 일</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">Initial</td>
+                                    <td class="py-3">재사용할 분석 객체(코호트·지표·정의)를 처음 세운다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">Update</td>
+                                    <td class="py-3">이전 정의나 필터를 수정하고, 수정본을 새 기본값으로 삼는다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">Counterfactual</td>
+                                    <td class="py-3">이번 턴에만 적용되는 임시 가정을 들여온다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">Rollback</td>
+                                    <td class="py-3">앞서 고정해 둔 분석 버전으로 되돌아가 답한다</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4 font-semibold">Composition</td>
+                                    <td class="py-3">여러 상태 연산을 명시적으로 조합한다</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        과제 하나에는 평균 5.8번의 Rollback 턴과 8.6번의 Composition 턴이 들어 있었습니다. 되돌아가고 겹쳐 쌓는 일이 예외가 아니라 기본값이라는 뜻입니다. 사람 분석가라면 노트와 코드 셀에 자연스럽게 남겨 두는 맥락을, 에이전트는 매 턴 스스로 붙잡아야 했습니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>왜 이 벤치마크가 중요한가</strong>: LongDS-Bench는 "AI가 데이터 분석을 할 수 있는가"가 아니라 "길게 이어지는 분석에서 상태를 붙잡을 수 있는가"를 묻습니다. 우리가 실제로 에이전트에게 맡기는 일이 바로 이런 모양이기 때문입니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="the-collapse" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">최고 모델도 절반을 못 넘겼다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다섯 개 프론티어 모델을 같은 68과제에 올렸을 때, 1등도 겨우 절반 문턱에서 멈췄습니다. Gemini-3.1-Pro가 평균 48.45%로 가장 높았고, 그 뒤로 GPT-5.4, Claude-4.6-Sonnet, Kimi-K2.6, DeepSeek-V4-Pro 순이었습니다. 참고로 이 채점은 사람 검증과 93.11% 일치(Cohen's κ = 0.86)해, 점수 자체를 의심하기는 어렵습니다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 themeable-heading font-semibold">모델</th>
+                                    <th class="text-right py-3 themeable-heading font-semibold">평균 정확도</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">Gemini-3.1-Pro</td>
+                                    <td class="py-3 text-right font-bold" style="color: #F86825;">48.45%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">GPT-5.4</td>
+                                    <td class="py-3 text-right">43.50%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Claude-4.6-Sonnet</td>
+                                    <td class="py-3 text-right">41.56%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Kimi-K2.6</td>
+                                    <td class="py-3 text-right">39.72%</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4">DeepSeek-V4-Pro</td>
+                                    <td class="py-3 text-right">31.97%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        평균값보다 무서운 것은 과제 안에서의 변화입니다. 초반 턴에서는 그럭저럭 맞히던 모델들이, 같은 과제의 후반 턴으로 갈수록 급격히 틀렸습니다. 초반과 후반의 정확도 차이가 거의 47%p에 달했습니다. 앞부분만 지켜본 사람이라면 "쓸 만하다"고 판단했을 바로 그 모델이, 뒷부분에서 조용히 무너지고 있었던 것입니다.
+                    </p>
+
+                    <!-- SVG 2: 초반/후반 정확도 낙차 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 220" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <defs>
+                                <marker id="ko2-drop" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)" font-weight="600">같은 과제 내 정확도 변화 — 초반 턴 → 후반 턴</text>
+                            <line x1="80" y1="38" x2="80" y2="178" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <line x1="80" y1="178" x2="560" y2="178" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="74" y="42" text-anchor="end" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">100%</text>
+                            <text x="74" y="111" text-anchor="end" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">50%</text>
+                            <text x="74" y="182" text-anchor="end" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">0%</text>
+                            <line x1="80" y1="108" x2="560" y2="108" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="4,4"/>
+                            <rect x="160" y="80" width="120" height="98" fill="#F86825" rx="6"/>
+                            <text x="220" y="72" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="14" fill="#F86825" font-weight="700">~70%</text>
+                            <rect x="370" y="146" width="120" height="32" fill="#1e293b" rx="6"/>
+                            <text x="430" y="138" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="14" fill="var(--text-secondary)" font-weight="700">~23%</text>
+                            <line x1="285" y1="80" x2="365" y2="146" stroke="#F86825" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#ko2-drop)"/>
+                            <text x="335" y="106" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="14" fill="#F86825" font-weight="700">▼ 47%p</text>
+                            <text x="220" y="197" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" fill="var(--text-secondary)" font-weight="600">초반 턴</text>
+                            <text x="430" y="197" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" fill="var(--text-secondary)" font-weight="600">후반 턴</text>
+                            <text x="330" y="213" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">개념 도식 — 같은 과제 내 초반·후반 정확도 낙차 (LongDS-Bench 기준)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 초반 턴 대비 후반 턴 정확도 47%p 급락 | 페블러스 원본 도식 (LongDS-Bench 재해석)
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 대목이 실무에서 특히 위험합니다. 데이터 분석 결과는 대개 마지막 몇 턴의 산출물, 이를테면 최종 집계와 결론에서 나옵니다. 그런데 정확도가 무너지는 지점도 바로 그 후반부입니다. 앞의 탐색은 그럴듯한데 마지막 답이 틀리는 패턴은, 검토자가 알아채기 가장 어려운 실패 형태입니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>핵심 발견</strong>: 문제는 "AI가 데이터 분석을 못 한다"가 아닙니다. 짧게는 잘합니다. 길어질수록, 특히 결론이 나오는 후반부일수록 정확도가 무너진다는 것이 진짜 신호입니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="why-it-breaks" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">무너지는 건 기억이 아니라 상태다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진은 실패 사례를 뜯어보고 원인을 크게 두 갈래로 나눴습니다. 코딩·플래닝·도메인 추론 같은 전통적 에러가 31~48%였고, 나머지 52~69%는 긴 작업에서만 생기는 '롱 호라이즌 에러'였습니다. 절반이 넘는 실패가 모델의 지능이 부족해서가 아니라, 이어지는 상태를 다루지 못해 발생했다는 뜻입니다. 이 롱 호라이즌 에러는 다시 세 종류로 갈립니다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 themeable-heading font-semibold">에러 유형</th>
+                                    <th class="text-left py-3 pr-4 themeable-heading font-semibold">무엇이 실패하나</th>
+                                    <th class="text-left py-3 themeable-heading font-semibold">규모</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">Cascade Error</td>
+                                    <td class="py-3 pr-4">잘못된 중간 상태가 하류 계산 전체로 전파된다</td>
+                                    <td class="py-3">가장 큼</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">State Management Error</td>
+                                    <td class="py-3 pr-4">올바른 상태를 고르고 갱신하고 복원하는 데 실패한다</td>
+                                    <td class="py-3">중간</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 pr-4 font-semibold">Context Memory Error</td>
+                                    <td class="py-3 pr-4">이전 정보를 단순히 다시 꺼내는 데 실패한다</td>
+                                    <td class="py-3">가장 작음</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- SVG 3: 실패 원인 분류 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 200" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)" font-weight="600">실패 원인 분류 — 절반 이상이 상태 관리 문제</text>
+                            <!-- Row 1: 전체 실패 split -->
+                            <text x="72" y="68" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">전체 실패</text>
+                            <!-- Traditional ~40% = 200px of 500px (x80-580) -->
+                            <rect x="80" y="52" width="200" height="32" fill="#334155" rx="4"/>
+                            <!-- Long-horizon ~60% = 300px -->
+                            <rect x="280" y="52" width="300" height="32" fill="#F86825" rx="4"/>
+                            <text x="180" y="73" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#e2e8f0" font-weight="600">전통적 에러 ~40%</text>
+                            <text x="430" y="73" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#fff" font-weight="700">롱 호라이즌 에러 ~60%</text>
+                            <!-- Row 2: Long-horizon breakdown (aligned to x280-580 zone) -->
+                            <text x="72" y="133" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">롱 호라이즌</text>
+                            <text x="72" y="147" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">세부</text>
+                            <!-- Gray zone for traditional (left, 80-280) -->
+                            <rect x="80" y="118" width="200" height="32" fill="#1e293b" opacity="0.2" rx="4"/>
+                            <!-- Cascade ~45% of 300 = 135px: x280-415 -->
+                            <rect x="280" y="118" width="135" height="32" fill="#F86825" rx="4"/>
+                            <!-- State Mgmt ~35% of 300 = 105px: x415-520 -->
+                            <rect x="415" y="118" width="105" height="32" fill="#334155" rx="4"/>
+                            <!-- Context Memory ~20% of 300 = 60px: x520-580 -->
+                            <rect x="520" y="118" width="60" height="32" fill="#1e293b" rx="4"/>
+                            <text x="347" y="139" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#fff" font-weight="700">Cascade (최대)</text>
+                            <text x="467" y="139" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#e2e8f0">State Mgmt</text>
+                            <text x="550" y="139" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="8" fill="#e2e8f0">Context</text>
+                            <!-- Sub-labels -->
+                            <text x="347" y="168" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#F86825" font-weight="600">가장 큼</text>
+                            <text x="467" y="168" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">중간</text>
+                            <text x="550" y="168" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">가장 작음</text>
+                            <text x="330" y="190" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">비율은 52~69% 범위 중앙값 기준 추정 | 출처: LongDS-Bench (arXiv:2605.30434)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 전체 실패 원인 분류 및 롱 호라이즌 에러 세부 유형 | 페블러스 원본 도식 (LongDS-Bench 재해석)
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 흥미로운 역설이 드러납니다. 우리가 흔히 걱정하는 것은 "AI가 앞의 내용을 까먹는다"는 쪽입니다. 그런데 정작 그 단순 기억 실패(Context Memory)는 가장 작은 범주였습니다. 정보를 꺼내는 일은 비교적 쉬웠습니다. 진짜로 무너진 곳은 정보를 제대로 적용하는 지점, 즉 어떤 상태가 지금 유효한지 판단하고(State Management) 그것을 다음 계산에 옳게 넘기는(Cascade) 대목이었습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 큰 범주인 Cascade Error가 왜 위험한지는 이름 그대로입니다. 초반에 정의 하나를 잘못 잡으면, 그 위에 쌓인 필터와 집계와 결론이 전부 오염됩니다. 후반 정확도가 47%p나 주저앉은 이유가 여기 있습니다. 후반이 특별히 어려워서가 아니라, 초반에 어긋난 상태가 후반까지 흘러와 답을 갉아먹은 것입니다. 한 번의 미세한 상태 드리프트가 뒤의 모든 턴을 조용히 물들입니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>관점의 전환</strong>: "AI가 기억을 못 해서 틀린다"는 진단은 절반만 맞습니다. 데이터 분석에서 진짜 병목은 기억(retrieval)이 아니라 상태(state)입니다. 무엇이 지금 유효한 정의이고, 그것을 다음 계산에 어떻게 넘기느냐가 정확도를 가릅니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="more-steps-fail" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">스텝을 늘려도 정확도는 안 온다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        직관적으로는 이렇게 생각하기 쉽습니다. 후반부가 어렵다면, 에이전트에게 더 많이 생각하고 더 많이 시도할 여유를 주면 되지 않을까. LongDS-Bench의 결과는 그 기대를 정면으로 반박합니다. 연구진은 "추가 스텝이 반드시 성능을 높이지는 않는다"고 못 박습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 또렷한 증거가 순위표 안에 있습니다. 테스트한 모델 중 스텝을 가장 많이 쓴 쪽은 Claude-4.6-Sonnet이었습니다. 그런데 그 성적은 훨씬 적게 움직인 Gemini-3.1-Pro보다 낮았습니다. 더 열심히, 더 많이 시도한 모델이 진 셈입니다. 시도 횟수와 정확도가 나란히 가지 않는다는 것은, 병목이 노력의 양이 아니라 다른 곳에 있다는 신호입니다.
+                    </p>
+
+                    <!-- SVG 4: 스텝 vs 정확도 역설 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#f8fafc)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)" font-weight="600">스텝 수 vs 정확도 — 더 많이 시도해도 더 높지 않다</text>
+                            <text x="200" y="45" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)" font-weight="700">Gemini-3.1-Pro</text>
+                            <text x="460" y="45" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)" font-weight="700">Claude-4.6-Sonnet</text>
+                            <text x="55" y="90" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">스텝 수</text>
+                            <text x="55" y="155" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">정확도</text>
+                            <!-- Gemini steps: shorter -->
+                            <rect x="80" y="68" width="240" height="34" fill="#334155" rx="6"/>
+                            <text x="200" y="90" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#e2e8f0">상대적 적음</text>
+                            <!-- Claude steps: longer (most steps) -->
+                            <rect x="340" y="54" width="280" height="34" fill="#334155" rx="6"/>
+                            <text x="480" y="76" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#e2e8f0" font-weight="600">가장 많음 ←</text>
+                            <line x1="80" y1="116" x2="620" y2="116" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="4,4"/>
+                            <!-- Gemini accuracy (48.45%): taller orange bar -->
+                            <rect x="80" y="122" width="240" height="52" fill="#F86825" rx="6"/>
+                            <text x="200" y="153" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="15" fill="#fff" font-weight="700">48.45%</text>
+                            <!-- Claude accuracy (41.56%): shorter dark bar -->
+                            <rect x="340" y="133" width="240" height="41" fill="#1e293b" rx="6"/>
+                            <text x="460" y="158" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="15" fill="#e2e8f0" font-weight="700">41.56%</text>
+                            <text x="200" y="193" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="#F86825" font-weight="700">✓ 1위</text>
+                            <text x="460" y="193" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">스텝 최다 → 3위</text>
+                            <text x="330" y="206" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">출처: LongDS-Bench (arXiv:2605.30434)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 스텝 수와 정확도의 역설 — 가장 많이 시도한 모델이 1위가 아니다 | 페블러스 원본 도식 (LongDS-Bench 재해석)
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진의 리셋 실험은 그 다른 곳을 가리킵니다. 에이전트는 후반으로 갈수록 탐색 스텝 자체가 줄어드는 경향을 보였습니다. 초반에 어긋난 상태가 이미 후반 전체를 오염시킨 뒤라, 더 많은 스텝을 준다 한들 잘못된 토대 위에서 헛도는 것입니다. 예산을 키우는 대신 상태를 바로잡는 지점을 만들어야 하는 이유입니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>한 줄 요약</strong>: 정확도의 병목은 "얼마나 많이 시도하느냐"가 아니라 "분석 상태를 얼마나 올바르게 유지하느냐"입니다. 더 큰 예산·더 많은 스텝은 잘못된 상태 위에서는 오히려 낭비가 됩니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="third-warning" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">데이터 팀에게 남는 세 번째 경고</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 블로그는 롱 호라이즌 에이전트의 실패를 두 번 다뤘습니다. 한 번은 약한 하네스가 에이전트를 죽인다는 인프라의 문제였고, 다른 한 번은 1년을 버틴 에이전트의 비밀이 똑똑함이 아니라 메모장이었다는 기억의 문제였습니다. LongDS-Bench는 그 흐름의 세 번째 장면입니다. 이번에는 데이터 분석이라는 구체적인 작업에서, 실패의 원인이 스텝 부족도 기억 부족도 아닌 '상태 유지'임을 68과제 2,225턴으로 못 박았습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이를 데이터의 관점에서 읽으면 결론은 분명합니다. 에이전트가 붙잡아야 할 분석 상태 — 정의와 범위, 가정과 중간 결과 — 는 결국 외부에 명시적으로 관리해야 할 데이터입니다. 그 데이터가 어떤 정의로 언제 갱신됐고 어느 버전이 지금 유효한지가 구조화돼 있지 않으면, 아무리 똑똑한 모델이라도 후반부에서 길을 잃습니다. 자율화 시대의 병목은 더 큰 추론력이 아니라, 붙잡을 상태를 얼마나 잘 설계해 두었는가입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 질문은 이렇게 바뀝니다. 지금 우리 팀이 에이전트에게 넘긴 다단계 데이터 작업은, 앞부분이 그럴듯하다는 이유로 뒷부분의 오염을 놓치고 있지는 않은가. 점검할 지점은 세 가지입니다. 중간 정의와 가정을 명시적으로 저장·참조하는 구조가 있는가. 이전 버전으로 되돌아가는 Rollback을 테스트해 봤는가. 그리고 정확도가 초반에만 좋은 것은 아닌지, 후반 턴을 따로 검증하고 있는가. 더 큰 모델로 갈아타기 전에, 붙잡을 상태부터 정돈할 차례입니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>마무리</strong>: 긴 데이터 분석에서 AI는 못 하는 게 아니라 갈수록 조용히 틀립니다. 그 조용함을 깨는 것은 더 많은 예산이 아니라, 분석 상태를 명시적 데이터로 붙잡는 설계입니다. 후반부를 따로 들여다보는 습관이 그 시작입니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- 참고문헌 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Xu, K., Lu, X., Qiao, S., Ding, Z., Xu, H., Liang, L., &amp; Zhang, N. (2026). "<a href="https://arxiv.org/abs/2605.30434" target="_blank" rel="noopener">LongDS-Bench: On the Failure of Long-Horizon Agentic Data Analysis</a>." <em>arXiv:2605.30434</em>. — 실제 Kaggle 노트북 기반 68개 과제·2,225턴 멀티턴 데이터 분석 벤치마크. 최고 모델 Gemini-3.1-Pro 평균 48.45%, 초반 대비 후반 정확도 약 47%p 급락. 전체 실패의 52~69%가 롱 호라이즌 에러(Cascade &gt; State Management &gt; Context Memory)이며, 추가 스텝이 성능을 보장하지 않음을 확인.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260704"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "AI는 데이터 분석을 갈수록 조용히 틀린다",
+            subtitle: "LongDS-Bench 68개 과제에서 확인한 분석 상태 유지 실패의 실체",
+            pageTitle: "AI 데이터 분석 에이전트, 작업 길수록 정확도 47%p 급락 — LongDS-Bench | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-04",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/longds-bench-agentic-data-analysis-failure/ko/",
+            tags: ["AI 에이전트 데이터 분석", "롱 호라이즌 에이전트", "분석 상태 유지", "state management", "LongDS-Bench", "정확도 붕괴", "cascade error", "AI 벤치마크", "데이터 품질", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "LongDS-Bench는 정확히 무엇을 측정하는 벤치마크인가요?",
+                    answer: "실제 Kaggle 노트북에서 뽑아낸 68개 데이터 분석 과제를 멀티턴 대화로 재구성한 벤치마크입니다. 지구과학·비즈니스·교육·스포츠·사회공헌·커뮤니티 여섯 개 도메인에 걸쳐 있고, 과제당 평균 33턴, 전체 2,225턴 규모입니다. 기존 벤치마크가 독립된 질문 하나를 채점했다면, LongDS-Bench는 정의·필터·가정이 여러 턴에 걸쳐 쌓이고 수정되고 되돌려지는 '이어지는 분석'에서 에이전트가 상태를 붙잡을 수 있는지를 봅니다. 한 요청은 평균 11.3턴 이전 상태에, 한 턴은 평균 2.9개의 앞선 상태에 의존합니다."
+                },
+                {
+                    question: "'분석 상태(analytical state)'란 무엇을 말하나요?",
+                    answer: "단순히 이전에 나온 숫자가 아니라, 어떤 범위에서 어떤 정의와 가정을 걸고 계산했는지의 맥락 전체입니다. 예를 들어 '지난 분기 북미 고객 중 재구매자를 제외한 신규 고객의 LTV' 같은 조건들이 턴마다 누적되면, 에이전트는 지금 어떤 조건이 유효한지를 계속 추적해야 합니다. LongDS-Bench는 이 상태를 다루는 방식을 Initial(수립)·Update(수정)·Counterfactual(임시 가정)·Rollback(이전 버전 복원)·Composition(조합) 다섯 패턴으로 정의합니다. 과제당 평균 5.8번의 Rollback과 8.6번의 Composition이 들어 있습니다."
+                },
+                {
+                    question: "최고 모델의 정확도가 48%라는 건 어느 정도로 나쁜 건가요?",
+                    answer: "다섯 개 프론티어 모델 중 1위인 Gemini-3.1-Pro의 평균 정확도가 48.45%로, 절반을 넘지 못했습니다. 그 뒤로 GPT-5.4(43.50%), Claude-4.6-Sonnet(41.56%), Kimi-K2.6(39.72%), DeepSeek-V4-Pro(31.97%) 순이었습니다. 이 채점은 사람 검증과 93.11% 일치(Cohen's κ = 0.86)해 점수 자체를 의심하기는 어렵습니다. 짧은 질문 하나는 잘 풀던 모델들이, 길게 이어지는 실제 분석에서는 절반도 못 맞혔다는 의미입니다."
+                },
+                {
+                    question: "왜 후반 턴으로 갈수록 정확도가 급락하나요?",
+                    answer: "같은 과제 안에서 초반 턴과 후반 턴의 정확도 차이가 거의 47%p에 달했습니다. 후반이 특별히 더 어려운 문제라서가 아니라, 초반에 어긋난 상태가 후반까지 흘러오기 때문입니다. 정의 하나를 잘못 잡으면 그 위에 쌓인 필터·집계·결론이 전부 오염되는데(Cascade Error), 데이터 분석의 최종 답은 대개 후반부에서 나옵니다. 앞부분 탐색은 그럴듯한데 마지막 결론이 틀리는 패턴이라, 검토자가 가장 알아채기 어려운 실패 형태이기도 합니다."
+                },
+                {
+                    question: "AI가 앞의 내용을 '까먹어서' 틀리는 건가요?",
+                    answer: "그렇지 않습니다. 오히려 단순 기억 실패(Context Memory Error)는 세 종류의 롱 호라이즌 에러 중 가장 작은 범주였습니다. 정보를 다시 꺼내는 일은 비교적 쉬웠습니다. 진짜로 무너진 곳은 정보를 제대로 적용하는 지점입니다. 어떤 상태가 지금 유효한지 판단하고 갱신·복원하는 데 실패하거나(State Management Error), 잘못된 중간 상태를 다음 계산으로 넘겨 하류 전체를 오염시키는(Cascade Error) 대목이었습니다. 데이터 분석의 병목은 기억이 아니라 상태 관리입니다."
+                },
+                {
+                    question: "스텝이나 예산을 더 주면 정확도가 오르지 않나요?",
+                    answer: "연구진은 '추가 스텝이 반드시 성능을 높이지는 않는다'고 결론지었습니다. 테스트한 모델 중 스텝을 가장 많이 쓴 Claude-4.6-Sonnet의 성적이, 훨씬 적게 움직인 Gemini-3.1-Pro보다 낮았습니다. 리셋 실험에서는 에이전트가 후반으로 갈수록 탐색 스텝 자체가 줄어드는 경향도 나타났습니다. 초반에 어긋난 상태가 이미 후반을 오염시킨 뒤라, 스텝을 더 준다 해도 잘못된 토대 위에서 헛돌 뿐입니다. 병목은 노력의 양이 아니라 상태 설계입니다."
+                },
+                {
+                    question: "우리 팀이 운영 중인 데이터 에이전트는 어떻게 점검해야 하나요?",
+                    answer: "세 가지를 확인하는 것을 권합니다. 첫째, 중간 정의·필터·가정을 에이전트가 명시적으로 저장하고 다시 참조하는 구조가 있는지. 둘째, 이전에 고정한 분석 버전으로 되돌아가는 Rollback 상황을 테스트해 봤는지. 셋째, 정확도가 초반 턴에만 좋은 것은 아닌지, 결론이 나오는 후반 턴을 따로 검증하고 있는지입니다. 앞부분이 그럴듯하다는 이유로 뒷부분의 조용한 오염을 놓치는 것이 가장 흔한 함정입니다."
+                },
+                {
+                    question: "이 연구가 데이터 관점에서 시사하는 바는 무엇인가요?",
+                    answer: "에이전트가 붙잡아야 할 분석 상태 — 정의와 범위, 가정과 중간 결과 — 는 결국 외부에 명시적으로 관리해야 할 데이터입니다. 그 데이터가 어떤 정의로 언제 갱신됐고 어느 버전이 지금 유효한지가 구조화돼 있지 않으면, 아무리 똑똑한 모델이라도 후반부에서 길을 잃습니다. 자율화 시대의 병목은 더 큰 추론력이 아니라 붙잡을 상태를 얼마나 잘 설계해 두었는가입니다. 더 큰 모델로 갈아타기 전에, 에이전트가 참조할 상태 데이터의 구조·신뢰·지속성부터 정돈하는 것이 긴 분석의 정확도를 지키는 길입니다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
