@@ -268,6 +268,11 @@ function getFontFaces(projectRoot) {
 }
 
 function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
+    // 합성어 하이픈("AI-레디"·"GPT-4"·"AI-Ready")은 줄바꿈에서 안 쪼개지게
+    // 한글이 붙은 하이픈만 비분리(U+2011)로("AI-레디"). 영어 하이픈·긴 합성어는 유지.
+    const nbHyphen = (x) => (x || "").replace(/(\S)-(\S)/g, (m,a,b) => (/[가-힣]/.test(a) || /[가-힣]/.test(b)) ? a+"\u2011"+b : m);
+    title = nbHyphen(title);
+    subtitle = nbHyphen(subtitle);
     // 괄호 묶음 "(AI BOM)"·"（…）"은 줄바꿈에서 절대 안 쪼개지게 내부 공백을 nbsp로 보호
     title = title.replace(/[（(]([^）)]*)[）)]/g, (m) => m.replace(/ /g, '\u00A0'));
 
@@ -375,6 +380,8 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
             font-size: 28px;
             font-weight: 400;
             line-height: 1.5;
+            word-break: keep-all;   /* 부제도 한글 낱말 안 끊기게(제목과 동일) */
+            overflow-wrap: break-word;
             display: -webkit-box;
             -webkit-line-clamp: 2;      /* 2줄 안전망 — fitSubtitle이 이미 문구 경계로 자름 */
             -webkit-box-orient: vertical;
