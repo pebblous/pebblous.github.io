@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>AI 에이전트 개인정보 유출 — 답변이 아니라 내부 통로를 감사하라 | 페블러스</title>
+    <meta name="description" content="AI 에이전트는 최종 답변이 깨끗해도 도구 호출·시스템 로그·에이전트 간 메시지라는 내부 통로로 개인정보를 흘린다. 답변만 검사하는 감사는 위반의 41.7%를 놓친다. AgentLeak·CIPL 벤치마크가 드러낸 데이터 경로 감사의 사각지대를 본다.">
+    <meta name="keywords" content="AI 에이전트 개인정보 유출, 멀티에이전트 내부 채널 유출, 도구 호출 데이터 유출, 에이전트 간 메시지 프라이버시, LLM 에이전트 감사 사각지대, agentic AI 데이터 거버넌스, AgentLeak, AI-Ready Data, 데이터 경로 가시성">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/ko/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="AI 에이전트는 답변이 아니라 통로에서 샌다">
+    <meta property="og:description" content="답변만 검사하는 감사는 개인정보 위반의 41.7%를 놓친다 — 도구 호출·로그·에이전트 간 메시지, 출력 뒤에 숨은 데이터 경로.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/ko/image/index.png">
+    <meta property="og:locale" content="ko_KR">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI 에이전트는 답변이 아니라 통로에서 샌다">
+    <meta name="twitter:description" content="답변만 검사하는 감사는 개인정보 위반의 41.7%를 놓친다 — 출력 뒤에 숨은 데이터 경로.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/ko/image/index.png">
+    <meta name="twitter:image:alt" content="에이전트의 최종 출력과 내부 채널 사이의 개인정보 유출 간극을 보여주는 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260705">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260705">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260705">
+
+    <!-- GTM -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">깨끗한 답변이라는 착각</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">데이터가 새는 보이지 않는 통로</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">멀티에이전트의 역설</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">저장이 아니라 통로가 감사 단위</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">AI-Ready는 경로가 보이는 상태</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            출력 가드레일을 통과한 답변이 깨끗하다고 해서, 그 답을 만드는 동안 개인정보가 새지 않았다는 뜻은 아니다. 에이전트는 최종 답변 말고도 도구 호출 인자, 시스템 로그, 에이전트 간 메시지라는 통로로 데이터를 흘린다. 이 글은 감사를 최종 답변에서 멈추면 안 되는 이유를 본다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            2026년 공개된 벤치마크 AgentLeak은 답변만 검사하는 감사가 개인정보 위반의 41.7%를 놓친다고 보고했다. 에이전트 간 메시지는 68.8% 비율로 개인정보를 흘리는데, 최종 출력은 27.2%만 흘리기 때문이다. 다만 이 수치들은 통제된 시나리오의 벤치마크 결과이므로, 확정된 사실이 아니라 연구가 보고한 값으로 읽는다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            위험을 가르는 것은 데이터가 어디에 저장됐느냐가 아니라 어느 통로로 관측되느냐다. 아래에서 그 통로를 하나씩 짚는다.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">41.7%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">출력 감사가 놓치는 위반</p>
+                            <p class="text-xs themeable-muted mt-1">C2 68.8% − C1 27.2%</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">68.8%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">에이전트 간 메시지 유출률</p>
+                            <p class="text-xs themeable-muted mt-1">최종 출력 27.2%의 2.5배</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~85%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">도구 입력·로그 최대 유출</p>
+                            <p class="text-xs themeable-muted mt-1">출력이 세정돼 있어도</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">2.6배</p>
+                            <p class="text-sm themeable-text-secondary mt-1">내부 채널이 외부보다</p>
+                            <p class="text-xs themeable-muted mt-1">내부 74% vs 외부 28.2%</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">깨끗한 답변이라는 착각</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        많은 팀의 프라이버시 감사는 한 지점에 걸려 있다. 모델이 사용자에게 내놓는 최종 답변이다. 출력 필터를 붙이고, 개인정보가 답변에 섞였는지 검사하고, 통과하면 안전하다고 판단한다. 이 방식은 직관적이고, 대부분의 규제 문서가 그리는 그림과도 맞아 보인다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 에이전트가 답변 하나만 만들어 내는 존재가 아니라는 데 있다. 하나의 과업을 처리하는 동안 에이전트는 도구를 호출하고, 중간 결과를 로그에 남기고, 다른 에이전트에게 메시지를 보낸다. 이 모든 흐름이 데이터가 지나가는 통로다. 최종 답변은 그중 마지막 한 칸일 뿐이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2026년 공개된 벤치마크 AgentLeak은 이 사각지대를 정량으로 붙잡았다. 7개 통신 채널을 계측해 각 통로에서 개인정보가 얼마나 새는지 따로 쟀더니, 최종 출력에서는 27.2%가 샜지만 에이전트 간 메시지에서는 68.8%가 샜다. 두 수치의 차이 41.7%p가 곧 출력만 검사하는 감사가 못 보는 위반의 크기다. 답변은 통과인데, 통로는 실패였다.
+                    </p>
+
+                    <!-- Fig 3: 에이전트 실행 경로 및 감사 시야 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 190" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <defs>
+                                <marker id="arr-ko-s1" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#808080" opacity="0.7"/>
+                                </marker>
+                            </defs>
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">에이전트 실행 경로 — 감사는 마지막 C1 하나만 본다</text>
+                            <!-- 박스 1: 에이전트 -->
+                            <rect x="10" y="38" width="130" height="64" rx="7" fill="#334155" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <text x="75" y="63" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">에이전트</text>
+                            <text x="75" y="79" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#94a3b8">추론 · 계획 · 실행</text>
+                            <!-- 화살표 1 -->
+                            <line x1="140" y1="70" x2="160" y2="70" stroke="#808080" stroke-width="1.5" marker-end="url(#arr-ko-s1)" opacity="0.7"/>
+                            <!-- 박스 2: 내부 채널 (점선) -->
+                            <rect x="163" y="28" width="275" height="86" rx="7" fill="#1e293b" stroke="#808080" stroke-width="1" stroke-dasharray="5,3"/>
+                            <text x="300" y="48" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">내부 채널 (감사 밖)</text>
+                            <text x="300" y="65" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#808080">C2 에이전트 간 메시지 · C3 도구 입력</text>
+                            <text x="300" y="80" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#808080">C5 공유 메모리 · C6 시스템 로그 · C7</text>
+                            <text x="300" y="104" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#CF1D21">68.8% ~ 85% 유출</text>
+                            <!-- 화살표 2 -->
+                            <line x1="438" y1="70" x2="458" y2="70" stroke="#808080" stroke-width="1.5" marker-end="url(#arr-ko-s1)" opacity="0.7"/>
+                            <!-- 박스 3: 최종 출력 C1 (오렌지 테두리) -->
+                            <rect x="461" y="38" width="188" height="64" rx="7" fill="#1e2a1e" stroke="#F86825" stroke-width="2"/>
+                            <text x="555" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">최종 출력 (C1)</text>
+                            <text x="555" y="78" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">27.2% 유출</text>
+                            <text x="555" y="93" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#F86825">← 감사가 보는 곳</text>
+                            <!-- 감사 범위 브래킷 -->
+                            <line x1="453" y1="118" x2="453" y2="130" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="453" y1="124" x2="649" y2="124" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="649" y1="118" x2="649" y2="130" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="551" y="146" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">감사 범위 → C1만</text>
+                            <!-- 사각지대 주석 -->
+                            <text x="300" y="145" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">← 감사 사각지대 +41.7%p →</text>
+                            <!-- 하단 주석 -->
+                            <text x="330" y="176" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">오렌지=감사 범위(C1). 회색 점선=감사 밖 내부 통로. 에이전트는 마지막 답변뿐 아니라 여러 통로로 데이터를 흘린다. (AgentLeak 7-채널 기반)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 에이전트 실행 경로와 감사 시야 — 내부 채널은 파이프라인 안에서만 흐르기 때문에 출력 감사에 잡히지 않는다 — 페블러스 원본 도식 | Source: <a href="https://arxiv.org/abs/2602.11510" target="_blank" rel="noopener" class="underline">El Yagoubi et al., arXiv:2602.11510</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">에이전트가 데이터를 흘리는 보이지 않는 통로</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AgentLeak은 에이전트가 데이터를 흘릴 수 있는 자리를 일곱 개로 나눠 계측했다. 최종 출력(C1), 에이전트 간 메시지(C2), 도구 입력(C3), 도구 출력(C4), 공유 메모리(C5), 시스템 로그(C6), 아티팩트(C7)다. 이 중 감사가 실제로 들여다보는 곳은 대개 C1 하나뿐이다. 나머지 여섯은 파이프라인 안쪽에서만 흐르기 때문에 눈에 잘 띄지 않는다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 계측은 작은 실험이 아니었다. AgentLeak은 헬스케어·금융·법률·기업 도메인에 걸친 1,000개 시나리오를 다섯 개의 상용·오픈 모델 위에서 돌렸고, 서른두 종의 공격을 섞어 4,979개의 검증된 실행 트레이스를 남겼다. 뒤에 나오는 통로별 유출률은 모두 이 규모 위에서 뽑은 값이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 많이 새는 통로는 최종 출력이 아니다. 에이전트 간 메시지가 68.8%로 앞서고, 도구 입력과 시스템 로그는 시나리오에 따라 최대 85%까지 샜다. 원인은 설계 습관에 가깝다. 에이전트는 도구 인자를 임시 작업 공간처럼 다뤄, 필요 이상의 원본 데이터를 그대로 함수에 밀어 넣는다. 추론 과정에서 민감정보를 다루면 그 흔적이 로그에 남는다. 최종 답변만 깨끗하게 세정하면 이 통로들은 감사 밖에 그대로 남는다.
+                    </p>
+
+                    <!-- Fig 1: 채널별 개인정보 유출률 + 41.7%p 간극 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 235" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="20" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">채널별 개인정보 유출률 — 감사가 보는 것은 C1 하나뿐 (AgentLeak)</text>
+                            <!-- X grid -->
+                            <line x1="284" y1="36" x2="284" y2="198" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <line x1="403" y1="36" x2="403" y2="198" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <line x1="521" y1="36" x2="521" y2="198" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <text x="284" y="34" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">25%</text>
+                            <text x="403" y="34" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">50%</text>
+                            <text x="521" y="34" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">75%</text>
+                            <!-- Row 1: C1 최종 출력 27.2% = 129px -->
+                            <text x="157" y="60" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">C1 최종 출력</text>
+                            <rect x="165" y="42" width="475" height="30" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="165" y="42" width="129" height="30" rx="5" fill="#F86825"/>
+                            <text x="302" y="61" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">27.2%</text>
+                            <text x="646" y="61" text-anchor="end" font-family="Pretendard,sans-serif" font-size="8" fill="var(--text-muted)">← 감사가 보는 곳</text>
+                            <!-- 41.7%p gap: from C1 end(294) to C2 end(492) -->
+                            <line x1="294" y1="76" x2="294" y2="84" stroke="#F86825" stroke-width="2"/>
+                            <line x1="294" y1="80" x2="492" y2="80" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="492" y1="76" x2="492" y2="84" stroke="#F86825" stroke-width="2"/>
+                            <text x="393" y="77" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">+41.7%p  감사 사각지대</text>
+                            <!-- Row 2: C2 에이전트 간 메시지 68.8% = 327px -->
+                            <text x="157" y="106" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">C2 에이전트 간 메시지</text>
+                            <rect x="165" y="88" width="475" height="30" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="165" y="88" width="327" height="30" rx="5" fill="#808080"/>
+                            <text x="502" y="107" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">68.8%</text>
+                            <!-- Row 3: C3 도구 입력 ~85% = 404px -->
+                            <text x="157" y="152" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">C3 도구 입력</text>
+                            <rect x="165" y="134" width="475" height="30" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="165" y="134" width="404" height="30" rx="5" fill="#808080"/>
+                            <text x="579" y="153" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">~85%</text>
+                            <!-- Row 4: C6 시스템 로그 ~85% = 404px -->
+                            <text x="157" y="198" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">C6 시스템 로그</text>
+                            <rect x="165" y="180" width="475" height="30" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="165" y="180" width="404" height="30" rx="5" fill="#808080"/>
+                            <text x="579" y="199" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">~85%</text>
+                            <text x="330" y="226" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">오렌지=감사가 보는 채널(C1), 회색=감사 밖 내부 채널. 통제된 벤치마크 시나리오 기준.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 최종 출력(C1)만 감사하면 41.7%p의 위반을 못 본다. 실제로 더 많이 새는 통로는 에이전트 간 메시지와 도구 입력·시스템 로그다 — 페블러스 원본 도식 | Source: <a href="https://arxiv.org/abs/2602.11510" target="_blank" rel="noopener" class="underline">El Yagoubi et al., arXiv:2602.11510</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            내부 채널은 외부 출력보다 약 2.6배 더 샌다(내부 74% 대 외부 28.2%). 답변을 아무리 깨끗하게 닦아도, 데이터가 지나온 통로가 열려 있으면 그 사이로 개인정보가 빠져나간다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">멀티에이전트의 역설 — 출력은 더 안전, 시스템은 더 위험</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 반직관적인 대목은 멀티에이전트에서 나온다. 하나의 모델이 혼자 답할 때 최종 출력 유출은 43.2%였다. 이걸 여러 에이전트가 나눠 협업하는 구조로 바꾸자 최종 출력 유출은 오히려 27.2%로 떨어졌다. 대시보드만 보면 멀티에이전트가 더 안전해진 것처럼 읽힌다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그러나 내부 채널을 모두 합산하면 시스템 전체 노출은 68.9%로 치솟는다. 에이전트를 여러 개로 쪼갤수록 그들 사이를 오가는 메시지와 공유 메모리라는 통로가 늘어나고, 감사가 걸린 최종 출력은 상대적으로 조용해진다. 위반이 사라진 게 아니라 감사가 보지 않는 안쪽으로 옮겨 갔을 뿐이다.
+                    </p>
+
+                    <!-- Fig 2: 멀티에이전트 역설 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 190" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="20" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">멀티에이전트의 역설 — 출력은 낮아지고, 시스템 전체는 올라간다</text>
+                            <!-- Row 1: 싱글 최종 출력 43.2% = 205px -->
+                            <text x="205" y="52" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">싱글에이전트 · 최종 출력</text>
+                            <rect x="213" y="38" width="400" height="28" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="213" y="38" width="173" height="28" rx="5" fill="#808080"/>
+                            <text x="396" y="56" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">43.2%</text>
+                            <!-- Row 2: 멀티 최종 출력 27.2% = 109px (더 안전해 보임, 오렌지) -->
+                            <text x="205" y="96" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">멀티에이전트 · 최종 출력</text>
+                            <rect x="213" y="82" width="400" height="28" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="213" y="82" width="109" height="28" rx="5" fill="#F86825"/>
+                            <text x="332" y="100" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">27.2%</text>
+                            <text x="613" y="100" text-anchor="end" font-family="Pretendard,sans-serif" font-size="8" fill="#F86825">더 안전해 보임</text>
+                            <!-- Row 3: 멀티 총 시스템 노출 68.9% = 276px (실제 더 위험) -->
+                            <text x="205" y="140" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">멀티에이전트 · 총 시스템</text>
+                            <rect x="213" y="126" width="400" height="28" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="213" y="126" width="276" height="28" rx="5" fill="#CF1D21" opacity="0.82"/>
+                            <text x="499" y="144" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">68.9%</text>
+                            <text x="613" y="144" text-anchor="end" font-family="Pretendard,sans-serif" font-size="8" fill="#CF1D21">실제로 더 위험</text>
+                            <text x="330" y="176" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">내부 채널을 합산하면 노출이 역전된다. 출력 감사는 이 상승을 잡지 못한다 (AgentLeak 보고치).</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 멀티에이전트로 가면 최종 출력 유출은 43.2%→27.2%로 낮아지지만, 내부 채널까지 더하면 시스템 전체 노출은 68.9%로 오른다 — 페블러스 원본 도식 | Source: <a href="https://arxiv.org/abs/2602.11510" target="_blank" rel="noopener" class="underline">El Yagoubi et al., arXiv:2602.11510</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델별로 뜯어보면 이 역설이 더 선명하다. 한 상용 모델은 최종 출력 유출이 8.2%로 다섯 모델 중 가장 낮았지만, 내부 대 외부 유출 비율은 6.6배로 가장 높았다. 도구 입력과 시스템 로그에서는 최대 85%까지 샜다. 출력이 가장 깨끗한 모델이 안쪽에서는 가장 많이 새고 있었다는 뜻이다. 출력 유출률 하나로 모델의 안전성을 줄 세우면 정확히 거꾸로 읽게 된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공격자 입장에서 보면 이 안쪽 통로가 곧 표적이다. AgentLeak이 시험한 공격군 가운데 성공률이 가장 높았던 것은 멀티에이전트 코디네이션 공격으로, 82.9%가 뚫렸다. 에이전트끼리 서로를 믿는다는 전제를 파고들어, 조율에 쓰이는 채널을 유출 통로로 삼고 공유 메모리를 데이터를 모아 두는 자리로 썼다. 에이전트를 쪼갤수록 감사 사각지대만 넓어지는 게 아니라 공격 표면도 함께 넓어진다.
+                    </p>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">저장이 아니라 통로가 감사 단위다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 시기 독립적으로 나온 또 다른 연구는 왜 이런 일이 벌어지는지에 대한 프레임을 준다. Observable Channels 연구는 프라이버시 위험을 데이터가 저장된 컴포넌트가 아니라 관측 가능한 채널의 문제로 봐야 한다고 주장한다. 데이터가 어느 데이터베이스에 담겨 있느냐가 아니라, 어느 통로에서 밖으로 관측될 수 있느냐가 위험의 본질이라는 것이다. AgentLeak이 얼마나 새는지를 측정했다면, 이 연구는 왜 새는지를 설명한다.
+                    </p>
+
+                    <!-- Fig 4: 저장 중심 vs 통로 중심 감사 패러다임 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 195" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <defs>
+                                <marker id="arr-ko-s4" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#F86825" opacity="0.9"/>
+                                </marker>
+                            </defs>
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">저장 위치 vs 관측 통로 — 감사 단위 패러다임 (Observable Channels)</text>
+                            <!-- 왼쪽 패널: 저장 중심 -->
+                            <rect x="15" y="34" width="290" height="136" rx="8" fill="#1e293b" stroke="#808080" stroke-width="0.8"/>
+                            <text x="160" y="57" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="600" fill="var(--text-secondary)">저장 중심 감사</text>
+                            <ellipse cx="72" cy="88" rx="26" ry="9" fill="#334155" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <rect x="46" y="88" width="52" height="34" fill="#334155" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <ellipse cx="72" cy="122" rx="26" ry="9" fill="#334155" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <text x="72" y="109" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#94a3b8">DB</text>
+                            <text x="210" y="90" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">감사 질문:</text>
+                            <text x="210" y="107" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">어느 스토리지에</text>
+                            <text x="210" y="122" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">담겨 있나?</text>
+                            <text x="160" y="148" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#808080">한계: 처리 중 통로는 보이지 않는다</text>
+                            <text x="160" y="164" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="18" fill="#808080">✗</text>
+                            <!-- vs 구분자 -->
+                            <text x="330" y="112" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="14" font-weight="700" fill="var(--text-muted)">vs</text>
+                            <!-- 오른쪽 패널: 통로 중심 -->
+                            <rect x="355" y="34" width="290" height="136" rx="8" fill="#1e2a1e" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="500" y="57" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="600" fill="#F86825">통로 중심 감사</text>
+                            <line x1="378" y1="84" x2="440" y2="84" stroke="#F86825" stroke-width="2" marker-end="url(#arr-ko-s4)" opacity="0.8"/>
+                            <text x="409" y="78" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="8" fill="#94a3b8">C2 메시지</text>
+                            <line x1="378" y1="106" x2="440" y2="106" stroke="#F86825" stroke-width="2" marker-end="url(#arr-ko-s4)" opacity="0.8"/>
+                            <text x="409" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="8" fill="#94a3b8">C3 도구 입력</text>
+                            <line x1="378" y1="128" x2="440" y2="128" stroke="#F86825" stroke-width="2" marker-end="url(#arr-ko-s4)" opacity="0.8"/>
+                            <text x="409" y="122" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="8" fill="#94a3b8">C6 로그</text>
+                            <text x="548" y="90" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">감사 질문:</text>
+                            <text x="548" y="107" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">어느 통로로</text>
+                            <text x="548" y="122" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">관측되나?</text>
+                            <text x="500" y="148" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#F86825">통로 = 위험 단위 = 개입 단위</text>
+                            <text x="500" y="164" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="18" fill="#F86825">✓</text>
+                            <!-- 하단 주석 -->
+                            <text x="330" y="184" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">어느 DB에 담겼느냐가 아니라 어느 통로로 관측될 수 있느냐가 위험의 본질이다 (arXiv:2603.22751)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 저장 중심에서 통로 중심으로 — 통로가 위험 단위라면 통로가 개입 단위이기도 하다 — 페블러스 원본 도식 | Source: <a href="https://arxiv.org/abs/2603.22751" target="_blank" rel="noopener" class="underline">Huang et al., arXiv:2603.22751</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        채널의 눈으로 보면 통로마다 위험의 성격이 다르다. 검색으로 끌어온 데이터는 자주, 그러나 불완전하게 샌다. 도구를 거치는 유출은 그 도구가 무엇을 보도록 열려 있느냐에 크게 좌우된다. 관측 표면이 넓게 열린 도구일수록 새어 나갈 것이 많다. 어느 통로가 무엇을 보도록 열려 있는지가 곧 유출의 모양을 정한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 관점은 실용적인 희망도 함께 준다. 연구는 메모리 시스템처럼 거의 항상 새는 고위험 통로가 있는 반면, 약한 통제를 세정하기만 해도 유출이 급격히 억제되는 지점이 있다고 보고했다. 통로가 위험의 단위라면, 통로는 개입의 단위이기도 하다. 어느 통로가 무엇을 관측하도록 열려 있는지 알면, 그 자리를 좁힐 수 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        규제도 같은 방향을 가리킨다. GDPR의 데이터 최소화와 목적 제한, EU AI Act의 로깅 의무는 모두 데이터가 최종적으로 무엇을 출력했는지가 아니라 처리 과정 전체에서 어디로 흘렀는지를 요구한다. 도구 호출과 시스템 로그, 에이전트 간 메시지에서 새는 41.7%는 감사 로그에 잡히지 않는 규제 리스크다. EU AI Act의 고위험 의무가 2026년 8월 본격 적용을 앞둔 지금, 출력만 보는 감사 체계는 규정을 지키고 있다고 착각하기 쉬운 자리에 서 있다.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">AI-Ready란 데이터가 스치는 경로 전체가 보이는 상태</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 연구가 각자 다른 길로 도달한 결론은 하나로 모인다. 데이터 거버넌스를 최종 답변에서 멈추면 안 된다. 답변은 데이터가 지나온 여러 통로의 끝자락일 뿐이고, 정작 위험은 그 앞의 통로들에 쌓여 있다. 감사의 단위를 최종 출력에서 경로 전체로 넓히는 것이 41.7%의 사각지대를 닫는 유일한 방법이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스가 말하는 AI-Ready Data는 데이터가 정제되고 라벨링된 상태를 넘어선다. 모델이 스치는 데이터 경로 전체가 관측되고 감사될 수 있는 상태까지가 AI-Ready의 조건이다. 41.7%라는 사각지대는 정확히 그 경로 가시성이 없을 때 생기는 증상이다. 도구 입력에 무엇이 실렸는지, 로그에 어떤 민감정보가 남았는지, 에이전트 사이로 무엇이 오갔는지를 볼 수 없다면, 그 데이터는 아무리 깨끗해 보여도 아직 AI-Ready가 아니다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        진단의 관점도 같다. 표면의 산출물만 보면 통과지만 파이프라인을 열면 실패인 경우가 데이터에서는 흔하다. 출력만 보면 통과, 통로를 보면 실패라는 이 글의 구도는 데이터 품질을 최종 결과가 아니라 경로 전체에서 봐야 한다는 오래된 원칙의 에이전트 버전이다. 문제는 새로운 기술에서 왔지만, 물음은 낯설지 않다. 데이터가 어디로 흐르는지 우리는 볼 수 있는가.
+                    </p>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">El Yagoubi, F., Badu-Marfo, G., &amp; Al Mallah, R. (2026). "<a href="https://arxiv.org/abs/2602.11510" target="_blank" rel="noopener">AgentLeak: A Benchmark for Internal-Channel Privacy Leakage in Multi-Agent LLM Systems</a>." arXiv:2602.11510.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Huang, T., Hou, C., Wu, G., &amp; Meng, J. (2026). "<a href="https://arxiv.org/abs/2603.22751" target="_blank" rel="noopener">Observable Channels, Not Just Storage: Evaluating Privacy Leakage in LLM Agent Pipelines</a>." arXiv:2603.22751.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Green, et al. (2025). "Leaky Thoughts: Privacy Leakage in the Reasoning Traces of LLMs." EMNLP 2025.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">오픈소스</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">4.</span><span class="ref-body">Privatris. "<a href="https://github.com/Privatris/AgentLeak" target="_blank" rel="noopener">AgentLeak — 7-channel multi-agent privacy leakage benchmark</a>." GitHub.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">5.</span><span class="ref-body">페블러스. "<a href="/blog/agent-compliance-benchmark/ko/">정답은 맞혔지만 규칙은 어긴 AI 에이전트</a>." blog.pebblous.ai.</span></li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/citation-download.js?v=20260705" defer></script>
+    <script src="/scripts/common-utils.js?v=20260705"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-04T21:09:38.164Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-04T21:18:47.040Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1783199378165-859ttb",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-04T22:02:21.541Z"
+            },
+            mainTitle: "AI 에이전트는 답변이 아니라 통로에서 샌다",
+            subtitle: "답변만 검사하는 감사는 개인정보 위반의 41.7%를 놓친다",
+            pageTitle: "AI 에이전트 개인정보 유출 — 답변이 아니라 내부 통로를 감사하라 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-05",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/agent-internal-channel-privacy-leak/ko/",
+            tags: ["AI 에이전트", "개인정보 유출", "데이터 거버넌스", "멀티에이전트", "LLM 보안", "AI-Ready Data", "데이터 경로 가시성", "AI 감사"],
+            faqs: [
+                { question: "출력이 깨끗한데 왜 데이터가 새나?", answer: "에이전트는 최종 답변 말고도 도구 호출 인자, 시스템 로그, 에이전트 간 메시지라는 통로로 데이터를 흘린다. 답변을 세정해도 이 내부 통로가 열려 있으면 개인정보가 그 사이로 빠져나간다." },
+                { question: "41.7%라는 수치는 무엇을 뜻하나?", answer: "AgentLeak 벤치마크에서 에이전트 간 메시지(C2) 유출률 68.8%와 최종 출력(C1) 유출률 27.2%의 차이(41.7%p)다. 답변만 검사하는 감사가 놓치는 위반의 크기를 나타낸다." },
+                { question: "어떤 통로가 가장 위험한가?", answer: "에이전트 간 메시지(68.8%)가 최종 출력(27.2%)보다 훨씬 많이 새고, 도구 입력과 시스템 로그는 시나리오에 따라 최대 85%까지 샜다. 최종 출력이 가장 덜 새는 통로다." },
+                { question: "멀티에이전트로 바꾸면 왜 더 위험해지나?", answer: "최종 출력 유출은 43.2%에서 27.2%로 낮아져 더 안전해 보이지만, 에이전트 사이 메시지·공유 메모리 같은 통로가 늘어 시스템 전체 노출은 68.9%로 오른다. 위반이 감사 밖으로 옮겨 간 것이다." },
+                { question: "출력 유출률로 모델 안전성을 비교하면 되나?", answer: "역전될 수 있다. 한 모델은 최종 출력 유출이 8.2%로 가장 낮았지만 내부 대 외부 비율은 6.6배로 가장 높았다. 출력만 보면 가장 안전해 보이는 모델이 안쪽에서는 가장 많이 새기도 한다." },
+                { question: "규제와는 어떤 관계가 있나?", answer: "GDPR 데이터 최소화·목적 제한과 EU AI Act 로깅 의무는 처리 과정 전체에서 데이터가 어디로 흘렀는지를 요구한다. 도구·로그·메시지에서 새는 41.7%는 출력 감사 로그에 잡히지 않는 규제 리스크다." },
+                { question: "실무에서 무엇부터 봐야 하나?", answer: "감사 대상을 최종 출력에서 데이터가 지나는 경로 전체로 넓혀야 한다. 도구 입력·시스템 로그·에이전트 간 메시지를 계측하고, 약한 통제부터 세정하면 유출이 크게 준다는 것이 연구의 실용적 함의다." }
+            ]
+        });
+    </script>
+</body>
+</html>
