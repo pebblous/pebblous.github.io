@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>AI Agent Privacy Leaks — Audit the Channels, Not the Answer | Pebblous</title>
+    <meta name="description" content="An AI agent can return a clean answer and still leak through tool calls, logs, and inter-agent messages. Output-only audits miss 41.7% of violations. What the AgentLeak benchmark reveals about the data-path blind spot.">
+    <meta name="keywords" content="AI agent privacy leak, multi-agent internal channel leakage, tool call data leak, inter-agent message privacy, LLM agent audit blind spot, agentic AI data governance, AgentLeak, AI-Ready Data, data path visibility">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/en/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="AI Agents Leak in the Channels, Not the Answer">
+    <meta property="og:description" content="Output-only audits miss 41.7% of privacy violations — tool calls, logs, and inter-agent messages are the data paths hiding behind a clean answer.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/en/image/index.png">
+    <meta property="og:locale" content="en_US">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI Agents Leak in the Channels, Not the Answer">
+    <meta name="twitter:description" content="Output-only audits miss 41.7% of privacy violations — the data paths hiding behind a clean answer.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/agent-internal-channel-privacy-leak/en/image/index.png">
+    <meta name="twitter:image:alt" content="Diagram showing the privacy-leak gap between an agent's final output and its internal channels">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260705">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260705">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260705">
+
+    <!-- GTM -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">The Illusion of a Clean Answer</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">The Invisible Channels That Leak</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">The Multi-Agent Paradox</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">The Channel, Not Storage, Is the Audit Unit</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">AI-Ready Means the Whole Path Is Visible</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            An answer that clears the output guardrail is not proof that no personal data leaked while the agent was producing it. Beyond the final answer, an agent spills data through tool-call arguments, system logs, and messages passed between agents. This article looks at why an audit cannot stop at the final answer.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            AgentLeak, a benchmark released in 2026, reported that an audit inspecting only the answer misses 41.7% of privacy violations. Inter-agent messages leak personal data at a rate of 68.8%, while the final output leaks only 27.2%. These figures come from controlled benchmark scenarios, so read them as values a study reported rather than as settled fact.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The dividing line isn't where data is stored, but which channel it can be observed through. The sections below walk those channels one at a time.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">41.7%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">of violations an output audit misses</p>
+                            <p class="text-xs themeable-muted mt-1">C2 68.8% − C1 27.2%</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">68.8%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">inter-agent message leak rate</p>
+                            <p class="text-xs themeable-muted mt-1">2.5× the 27.2% of final output</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~85%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">peak leak via tool input & logs</p>
+                            <p class="text-xs themeable-muted mt-1">even when the output is sanitized</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">2.6×</p>
+                            <p class="text-sm themeable-text-secondary mt-1">internal channels vs external</p>
+                            <p class="text-xs themeable-muted mt-1">internal 74% vs external 28.2%</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Illusion of a Clean Answer</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For many teams, the privacy audit hangs on a single point: the final answer the model hands back to the user. They attach an output filter, check whether personal data slipped into the answer, and call it safe once it passes. The approach is intuitive, and it seems to match the picture most regulatory documents draw.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The trouble is that an agent is not a thing that produces one answer and nothing else. While handling a single task, an agent calls tools, writes intermediate results to logs, and sends messages to other agents. Every one of those flows is a channel that data passes through. The final answer is only the last slot in the sequence.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AgentLeak, a benchmark released in 2026, put a number on this blind spot. It instrumented seven communication channels and measured how much personal data leaked at each one separately. The final output leaked 27.2%, but inter-agent messages leaked 68.8%. The 41.7-point gap between those two figures is exactly the size of the violations that an output-only audit never sees. The answer passed; the channel failed.
+                    </p>
+
+                    <!-- Fig 3: Agent execution path and audit scope -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 190" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <defs>
+                                <marker id="arr-en-s1" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#808080" opacity="0.7"/>
+                                </marker>
+                            </defs>
+                            <text x="330" y="22" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" fill="var(--text-secondary)">Agent execution path — the audit sees only the last step, C1</text>
+                            <!-- Box 1: Agent -->
+                            <rect x="10" y="38" width="130" height="64" rx="7" fill="#334155" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <text x="75" y="63" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">Agent</text>
+                            <text x="75" y="79" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#94a3b8">Reasoning · Planning · Execution</text>
+                            <!-- Arrow 1 -->
+                            <line x1="140" y1="70" x2="160" y2="70" stroke="#808080" stroke-width="1.5" marker-end="url(#arr-en-s1)" opacity="0.7"/>
+                            <!-- Box 2: Internal channels (dashed) -->
+                            <rect x="163" y="28" width="275" height="86" rx="7" fill="#1e293b" stroke="#808080" stroke-width="1" stroke-dasharray="5,3"/>
+                            <text x="300" y="48" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">Internal channels (outside audit)</text>
+                            <text x="300" y="65" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" font-weight="600" fill="#808080">C2 Inter-agent messages · C3 Tool input</text>
+                            <text x="300" y="80" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#808080">C5 Shared memory · C6 System logs · C7</text>
+                            <text x="300" y="104" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="#CF1D21">68.8% – 85% leak</text>
+                            <!-- Arrow 2 -->
+                            <line x1="438" y1="70" x2="458" y2="70" stroke="#808080" stroke-width="1.5" marker-end="url(#arr-en-s1)" opacity="0.7"/>
+                            <!-- Box 3: C1 Final Output (orange border) -->
+                            <rect x="461" y="38" width="188" height="64" rx="7" fill="#1e2a1e" stroke="#F86825" stroke-width="2"/>
+                            <text x="555" y="62" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">Final output (C1)</text>
+                            <text x="555" y="78" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="#F86825">27.2% leak</text>
+                            <text x="555" y="93" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#F86825">← what the audit sees</text>
+                            <!-- Audit scope bracket -->
+                            <line x1="453" y1="118" x2="453" y2="130" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="453" y1="124" x2="649" y2="124" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="649" y1="118" x2="649" y2="130" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="551" y="146" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" font-weight="600" fill="#F86825">Audit scope → C1 only</text>
+                            <!-- Blind-spot annotation -->
+                            <text x="300" y="145" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">← audit blind spot +41.7 pt →</text>
+                            <!-- Bottom note -->
+                            <text x="330" y="176" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">Orange = audit scope (C1). Dashed gray = internal channels outside the audit. An agent leaks through more than one channel. (AgentLeak 7-channel basis)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Agent execution path and audit scope — internal channels flow only inside the pipeline and are never caught by an output audit — original Pebblous diagram | Source: <a href="https://arxiv.org/abs/2602.11510" target="_blank" rel="noopener" class="underline">El Yagoubi et al., arXiv:2602.11510</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Invisible Channels an Agent Leaks Through</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AgentLeak split the places an agent can leak data into seven and instrumented each one: final output (C1), inter-agent messages (C2), tool input (C3), tool output (C4), shared memory (C5), system logs (C6), and artifacts (C7). Of these, the one an audit actually looks at is usually just C1. The other six flow only inside the pipeline, so they rarely draw attention.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This instrumentation was not a small experiment. AgentLeak ran 1,000 scenarios spanning healthcare, finance, legal, and enterprise domains across five commercial and open models, mixed in thirty-two attack types, and left 4,979 verified execution traces. Every per-channel leak rate below is drawn from that scale.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The channel that leaks the most is not the final output. Inter-agent messages lead at 68.8%, and tool input and system logs leaked as much as 85% depending on the scenario. The cause looks closer to a design habit. An agent treats tool arguments like scratch space, pushing more raw data into functions than it needs to. When sensitive information passes through the reasoning trace, its residue stays in the logs. Sanitize only the final answer, and these channels remain outside the audit entirely.
+                    </p>
+
+                    <!-- Fig 1: per-channel privacy leak rate + 41.7pt gap -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 235" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="20" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">Per-channel privacy leak rate — the audit sees only C1 (AgentLeak)</text>
+                            <!-- X grid -->
+                            <line x1="284" y1="36" x2="284" y2="198" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <line x1="403" y1="36" x2="403" y2="198" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <line x1="521" y1="36" x2="521" y2="198" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <text x="284" y="34" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">25%</text>
+                            <text x="403" y="34" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">50%</text>
+                            <text x="521" y="34" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">75%</text>
+                            <!-- Row 1: C1 final output 27.2% = 129px -->
+                            <text x="157" y="60" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">C1 Final output</text>
+                            <rect x="165" y="42" width="475" height="30" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="165" y="42" width="129" height="30" rx="5" fill="#F86825"/>
+                            <text x="302" y="61" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">27.2%</text>
+                            <text x="646" y="61" text-anchor="end" font-family="Pretendard,sans-serif" font-size="8" fill="var(--text-muted)">← what the audit sees</text>
+                            <!-- 41.7pt gap: from C1 end(294) to C2 end(492) -->
+                            <line x1="294" y1="76" x2="294" y2="84" stroke="#F86825" stroke-width="2"/>
+                            <line x1="294" y1="80" x2="492" y2="80" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="492" y1="76" x2="492" y2="84" stroke="#F86825" stroke-width="2"/>
+                            <text x="393" y="77" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">+41.7pt  audit blind spot</text>
+                            <!-- Row 2: C2 inter-agent messages 68.8% = 327px -->
+                            <text x="157" y="106" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">C2 Inter-agent messages</text>
+                            <rect x="165" y="88" width="475" height="30" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="165" y="88" width="327" height="30" rx="5" fill="#808080"/>
+                            <text x="502" y="107" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">68.8%</text>
+                            <!-- Row 3: C3 tool input ~85% = 404px -->
+                            <text x="157" y="152" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">C3 Tool input</text>
+                            <rect x="165" y="134" width="475" height="30" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="165" y="134" width="404" height="30" rx="5" fill="#808080"/>
+                            <text x="579" y="153" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">~85%</text>
+                            <!-- Row 4: C6 system logs ~85% = 404px -->
+                            <text x="157" y="198" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">C6 System logs</text>
+                            <rect x="165" y="180" width="475" height="30" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="165" y="180" width="404" height="30" rx="5" fill="#808080"/>
+                            <text x="579" y="199" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">~85%</text>
+                            <text x="330" y="226" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">Orange = channel the audit sees (C1); gray = internal channels outside the audit. Controlled benchmark scenarios.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Audit only the final output (C1) and you miss 41.7 points of violations. The channels that actually leak more are inter-agent messages, tool input, and system logs — original Pebblous diagram | Source: <a href="https://arxiv.org/abs/2602.11510" target="_blank" rel="noopener" class="underline">El Yagoubi et al., arXiv:2602.11510</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Internal channels leak about 2.6 times more than external output (74% internal vs. 28.2% external). No matter how clean you scrub the answer, if the channels the data traveled through stay open, personal data slips out between them.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Multi-Agent Paradox — Safer Output, Riskier System</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The most counterintuitive part comes from multi-agent setups. When a single model answered alone, its final-output leak was 43.2%. Split the same work across several collaborating agents and the final-output leak actually dropped to 27.2%. Read the dashboard alone and multi-agent looks like the safer choice.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Add up all the internal channels, though, and total system exposure jumps to 68.9%. The more you split agents apart, the more channels open up between them — messages and shared memory — while the audited final output grows relatively quiet. The violations did not disappear; they moved inward, where the audit does not look.
+                    </p>
+
+                    <!-- Fig 2: multi-agent paradox -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 190" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="20" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">The multi-agent paradox — output falls, total system rises</text>
+                            <!-- Row 1: single final output 43.2% = 205px -->
+                            <text x="205" y="52" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">Single-agent · final output</text>
+                            <rect x="213" y="38" width="400" height="28" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="213" y="38" width="173" height="28" rx="5" fill="#808080"/>
+                            <text x="396" y="56" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">43.2%</text>
+                            <!-- Row 2: multi final output 27.2% = 109px (looks safer, orange) -->
+                            <text x="205" y="96" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">Multi-agent · final output</text>
+                            <rect x="213" y="82" width="400" height="28" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="213" y="82" width="109" height="28" rx="5" fill="#F86825"/>
+                            <text x="332" y="100" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">27.2%</text>
+                            <text x="613" y="100" text-anchor="end" font-family="Pretendard,sans-serif" font-size="8" fill="#F86825">looks safer</text>
+                            <!-- Row 3: multi total system exposure 68.9% = 276px (actually riskier) -->
+                            <text x="205" y="140" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">Multi-agent · total system</text>
+                            <rect x="213" y="126" width="400" height="28" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="213" y="126" width="276" height="28" rx="5" fill="#CF1D21" opacity="0.82"/>
+                            <text x="499" y="144" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">68.9%</text>
+                            <text x="613" y="144" text-anchor="end" font-family="Pretendard,sans-serif" font-size="8" fill="#CF1D21">actually riskier</text>
+                            <text x="330" y="176" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">Sum the internal channels and exposure reverses. Output audits do not catch this rise (AgentLeak reported values).</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Moving to multi-agent lowers the final-output leak from 43.2% to 27.2%, but adding the internal channels pushes total system exposure up to 68.9% — original Pebblous diagram | Source: <a href="https://arxiv.org/abs/2602.11510" target="_blank" rel="noopener" class="underline">El Yagoubi et al., arXiv:2602.11510</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paradox sharpens when you break it down by model. One commercial model had the lowest final-output leak of the five at 8.2%, yet the highest internal-to-external leak ratio at 6.6×. Its tool input and system logs leaked as much as 85%. In other words, the model with the cleanest output was leaking the most on the inside. Rank models by output leak rate alone and you read their safety exactly backward.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        From an attacker's point of view, these inner channels are the target. Among the attack families AgentLeak tested, the highest success rate belonged to multi-agent coordination attacks, which broke through 82.9% of the time. They exploited the premise that agents trust one another, turning the channels used for coordination into leak paths and using shared memory as a place to pool data. Splitting agents apart widens more than the audit blind spot; it widens the attack surface too.
+                    </p>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Channel, Not Storage, Is the Audit Unit</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Another study, released independently around the same time, offers a frame for why this happens. The Observable Channels work argues that privacy risk should be seen as a property of observable channels rather than of the component where data is stored. What matters is not which database holds the data, but which channel it can be observed from on the way out. Where AgentLeak measured how much leaks, this study explains why it leaks.
+                    </p>
+
+                    <!-- Fig 4: Storage-centric vs channel-centric audit paradigm -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 195" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <defs>
+                                <marker id="arr-en-s4" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#F86825" opacity="0.9"/>
+                                </marker>
+                            </defs>
+                            <text x="330" y="22" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" fill="var(--text-secondary)">Storage location vs observable channel — the audit-unit paradigm shift (Observable Channels)</text>
+                            <!-- Left panel: storage-centric (old) -->
+                            <rect x="15" y="34" width="290" height="136" rx="8" fill="#1e293b" stroke="#808080" stroke-width="0.8"/>
+                            <text x="160" y="57" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="600" fill="var(--text-secondary)">Storage-centric audit</text>
+                            <ellipse cx="72" cy="88" rx="26" ry="9" fill="#334155" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <rect x="46" y="88" width="52" height="34" fill="#334155" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <ellipse cx="72" cy="122" rx="26" ry="9" fill="#334155" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <text x="72" y="109" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" font-weight="600" fill="#94a3b8">DB</text>
+                            <text x="210" y="90" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">Audit question:</text>
+                            <text x="210" y="107" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">Which storage</text>
+                            <text x="210" y="122" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">holds the data?</text>
+                            <text x="160" y="148" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#808080">Limit: processing channels stay invisible</text>
+                            <text x="160" y="164" text-anchor="middle" font-family="Outfit,sans-serif" font-size="18" fill="#808080">✗</text>
+                            <!-- vs divider -->
+                            <text x="330" y="112" text-anchor="middle" font-family="Outfit,sans-serif" font-size="14" font-weight="700" fill="var(--text-muted)">vs</text>
+                            <!-- Right panel: channel-centric (new) -->
+                            <rect x="355" y="34" width="290" height="136" rx="8" fill="#1e2a1e" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="500" y="57" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="600" fill="#F86825">Channel-centric audit</text>
+                            <line x1="378" y1="84" x2="440" y2="84" stroke="#F86825" stroke-width="2" marker-end="url(#arr-en-s4)" opacity="0.8"/>
+                            <text x="409" y="78" text-anchor="middle" font-family="Outfit,sans-serif" font-size="8" fill="#94a3b8">C2 messages</text>
+                            <line x1="378" y1="106" x2="440" y2="106" stroke="#F86825" stroke-width="2" marker-end="url(#arr-en-s4)" opacity="0.8"/>
+                            <text x="409" y="100" text-anchor="middle" font-family="Outfit,sans-serif" font-size="8" fill="#94a3b8">C3 tool input</text>
+                            <line x1="378" y1="128" x2="440" y2="128" stroke="#F86825" stroke-width="2" marker-end="url(#arr-en-s4)" opacity="0.8"/>
+                            <text x="409" y="122" text-anchor="middle" font-family="Outfit,sans-serif" font-size="8" fill="#94a3b8">C6 system logs</text>
+                            <text x="548" y="90" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">Audit question:</text>
+                            <text x="548" y="107" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">Which channel</text>
+                            <text x="548" y="122" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">can expose it?</text>
+                            <text x="500" y="148" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#F86825">Channel = risk unit = intervention unit</text>
+                            <text x="500" y="164" text-anchor="middle" font-family="Outfit,sans-serif" font-size="18" fill="#F86825">✓</text>
+                            <!-- Bottom note -->
+                            <text x="330" y="184" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">Risk is set not by where data is stored but by which channel it can be observed through (arXiv:2603.22751)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ From storage-centric to channel-centric — if the channel is the unit of risk, it is also the unit of intervention — original Pebblous diagram | Source: <a href="https://arxiv.org/abs/2603.22751" target="_blank" rel="noopener" class="underline">Huang et al., arXiv:2603.22751</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Seen through the lens of channels, the character of the risk differs from one channel to the next. Data pulled in by retrieval leaks often but incompletely. A leak that passes through a tool depends heavily on what that tool is allowed to see. The wider a tool's observation surface, the more there is to leak. What each channel is allowed to observe is what sets the shape of the leak.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This view also carries a practical hope. The study reported that while some high-risk channels, such as memory systems, leak almost constantly, there are points where simply sanitizing a weak control sharply suppresses the leak. If the channel is the unit of risk, it is also the unit of intervention. Know what each channel is open to observe, and you can narrow that opening.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Regulation points the same way. GDPR's data minimization and purpose limitation, and the EU AI Act's logging obligations, all ask not what the data finally output, but where it flowed across the whole processing chain. The 41.7% leaking through tool calls, system logs, and inter-agent messages is regulatory risk that never reaches the audit log. With the EU AI Act's high-risk obligations set to apply in earnest in August 2026, an audit regime that watches only the output stands exactly where it is easiest to mistake itself for compliant.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">AI-Ready Means the Whole Path Data Touches Is Visible</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Reaching it by different roads, the two studies converge on one conclusion: data governance cannot stop at the final answer. The answer is only the tail end of the many channels the data traveled through, and the real risk piles up in the channels before it. Widening the audit unit from the final output to the entire path is the only way to close the 41.7% blind spot.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The AI-Ready Data that Pebblous talks about goes beyond data being cleaned and labeled. AI-Ready also requires that the whole data path the model touches can be observed and audited. The 41.7% blind spot is exactly the symptom of missing that path visibility. If you cannot see what rode into the tool input, what sensitive data was left in the logs, or what passed between agents, then that data — however clean it looks — is not yet AI-Ready.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The diagnostic view is the same. Data where the surface artifact passes but the pipeline fails once you open it is common. This article's shape — pass on the output, fail on the channel — is the agent-era version of an old principle: data quality has to be judged across the whole path, not at the final result. The problem came from a new technology, but the question is not unfamiliar. Can we see where our data flows?
+                    </p>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">El Yagoubi, F., Badu-Marfo, G., &amp; Al Mallah, R. (2026). "<a href="https://arxiv.org/abs/2602.11510" target="_blank" rel="noopener">AgentLeak: A Benchmark for Internal-Channel Privacy Leakage in Multi-Agent LLM Systems</a>." arXiv:2602.11510.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Huang, T., Hou, C., Wu, G., &amp; Meng, J. (2026). "<a href="https://arxiv.org/abs/2603.22751" target="_blank" rel="noopener">Observable Channels, Not Just Storage: Evaluating Privacy Leakage in LLM Agent Pipelines</a>." arXiv:2603.22751.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Green, et al. (2025). "Leaky Thoughts: Privacy Leakage in the Reasoning Traces of LLMs." EMNLP 2025.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Open Source</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">4.</span><span class="ref-body">Privatris. "<a href="https://github.com/Privatris/AgentLeak" target="_blank" rel="noopener">AgentLeak — 7-channel multi-agent privacy leakage benchmark</a>." GitHub.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Pebblous</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">5.</span><span class="ref-body">Pebblous. "<a href="/blog/agent-compliance-benchmark/en/">The AI Agent That Got the Answer Right but Broke the Rules</a>." blog.pebblous.ai.</span></li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/citation-download.js?v=20260705" defer></script>
+    <script src="/scripts/common-utils.js?v=20260705"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-04T21:09:38.164Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-04T21:18:47.040Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1783199378165-859ttb",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-04T22:02:21.541Z"
+            },
+            mainTitle: "AI Agents Leak in the Channels, Not the Answer",
+            subtitle: "Audits that inspect only the output miss 41.7% of privacy violations",
+            pageTitle: "AI Agent Privacy Leaks — Audit the Channels, Not the Answer | Pebblous",
+            category: "tech",
+            publishDate: "2026-07-05",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/agent-internal-channel-privacy-leak/en/",
+            tags: ["AI Agents", "Privacy Leakage", "Data Governance", "Multi-Agent", "LLM Security", "AI-Ready Data", "Data Path Visibility", "AI Audit"],
+            faqs: [
+                { question: "If the output is clean, why does data still leak?", answer: "Beyond the final answer, an agent spills data through tool-call arguments, system logs, and inter-agent messages. Even if you sanitize the answer, personal data slips out through these internal channels as long as they stay open." },
+                { question: "What does the 41.7% figure mean?", answer: "In the AgentLeak benchmark, it is the gap between the inter-agent message (C2) leak rate of 68.8% and the final-output (C1) leak rate of 27.2% — 41.7 points. It represents the size of the violations an output-only audit misses." },
+                { question: "Which channel is the most dangerous?", answer: "Inter-agent messages (68.8%) leak far more than the final output (27.2%), and tool input and system logs leaked as much as 85% depending on the scenario. The final output is the channel that leaks the least." },
+                { question: "Why does switching to multi-agent make things riskier?", answer: "The final-output leak falls from 43.2% to 27.2%, so it looks safer, but channels like inter-agent messages and shared memory multiply, pushing total system exposure up to 68.9%. The violations simply moved outside the audit." },
+                { question: "Can I compare model safety by output leak rate?", answer: "It can invert. One model had the lowest final-output leak at 8.2% but the highest internal-to-external ratio at 6.6×. The model that looks safest by output alone can be the one leaking the most on the inside." },
+                { question: "How does this relate to regulation?", answer: "GDPR's data minimization and purpose limitation and the EU AI Act's logging obligations all ask where data flowed across the whole processing chain. The 41.7% leaking through tools, logs, and messages is regulatory risk that never reaches the output audit log." },
+                { question: "In practice, what should I look at first?", answer: "Widen the audit target from the final output to the entire path the data travels. Instrument tool input, system logs, and inter-agent messages, and — as the research suggests — start by sanitizing the weak controls, which sharply reduces the leak." }
+            ]
+        });
+    </script>
+</body>
+</html>
