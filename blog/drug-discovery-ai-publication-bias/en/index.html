@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>Drug Discovery AI Overestimation — Publication Bias and Training Data Flaws | Pebblous</title>
+    <meta name="description" content="AI trained only on published successes systematically overestimates drug candidate activity, because failed experiments never become papers. Pebblous examines this representation flaw that data cleaning cannot fix, using Oxford's OpenBind as a case study.">
+    <meta name="keywords" content="drug discovery AI, publication bias, negative data, training data flaw, AI-Ready Data, data representativeness, OpenBind, overestimation, ChemDiv, Pebblous">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/drug-discovery-ai-publication-bias/en/">
+
+    <!-- hreflang -->
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/drug-discovery-ai-publication-bias/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/drug-discovery-ai-publication-bias/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/drug-discovery-ai-publication-bias/ko/">
+
+    <!-- Open Graph -->
+    <meta name="og-image-title" content="The Drug-Discovery AI That Only Learned to Succeed">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="The Drug-Discovery AI That Only Learned to Succeed">
+    <meta property="og:description" content="Failed experiments never get published, so AI grows up seeing only the candidates that work. A representation flaw that data cleaning cannot fix.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/drug-discovery-ai-publication-bias/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/drug-discovery-ai-publication-bias/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="The Drug-Discovery AI That Only Learned to Succeed — a data flaw made by the absence of failure">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-07-05">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Drug-Discovery AI That Only Learned to Succeed">
+    <meta name="twitter:description" content="Failed experiments never get published, so AI grows up seeing only the candidates that work. The problem is not dirtiness — it is representation.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/drug-discovery-ai-publication-bias/en/image/index.png">
+    <meta name="twitter:image:alt" content="The Drug-Discovery AI That Only Learned to Succeed — a data flaw made by the absence of failure">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Stylesheets (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260705">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260705">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260705">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#unpublished" class="block pl-4 themeable-toc-link transition-colors duration-200">1. The Weight of Unpublished Experiments</a></li>
+                    <li><a href="#distortion" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The Illusion of an AI That Only Saw Success</a></li>
+                    <li><a href="#cleaning" class="block pl-4 themeable-toc-link transition-colors duration-200">3. A Flaw That Cleaning Cannot Fix</a></li>
+                    <li><a href="#ai-ready" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Rethinking What AI-Ready Means</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Drug discovery AI tends to rate a candidate's activity higher than it really is. The cause is not the noise or errors that usually get blamed, but the things that never made it into the data at all. Experiments that went poorly, compounds that failed to bind, attempts that came to nothing — most of these never become papers. AI grew up seeing only the filtered successes, and it inherited a map on which promising candidates look far more common than they actually are. This piece looks, through the lens of data, at how those blank spaces distort prediction.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            One number shows the scale. By one analysis, roughly 60% of negative experimental results in drug research disappear from the public record. When an AI pipeline learns from a literature tilted this way, the bias is not washed out but amplified. In a three-stage system that automatically links retrieval, generation, and evaluation, one estimate puts the growth of that distortion at about 2.18 times.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            What matters most is that this flaw is not fixed by cleaning the data. Data that does not exist cannot be scrubbed or polished into being. So the question we ask of AI-Ready data has to change as well. Not "is this data clean," but "does this data include the failures too."
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Figures</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        The size of the problem compresses into four numbers: the share of negative results that vanish, the multiplier by which AI pipelines inflate the bias, the imbalance in screening data where success and failure are inverted, and how prediction accuracy changes once failure data is added.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">Sources: <a href="https://arxiv.org/abs/2606.04220" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">arXiv 2606.04220 (2026)</a>, <a href="https://www.chemdiv.com/datasets/" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">ChemDiv Datasets</a></p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~60%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Negative results lost</p>
+                            <p class="text-xs themeable-muted mt-1">Share of failed experiments missing from the public record</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">2.18×</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Bias amplification</p>
+                            <p class="text-xs themeable-muted mt-1">Multiplier by which a three-stage AI pipeline inflates literature bias</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">50:1–1000:1</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Active:inactive imbalance</p>
+                            <p class="text-xs themeable-muted mt-1">Degree to which successes are over-represented in screening data</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.35 → 0.80</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Accuracy change</p>
+                            <p class="text-xs themeable-muted mt-1">Toxicity prediction accuracy after adding failure data (hERG case)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="unpublished" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Weight of Unpublished Experiments</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Most of what gets tried in a lab ends in failure. A candidate does not bind to its target protein, the expected reaction never appears, toxicity gets in the way. These outcomes are a normal part of science. And yet those failures rarely become papers. Journals favor new and positive findings, and a researcher's time and budget go toward chasing what works rather than recording what does not.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For an individual lab, this choice is rational. The problem surfaces when tens of thousands of such choices pile up into a single body of literature. What remains in the world is a record of successes, while failures stay quietly in the drawer. This phenomenon is called publication bias. One analysis estimates that about 60% of negative results in drug research never make it onto the public record. More than half of the failures are invisible from the start.
+                    </p>
+
+                    <!-- Pebblous original diagram: how publication bias distorts training data -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 196" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--bg-card); font-family:'Outfit',sans-serif">
+                            <defs>
+                                <marker id="pb-en-ok" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L8,3 L0,6 Z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                            <rect x="20" y="76" width="110" height="44" rx="9" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="75" y="95" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">Experiment</text>
+                            <text x="75" y="111" text-anchor="middle" font-size="10" style="fill:var(--text-secondary)">Results</text>
+                            <line x1="130" y1="87" x2="200" y2="55" stroke="#F86825" stroke-width="1.5" marker-end="url(#pb-en-ok)"/>
+                            <text x="153" y="57" font-size="9" fill="#F86825">Success ~40%</text>
+                            <line x1="130" y1="107" x2="200" y2="139" stroke-width="1.5" stroke-dasharray="5,4" style="stroke:var(--text-muted)"/>
+                            <text x="138" y="156" font-size="9" style="fill:var(--text-muted)">Failure ~60%</text>
+                            <rect x="204" y="35" width="140" height="44" rx="9" fill="#F86825" fill-opacity="0.10" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="274" y="55" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">Published</text>
+                            <text x="274" y="71" text-anchor="middle" font-size="10" style="fill:var(--text-secondary)">Papers &amp; literature</text>
+                            <line x1="344" y1="57" x2="390" y2="57" stroke="#F86825" stroke-width="1.5" marker-end="url(#pb-en-ok)"/>
+                            <rect x="394" y="35" width="152" height="44" rx="9" fill="#F86825" fill-opacity="0.10" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="470" y="55" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">AI Training Data</text>
+                            <text x="470" y="71" text-anchor="middle" font-size="9.5" fill="#F86825" opacity="0.85">⚠ Biased toward success</text>
+                            <rect x="204" y="119" width="140" height="44" rx="9" fill="none" stroke-width="1" stroke-dasharray="6,3" style="stroke:var(--border-color)"/>
+                            <text x="274" y="139" text-anchor="middle" font-size="12" style="fill:var(--text-muted)">File Drawer</text>
+                            <text x="274" y="155" text-anchor="middle" font-size="10" style="fill:var(--text-muted)">Unpublished (hidden)</text>
+                            <text x="388" y="153" text-anchor="middle" font-size="28" style="fill:var(--text-muted)" opacity="0.45">✕</text>
+                            <rect x="20" y="174" width="620" height="18" rx="4" fill="#F86825" fill-opacity="0.07"/>
+                            <text x="330" y="187" text-anchor="middle" font-size="10" fill="#F86825" font-weight="600">~60% of negative results never reach the public record — AI inherits a tilted map (arXiv 2606.04220)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ How publication bias distorts AI training data — Pebblous original | Source: arXiv 2606.04220</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        When a human reads papers, they account for this bias to some degree. Experience teaches them that what gets published is not everything. AI, however, takes what it is given as the whole world. Train a model on a corpus tilted toward successes, and it mistakes that tilt for the actual shape of reality. It inherits, intact, a map on which promising candidates look more common than they are.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Publication bias is not a problem of the data being wrong. Each surviving record of a success is, on the whole, accurate. The problem is that the record of failure, which should sit right beside it, is missing entirely. It is like a student who studies from a workbook that keeps only the correct answers and comes away underestimating how hard the exam will be.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="distortion" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Illusion of an AI That Only Saw Success</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        How much the missing failures shake prediction becomes clear when you look at the balance of the data. In high-throughput screening data, the ratio of active to inactive compounds stretches from roughly 50:1 to 1000:1. In reality, most of what was tried is inactive, yet the record keeps only the actives thickly stacked. When this imbalance is severe, a model can label every candidate inactive and still score high on accuracy. The very number we call accuracy loses its signal.
+                    </p>
+
+                    <!-- Pebblous original diagram: active/inactive imbalance in training data -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 480 220" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[480px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--bg-card); font-family:'Outfit',sans-serif">
+                            <text x="240" y="26" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--text-secondary)">Imbalance in Screening Training Data</text>
+                            <line x1="50" y1="170" x2="430" y2="170" stroke-width="1" style="stroke:var(--border-color)"/>
+                            <rect x="80" y="48" width="110" height="122" rx="4" fill="#F86825" fill-opacity="0.9"/>
+                            <text x="135" y="43" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">Active compounds</text>
+                            <text x="135" y="183" text-anchor="middle" font-size="10" fill="#F86825">Published (over-represented)</text>
+                            <rect x="290" y="163" width="110" height="7" rx="3" style="fill:var(--text-muted)" opacity="0.5"/>
+                            <text x="345" y="157" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--text-muted)">Inactive compounds</text>
+                            <text x="345" y="183" text-anchor="middle" font-size="10" style="fill:var(--text-muted)">Unpublished (missing)</text>
+                            <text x="240" y="108" text-anchor="middle" font-size="36" font-weight="900" fill="#F86825">50:1</text>
+                            <text x="240" y="133" text-anchor="middle" font-size="14" style="fill:var(--text-muted)">to 1,000:1</text>
+                            <text x="240" y="152" text-anchor="middle" font-size="10" style="fill:var(--text-muted)">(active : inactive in training data)</text>
+                            <rect x="20" y="192" width="440" height="22" rx="4" fill="#F86825" fill-opacity="0.07"/>
+                            <text x="240" y="204" text-anchor="middle" font-size="9.5" fill="#F86825" font-weight="600">Publication bias over-represents active compounds in training data.</text>
+                            <text x="240" y="212" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Source: ChemDiv Datasets</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Active/inactive imbalance in training data — Pebblous original | Source: ChemDiv Datasets</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The distortion also runs the other way. AI draws the density of active compounds higher than it should across chemical space, while underestimating activity in the unfamiliar regions of molecules that do not resemble known drugs. The irony lands exactly where generative drug discovery needs it least: in the chemical space no one has explored, the model misses by the widest margin. In toxicity prediction, positive cases are so rare that the model leans toward calling things safe, and it lets rare but lethal toxicity slip through as false negatives.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is a concrete case of what changes when failure data is added. The compound supplier ChemDiv, noting that public databases overwhelmingly hold only active compounds while unsuccessful experiments go unpublished, folded both successes and failures into thirty years of accumulated in-house experimental data. In a case predicting hERG inhibition toxicity, accuracy rose from 0.35 to 0.80, and Cohen's kappa, which measures agreement in prediction, jumped from 0.044 to 0.565. What changed was not the size of the model but the single fact that failures had entered the data.
+                    </p>
+
+                    <!-- Pebblous original diagram: hERG toxicity prediction accuracy — before and after adding failure data -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 560 224" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[560px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--bg-card); font-family:'Outfit',sans-serif">
+                            <text x="280" y="26" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--text-secondary)">hERG Toxicity Prediction: Before vs After Failure Data</text>
+                            <line x1="40" y1="172" x2="520" y2="172" stroke-width="1" style="stroke:var(--border-color)"/>
+                            <!-- BEFORE -->
+                            <text x="147" y="46" text-anchor="middle" font-size="11" style="fill:var(--text-muted)" font-weight="600">No failure data</text>
+                            <rect x="87" y="130" width="55" height="42" rx="4" style="fill:var(--text-muted)" opacity="0.25"/>
+                            <text x="114" y="124" text-anchor="middle" font-size="19" font-weight="900" style="fill:var(--text-muted)">0.35</text>
+                            <text x="114" y="186" text-anchor="middle" font-size="10" style="fill:var(--text-muted)">Accuracy</text>
+                            <rect x="162" y="167" width="55" height="5" rx="2" style="fill:var(--text-muted)" opacity="0.25"/>
+                            <text x="189" y="161" text-anchor="middle" font-size="10" style="fill:var(--text-muted)">0.044</text>
+                            <text x="189" y="186" text-anchor="middle" font-size="10" style="fill:var(--text-muted)">Cohen κ</text>
+                            <!-- Arrow -->
+                            <text x="280" y="112" text-anchor="middle" font-size="34" fill="#F86825">→</text>
+                            <text x="280" y="135" text-anchor="middle" font-size="9.5" style="fill:var(--text-muted)">Add failure data</text>
+                            <text x="280" y="150" text-anchor="middle" font-size="9.5" fill="#F86825" font-weight="600">Data design change</text>
+                            <!-- AFTER -->
+                            <text x="413" y="46" text-anchor="middle" font-size="11" fill="#F86825" font-weight="600">With failure data</text>
+                            <rect x="353" y="76" width="55" height="96" rx="4" fill="#F86825"/>
+                            <text x="380" y="70" text-anchor="middle" font-size="19" font-weight="900" fill="#F86825">0.80</text>
+                            <text x="380" y="186" text-anchor="middle" font-size="10" fill="#F86825">Accuracy</text>
+                            <rect x="428" y="104" width="55" height="68" rx="4" fill="#F86825" fill-opacity="0.60"/>
+                            <text x="455" y="98" text-anchor="middle" font-size="11" fill="#F86825" font-weight="700">0.565</text>
+                            <text x="455" y="186" text-anchor="middle" font-size="10" fill="#F86825">Cohen κ</text>
+                            <!-- Bottom note -->
+                            <rect x="20" y="198" width="520" height="20" rx="4" fill="#F86825" fill-opacity="0.07"/>
+                            <text x="280" y="211" text-anchor="middle" font-size="9.5" fill="#F86825" font-weight="600">What changed: not model size, but the fact that failures entered the data (Source: ChemDiv Datasets)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ hERG toxicity prediction accuracy before and after adding failure data — Pebblous original | Source: ChemDiv Datasets</figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The problem grows when an automated pipeline inherits the same bias. A three-stage AI system that gathers literature through retrieval, generates hypotheses on top of it, and then evaluates them automatically adds a little bias at each step. One analysis estimates that this accumulation grows the original bias by about 2.18 times. An AI scientist trained on biased literature accelerates science, and accelerates science's blind spots right along with it.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="cleaning" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A Flaw That Cleaning Cannot Fix</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here lies a common misunderstanding. Told there is a problem with the data, many teams assume the answer is to scrub the data cleaner: remove duplicates, standardize formats, filter out outliers. But this flaw sits beyond the reach of such cleaning. Cleaning refines data that already exists, and the failed experiments were never in the dataset to begin with. What is absent cannot be washed into existence.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So it helps to name the problem precisely. This is not a problem of dirtiness but of representation. If data is contaminated, you can purify it; but if data holds only one side of the world, purification cannot summon the other side. The absence of failure is itself a structural flaw, and this flaw is made not at the stage of handling data but at the stage of collecting it.
+                    </p>
+
+                    <!-- Pebblous original diagram: collection design — traditional vs representative -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 188" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--bg-card); font-family:'Outfit',sans-serif">
+                            <defs>
+                                <marker id="cd-en-ok" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L8,3 L0,6 Z" fill="#F86825"/>
+                                </marker>
+                                <marker id="cd-en-ng" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L8,3 L0,6 Z" fill="#6B7280"/>
+                                </marker>
+                            </defs>
+                            <line x1="330" y1="18" x2="330" y2="172" stroke-width="1" stroke-dasharray="6,4" style="stroke:var(--border-color)"/>
+                            <!-- LEFT: Traditional -->
+                            <text x="165" y="26" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--text-muted)">Traditional approach</text>
+                            <rect x="24" y="38" width="126" height="40" rx="8" fill="none" stroke-width="1" style="stroke:var(--border-color)"/>
+                            <text x="87" y="55" text-anchor="middle" font-size="11" style="fill:var(--text-secondary)">Data collection</text>
+                            <text x="87" y="70" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Record successes only</text>
+                            <line x1="150" y1="58" x2="186" y2="58" stroke="#6B7280" stroke-width="1.5" marker-end="url(#cd-en-ng)"/>
+                            <rect x="190" y="38" width="120" height="40" rx="8" fill="none" stroke-width="1" style="stroke:var(--border-color)"/>
+                            <text x="250" y="55" text-anchor="middle" font-size="11" style="fill:var(--text-muted)">Training data</text>
+                            <text x="250" y="70" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">Success only</text>
+                            <rect x="44" y="104" width="250" height="48" rx="8" fill="none" stroke-width="1" style="stroke:var(--border-color)"/>
+                            <text x="169" y="124" text-anchor="middle" font-size="11" style="fill:var(--text-muted)">AI prediction</text>
+                            <text x="169" y="142" text-anchor="middle" font-size="10" style="fill:var(--text-muted)">Overestimation → clinical failure risk</text>
+                            <line x1="250" y1="78" x2="169" y2="104" stroke="#6B7280" stroke-width="1" stroke-dasharray="4,3"/>
+                            <!-- RIGHT: Representative -->
+                            <text x="495" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">Representative approach (OpenBind)</text>
+                            <rect x="344" y="38" width="126" height="40" rx="8" fill="#F86825" fill-opacity="0.10" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="407" y="55" text-anchor="middle" font-size="11" fill="#F86825">Data collection</text>
+                            <text x="407" y="70" text-anchor="middle" font-size="9" style="fill:var(--text-secondary)">Successes + failures</text>
+                            <line x1="470" y1="58" x2="506" y2="58" stroke="#F86825" stroke-width="1.5" marker-end="url(#cd-en-ok)"/>
+                            <rect x="510" y="38" width="120" height="40" rx="8" fill="#F86825" fill-opacity="0.10" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="570" y="55" text-anchor="middle" font-size="11" fill="#F86825">Training data</text>
+                            <text x="570" y="70" text-anchor="middle" font-size="9" style="fill:var(--text-secondary)">Includes failures</text>
+                            <rect x="364" y="104" width="250" height="48" rx="8" fill="#F86825" fill-opacity="0.10" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="489" y="124" text-anchor="middle" font-size="11" fill="#F86825">AI prediction</text>
+                            <text x="489" y="142" text-anchor="middle" font-size="10" style="fill:var(--text-secondary)">Learns real boundaries → reliable</text>
+                            <line x1="570" y1="78" x2="489" y2="104" stroke="#F86825" stroke-width="1" stroke-dasharray="4,3"/>
+                            <!-- Bottom note -->
+                            <rect x="20" y="165" width="620" height="18" rx="4" fill="#F86825" fill-opacity="0.07"/>
+                            <text x="330" y="178" text-anchor="middle" font-size="10" fill="#F86825" font-weight="600">The flaw arises in collection design — and so does the fix. Cleaning data and designing data are on different levels.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Collection design: traditional vs representative — Pebblous original | Ref: Oxford OpenBind (2026)</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If the flaw arises in collection design, the fix has to be found in collection design too. OpenBind, released in May 2026 by a consortium led by the University of Oxford, shows that direction. Backed by £8 million in UK government funding, the project aims to release, over five years, more than 500,000 structures of protein–drug complexes — roughly twenty times the volume of data available today. Its first release paired 699 X-ray structures of a single viral target protein with 601 binding-strength measurements.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The point is not the scale but the method. OpenBind measures not only the compounds that bound successfully but the strength of binding, under a standardized experimental design. Capture what binds and how strongly, systematically from the start, and the cases that bind poorly remain in the data as well. The researchers leading it say the biggest bottleneck in AI drug discovery is the shortage of reliable, large-scale experimental data showing how molecules bind to proteins. Instead of making the model bigger, it re-lays the very ground the model learns from.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Just as AlphaFold2 leapt forward on top of decades of accumulated protein structure data, a model's ceiling is ultimately set by the design of its data. Deciding at collection time to include failures, and cleaning up finished data afterward, are tasks on entirely different layers. It is the former decision that draws the boundary of what a model can ever reach.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="ai-ready" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Rethinking What AI-Ready Means</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This story is not confined to drug discovery. The structure in which successes are recorded and failures quietly vanish exists in every field. In hiring, only the people who got the job remain as data; in credit assessment, only approved cases are observed; in equipment maintenance, only the normal readings before a breakdown accumulate. Models trained on data gathered this way lean toward optimism, each in its own way. The absence of failure is not an accident of any one domain but a general trap in how data captures the world.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This is why, when Pebblous talks about data quality, it puts representativeness first. A biased sample builds a biased model, and that bias hides well behind a number called accuracy. So when you inspect AI-Ready data, the question to ask shifts. Beyond "are the values non-empty" and "does the format fit," you have to ask whether the data holds even the opposite side of the world it is meant to capture.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In concrete terms, this means checking whether failure cases are explicitly present in the training data, whether the ratio of success to failure reflects the real-world ratio, and whether negative results were excluded at the collection-design stage. This check is not the cleaning you do after all the data is gathered; it begins at the moment you decide what to gather. Just as, in drug discovery, <a href="/blog/ai-drug-discovery-pkmyt1-hidden-pocket/en/" class="text-orange-500 hover:text-orange-400 underline">predicted data and measured data were not the same</a>, here too clean data and representative data are not the same.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note.</strong> In addressing the conditions for AI-Ready data, Pebblous has particularly emphasized representativeness among the <a href="/blog/ai-ready-data-conditions/en/" class="text-orange-500 hover:text-orange-400 underline">many dimensions of quality</a>. This drug discovery case is one scene showing how that abstract principle turns into concrete loss on the ground of science. The question of whether data includes the failures is, before it is a matter of regulation or ethics, a matter of how honestly a model predicts.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6 mt-8">
+                        An AI that learned only success draws the world as a place where things work out more often than they do. That optimism is not erased by scrubbing the data cleaner; it is erased by bringing the missing failures back into the data. The next time a model confidently points to a candidate as promising, it is worth asking again whether that confidence is a real signal or an illusion born of never having seen failure. Thank you for reading to the end.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>Pebblous Data Communication Team</strong><br>
+                        <span class="themeable-muted text-sm">July 5, 2026</span>
+                    </p>
+                </section>
+
+                <!-- FAQ (rendered by PebblousPage.init faqs[]) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">R.1</span>Academic Papers</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">"<a href="https://arxiv.org/abs/2606.04220" target="_blank" rel="noopener">Dead Science Walking: Publication Bias and the AI Scientist Pipeline</a>." (2026). arXiv:2606.04220.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">"<a href="https://arxiv.org/abs/2405.14422" target="_blank" rel="noopener">Unraveling Overoptimism and Publication Bias in ML-Driven Science</a>." arXiv:2405.14422.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">R.2</span>Industry &amp; Press</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">3.</span><span class="ref-body">University of Oxford. (2026). "<a href="https://www.ox.ac.uk/news/2026-05-12-openbind-releases-first-open-dataset-and-ai-model-for-drug-discovery" target="_blank" rel="noopener">OpenBind releases first open dataset and AI model for drug discovery</a>." [Press release].</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">EurekAlert! (2026). "<a href="https://www.eurekalert.org/news-releases/1126456" target="_blank" rel="noopener">OpenBind's first data and model release marks a milestone for AI enabled drug discovery</a>." AAAS.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Digital Chemistry. "<a href="https://www.digitalchemistry.ai/resources/white-papers/the-hidden-value-of-failure-why-negative-data-is-critical-for-ai-driven-drug-discovery/" target="_blank" rel="noopener">The Hidden Value of Failure: Why Negative Data is Critical for AI-Driven Drug Discovery</a>." [White paper].</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Drug Target Review. (2026). "<a href="https://www.drugtargetreview.com/article/192243/2026-the-year-ai-stops-being-optional-in-drug-discovery/" target="_blank" rel="noopener">2026: the year AI stops being optional in drug discovery</a>."</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">R.3</span>Datasets &amp; Official Documents</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">7.</span><span class="ref-body">ChemDiv. "<a href="https://www.chemdiv.com/datasets/" target="_blank" rel="noopener">Datasets — Active/Inactive compound coverage and hERG case study</a>."</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260705"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "The Drug-Discovery AI That Only Learned to Succeed",
+            subtitle: "Failed experiments never get published. Inside the representation flaw in training data that OpenBind exposes.",
+            pageTitle: "Drug Discovery AI Overestimation — Publication Bias and Training Data Flaws | Pebblous",
+            category: "tech",
+            publishDate: "2026-07-05",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/drug-discovery-ai-publication-bias/en/",
+            tags: ["AI-Ready Data", "drug discovery", "publication bias", "training data", "data representativeness", "OpenBind", "negative data", "overestimation"],
+            faqs: [
+                {
+                    question: "What does it mean that drug discovery AI overestimates a candidate's activity?",
+                    answer: "It refers to the tendency of a model to predict a higher-than-real probability that a compound binds its target protein or produces a therapeutic effect. Because the training data is filled mostly with successful experiments, the model learns a map on which promising candidates appear more common than they truly are across chemical space."
+                },
+                {
+                    question: "What exactly is publication bias?",
+                    answer: "It is the phenomenon in which positive and novel results are published far more often than negative ones. Because of journal preferences and how research resources are allocated, failed experiments never become papers and stay in the drawer. One analysis estimates that about 60% of negative results in drug research never make it onto the public record."
+                },
+                {
+                    question: "Why does the absence of failure data make predictions worse?",
+                    answer: "A model needs to see the cases that do not work in order to learn where the boundary with the cases that do work lies. When failures are missing, that boundary blurs: the model overestimates the density of active compounds and, conversely, underestimates activity in the unfamiliar regions of molecules unlike known drugs. The accuracy number may look high while the real signal weakens."
+                },
+                {
+                    question: "Can't this be solved by cleaning the data more thoroughly?",
+                    answer: "No. Cleaning refines data that already exists, and failed experiments are not in the dataset to begin with. Data that is absent cannot be created by scrubbing or standardization. This flaw arises not at the stage of handling data but at the design stage of collecting it."
+                },
+                {
+                    question: "What does it mean that the problem is 'representation,' not 'dirtiness'?",
+                    answer: "Dirtiness is a state where errors or noise are mixed into the data, and it can be fixed by purification. A representation flaw is a state where the data holds only one side of the world. The surviving records of success are generally accurate, but the records of failure that should sit beside them are missing entirely, so purification cannot summon the other side."
+                },
+                {
+                    question: "How does OpenBind address this problem?",
+                    answer: "OpenBind, released in May 2026 by an Oxford-led consortium, measures protein–drug binding structures and binding strengths at large scale under a standardized experimental design. Capturing what binds and how strongly, systematically from the start, keeps even the poorly binding cases in the data. It is an approach that secures representativeness at the collection-design stage."
+                },
+                {
+                    question: "Is there evidence that adding failure data actually improves performance?",
+                    answer: "Yes — the hERG toxicity prediction case from the compound supplier ChemDiv. When in-house experimental data containing both successes and failures was used, accuracy rose from 0.35 to 0.80, and Cohen's kappa, which measures prediction agreement, rose from 0.044 to 0.565. What changed was not the model's size but the fact that failures had entered the data."
+                },
+                {
+                    question: "Does this problem apply only to drug discovery?",
+                    answer: "No. The structure in which only successes are recorded and failures vanish exists in many fields, including hiring, credit assessment, and equipment maintenance. Models trained on data gathered this way lean toward optimism, each in its own way. That is why, when inspecting AI-Ready data, you have to ask whether the data holds even the opposite side of the world it is meant to capture."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
