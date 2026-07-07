@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>Squidbleed CVE-2026-47729, AI가 찾은 29년 묵은 스퀴드 프록시 버그 | 페블러스</title>
+    <meta name="description" content="AI 에이전트가 스퀴드 프록시에서 1997년부터 잠복한 결함 Squidbleed(CVE-2026-47729)를 C 표준을 인용하며 짚어냈다. AI가 코드를 망친다는 담론의 반대편에서, 코드도 오래 방치된 데이터라는 관점으로 레거시 코드 감사의 새 조건을 읽는다.">
+    <meta name="keywords" content="Squidbleed, CVE-2026-47729, 스퀴드 프록시 취약점, AI 버그 발견, AI 코드 감사, 레거시 코드 보안, strchr, 데이터 품질, 코드 감사, Squid Proxy, 페블러스">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/squidbleed-ai-legacy-code-audit/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/squidbleed-ai-legacy-code-audit/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/squidbleed-ai-legacy-code-audit/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/squidbleed-ai-legacy-code-audit/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="사람이 29년 못 본 버그를 AI가 읽어냈다">
+    <meta property="og:description" content="AI 에이전트가 스퀴드 프록시에서 1997년부터 잠복한 결함 Squidbleed를 C 표준을 인용하며 짚어냈다. 코드도 오래 방치된 데이터라는 관점에서 본 레거시 코드 감사.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/squidbleed-ai-legacy-code-audit/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/squidbleed-ai-legacy-code-audit/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="AI가 발견한 29년 묵은 스퀴드 프록시 취약점 Squidbleed">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="og:site_name" content="Pebblous Blog">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="사람이 29년 못 본 버그를 AI가 읽어냈다">
+    <meta name="twitter:description" content="AI가 스퀴드 프록시의 1997년 버그 Squidbleed를 C 표준을 인용하며 짚었다. 코드도 오래 방치된 데이터라는 관점에서.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/squidbleed-ai-legacy-code-audit/ko/image/index.png">
+    <meta name="twitter:image:alt" content="AI가 발견한 29년 묵은 스퀴드 프록시 취약점 Squidbleed">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260707">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260707">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260707">
+
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 1997년부터 잠들어 있던 결함</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. AI가 상태기계를 읽는 방법</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. '검증된 레거시'라는 환상</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 발견 이후는 사람의 몫</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            2026년, 기업 네트워크에서 널리 쓰이는 스퀴드 프록시(Squid Proxy)에서 오래된 결함 하나가 드러났다. 이름은 Squidbleed(CVE-2026-47729), 1997년 1월부터 코드에 잠복해 있었다. 특이한 점은 발견자다. 이 결함을 처음 "실제 버그"라고 짚어낸 것은 사람이 아니라 AI 에이전트였고, 판단의 근거로 C 언어 표준의 조항을 직접 인용했다. 이 글은 그 사건을 보안 속보가 아니라 데이터 품질의 문제로 읽는다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            29년간 아무도 못 본 이유는 이 버그가 평범한 실행 경로 바깥의 엣지 케이스에 숨어 있었기 때문이다. AI는 코드 리뷰나 테스트가 훑지 못한 그 구석을 명세와 대조해 찾아냈다. 다만 반전이 있다. AI가 버그를 짚은 뒤에도 패치를 각 버전에 반영하고, 발견자를 제대로 기록하고, 사용자에게 알리는 일은 여전히 사람이 손으로 처리해야 했다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            "오래 쓰였으니 검증된 코드"라는 믿음은 여기서 흔들린다. 코드도 한번 만들어진 뒤 오래 방치되면 품질이 저하되는 데이터와 다르지 않다. AI는 그 방치된 데이터를 감사하는 도구가 될 수 있다. 이 글은 그 가능성과, 발견 이후에도 사람이 감당해야 하는 몫을 함께 본다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8 mb-2">
+                        이 사건이 남긴 자국은 네 개의 숫자로 압축된다. 결함이 얼마나 오래 숨어 있었는지, 같은 기간에 몇 팀이 각자 도달했는지, 그리고 발견 이후 패치와 공지가 얼마나 어긋났는지다.
+                    </p>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">29년</p>
+                            <p class="text-sm themeable-text-secondary mt-1">버그 잠복 기간</p>
+                            <p class="text-xs themeable-muted mt-1">1997년 1월부터 코드에 존재</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">3팀</p>
+                            <p class="text-sm themeable-text-secondary mt-1">독립 발견</p>
+                            <p class="text-xs themeable-muted mt-1">두 달 사이 각자 같은 버그에 도달</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">한 달</p>
+                            <p class="text-sm themeable-text-secondary mt-1">v8→v7 패치 격차</p>
+                            <p class="text-xs themeable-muted mt-1">그 사이 v7 사용자는 취약 상태</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">2주</p>
+                            <p class="text-sm themeable-text-secondary mt-1">릴리즈→어드바이저리</p>
+                            <p class="text-xs themeable-muted mt-1">고쳤는지 확인하기 어려운 공백</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">1997년부터 잠들어 있던 결함</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        스퀴드는 기업과 기관의 네트워크 경계에서 웹 트래픽을 중개하는 프록시 소프트웨어다. 수많은 조직이 방화벽 안쪽에 두고 외부로 나가는 요청을 이 프로그램에 통과시킨다. 그만큼 오래됐고, 그만큼 검증됐다고 여겨졌다. 이번에 드러난 결함 Squidbleed는 그 스퀴드가 FTP 디렉토리 목록을 해석하는 파서에 있었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        원인은 C 언어의 작은 함정 하나다. 문자열에서 특정 문자를 찾는 <code>strchr()</code> 함수는, 찾으려는 문자가 문자열의 끝을 나타내는 널 문자(<code>'\0'</code>)일 때 예외적으로 동작한다. 없으면 빈손(NULL)을 돌려줄 것 같지만, C 표준은 이때 문자열 끝의 널 종결자를 가리키는 포인터를 반환하라고 정해 두었다. 스퀴드의 FTP 파서는 이 포인터를 "못 찾았다"는 신호로 오해하지 않고 그대로 계산에 넣었고, 그 결과 버퍼의 경계를 넘어 옆 메모리를 읽었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 옆 메모리에는 같은 프록시를 지나던 다른 사용자의 요청 데이터가 들어 있을 수 있다. 자격증명이나 API 키 같은 민감 정보가 공격자에게 새어 나가는 정보 유출(information disclosure) 결함이다. 공격 조건도 까다롭지 않다. 공격자가 제어하는 FTP 서버에 프록시가 접근하도록 유도하면 된다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제를 키우는 것은 기본 설정이다. 스퀴드는 별도로 끄지 않는 한 FTP 지원이 켜져 있고, 그 통로가 되는 21번 포트도 기본 허용 목록(<code>Safe_ports</code> ACL)에 들어 있다. 관리자가 손대지 않은 평범한 설치본 상당수가, 이 취약한 경로에 그대로 노출돼 있었다는 뜻이다.
+                    </p>
+
+                    <!-- 페블러스 원본 도식: strchr 엣지 케이스 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 250" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="28" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="var(--text-secondary,#94a3b8)">strchr(w_space, '\0')가 돌려주는 것</text>
+                            <text x="330" y="48" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted,#64748b)">널 문자를 찾을 때, 함수는 빈손이 아니라 문자열 끝 포인터를 반환한다</text>
+                            <!-- 기대 -->
+                            <rect x="40" y="72" width="270" height="150" rx="12" fill="#1a2536" stroke="#475569" stroke-width="1.5" stroke-dasharray="5,3"/>
+                            <text x="175" y="98" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="var(--text-secondary,#94a3b8)">코드가 기대한 것</text>
+                            <text x="175" y="132" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="26" fill="var(--text-muted,#64748b)">NULL</text>
+                            <text x="175" y="160" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted,#64748b)">"찾는 문자가 없다"는 신호</text>
+                            <text x="175" y="182" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted,#64748b)">→ 여기서 멈춘다</text>
+                            <!-- 실제 -->
+                            <rect x="350" y="72" width="270" height="150" rx="12" fill="#334155" stroke="#F86825" stroke-width="2"/>
+                            <text x="485" y="98" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="#F86825">C 표준이 정한 것</text>
+                            <text x="485" y="128" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="15" font-weight="600" fill="#e2e8f0">종결자 포인터</text>
+                            <text x="485" y="150" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#cbd5e1">"문자열 끝"을 가리키는 유효 주소</text>
+                            <text x="485" y="176" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#ffe4d6">→ 계산이 이어져 버퍼 경계를 넘음</text>
+                            <text x="485" y="200" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#F86825">→ 옆 메모리 유출(overread)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Squidbleed의 뿌리인 strchr() 엣지 케이스 — 널 문자 검색 시 반환값 차이가 메모리 유출로 이어진다 | 페블러스 원본 도식</figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 결함이 29년을 버틴 이유는 역설적이다. 일반적인 FTP 목록에서는 이 코드 경로가 거의 실행되지 않는다. 표준을 정확히 따르는 함수의 정상 동작이, 그 함수를 오해한 코드와 만나 아주 드문 조건에서만 문제를 일으켰다. 그래서 오래 쓰이는 동안에도 아무도 밟지 않은 지뢰로 남아 있었다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">AI가 상태기계를 읽는 방법</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        발견 과정은 지금의 AI 활용을 그대로 보여 준다. Calif.io의 연구자는 AI 에이전트에게 스퀴드의 FTP 상태기계 전체를 조사하라고 지시했다. 필요하면 다른 에이전트를 추가로 띄워 경로 하나하나를 파고들라는 주문이었다. 그 과정에서 AI는 문제의 지점을 짚으며 이렇게 판단했다. <span class="themeable-heading" style="font-weight:600;">"strchr(w_space, '\0')는 C11 §7.24.5.2에 따라 널이 아닌 값을 반환한다. 종결 널은 문자열의 일부다. 이것은 실제 버그다."</span>
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        주목할 부분은 근거 방식이다. AI는 "이상해 보인다"에 그치지 않고 C 표준의 특정 조항을 인용해 왜 버그인지 논증했다. 사람이 29년 동안 못 본 이유와 정확히 대비되는 지점이다. 사람은 코드를 읽을 때 흔한 경로를 먼저 훑고, 드문 엣지 케이스는 테스트와 리뷰의 사각지대로 밀려나기 쉽다. 반면 이번 조사에서 AI는 상태기계의 모든 분기를 명세와 하나씩 대조했다. 사람이 "설마 여기서 문제가 나겠어"라고 넘긴 자리를 기계는 넘기지 않았다.
+                    </p>
+
+                    <!-- Image: Squid Proxy 공식 마스코트 -->
+                    <figure class="my-8">
+                        <img src="./image/img-01-squid-proxy.png"
+                             alt="Squid Proxy 공식 마스코트 — AI가 FTP 상태기계를 분석한 네트워크 프록시 소프트웨어"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Squid Proxy — AI가 FTP 상태기계를 샅샅이 분석한 대상 | Source: <a href="https://commons.wikimedia.org/wiki/File:Squid-cache.png" target="_blank" rel="noopener" class="underline">Wikimedia Commons (CC BY-SA 3.0)</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 눈여겨볼 신호는 발견자가 한 명이 아니라는 점이다. 3월 초 아이슬 리서치(Aisle Research)의 한 연구자가 이 결함을 처음 신고했고, 뒤이어 4월과 5월에 걸쳐 서로를 모르던 두 팀이 같은 버그에 독립적으로 다시 도달했다. 두 달 사이 세 번의 독립 발견은 우연으로만 보기 어렵다. AI 기반 코드 감사 도구가 퍼지면서, 오래 잠들어 있던 결함들이 비슷한 시기에 동시에 깨어나고 있다는 신호로 읽을 수 있다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            핵심은 도구의 성능 자랑이 아니다. AI는 코드를 생성하는 데만 쓰이는 것이 아니라, 이미 존재하는 코드를 명세와 대조해 감사하는 데에도 쓰인다는 사실이다. "AI가 코드를 망친다"는 이야기의 반대편에서, AI는 사람이 오래 눈감아 온 코드를 다시 읽는 렌즈가 되고 있다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">'검증된 레거시'라는 환상</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        많은 조직이 오래된 코드를 안심하고 쓴다. 수십 년 돌아갔으니 그동안 충분히 검증됐으리라는 직관 때문이다. Squidbleed는 그 직관의 약한 고리를 정확히 건드린다. "오래 쓰였다"는 사실은 "자주 실행된 경로가 안정적이다"라는 뜻일 뿐, 거의 실행되지 않는 엣지 케이스가 안전하다는 보장이 되지는 못한다. 검증은 실제로 밟은 경로만큼만 이뤄진다.
+                    </p>
+
+                    <!-- Image: Heartbleed 취약점 구조 도식 -->
+                    <figure class="my-8">
+                        <img src="./image/img-02-heartbleed-explained.svg"
+                             alt="Heartbleed(CVE-2014-0160) 메모리 오버리드 구조 도식 — 2년간 신뢰받던 OpenSSL 레거시 코드에 숨어 있던 결함"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Heartbleed(CVE-2014-0160) — 신뢰받던 OpenSSL에 2년간 숨어 있던 메모리 유출 결함. '검증된 레거시'가 실은 가정이었다는 것을 보여 준 또 다른 사례 | Source: <a href="https://commons.wikimedia.org/wiki/File:Heartbleed_bug_explained.svg" target="_blank" rel="noopener" class="underline">Wikimedia Commons (CC BY-SA 3.0)</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스가 데이터 품질에서 오래 다뤄 온 원칙이 여기에 그대로 적용된다. 한번 수집·가공된 데이터도 오래 방치되면 현실과 어긋나며 품질이 저하된다. 코드 역시 마찬가지다. 작성되던 시점의 가정과 관행 위에 굳은 채 오래 손대지 않으면, 그 자체로 감사가 필요한 오래된 데이터가 된다. 코드도 결국 사람이 읽고 쓰라고 만든 텍스트이고, 방치된 텍스트는 방치된 데이터와 같은 위험을 안는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그렇다면 AI 감사가 가장 큰 값을 내는 자리는 최신 코드가 아니다. 오히려 "이미 검증됐다"고 모두가 믿어 아무도 다시 들여다보지 않는 오래된 코드다. 사람의 관심에서 멀어진 만큼 사각지대가 넓고, 명세를 통째로 대조하는 기계의 방식이 그 넓은 사각지대에서 특히 유리하다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            '검증된 레거시'는 상태가 아니라 가정이다. 그 가정을 주기적으로 다시 시험하지 않으면, 안전하다는 믿음만 29년을 함께 쌓인다. 코드를 감사 대상 데이터로 다루기 시작할 때, 레거시는 비로소 관리되는 자산이 된다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">발견 이후는 사람의 몫</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AI가 버그를 짚었다고 문제가 끝난 것은 아니다. 이후의 타임라인은 자동 발견과 자동 해결 사이의 거리를 그대로 보여 준다. 수정 패치는 4월 중순 최신 개발 브랜치(v8)에 먼저 들어갔지만, 여전히 널리 쓰이는 v7 브랜치에 반영되기까지는 한 달이 더 걸렸다. 그 한 달 동안 v7을 쓰던 조직은 패치가 존재하는데도 취약한 상태로 남아 있었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공지의 타이밍도 어긋났다. 수정이 담긴 v7.6이 6월 초 출시됐지만, 이 버전이 무엇을 고쳤는지 설명하는 공식 어드바이저리는 그로부터 2주 뒤에야 공개됐다. 사용자로서는 새 버전이 문제의 결함을 덮었는지 한동안 확신하기 어려웠다. 게다가 최초 보고자가 공식 어드바이저리에서 빠졌다가, 통보를 받은 뒤에야 기여자 목록에 추가되는 일도 있었다.
+                    </p>
+
+                    <!-- 페블러스 원본 도식: 발견 이후 타임라인 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="28" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="var(--text-secondary,#94a3b8)">발견 이후 — 사람이 관리해야 했던 격차</text>
+                            <!-- 기준선 -->
+                            <line x1="50" y1="120" x2="610" y2="120" stroke="#475569" stroke-width="2"/>
+                            <!-- 노드 4/17 -->
+                            <circle cx="110" cy="120" r="7" fill="#F86825"/>
+                            <text x="110" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">4월 17일</text>
+                            <text x="110" y="146" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#94a3b8">패치 게시</text>
+                            <text x="110" y="160" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#94a3b8">v8 반영</text>
+                            <!-- 노드 5/17 -->
+                            <circle cx="290" cy="120" r="7" fill="#F86825"/>
+                            <text x="290" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">5월 17일</text>
+                            <text x="290" y="146" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#94a3b8">v7 브랜치 반영</text>
+                            <!-- 격차 1 -->
+                            <text x="200" y="184" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">← 한 달, v7 취약 →</text>
+                            <!-- 노드 6/8 -->
+                            <circle cx="450" cy="120" r="7" fill="#F86825"/>
+                            <text x="450" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">6월 8일</text>
+                            <text x="450" y="146" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#94a3b8">v7.6 출시</text>
+                            <!-- 노드 6/23 -->
+                            <circle cx="560" cy="120" r="7" fill="#334155" stroke="#F86825" stroke-width="2"/>
+                            <text x="560" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#e2e8f0">6월 23일</text>
+                            <text x="560" y="146" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#94a3b8">공식 어드바이저리</text>
+                            <!-- 격차 2 -->
+                            <text x="505" y="184" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">← 2주 →</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Squidbleed 패치·공지 타임라인 — 버전별 반영과 공식 공지 사이에 사람이 메워야 할 격차가 남았다 | 페블러스 원본 도식</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 교훈은 분명하다. AI가 결함을 찾아내더라도 각 버전에 패치를 백포팅하고, 발견자를 정확히 귀속하고, 사용자에게 제때 알리는 일은 여전히 사람이 설계하고 집행한다. 자동 발견은 워크플로우의 시작일 뿐 끝이 아니다. 조직이 준비해야 할 것은 "AI가 무언가를 찾은 다음"의 절차다. 어떤 브랜치까지 고칠지, 누구에게 언제 알릴지, 발견의 공을 어떻게 기록할지가 미리 정해져 있어야 한다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            AI 코드 감사가 조직에 주는 진짜 이득은 버그 목록 자체가 아니다. 그 목록을 받아 검증하고, 추적하고, 책임 있게 공개하는 사람의 워크플로우가 함께 있을 때 비로소 이득이 실현된다. 발견은 빨라졌지만, 발견 이후는 여전히 사람이 설계하는 시간이다.
+                        </p>
+                    </div>
+
+                    <div class="themeable-card rounded-xl p-5 mt-6 themeable-text leading-relaxed">
+                        <p><strong style="font-weight:600;">편집자의 노트.</strong> 페블러스는 데이터가 AI에 쓰일 준비를 갖추는 과정(AI-Ready Data)을 다뤄 왔다. Squidbleed는 그 관점이 코드에도 닿는다는 것을 보여 준다. 코드를 감사 대상 데이터로 다루면, AI는 사람이 놓친 결함을 읽어 주고 사람은 그 발견을 검증·추적하는 역할을 맡는다. 발견과 검증이 나뉜 이 구도가, 레거시를 관리되는 자산으로 바꾸는 출발점이다.</p>
+                    </div>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- 참고문헌 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Lam, J. R. (2026, June 10). "<a href="https://blog.calif.io/p/squidbleed-cve-2026-47729" target="_blank" rel="noopener">Squidbleed (CVE-2026-47729)</a>." Calif.io Blog. (주요 출처)</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">The Hacker News. (2026, June). "<a href="https://thehackernews.com/2026/06/29-year-old-squid-proxy-bug-squidbleed.html" target="_blank" rel="noopener">29-Year-Old Squid Proxy Bug 'Squidbleed'</a>." The Hacker News.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">SquidBleed. (2026). "<a href="https://www.squidbleed.xyz/" target="_blank" rel="noopener">SquidBleed — CVE-2026-47729</a>." squidbleed.xyz.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260707"></script>
+    <script src="/scripts/citation-download.js?v=20260707" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-06T23:22:17.222Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-06T23:32:33.033Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1783380137223-n9eou1",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-07T00:07:24.873Z"
+            },
+            mainTitle: "사람이 29년 못 본 버그를 AI가 읽어냈다",
+            subtitle: "Squidbleed(CVE-2026-47729)가 보여준 레거시 코드 감사의 새 조건",
+            pageTitle: "Squidbleed CVE-2026-47729, AI가 찾은 29년 묵은 스퀴드 프록시 버그 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-07",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/squidbleed-ai-legacy-code-audit/ko/",
+            tags: ["Squidbleed", "CVE-2026-47729", "스퀴드 프록시", "AI 코드 감사", "레거시 코드 보안", "AI 버그 발견", "데이터 품질", "코드 감사"],
+            faqs: [
+                { question: "Squidbleed(CVE-2026-47729)는 어떤 취약점인가요?", answer: "스퀴드 프록시 FTP 파서의 힙 버퍼 오버리드(정보 유출) 결함으로, strchr()의 엣지 케이스를 오해해 버퍼 경계를 넘어 다른 사용자의 자격증명·API 키가 유출될 수 있습니다. 1997년 1월부터 약 29년간 잠복했습니다." },
+                { question: "이 버그를 정말 AI가 발견했나요?", answer: "연구자가 AI 에이전트에게 FTP 상태기계 전체 조사를 지시했고, AI가 C11 표준 §7.24.5.2를 인용해 '이것은 실제 버그다'라고 판단했습니다. 최종 검증과 보고는 사람이 했지만 결함을 처음 논증한 것은 AI였습니다." },
+                { question: "strchr()의 엣지 케이스가 정확히 무엇인가요?", answer: "찾으려는 문자가 널 문자('\\0')이면 C 표준은 NULL이 아니라 문자열 끝의 널 종결자를 가리키는 유효한 포인터를 반환합니다. 이를 '못 찾았다'로 오해한 코드가 그 포인터로 계산을 이어 가다 버퍼 경계를 넘었습니다." },
+                { question: "왜 29년 동안 아무도 발견하지 못했나요?", answer: "문제의 코드 경로는 일반적인 FTP 목록에서는 거의 실행되지 않는 드문 엣지 케이스였습니다. 검증은 실제로 밟은 경로만큼만 이뤄지므로 이 구석은 테스트·리뷰의 사각지대로 오래 남았습니다." },
+                { question: "우리 조직도 스퀴드를 쓰는데 어떻게 대응해야 하나요?", answer: "수정이 담긴 v7.6 이상으로 업데이트하는 것이 기본입니다. FTP 지원을 쓰지 않는다면 해당 기능과 21번 포트 접근 제한도 완화책이 됩니다. 버전별 반영 시점과 공식 어드바이저리를 함께 확인해 실제로 덮였는지 검증하세요." },
+                { question: "'코드도 오래 방치된 데이터'라는 말은 무슨 뜻인가요?", answer: "데이터가 오래 방치되면 현실과 어긋나 품질이 저하되듯, 코드도 작성 시점 가정 위에 굳은 채 오래 손대지 않으면 감사가 필요한 오래된 데이터가 됩니다. '오래 쓰였으니 검증됐다'는 믿음은 자주 밟은 경로에만 해당합니다." },
+                { question: "AI가 취약점을 찾으면 사람은 무엇을 해야 하나요?", answer: "자동 발견 이후에도 여러 버전에 패치를 백포팅하고, 발견자를 정확히 귀속하며, 사용자에게 제때 알리는 일이 남습니다. 조직은 'AI가 찾은 다음'의 절차를 미리 설계해 둬야 합니다." },
+                { question: "세 팀이 비슷한 시기에 같은 버그를 찾은 것은 무슨 의미인가요?", answer: "2026년 3~5월 사이 세 팀이 독립적으로 같은 결함에 도달했습니다. AI 기반 코드 감사 도구가 퍼지면서 오래 잠들어 있던 레거시 결함들이 비슷한 시기에 동시에 드러나기 시작했다는 신호로 읽을 수 있습니다." }
+            ]
+        });
+    </script>
+</body>
+</html>
