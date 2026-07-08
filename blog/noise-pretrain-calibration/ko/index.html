@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>신경망 과신의 원인은 랜덤 초기화였다 — 노이즈 사전학습 캘리브레이션 | 페블러스</title>
+    <meta name="description" content="AI가 근거 없이 확신하는 버릇은 데이터 품질이 아니라 표준으로 굳어진 랜덤 초기화가 만든 것이었습니다. 학습 전 무작위 노이즈로 잠깐 준비운동을 시키면 모델은 모르는 입력에 낮은 확신을 보이는 메타인지를 얻습니다. KAIST가 Nature Machine Intelligence에 발표한 노이즈 사전학습 연구를 페블러스가 데이터의 눈으로 읽습니다.">
+    <meta name="keywords" content="신경망 캘리브레이션, AI 과신, 불확실성 캘리브레이션, 딥러닝 초기화, 노이즈 사전학습, 랜덤 초기화, ECE, OOD 감지, 뇌과학 딥러닝, KAIST, Nature Machine Intelligence, 페블러스">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/noise-pretrain-calibration/ko/">
+
+    <!-- hreflang -->
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/noise-pretrain-calibration/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/noise-pretrain-calibration/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/noise-pretrain-calibration/ko/">
+
+    <!-- Open Graph -->
+    <meta name="og-image-title" content="노이즈로 훈련한 신경망이 과신을 교정했다">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="노이즈로 훈련한 신경망이 자신의 과신을 교정했다">
+    <meta property="og:description" content="과신은 데이터가 아니라 초기화 방식이 만든 버릇이었습니다. 학습 전 노이즈 준비운동이 모델에게 '모른다'고 말하는 법을 가르칩니다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/noise-pretrain-calibration/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/noise-pretrain-calibration/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="노이즈로 훈련한 신경망이 자신의 과신을 교정했다 — 초기화가 만든 과신과 노이즈 사전학습">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-07-08">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="노이즈로 훈련한 신경망이 자신의 과신을 교정했다">
+    <meta name="twitter:description" content="과신의 뿌리는 데이터가 아니라 랜덤 초기화였습니다. 학습 전 노이즈 준비운동이 모델에게 메타인지를 가르칩니다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/noise-pretrain-calibration/ko/image/index.png">
+    <meta name="twitter:image:alt" content="노이즈로 훈련한 신경망이 자신의 과신을 교정했다 — 초기화가 만든 과신과 노이즈 사전학습">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Stylesheets (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260708">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260708">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260708">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#confident" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 틀리면서도 당당한 AI</a></li>
+                    <li><a href="#culprit" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 범인은 데이터가 아니라 초기화였다</a></li>
+                    <li><a href="#warmup" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 학습 전에 시키는 노이즈 준비운동</a></li>
+                    <li><a href="#evidence" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 수치가 확인해 준 것</a></li>
+                    <li><a href="#brain" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 뇌가 태어나기 전에 하던 일</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            AI가 틀린 답을 내놓으면서도 지나치게 당당한 문제를 우리는 대개 데이터 탓으로 돌립니다. 데이터가 부족했거나 지저분했다고요. 그런데 KAIST 연구진이 내놓은 답은 방향이 다릅니다. 과신의 뿌리는 데이터가 아니라, 학습을 시작하기도 전에 신경망을 세팅하는 방식 — 표준으로 굳어진 랜덤 초기화 그 자체에 있다는 것입니다. 데이터를 단 한 장도 보지 않은 신경망이 이미 특정 답에 높은 확신을 품고 있었고, 그 편향이 학습 내내 살아남아 최종 모델의 과신으로 이어졌습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            해법은 뜻밖에 간단합니다. 진짜 데이터를 보여 주기 전에, 아무 의미 없는 무작위 노이즈로 잠깐 준비운동을 시키는 것입니다. 이 단계에서 모델은 아무것도 배우지 못합니다. 정확도는 우연 수준에 머뭅니다. 그런데 이 헛수고처럼 보이는 준비운동을 거친 모델은 이후 실제 학습에서 캘리브레이션 오차가 통계적으로 유의하게 줄었고(P&lt;10⁻³), 처음 보는 낯선 입력 앞에서 확신을 낮추는 능력, 즉 '모르는 것은 모른다'고 말하는 메타인지를 얻었습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            페블러스가 이 연구에서 주목하는 것은 관점의 전환입니다. 신뢰할 수 있는 AI는 더 깨끗한 데이터만의 문제일까요, 아니면 학습 레시피의 문제일까요. 캘리브레이션을 데이터가 아니라 훈련 순서로 바라보는 이 발상은, 데이터 품질과 학습 설계가 사실은 한 몸이라는 사실을 다시 일깨웁니다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        이 발견을 네 개의 숫자로 압축하면 이렇습니다. 데이터를 보기 전부터 존재한 과신의 통계적 증거, 노이즈 준비운동 뒤 그 편향이 사라진 정도, 준비운동의 역설을 드러내는 정확도, 그리고 실제 학습에서 확인된 캘리브레이션 개선입니다.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://www.nature.com/articles/s42256-026-01215-x" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">Nature Machine Intelligence (2026)</a>, <a href="https://arxiv.org/abs/2412.17411" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">arXiv:2412.17411</a></p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">P&lt;10⁻³</p>
+                            <p class="text-sm themeable-text-secondary mt-1">학습 전 과신</p>
+                            <p class="text-xs themeable-muted mt-1">데이터를 하나도 안 본 신경망의 클래스 편향 (일원분산분석)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">P=0.429</p>
+                            <p class="text-sm themeable-text-secondary mt-1">편향 소멸</p>
+                            <p class="text-xs themeable-muted mt-1">노이즈 준비운동 뒤 클래스 편향이 통계적으로 사라짐</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">우연 수준</p>
+                            <p class="text-sm themeable-text-secondary mt-1">준비운동의 역설</p>
+                            <p class="text-xs themeable-muted mt-1">노이즈 학습에서 손실은 내려가도 정확도는 우연에 머문다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">P&lt;10⁻³</p>
+                            <p class="text-sm themeable-text-secondary mt-1">ECE·OOD 개선</p>
+                            <p class="text-xs themeable-muted mt-1">캘리브레이션 오차 감소와 낯선 입력 감지 향상 모두 유의</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="confident" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">틀리면서도 당당한 AI</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AI를 실제로 다뤄 본 사람이라면 익숙한 장면이 있습니다. 모델이 명백히 틀린 답을 내놓는데, 그 답에 붙은 확신 점수는 99%입니다. 의료 영상을 오판하면서도 확신하고, 자율주행이 처음 보는 도로 상황을 익숙한 것으로 착각하면서도 확신하고, 금융 모델이 낯선 패턴을 아는 것처럼 확신합니다. 문제는 틀렸다는 사실 자체가 아니라, 틀렸으면서도 낮은 확신을 보이지 못한다는 데 있습니다. 우리가 정말 원하는 것은 틀리지 않는 AI가 아니라, 자기가 모를 때는 모른다고 말해 주는 AI입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 어긋남을 재는 지표가 캘리브레이션(calibration), 우리말로는 확신 보정입니다. 잘 보정된 모델이라면 확신 80%라고 말한 예측들을 모아 봤을 때 실제로 그중 80% 정도가 맞아야 합니다. 이 약속이 얼마나 깨졌는지를 하나의 숫자로 요약한 것이 ECE(Expected Calibration Error), 기대 캘리브레이션 오차입니다. ECE가 크다는 것은 모델이 말하는 확신과 실제 적중률 사이가 벌어져 있다는 뜻이고, 그 벌어짐이 대개 과신 쪽으로 기웁니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            정확도와 캘리브레이션은 다른 능력입니다. 정확도는 얼마나 자주 맞히느냐를, 캘리브레이션은 자기 확신이 얼마나 정직하냐를 잽니다. 아무리 정확한 모델이라도 확신이 정직하지 않으면, 그 확신을 믿고 내리는 결정은 위험해집니다. 신뢰할 수 있는 AI란 결국 자기 무지를 아는 AI입니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="culprit" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">범인은 데이터가 아니라 초기화였다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그렇다면 과신은 어디서 올까요. 흔한 답은 데이터입니다. 편향된 데이터, 부족한 데이터, 지저분한 데이터가 모델을 잘못 가르쳤다는 것입니다. 그런데 이 논문의 저자들은 데이터를 의심하기 전에 더 앞 단계를 들여다봤습니다. 학습이 시작되기도 전, 신경망의 가중치를 무작위 숫자로 채우는 랜덤 초기화 단계입니다. 오늘날 거의 모든 딥러닝 모델이 여기서 출발하며, 우리는 이 관행을 너무 당연하게 여겨 의심조차 하지 않았습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        놀라운 관찰은 여기서 나옵니다. 데이터를 단 한 장도 보지 않은, 갓 초기화된 신경망의 출력을 살펴봤더니 이미 특정 클래스로 확신이 쏠려 있었습니다. 배운 것이 전혀 없는데도 어떤 답을 다른 답보다 자신 있게 내놓은 것입니다. 연구진이 이 출력 분포를 일원분산분석(one-way ANOVA)으로 검정하자 클래스 사이의 편향은 통계적으로 뚜렷했습니다(P&lt;10⁻³). 지식이 0비트인 상태에서 이미 확신이 존재한 것입니다. 이것이 과신의 씨앗이었습니다.
+                    </p>
+
+                    <!-- 페블러스 원본 도식: 학습 전 신경망의 사전 편향과 노이즈 준비운동 후 소멸 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 620 236" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[620px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--bg-card); font-family:'Pretendard',sans-serif">
+                            <text x="310" y="26" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--text-secondary)">데이터를 보기 전, 신경망의 확신 분포</text>
+                            <line x1="310" y1="44" x2="310" y2="196" stroke-width="1" stroke-dasharray="6,4" style="stroke:var(--border-color)"/>
+                            <!-- LEFT: before noise (biased) -->
+                            <text x="155" y="58" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--text-muted)">랜덤 초기화만</text>
+                            <line x1="40" y1="176" x2="270" y2="176" stroke-width="1" style="stroke:var(--border-color)"/>
+                            <rect x="52" y="96" width="26" height="80" rx="3" style="fill:var(--text-muted)" opacity="0.35"/>
+                            <rect x="86" y="132" width="26" height="44" rx="3" style="fill:var(--text-muted)" opacity="0.35"/>
+                            <rect x="120" y="74" width="26" height="102" rx="3" fill="#F86825"/>
+                            <rect x="154" y="150" width="26" height="26" rx="3" style="fill:var(--text-muted)" opacity="0.35"/>
+                            <rect x="188" y="120" width="26" height="56" rx="3" style="fill:var(--text-muted)" opacity="0.35"/>
+                            <rect x="222" y="140" width="26" height="36" rx="3" style="fill:var(--text-muted)" opacity="0.35"/>
+                            <text x="133" y="66" text-anchor="middle" font-size="9.5" fill="#F86825" font-weight="700">쏠린 확신</text>
+                            <text x="155" y="193" text-anchor="middle" font-size="10" fill="#F86825" font-weight="600">P&lt;10⁻³ · 클래스 편향 뚜렷</text>
+                            <!-- RIGHT: after noise (flat) -->
+                            <text x="465" y="58" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">노이즈 준비운동 후</text>
+                            <line x1="350" y1="176" x2="580" y2="176" stroke-width="1" style="stroke:var(--border-color)"/>
+                            <rect x="362" y="128" width="26" height="48" rx="3" fill="#F86825" fill-opacity="0.55"/>
+                            <rect x="396" y="122" width="26" height="54" rx="3" fill="#F86825" fill-opacity="0.55"/>
+                            <rect x="430" y="126" width="26" height="50" rx="3" fill="#F86825" fill-opacity="0.55"/>
+                            <rect x="464" y="120" width="26" height="56" rx="3" fill="#F86825" fill-opacity="0.55"/>
+                            <rect x="498" y="128" width="26" height="48" rx="3" fill="#F86825" fill-opacity="0.55"/>
+                            <rect x="532" y="124" width="26" height="52" rx="3" fill="#F86825" fill-opacity="0.55"/>
+                            <text x="465" y="112" text-anchor="middle" font-size="9.5" fill="#F86825" font-weight="700">고른 확신</text>
+                            <text x="465" y="193" text-anchor="middle" font-size="10" fill="#F86825" font-weight="600">P=0.429 · 편향 사라짐</text>
+                            <!-- Bottom note -->
+                            <rect x="20" y="208" width="580" height="20" rx="4" fill="#F86825" fill-opacity="0.07"/>
+                            <text x="310" y="221" text-anchor="middle" font-size="9.5" fill="#F86825" font-weight="600">과신은 학습 전부터 초기화에 새겨져 있었고, 노이즈 준비운동이 그 편향을 지웁니다 (출처: Nature Machine Intelligence, 2026)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ 학습 전 신경망의 확신 편향과 노이즈 준비운동 후 변화 — 페블러스 원본 도식 | 출처: Cheon &amp; Paik (2026)</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 중요한 것은 이 씨앗이 그냥 사라지지 않는다는 점입니다. 학습이 진행되며 모델은 데이터를 배우지만, 출발점에 새겨진 확신의 기울기는 좀처럼 교정되지 않고 최종 모델까지 살아남습니다. 그래서 잘 훈련된 모델조차 근거 없이 당당한 것입니다. 과신을 데이터의 문제로만 보면 이 출발선의 편향은 계속 보이지 않고, 우리는 엉뚱한 곳을 청소하게 됩니다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="warmup" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">학습 전에 시키는 노이즈 준비운동</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        출발선이 문제라면 해법도 출발선에 있어야 합니다. 연구진의 처방은 진짜 데이터로 학습을 시작하기 전에, 아무 의미 없는 무작위 노이즈로 신경망을 한 번 훑는 것입니다. 이 준비운동은 다섯 단계로 단순합니다. 입력은 가우시안 노이즈(평균 0, 표준편차 1)로 만든 무작위 이미지이고, 정답은 그때그때 무작위로 뽑은 라벨이며, 입력과 정답 사이에는 아무런 규칙도 없습니다. 매 반복마다 노이즈와 라벨을 새로 뽑아, 모델이 외울 수 있는 패턴 자체가 존재하지 않게 만듭니다. 그 위에서 평소처럼 교차 엔트로피 손실을 줄여 나갈 뿐입니다.
+                    </p>
+
+                    <!-- 페블러스 원본 도식: 노이즈 사전학습 프로토콜 흐름 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 176" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--bg-card); font-family:'Pretendard',sans-serif">
+                            <defs>
+                                <marker id="np-ko-ok" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L8,3 L0,6 Z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                            <rect x="24" y="52" width="150" height="52" rx="9" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="99" y="74" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">노이즈 준비운동</text>
+                            <text x="99" y="91" text-anchor="middle" font-size="9.5" style="fill:var(--text-secondary)">무작위 입력·무작위 라벨</text>
+                            <line x1="174" y1="78" x2="222" y2="78" stroke="#F86825" stroke-width="1.5" marker-end="url(#np-ko-ok)"/>
+                            <rect x="226" y="52" width="150" height="52" rx="9" fill="#F86825" fill-opacity="0.10" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="301" y="70" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">손실 ↓ · 정확도 우연</text>
+                            <text x="301" y="87" text-anchor="middle" font-size="9.5" style="fill:var(--text-secondary)">배우진 못해도 편향은 지워짐</text>
+                            <line x1="376" y1="78" x2="424" y2="78" stroke="#F86825" stroke-width="1.5" marker-end="url(#np-ko-ok)"/>
+                            <rect x="428" y="52" width="150" height="52" rx="9" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="503" y="70" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">진짜 데이터 학습</text>
+                            <text x="503" y="87" text-anchor="middle" font-size="9.5" style="fill:var(--text-secondary)">낮은 손실에서 출발</text>
+                            <text x="310" y="30" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--text-muted)">학습을 시작하기 전, 단 한 번의 준비운동</text>
+                            <rect x="20" y="128" width="620" height="34" rx="4" fill="#F86825" fill-opacity="0.07"/>
+                            <text x="330" y="144" text-anchor="middle" font-size="10" fill="#F86825" font-weight="600">역설: 아무것도 배우지 못하는 이 단계가 출발점의 과신을 지워, 이후 학습에서 캘리브레이션을 끌어올립니다.</text>
+                            <text x="330" y="157" text-anchor="middle" font-size="9" style="fill:var(--text-muted)">출처: Cheon &amp; Paik, Nature Machine Intelligence (2026)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ 노이즈 사전학습 프로토콜의 흐름 — 페블러스 원본 도식 | 출처: Cheon &amp; Paik (2026)</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기에 이 방법의 역설이 있습니다. 노이즈 단계에서 손실은 꾸준히 내려가지만, 정확도는 끝까지 우연 수준에 머뭅니다. 당연합니다. 애초에 배울 규칙이 없으니까요. 모델은 아무것도 학습하지 못합니다. 그런데 바로 그 헛수고가 초기화에 새겨져 있던 확신의 쏠림을 흩어 놓습니다. 준비운동을 마친 뒤 다시 클래스 편향을 검정하면 P=0.429 — 편향이 통계적으로 사라진 상태에서 진짜 학습을 시작하게 됩니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 접근이 기존 캘리브레이션 방법들과 근본적으로 다른 지점이 여기입니다. 널리 쓰이는 방법들은 대부분 학습이 끝난 뒤나 추론하는 순간에 확신을 사후 보정합니다. 출발선에 남은 편향은 그대로 둔 채 결과만 손보는 셈입니다. 반면 노이즈 준비운동은 학습이 시작되기 전, 원인이 생기는 바로 그 자리에서 편향을 지웁니다.
+                    </p>
+
+                    <div class="table-wrap overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading">방법</th>
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading">개입 시점</th>
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading">특징과 대가</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3 font-semibold">온도 스케일링</td>
+                                    <td class="py-3 px-3">학습 후 (사후)</td>
+                                    <td class="py-3 px-3">로짓을 온도 값으로 나눠 확신을 눅인다. 별도 검증셋과 하이퍼파라미터가 필요하다.</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3 font-semibold">라벨 스무딩</td>
+                                    <td class="py-3 px-3">학습 중</td>
+                                    <td class="py-3 px-3">정답 라벨을 부드럽게 만든다. 강도를 잘못 잡으면 이번엔 과소확신으로 기운다.</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3 font-semibold">MC 드롭아웃</td>
+                                    <td class="py-3 px-3">추론 시</td>
+                                    <td class="py-3 px-3">여러 번 추론해 불확실성을 추정한다. 추론 비용이 여러 배로 늘어난다.</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-3 font-semibold" style="color: #F86825;">노이즈 사전학습</td>
+                                    <td class="py-3 px-3" style="color: #F86825;">초기화 단계</td>
+                                    <td class="py-3 px-3">학습 시작 전 단 한 번. 사후 처리가 필요 없고, 학습 루틴에 한 단계를 더할 뿐이다.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="evidence" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">수치가 확인해 준 것</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        발상이 아무리 그럴듯해도 숫자가 받쳐 주지 않으면 이야기에 그칩니다. 연구진은 CIFAR-10 데이터의 일부(4,000장)와 6개 층 신경망으로 실험했습니다. 노이즈 준비운동을 거친 모델은 캘리브레이션 오차(ECE)가 통계적으로 유의하게 줄었고(윌콕슨 순위합 검정, P&lt;10⁻³), 이 효과는 2개 층부터 6개 층까지 모든 깊이와 여러 데이터 크기에서 일관되게 나타났습니다. 특정 세팅에서 우연히 잘된 결과가 아니라는 뜻입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        메타인지가 가장 선명하게 드러난 곳은 낯선 입력을 만났을 때였습니다. CIFAR-10으로 학습한 모델에게 전혀 다른 SVHN 이미지를 보여 주는 분포 밖(OOD) 테스트에서, 준비운동을 하지 않은 모델은 처음 보는 입력에도 높은 확신을 유지했습니다. 반면 준비운동을 거친 모델은 그런 낯선 입력 앞에서 확신을 우연 수준으로 낮췄습니다(P&lt;10⁻³). 아는 것과 모르는 것을 구분하는 능력을 정량으로 재는 AUROC 역시 유의하게 올랐습니다. 2차원 장난감 모델에서 확신 지도를 그려 보면 차이가 눈에 보입니다. 준비운동 전에는 특정 영역에 확신이 뭉쳐 있던 것이, 준비운동 뒤에는 입력 공간 전체에 고르게 낮은 확신으로 펼쳐졌습니다 — 모르는 곳에서는 겸손해진 것입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실무자가 가장 먼저 던지는 질문은 대개 이것입니다. 그 대가로 정확도를 잃는 것 아니냐고요. 결과는 그렇지 않았습니다. 준비운동을 거친 모델은 더 낮은 손실에서 학습을 시작했고, 최종 정확도는 같거나 오히려 더 높았습니다. 캘리브레이션과 정확도를 맞바꾸는 흔한 딜레마가 여기서는 나타나지 않은 것입니다. 확신을 정직하게 만드는 일이 성능을 깎아먹지 않았다는 점이, 이 방법을 매력적으로 만듭니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            물론 경계도 분명합니다. 실험은 비교적 단순한 이미지 분류와 작은 신경망에 한정되어 있고, 거대 언어 모델처럼 큰 시스템에서 같은 효과가 나는지는 계산 비용 탓에 아직 직접 검증되지 않았습니다. 저자들은 확률 분포를 출력하는 모델이라면 원리가 일반화될 것이라 기대하지만, 그것은 아직 검증되지 않은 가설입니다. 발견의 크기만큼 남은 검증도 큽니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="brain" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">뇌가 태어나기 전에 하던 일</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 아이디어는 어디서 왔을까요. 연구진이 영감을 얻은 곳은 뜻밖에도 태아의 뇌입니다. 생물학적 뇌는 눈을 뜨고 세상을 보기 훨씬 전, 아직 어떤 감각 경험도 하지 못한 태아기부터 이미 스스로 활동을 시작합니다. 시각피질과 청각피질에서 관찰되는 이 태아기 자발적 신경 활동은 통계적으로 무작위 노이즈와 닮아 있습니다. 아무 의미 없어 보이는 이 자발적 발화가, 실은 감각이 들어오기 전에 신경 회로를 미리 다듬어 두는 준비운동이었던 것입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        인공신경망의 노이즈 사전학습은 바로 이 태아기 준비운동을 흉내 낸 것입니다. 저자들은 이 닮음이 단순한 은유를 넘어, 생물학적 뇌가 아는 것과 모르는 것을 구분하는 능력, 곧 메타인지를 어떻게 발달시키는지에 대한 하나의 설명이 될 수 있다고 봅니다. 뇌는 세상을 보기 전에 먼저 자기 자신과 노는 법으로, 모른다는 감각을 위한 자리를 마련해 두는지도 모릅니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note.</strong> 페블러스가 이 연구에서 오래 눈을 두는 지점은 관점의 전환입니다. AI의 과신을 이야기할 때 우리는 대개 데이터를 더 깨끗이, 더 많이 모으는 쪽을 먼저 떠올립니다. 그런데 이 연구는 같은 데이터라도 학습의 순서를 바꾸는 것만으로 모델의 정직함이 달라진다는 것을 보여 줍니다. 데이터 품질과 학습 레시피는 대립하는 선택지가 아니라 함께 가는 한 쌍입니다. 신뢰할 수 있는 AI를 만들려면, 무엇을 먹이느냐만큼이나 어떤 순서로 먹이느냐를 물어야 합니다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6 mt-8">
+                        틀리면서도 당당한 AI를 우리는 오래 데이터의 잘못으로만 읽어 왔습니다. 이 연구는 그 시선을 학습이 시작되기 전, 아무도 들여다보지 않던 출발선으로 옮겨 놓습니다. 다음에 어떤 모델이 스스로 확신에 차 답을 내놓을 때, 그 확신이 정말 배움에서 온 것인지 아니면 태어날 때부터 지니고 있던 버릇인지 한 번쯤 되물어 볼 만합니다. 끝까지 읽어 주셔서 고맙습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>(주)페블러스 데이터 커뮤니케이션팀</strong><br>
+                        <span class="themeable-muted text-sm">2026년 7월 8일</span>
+                    </p>
+                </section>
+
+                <!-- FAQ (PebblousPage.init faqs[]가 렌더링) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <!-- Citation Download -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">
+                            RIS
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">R.1</span>학술 논문</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Cheon, J., &amp; Paik, S.-B. (2026). "<a href="https://www.nature.com/articles/s42256-026-01215-x" target="_blank" rel="noopener">Brain-inspired warm-up training with random noise for uncertainty calibration</a>." <span class="italic-en" style="font-weight:600;">Nature Machine Intelligence</span>.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Cheon, J., &amp; Paik, S.-B. (2024). "<a href="https://arxiv.org/abs/2412.17411" target="_blank" rel="noopener">Pretraining with random noise for uncertainty calibration</a>." arXiv:2412.17411.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Cheon, J., Lee, S. W., &amp; Paik, S.-B. (2024). "<a href="https://neurips.cc/virtual/2024/poster/96093" target="_blank" rel="noopener">Pretraining with random noise for fast and robust learning without weight transport</a>." <span class="italic-en" style="font-weight:600;">Advances in Neural Information Processing Systems 37 (NeurIPS 2024)</span>, 13748–13768.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">R.2</span>배경 문헌</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">4.</span><span class="ref-body">Guo, C., Pleiss, G., Sun, Y., &amp; Weinberger, K. Q. (2017). "<a href="https://arxiv.org/abs/1706.04599" target="_blank" rel="noopener">On calibration of modern neural networks</a>." <span class="italic-en" style="font-weight:600;">ICML</span>. [온도 스케일링의 원조 논문]</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/citation-download.js?v=20260708" defer></script>
+    <script src="/scripts/common-utils.js?v=20260708"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-05T21:57:38.184Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-05T22:08:36.983Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1783288658184-8oo23h",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-08T03:09:23.915Z"
+            },
+            mainTitle: "노이즈로 훈련한 신경망이 자신의 과신을 교정했다",
+            subtitle: "데이터가 아니라 초기화 방식이 만든 과신 — KAIST가 Nature Machine Intelligence에 발표한 노이즈 사전학습 연구",
+            pageTitle: "신경망 과신의 원인은 랜덤 초기화였다 — 노이즈 사전학습 캘리브레이션 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-08",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/noise-pretrain-calibration/ko/",
+            tags: ["신경망 캘리브레이션", "AI 과신", "불확실성 캘리브레이션", "노이즈 사전학습", "랜덤 초기화", "ECE", "OOD 감지", "뇌과학 딥러닝", "KAIST", "Nature Machine Intelligence"],
+            faqs: [
+                {
+                    question: "캘리브레이션(calibration)이 정확도(accuracy)와 어떻게 다른가요?",
+                    answer: "정확도는 모델이 얼마나 자주 맞히느냐를 재고, 캘리브레이션은 모델이 말하는 확신이 얼마나 정직하냐를 잽니다. 잘 보정된 모델이라면 확신 80%라고 말한 예측들 가운데 실제로 약 80%가 맞아야 합니다. 정확도가 높아도 캘리브레이션이 나쁘면, 그 확신을 믿고 내리는 결정이 위험해집니다."
+                },
+                {
+                    question: "'과신의 원인이 초기화'라는 게 정확히 무슨 뜻인가요?",
+                    answer: "데이터를 하나도 보지 않은, 갓 랜덤 초기화된 신경망의 출력을 살펴보면 이미 특정 클래스로 확신이 쏠려 있습니다. 배운 것이 없는데도 어떤 답을 다른 답보다 자신 있게 내놓는 것입니다. 이 편향은 일원분산분석에서 통계적으로 뚜렷했고(P 값 0.001 미만), 학습이 끝난 뒤에도 살아남아 최종 모델의 과신으로 이어집니다."
+                },
+                {
+                    question: "노이즈 사전학습은 어떻게 하는 건가요?",
+                    answer: "진짜 데이터로 학습을 시작하기 전에, 가우시안 무작위 노이즈를 입력으로 주고 매번 무작위로 뽑은 라벨을 정답으로 삼아 잠깐 학습시킵니다. 입력과 정답 사이에 규칙이 없어 모델은 아무것도 배우지 못하고 정확도는 우연 수준에 머물지만, 이 과정이 초기화에 새겨진 확신의 쏠림을 흩어 놓습니다."
+                },
+                {
+                    question: "아무것도 못 배우는 단계가 왜 도움이 되나요?",
+                    answer: "이 단계의 목적은 지식을 쌓는 것이 아니라 편향을 지우는 것입니다. 노이즈 준비운동을 마친 뒤 클래스 편향을 다시 검정하면 P=0.429로, 통계적으로 편향이 사라진 상태가 됩니다. 그 깨끗한 출발선에서 진짜 학습을 시작하기 때문에 캘리브레이션이 좋아집니다."
+                },
+                {
+                    question: "기존 온도 스케일링이나 라벨 스무딩보다 나은가요?",
+                    answer: "성격이 다릅니다. 온도 스케일링은 학습이 끝난 뒤, MC 드롭아웃은 추론하는 순간에 확신을 사후 보정합니다. 출발선의 편향은 그대로 둔 채 결과만 손보는 셈입니다. 노이즈 사전학습은 원인이 생기는 초기화 단계에서 편향을 지우고, 별도 검증셋이나 추가 추론 비용 없이 학습 루틴에 한 단계를 더할 뿐입니다."
+                },
+                {
+                    question: "캘리브레이션을 얻는 대신 정확도를 잃지는 않나요?",
+                    answer: "실험에서는 그렇지 않았습니다. 노이즈 준비운동을 거친 모델은 더 낮은 손실에서 학습을 시작했고, 최종 정확도는 같거나 오히려 더 높았습니다. 캘리브레이션과 정확도를 맞바꿔야 하는 흔한 딜레마가 여기서는 나타나지 않았습니다."
+                },
+                {
+                    question: "거대 언어 모델(LLM)에도 적용할 수 있나요?",
+                    answer: "아직 직접 검증되지 않았습니다. 실험은 CIFAR-10·SVHN 같은 이미지 분류와 작은 신경망에 한정되어 있습니다. 저자들은 확률 분포를 출력하는 모델이라면 원리가 일반화될 것이라 기대하지만, 대규모 시스템에서의 검증은 계산 비용 때문에 앞으로의 과제로 남아 있습니다."
+                },
+                {
+                    question: "이 연구가 페블러스의 데이터 품질 관점과 어떻게 이어지나요?",
+                    answer: "AI의 과신을 이야기할 때 우리는 대개 데이터를 더 깨끗이, 더 많이 모으는 쪽을 먼저 떠올립니다. 이 연구는 같은 데이터라도 학습의 순서를 바꾸는 것만으로 모델의 정직함이 달라진다는 것을 보여 줍니다. 데이터 품질과 학습 레시피는 대립하는 선택지가 아니라 함께 가는 한 쌍이며, 신뢰할 수 있는 AI는 무엇을 먹이느냐와 어떤 순서로 먹이느냐를 함께 물을 때 만들어집니다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
