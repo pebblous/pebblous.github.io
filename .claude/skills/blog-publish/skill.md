@@ -94,11 +94,18 @@ Article 필수 필드(사이드카 = 이 객체 그대로):
   "category": "tech|business|story|art",
   "published": true,
   "featured": false,
-  "description": "[150자 설명]",
+  "description": "[HTML <meta name=\"description\">의 값을 그대로 복사]",
   "image": "",
   "tags": []
 }
 ```
+
+**⛔ `title`·`description`은 복사이지 창작이 아니다** (2026-07-08 확정 — 이중 생성 금지):
+- `title` = HTML config의 `mainTitle` **그대로**
+- `description` = HTML `<meta name="description">` content **그대로** (새로 쓰지 않는다)
+- 이유: 같은 정보를 publish 단계에서 다시 지으면 meta와 카드가 미묘하게 표류한다
+  (실사례 2026-07: 한쪽 "데이터 품질이 아니라"/다른쪽 "데이터가 아니라", 끝맺음 문장 상이).
+  description의 유일한 생성 지점은 blog-write의 SEO 4계층 — 스타일 기준도 그쪽에 있다.
 
 #### `provenance` 필드 (증적 — Engine 자율 운영 시 필수)
 
