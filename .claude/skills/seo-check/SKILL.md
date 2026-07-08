@@ -16,11 +16,12 @@ When this skill is invoked:
 
 4. **Check all 4 SEO layers** and report pass/fail for each (skip layers marked N/A for noindex pages):
 
-   **Layer 0 — Title Quality** (참조: `docs/title-strategy.md`):
-   - `pageTitle` (`<title>`) ≠ `mainTitle` (h1) — 같으면 WARN: "SEO 제목과 본문 제목의 역할이 다릅니다. 분리를 권장합니다."
+   **Layer 0 — Title Quality** (참조: `docs/title-strategy.md` §0 보도기사·매거진 정본):
+   - `pageTitle`은 `mainTitle`의 **검색 변형**인가 — 완전 동일이면 WARN(키워드 보강 기회 상실), 전혀 다른 이야기면 WARN(슬롯 표류)
    - `pageTitle` 핵심 키워드가 앞쪽 1/3에 위치하는가?
-   - `mainTitle` 20-40자, 키워드 나열이 아닌 감성 후킹인가?
-   - `subtitle`에 mainTitle에 없는 보조 키워드가 포함되었는가?
+   - `mainTitle` 20-40자, **보도 헤드라인**인가 — 사실을 완결 구문으로, 전자신문/경향신문 지면에 실려도 자연스러운가? (감성 장치·키워드 나열 모두 감점)
+   - 세 슬롯 모두 **따옴표("...")·대조공식·줄표 동격 없음** (§0 전 슬롯 공통 금지)
+   - `subtitle`은 리드문인가 — mainTitle에 없는 보조 키워드 포함, mainTitle 동격 재진술 아님
    - EN 제목이 KO 직역이 아닌가? (bilingual 시)
 
    **Layer 1 — Meta Tags**:

@@ -68,14 +68,15 @@ agent-browser eval "document.querySelector('meta[http-equiv=\"content-language\"
 
 | 슬롯 | 기준 | 글자 수 |
 |------|------|---------|
-| `pageTitle` | 핵심 키워드 앞배치 + 구체적 약속 + ` \| 페블러스` | 50-60자 |
-| `mainTitle` | 감성 후킹 (은유/선언/대조) — 키워드 나열 금지 | 20-40자 |
-| `subtitle` | 맥락 보충 + mainTitle에 없는 보조 키워드 | 30-60자 |
+| `pageTitle` | mainTitle의 **검색 변형** — 핵심 키워드 앞배치 + 구체적 약속 + ` \| 페블러스` | 50-60자 |
+| `mainTitle` | **보도 헤드라인** (전자신문/경향신문 결, 고급 매거진 톤) — 사실을 완결 구문으로. 완결 명사구 기본, 동사 종결은 발견일 때만 (`docs/title-strategy.md` §0·§3) | 20-40자 |
+| `subtitle` | **리드문** — 누가·무엇을·왜 한 줄 + mainTitle에 없는 보조 키워드 | 30-60자 |
 
 3. **검증 체크**:
-   - [ ] `pageTitle ≠ mainTitle` (역할이 다르므로 반드시 다른 문장)
+   - [ ] `pageTitle`은 mainTitle의 검색 변형인가 — **같은 사실**, 검색자의 언어. 완전 동일도, 억지 신규 문장 발명도 금지 (title-strategy §0)
    - [ ] `pageTitle` 앞쪽 1/3에 핵심 키워드
-   - [ ] `mainTitle` 소리 내어 읽었을 때 자연스러운가?
+   - [ ] 세 슬롯 모두 따옴표("...")·대조공식("A가 아니라 B")·줄표 동격 없음 (§0 전 슬롯 공통 금지)
+   - [ ] `mainTitle` 소리 내어 읽었을 때 — 전자신문/경향신문 지면에 실려도 자연스러운가?
    - [ ] EN 제목은 한국어 직역이 아닌 영어 검색 의도에 맞게 재작성
 
 4. **EN 제목** (bilingual 시): 한국어 제목을 번역하지 말고, 영어 검색 의도에 맞게 별도 작성. Title Case 적용.
@@ -84,9 +85,9 @@ agent-browser eval "document.querySelector('meta[http-equiv=\"content-language\"
 
 ```javascript
 PebblousPage.init({
-  mainTitle: "메인 제목",          // REQUIRED — h1에 렌더링 (감성 후킹)
-  subtitle: "부제목",              // REQUIRED — h1 아래 (맥락 + 보조 키워드)
-  pageTitle: "제목 | 페블러스",    // <title> 태그용 (SEO 키워드 중심)
+  mainTitle: "메인 제목",          // REQUIRED — h1에 렌더링 (보도 헤드라인)
+  subtitle: "부제목",              // REQUIRED — h1 아래 (리드문 + 보조 키워드)
+  pageTitle: "제목 | 페블러스",    // <title> 태그용 (mainTitle의 검색 변형)
   category: "tech",               // tech|business|art|story
   publishDate: "2026-03-29",
   publisher: "(주)페블러스 데이터 커뮤니케이션팀",
@@ -226,6 +227,12 @@ PebblousPage.init({
 <meta name="twitter:description" content="[설명]">
 <meta name="twitter:image" content="https://blog.pebblous.ai/[path]image/index.png">
 ```
+
+**meta description 작성 기준 (⛔ 여기가 유일한 생성 지점 — 카드/사이드카 description은 이 값을 복사한다):**
+- **보도기사의 리드 문단**처럼: 핵심 사실 → 왜 중요한가, 120-160자, 평서문 2-3문장
+- 따옴표·대조공식·줄표 동격 금지 (title-strategy §0 전 슬롯 공통 금지가 description에도 적용)
+- 제목의 동격 재진술 금지 — 제목이 말한 사실에 **새 정보**(수치·출처·함의)를 더한다
+- 끝맺음은 사실 서술로 — "~입니다/~합니다" 존댓말 유지, 광고 문구("확인하세요", "알아보세요") 금지
 
 ## 콘텐츠 원칙
 
