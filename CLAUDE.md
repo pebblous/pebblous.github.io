@@ -148,6 +148,11 @@ node tools/generate-rss.js            # Regenerate RSS feed
 node tools/generate-sitemap.js        # Regenerate sitemap.xml
 python3 tools/generate-llms-txt.py  # Regenerate llms.txt (AI crawler index)
 
+# HTML-중립 본문 원고 (index.md) — 출간 후 인간 수정용
+python3 tools/extract-manuscript.py <path/index.html>   # 옆에 index.md 역추출
+python3 tools/extract-manuscript.py <글-디렉토리>          # ko/en index.html 일괄
+python3 tools/extract-manuscript.py <path> --stdout      # 저장 대신 미리보기
+
 # OG image generation
 node tools/generate-og-image.js --from-html <path.html>  # Auto-extract title/subtitle/theme
 node tools/generate-og-image.js --from-html <path.html> --force  # Regenerate existing
@@ -288,6 +293,16 @@ New HTML article
 - `PebblousPage.init(config)`의 config가 렌더링 시점에 사용 (fetch 없이 즉시)
 - `tools/scan-articles-meta.py`가 HTML → articles.json 동기화 보장
 - HTML에 메타 하드코딩 금지 — JS가 config에서 동적 생성
+
+**본문 원고 (index.md) — 출간 후 인간 수정용** (설계 2026-07-08):
+- 발행 글의 각 언어 폴더(`ko/`, `en/`)에는 `index.html`과 함께 **HTML-중립 Markdown 원고 `index.md`**가 있다.
+- 목적: 발행 HTML은 PebblousPage 컨벤션(number-badge, key-insight, Stat Card, 인라인 SVG 차트)이 뒤섞여
+  사람이 본문만 고치기 어렵다. `index.md`는 badge/callout/표/이미지를 MD 및 확장 표기(`> [!callout]`,
+  `<!-- stat-card -->`)로 담은 깨끗한 본문이라, **출간 후 문안 수정은 이 파일에서** 하는 것을 원칙으로 한다.
+- 생성: 엔진 파이프라인의 결정론적 `manuscript` phase가 `publish-prep` **직전**에 최종 HTML→MD로 역추출.
+  HTML 생성 경로는 건드리지 않는 순수 역추출이라 회귀 위험이 없다. 수동 실행은 `tools/extract-manuscript.py`.
+- ⚠️ 방향: **HTML이 여전히 렌더링 대상(source of truth for the live site)**, `index.md`는 사후 편집 편의를 위한
+  동반 원고다. index.md를 고쳤다면 HTML에도 반영해야 라이브에 나간다(자동 MD→HTML 재생성은 아직 없음).
 
 **articles.json structure** — MUST be a wrapper object, NEVER a bare array:
 ```json
