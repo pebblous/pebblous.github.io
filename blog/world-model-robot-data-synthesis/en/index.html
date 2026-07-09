@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>Alibaba's RynnWorld-Teleop Synthesizes Robot Training Data from Hand Motion Alone | Pebblous</title>
+    <meta name="description" content="Alibaba DAMO's RynnWorld-Teleop synthesizes robot-view video from hand motion alone, no robot needed. A synthetic-only policy hit 82.86% on block pushing.">
+    <meta name="keywords" content="world model, robot data, robot training data synthesis, teleoperation, digital teleoperation, RynnWorld-Teleop, Physical AI, embodiment gap, sim-to-real, synthetic data, VLA, data quality, Alibaba DAMO">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/world-model-robot-data-synthesis/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/world-model-robot-data-synthesis/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/world-model-robot-data-synthesis/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/world-model-robot-data-synthesis/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="A World Model That Synthesizes Robot Training Data from Hand Motion Alone">
+    <meta property="og:description" content="Alibaba DAMO's real-time generative model builds demonstration data without any physical robot hardware. We examine how far a policy trained on synthetic data alone actually works.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/world-model-robot-data-synthesis/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/world-model-robot-data-synthesis/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-07-10">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="A World Model That Synthesizes Robot Training Data from Hand Motion Alone">
+    <meta name="twitter:description" content="Alibaba DAMO's research synthesizes robot-view demonstration video in real time from a hand-motion stream, with no real robot — down to the question of how authentic synthetic robot data is.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/world-model-robot-data-synthesis/en/image/index.png">
+    <meta name="twitter:image:alt" content="A concept diagram of digital teleoperation, where human hand motion turns into robot-view video">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="Alibaba's RynnWorld-Teleop Synthesizes Robot Training Data from Hand Motion Alone">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/07/10">
+    <meta name="citation_online_date" content="2026/07/10">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260710">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260710">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260710">
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">Manipulation Video Made Without a Single Robot Arm</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">How Hand Motion Becomes Robot Video</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">The Numbers: What Works and What Doesn't</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">Authenticity as a New Quality Axis</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The old bottleneck in robot learning was never the model — it was the data. Training a single policy means a person has to teleoperate a robot to collect demonstrations, and each of those demonstrations is bound entirely to a specific piece of robot hardware and to human time. RynnWorld-Teleop, released by Alibaba DAMO Academy in July 2026, breaks that chain from a different angle. A person wears only trackers and a data glove and moves their hands; a robot-centric generative world model synthesizes, in real time, the point-of-view video of "what it would look like if that robot performed the same motion." Not a single physical robot arm ever runs.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The effect was most pronounced in precise manipulation. Mixing 300 synthetic demonstrations into 300 real ones lifted the lid-placement success rate from 42.86% to 62.86%, a 20-point jump, and a synthetic-only policy that used zero real data still recorded 82.86% on block pushing. The authors, however, drew their own lines: complex physical phenomena such as fluid dynamics and highly deformable objects remain hard to generate, and the embodiment gap still varies from one robot platform to the next.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            This article traces the path from a hand-motion stream to robot-view video, and asks what those numbers prove and what they do not. As we cross from an era of collecting data into an era of generating it, the definition of quality shifts from label accuracy toward authenticity and physical consistency — and we look at how. It is the latest case in the bottleneck our <a href="/project/PhysicalAI/en/" class="text-orange-500 hover:text-orange-400 font-semibold">Physical AI</a> data series has tracked.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">40+ FPS</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Real-time generation</p>
+                            <p class="text-xs themeable-muted mt-1">Hand motion to robot-view video on a single H100</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">Zero</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Real robot data</p>
+                            <p class="text-xs themeable-muted mt-1">Condition of the zero-shot synthetic-only policy</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">82.86%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Zero-shot success</p>
+                            <p class="text-xs themeable-muted mt-1">Block pushing, trained on synthetic data alone</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">+20pp</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Precise manipulation</p>
+                            <p class="text-xs themeable-muted mt-1">Lid placement 42.86%→62.86% with mixed data</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Manipulation Video Made Without a Single Robot Arm</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In the video, a two-armed robot picks up an apple and a banana, pushes blocks in sequence, and lifts a cushion with both arms. Yet the person who produced that motion was nowhere near a robot. Wearing HTC Vive trackers on the chest and both wrists and upper arms, and Manus data gloves, they simply moved their hands through the air. The footage that looks like a robot at work was <strong>drawn in real time by a generative world model</strong>. Alibaba DAMO Academy calls this "digital teleoperation": the operator teleoperates a model instead of a real robot.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Why this matters becomes clear once you see how robot training data is actually made. Training a robot policy such as a VLA (Vision-Language-Action) model requires large volumes of demonstration data that says "in this situation, the robot moved like this." But those demonstrations have to be built one at a time by a person teleoperating a robot, and even an expert struggles to exceed a few dozen an hour. Worse, the data collected that way is tied to that robot, that gripper, that camera placement — change the hardware and you start over. The real bottleneck in robot learning was never model performance; it was <strong>the fact that demonstration collection depends on human time and specific hardware</strong>.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/img-01-teleop-paradigm.jpg"
+                             alt="Comparison of physical teleoperation and digital teleoperation paradigms — from hardware dependency to real-time synthesis"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Physical teleoperation (top) is bound to hardware, workspace, and manual resets; digital teleoperation (bottom) renders hand motion as a skeleton and generates synthetic data in real time | Source: <a href="https://arxiv.org/abs/2607.06558" target="_blank" rel="noopener" class="underline">Zhao et al., arXiv:2607.06558</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            What RynnWorld-Teleop changes is clear. Human hand motion is still needed, but the part that turns that motion into demonstration video moves from a physical robot to a generative model. The physical constraint — one robot can produce only one demonstration at a time — becomes a software problem, where a model can churn out demonstrations from many combinations of reference images and hand motions.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">How Hand Motion Becomes Robot Video</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Human hands and robot hands look different. So if you render the signal "the person moved their hand like this" directly onto the screen, you get a <strong>human hand</strong>, not a robot demonstration. That is exactly the problem RynnWorld-Teleop solves. The model takes a single reference image (that robot, that scene) and a stream of human hand poses, and predicts the video of the robot performing the motion, from a robot-centric, egocentric viewpoint.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>A Hand Skeleton That Keeps Its Depth</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One key device is depth-aware skeleton conditioning. Render a hand pose as a flat 2D skeleton and feed it to the model, and the distance-to-camera information is flattened away. The researchers adjusted the skeleton's color and radius according to distance from the camera, so that near joints and far joints stay distinguishable on screen — explicitly loading a 3D cue into a 2D signal. As a result, the model does not confuse whether a hand is moving forward or back.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/img-02-depth-skeleton.jpg"
+                             alt="Depth-aware hand skeleton representation — skeleton color and radius adjusted by camera distance, overlaid on the source video"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ The hand skeleton's color and size shift with distance from the camera, embedding 3D depth cues into a 2D rendering | Source: <a href="https://arxiv.org/abs/2607.06558" target="_blank" rel="noopener" class="underline">Zhao et al., arXiv:2607.06558</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>Learn from Human Video, Transfer onto Robot Data</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The model is built on a video Diffusion Transformer and trained in two stages. First, on large-scale egocentric human video (VITRA's 30.7 million frames, EgoDex's 74 million frames), it acquires a physical intuition for "how a scene changes when a hand manipulates an object." Then it is fine-tuned on a small set of paired human-robot data (1,800 episodes of real robot demonstrations) to transfer the same motion onto the robot's body. Finally, a bidirectional teacher model is distilled into a causal student model, yielding real-time generation of 40+ FPS on a single H100 GPU.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/img-03-architecture.jpg"
+                             alt="RynnWorld-Teleop model architecture — VAE encoding, Wan-DiT blocks, and distillation into a causal student model"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Hand motion and video are each VAE-encoded and fused through Wan-DiT blocks, then distilled into causal blocks for real-time, KV-cache-based generation | Source: <a href="https://arxiv.org/abs/2607.06558" target="_blank" rel="noopener" class="underline">Zhao et al., arXiv:2607.06558</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This is where it diverges from prior work. Attempts to turn human video into robot video (Masquerade, Phantom) only transformed observations; they did not generate robot actions. Action-conditioned egocentric world models (such as Hand2World) left the on-screen hand still human, preserving the embodiment gap. RynnWorld-Teleop claims to be the first to satisfy three conditions at once: robot-centric, action-based, and real-time. It is also worth distinguishing from the <a href="/project/AgenticAI/isaac-groot/en/" class="text-orange-500 hover:text-orange-400 font-semibold">GR00T-style approach</a> that expands trajectories with a simulator's physics engine — here, a generative video model shoots the demonstrations instead.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Numbers: What Works and What Doesn't</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Evaluation ran on a TIANJI M6 mobile robot — dual 7-DoF arms topped with two 20-DoF hands (54 DoF in total) — across four tasks: dual picking, sequential block pushing, dual-arm cushion lifting, and precise lid placement. When training mixed 300 synthetic demonstrations into 300 real ones, the success-rate changes were as follows.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/img-04-task-setup.jpg"
+                             alt="The four robot manipulation tasks used in evaluation — dual picking, block pushing, dual-arm cushion lifting, precise lid placement"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Four evaluation tasks on the TIANJI M6 mobile robot — from left, dual picking, block pushing, dual-arm cushion lifting, and precise lid placement | Source: <a href="https://arxiv.org/abs/2607.06558" target="_blank" rel="noopener" class="underline">Zhao et al., arXiv:2607.06558</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Task</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">300 real</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">300 real + 300 synthetic</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Dual picking (apple, banana)</td>
+                                    <td class="py-3 pr-4">94.29%</td>
+                                    <td class="py-3 pr-4">97.14%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Dual-arm cushion lifting</td>
+                                    <td class="py-3 pr-4">94.29%</td>
+                                    <td class="py-3 pr-4">100%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Precise lid placement</td>
+                                    <td class="py-3 pr-4">42.86%</td>
+                                    <td class="py-3 pr-4">62.86%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Two things stand out. First, tasks the robot already did well (picking, lifting) rose slightly, but the hard task — precise lid placement — jumped 20 points. Synthetic data pays off most where real demonstrations are scarce, as in fine manipulation. Second, even when a π₀ policy was trained on synthetic demonstrations alone, with zero real data, it recorded 82.86% on block pushing and 77.14% on dual-arm lifting — evidence that "a policy runs even on data made without a real robot." The world model's own generation quality improved over competing models, at PSNR 26.78 and FVD 550.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/img-05-qualitative-results.jpg"
+                             alt="The same hand-motion stream synthesized into both a human-view and a robot-view video, side by side"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ One hand-motion stream synthesized into both a human-view and a robot-view video — pretraining on large-scale human video transfers into robot execution | Source: <a href="https://arxiv.org/abs/2607.06558" target="_blank" rel="noopener" class="underline">Zhao et al., arXiv:2607.06558</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        But it is just as important to be clear about what these numbers do not prove. The results are confined to four tasks and one robot platform. The authors acknowledged two limits directly. One is that generation remains fragile for complex physical phenomena such as fluid dynamics or heavily deforming objects; the other is that closing the embodiment gap still relies on per-platform fine-tuning. Scaling to an entire robot fleet needs further work, and the researchers themselves named the next task: a "cross-embodiment foundation world model conditioned on robot kinematics."
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            In short, RynnWorld-Teleop gave a positive answer, under controlled conditions, to the question of how far synthetic robot data can replace or augment real data. At the same time, it left open the question of how physically valid that synthetic data is. It is a signal that the success-rate table needs a new column beside it: physical consistency.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Authenticity as a New Quality Axis</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On the text side, this is a transition we have already lived through. As synthetic data grew in language-model training, the quality question moved from "is the label correct?" to "does this data represent the real world?" When the loop of training models on model-generated data compounds, the distribution narrows and the distance from the original world quietly widens. Robot data now stands at the same threshold. The difference is that in robotics, that "real world" is the laws of physics.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In an era of collecting data, quality was measured by label accuracy, missing-value rates, and class balance. In an era of generating data, two more axes attach. The first is <strong>authenticity</strong>: does a synthesized demonstration represent the data a real robot would plausibly have produced? The second is <strong>physical consistency</strong>: does that demonstration respect physics such as gravity, friction, and contact? RynnWorld-Teleop raising the lid-placement success rate is progress on the first axis; admitting fragility with fluids and deformable objects is a confession that the second axis is still empty.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This frame extends the questions Pebblous has worked through in its discussions of the <a href="/report/korea-physical-ai-behavior-data/en/" class="text-orange-500 hover:text-orange-400 font-semibold">behavioral data bottleneck</a> and the <a href="/blog/prometheus-physical-ai-data-moat/en/" class="text-orange-500 hover:text-orange-400 font-semibold">physical data moat</a>. The more a path opens to generating data without capital, the more verifying whether that data represents the real thing becomes the new bottleneck. What the next generation of data-quality frameworks must answer is not the accuracy of a label, but the ability to pinpoint where a generated demonstration diverges from reality.
+                    </p>
+                </section>
+
+                <!-- FAQ Section -->
+                <section id="faq" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">?</span>
+                        <h2 class="text-3xl font-bold themeable-heading">FAQ</h2>
+                    </div>
+                    <!-- PebblousPage renders FAQs here from config.faqs -->
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            RIS
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">R.1</span>Academic Papers</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Zhao, H. et al. (2026). "<a href="https://arxiv.org/abs/2607.06558" target="_blank" rel="noopener">RynnWorld-Teleop: An Action-Conditioned World Model for Digital Teleoperation</a>." arXiv:2607.06558. Alibaba DAMO Academy.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Alibaba DAMO Academy. (2026). "<a href="https://arxiv.org/html/2607.06559v1" target="_blank" rel="noopener">RynnWorld-4D: A 4D Embodied World Model</a>." arXiv:2607.06559.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Lepert, M., Fang, J., Bohg, J. (2025). "<a href="https://arxiv.org/abs/2503.00779" target="_blank" rel="noopener">Phantom: Training Robots Without Robots Using Only Human Videos</a>." arXiv:2503.00779.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Lepert, M., Fang, J., Bohg, J. (2025). "<a href="https://arxiv.org/abs/2508.09976" target="_blank" rel="noopener">Masquerade: Learning from In-the-wild Human Videos using Data-Editing</a>." arXiv:2508.09976.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Wang, Y. et al. (2026). "<a href="https://arxiv.org/abs/2602.09600" target="_blank" rel="noopener">Hand2World: Autoregressive Egocentric Interaction Generation via Free-Space Hand Gestures</a>." arXiv:2602.09600.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Xie, L. et al. (2026). "<a href="https://arxiv.org/abs/2602.18422" target="_blank" rel="noopener">Generated Reality: Human-centric World Simulation using Interactive Video Generation with Hand and Camera Control</a>." arXiv:2602.18422.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">R.2</span>Industry & Press</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">7.</span><span class="ref-body">Tech Times. (2026-07-09). "<a href="https://www.techtimes.com/articles/319971/20260709/alibaba-robot-world-model-predicts-geometry-motion-before-each-move.htm" target="_blank" rel="noopener">Alibaba Robot World Model Predicts Geometry, Motion Before Each Move</a>." Tech Times.</span></li>
+                    </ul>
+                </section>
+
+                <!-- Closing -->
+                <section class="mb-16 fade-in-card">
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A single paper like RynnWorld-Teleop does not make the robot-data bottleneck disappear. But the same team released the 4D embodied world model RynnWorld-4D within a day, and back in February it had unveiled RynnBrain, a Qwen3-VL-based cognition model. Seeing the layers stacked in sequence — cognition (RynnBrain), prediction (RynnWorld-4D), teleoperation (RynnWorld-Teleop) — it becomes clear this is one company's roadmap. The shift of robot data from hardware to software has already begun.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Thanks for reading. If you have thoughts or questions on how to verify the authenticity of synthetic robot data, we would love to hear them.
+                    </p>
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>Pebblous Data Communication Team</strong><br>
+                        <span class="themeable-muted text-sm">July 10, 2026</span>
+                    </p>
+                </section>
+
+                <!-- Hub Series Notice -->
+                <div class="themeable-card rounded-xl p-6 mt-8 mb-8" style="border-left: 4px solid #F86825;">
+                    <p class="text-sm font-bold themeable-heading mb-2">📚 Physical AI Series</p>
+                    <p class="text-sm themeable-text leading-relaxed">
+                        This article is part of the series curated at <a href="/project/PhysicalAI/en/" class="text-orange-500 hover:text-orange-400 font-semibold">Physical AI</a> — from how a robot sees, understands, and acts, to the data, simulation, models, and industry landscape, read together in one place.
+                    </p>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260710"></script>
+    <script src="/scripts/citation-download.js?v=20260710" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-09T19:27:45.971Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-09T19:36:59.465Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1783625265971-05lq2t",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-09T20:09:12.611Z"
+            },
+            mainTitle: "A World Model That Synthesizes Robot Training Data from Hand Motion Alone",
+            subtitle: "Alibaba DAMO's real-time generative model that builds demonstration data without physical robot hardware",
+            pageTitle: "Alibaba's RynnWorld-Teleop Synthesizes Robot Training Data from Hand Motion Alone | Pebblous",
+            category: "tech",
+            publishDate: "2026-07-10",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/world-model-robot-data-synthesis/en/",
+            tags: ["Physical AI", "world model", "robot data", "teleoperation", "embodiment gap", "sim-to-real", "synthetic data", "VLA", "data quality", "Alibaba DAMO"],
+            faqs: [
+                {
+                    question: "What is digital teleoperation?",
+                    answer: "It is an approach where the operator teleoperates a generative world model instead of a real robot. As a person moves their hands with trackers and a data glove, a robot-centric generative model synthesizes, in real time, the point-of-view video of that robot performing the same motion. No physical robot hardware runs."
+                },
+                {
+                    question: "Who created RynnWorld-Teleop?",
+                    answer: "It is research from Alibaba DAMO Academy, released in July 2026. It was published as arXiv:2607.06558 and, together with RynnWorld-4D released a day earlier, forms part of DAMO's embodied world model lineup."
+                },
+                {
+                    question: "How does human hand motion turn into robot video?",
+                    answer: "The model takes a single reference image and a stream of human hand poses. Depth-aware skeleton conditioning loads 3D distance cues onto a 2D hand skeleton; after pretraining on large-scale human video, it is fine-tuned on paired human-robot data to transfer the motion onto the robot's body. It closes the shape difference between human and robot hands — the embodiment gap — in this process."
+                },
+                {
+                    question: "Does a policy trained on synthetic data alone actually work?",
+                    answer: "It worked under controlled conditions. Trained on synthetic demonstrations alone, with zero real robot data, a π₀ policy recorded zero-shot success rates of 82.86% on block pushing and 77.14% on dual-arm lifting. That said, these results are confined to four tasks and one robot platform."
+                },
+                {
+                    question: "Why is synthetic data especially effective for precise manipulation?",
+                    answer: "The harder the task — where real demonstrations are scarce and success rates are low — the greater the augmentation payoff. Mixing 300 synthetic into 300 real raised precise lid placement from 42.86% to 62.86%, a 20-point jump, while the already-strong picking task rose only slightly."
+                },
+                {
+                    question: "What are the limitations of this approach?",
+                    answer: "The authors acknowledged two directly. First, generation remains fragile for complex physical phenomena such as fluid dynamics or heavily deforming objects. Second, closing the embodiment gap relies on per-platform fine-tuning, so scaling to an entire robot fleet needs further work."
+                },
+                {
+                    question: "How does it differ from prior human-to-robot video conversion research?",
+                    answer: "Work such as Masquerade and Phantom only transformed observations rather than generating robot actions, and action-conditioned world models like Hand2World left the on-screen hand still human, preserving the embodiment gap. RynnWorld-Teleop claims to be the first to satisfy three conditions at once: robot-centric, action-based, and real-time."
+                },
+                {
+                    question: "How does it differ from simulator-based synthesis such as GR00T?",
+                    answer: "Approaches like GR00T Blueprint use a physics-engine simulator to expand a handful of demonstrations into large trajectory sets. RynnWorld-Teleop uses a generative video model — not a physics engine — to directly render robot-view video. The idea of producing large synthetic sets from little real data is similar, but the engine that makes the data is different."
+                },
+                {
+                    question: "What question does this research raise from a data-quality perspective?",
+                    answer: "As we cross from an era of collecting data into one of generating it, the definition of quality changes. Beyond label accuracy and missing-value rates, two new axes emerge: whether a synthetic demonstration represents the real thing (authenticity) and whether it avoids violating physics (physical consistency). It is the robot version of the synthetic-data contamination debate in text."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
