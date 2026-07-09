@@ -108,15 +108,16 @@ def eval_pagetitle(t: str):
 
 
 CONFIG_FIELD = {
+    'mainTitle': re.compile(r'mainTitle:\s*"((?:\\.|[^"\\])*)"'),
     'subtitle': re.compile(r'subtitle:\s*"((?:\\.|[^"\\])*)"'),
     'pageTitle': re.compile(r'pageTitle:\s*"((?:\\.|[^"\\])*)"'),
 }
 
 
 def extract_config(repo: str, path_rel: str):
-    """글 HTML의 PebblousPage.init config에서 subtitle/pageTitle 추출 (없으면 빈 값)."""
+    """글 HTML의 PebblousPage.init config에서 mainTitle/subtitle/pageTitle 추출 (없으면 빈 값)."""
     html_path = os.path.join(repo, path_rel.rstrip('/'), 'index.html')
-    out = {'subtitle': '', 'pageTitle': ''}
+    out = {k: '' for k in CONFIG_FIELD}
     try:
         with open(html_path, encoding='utf-8') as f:
             txt = f.read()
@@ -139,13 +140,51 @@ def reason_text(labels, score):
     return '§0 위반: ' + ' · '.join(labels)
 
 
+# 게이트 판정 임계: 슬롯 점수 ≤ GATE_FAIL_MAX 면 하드 위반(따옴표/대조/줄표·콜론/미끼 등 1개 이상).
+# 소프트 감점(동사 종결 확인·길이)만 있으면 8~9점이라 통과한다.
+GATE_FAIL_MAX = 7
+
+
+def check_html(html_file: str) -> dict:
+    """단일 HTML의 3슬롯 게이트 판정 — 발행 파이프라인 title-gate phase가 호출.
+    반환: {file, ok, slots:{mainTitle|subtitle|pageTitle: {value, score, labels}}} (빈 슬롯은 생략)."""
+    with open(html_file, encoding='utf-8') as f:
+        txt = f.read()
+    vals = {}
+    for k, rx in CONFIG_FIELD.items():
+        m = rx.search(txt)
+        vals[k] = m.group(1) if m else ''
+    evals = {
+        'mainTitle': eval_maintitle,
+        'subtitle': eval_subtitle,
+        'pageTitle': eval_pagetitle,
+    }
+    slots, ok = {}, True
+    for k, fn in evals.items():
+        if not vals[k]:
+            continue
+        score, labels = fn(vals[k])
+        slots[k] = {'value': vals[k], 'score': score, 'labels': labels}
+        if score <= GATE_FAIL_MAX:
+            ok = False
+    return {'file': html_file, 'ok': ok, 'slots': slots}
+
+
 def main():
     ap = argparse.ArgumentParser(description='한글 제목 전수조사 — title-strategy §0 기준 채점')
     ap.add_argument('--repo', default='.', help='콘텐츠 클론 루트 (articles.json 위치)')
     ap.add_argument('--output', help='출력 경로 (기본: <repo>/_workspace/title-review/titles_scored.json)')
     ap.add_argument('--dry-run', action='store_true', help='파일 쓰지 않고 통계만')
     ap.add_argument('--min-score', type=int, help='이 점수 미만 행만 stdout 리포트')
+    ap.add_argument('--check-html', metavar='FILE', action='append',
+                    help='게이트 모드: 이 HTML 파일(들)의 3슬롯만 판정, JSON 출력. 위반 있으면 exit 1')
     args = ap.parse_args()
+
+    # ── 게이트 모드 (발행 파이프라인 title-gate) ──
+    if args.check_html:
+        results = [check_html(f) for f in args.check_html]
+        print(json.dumps(results, ensure_ascii=False, indent=1))
+        sys.exit(0 if all(r['ok'] for r in results) else 1)
 
     repo = os.path.abspath(args.repo)
     aj = os.path.join(repo, 'articles.json')
