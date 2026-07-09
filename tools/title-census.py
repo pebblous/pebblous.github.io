@@ -213,6 +213,7 @@ def main():
             'st_score': st_score,
             'st_labels': st_labels,
             'st_reason': reason_text(st_labels, st_score) if cfg['subtitle'] else '',
+            'st_fix': '',
             'pageTitle': cfg['pageTitle'],
             'pt_score': pt_score,
             'pt_labels': pt_labels,
