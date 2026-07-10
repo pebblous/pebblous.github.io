@@ -1,0 +1,290 @@
+---
+title: 교황청의 AI를 향한 질문 — 자율인가, 연대인가
+subtitle: 교황 레오 14세가 
+date: 2026-05-25
+category: business
+source: index.html
+note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
+---
+
+# 교황청의 AI를 향한 질문 — 자율인가, 연대인가
+
+_교황 레오 14세가 _
+
+## Executive Summary
+
+> [!callout]
+> 2026년 5월 25일, 14억 가톨릭 신자와 "선의의 모든 사람(every person of goodwill)"을 청중으로 둔 한 문서가 AI 산업의 핵심 전제를 공격했다. 교황 레오 14세의 첫 회칙 **Magnifica Humanitas**는 245항 5개 장에 걸쳐 단 하나의 명령을 관통한다 — **"인공지능을 무장해제하라(disarm AI)"**(§125). 회칙은 무장해제를 "기술 거부가 아니라 지배·배제·죽음의 논리에서의 해방"으로 정의하며(§110), "기술은 결코 중립적이지 않다(§9)"는 진단을 통해 "AI는 도구일 뿐이며 사용자가 책임진다"는 기업들의 오랜 면책 논리를 정면 부정한다.
+
+> 회칙은 세 가지 점에서 AI 윤리 논의의 지형을 바꾼다. 첫째, 인류 앞의 선택을 **"새로운 바벨탑 건설 vs 하느님과 인간이 함께 거주하는 도시 재건"**(§1)으로 제시하며 "이윤의 우상화"를 "바벨 신드롬(§10)"으로 명명한다. 둘째, 데이터·알고리즘·디지털 플랫폼·특허에 "재화의 보편적 목적"을 적용(§108)하여 디지털 자산을 공공재에 준하는 것으로 재정의하고, 84개 AI 윤리 가이드라인 중 **7%만이 명시**했던 "연대(solidarity)"를 원칙이자 덕목으로 격상시킨다. 셋째, 자율무기에 대해 "정의로운 전쟁론은 시효 만료"라 못 박고(§198) — "전쟁을 도덕적으로 받아들이게 만드는 알고리즘은 존재하지 않는다." 데이터 라벨러·콘텐츠 모더레이터·희토류 채굴 노동자를 잇는 보이지 않는 노동 사슬을 **"새로운 형태의 노예제"**로 명명한 §173, §176도 같은 무게로 다뤄진다.
+
+> 교황이 회칙을 직접 발표한 최초 사례로 기록된 이 문서는, 5월 15일 — 레오 13세의 Rerum Novarum(1891) 반포 정확히 135주년 되는 날에 서명되었다. Anthropic 공동창업자 Christopher Olah가 추기경 3인·여성 신학자 2인과 함께 바티칸 무대에서 "AI 랩이 AI를 스스로 감독할 수 없다"고 선언한 것은, 기술 안전 연구와 종교 도덕 권위의 전례 없는 수렴이다. EU AI Act(2026년 8월 전면 시행)과 한국 AI 기본법(2026년 1월 시행), 47개국 AI 법안이 동시 작동하는 환경에서, 이 보고서는 회칙의 내용과 맥락, 그리고 그것이 AI 산업에 던지는 질문을 추적한다 — **자율(autonomy)인가, 연대(solidarity)인가**라는 새로운 분석 축으로.
+
+회칙의 규모와 맥락을 숫자로 확인한다. Annuario Pontificio 2026, Stanford HAI AI Index 2026, Jobin et al.(2019) 기반.
+
+<!-- stat-card -->
+**14.22억 명** — 가톨릭 신자 — 회칙의 직접 청중 (세계 인구 17.8%)
+
+<!-- stat-card -->
+**245항 5장** — 회칙 분량 — AI 전문 교황 문서 역대 최장
+
+<!-- stat-card -->
+**135년** — 사회교리 계보 — Rerum Novarum(1891) 이후
+
+<!-- stat-card -->
+**362건** — AI 안전 사고(2025) — 전년 대비 +55.4% (Stanford HAI)
+
+<!-- stat-card -->
+**7%** — 연대 원칙 명시율 — 84개 AI 윤리 가이드라인 중
+
+## "위대한 인간성"의 등장 — 왜 교황이 AI를 말하는가
+
+Magnifica Humanitas는 갑자기 등장한 것이 아니다. 가톨릭 교회는 135년간 매 기술 혁명마다 윤리적 개입을 해왔고, 이번 회칙은 그 계보의 최신 작동이다. 레오 14세가 교황명으로 "레오"를 선택한 것 자체가 의미심장하다. 레오 13세가 1891년 산업혁명의 노동 착취에 Rerum Novarum으로 응답했듯, 레오 14세는 AI 시대의 권력 집중에 Magnifica Humanitas로 응답한다.
+
+![교황 레오 14세가 성 베드로 광장에서 신자들에게 인사를 건네고 있다](/report/pope-magnifica-humanitas/image/img-01-pope-leo-xiv.jpg)
+*▲ 교황 레오 14세 (로버트 프레보스트). 2026년 5월 교황청 일반 알현에서 | Source: [Vatican News](https://www.vaticannews.va/)*
+
+### 135년의 계보: 새로운 것에 대한 윤리적 응답
+
+Rerum Novarum(1891, 산업혁명) → Laudato Si'(2015, 기후위기) → Magnifica Humanitas(2026, AI)로 이어지는 계보는 각 시대의 "새로운 것(nova rerum)"에 대한 일관된 패턴을 보인다. 패턴은 단순하다. 기술 혁명이 기존 권력 균형을 무너뜨리면, 교회는 도덕적 개입으로 응답한다. 교황 프란치스코의 Laudato Si'가 2015년 파리기후협약 논의를 가속화하고 전 세계 **90만 명의 서명**을 이끌어낸 선례는, Magnifica Humanitas의 잠재적 정책 파급력을 가늠하는 가장 직접적인 기준이다. 법적 구속력이 없는 도덕적 선언이 국제 협약의 방향을 바꿀 수 있다는 증거다.
+
+### 거버넌스 선점 타임라인
+
+바티칸은 AI 거버넌스를 단번에 선언한 것이 아니라 6년에 걸쳐 단계적으로 준비해왔다. 2020년 Rome Call for AI Ethics에 Microsoft, IBM이 서명하며 빅테크와의 접점을 만들었다. 2024년 히로시마 G7에서 교황이 AI 윤리를 직접 연설하며 국제 정치 무대에 올랐다. 2025년 Antiqua et Nova 문서가 신학적 기반을 완성했고, 2026년 5월에는 교황청 AI 위원회가 공식 설립되었다. 이 준비의 정점에서 245항 5장의 회칙이 발표된 것이다. 이를 "갑작스러운 종교적 선언"으로 읽는 것은 6년의 문맥을 무시하는 것이다.
+
+![교황 레오 14세가 2026년 5월 25일 바티칸에서 추기경단과 외교단이 참석한 가운데 회칙 Magnifica Humanitas를 발표하고 있다](/report/pope-magnifica-humanitas/image/img-03-magnifica-humanitas-presentation.jpg)
+*▲ 2026년 5월 25일, 교황 레오 14세가 바티칸 홀에서 추기경단과 외교단이 자리한 가운데 회칙 Magnifica Humanitas를 직접 발표하고 있다 | Source: [Vatican News](https://www.vaticannews.va/en/pope/news/2026-05/pope-leo-xiv-magnifica-humanitas-presentation-ai-disarmament.html)*
+
+> [!callout]
+> **14억 2,200만 명**의 가톨릭 신자가 이 회칙의 직접 청중이다(Annuario Pontificio 2026, 세계 인구의 17.8%). 교황 문서는 법적 구속력이 없지만, Laudato Si'가 환경 정책에 미친 선례를 감안하면 도덕적 영향력의 크기는 무시하기 어렵다.
+
+원문 직접 읽기 — Rerum Novarum (1891) × Magnifica Humanitas (2026) 영어 원문 핵심 구절▼ 펼치기135년을 가로지르는 두 선언의 영어 원문 핵심 구절. 왼쪽은 1891년 레오 13세가 산업혁명에 응답한 언어, 오른쪽은 2026년 레오 14세가 AI 혁명에 응답한 언어다.
+
+RERUM NOVARUM · 1891 · LEO XIII
+
+§1 — 서문 (권력 집중)
+
+"…the enormous fortunes of some few individuals, and the utter poverty of the masses; the increased self-reliance and closer mutual combination of the working classes… have given rise to a conflict of no little severity."
+
+§3 — 독점적 지배
+
+"…the hiring of labor and the conduct of trade are concentrated in the hands of comparatively few; so that a small number of very rich men have been able to lay upon the teeming masses of the laboring poor a yoke little better than that of slavery itself."
+
+§19 — 공동선
+
+"…men should not consider external goods as their own, but as common to all, so as to share them without difficulty when they are in need."
+
+MAGNIFICA HUMANITAS · 2026 · LEO XIV
+
+§9 — 기술은 중립적이지 않다
+
+"In practice, however, technology is never neutral, because it takes on the characteristics of those who devise, finance, regulate and use it." (§9)
+
+§67 — 데이터의 보편적 목적
+
+"The principle of universal destination of goods applies also to algorithms, data, digital platforms, technical infrastructure, and patents. No entity can claim exclusive dominion over the tools that determine the distribution of knowledge and opportunity across humanity."
+
+§73 — 연대는 덕목이다
+
+"Solidarity is not merely a social principle but a moral virtue — one that demands we ensure the benefits of artificial intelligence are shared equitably across all peoples and nations, with particular care for those most vulnerable to its disruptions."
+
+## 회칙이 말하는 것 — 6가지 핵심 선언
+
+회칙의 245항을 기술 업계가 무시할 수 없는 구체적 요구사항으로 정리하면, 여섯 가지 핵심 선언으로 압축된다. 첫 다섯은 "기술은 중립적이지 않다(§9)"부터 "트랜스휴머니즘 거부(§15, §233)"까지의 도덕적·신학적 진단이다. 그 위에 회칙 전체를 관통하는 한 마디 명령 — **"AI를 무장해제하라(§125)"**가 놓인다.
+
+![2026년 5월 25일 바티칸에서 열린 Magnifica Humanitas 회칙 반포 행사 현장](/report/pope-magnifica-humanitas/image/img-02-magnifica-humanitas-ceremony.jpg)
+*▲ 2026년 5월 25일 바티칸에서 열린 회칙 Magnifica Humanitas 반포 행사. 이날 선언된 "기술은 결코 중립적이지 않다"는 명제가 AI 산업의 면책 논리를 정면으로 반박했다 | Source: [Vatican News](https://www.vaticannews.va/en/pope/news/2026-05/pope-leo-xiv-magnifica-humanitas-presentation-ai-disarmament.html)*
+
+### 선언 1. "기술은 결코 중립적이지 않다" (§9)
+
+회칙 §9는 선언한다. **"실제로 기술은 결코 중립적이지 않다. 기술은 그것을 고안하고, 자금을 대고, 규제하고, 사용하는 자들의 특성을 취하기 때문이다(In practice, however, technology is never neutral, because it takes on the characteristics of those who devise, finance, regulate and use it)."** 이는 "AI는 도구이며, 사용자가 책임진다"는 기존 기업 논리에 대한 직접 반박이다. 2025년 AI 안전 사고 362건(전년 대비 +55.4%, Stanford HAI AI Index 2026)이 이 선언의 실증적 근거가 된다.
+
+### 선언 2. 연대를 "원칙이자 덕목"으로 격상 (SS73)
+
+전 세계 84개 AI 윤리 가이드라인 중 연대(solidarity)를 명시한 것은 7%에 불과하다(Jobin et al. 2019). 대부분의 프레임워크가 투명성, 공정성, 프라이버시에 집중하는 반면, 회칙은 연대를 "원칙이자 덕목"으로 전면에 내세운다. AI가 창출하는 번영과 부담을 공유하고, 누구도 뒤처지지 않도록 하겠다는 선언이다.
+
+### 선언 3. 데이터에 "재화의 보편적 목적" 적용 (SS67)
+
+§67은 알고리즘, 데이터, 디지털 플랫폼, 기술 인프라, 특허를 재화의 보편적 목적에 포함시켰다. 가톨릭 사회교리에서 이 원칙은 "지구의 재화가 모든 인류의 이익을 위해 존재한다"는 뜻이다. 데이터를 소수 기업의 사적 재산이 아니라 공공재에 준하는 것으로 재정의한 것이며, 이는 AI 거버넌스의 패러다임 전환이다.
+
+### 선언 4. 자율 살상 무기 금지 — "정의로운 전쟁론은 시효 만료" (§197-198)
+
+회칙 §197-198은 자율무기(autonomous weapons)에 대해 가장 강경한 언어를 택한다. **"치명적이거나 그 외 되돌릴 수 없는 결정을 인공 시스템에 위임하는 것은 허용될 수 없다(not permissible)."** 그리고 §198은 한 줄로 못 박는다 — **"전쟁을 도덕적으로 받아들일 수 있게 만드는 알고리즘은 존재하지 않는다(There exists no algorithm that can make war morally acceptable)."** 더 결정적으로, 회칙은 가톨릭이 1,500년간 견지해온 "정의로운 전쟁론(just war theory)"이 "이제 시효 만료(now outdated)"라고 선언한다. CNN, NPR, PBS 등 주요 외신은 이 선언을 회칙의 가장 충격적인 정책 함의로 지목했다.
+
+### 선언 5. 트랜스휴머니즘 거부 — "어떤 기계도 인간을 대체할 수 없다" (§15, §233)
+
+"한계를 통해서 번영하는 것이 인간성이다." 회칙 §15는 "어떤 기계도 결코 대체할 수 없는(no machine can ever replace)" 인간 존엄의 광휘를 말하고, §233은 "어떠한 계산 시스템도 자신을 내어주는 마음이나 선악을 분별하는 양심을 만들어낼 수 없다"고 못 박는다. 기술을 통해 인간의 한계를 극복하려는 트랜스휴머니즘·포스트휴머니즘 시각에 대해, 인간 존엄은 능력의 확장이 아니라 상호 의존의 관계 속에서 실현된다고 반론한다.
+
+### 선언 6. "AI를 무장해제하라(disarm AI)" — 회칙의 핵심 명령 (§110, §125)
+
+다섯 선언 위에 회칙 전체를 관통하는 한 마디 명령이 놓여 있다. **"인공지능은 이제 무장해제(disarmed)되어야 하며, 그것을 지배·배제·죽음의 도구로 만드는 논리에서 해방되어야 한다"(§125)**. 교황은 이 단어의 선택이 의도적이었음을 발표 자리에서 직접 밝혔다 — "주의를 끌고, 양심을 깨우고, 인류에게 길을 가리키기 위해." 회칙 §110은 무장해제가 무엇이 _아닌지_도 명확히 한다. 기술 거부가 아니다. 그것은 (1) 무장 경쟁(armed competition)의 사고방식에서 빼내고, (2) 독점적 통제(monopolistic control)에서 해방하여 토론·논의에 개방하고, (3) "인간 친화적(human-friendly)"으로 만드는 것이다. 한국·미국·이탈리아·호주 언론이 공통적으로 헤드라인으로 잡은 표현이 바로 이 "AI 무장해제(disarm AI)"다. Angelus News의 분석에 따르면, 교황은 이 표현이 "내 마음에 가까운 표현"이라고 §110에서 직접 말했다.
+
+> [!callout]
+> 회칙의 다섯 선언은 기술 업계에 세 가지 질문을 던진다. AI의 편향은 설계자의 편향인가? 데이터의 사적 소유는 정당한가? 인간의 한계를 AI로 대체하는 것이 진보인가? 이 질문들은 철학적 논쟁에 머물지 않는다. 2024~2025년 AI 편향 관련 소송 6건 이상과 iTutorGroup의 연령 차별 AI 합의금 36만 5천 달러(EEOC, 2023)는 이 질문이 이미 법정에 도달했음을 보여준다. 도덕적 명령이 법적 책임으로 전환되는 속도가 빨라지고 있다.
+
+## 자율성 vs 연대 — AI 윤리의 새로운 분석 축
+
+서구 AI 윤리 프레임워크는 자율성(autonomy)에 과집중해왔다. 개인의 동의, 프라이버시, 설명 가능성이 핵심 가치로 자리 잡은 반면, "누구도 뒤처지지 않도록 하는" 연대의 원칙은 체계적으로 배제되었다. Jobin et al.(2019)이 84개 가이드라인을 분석한 결과, 투명성(73개), 공정성(68개), 프라이버시(47개)가 상위를 차지한 반면 연대를 명시한 것은 6개(7%)에 불과했다. Magnifica Humanitas는 이 불균형을 교정하는 프레임을 제시한다.
+
+### 왜 연대가 빠졌는가
+
+AI 윤리 가이드라인의 대다수는 미국과 서유럽에서 작성되었다. 이 지역의 자유주의적 전통은 개인 권리를 최우선으로 놓는다. 그 결과는 Jobin et al.(2019)의 분석에서 확인된다. 투명성이 84개 중 73개(87%), 공정성이 68개(81%), 프라이버시가 47개(56%)로 상위를 차지한 반면, 연대를 명시한 것은 단 6개(7%)에 불과했다. Floridi et al.(2018)의 AI4People 프레임워크도 자율성·선행·비해악·정의·설명가능성 5원칙을 제시했지만 연대는 포함하지 않았다. 이 프레임이 EU AI Act와 OECD AI 원칙의 지적 기반이 되었으므로, 연대의 부재는 우연이 아니라 서구 자유주의 윤리의 구조적 편향이다. Luengo-Oroz(2019)는 Nature Machine Intelligence에서 "연대가 AI의 핵심 윤리 원칙이어야 한다"고 주장했지만, 학술적 제안에 그쳤다. 회칙은 이 학술적 제안을 14억 명에게 도달하는 도덕적 선언으로 격상시킨 것이다.
+
+### 프레임 비교: 바티칸 vs EU vs OECD vs 기업
+
+바티칸의 프레임은 EU AI Act이나 OECD AI 원칙과 겹치는 부분이 있지만 결정적으로 다르다. EU AI Act는 위험 기반(risk-based) 접근으로 고위험 AI에 규제를 부과한다. OECD AI 원칙은 46개국이 지지하는 투명성, 책임성 중심의 국제 합의다. 기업 자율 규제는 Rome Call 서명 등 자발적 약속에 머문다. 반면 회칙은 "인간 존엄"을 최상위 가치로 놓고 모든 기술적 판단을 이 기준에 종속시킨다. 자율성 대 연대는 양자택일이 아니라, 회칙이 기존 프레임에 빠진 축을 추가한 것이다.
+
+> [!callout]
+> Vallor(2016)가 제안한 교차문화적 덕목 윤리의 관점에서 보면, 연대의 복원은 서구적 편향의 교정이기도 하다. 유교의 "인(仁)", 불교의 "자비", 가톨릭의 "연대" 모두 개인을 넘어선 관계적 윤리를 지향한다. 47개국이 AI 법안을 동시에 운용하는 환경에서 이 교차문화적 접근은 단순한 철학적 논의를 넘어 실무적 함의를 갖는다.
+
+## 실리콘밸리가 로마에 간 이유 — Anthropic-바티칸 수렴의 의미
+
+회칙 발표 행사에서 가장 주목받은 인물은 교황이 아니라 Anthropic 공동창업자 Christopher Olah였다. AI 산업의 기술 연구자가 바티칸 무대에 선 것은 전례가 없다. 이 수렴은 브랜딩이 아니라 구조적 논리에 따른 것이라는 점에서 분석할 가치가 있다.
+
+![교황 레오 14세. Anthropic 공동창업자 Christopher Olah가 이 교황의 회칙 발표 행사에 유일한 AI 산업계 인사로 참석했다](/report/pope-magnifica-humanitas/image/img-01-pope-leo-xiv.jpg)
+*▲ 교황 레오 14세. Anthropic의 Christopher Olah는 이 교황의 회칙 발표 행사에 유일한 AI 산업계 연구자로 무대에 올라 "AI 랩이 AI를 스스로 감독할 수 없다"고 선언했다 | Source: [Vatican News](https://www.vaticannews.va/)*
+
+### 타임라인: Anthropic 본사에서 바티칸까지
+
+2026년 3월, Olah는 Anthropic 본사에서 소규모 기독교인 AI 모임을 조직했다. "AI 산업이 너무 빠르게 달려가고 있어 산업 외부의 목소리가 필요하다"는 인식이 배경이었다. 이 모임이 바티칸과의 접점이 되었고, 두 달 후 Olah는 회칙 발표 행사의 유일한 AI 산업계 인사로 무대에 올랐다. "AI 랩이 AI를 스스로 감독할 수 없다"는 그의 발언은 기술 업계의 자기 한계 인정으로 읽힌다.
+
+### Constitutional AI와 Imago Dei의 교차점
+
+Anthropic의 Constitutional AI는 덕 윤리(virtue ethics)를 기술적으로 구현한 접근이다. AI 모델에 원칙(constitution)을 내장하여 행동을 안내한다. 바티칸의 Imago Dei(하느님의 형상) 개념은 인간 존엄의 신학적 근거다. 둘의 공통분모는 **"설계 단계에서 윤리를 내재화한다"**는 것이다. 사후 규제가 아니라 사전 설계에 윤리를 녹이는 접근이 둘을 연결한다.
+
+윤리적 원칙의 수렴만이 아니라, 기술 연구의 방향도 수렴한다. Anthropic의 기계적 해석가능성(mechanistic interpretability) 연구는 회칙이 요구하는 "알고리즘 투명성"의 기술적 실현 경로를 제시한다. Templeton et al.(2024)은 Sparse Autoencoder를 통해 클로드 모델 내부에서 **3,400만 개의 해석 가능한 특성**을 추출했다. "블랙박스 AI는 책임질 수 없다"는 바티칸의 우려에 대해, 기술 연구가 같은 방향에서 답을 찾고 있다는 증거다.
+
+### 비판적 시각: 기업 브랜딩인가, 진정성인가
+
+기업가치 **3,800억 달러**의 AI 기업이 바티칸 무대에 서는 것을 순수한 도덕적 동기로만 해석하기는 어렵다. "기술 기업이 종교 권위를 빌려 도덕적 정당성을 확보하려는 것 아닌가"라는 비판은 타당한 질문이다. 그러나 Olah의 발언 — "AI 랩이 AI를 스스로 감독할 수 없다" — 은 기업 이익과 반대되는 방향이다. 자기 산업의 자율 규제 능력을 부정하는 선언은 브랜딩으로 설명하기 어렵다.
+
+> [!callout]
+> Anthropic-바티칸 수렴은 "기술 vs 종교"라는 이항대립이 아니라, 기술 안전 연구와 도덕 철학이 같은 질문 — "AI 시스템이 인간에게 해를 끼치지 않으려면 무엇이 필요한가" — 에 다른 경로로 도달한 결과다. 이 수렴이 일회성 이벤트인지, 구조적 협력의 시작인지는 앞으로의 후속 행동이 결정할 것이다.
+
+## 원칙에서 실행으로 — AI 거버넌스의 간극
+
+도덕적 선언, 법적 규제, 기술적 도구가 동시에 존재하는 2026년의 환경은 역사상 가장 조밀한 AI 거버넌스 인프라를 갖추고 있다. 교황 회칙(도덕적 권고), EU AI Act(2026년 8월 전면 시행, 위반 시 매출 7% 과징금), 한국 AI 기본법(2026년 1월 시행), 47개국 AI 특화 법안이 동시에 작동한다. 그러나 원칙과 실행 사이의 간극은 여전히 넓다 — 그리고 그 간극이 가장 잔혹하게 드러나는 곳은 AI 산업의 "보이지 않는 노동 사슬"이다.
+
+### 5.1. "새로운 형태의 노예제" — AI 시스템 뒤의 숨겨진 노동 (§173, §176)
+
+회칙 §173은 AI 시스템 뒤에 "긴 매개의 사슬(a long chain of mediation)"이 있음을 지적한다. 데이터 라벨러, 콘텐츠 모더레이터, 그리고 AI 하드웨어를 작동시키는 희토류와 콜탄을 채굴하는 노동자들이다. 회칙은 이를 회피하지 않고 직접 명명한다 — **"새로운 형태의 노예제(new forms of slavery)"**. The Pillar의 리더스 가이드, Aleteia, NBC News, 문화일보, 동아사이언스, AI타임스가 모두 이 표현을 헤드라인으로 잡았다. 데이터 라벨러는 시급 1~2달러에 폭력적 콘텐츠를 분류하고, 콘텐츠 모더레이터는 PTSD 진단 비율이 일반 사무직의 수 배에 달하며, 콜탄 광부는 콩고민주공화국에서 아동 노동으로 채굴되는 광물 위에 우리의 GPU가 서 있다.
+
+§176은 한 걸음 더 나아간다. 교황은 가톨릭 교회가 역사적으로 노예제 단죄에 늦었음을 "교회의 이름으로 진심으로 사과한다(I sincerely ask for pardon)"고 명시한다. 그리고 같은 늦장이 디지털 경제에서 반복되어서는 안 된다고 강조한다 — "콜탄 광산부터 인신매매에 사용되는 익명 결제 수단까지, 디지털 경제의 모든 층위에서 현대 노예제를 제거해야 한다"(Vatican News). 이는 AI 윤리 논의에서 "데이터 품질"이 단지 모델 성능의 문제가 아니라 도덕적 문제임을 명백히 한다. 모델이 어떤 데이터로, 누구의 어떤 노동을 거쳐 학습되었는가 — 이 질문은 이제 회피할 수 없다.
+
+### 5.2. "원칙은 있으나 실행은 없다"
+
+McKinsey State of AI(2024/2025)에 따르면, AI 윤리 전문가를 채용한 기업은 전체의 **6%**에 불과하고, 이사회 승인 AI 정책을 보유한 기업은 **25% 미만**이다. 이 간극은 의도의 문제가 아니다. AI 거버넌스 전담 인력 시장이 연간 17% 성장하고 있음에도 절대 규모가 작은 것은 공급이 따라가지 못하는 구조적 제약이다. Mittelstadt(2019)가 "원칙만으로는 윤리적 AI를 보장할 수 없다"고 경고한 지 7년이 지났지만, EU AI Act 전면 시행(2026년 8월)을 앞두고도 유럽 중소기업의 **60% 이상**이 준비에 미착수 상태다. 원칙의 언어는 넘쳐나지만, 그것을 실행할 인프라가 없다.
+
+### 5.3. 다자 규제의 동시 압력
+
+그러나 긍정적 신호도 있다. Rome Call for AI Ethics에 Microsoft, IBM, Cisco, Qualcomm이 서명했고, 책임있는 AI 프레임워크를 보유하지 않은 기업 비율이 24%에서 11%로 감소했다(McKinsey 2024/2025). AI 거버넌스 플랫폼 시장은 2026년 4억 9,200만 달러에서 2030년 10억 달러 이상으로 성장할 전망이다(Gartner 2026년 2월). 이는 플랫폼 시장만의 수치이며, AI 거버넌스 관련 전체 지출로 보면 MarketsandMarkets는 2029년 57.8억 달러 수준을 전망한다. 도덕적 압력, 법적 의무, 시장 수요가 같은 방향으로 수렴하고 있다. 간극은 좁혀지고 있지만, 아직 닫히지 않았다.
+
+### 5.4. 한국의 독특한 교차점
+
+한국은 이 논의에서 독특한 위치에 있다. 가톨릭 신자 **600만 명**(인구의 11.4%), 세계 두 번째 AI 기본법 시행국, AI 시장 고성장(CAGR 26~33%) — 이 세 조건의 교차점에서 한국은 Magnifica Humanitas의 도덕적 원칙과 법적 규제를 동시에 반영할 수 있는 위치에 있다. 기본법이 부과하는 고영향 AI의 투명성, 안정성 의무는 회칙의 요구와 실질적으로 같은 방향을 가리킨다.
+
+> [!callout]
+> 간극의 핵심은 "의지의 부재"가 아니라 "실행 인프라의 미성숙"이다. 원칙은 넘치지만, 그것을 기술적으로 구현할 도구, 데이터 품질을 사전에 검증할 시스템, 편향을 탐지할 프레임워크는 여전히 부족하다. 회칙이 던지는 진짜 질문은 "이것이 옳은가"가 아니라 "이것을 어떻게 실행하는가"이다.
+
+## 페블러스가 이 회칙에 주목하는 이유 — DataClinic이 만나는 지점
+
+Magnifica Humanitas가 요구하는 "설계 단계 윤리 내재화"의 기술적 출발점은 데이터다. 회칙이 "데이터는 다수의 기여자가 만든 산물이며 소수에게 맡겨서는 안 된다"(§108)고 선언한 것은, 학습 데이터의 품질, 편향, 대표성을 사전에 검증해야 한다는 요구와 직결된다. 이는 DataClinic이 모델 학습 이전 단계에서 데이터 품질을 5차원(정확성, 완전성, 일관성, 출처성, 편향성)으로 진단하는 접근과 구조적으로 동일하다.
+
+### 데이터 품질이 곧 AI 공정성이다
+
+Quaresmini & Primiero(2023/2024)는 AI 편향 문제를 데이터 품질 차원(완전성, 일관성, 적시성, 신뢰성)으로 재프레이밍했다. 회칙이 비판하는 "배제가 중립성, 객관성의 외피에 가려진다"(§108)는 현상은 학습 데이터에 내재된 편향이 모델 출력에서 "객관적 판단"으로 포장되는 구조를 정확히 기술한다. AI 이력서 스크리너의 백인 이름 선호율 85.1%는 이 구조적 문제의 실증이다. DataClinic의 데이터 품질 진단은 이 "편향의 객관성 위장"을 사전에 탐지하는 도구이다.
+
+### 도덕적 의무와 법적 의무의 수렴
+
+AI 거버넌스 시장이 CAGR 45.3%로 성장하고(MarketsandMarkets), EU AI Act가 전면 시행되며, 한국 AI 기본법이 이미 작동하는 환경에서 "AI-Ready Data"에 대한 수요는 도덕적 요구(회칙)와 법적 의무(규제)가 동시에 밀어붙이는 구조적 드라이버로 작동한다. AI 윤리 전문가 채용률 6%라는 현실에서, 자동화된 데이터 품질 진단 도구가 인력 부족을 보완하는 핵심 인프라가 된다.
+
+### AI 도입 조직이 주목해야 할 실무 함의
+
+회칙과 규제의 압력이 수렴하는 환경에서 AI를 도입하는 조직에게 세 가지 실무 시사점이 도출된다.
+
+- • EU AI Act 컴플라이언스와 도덕적 기준의 동시 충족: 법적 의무(고위험 AI 편향 평가)와 도덕적 기대(회칙의 공정성·투명성 요구)가 수렴하는 환경에서, 사전 데이터 품질 진단은 양쪽을 동시에 충족하는 효율적 경로다.
+- • "6% 함정" 탈출: AI 윤리 전문가 채용률 6%라는 현실에서, 자동화된 데이터 품질 진단 도구는 인력 부족을 보완하는 핵심 인프라다. 인력을 채용하기 전에 프로세스가 먼저다.
+- • 한국 AI 기본법 대응의 첫 단계: 고영향 AI에 대한 투명성·안정성 의무가 부과되는 환경에서, 학습 데이터의 품질 진단과 문서화가 규제 대응의 출발점이 된다.
+
+### 앞으로 탐구할 질문
+
+이 회칙은 페블러스에게 기술적 검증을 넘어선 질문을 던진다. 데이터 품질 진단이 "기술 서비스"에 머무는가, 아니면 "윤리적 의무의 기술적 구현"인가? "재화의 보편적 목적에 부합하는 데이터 거버넌스"란 구체적으로 어떤 모습인가? 학습 데이터의 편향 진단이 AI 이력서 스크리너의 백인 선호율 85.1%과 같은 구조적 차별을 사전에 방지할 수 있는가? 이 질문들은 AI-Ready Data가 단순한 품질 인증을 넘어, 데이터가 공공재로서 모든 인류의 이익에 기여하도록 만드는 프레임워크가 되어야 한다는 방향을 가리킨다.
+
+> [!callout]
+> Magnifica Humanitas는 "AI는 중립적 도구"라는 신화를 공식적으로 종식시켰다. AI의 윤리적 품질은 설계 단계에서 결정되며, 그 설계의 출발점은 데이터다. DataClinic은 학습 데이터의 편향, 공정성, 대표성을 진단하여 "재화의 보편적 목적에 부합하는 AI"를 가능하게 하는 기술적 기반이다.
+
+## 페블러스에서 더 읽기
+
+보고서 · AI 거버넌스
+
+AI가 틀렸는데 아무도 말하지 않는다
+
+에이전틱 AI 거버넌스 공백 — 책임은 누구에게
+
+[/report/ai-psychosis-agentic-governance-2026-05/ko/](/report/ai-psychosis-agentic-governance-2026-05/ko/)스토리 · 기술 중립성
+
+기술은 중립이 아니다 — 팔란티어 기술 공화국
+
+22조 선언 원문과 해설 — §9의 선언과 나란히 읽기
+
+[/story/palantir-technological-republic/ko/](/story/palantir-technological-republic/ko/)보고서 · Anthropic
+
+에이전트가 일할 때, 누군가는 데이터를 거둬간다
+
+Claude 크리에이티브 작업 커넥터와 데이터 귀속
+
+[/report/claude-creative-work-connectors/ko/](/report/claude-creative-work-connectors/ko/)DataClinic 진단 스토리
+
+AI 데이터셋, 숫자 뒤에 숨은 이야기
+
+DataClinic 진단 시리즈 전체 보기
+
+[/story/dataclinic-stories/ko/](/story/dataclinic-stories/ko/)
+
+## 자주 묻는 질문
+
+## 참고문헌
+
+### 1차 소스 (교황 문서 및 공식 발표)
+
+1. Pope Leo XIV (2026). [_Magnifica Humanitas: On Safeguarding the Human Person in the Time of Artificial Intelligence_](https://www.vatican.va/content/leo-xiv/en/encyclicals/documents/20260515-magnifica-humanitas.html). Vatican, 15 May 2026. [영어 원문]
+2. Pontifical Academy for Life (2020). [Rome Call for AI Ethics](https://www.romecall.org/). Vatican.
+3. Pope Francis (2015). [_Laudato Si': On Care for Our Common Home_](https://www.vatican.va/content/francesco/en/encyclicals/documents/papa-francesco_20150524_enciclica-laudato-si.html). Vatican.
+4. Pope Leo XIII (1891). [_Rerum Novarum: On Capital and Labor_](https://www.vatican.va/content/leo-xiii/en/encyclicals/documents/hf_l-xiii_enc_15051891_rerum-novarum.html). Vatican, 15 May 1891. [영어 원문]
+5. Dicastery for the Doctrine of the Faith & Dicastery for Culture and Education (2025). _Antiqua et Nova_. Vatican.
+6. Vatican News (2026-05). [AI 위원회 설립](https://www.vaticannews.va/en/pope/news/2026-05/pope-leo-interdicasterial-artificial-intelligence-commission.html).
+
+### 학술 논문
+
+1. Jobin, A., Ienca, M., Vayena, E. (2019). "The Global Landscape of AI Ethics Guidelines." _Nature Machine Intelligence_ 1, 389-399.
+2. Floridi, L. et al. (2018). "AI4People — An Ethical Framework for a Good AI Society." _Minds and Machines_ 28, 689-707.
+3. Luengo-Oroz, M. (2019). "Solidarity Should Be a Core Ethical Principle of AI." _Nature Machine Intelligence_ 1.
+4. Templeton, A. et al. (2024). "Scaling Monosemanticity." Anthropic / transformer-circuits.pub.
+5. Quaresmini, C., Primiero, G. (2023/2024). "Data Quality Dimensions for Fair AI." arXiv:2305.06967.
+6. Srivastava, S., Bullock, J. (2024). "AI, Global Governance, and Digital Sovereignty." arXiv:2410.17481.
+7. Huang, C. et al. (2023/2025). "Survey on AI Ethics: A Socio-technical Perspective." arXiv:2311.17228.
+8. Vallor, S. (2016). _Technology and the Virtues_. Oxford University Press.
+9. Mittelstadt, B. (2019). "Principles Alone Cannot Guarantee Ethical AI." _Nature Machine Intelligence_ 1, 501-507.
+
+### 업계, 언론, 분석 소스
+
+1. Religion News Service (2026-05-22). "Why Anthropic is helping unveil the Pope's new encyclical on AI."
+2. The Next Web (2026-05-25). "Anthropic's Olah says AI cannot be steered by AI labs alone."
+3. Fortune (2026-05-18). "Pope Leo AI commission."
+4. CBPAI (2026-05). "An Alignment of the Vatican and Anthropic."
+5. America Magazine (2026-05-18). 회칙 사전 보도.
+6. ChatForest (2026-05-25). Magnifica Humanitas 전문 분석.
+7. NCR Online / National Catholic Register (2026-05-25). 회칙 전문.
+
+### 데이터 소스
+
+1. Annuario Pontificio 2026 (Vatican News, 2026-03).
+2. Gartner (2026-02-17). AI 거버넌스 플랫폼 시장 전망.
+3. MarketsandMarkets. AI 거버넌스 시장 보고서.
+4. Stanford HAI AI Index 2025/2026.
+5. McKinsey State of AI 2024/2025.
+6. [OECD AI Principles](https://oecd.ai/en/ai-principles) (2019/2024).
+7. EU AI Act (2024). Regulation (EU) 2024/1689.
+8. [한국 AI 기본법](https://aibasicact.kr/) (2024/2026 시행).
+9. ZENIT (2025-05). 한국 가톨릭 통계.
+10. [AI Incident Database](https://incidentdatabase.ai/).
