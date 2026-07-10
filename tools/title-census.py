@@ -28,7 +28,16 @@ import re
 import sys
 
 # ── §0·§3.1 결정론 규칙 ─────────────────────────────────────────────────────
-QUOTE_CHARS = re.compile(r'["\'‘’“”「」『』]')
+# 인용 검출 — 실제 인용(쌍)만 잡는다. 영어 아포스트로피(소유격 's·축약 n't·'re 등)는
+# 정상 문법이라 제외한다(2026-07-11 오탐: "MAI-Thinking-1's"가 따옴표로 오판돼 교정 불가 잔존).
+# 곧은 홑따옴표는 아포스트로피/축약 위치를 지운 뒤 남아 있을 때만(짝지어 감싼 인용) 위반으로 본다.
+QUOTE_PAIRS = re.compile(r'["“”「」『』]|‘[^’]*’|"[^"]*"')  # 명백한 인용쌍·직선 큰따옴표
+def _has_quote(t: str) -> bool:
+    if QUOTE_PAIRS.search(t):
+        return True
+    # 곧은 홑따옴표: 축약/소유격('s 'll 're 've 'd 'm n't o'clock, 그리고 뒤에 문자 없는 복수 소유격 s')을 제거
+    stripped = re.sub(r"(?<=\w)'(?=(s|ll|re|ve|d|m|t|clock)\b)|(?<=s)'(?!\w)|n't|\b[OoDdLl]'(?=[A-Z])", '', t)
+    return "'" in stripped  # 남은 곧은 홑따옴표 = 인용 용도
 CONTRAST = re.compile(r'(?:[가이은는를]\s*)?아니라|같은\s+\S+.{0,12},\s*다른')
 DASH_COLON = re.compile(r'[—–]|:\s')
 INCOMPLETE_END = re.compile(r'(이후|전략|조건|과제)\s*$')
@@ -41,7 +50,7 @@ TILDE = re.compile(r'~')
 def eval_maintitle(t: str):
     """mainTitle — 헤드라인. 가장 엄격: 따옴표/대조/줄표·콜론/미완결/미끼 전면 금지."""
     labels, ded = [], 0
-    if QUOTE_CHARS.search(t):
+    if _has_quote(t):
         labels.append('따옴표'); ded += 4
     if CONTRAST.search(t):
         labels.append('대조공식'); ded += 3
@@ -68,7 +77,7 @@ def eval_maintitle(t: str):
 def eval_subtitle(t: str):
     """subtitle — 리드문. 대조/따옴표/미끼 금지, 줄표는 동격 재진술 의심으로 소프트 감점."""
     labels, ded = [], 0
-    if QUOTE_CHARS.search(t):
+    if _has_quote(t):
         labels.append('따옴표'); ded += 4
     if CONTRAST.search(t):
         labels.append('대조공식'); ded += 3
@@ -92,7 +101,7 @@ def eval_subtitle(t: str):
 def eval_pagetitle(t: str):
     """pageTitle — 검색 변형. 따옴표/대조/미끼 금지, 줄표 1개 허용, 브랜드 접미사 필수."""
     labels, ded = [], 0
-    if QUOTE_CHARS.search(t):
+    if _has_quote(t):
         labels.append('따옴표'); ded += 4
     if CONTRAST.search(t):
         labels.append('대조공식'); ded += 3
