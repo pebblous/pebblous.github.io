@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>AI 생성 코드, 오픈소스 의존성에서 걷어낸 git-annex의 100시간 | 페블러스</title>
+    <meta name="description" content="git-annex 개발자가 100시간을 들여 전체 의존성 트리에서 AI 생성 코드를 걷어냈다. 1,489줄 커밋 메시지와 조용히 되돌려진 패치가 근거였고, 대가로 GHC 9.15 이후 언어 개선을 포기했다. 코드의 출처 증명이 데이터 출처 증명과 같은 문제인 이유를 짚는다.">
+    <meta name="keywords" content="AI 생성 코드, 오픈소스 의존성, git-annex, NoLLMDependencies, AI 코드 저작권, 소프트웨어 공급망 AI 리스크, 코드 프로버넌스, 데이터 프로버넌스, 의존성 트리 감사, Joey Hess, AI-Ready Data, 페블러스">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/git-annex-no-llm-code/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/git-annex-no-llm-code/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/git-annex-no-llm-code/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/git-annex-no-llm-code/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="의존성 트리에서 AI 생성 코드를 걷어낸 오픈소스 프로젝트">
+    <meta property="og:description" content="git-annex 개발자가 100시간을 들여 의존성까지 뒤져 AI 생성 코드를 걷어냈다. 저작권 불확실성을 피하려고 미래 언어 개선까지 포기한 감사의 비용을 짚는다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/git-annex-no-llm-code/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/git-annex-no-llm-code/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="og:site_name" content="Pebblous Blog">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="의존성 트리에서 AI 생성 코드를 걷어낸 오픈소스 프로젝트">
+    <meta name="twitter:description" content="git-annex는 저작권 불확실성 때문에 의존성까지 뒤져 AI 생성 코드를 걷어냈고, 대가로 미래 언어 개선을 포기했다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/git-annex-no-llm-code/ko/image/index.png">
+    <meta name="twitter:image:alt" content="git-annex가 의존성 트리에서 AI 생성 코드를 걷어낸 사례와 코드 출처 증명 문제">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260711">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260711">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260711">
+
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 100시간의 코드 고고학</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 보장이 아니라 빌드 플래그</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 새로운 위협 표면이 된 의존성</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 결벽이 치른 대가</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 코드 출처 = 데이터 출처</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 페블러스 관점</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            git-annex 개발자 Joey Hess가 지난 한 달간 약 100시간을 들여 자기 프로젝트의 전체 의존성 트리를 뒤졌다. 목적은 하나였다. "우리 소프트웨어와 그것이 기대는 라이브러리 어디에도 LLM이 생성한 코드가 없다"고 말할 수 있게 하는 것. 이 글은 그 감사가 무엇을 찾아냈고, 무엇을 지불했으며, 왜 그것이 데이터를 다루는 사람에게도 남의 일이 아닌지를 본다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            발단은 품질이 아니라 저작권이었다. 그가 검토 과정에서 마주친 것은 1,489줄짜리 두서없는 커밋 메시지, 이후 릴리스에서 아무 설명 없이 되돌려진 대량 변경, 그리고 다른 프로젝트 코드를 그대로 옮겨와 저작권 침해 소지를 남긴 복붙이었다. 문제는 "AI 코드가 나쁘다"가 아니라 "무엇이 들어왔는지 사후에 알 수 없다"는 데 있었다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            그리고 이 원칙에는 값이 붙었다. 이 결벽을 유지하려면 git-annex는 GHC 9.15 이후 대부분의 Haskell 언어 개선에서 스스로를 끊어야 했다. 저자 본인조차 "언어의 미래와 영구히 단절되는 편이 LLM 코드에 기대는 것보다 더 나쁠 수도 있다"고 인정했다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~100시간</p>
+                            <p class="text-sm themeable-text-secondary mt-1">의존성 트리 감사</p>
+                            <p class="text-xs themeable-muted mt-1">지난 한 달간 한 명이 투입</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1,489줄</p>
+                            <p class="text-sm themeable-text-secondary mt-1">문제 커밋 메시지</p>
+                            <p class="text-xs themeable-muted mt-1">코드에는 1만 줄 넘게 변경</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">6개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">오염 확인된 하위 의존성</p>
+                            <p class="text-xs themeable-muted mt-1">GHC·ram·persistent·yesod·Cabal·git</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">GHC 9.15+</p>
+                            <p class="text-sm themeable-text-secondary mt-1">포기한 미래 언어 개선</p>
+                            <p class="text-xs themeable-muted mt-1">git-annex는 9.6.6까지만 지원</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">100시간의 코드 고고학</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        git-annex는 대용량 파일을 git으로 관리하는, 20년 가까이 이어진 성숙한 오픈소스 프로젝트다. 개발자 Joey Hess가 지난 한 달간 한 일은 새 기능을 만드는 것이 아니었다. 자기 프로젝트가 기대는 코드 전부를 거슬러 올라가며, 어디에 LLM이 쓴 코드가 섞여 들어왔는지 손으로 추적하는 작업이었다. 그는 이 과정에 100시간 가까이를 썼다고 적었다.
+                    </p>
+                    <figure class="my-8">
+                        <div class="themeable-card rounded-xl p-8 flex items-center justify-center">
+                            <img src="./image/img-01-git-logo.svg"
+                                 alt="Git 버전관리 시스템 공식 로고 — git-annex가 그 위에 대용량 파일 관리 기능을 얹은 기반 시스템"
+                                 class="max-w-[220px] max-h-[160px] object-contain"
+                                 loading="lazy"
+                                 onerror="this.parentElement.parentElement.style.display='none'">
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ git-annex는 Git 위에 대용량 파일 이력 관리를 얹은 프로젝트다 | Source: <a href="https://commons.wikimedia.org/wiki/File:Git-logo.svg" target="_blank" rel="noopener" class="underline">Git 공식 로고, Jason Long (CC BY 3.0)</a>
+                        </figcaption>
+                    </figure>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        추적하면서 그가 실제로 마주친 사례들은 "AI가 코드를 잘 쓰느냐"는 논쟁과는 결이 달랐다. 그가 남긴 기록을 요약하면 세 가지다.
+                    </p>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>1,489줄짜리 커밋 메시지.</strong> 26,000줄 규모 코드베이스에 1만 줄 넘는 변경이 한 번에 들어오면서, 그 변경을 설명하는 커밋 메시지가 사람이 읽기 어려운 1,489줄로 늘어난 경우가 있었다. 무엇이 왜 바뀌었는지가 메시지 안에서 오히려 흐려졌다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>조용히 되돌려진 대량 패치.</strong> 대규모로 들어온 LLM 생성 변경이 이후 릴리스에서 아무 설명 없이 원상 복구된 흔적이 있었다. 들어올 때도, 사라질 때도 그 근거가 기록에 남지 않았다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>운으로 피한 저작권 침해.</strong> 다른 프로젝트의 코드를 거의 그대로 옮겨와 저작권 침해가 될 뻔한 복붙 시도도 있었다. 걸러진 것은 규칙이 막아서가 아니라 누군가 뒤늦게 알아챘기 때문이었다.</span>
+                        </li>
+                    </ul>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            세 사례를 관통하는 문제는 코드의 품질이 아니다. <strong>무엇이, 언제, 왜 들어왔는지를 사후에 되짚을 수 없다는 것</strong>이다. 저작권이 불투명한 코드가 기록의 공백을 타고 슬며시 들어오고, 또 슬며시 사라진다. Joey Hess가 100시간을 쓴 이유는 코드가 못 미더워서가 아니라, 그 출처가 증명되지 않아서였다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">보장이 아니라 빌드 플래그</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        감사의 결과물은 선언문이 아니라 하나의 빌드 옵션이었다. git-annex는 <code>NoLLMDependencies</code>라는 빌드 플래그를 도입했다(stack 사용자에게는 별도 설정 파일이 제공된다). 이 옵션으로 빌드하면, LLM 생성 코드가 유입되기 이전 버전의 의존성으로 고정해 소프트웨어를 만든다. "AI 코드 없는 git-annex"를 원하는 사람이 실제로 손에 쥘 수 있는 물건이 생긴 것이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        중요한 것은 이 플래그가 무엇을 <strong>보장하지 못하는지</strong>다. 우선 기본 빌드가 아니다. 명시적으로 이 옵션을 켠 사람만 그 상태를 얻는다. 더 무거운 문제는 보안이다. 어떤 취약점이 새 버전에서만 고쳐졌다면, 구버전 의존성에 고정된 이 빌드는 그 보안 패치를 받지 못한 채 취약점을 그대로 안고 간다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            그래서 이것은 "완전한 안전"이 아니라 <strong>선택 가능한 트레이드오프</strong>다. AI 코드 유입 위험과 보안 패치 지연 위험 중 무엇을 더 감당할 수 있는지, 사용자가 스스로 고르게 만든 장치다. git-annex의 공식 문서 표현을 빌리면, 자유 소프트웨어에 들어온 LLM 생성 코드는 "잠재적 지뢰"이고 그 저작권은 "미해결 문제"다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">새로운 위협 표면이 된 의존성</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        git-annex 자신이 LLM 코드를 한 줄도 쓰지 않아도, 문제는 그 아래에서 올라온다. 감사가 드러낸 것은 이미 여러 하위 의존성이 LLM 생성 코드를 포함하기 시작했다는 사실이다. 공식 문서가 지목한 패키지와 그 시점은 구체적이다.
+                    </p>
+                    <figure class="my-8">
+                        <div class="themeable-card rounded-xl p-8 flex items-center justify-center">
+                            <img src="./image/img-02-haskell-logo.svg"
+                                 alt="Haskell 프로그래밍 언어 공식 로고 — GHC·ram·persistent·yesod·Cabal 등 오염이 확인된 하위 의존성 다수가 이 생태계 소속"
+                                 class="max-w-[220px] max-h-[160px] object-contain"
+                                 loading="lazy"
+                                 onerror="this.parentElement.parentElement.style.display='none'">
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 오염이 확인된 하위 의존성 대부분은 Haskell 생태계 소속이다 | Source: <a href="https://commons.wikimedia.org/wiki/File:Haskell-Logo.svg" target="_blank" rel="noopener" class="underline">Haskell 공식 로고 (Public Domain)</a>
+                        </figcaption>
+                    </figure>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>GHC</strong> — 9.15부터 (git-annex는 9.6.6까지만 지원)</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>ram</strong> — 0.21.0부터. git-annex는 이 라이브러리 대신 그것이 포크되기 전 원본인 비유지보수 라이브러리 <strong>memory</strong>를 계속 쓰는 쪽을 택했다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>persistent</strong> — 2.15.0.0부터, <strong>yesod</strong> — 1.7.0.0부터, <strong>Cabal</strong>, 그리고 <strong>git</strong> — 2.53부터 (git-annex는 2.22까지만 지원)</span>
+                        </li>
+                    </ul>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 목록이 말하는 바는 분명하다. 한 프로젝트의 청결함이, 그 프로젝트가 통제할 수 없는 수백 개 하위 패키지의 결정에 좌우된다. 내가 아무리 조심해도 내가 기대는 라이브러리가 방침을 바꾸면 오염은 다시 흘러든다. AI 생성 코드가 개별 파일의 문제가 아니라 <strong>공급망 전체의 위협 표면</strong>이 되는 순간이다. git-annex가 memory 같은 낡은 라이브러리로 되돌아간 것은, 그 무력감 앞에서 택할 수 있는 몇 안 되는 우회로였다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">결벽이 치른 대가</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 정직한 대목은 이 원칙의 값을 저자 스스로 계산해 공개했다는 점이다. GHC 9.15부터 LLM 코드가 들어왔고 git-annex가 9.6.6까지만 지원하기로 한 이상, git-annex는 그 이후 등장할 대부분의 Haskell 언어 개선을 앞으로 쓸 수 없다. 컴파일러가 나아가는 방향에서 스스로를 떼어낸 것이다. 저자는 이 상황을 "deeply unfortunate", 깊이 유감스러운 일이라고 적었다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            그는 여기서 한 걸음 더 나아가 자기 원칙의 한계를 인정한다. 언어의 미래와 영구히 단절되는 편이 LLM 코드에 기대는 것보다 오히려 더 나쁠 수도 있다는 것이다. 그래서 그는 "이 원칙을 앞으로도 반드시 지키겠다고는 약속할 수 없다"고 밝혔다. 결벽을 선언하되, 그 결벽이 언젠가 더 큰 손해가 될 수 있음을 같은 문장 안에서 인정하는 태도다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mt-6">
+                        커뮤니티 반응도 갈렸다. 한쪽에서는 과잉 대응이라 봤고, 다른 쪽에서는 지지하며 관심을 보였다. 반-AI 성향 개발자들 사이에서는 여러 프로젝트별로 "마지막으로 오염되지 않은 버전"을 추적하려는 비공식 시도도 언급됐다. 아직 포괄적이지는 않지만, 이 불안이 한 사람의 유별남만은 아니라는 신호다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">코드 출처 = 데이터 출처</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서부터가 데이터를 다루는 사람에게 이 사건이 남의 일이 아닌 이유다. git-annex가 씨름한 질문을 한 줄로 줄이면 이렇다. "이 산출물을 누가, 무엇이 만들었는가를 사후에 증명할 수 있는가." 코드라는 단어를 데이터로 바꿔도 문장은 그대로 성립한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스가 최근 다룬 <a href="/blog/mechanical-turk-sunset-data-provenance/ko/" class="text-orange-500 hover:text-orange-400 transition-colors font-semibold">아마존 메커니컬 터크 종료</a> 사례가 정확히 같은 구조였다. 인간이 라벨을 붙인다고 믿었던 크라우드 작업에서, 한 연구는 워커의 33~46%가 실제로는 LLM으로 과제를 처리했다고 추정했다. 인간 라벨이라는 데이터의 출처 정보가 소실되는 순간, 그 데이터의 신뢰는 품질을 따지기도 전에 무너졌다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            코드에서든 데이터에서든 같은 패턴이 반복된다. <strong>생성 주체의 출처 정보가 사라지면, 품질 검증보다 먼저 신뢰가 붕괴한다.</strong> git-annex가 뒤늦게 100시간을 들여 되짚어야 했던 것도, 메커니컬 터크에서 라벨의 진짜 저자를 알 수 없게 된 것도, 결국 출처를 처음부터 기록하지 않은 대가였다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스 관점</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Joey Hess는 자신의 100시간을 일회성 감사로 규정하지 않았다. 의존성은 계속 갱신되고, 새 오염은 다음 릴리스에서 또 흘러들 수 있으니, 이 검토는 반복해야 하는 유지보수 부담이라고 못 박았다. 이 지점이 AI-Ready Data 관점에서 이 사례가 축소판으로 보여주는 핵심이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터와 모델의 계보를 증명 가능하게 유지하는 일도 똑같다. 한 번 검증하고 끝나는 기능이 아니라, 데이터가 흐르는 동안 계속 지불해야 하는 비용이다. git-annex가 한 명의 손과 100시간으로 감당한 것을, 조직 규모의 데이터 파이프라인에서는 누가, 어떤 자동화로, 어떤 주기로 감당할 것인가.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            그래서 이 글이 남기는 질문은 "AI 코드를 쓸 것인가 말 것인가"가 아니다. <strong>증명 가능한 출처를 유지하는 비용을 누가, 어떻게 분담할 것인가</strong>이다. 코드든 데이터든, 출처를 나중에 복원하는 값은 항상 처음부터 기록하는 값보다 비싸다. git-annex의 1,489줄과 100시간이 그 청구서를 미리 보여줬을 뿐이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- 참고문헌 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            RIS
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">1차 소스</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Hess, J. (2026). "<a href="https://joeyh.name/blog/entry/no_LLM_code_in_dependencies/" target="_blank" rel="noopener">no LLM code in dependencies</a>." joeyh.name.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">git-annex. (2026). "<a href="https://git-annex.branchable.com/no_llm_code/" target="_blank" rel="noopener">no_llm_code</a>." git-annex.branchable.com. (공식 정책 문서 — NoLLMDependencies 빌드 플래그, 영향받는 의존성 목록)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">커뮤니티·보도</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">3.</span><span class="ref-body">Hacker News. (2026). "<a href="https://news.ycombinator.com/item?id=48762008" target="_blank" rel="noopener">No LLM code in dependencies — discussion</a>." news.ycombinator.com.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Lobsters. (2026). "<a href="https://lobste.rs/s/oe8pxn/no_llm_code_dependencies" target="_blank" rel="noopener">No LLM code in dependencies — discussion</a>." lobste.rs.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Daily AI Digest. (2026). "<a href="https://dailyaidigest.net/archive/2026/07/03/" target="_blank" rel="noopener">Daily AI Digest — 2026-07-03 archive</a>." dailyaidigest.net.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260711"></script>
+    <script src="/scripts/citation-download.js?v=20260711" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-10T18:35:56.678Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-10T18:45:40.450Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1783708556678-nmnfs7",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-10T19:10:52.797Z"
+            },
+            mainTitle: "의존성 트리에서 AI 생성 코드를 걷어낸 오픈소스 프로젝트",
+            subtitle: "저작권 불확실성 때문에 미래 언어 개선까지 포기한 git-annex의 100시간 감사",
+            pageTitle: "AI 생성 코드, 오픈소스 의존성에서 걷어낸 git-annex의 100시간 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-11",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/git-annex-no-llm-code/ko/",
+            tags: ["AI 생성 코드", "오픈소스", "소프트웨어 공급망", "데이터 프로버넌스", "git-annex", "AI-Ready Data", "코드 저작권"],
+            faqs: [
+                { question: "git-annex는 왜 AI 생성 코드를 배제했나요?", answer: "코드 품질 때문이 아니라 저작권 불확실성 때문입니다. LLM이 생성한 코드는 저작권 귀속이 미해결 문제여서, 자유 소프트웨어에 섞여 들면 잠재적 법적 지뢰가 됩니다. git-annex는 '우리 코드와 의존성 어디에도 LLM 생성 코드가 없다'고 증명 가능하게 말하기 위해 이 결정을 내렸습니다." },
+                { question: "감사에 100시간이나 걸린 이유는 무엇인가요?", answer: "자기 프로젝트 코드만이 아니라 그 프로젝트가 기대는 전체 의존성 트리를 거슬러 올라가며 손으로 추적해야 했기 때문입니다. 개발자 Joey Hess는 지난 한 달간 약 100시간을 이 검토에 투입했습니다." },
+                { question: "1,489줄 커밋 메시지가 왜 문제인가요?", answer: "26,000줄 코드베이스에 1만 줄 넘는 변경이 한 번에 들어오면서 커밋 메시지가 사람이 읽기 어려운 1,489줄로 늘어났습니다. 무엇이 왜 바뀌었는지가 오히려 흐려졌고, 변경의 출처를 사후에 되짚기 어려워졌다는 점이 핵심 문제입니다." },
+                { question: "NoLLMDependencies 빌드 플래그는 무엇을 보장하나요?", answer: "LLM 생성 코드가 유입되기 이전 버전의 의존성으로 고정해 빌드하는 옵션입니다. 다만 기본 빌드가 아니며, 보안 패치가 새 버전에만 있으면 구버전에 고정된 이 빌드는 그 취약점을 그대로 안고 갑니다. 완전한 보장이 아니라 선택 가능한 트레이드오프입니다." },
+                { question: "어떤 의존성에서 LLM 코드가 확인됐나요?", answer: "GHC(9.15부터), ram(0.21.0부터), persistent(2.15.0.0부터), yesod(1.7.0.0부터), Cabal, git(2.53부터)입니다. git-annex는 이를 피하기 위해 ram 대신 그 원본인 비유지보수 라이브러리 memory를 계속 사용하는 등의 우회를 택했습니다." },
+                { question: "이 결정이 치른 대가는 무엇인가요?", answer: "git-annex는 GHC 9.15 이후 대부분의 Haskell 언어 개선을 앞으로 쓸 수 없게 됐습니다. 저자 본인도 이를 '깊이 유감스러운 일'이라 표현하며, 언어의 미래와 영구 단절되는 편이 LLM 코드에 기대는 것보다 더 나쁠 수도 있어 이 원칙을 반드시 지키겠다고 약속할 수는 없다고 인정했습니다." },
+                { question: "이 사례가 데이터 거버넌스와 어떤 관련이 있나요?", answer: "코드의 출처 증명과 데이터의 출처 증명은 같은 구조의 문제입니다. 생성 주체의 출처 정보가 사라지면 품질 검증보다 먼저 신뢰가 무너집니다. 메커니컬 터크에서 크라우드워커의 33~46%가 LLM으로 라벨 작업을 했다는 추정과 같은 패턴으로, 출처를 처음부터 기록하지 않으면 나중에 복원하는 비용이 훨씬 커집니다." },
+                { question: "이 문제는 git-annex만의 특수한 상황인가요?", answer: "아닙니다. 한 프로젝트가 아무리 조심해도 그것이 기대는 수백 개 하위 패키지가 방침을 바꾸면 오염은 다시 흘러듭니다. AI 생성 코드는 개별 파일의 문제가 아니라 소프트웨어 공급망 전체의 위협 표면이며, 반-AI 개발자들이 프로젝트별 '마지막 무오염 버전'을 추적하려는 비공식 시도도 나타나고 있습니다." }
+            ]
+        });
+    </script>
+</body>
+</html>
