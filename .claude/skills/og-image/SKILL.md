@@ -70,6 +70,12 @@ node tools/generate-og-image.js --from-html "project/World Model/world-model-com
    - 기타 → tech
 ```
 
+## 문구 전략의 정본 (2026-07-10)
+
+**커버에 그릴 문구(제목·부제)의 스타일 정본은 [`docs/title-strategy.md`](../../../docs/title-strategy.md) §0·§1.1** —
+이 스킬은 렌더링 규칙(추출 우선순위·줄바꿈·폰트·테마)만 담당하고 문구 스타일을 재정의하지 않는다.
+핵심: 커버 제목 기본값 = mainTitle 그대로, 오버라이드는 2줄 넘칠 때 같은 사실의 압축본만(§1.1).
+
 ## 제목 추출 우선순위
 
 ```
