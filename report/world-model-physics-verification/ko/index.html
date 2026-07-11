@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>생성 영상은 물리를 지키는가: 월드모델 합성데이터 검증 | 페블러스</title>
+    <meta name="description" content="Cosmos·Sora가 만든 영상이 물리적으로 옳은지 사후에 감사하는 기술 계열을 해부한다. SAM2·CoTracker·FoundationPose·Depth Anything 역추출 파이프라인, Physics-IQ 벤치마크, 그리고 검증 없이 정답을 소유하는 시뮬레이터 데이터 해자.">
+    <meta name="keywords" content="월드모델, 물리 검증, 합성데이터, Physical AI, 피지컬AI, Cosmos, Sora, Physics-IQ, SAM2, CoTracker, FoundationPose, Depth Anything, V-JEPA, 역추출, 시뮬레이터, ground-truth, 데이터 품질, 페블러스, PebbloSim, DataClinic">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/world-model-physics-verification/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/world-model-physics-verification/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/world-model-physics-verification/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/world-model-physics-verification/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="생성된 영상은 물리적으로 옳은가">
+    <meta property="og:description" content="월드모델이 만든 영상의 물리적 타당성을 사후에 감사하는 기술 계열과, 검증조차 필요 없는 정답 데이터의 해자.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/world-model-physics-verification/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/world-model-physics-verification/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="월드모델 생성 영상의 사후 물리 검증 파이프라인">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="생성된 영상은 물리적으로 옳은가">
+    <meta name="twitter:description" content="월드모델 합성데이터의 사후 물리 검증 — 역추출 파이프라인부터 시뮬레이터 정답 장부까지.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/world-model-physics-verification/ko/image/index.png">
+    <meta name="twitter:image:alt" content="월드모델 생성 영상의 사후 물리 검증 파이프라인">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="생성된 영상은 물리적으로 옳은가">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/07/11">
+    <meta name="citation_online_date" content="2026/07/11">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Stylesheets (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260711">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260711">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260711">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 그럴듯함의 함정</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 세 갈래 길과 검증 가능성</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 픽셀에서 물리를 되읽다</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 물리 이해를 채점하다</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 산업계의 대응과 검증기의 신뢰성</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 정답을 갖고 시작하라</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            피지컬AI 시대의 월드모델은 실사에 가까운 영상을 쏟아낸다. NVIDIA Cosmos와 OpenAI Sora가 만든 장면은 눈으로 보기에는 흠잡을 데가 없다. 그러나 "보기에 그럴듯한 것"과 "실제 물리를 지키는 것" 사이에는 넓은 간극이 있다. 이 보고서는 생성된 영상이 정말 물리 법칙을 따르는지 <strong>사후에 감사(audit)</strong>하는 기술 계열, 즉 픽셀에서 궤적·속도·자세·깊이를 도로 읽어내 정답과 대조하는 검증 파이프라인을 해부한다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            간극의 크기는 숫자로 드러난다. DeepMind·INSAIT의 Physics-IQ 벤치마크에서 가장 뛰어난 생성 모델조차 실제-실제 영상 쌍이 갖는 자연 변동성(100점)의 <strong>24.1점</strong>에 그쳤고, 시각적으로 가장 그럴듯하다고 평가받은 Sora는 물리 이해에서는 오히려 하위권으로 밀렸다. 시각적 사실성과 물리적 정확성은 함께 오르지 않는다. 그래서 산업은 "이 영상이 정말 물리를 지키는가"를 되묻는 검증 도구를 세우기 시작했지만, 정작 검증기 자신도 완벽하지 않다는 사실이 함께 드러났다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            여기서 페블러스의 관점이 갈린다. 역추출 검증은 정답이 없는 영상에서 물리를 <strong>추측</strong>하는 근사다. 반면 시뮬레이터는 영상을 만드는 순간 궤적·힘·질량·충돌 이벤트라는 <strong>물리 사건의 정답 장부(ground-truth event ledger)</strong>를 함께 소유한다. 검증이 어려운 문제일수록, 검증할 필요조차 없는 정답을 대량으로 생성하는 능력이 데이터 해자가 된다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">24.1 / 100</p>
+                            <p class="text-sm themeable-text-secondary mt-1">최고 생성 모델의 물리 이해 점수</p>
+                            <p class="text-xs themeable-muted mt-1">Physics-IQ — 실제 영상의 자연 변동성 대비. "그럴듯함 ≠ 물리적 옳음"</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">57.6%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">오염된 벤치마크 표본 비율</p>
+                            <p class="text-xs themeable-muted mt-1">Physics-IQ Verified가 밝힌 원 벤치마크 오염률 — "검증기도 완벽하지 않다"</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">200만+</p>
+                            <p class="text-sm themeable-text-secondary mt-1">역추출된 궤적 수</p>
+                            <p class="text-xs themeable-muted mt-1">ObjectForesight — 원시 궤적 절반을 버려야 남는 규모. 역추출의 규모와 손실</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">91% vs 22%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">물리 내장 학습 vs 검증 없는 생성물</p>
+                            <p class="text-xs themeable-muted mt-1">RoboScape 합성 학습 성공률(실제 92% 근접) 대 일반 생성물의 물리 준수율</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">그럴듯함의 함정 — 생성 영상은 왜 물리를 어기는가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결론부터 말하면, 픽셀 계열 월드모델이 물리를 어기는 것은 우연한 버그가 아니라 구조적 필연이다. 이 모델들은 방대한 영상을 보고 "다음 프레임이 어떻게 생겨야 통계적으로 그럴듯한가"를 학습한다. 학습 목표 어디에도 질량·힘·속도·접촉이라는 물리 상태가 명시적으로 들어 있지 않다. 모델은 세계가 어떻게 움직이는지를 아는 대신, 픽셀이 어떻게 배열되면 자연스러워 보이는지를 안다. 그래서 물체가 벽을 통과하고, 컵이 사라졌다 다시 나타나고, 떨어지던 공이 중력을 잊는 장면이 태연히 생성된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이런 실패는 몇 가지 전형적인 유형으로 반복된다. 물체가 다른 물체를 뚫고 지나가는 <strong>관통(interpenetration)</strong>, 화면에서 벗어났던 물체가 다른 모습으로 돌아오는 <strong>물체 영속성(object permanence) 위반</strong>, 액체가 부피를 지키지 않는 <strong>질량 보존 위반</strong>, 그리고 충돌 후 운동량이 맞지 않게 튀는 <strong>운동량 보존 위반</strong>이다. 사람 눈에는 한 장면씩 보면 그럴듯하지만, 물리학의 잣대를 들이대면 곳곳이 어긋난다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>결함은 얼마나 흔한가</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 결함은 예외가 아니라 다수다. Physion-Eval 벤치마크는 생성 영상을 사람이 직접 검토해 물리 결함을 세었는데, 3인칭(외부 시점) 영상의 <strong>83.3%</strong>, 1인칭(에고 시점) 영상의 <strong>93.5%</strong>가 최소 하나 이상의 식별 가능한 물리 결함을 담고 있었다. 열 편 중 여덟아홉 편이 "어딘가 물리를 어긴" 셈이다. 특히 카메라가 함께 움직이는 1인칭 영상에서 결함률이 더 높다는 점은, 로봇·자율주행처럼 관찰자가 움직이는 실제 응용에서 문제가 더 심각해짐을 시사한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        평가 기준을 엄격하게 조일수록 통과율은 가파르게 떨어진다. 아래는 같은 "물리 준수"를 서로 다른 엄격도로 잰 세 지점이다. 의미와 물리를 동시에 만족해야 하는 기준(VideoPhy)에서 이미 40% 안팎이던 통과율은, 더 어려운 물리 시나리오로 좁힌 VideoPhy-2에서 22%까지 내려가고, 사람이 결함을 하나라도 찾는 방식(Physion-Eval)으로 보면 결함률이 90%대에 이른다.
+                    </p>
+
+                    <div class="my-8">
+                        <svg viewBox="0 0 720 260" class="w-full h-auto" role="img" aria-label="평가 엄격도가 높아질수록 생성 영상의 물리 통과율이 떨어지는 스펙트럼">
+                            <text x="20" y="28" font-size="15" font-weight="700" fill="#171719">엄격도 ↑ → 통과율 ↓</text>
+                            <!-- bar 1 -->
+                            <text x="20" y="80" font-size="13" fill="#585858">VideoPhy · 의미+물리 동시(CogVideoX-5B)</text>
+                            <rect x="20" y="90" width="640" height="22" rx="4" fill="#E5E5E5"/>
+                            <rect x="20" y="90" width="253" height="22" rx="4" fill="#F86825"/>
+                            <text x="283" y="107" font-size="13" font-weight="700" fill="#171719">39.6%</text>
+                            <!-- bar 2 -->
+                            <text x="20" y="150" font-size="13" fill="#585858">VideoPhy-2 · 어려운 물리 서브셋(Wan2.1-14B)</text>
+                            <rect x="20" y="160" width="640" height="22" rx="4" fill="#E5E5E5"/>
+                            <rect x="20" y="160" width="141" height="22" rx="4" fill="#F86825"/>
+                            <text x="171" y="177" font-size="13" font-weight="700" fill="#171719">22%</text>
+                            <!-- bar 3 -->
+                            <text x="20" y="220" font-size="13" fill="#585858">Physion-Eval · 사람이 찾은 결함률(에고 시점)</text>
+                            <rect x="20" y="230" width="640" height="22" rx="4" fill="#E5E5E5"/>
+                            <rect x="20" y="230" width="599" height="22" rx="4" fill="#CF1D21"/>
+                            <text x="629" y="247" font-size="13" font-weight="700" fill="#171719">93.5%</text>
+                        </svg>
+                        <p class="text-xs themeable-muted mt-2 text-center">같은 "물리를 지키는가"라는 질문도, 재는 방식이 엄격해질수록 생성 영상의 성적은 급격히 나빠진다. (VideoPhy arXiv:2406.03520 · VideoPhy-2 arXiv:2503.06800 · Physion-Eval arXiv:2603.19607)</p>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            핵심은 이것이 데이터의 문제라는 점이다. 이렇게 물리를 어긴 영상이 검증 없이 학습 데이터로 흘러 들어가면, 그 위에서 훈련된 로봇·자율주행 정책 모델의 물리 감각까지 오염된다. 생성물의 겉모습이 아무리 정교해도, 물리가 틀린 데이터는 틀린 세계관을 가르친다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">세 갈래 길 — 픽셀식·물리식·JEPA와 '검증 가능성'</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        월드모델이 물리를 다루는 방식은 크게 세 갈래로 나뉜다. 이 계보 자체는 <a href="/report/world-model-survey-2026/ko/" class="themeable-link" style="color:#F86825;text-decoration:underline;">앞선 서베이 편</a>에서 정리했으므로, 여기서는 오직 하나의 축, <strong>"검증 가능성"</strong>으로만 다시 세워 본다. 각 갈래가 물리를 어떻게 다루느냐는, 곧 그 물리가 옳은지를 사후에 확인할 수 있느냐와 직결되기 때문이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <strong>픽셀식(Sora·Cosmos·Genie)</strong>은 물리를 픽셀 통계 안에 암묵적으로 녹인다. 명시적인 물리 상태가 없으니, 결과물의 물리를 확인하려면 픽셀에서 물리값을 도로 뽑아내는 수밖에 없다. 이것이 이 보고서 3장의 역추출 파이프라인이다. <strong>물리식(시뮬레이터·명시적 상태)</strong>은 물리 엔진이 매 스텝 궤적·힘·충돌을 계산하므로, 물리값이 결과물과 함께 정답으로 존재해 검증이 필요 없다. <strong>이해형 JEPA(V-JEPA 2, 얀 르쿤)</strong>는 픽셀 재현을 포기하고 잠재공간에서 다음 상태를 예측해 표현이 간결하지만, 그 잠재 표현이 실제 물리를 담았는지는 여전히 외부 테스트로 확인해야 한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        "이해형이면 물리를 아는 것 아닌가"라는 기대는 아직 이르다. V-JEPA 2도 물리 위반을 일부러 삽입한 IntPhys 2 같은 직관 물리 테스트에서 사람에 유의미하게 못 미친다. 잠재공간에서 예측을 잘한다는 것과 물리를 정확히 이해한다는 것은 같지 않다. 즉 세 갈래 중 어느 쪽도 "검증 없이 물리적으로 옳다"고 단언할 수 없다. 유일한 예외는 애초에 물리 정답을 손에 쥔 시뮬레이터뿐인데, 이 대비는 6장에서 다시 만난다.
+                    </p>
+
+                    <div class="my-8">
+                        <svg viewBox="0 0 720 230" class="w-full h-auto" role="img" aria-label="픽셀식·이해형 JEPA·물리식 세 갈래 접근의 검증 가능성 비교">
+                            <defs>
+                                <marker id="arrow-verif-gray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L6,3 L0,6 Z" fill="var(--text-muted)"/>
+                                </marker>
+                                <marker id="arrow-verif-orange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L6,3 L0,6 Z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                            <text x="20" y="22" font-size="15" font-weight="700" fill="var(--text-primary)">세 갈래 접근과 검증 가능성</text>
+
+                            <!-- Row 1: 픽셀식 -->
+                            <rect x="20" y="40" width="220" height="50" rx="8" fill="none" stroke="var(--border-color)" stroke-width="1.5"/>
+                            <text x="35" y="62" font-size="13" font-weight="700" fill="var(--text-primary)">픽셀식</text>
+                            <text x="35" y="80" font-size="11" fill="var(--text-secondary)">Sora · Cosmos · Genie</text>
+                            <line x1="245" y1="65" x2="290" y2="65" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow-verif-gray)"/>
+                            <rect x="300" y="40" width="400" height="50" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                            <text x="316" y="62" font-size="13" font-weight="700" fill="var(--text-secondary)">✗ 정답 없음</text>
+                            <text x="316" y="80" font-size="11" fill="var(--text-muted)">추측으로만 확인 가능 (3장 참고)</text>
+
+                            <!-- Row 2: 이해형 JEPA -->
+                            <rect x="20" y="100" width="220" height="50" rx="8" fill="none" stroke="var(--border-color)" stroke-width="1.5"/>
+                            <text x="35" y="122" font-size="13" font-weight="700" fill="var(--text-primary)">이해형 JEPA</text>
+                            <text x="35" y="140" font-size="11" fill="var(--text-secondary)">V-JEPA 2 · 얀 르쿤</text>
+                            <line x1="245" y1="125" x2="290" y2="125" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow-verif-gray)"/>
+                            <rect x="300" y="100" width="400" height="50" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                            <text x="316" y="122" font-size="13" font-weight="700" fill="var(--text-secondary)">△ 표현은 있으나 미검증</text>
+                            <text x="316" y="140" font-size="11" fill="var(--text-muted)">잠재공간 예측, 실제 이해 여부는 외부 테스트로 확인</text>
+
+                            <!-- Row 3: 물리식 -->
+                            <rect x="20" y="160" width="220" height="50" rx="8" fill="#FDEEE6" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="35" y="182" font-size="13" font-weight="700" fill="var(--text-primary)">물리식</text>
+                            <text x="35" y="200" font-size="11" fill="var(--text-secondary)">시뮬레이터 · 명시적 상태</text>
+                            <line x1="245" y1="185" x2="290" y2="185" stroke="#F86825" stroke-width="1.5" marker-end="url(#arrow-verif-orange)"/>
+                            <rect x="300" y="160" width="400" height="50" rx="8" fill="#FDEEE6" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="316" y="182" font-size="13" font-weight="700" fill="#F86825">✓ 정답과 함께 생성</text>
+                            <text x="316" y="200" font-size="11" fill="var(--text-secondary)">물리 엔진이 계산, 검증이 필요 없음</text>
+                        </svg>
+                        <p class="text-xs themeable-muted mt-2 text-center">검증 가능성 축으로 다시 세운 세 갈래 길. 픽셀식은 확인이 가장 어렵고, 물리식(시뮬레이터)은 확인이 필요 없다.</p>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            세 갈래를 검증 가능성으로 다시 읽으면 질문이 뒤집힌다. "어떤 모델이 물리를 가장 잘 아는가"가 아니라, <strong>"어떤 접근이 물리의 옳고 그름을 확인하기 쉬운가"</strong>가 실무의 관건이 된다. 픽셀식은 확인하기 가장 어렵고, 시뮬레이터는 확인이 필요 없다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">픽셀에서 물리를 되읽다 — 역추출 검증 파이프라인</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        픽셀식 생성물에는 물리 상태가 없으니, 검증하려면 픽셀에서 물리를 도로 읽어내야 한다. 지난 2년 사이 이 작업에는 사실상의 표준 조립 라인이 자리 잡았다. 물체를 분리하고(세그멘테이션), 그 물체가 어디로 움직였는지 따라가고(궤적 추적), 어떤 자세로 놓였는지 재고(6자유도 자세), 카메라로부터 얼마나 떨어졌는지 재고(메트릭 깊이), 마지막으로 이 값들을 미분해 속도·가속도를 얻어 물리 법칙과 대조한다(물리량 산출). 각 단계는 잘 훈련된 파운데이션 모델이 하나씩 맡는다.
+                    </p>
+
+                    <div class="my-8">
+                        <svg viewBox="0 0 760 150" class="w-full h-auto" role="img" aria-label="역추출 검증 파이프라인: 세그멘테이션에서 물리량 산출까지의 5단계 흐름">
+                            <defs>
+                                <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L6,3 L0,6 Z" fill="#808080"/>
+                                </marker>
+                            </defs>
+                            <!-- boxes -->
+                            <g font-size="12" text-anchor="middle">
+                                <rect x="8" y="45" width="120" height="56" rx="8" fill="#FDEEE6" stroke="#F86825" stroke-width="1.5"/>
+                                <text x="68" y="68" font-weight="700" fill="#171719">SAM2</text>
+                                <text x="68" y="86" fill="#585858">세그멘테이션</text>
+
+                                <rect x="163" y="45" width="120" height="56" rx="8" fill="#FDEEE6" stroke="#F86825" stroke-width="1.5"/>
+                                <text x="223" y="64" font-weight="700" fill="#171719">CoTracker3</text>
+                                <text x="223" y="80" fill="#585858">SpatialTrackerV2</text>
+                                <text x="223" y="94" fill="#585858">궤적 추적</text>
+
+                                <rect x="318" y="45" width="120" height="56" rx="8" fill="#FDEEE6" stroke="#F86825" stroke-width="1.5"/>
+                                <text x="378" y="68" font-weight="700" fill="#171719">FoundationPose</text>
+                                <text x="378" y="86" fill="#585858">6DoF 자세</text>
+
+                                <rect x="473" y="45" width="120" height="56" rx="8" fill="#FDEEE6" stroke="#F86825" stroke-width="1.5"/>
+                                <text x="533" y="64" font-weight="700" fill="#171719">Depth</text>
+                                <text x="533" y="80" font-weight="700" fill="#171719">Anything V2</text>
+                                <text x="533" y="94" fill="#585858">메트릭 깊이</text>
+
+                                <rect x="628" y="45" width="124" height="56" rx="8" fill="#171719"/>
+                                <text x="690" y="68" font-weight="700" fill="#ffffff">중심차분·PINN</text>
+                                <text x="690" y="86" fill="#BDBDBD">물리량 산출</text>
+                            </g>
+                            <!-- arrows -->
+                            <line x1="130" y1="73" x2="161" y2="73" stroke="#808080" stroke-width="1.5" marker-end="url(#arrow)"/>
+                            <line x1="285" y1="73" x2="316" y2="73" stroke="#808080" stroke-width="1.5" marker-end="url(#arrow)"/>
+                            <line x1="440" y1="73" x2="471" y2="73" stroke="#808080" stroke-width="1.5" marker-end="url(#arrow)"/>
+                            <line x1="595" y1="73" x2="626" y2="73" stroke="#808080" stroke-width="1.5" marker-end="url(#arrow)"/>
+                            <text x="380" y="128" font-size="12" text-anchor="middle" fill="#808080">각 단계 개별 정확도 90%대 → 체인으로 엮이면 오차 누적 → 운동량·에너지 보존과 대조</text>
+                        </svg>
+                        <p class="text-xs themeable-muted mt-2 text-center">표준 역추출 파이프라인. 입력은 생성 영상, 출력은 궤적·속도·자세·깊이 같은 물리 시그널이다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        각 도구의 역할과 대표 정확도, 구조적 한계를 표로 모았다. 개별 성적은 90%대로 인상적이지만, 마지막 열의 한계들이 체인으로 엮이는 순간 오차는 곱해진다.
+                    </p>
+
+                    <div class="overflow-x-auto my-8">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2" style="border-color:#F86825;">
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">단계 · 도구</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">뽑아내는 물리 시그널</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">대표 정확도</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">구조적 한계</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>SAM2</strong> · 세그멘테이션</td>
+                                    <td class="py-3 px-3">물체 마스크·경계</td>
+                                    <td class="py-3 px-3">DAVIS J&amp;F 90.7%</td>
+                                    <td class="py-3 px-3">유사 물체·빠른 움직임에서 마스크 새어 나감</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>CoTracker3</strong> · 2D 궤적</td>
+                                    <td class="py-3 px-3">점 단위 2D 이동 경로</td>
+                                    <td class="py-3 px-3">AJ 55.8(비폐색)</td>
+                                    <td class="py-3 px-3">폐색 시 AJ 46.7로 하락 — 가려지면 추적 유실</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>SpatialTrackerV2</strong> · 3D 궤적</td>
+                                    <td class="py-3 px-3">3D 공간 궤적</td>
+                                    <td class="py-3 px-3">단안 3D 추적 SOTA급</td>
+                                    <td class="py-3 px-3">단안 스케일 모호성 — 절대 크기 미정</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>FoundationPose</strong> · 6DoF 자세</td>
+                                    <td class="py-3 px-3">위치+회전(6자유도)</td>
+                                    <td class="py-3 px-3">YCB ADD-S 91.5%</td>
+                                    <td class="py-3 px-3">CAD/템플릿 의존, 신규·변형체 취약</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>Depth Anything V2</strong> · 깊이</td>
+                                    <td class="py-3 px-3">픽셀별 미터 깊이</td>
+                                    <td class="py-3 px-3">실내 AbsRel 0.05대</td>
+                                    <td class="py-3 px-3">원거리·수중 0.27까지 악화, 6m서 급락</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>중심차분·PINN</strong> · 물리량</td>
+                                    <td class="py-3 px-3">속도·가속도·보존량</td>
+                                    <td class="py-3 px-3">—</td>
+                                    <td class="py-3 px-3">앞 단계 오차를 미분이 증폭</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">출처: SAM2 arXiv:2408.00714 · CoTracker3 arXiv:2410.11831 · SpatialTrackerV2 arXiv:2507.12462 · FoundationPose arXiv:2312.08344 · Depth Anything V2 arXiv:2406.09414</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>세그멘테이션 — 무엇을 물체로 볼 것인가 (SAM2)</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모든 물리 측정은 "무엇을 하나의 물체로 볼 것인가"에서 시작한다. Meta AI의 SAM2는 영상 전체에 걸쳐 물체를 프레임 단위로 분리·추적하는 파운데이션 세그멘테이션 모델로, DAVIS 벤치마크에서 J&amp;F 90.7%를 낸다. 다만 색이나 형태가 비슷한 물체가 겹치거나 빠르게 움직이면 마스크가 이웃으로 새어 나가고, 이 경계 오차는 뒤따르는 궤적·자세·깊이 측정의 기준선을 통째로 흔든다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>궤적 추적 — 물체는 어디로 움직였나 (CoTracker3·SpatialTrackerV2)</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        분리된 물체가 시간에 따라 어디로 갔는지를 좇는 단계다. CoTracker3는 화면 위 점의 2D 이동 경로를 촘촘히 추적하지만, 물체가 다른 것에 가려지는 폐색 상황에서 정확도(AJ)가 55.8에서 46.7로 떨어진다. 잠깐 가려졌을 뿐인데 추적점을 잃으면, 그 구간의 속도는 통째로 추정 불가가 된다. SpatialTrackerV2는 이를 3D로 확장해 공간 궤적을 복원하지만, 단안(하나의 카메라) 영상에서는 "이 물체가 실제로 얼마나 큰가"라는 절대 스케일을 원리적으로 확정할 수 없다. 스케일이 흔들리면 속도의 절대값도 함께 흔들린다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>6자유도 자세 — 어떤 방향으로 놓였나 (FoundationPose)</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        물체의 위치(3)와 회전(3)을 합친 6자유도 자세는 회전 운동·접촉·충돌을 판정하는 데 필수다. FoundationPose는 YCB 데이터셋에서 ADD-S 91.5%로 신규 물체 자세 추정의 표준이 됐다. 그러나 이 정밀도는 물체의 CAD 모델이나 소수 참조 이미지에 기댄 것이어서, 생성 영상에 흔한 처음 보는 물체나 형태가 변하는 변형체·유체 앞에서는 기준 자체가 흔들린다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.4</span>메트릭 깊이 — 카메라에서 얼마나 먼가 (Depth Anything V2)</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2D 궤적을 실제 물리 공간으로 되돌리려면 각 픽셀이 카메라에서 몇 미터 떨어졌는지를 알아야 한다. Depth Anything V2는 실내 벤치마크에서 상대 오차(AbsRel) 0.05대의 뛰어난 성적을 내지만, 이 강점은 거리가 멀어질수록 급격히 무너진다. 정확도의 하락은 거의 거리에 비례해서, 2m에서 89.1%였던 값이 6m에서는 70.8%까지 내려간다. 로봇·자율주행처럼 원거리·수중·야외 조건에서는 상대 오차가 0.27까지 악화된다. (V2가 V1을 항상 능가하지는 않으며, 원 논문도 "V1과 유사 수준"임을 명시한다.)
+                    </p>
+
+                    <div class="my-8">
+                        <svg viewBox="0 0 640 280" class="w-full h-auto" role="img" aria-label="Depth Anything V2 정확도가 거리에 따라 급락하는 곡선">
+                            <line x1="60" y1="30" x2="60" y2="230" stroke="#BDBDBD" stroke-width="1"/>
+                            <line x1="60" y1="230" x2="600" y2="230" stroke="#BDBDBD" stroke-width="1"/>
+                            <!-- y labels -->
+                            <text x="52" y="48" font-size="11" text-anchor="end" fill="#808080">90%</text>
+                            <text x="52" y="123" font-size="11" text-anchor="end" fill="#808080">80%</text>
+                            <text x="52" y="198" font-size="11" text-anchor="end" fill="#808080">70%</text>
+                            <!-- data: 2m 89.1 (y=48.75), 4m 77.0 (y=139.5), 6m 70.8 (y=186) ; map 90->45,70->195 -> y=45+(90-v)*7.5 -->
+                            <polyline points="160,53 380,151 560,186" fill="none" stroke="#F86825" stroke-width="3"/>
+                            <circle cx="160" cy="53" r="5" fill="#F86825"/>
+                            <circle cx="380" cy="151" r="5" fill="#F86825"/>
+                            <circle cx="560" cy="186" r="5" fill="#F86825"/>
+                            <text x="160" y="42" font-size="12" text-anchor="middle" font-weight="700" fill="#171719">89.1%</text>
+                            <text x="380" y="140" font-size="12" text-anchor="middle" font-weight="700" fill="#171719">77.0%</text>
+                            <text x="560" y="175" font-size="12" text-anchor="middle" font-weight="700" fill="#171719">70.8%</text>
+                            <text x="160" y="250" font-size="12" text-anchor="middle" fill="#585858">2m</text>
+                            <text x="380" y="250" font-size="12" text-anchor="middle" fill="#585858">4m</text>
+                            <text x="560" y="250" font-size="12" text-anchor="middle" fill="#585858">6m</text>
+                            <text x="330" y="274" font-size="12" text-anchor="middle" fill="#808080">카메라로부터의 거리</text>
+                        </svg>
+                        <p class="text-xs themeable-muted mt-2 text-center">깊이 추정 정확도는 거리에 민감하다. 먼 물체일수록 물리 측정의 신뢰도가 떨어진다. (Depth Anything V2, 로보틱스 실측 기준)</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.5</span>물리량 산출과 규모화의 대가 (중심차분·Morpheus·ObjectForesight)</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        궤적·자세·깊이가 모이면 마지막으로 시간에 대한 미분(중심차분법)으로 속도·가속도를 얻고, 운동량·에너지 보존 같은 물리 법칙에 대조한다. 문제는 미분이 앞 단계의 작은 오차를 증폭한다는 데 있다. Morpheus는 실제 물리 실험을 촬영한 80여 개(개정판 130개) 영상을 기준으로, 가속도 점수(Acceleration Score)와 수평 운동량 보존(Momentum Conservation Score) 같은 보존량 지표만으로 채점한다. 정답 영상을 따로 두지 않고 "보존 법칙이 지켜졌는가"만 묻는 설계라, 원리적으로 정답이 없는 생성물에도 그대로 적용된다. ObjectForesight는 다른 길을 택한다. SAM2→SpatialTrackerV2→TRELLIS→FoundationPose 체인으로 EPIC 주방 영상에서 200만 개가 넘는 궤적을 뽑아, 0.84TiB 규모의 데이터셋으로 묶는다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 그 200만 궤적은 "잘 뽑아낸" 것이 아니라 "골라내고 남은" 것이다. ObjectForesight는 원시 궤적 약 229K개 중 절반가량인 112K개만 신뢰할 수 있어 나머지를 버렸다. 살아남은 궤적조차 투영 IoU가 0.1 아래로 떨어지면 국소 재정합을 다시 거쳐야 할 만큼, 손실을 메우는 보정이 파이프라인의 상당 부분을 차지한다. Morpheus도 상당한 폐기율(discard rate)을 전제로 규모를 맞춘다. 사후 역추출은 태생적으로 대량 손실을 감수해야만 규모화되는 <strong>정답을 골라내는 작업</strong>이다. 신뢰할 수 없는 궤적을 버려야 비로소 쓸 만한 궤적이 남는다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            역추출 파이프라인은 실행 가능한 레시피지만, 그 정직한 이름은 "근사"다. 개별 90%대 도구가 다섯 단계로 엮이며 오차가 곱해지고, 폐색·원거리·단안 스케일에서 신뢰가 무너지며, 규모를 맞추려면 절반을 버려야 한다. 이 파이프라인이 정교할수록 오히려 분명해지는 사실이 있다. 픽셀에서 물리를 되읽는 일은 원리적으로 정답을 소유한 것과 같아질 수 없다는 점이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">물리 이해를 채점하다 — Physics-IQ와 벤치마크 논쟁</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        개별 도구가 아니라 모델 전체의 물리 이해를 정면으로 재는 시도가 Physics-IQ다. 방법은 단순하고 영리하다. 유리컵이 넘어지고, 물감이 물에 퍼지고, 도미노가 쓰러지는 66개 실물 시나리오를 세 시점에서 두 번씩 촬영해 396개의 실제 영상을 만든다. 그런 다음 모델에게 앞의 3초를 보여주고 뒤의 5초를 예측하게 한 뒤, 모델이 그린 미래를 실제로 이어지는 영상과 IoU·MSE로 비교한다. 만점(100)의 기준은 "정답 영상"이 아니라 같은 장면을 다시 촬영한 실제-실제 영상 쌍의 자연 변동성이다. 사람이 봐도 두 번의 실제 촬영은 완전히 같지 않으니, 그 자연스러운 차이만큼을 100점으로 놓는 것이다. 촬영 대상은 특정 현상에 치우치지 않는다. 물감이 물에 번지는 유체역학, 빛의 반사·굴절 같은 광학, 도미노와 충돌의 고체역학, 자성, 열역학까지 다섯 갈래 물리를 고루 담아, 모델이 쉬운 물리 한둘만 흉내 내 점수를 부풀리지 못하게 막았다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결과는 냉정하다. 가장 뛰어난 생성 모델조차 이 기준선의 24.1점에 그쳤다. 사람이 기대하는 물리적 연속성의 약 4분의 1만 재현한 셈이다. 픽셀 충실도라는 다른 잣대로 봐도 격차는 그대로다. 최고 모델의 예측 오차(MSE)는 0.010으로, 실제-실제 쌍의 0.002보다 다섯 배 컸다. 겉보기 화질과 물리적 연속성 어느 쪽으로 재도 생성물은 실제에 한참 못 미친다. 더 흥미로운 것은 시각적 사실성과의 관계다. 시각적으로 가장 그럴듯하다고 평가받은 Sora는 물리 이해에서 오히려 하위권(8.7)으로 밀렸다. 두 데이터 소스 모두 사실성과 물리 이해 사이 상관이 낮거나 음(陰)의 방향임을 지적한다. <strong>잘 만든 영상일수록 물리를 잘 안다는 직관은 성립하지 않는다.</strong>
+                    </p>
+
+                    <div class="my-8">
+                        <svg viewBox="0 0 680 220" class="w-full h-auto" role="img" aria-label="Physics-IQ 물리 이해 점수 비교: 실제 기준선 100 대 최고 생성 모델 24.1, Sora 8.7">
+                            <text x="20" y="26" font-size="15" font-weight="700" fill="#171719">Physics-IQ 물리 이해 점수 (실제 영상 자연 변동성 = 100)</text>
+                            <!-- baseline 100 -->
+                            <text x="20" y="70" font-size="13" fill="#585858">실제-실제 영상 쌍 (기준선)</text>
+                            <rect x="20" y="78" width="600" height="26" rx="4" fill="#171719"/>
+                            <text x="628" y="97" font-size="13" font-weight="700" fill="#171719">100</text>
+                            <!-- best gen 24.1 -->
+                            <text x="20" y="130" font-size="13" fill="#585858">최고 생성 모델 (VideoPoet)</text>
+                            <rect x="20" y="138" width="600" height="26" rx="4" fill="#E5E5E5"/>
+                            <rect x="20" y="138" width="145" height="26" rx="4" fill="#F86825"/>
+                            <text x="173" y="157" font-size="13" font-weight="700" fill="#171719">24.1</text>
+                            <!-- sora 8.7 -->
+                            <text x="20" y="190" font-size="13" fill="#585858">Sora (시각 사실성 상위, 물리 하위)</text>
+                            <rect x="20" y="198" width="600" height="26" rx="4" fill="#E5E5E5"/>
+                            <rect x="20" y="198" width="52" height="26" rx="4" fill="#808080"/>
+                            <text x="80" y="217" font-size="13" font-weight="700" fill="#171719">8.7</text>
+                        </svg>
+                        <p class="text-xs themeable-muted mt-2 text-center">75.9점의 간극이 "그럴듯함"과 "물리적 옳음" 사이의 거리다. (Physics-IQ, arXiv:2501.09038, ICCV 2025)</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>검증기를 누가 검증하나 — Physics-IQ Verified</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        벤치마크가 권위를 얻으면, 그 벤치마크 자체가 얼마나 믿을 만한지를 되묻는 순간이 온다. 2026년 6월 발표된 Physics-IQ Verified는 원 벤치마크를 정밀 감사해, 표본의 <strong>57.6%</strong>가 측정하려는 물리와 무관한 아티팩트(조명 깜빡임, 카메라 흔들림, 압축 노이즈 등)에 오염돼 있었고, 프롬프트의 <strong>34.8%</strong>에 결함이 있었음을 밝혔다. 결정적으로, 오염을 걷어내고 다시 측정하니 모델 순위가 실제로 뒤바뀌었다. 원본과 재측정 순위의 상관은 Kendall τ=0.46에 그쳤다. "완만하지만 순위가 실제로 흔들리는" 수준이다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Physics-IQ Verified가 던지는 질문은 이 보고서의 뼈대와 정확히 겹친다. 생성물을 검증하려고 세운 인프라 자체가 감사 대상이 된다면, 검증의 신뢰는 어디에 뿌리내려야 하는가. 절반이 넘는 표본이 오염될 수 있는 측정 위에서 순위를 매기는 일과, 애초에 오염될 여지가 없는 정답을 소유하는 일은 질적으로 다른 문제다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">산업계의 대응과 검증기의 신뢰성</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        산업계도 자동 채점의 한계를 인정하기 시작했다. 2026년 6월 GTC 타이베이에서 공개된 NVIDIA Cosmos 3(Nano 16B·Super 64B)는 함께 발표된 Cosmos Evaluator/HUE와 짝을 이룬다. 기존 리더보드가 포화 상태에 이르러 모델 간 차이를 더 이상 가려내지 못하자, NVIDIA는 채점 방식을 바꿨다. 생성 영상을 통째로 점수 매기는 대신, <strong>단일 사실에 대한 Yes/No 질문으로 잘게 분해</strong>하는 "원자적 이진 검증"이다. 이 평가기는 별도 도구가 아니라 큐레이션(Cosmos Curator) → 도메인 적응(Cosmos-Transfer) → 품질 평가(Cosmos-Reason/Evaluator)로 이어지는 파이프라인의 마지막 단계로, NVIDIA OSMO가 전체를 오케스트레이션하며 로보틱스·자율주행을 포함한 7개 피지컬AI 도메인을 커버한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        분해된 질문은 네 축으로 묶인다. 장면이 프롬프트의 의미와 맞는가(의미 정합), 물리 법칙을 지키는가(물리 법칙), 공간·기하가 일관되는가(기하 추론), 시각적으로 완결되는가(시각 완결성). "공이 바닥에 닿은 뒤 튀어 올랐는가?" 같은 이진 질문이 모여 하나의 영상을 채점하는 방식은, 애매한 총점보다 어디가 틀렸는지를 짚어내기에 유리하다. NVIDIA는 이 채점이 사람 평가와 높은 상관(ρ=0.96)을 보인다고 발표했다.
+                    </p>
+
+                    <div class="my-8">
+                        <svg viewBox="0 0 760 250" class="w-full h-auto" role="img" aria-label="NVIDIA Cosmos Evaluator 파이프라인: 큐레이션에서 원자적 이진 검증, 4개 채점 축까지">
+                            <defs>
+                                <marker id="arrow-cosmos" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L6,3 L0,6 Z" fill="var(--text-muted)"/>
+                                </marker>
+                            </defs>
+                            <text x="20" y="18" font-size="12" fill="var(--text-muted)">NVIDIA OSMO 오케스트레이션 · 로보틱스·자율주행 등 7개 피지컬AI 도메인</text>
+                            <rect x="15" y="28" width="730" height="92" rx="10" fill="none" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4,4"/>
+
+                            <rect x="30" y="44" width="210" height="60" rx="8" fill="#FDEEE6" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="135" y="70" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-primary)">Cosmos Curator</text>
+                            <text x="135" y="90" font-size="11" text-anchor="middle" fill="var(--text-secondary)">큐레이션</text>
+
+                            <line x1="240" y1="74" x2="268" y2="74" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow-cosmos)"/>
+
+                            <rect x="270" y="44" width="210" height="60" rx="8" fill="#FDEEE6" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="375" y="70" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-primary)">Cosmos-Transfer</text>
+                            <text x="375" y="90" font-size="11" text-anchor="middle" fill="var(--text-secondary)">도메인 적응</text>
+
+                            <line x1="480" y1="74" x2="508" y2="74" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow-cosmos)"/>
+
+                            <rect x="510" y="44" width="220" height="60" rx="8" fill="#171719"/>
+                            <text x="620" y="70" font-size="13" font-weight="700" text-anchor="middle" fill="#ffffff">Cosmos-Reason / Evaluator</text>
+                            <text x="620" y="90" font-size="11" text-anchor="middle" fill="#e2e8f0">품질 평가 · 원자적 이진 검증</text>
+
+                            <line x1="620" y1="120" x2="620" y2="147" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow-cosmos)"/>
+
+                            <rect x="15" y="150" width="172" height="55" rx="8" fill="none" stroke="var(--border-color)" stroke-width="1.5"/>
+                            <text x="101" y="173" font-size="12" font-weight="700" text-anchor="middle" fill="var(--text-primary)">의미 정합</text>
+                            <text x="101" y="191" font-size="10" text-anchor="middle" fill="var(--text-muted)">Semantic</text>
+
+                            <rect x="201" y="150" width="172" height="55" rx="8" fill="#FDEEE6" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="287" y="173" font-size="12" font-weight="700" text-anchor="middle" fill="#F86825">물리 법칙</text>
+                            <text x="287" y="191" font-size="10" text-anchor="middle" fill="var(--text-secondary)">Physical Law</text>
+
+                            <rect x="387" y="150" width="172" height="55" rx="8" fill="none" stroke="var(--border-color)" stroke-width="1.5"/>
+                            <text x="473" y="173" font-size="12" font-weight="700" text-anchor="middle" fill="var(--text-primary)">기하 추론</text>
+                            <text x="473" y="191" font-size="10" text-anchor="middle" fill="var(--text-muted)">Geometry</text>
+
+                            <rect x="573" y="150" width="172" height="55" rx="8" fill="none" stroke="var(--border-color)" stroke-width="1.5"/>
+                            <text x="659" y="173" font-size="12" font-weight="700" text-anchor="middle" fill="var(--text-primary)">시각 완결성</text>
+                            <text x="659" y="191" font-size="10" text-anchor="middle" fill="var(--text-muted)">Visual</text>
+
+                            <text x="380" y="228" font-size="11" text-anchor="middle" fill="var(--text-muted)">Yes/No 원자적 질문으로 네 축을 채점한다. 생성 벤더가 채점까지 겸한다는 한계는 남는다.</text>
+                        </svg>
+                        <p class="text-xs themeable-muted mt-2 text-center">Cosmos Evaluator/HUE는 독립 도구가 아니라 큐레이션→도메인 적응→품질 평가로 이어지는 파이프라인의 마지막 단계다. (NVIDIA Cosmos 3, arXiv:2606.02800)</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        방향은 분명히 옳다. 그러나 두 가지 한계가 남는다. 첫째, 영상을 <strong>생성한 벤더가 채점까지 맡는</strong> 구조다. 생성과 평가가 같은 손에 있으면, 그 평가의 독립성은 원리적으로 제한된다(ρ=0.96도 NVIDIA 자체 발표이며 제3자 검증은 제한적이다). 둘째, 구체적인 점수 공식이 공개되지 않아 재현·감사가 어렵다. 그리고 이 모든 자동 검증은 여전히 3장에서 본 역추출의 약점(폐색·원거리·단안 스케일 모호성, 변형체·유체 미검증) 위에 서 있다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            "who verifies the verifier(검증기를 누가 검증하나)"는 수사적 질문이 아니라 실무 문제로 확정됐다. 원자적 이진 검증은 진전이지만, 생성과 채점이 분리되지 않는 한, 그리고 역추출이 근사인 한, 검증의 신뢰는 늘 한 겹의 의심을 안고 간다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">역추출하지 말고, 정답을 갖고 시작하라</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지금까지의 논의를 한 축으로 세우면 이렇게 정리된다. 물리 데이터를 얻는 데는 세 갈래 길이 있고, 세 길은 물리 정답과의 관계가 근본적으로 다르다. 생성하는 <strong>순간에 물리를 심는 길</strong>(RoboScape), 생성한 <strong>다음에 물리를 되읽는 길</strong>(이 보고서의 역추출 검증), 그리고 애초에 <strong>물리 정답을 손에 쥐고 시작하는 길</strong>(시뮬레이터)이다.
+                    </p>
+
+                    <div class="overflow-x-auto my-8">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2" style="border-color:#F86825;">
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">접근</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">물리를 얻는 시점</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">오차의 원천</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">정답 소유</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>생성 시점 내장</strong><br><span class="themeable-muted text-xs">RoboScape</span></td>
+                                    <td class="py-3 px-3">생성 중 물리를 학습에 주입</td>
+                                    <td class="py-3 px-3">주입한 물리의 근사 오차</td>
+                                    <td class="py-3 px-3">부분 — 물리를 심어야 함</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>사후 감사</strong><br><span class="themeable-muted text-xs">역추출 검증(본편)</span></td>
+                                    <td class="py-3 px-3">생성 후 픽셀에서 추정</td>
+                                    <td class="py-3 px-3">체인 누적·폐색·스케일 모호성</td>
+                                    <td class="py-3 px-3">없음 — 추측</td>
+                                </tr>
+                                <tr class="border-b themeable-border" style="background:rgba(248,104,37,0.06);">
+                                    <td class="py-3 px-3"><strong>정답 장부</strong><br><span class="themeable-muted text-xs">시뮬레이터 · PebbloSim</span></td>
+                                    <td class="py-3 px-3">생성 순간 물리 엔진이 계산</td>
+                                    <td class="py-3 px-3">없음 — 정답이 함께 나옴</td>
+                                    <td class="py-3 px-3">완전 — 검증 불필요</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">세 접근의 핵심 차이는 "물리 정답을 소유하는가"에 있다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        내장형도 사후 감사형도 결국 근사다. RoboScape는 물리를 생성 과정에 심어 합성 200클립만으로 실제 데이터(92%)에 육박하는 91%를 냈지만, 여전히 물리를 <strong>심어야</strong> 했다. 그 물리가 데이터에서 얼마나 큰 몫을 지는지는 제거 실험이 보여준다. RoboScape에서 깊이·키포인트 같은 물리 컴포넌트를 걷어내자 성능이 40.6%p 무너졌다. 물리는 데이터에 얹은 장식이 아니라, 데이터가 제대로 작동하기 위한 조건이라는 뜻이다. 반대로 검증 없는 일반 생성물의 물리 준수율은 VideoPhy-2 기준 22%에 머문다. 91%와 22%의 격차가 곧 "물리를 데이터에 어떻게 담느냐"가 만드는 차이다. 그런데 시뮬레이터는 이 질문 자체를 우회한다. 물리 엔진이 매 스텝 계산한 궤적·힘·질량·충돌 이벤트가 영상과 함께 <strong>정답 장부(event ledger)</strong>로 남기 때문이다. 되읽을 필요도, 심을 필요도 없다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 대비는 AI-Ready Data의 세 차원, 곧 정확성(accuracy)·일관성(consistency)·출처성(provenance)과 정확히 맞물린다. 생성 영상은 출처도 정답도 없어 별도의 검증 인프라를 세워야 하고, 그 인프라마저 57.6%가 오염될 수 있다. 시뮬레이터 데이터는 생성 시점에 정답 라벨이 함께 나오므로 세 차원을 태생적으로 만족한다. 검증이 어려운 문제일수록, 검증할 필요조차 없는 정답을 대량 생성하는 능력이 데이터의 해자가 된다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note.</strong> 이 보고서는 특정 제품을 권하려는 글이 아니라, "생성물을 어디까지 믿을 수 있는가"라는 질문을 데이터의 관점에서 끝까지 따라간 기록이다. 다만 그 질문을 오래 붙들다 보면 하나의 결론에 이르게 된다. 데이터 품질 진단을 업으로 하는 이들에게, 검증의 어려움은 곧 정답 데이터의 가치를 재는 척도다. 페블러스가 PebbloSim과 DataClinic으로 서 있는 자리도 여기다. 남들이 픽셀에서 물리를 힘겹게 되읽는 동안, 정답을 처음부터 소유하는 편을 택하는 것.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 읽을거리로, 물리를 생성 시점에 내장하는 대비편 <a href="/blog/roboscape-physics-synthetic-data/ko/" class="themeable-link" style="color:#F86825;text-decoration:underline;">RoboScape 편</a>과, 월드모델 계보를 폭넓게 다룬 <a href="/report/world-model-survey-2026/ko/" class="themeable-link" style="color:#F86825;text-decoration:underline;">월드모델 서베이 편</a>을 함께 권한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>페블러스 데이터 커뮤니케이션팀</strong><br>
+                        <span class="themeable-muted text-sm">2026년 7월 11일</span>
+                    </p>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">참고문헌</h2>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">벤치마크 · 물리 이해</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Motamed, Culp, Swersky, Jaini, Geirhos. "<a href="https://arxiv.org/abs/2501.09038" target="_blank" rel="noopener">Do generative video models understand physical principles?</a>" (Physics-IQ), arXiv:2501.09038 (ICCV 2025).</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Rädsch, Asano, Kuehne, Bauer, Jaini, Geirhos, Lüth. "<a href="https://arxiv.org/abs/2606.18943" target="_blank" rel="noopener">Physics-IQ Verified</a>," arXiv:2606.18943 (2026).</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Zhang et al. "<a href="https://arxiv.org/abs/2504.02918" target="_blank" rel="noopener">Morpheus: Benchmarking Physical Reasoning of Video Generative Models</a>," arXiv:2504.02918.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Bansal et al. "<a href="https://arxiv.org/abs/2406.03520" target="_blank" rel="noopener">VideoPhy</a>," arXiv:2406.03520 · "<a href="https://arxiv.org/abs/2503.06800" target="_blank" rel="noopener">VideoPhy-2</a>," arXiv:2503.06800.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">"<a href="https://arxiv.org/abs/2603.19607" target="_blank" rel="noopener">Physion-Eval</a>," arXiv:2603.19607.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">"<a href="https://arxiv.org/abs/2601.05237" target="_blank" rel="noopener">ObjectForesight: Predicting Future 3D Object Trajectories from Human Videos</a>," arXiv:2601.05237.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">역추출 도구</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">7.</span><span class="ref-body">Ravi et al. (Meta AI). "<a href="https://arxiv.org/abs/2408.00714" target="_blank" rel="noopener">SAM 2: Segment Anything in Images and Videos</a>," arXiv:2408.00714.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Karaev et al. "<a href="https://arxiv.org/abs/2410.11831" target="_blank" rel="noopener">CoTracker3</a>," arXiv:2410.11831 · "<a href="https://arxiv.org/abs/2507.12462" target="_blank" rel="noopener">SpatialTrackerV2</a>," arXiv:2507.12462.</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Wen et al. "<a href="https://arxiv.org/abs/2312.08344" target="_blank" rel="noopener">FoundationPose</a>," arXiv:2312.08344 (CVPR 2024).</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">Yang et al. "<a href="https://arxiv.org/abs/2406.09414" target="_blank" rel="noopener">Depth Anything V2</a>," arXiv:2406.09414.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">월드모델 · 산업</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">11.</span><span class="ref-body">NVIDIA. "<a href="https://arxiv.org/abs/2606.02800" target="_blank" rel="noopener">Cosmos 3: Omnimodal World Models for Physical AI</a>," arXiv:2606.02800 (2026) · <a href="https://github.com/NVIDIA/cosmos-evaluator" target="_blank" rel="noopener">NVIDIA/cosmos-evaluator</a> (GitHub).</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">Assran et al. (Meta AI). "<a href="https://arxiv.org/abs/2506.09985" target="_blank" rel="noopener">V-JEPA 2</a>," arXiv:2506.09985.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">"<a href="https://arxiv.org/abs/2506.23135" target="_blank" rel="noopener">RoboScape</a>," arXiv:2506.23135 (NeurIPS 2025).</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body"><a href="https://github.com/google-deepmind/physics-iq-benchmark" target="_blank" rel="noopener">google-deepmind/physics-iq-benchmark</a> (GitHub) · INSAIT 발표문.</span></li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260711"></script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260711" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "at": "2026-07-11T07:42:35.543Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-11T07:48:06.402Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-11T08:10:48.245Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1783755755543-uevgqs",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-11T08:59:11.785Z"
+            },
+            mainTitle: "생성된 영상은 물리적으로 옳은가",
+            subtitle: "NVIDIA Cosmos 생성 영상을 역추출 파이프라인과 Physics-IQ 벤치마크로 검증한다",
+            pageTitle: "생성 영상은 물리를 지키는가: 월드모델 합성데이터 검증 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-11",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/world-model-physics-verification/ko/",
+            tags: ["월드모델", "물리 검증", "합성데이터", "피지컬AI", "Physics-IQ", "역추출 파이프라인", "시뮬레이터", "데이터 품질"],
+            faqs: [
+                { question: "영상이 '그럴듯해 보이는데' 물리적으로 틀렸다는 게 무슨 뜻인가?", answer: "픽셀 계열 모델은 프레임 사이의 통계적 개연성을 학습할 뿐, 질량·힘·속도 같은 물리 상태를 명시적으로 다루지 않는다. 그래서 물체가 벽을 통과하거나, 사라졌다 다시 나타나거나, 질량·운동량 보존을 어긴다. Physion-Eval에서는 1인칭 시점 생성 영상의 93.5%가 사람이 알아챌 수 있는 물리 결함을 최소 하나 이상 담고 있었다." },
+                { question: "생성 영상에서 물리값을 어떻게 '되읽어' 검증하나?", answer: "표준 역추출 파이프라인은 SAM2로 물체를 분리하고, CoTracker3나 SpatialTrackerV2로 궤적을, FoundationPose로 6자유도 자세를, Depth Anything V2로 미터 단위 깊이를 뽑아낸 뒤, 중심차분법으로 속도·가속도를 계산해 운동량·에너지 보존 같은 물리 법칙과 대조한다." },
+                { question: "이 검증 도구들은 얼마나 정확한가?", answer: "개별 벤치마크에서는 90%대다. FoundationPose는 YCB에서 ADD-S 91.5%, SAM2는 DAVIS에서 J&F 90.7%를 낸다. 그러나 이들을 하나의 체인으로 엮으면 오차가 누적되고, 폐색·원거리·단안 스케일 모호성에서 급락한다. Depth Anything V2의 정확도는 2m에서 89.1%였지만 6m에서 70.8%로 떨어진다." },
+                { question: "Physics-IQ 벤치마크는 정확히 무엇을 측정하나?", answer: "66개 실물 시나리오를 세 시점·두 번씩 촬영한 396개 영상에서, 모델이 앞의 3초를 보고 뒤의 5초를 예측하게 한 뒤 실제 이어지는 영상과 IoU·MSE로 비교한다. 가장 뛰어난 모델도 실제-실제 영상 쌍의 자연 변동성(100점)의 24.1점에 그쳤다." },
+                { question: "'검증기를 누가 검증하나'는 실제 문제인가?", answer: "그렇다. 2026년 Physics-IQ Verified 감사는 원 벤치마크 표본의 57.6%가 측정과 무관한 아티팩트에 오염됐고, 프롬프트의 34.8%에 결함이 있었으며, 다시 측정하면 모델 순위가 실제로 뒤바뀐다(Kendall τ=0.46)는 사실을 드러냈다. 역추출·검증 인프라 자체가 감사 대상이다." },
+                { question: "JEPA(V-JEPA 2) 같은 '이해형' 모델은 물리를 제대로 아는가?", answer: "잠재공간에서 다음 상태를 예측하는 JEPA 계열은 픽셀 재현을 목표로 하지 않아 표현이 더 간결하다. 하지만 V-JEPA 2도 물리 위반을 삽입한 IntPhys 2 같은 테스트에서 사람에 유의미하게 못 미친다. 이해형 계열도 검증 없이 완전한 물리 이해를 주장할 수는 없다." },
+                { question: "NVIDIA Cosmos Evaluator는 이 문제를 푸는가?", answer: "Cosmos 3와 함께 발표된 Cosmos Evaluator/HUE는 자동 리더보드의 포화 때문에, 생성 영상을 단일 사실에 대한 Yes/No 질문으로 분해해 의미 정합·물리 법칙·기하 추론·시각 완결성 네 축으로 채점한다. 방향은 옳지만, 생성한 벤더가 채점까지 맡는 구조라는 점과 구체적인 점수 공식이 공개되지 않았다는 한계가 있다." },
+                { question: "그렇다면 검증 대신 다른 길이 있나 — 페블러스의 관점은?", answer: "사후 역추출은 정답이 없는 영상에서 물리를 추측하는 근사다. 시뮬레이터는 영상을 만드는 순간 궤적·힘·질량·충돌을 정답으로 소유한다. 검증이 어려울수록 '검증할 필요조차 없는 정답을 대량으로 생성하는 능력'이 데이터 해자가 된다. 이것이 PebbloSim·DataClinic의 자리다." },
+                { question: "왜 지금 이 주제가 중요한가?", answer: "2026년 6월 NVIDIA Cosmos 3·Cosmos Evaluator와 DeepMind 계열의 Physics-IQ Verified가 잇달아 나오면서, 업계의 무게중심이 '생성 능력 자랑'에서 '검증 가능성'으로 옮겨가는 변곡점에 와 있기 때문이다." }
+            ]
+        });
+    </script>
+</body>
+</html>
