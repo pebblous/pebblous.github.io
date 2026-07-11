@@ -371,6 +371,34 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 3 --agent repor
 
 ### Phase 4: HTML 작성
 
+> ⛔ **한 번에 통짜 HTML 출력 금지 (2026-07-11 확정 — API stall 방지).** report 본문은
+> 길어서(성공 사례도 <main> 40KB 이상) 전체 HTML을 단일 응답으로 뽑으면 "Response stalled
+> mid-stream"으로 스트림이 끊겨 write-ko가 반복 실패했다. **골격 먼저 Write → 섹션마다 Edit로
+> 하나씩 채운다.** 각 출력이 짧아져 stall이 원천 차단된다.
+
+#### 4-0. 분량 판단 — 1편으로 갈지, 분권할지 (선택)
+
+`03_synthesis.md`의 섹션 수·깊이를 보고 판단한다:
+- **본문 예상 <main> ≤ 40KB (섹션 ~6개 이하)** → 단일 편으로 진행(아래 4-A~4-C).
+- **그 이상으로 방대**(섹션 8개+ 또는 서로 독립적인 두 주제 축) → **1편/2편 분권**을 고려.
+  분권은 *편집 판단*이다(stall은 4-A~C가 이미 막음) — 두 편이 각각 독립된 글로 성립하고
+  상호 링크로 이어질 때만. 분권 시: 슬러그를 `[slug]-part1`·`[slug]-part2`로,
+  각 편 끝에 다음/이전 편 링크, articles.json에 2개 항목. 애매하면 1편으로 간다(분권은 관리 비용).
+
+#### 4-A. 골격 Write (뼈대만, 본문 비움)
+
+report-writer 에이전트에게 **`<head>` + PebblousPage.init + Hero + 빈 섹션 골격**만 먼저 쓰게 한다.
+각 `<section id="...">`은 h2(number-badge)까지만 두고 본문은 `<!-- TODO: 섹션 N 본문 -->` placeholder.
+Executive Summary·섹션 1~N·"페블러스 관심의 이유"·FAQ placeholder까지 **구조가 다 잡힌 빈 골격**.
+
+#### 4-B. 섹션별 Edit로 본문 채우기 (하나씩)
+
+골격의 각 placeholder를 **Edit 툴로 한 섹션씩** 실제 본문으로 교체한다. 한 번에 한 섹션만 —
+그래야 각 응답이 짧아 stall이 안 난다. Executive Summary → 섹션 1 → 2 → … → "페블러스 관심의 이유" 순.
+Text-First(설명 문단 먼저)·역피라미드 산문·표/차트 컨벤션은 blog-write 스킬대로.
+
+#### 4-C. 작성 실행
+
 ```bash
 python3 tools/report-produce-logger.py start --slug [slug] --phase 4 --agent report-writer --model opus
 ```
@@ -391,8 +419,13 @@ Agent(
 
     HTML 템플릿: report/korea-ai-fund-report-2026-03/ko/index.html
     체크리스트: docs/blog-html-checklist.md
-    제목 전략: docs/title-strategy.md (§7 제목→Exec Summary 일관성 필수)
+    제목 전략: docs/title-strategy.md (§0 보도기사·매거진 정본, §7 제목→Exec Summary 일관성)
     CLAUDE.md: <repo-root>/CLAUDE.md
+
+    ⛔⛔ 작성 방식 — 통짜 출력 금지, 골격→섹션별 Edit (API stall 방지, skill §4-A·4-B):
+    1. 먼저 <head>+init+Hero+빈 섹션 골격만 Write (각 섹션 본문은 <!-- TODO --> placeholder)
+    2. 그다음 각 섹션을 Edit 툴로 하나씩 실제 본문으로 교체 (한 번에 한 섹션만)
+    3. 전체 HTML을 단일 응답으로 절대 뱉지 말 것 — 반드시 여러 번의 Edit로 나눠 쓴다
 
     ⛔ 제목→Executive Summary 일관성 규칙 (title-strategy.md §7):
     - mainTitle의 핵심 주장이 Executive Summary key-insight에 산문으로 등장해야 함
@@ -402,7 +435,7 @@ Agent(
     - 외부 보고서 기반 글: mainTitle에 외부 브랜드명 금지, subtitle에 배치
 
     출력:
-    - report/[slug]/ko/index.html
+    - report/[slug]/ko/index.html  (골격 Write 후 섹션별 Edit로 완성)
     - _workspace/report/04_write_meta.json
   """
 )
@@ -589,6 +622,8 @@ for f in ['report/[slug]/ko/index.html', 'report/[slug]/en/index.html']:
 ### Phase 6: 영문화 (EN 작성)
 
 ⛔ 단순 번역 금지 — 영미권 독자 기준으로 재작성.
+⛔ **통짜 출력 금지 (§4-A·4-B와 동일).** EN 골격 Write → 섹션별 Edit로 하나씩. 전체 HTML을
+단일 응답으로 뱉으면 KO와 동일하게 API stall로 실패한다.
 
 ```bash
 python3 tools/report-produce-logger.py start --slug [slug] --phase 6 --agent report-en-writer --model opus

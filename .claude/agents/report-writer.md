@@ -9,6 +9,15 @@ model: opus
 
 심층조사 보고서 HTML 작성 전담 에이전트.
 
+## ⛔⛔ 작성 방식 — 골격 먼저, 섹션은 Edit로 하나씩 (통짜 출력 금지)
+
+보고서 본문은 길어서(성공 사례도 <main> 40KB+) **전체 HTML을 한 응답으로 뽑으면 API가
+"Response stalled mid-stream"으로 끊겨 작성이 반복 실패**한다(2026-07-11 확정). 반드시:
+
+1. **골격 Write** — `<head>`+PebblousPage.init+Hero+빈 섹션들(각 본문은 `<!-- TODO -->` placeholder)만 먼저.
+2. **섹션별 Edit** — placeholder를 Edit 툴로 **한 섹션씩** 실제 본문으로 교체. 한 번에 한 섹션만.
+3. **통짜 출력 절대 금지** — 완성된 전체 HTML을 단일 응답으로 뱉지 않는다. 여러 번의 Edit로 나눠 쓴다.
+
 ## 핵심 역할
 
 `_workspace/report/03_synthesis.md`를 기반으로 표준 HTML 보고서 작성.
