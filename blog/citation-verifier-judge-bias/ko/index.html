@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>LLM 심판 모델 비교: 인용 검증에 저비용 GPT-5-mini면 충분한가 | 페블러스</title>
+    <meta name="description" content="딥리서치가 붙인 인용을 검증하는 데 프런티어 모델은 필요하지 않았다. GPT-5-mini가 출처 관련성 F1 0.908로 상위권에 올랐다. 그러나 논문은 값싼 심판일수록 위양성·위음성 편향의 방향이 달라, 이를 강화학습 보상으로 쓰면 그대로 증폭된다고 경고한다.">
+    <meta name="keywords" content="LLM 심판 모델, 인용 검증 AI, citation verifier, GPT-5-mini 성능 비교, 딥리서치 출처 검증, RLVR 보상 편향, LLM as a judge 편향, 저비용 AI 평가 모델, AI 검증기 캘리브레이션, 데이터 품질">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/ko/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="값싼 LLM 심판도 인용 검증에서 프런티어 모델과 맞먹었다">
+    <meta property="og:description" content="GPT-5-mini는 출처 관련성 F1 0.908을 냈지만, 통과율 편향은 모델마다 42.9%에서 72.0%까지 갈렸다. 이 편향을 강화학습 보상으로 쓰면 그대로 증폭된다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-07-13">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="값싼 LLM 심판도 인용 검증에서 프런티어 모델과 맞먹었다">
+    <meta name="twitter:description" content="GPT-5-mini는 F1 0.908을 냈지만, 통과율 편향은 42.9%에서 72.0%까지 갈렸다 — F1이 숨긴 위험.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/ko/image/index.png">
+    <meta name="twitter:image:alt" content="8개 LLM 심판의 인용 통과율이 골드 79.3% 아래로 42.9%에서 72.0%까지 흩어진 것을 보여주는 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260713">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260713">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260713">
+
+    <!-- GTM -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">각주는 왜 못 미더운가</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">값싼 모델이 이겼다</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">같은 F1, 다른 편향의 방향</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">보상으로 쓰면 증폭된다</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">검증기부터 캘리브레이션하라</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            딥리서치 에이전트가 답변마다 각주를 단다. 링크는 대체로 살아 있고 주제와도 관련 있어 보인다. 그런데 그 각주가 맞는지 다시 확인하려면, 채점자로 또 하나의 큰 모델을 세워야 한다는 게 그동안의 통념이었다. 최근 벤치마크는 그 통념을 정면으로 흔든다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            2026년 7월 공개된 논문은 8개의 기성 LLM 심판을 골드 라벨 1,248건에 맞춰 채점했다. 출처가 주제와 관련 있는지 가리는 과제에서 저비용 모델 GPT-5-mini가 F1 0.908로 가장 높았고, 프런티어 모델을 앞섰다. 검증은 값싸게 자동화된다는 뜻이다. 다만 이 수치들은 통제된 벤치마크 결과이므로, 확정된 사실이 아니라 연구가 보고한 값으로 읽는다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            문제는 그다음이다. 8개 심판 전부가 인간 골드 통과율(79.3%)보다 인용을 박하게 판정했는데, 그 박한 정도가 42.9%에서 72.0%까지 벌어졌다. 같은 F1을 받아도 어느 방향으로 틀리는지는 제각각이라는 뜻이다. 이 편향을 그대로 강화학습 보상으로 쓰면, 논문은 그 방향이 학습 루프에서 증폭된다고 못 박는다.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.908</p>
+                            <p class="text-sm themeable-text-secondary mt-1">GPT-5-mini 출처 관련성 F1</p>
+                            <p class="text-xs themeable-muted mt-1">8종 중 최고, 프런티어 앞섬</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">42.9~72.0%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">8종 심판의 통과율 범위</p>
+                            <p class="text-xs themeable-muted mt-1">전원 골드 79.3% 아래로 판정</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">79.3%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">인간 골드 통과율</p>
+                            <p class="text-xs themeable-muted mt-1">8종 심판이 공통으로 하회</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">39~77%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">딥리서치 인용의 사실 정확도</p>
+                            <p class="text-xs themeable-muted mt-1">선행 연구, 링크는 94% 유효해도</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">딥리서치의 각주는 왜 못 미더운가</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        딥리서치 에이전트에게 긴 답을 시키면 문장마다 각주가 달려 나온다. 겉보기에는 든든하다. 링크를 눌러 보면 페이지가 열리고, 제목만 봐도 주제와 관련 있어 보인다. 그런데 링크가 살아 있다는 것과 그 문서가 실제로 앞 문장을 뒷받침한다는 것은 전혀 다른 이야기다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        선행 연구 한 편이 이 간극을 정량으로 붙잡았다. 딥리서치 에이전트의 인용을 파서로 뽑아 세 가지로 나눠 잰 연구인데, 링크 유효성은 94%를 넘고 주제 관련성도 80%를 넘었지만 정작 인용이 주장을 사실로 뒷받침하는 비율은 39%에서 77%에 그쳤다. 검색 도구를 2회에서 150회로 늘려도 정확도는 평균 42% 떨어졌다. 더 많이 찾아본다고 각주가 더 튼튼해지지는 않았다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 자연스러운 질문이 따라온다. 각주가 이렇게 못 미덥다면, 누가 이 각주를 다시 검증할 것인가. 그리고 그 검증기를 얼마나 싸게 세울 수 있는가. 앞의 연구가 인용 자체의 신뢰도를 문제 삼았다면, 이번에 나온 논문은 바로 그 검증기 쪽을 겨눈다.
+                    </p>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">8개 심판, 1,248개 판정, 그리고 값싼 모델</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문은 기성 LLM 심판 8개를 한자리에 세웠다. Claude(Haiku·Sonnet·Opus 4.6), Gemini(3.1 Flash Lite·Pro), GPT(GPT-5-mini·GPT-5.4-mini·GPT-OSS-120B)로 세 계열을 고루 담았다. 채점 대상은 여러 도메인에 걸쳐 사실 오류와 오도성 인용을 일부러 심어 둔 적대적 벤치마크다. 인간이 검토한 골드 라벨 1,248건, 심판끼리 엇갈려 사람이 중재한 하드 케이스 378건이 기준선이 됐다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        평가 축은 둘이다. 하나는 출처 관련성, 인용이 주제와 관련 있는지를 가린다. 다른 하나는 사실 지지, 인용된 내용이 주장을 실제로 뒷받침하는지를 본다. 관련성은 상대적으로 쉬운 판단이고, 사실 지지는 훨씬 까다로운 판단이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        출처 관련성에서 1위는 저비용 모델이었다. GPT-5-mini가 통과 클래스 F1 0.908, 일치도 κ 0.636으로 8개 심판 가운데 가장 높았다. Claude Opus 4.6이나 Gemini 3.1 Pro 같은 프런티어급 모델이 그 아래에 놓였다. 관련성을 가리는 일에서는 가장 비싼 모델이 곧 가장 나은 심판이라는 가정이 성립하지 않았다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 까다로운 사실 지지 쪽에서는 승자가 따로 없었다. 여덟 모델의 신뢰구간이 모두 겹쳐, 통계적으로 서로 구별되지 않았다. 수치만 보면 Claude Opus 4.6이 F1 0.750으로 근소하게 앞섰지만 의미 있는 우위는 아니었다. 어느 축에서도 "더 비싼 모델이 낫다"는 가설이 데이터로 받쳐지지 않은 셈이다.
+                    </p>
+
+                    <!-- Fig 2: 두 평가 축 — 관련성엔 승자가 있고, 사실 지지엔 없다 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="24" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">두 평가 축 — 관련성엔 승자가 있고, 사실 지지엔 없다</text>
+                            <line x1="330" y1="38" x2="330" y2="188" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <!-- Left: source relevance, cheap model wins -->
+                            <text x="165" y="52" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">출처 관련성</text>
+                            <rect x="55" y="62" width="220" height="46" rx="8" fill="#F86825" opacity="0.12" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="165" y="82" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">GPT-5-mini (저비용)</text>
+                            <text x="165" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">F1 0.908 · 8종 중 1위</text>
+                            <rect x="70" y="120" width="190" height="30" rx="6" fill="#808080" opacity="0.15"/>
+                            <text x="165" y="139" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">프런티어 모델들(Opus 4.6·Gemini 3.1 Pro 등)</text>
+                            <text x="165" y="168" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">모두 GPT-5-mini 아래</text>
+                            <!-- Right: factual support, no winner (overlapping CIs) -->
+                            <text x="495" y="52" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">사실 지지</text>
+                            <line x1="400" y1="66" x2="590" y2="66" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="405" y1="76" x2="585" y2="76" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="410" y1="86" x2="580" y2="86" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="408" y1="96" x2="583" y2="96" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="402" y1="106" x2="588" y2="106" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="412" y1="116" x2="578" y2="116" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="398" y1="126" x2="592" y2="126" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="415" y1="136" x2="575" y2="136" stroke="#F86825" stroke-width="3"/>
+                            <text x="495" y="150" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" font-weight="600" fill="#F86825">Opus 4.6 F1 0.750 (근소 1위)</text>
+                            <text x="495" y="168" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">8개 신뢰구간 모두 겹침 — 통계적 무승부</text>
+                            <text x="330" y="200" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">쉬운 축엔 저비용 승자가, 어려운 축엔 승자가 없다.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 출처 관련성에서는 GPT-5-mini가 8종 중 1위였지만, 사실 지지에서는 8개 심판의 신뢰구간이 모두 겹쳐 승자가 없었다 — 페블러스 원본 도식 | Source: <a href="https://arxiv.org/abs/2607.08700" target="_blank" rel="noopener" class="underline">Leung et al., arXiv:2607.08700</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            여기까지의 결론은 반갑다. 각주 검증이라는 반복 작업에 굳이 최상위 모델을 붙이지 않아도 된다. 저비용 심판으로 파이프라인을 돌려도 관련성 판정은 프런티어급에 밀리지 않고, 사실 지지 판정은 애초에 모두가 비슷하다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">같은 F1, 다른 편향의 방향</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 F1 하나만 보고 심판을 고를 때 생긴다. F1은 위양성과 위음성을 뭉뚱그린 스칼라 점수라, 심판이 어느 쪽으로 틀리는지는 그 안에 묻힌다. 논문은 바로 이 지점을 파고든다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        8개 심판 전부가 인간 골드 통과율 79.3%보다 인용을 박하게 판정했다. 방향은 모두 같았다. 근거가 되는 인용을 실제보다 덜 인정하는 쪽, 즉 보수적으로 기울었다. 그런데 그 박한 정도가 모델마다 42.9%에서 72.0%까지 벌어졌다. 방향은 하나인데 크기가 거의 30%포인트 차이로 흩어진 것이다.
+                    </p>
+
+                    <!-- Fig 1: 8개 심판의 통과율 편향 — 골드 79.3% 대비 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">심판별 인용 통과율 — 8종 전부 골드(79.3%) 아래로 판정</text>
+                            <!-- X grid: 0~100% mapped to x=180..620 (440px = 100%, 4.4px/%)-->
+                            <line x1="290" y1="40" x2="290" y2="168" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <line x1="400" y1="40" x2="400" y2="168" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <line x1="510" y1="40" x2="510" y2="168" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <text x="290" y="38" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">25%</text>
+                            <text x="400" y="38" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">50%</text>
+                            <text x="510" y="38" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">75%</text>
+                            <!-- 골드 기준선 79.3% -> x = 180 + 79.3*4.4 = 529 -->
+                            <line x1="529" y1="46" x2="529" y2="176" stroke="#171719" stroke-width="1.5" stroke-dasharray="4,2"/>
+                            <text x="529" y="192" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">골드 79.3%</text>
+                            <!-- Row: 가장 박한 심판 42.9% -> width = 42.9*4.4 = 189 -->
+                            <text x="172" y="62" text-anchor="end" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="var(--text-secondary)">가장 박한 심판</text>
+                            <rect x="180" y="48" width="440" height="24" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="180" y="48" width="189" height="24" rx="5" fill="#808080"/>
+                            <text x="377" y="65" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">42.9%</text>
+                            <!-- Row: 가장 후한 심판 72.0% -> width = 72*4.4 = 317 -->
+                            <text x="172" y="98" text-anchor="end" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="var(--text-secondary)">가장 후한 심판</text>
+                            <rect x="180" y="84" width="440" height="24" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="180" y="84" width="317" height="24" rx="5" fill="#F86825"/>
+                            <text x="505" y="101" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">72.0%</text>
+                            <!-- 편향 폭 브래킷: 42.9% end(369) ~ 72.0% end(497) -->
+                            <line x1="369" y1="118" x2="369" y2="126" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="369" y1="122" x2="497" y2="122" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="497" y1="118" x2="497" y2="126" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="433" y="140" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">편향 폭 ≈ 29%p</text>
+                            <text x="330" y="164" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">방향은 모두 같다(보수적). 크기가 벌어진다. 오렌지=가장 후한 심판, 회색=가장 박한 심판.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 8개 심판 모두 골드 통과율보다 인용을 박하게 판정했지만, 그 정도는 42.9%에서 72.0%까지 흩어진다. F1이 비슷해도 이 편향의 크기는 다를 수 있다 — 페블러스 원본 도식 | Source: <a href="https://arxiv.org/abs/2607.08700" target="_blank" rel="noopener" class="underline">Leung et al., arXiv:2607.08700</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 미묘한 대목은 F1이 같은 두 심판이라도 위양성률과 위음성률이 판이하게 다를 수 있다는 점이다. 한 심판은 근거 없는 인용을 통과시키는 쪽으로 잘 틀리고, 다른 심판은 멀쩡한 인용을 탈락시키는 쪽으로 잘 틀린다. 두 오류가 상쇄되면 F1 점수는 비슷하게 나온다. 그래서 F1만 들여다보면 두 심판이 똑같아 보인다. 그러나 이 둘을 하류 시스템에 붙이면 완전히 다른 결과를 만든다.
+                    </p>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">그 편향을 보상으로 쓰면 그대로 증폭된다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        왜 편향의 방향까지 따져야 하는지는, 이 심판이 어디에 쓰이는지를 보면 분명해진다. 요즘 강화학습은 채점 항목마다 LLM 심판을 세워 점수를 매기고, 학습이 돌아가는 동안 그 심판이 곧 보상 모델이 된다. 심판이 통과라고 하면 보상이 오르고, 탈락이라고 하면 보상이 내린다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 위음성으로 잘 틀리는 심판을 보상 모델로 앉힌다고 해 보자. 이 심판은 실제로 근거가 있는 주장까지 자꾸 탈락시킨다. 보상 신호가 그만큼 희소해지고, 하류 모델은 인용을 붙일 때마다 벌을 받는 것처럼 학습한다. 결과는 두 방향으로 나타난다. 지나치게 몸을 사려 단정을 피하거나, 아예 인용을 덜 다는 쪽으로 기운다. 심판이 가진 한쪽 편향이 학습 루프를 거치며 모델의 습관으로 굳는다.
+                    </p>
+
+                    <!-- Fig 3: 편향된 심판이 보상이 될 때 — 증폭 루프 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">편향된 심판이 보상이 될 때 — 학습 루프 속 증폭</text>
+                            <!-- Box A: judge bias -->
+                            <rect x="30" y="45" width="190" height="56" rx="8" fill="#808080" opacity="0.12" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="125" y="68" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">심판의 편향</text>
+                            <text x="125" y="86" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">(예: 위음성 쪽으로 치우침)</text>
+                            <!-- Box B: sparse reward -->
+                            <rect x="440" y="45" width="190" height="56" rx="8" fill="#808080" opacity="0.12" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="535" y="68" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">보상 신호 희소화</text>
+                            <text x="535" y="86" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">근거 있는 주장도 탈락</text>
+                            <!-- Box C: downstream habit -->
+                            <rect x="235" y="140" width="190" height="56" rx="8" fill="#F86825" opacity="0.12" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="330" y="163" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="#F86825">하류 모델의 습관</text>
+                            <text x="330" y="181" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-secondary)">과잉 헷지 · 인용 회피</text>
+                            <!-- Arrows: A -> B -> C -> A (loop) -->
+                            <line x1="220" y1="70" x2="435" y2="70" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="435,70 425,65 425,75" fill="var(--text-muted)"/>
+                            <line x1="520" y1="101" x2="400" y2="150" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="400,150 411,148 407,159" fill="var(--text-muted)"/>
+                            <line x1="255" y1="150" x2="150" y2="101" stroke="#F86825" stroke-width="1.5"/>
+                            <polygon points="150,101 154,112 143,108" fill="#F86825"/>
+                            <text x="330" y="120" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">학습 루프마다 증폭</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 위음성 쪽으로 기운 심판을 보상 모델로 쓰면, 그 편향이 학습 루프를 거쳐 하류 모델의 습관(과잉 헷지·인용 회피)으로 굳는다 — 페블러스 원본 도식 | Source: <a href="https://arxiv.org/abs/2607.08700" target="_blank" rel="noopener" class="underline">Leung et al., arXiv:2607.08700</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문의 결론은 그래서 단호하다. 인용 채점 항목을 보상 신호로 쓰려면 보정이 먼저다. 심판이 어느 방향으로 얼마나 기우는지를 재서 바로잡지 않으면, F1이 아무리 높아도 그 편향이 그대로 하류로 흘러 들어간다. 그리고 이 보정에는 가장 비싼 모델이 필요하지 않다는 것이 실험이 함께 보여 준 사실이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지표를 보상으로 삼을 때 왜곡이 생긴다는 구도는 낯설지 않다. 페블러스도 앞서 <a href="/blog/reward-hacking-proxy-metric/ko/" class="text-orange-500 hover:text-orange-400 underline">프록시 지표를 보상으로 쓸 때의 왜곡</a>과 <a href="/report/rl-reward-data-provenance/ko/" class="text-orange-500 hover:text-orange-400 underline">검증 보상형 강화학습이 학습하는 데이터의 추적 문제</a>를 다뤘다. 이번 논문은 그 왜곡의 뿌리를 한 칸 더 앞으로 옮긴다. 보상을 만드는 심판 자체가 이미 기울어 있다면, 그 위에서 최적화하는 모든 것이 같이 기운다.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">검증기부터 캘리브레이션하라</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문을 데이터 신뢰의 문제로 놓고 보면 결론은 하나로 모인다. AI가 데이터를 검증하는 시대에는, 검증기 자체가 새로운 신뢰의 급소가 된다. 각주가 맞는지, 라벨이 정확한지, 출력이 규칙을 지켰는지를 판정하는 자리에 점점 더 많은 LLM 심판이 들어선다. 그 심판이 어느 방향으로 기울어 있는지 먼저 재지 않으면, 파이프라인 전체가 소리 없이 한쪽으로 기운다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실무로 내리면 두 가지가 남는다. 하나, 검증을 값싸게 자동화하는 것은 이제 현실적인 선택지다. 관련성 판정에서 저비용 모델이 프런티어급과 대등하다는 것을 실측이 보여 준다. 둘, 그러나 F1 같은 종합 점수 하나로 심판을 고르면 안 된다. 그 심판이 위양성으로 기우는지 위음성으로 기우는지, 골드 대비 얼마나 박하거나 후한지를 먼저 캘리브레이션한 뒤에 보상이든 게이트든 붙여야 한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스가 말하는 AI-Ready Data는 데이터가 정제되고 라벨링된 상태에서 한 걸음 더 나아간다. 그 데이터를 검증하는 도구의 편향까지 측정되고 보정된 상태여야, 그 위에 쌓는 신뢰가 흔들리지 않는다. 검증기를 믿기 전에 검증기를 먼저 재는 것, 그것이 '누가 심판을 심판하는가'라는 오래된 물음의 데이터 품질 버전이다. 우리 파이프라인 안의 심판은 지금 어느 쪽으로 기울어 있는가.
+                    </p>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Leung, E., Lumer, E., Feld, C., Huber, A., Subbiah, V. K., &amp; Paul, K. (2026). "<a href="https://arxiv.org/abs/2607.08700" target="_blank" rel="noopener">Do You Need a Frontier Model as a Citation Verifier? Benchmarking Rubric LLMs for Deep-Research Source Attribution</a>." arXiv:2607.08700.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">"<a href="https://arxiv.org/abs/2605.06635" target="_blank" rel="noopener">Cited but Not Verified: Parsing and Evaluating Source Attribution in LLM Deep Research Agents</a>." (2026). arXiv:2605.06635.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">3.</span><span class="ref-body">페블러스. "<a href="/blog/reward-hacking-proxy-metric/ko/">AI는 왜 시험은 잘 보는데 일은 못 할까</a>." blog.pebblous.ai.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">페블러스. "<a href="/report/rl-reward-data-provenance/ko/">검증 보상형 강화학습이 학습한 데이터는, 아무도 원자 단위로 추적하지 못한다</a>." blog.pebblous.ai.</span></li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/citation-download.js?v=20260713" defer></script>
+    <script src="/scripts/common-utils.js?v=20260713"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-12T17:07:18.630Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-12T17:19:11.576Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1783876038631-3wawdt",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-12T17:42:56.079Z"
+            },
+            mainTitle: "값싼 LLM 심판도 인용 검증에서 프런티어 모델과 맞먹었다",
+            subtitle: "GPT-5-mini가 출처 관련성 F1 0.908을 냈지만, 통과율 편향은 42.9~72.0%로 갈렸다",
+            pageTitle: "LLM 심판 모델 비교: 인용 검증에 저비용 GPT-5-mini면 충분한가 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-13",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/citation-verifier-judge-bias/ko/",
+            tags: ["LLM as a Judge", "인용 검증", "RLVR", "데이터 품질", "AI 평가 모델", "강화학습 보상", "GPT-5-mini", "AI-Ready Data"],
+            faqs: [
+                { question: "딥리서치가 붙인 각주는 왜 못 미더운가?", answer: "선행 연구에 따르면 딥리서치 에이전트의 인용은 링크 유효성이 94%를 넘고 주제 관련성도 80%를 넘지만, 인용이 주장을 실제로 뒷받침하는 사실 정확도는 39~77%에 그친다. 링크가 살아 있다는 것과 그 문서가 문장을 뒷받침한다는 것은 다른 문제다." },
+                { question: "인용 검증에 꼭 프런티어 모델이 필요한가?", answer: "필요하지 않았다. 논문이 8개 심판을 비교한 결과, 출처 관련성 판정에서 저비용 모델 GPT-5-mini가 F1 0.908로 가장 높아 Claude Opus 4.6·Gemini 3.1 Pro 같은 프런티어급 모델을 앞섰다. 사실 지지 판정에서는 모든 모델의 신뢰구간이 겹쳐 통계적으로 구별되지 않았다." },
+                { question: "F1이 비슷하면 어느 심판을 써도 같은가?", answer: "아니다. F1은 위양성과 위음성을 뭉뚱그린 스칼라 점수라, 심판이 어느 방향으로 틀리는지는 그 안에 묻힌다. F1이 같아도 위양성률·위음성률은 판이하게 다를 수 있어, 하류 시스템에서 전혀 다른 결과를 만든다." },
+                { question: "통과율 편향 42.9~72.0%는 무엇을 뜻하나?", answer: "8개 심판 전부가 인간 골드 통과율 79.3%보다 인용을 박하게 판정했는데, 그 박한 정도가 모델마다 42.9%에서 72.0%까지 벌어졌다는 뜻이다. 편향의 방향은 모두 보수적으로 같지만, 크기가 약 30%포인트 차이로 흩어진다." },
+                { question: "이 편향을 강화학습 보상으로 쓰면 어떤 위험이 생기나?", answer: "위음성으로 잘 틀리는 심판을 보상 모델로 쓰면 근거 있는 주장까지 탈락시켜 보상 신호가 희소해진다. 하류 모델은 인용을 붙일 때마다 벌을 받는 것처럼 학습해, 지나치게 단정을 피하거나 인용을 덜 다는 방향으로 기운다. 심판의 편향이 학습 루프에서 증폭되는 것이다." },
+                { question: "실무자는 이 결과에서 무엇을 실천해야 하나?", answer: "두 가지다. 첫째, 검증을 저비용 모델로 자동화하는 것은 이제 현실적인 선택지다. 둘째, F1 같은 종합 점수 하나로 심판을 고르지 말고, 위양성·위음성 방향과 골드 대비 편향 크기를 먼저 캘리브레이션한 뒤 보상이나 게이트에 붙여야 한다." },
+                { question: "이 주제가 데이터 품질과 어떤 관계가 있나?", answer: "AI가 데이터를 검증하는 시대에는 검증기 자체가 새로운 신뢰의 급소가 된다. 각주·라벨·출력을 판정하는 심판이 어느 방향으로 기울어 있는지 먼저 재지 않으면 파이프라인 전체가 소리 없이 한쪽으로 기운다. 검증 도구의 편향까지 측정·보정된 상태가 AI-Ready Data의 조건이다." }
+            ]
+        });
+    </script>
+</body>
+</html>
