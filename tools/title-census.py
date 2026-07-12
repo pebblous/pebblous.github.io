@@ -98,8 +98,10 @@ def eval_subtitle(t: str):
     return max(0, 10 - ded), labels
 
 
-def eval_pagetitle(t: str):
-    """pageTitle — 검색 변형. 따옴표/대조/미끼 금지, 줄표 1개 허용, 브랜드 접미사 필수."""
+def eval_pagetitle(t: str, main_title: str = ''):
+    """pageTitle — 검색 변형. 따옴표/대조/미끼 금지, 줄표 1개 허용, 브랜드 접미사 필수.
+    main_title이 주어지면 '검색 변형인가'도 본다(§0): 브랜드 접미사만 뗀 게 mainTitle과
+    완전 동일하면 키워드 보강 기회를 놓친 것 — WARN(-2, 8점으로 통과선 위에 남되 표시)."""
     labels, ded = [], 0
     if _has_quote(t):
         labels.append('따옴표'); ded += 4
@@ -113,6 +115,10 @@ def eval_pagetitle(t: str):
         labels.append('브랜드 접미사 없음'); ded += 1
     if len(t) > 62:
         labels.append('김(60자 초과)'); ded += 1
+    if main_title:
+        bare = re.sub(r'\s*\|\s*(페블러스|Pebblous)\s*$', '', t).strip()
+        if bare and bare == main_title.strip():
+            labels.append('mainTitle와 동일(검색 변형 아님)'); ded += 2
     return max(0, 10 - ded), labels
 
 
@@ -172,7 +178,8 @@ def check_html(html_file: str) -> dict:
     for k, fn in evals.items():
         if not vals[k]:
             continue
-        score, labels = fn(vals[k])
+        # pageTitle은 mainTitle과 비교해 '검색 변형인가'까지 본다(§0)
+        score, labels = fn(vals[k], vals['mainTitle']) if k == 'pageTitle' else fn(vals[k])
         slots[k] = {'value': vals[k], 'score': score, 'labels': labels}
         if score <= GATE_FAIL_MAX:
             ok = False
@@ -208,7 +215,7 @@ def main():
         cfg = extract_config(repo, a['path'])
         mt_score, mt_labels = eval_maintitle(title)
         st_score, st_labels = eval_subtitle(cfg['subtitle']) if cfg['subtitle'] else (None, [])
-        pt_score, pt_labels = eval_pagetitle(cfg['pageTitle']) if cfg['pageTitle'] else (None, [])
+        pt_score, pt_labels = eval_pagetitle(cfg['pageTitle'], cfg.get('mainTitle') or title) if cfg['pageTitle'] else (None, [])
         rows.append({
             'idx': i,
             'slug': slug_of(a['path']),
