@@ -194,6 +194,8 @@ def main():
     ap.add_argument('--min-score', type=int, help='이 점수 미만 행만 stdout 리포트')
     ap.add_argument('--check-html', metavar='FILE', action='append',
                     help='게이트 모드: 이 HTML 파일(들)의 3슬롯만 판정, JSON 출력. 위반 있으면 exit 1')
+    ap.add_argument('--no-backup', action='store_true',
+                    help='기존 titles_scored.json을 .bak로 백업하지 않고 덮어쓴다(자동/스케줄 실행용 — 백업 누적 방지)')
     args = ap.parse_args()
 
     # ── 게이트 모드 (발행 파이프라인 title-gate) ──
@@ -257,7 +259,28 @@ def main():
 
     out = args.output or os.path.join(repo, '_workspace', 'title-review', 'titles_scored.json')
     os.makedirs(os.path.dirname(out), exist_ok=True)
+
+    # 기존 센서스의 수정 제안(mt_fix·st_fix)을 slug 기준으로 이어받는다 — 재실행이 손으로 채운
+    # 제안을 날리지 않도록(2026-07-12). 단, 제목이 바뀐 글(제안이 이미 반영됨)은 제안을 비운다.
     if os.path.exists(out):
+        try:
+            prev = {r['slug']: r for r in json.load(open(out, encoding='utf-8')) if r.get('slug')}
+            carried = 0
+            for r in rows:
+                p = prev.get(r['slug'])
+                if not p:
+                    continue
+                # mt_fix: 이전 제안이 있고, 현재 제목이 그 제안과 다르면(아직 미적용) 이어받는다.
+                if p.get('mt_fix') and p['mt_fix'] != r['mainTitle'] and not r.get('mt_fix'):
+                    r['mt_fix'] = p['mt_fix']; carried += 1
+                if p.get('st_fix') and p['st_fix'] != r.get('subtitle') and not r.get('st_fix'):
+                    r['st_fix'] = p['st_fix']; carried += 1
+            if carried:
+                print(f'기존 제안 이어받음: {carried}건')
+        except Exception as e:
+            print(f'기존 제안 병합 실패(무시): {e}')
+
+    if os.path.exists(out) and not args.no_backup:
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
         bak = out.replace('.json', f'-{stamp}.bak.json')
         os.rename(out, bak)
