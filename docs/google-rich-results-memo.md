@@ -20,6 +20,20 @@ Google 검색 결과에서 "단순 파란 링크" 위에 추가 시각 요소가
 | **Organization** | 페블러스 로고·소셜링크가 사이드 패널에 표시될 가능성 |
 | **VideoObject** | 영상 임베드 시 미리보기 + 재생 시간 |
 
+> ### ⛔ FAQ가 Search Console에 안 보이는 것은 정상이다 (2026-07-12 실증)
+>
+> **증상**: URL Inspection의 Enhancements에 HTTPS·Breadcrumbs만 있고 FAQ가 없음.
+> **원인**: 페블러스 코드가 아니라 **Google 정책.** 2023년 8월 Google은 FAQ 리치 결과를
+> "잘 알려진 권위 있는 정부·보건 사이트"로만 제한했다. 그 뒤로 일반 사이트의 FAQ는
+> **검색 결과에도, Search Console Enhancements 리포트에도 표시되지 않는다.**
+>
+> **페블러스 코드는 정상**(2026-07-12 seo-check 전수 검증): `config.faqs` → `<section id="faq">`
+> → `PebblousSchema` 런타임 주입까지 완벽 작동, 라이브 렌더에 `FAQPage` JSON-LD 존재 확인.
+> → **FAQPage 스키마는 그대로 유지한다.** AI 검색·LLM 크롤러가 읽고(llms.txt와 함께 인용 우대),
+>   Google 정책이 복원될 여지도 있다. GSC에 FAQ 안 뜬다고 코드/전략을 고치지 말 것.
+>
+> **다음에 또 "FAQ가 왜 안 잡히나"를 조사하지 말 것 — 이 노트가 답이다.**
+
 ---
 
 ## 2. 페블러스 블로그에서 중요한 이유
@@ -61,7 +75,7 @@ Google 검색 결과에서 "단순 파란 링크" 위에 추가 시각 요소가
 ### 잘 갖춰진 것 ✅
 
 - **BreadcrumbList**: `PebblousPage.init()`이 자동 생성 — 거의 모든 페이지 충족
-- **FAQPage**: `config.faqs`로 정의 → 자동 JSON-LD 주입 (단, 일반 블로그라 Google이 SERP에서 안 보여줄 가능성 큼)
+- **FAQPage**: `config.faqs`로 정의 → 자동 JSON-LD 주입 (정상 작동). 단 Google이 SERP·GSC에 안 보여주는 것은 정상 — §1 "FAQ가 Search Console에 안 보이는 것은 정상" 노트 참조
 - **Article/TechArticle 일부 페이지**: 신규 표준 페이지(예: PebbloSim)는 `<head>`에 직접 `<script type="application/ld+json">`로 삽입
 
 ### 부족한 부분 ⚠️
