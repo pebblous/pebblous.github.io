@@ -386,6 +386,8 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
             -webkit-line-clamp: 2;      /* 2줄 안전망 — fitSubtitle이 이미 문구 경계로 자름 */
             -webkit-box-orient: vertical;
             overflow: hidden;
+            border-left: 4px solid ${theme.accent};   /* 부제 앞 주황 세로 바 (복구 2026-07-12) */
+            padding-left: 20px;
         }
 
         .footer {
