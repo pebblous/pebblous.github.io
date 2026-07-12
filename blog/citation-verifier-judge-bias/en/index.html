@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>LLM Judge Comparison: Is Low-Cost GPT-5-mini Enough for Citation Verification? | Pebblous</title>
+    <meta name="description" content="Citation verification skipped the frontier model. GPT-5-mini hit F1 0.908 on relevance, but cheap judges skew bias differently, and RL rewards amplify that skew.">
+    <meta name="keywords" content="LLM as a judge, citation verification AI, citation verifier, GPT-5-mini benchmark, deep research source attribution, RLVR reward bias, LLM judge bias, low-cost AI evaluator, AI verifier calibration, data quality">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/en/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="A Cheap LLM Judge Matched Frontier Models at Citation Verification">
+    <meta property="og:description" content="GPT-5-mini scored F1 0.908 on source relevance, but pass-rate bias ranged from 42.9% to 72.0% across judges. Use that bias as a reinforcement-learning reward and it gets amplified.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-07-13">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="A Cheap LLM Judge Matched Frontier Models at Citation Verification">
+    <meta name="twitter:description" content="GPT-5-mini scored F1 0.908, but pass-rate bias ranged from 42.9% to 72.0% across judges — the risk F1 hides.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/citation-verifier-judge-bias/en/image/index.png">
+    <meta name="twitter:image:alt" content="Diagram showing eight LLM judges' citation pass rates scattered from 42.9% to 72.0%, all below the gold rate of 79.3%">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260713">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260713">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260713">
+
+    <!-- GTM -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">Why the footnotes are shaky</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">The cheap model won</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">Same F1, different bias direction</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">Use it as a reward and it amplifies</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">Calibrate the verifier first</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            A deep-research agent attaches a footnote to every claim it makes. The links usually resolve, and the titles look on-topic. But to check whether those footnotes are actually right, the received wisdom has been that you need to stand up another large model as the grader. A recent benchmark knocks that assumption head-on.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            A paper released in July 2026 scored eight off-the-shelf LLM judges against 1,248 gold-labeled items. On the task of deciding whether a source is relevant to the topic, the low-cost model GPT-5-mini landed highest at F1 0.908, ahead of the frontier models. That means verification can be automated cheaply. These figures come from a controlled benchmark, so read them as values the study reported rather than settled fact.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The trouble starts next. All eight judges rated citations more strictly than the human gold pass rate of 79.3%, but that strictness spread from 42.9% to 72.0% across models. In other words, judges with the same F1 still err in different directions. Use that bias directly as a reinforcement-learning reward, the paper insists, and the direction gets amplified inside the training loop.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.908</p>
+                            <p class="text-sm themeable-text-secondary mt-1">GPT-5-mini source-relevance F1</p>
+                            <p class="text-xs themeable-muted mt-1">Best of 8, ahead of frontier</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">42.9–72.0%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Pass-rate range across 8 judges</p>
+                            <p class="text-xs themeable-muted mt-1">All below gold's 79.3%</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">79.3%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Human gold pass rate</p>
+                            <p class="text-xs themeable-muted mt-1">Undercut by all 8 judges</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">39–77%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Factual accuracy of deep-research citations</p>
+                            <p class="text-xs themeable-muted mt-1">Prior work, even with 94% valid links</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why deep research's footnotes are shaky</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Ask a deep-research agent for a long answer and every sentence comes back with a footnote attached. It looks reassuring. Click a link and the page opens; even the title alone seems on-topic. But a link resolving and the document actually supporting the sentence in front of it are two entirely different things.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One prior study put a number on that gap. It parsed the citations produced by deep-research agents and measured them three ways: link validity came in above 94% and topical relevance above 80%, yet the share of citations that factually supported the claim landed at just 39% to 77%. Scaling the search tool from 2 calls to 150 dropped accuracy by an average of 42%. Looking harder did not make the footnotes any sturdier.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A natural question follows. If the footnotes are this unreliable, who verifies them, and how cheaply can that verifier be built? Where the earlier study questioned the trustworthiness of the citations themselves, this new paper takes aim at the verifier side.
+                    </p>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Eight judges, 1,248 verdicts, and a cheap model</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper lined up eight off-the-shelf LLM judges in one place. It spread three families evenly: Claude (Haiku, Sonnet, Opus 4.6), Gemini (3.1 Flash Lite, Pro), and GPT (GPT-5-mini, GPT-5.4-mini, GPT-OSS-120B). The material under review was an adversarial benchmark seeded across several domains with deliberate factual errors and misleading citations. A human-reviewed gold set of 1,248 items, plus 378 hard cases where judges disagreed and a person arbitrated, became the baseline.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There are two axes of evaluation. One is source relevance: does the citation relate to the topic? The other is factual support: does the cited content actually back the claim? Relevance is the relatively easy call; factual support is far harder.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On source relevance, the winner was the low-cost model. GPT-5-mini topped all eight judges at F1 0.908 on the pass class, with agreement κ of 0.636. Frontier-tier models like Claude Opus 4.6 and Gemini 3.1 Pro sat below it. For deciding relevance, the assumption that the most expensive model is the best judge simply did not hold.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On the harder factual-support axis there was no separate winner. All eight models' confidence intervals overlapped, so they were statistically indistinguishable. By the raw numbers Claude Opus 4.6 edged ahead at F1 0.750, but not by a meaningful margin. On neither axis did the data support the hypothesis that a pricier model is a better judge.
+                    </p>
+
+                    <!-- Fig 2: two evaluation axes — relevance has a winner, factual support does not -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="24" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">Two axes — relevance has a winner, factual support does not</text>
+                            <line x1="330" y1="38" x2="330" y2="188" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <!-- Left: source relevance, cheap model wins -->
+                            <text x="165" y="52" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">Source relevance</text>
+                            <rect x="55" y="62" width="220" height="46" rx="8" fill="#F86825" opacity="0.12" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="165" y="82" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">GPT-5-mini (low-cost)</text>
+                            <text x="165" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-secondary)">F1 0.908 · top of 8 judges</text>
+                            <rect x="70" y="120" width="190" height="30" rx="6" fill="#808080" opacity="0.15"/>
+                            <text x="165" y="139" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">Frontier models (Opus 4.6, Gemini 3.1 Pro, etc.)</text>
+                            <text x="165" y="168" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">all sit below GPT-5-mini</text>
+                            <!-- Right: factual support, no winner (overlapping CIs) -->
+                            <text x="495" y="52" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">Factual support</text>
+                            <line x1="400" y1="66" x2="590" y2="66" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="405" y1="76" x2="585" y2="76" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="410" y1="86" x2="580" y2="86" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="408" y1="96" x2="583" y2="96" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="402" y1="106" x2="588" y2="106" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="412" y1="116" x2="578" y2="116" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="398" y1="126" x2="592" y2="126" stroke="#808080" stroke-width="3" opacity="0.4"/>
+                            <line x1="415" y1="136" x2="575" y2="136" stroke="#F86825" stroke-width="3"/>
+                            <text x="495" y="150" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" font-weight="600" fill="#F86825">Opus 4.6 F1 0.750 (edges ahead)</text>
+                            <text x="495" y="168" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">All 8 CIs overlap — statistical tie</text>
+                            <text x="330" y="200" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">The easy axis has a cheap winner; the hard axis has none.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ On source relevance, GPT-5-mini topped all 8 judges. On factual support, all 8 judges' confidence intervals overlapped — no winner — original Pebblous diagram | Source: <a href="https://arxiv.org/abs/2607.08700" target="_blank" rel="noopener" class="underline">Leung et al., arXiv:2607.08700</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The conclusion so far is welcome. You do not need to attach a top-tier model to the repetitive chore of footnote verification. Run the pipeline on a low-cost judge and its relevance calls hold their own against frontier tier, while the factual-support calls are all in the same neighborhood to begin with.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Same F1, different direction of bias</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The problem appears when you pick a judge on F1 alone. F1 is a scalar that lumps false positives and false negatives together, so which way a judge errs stays buried inside it. This is exactly where the paper digs in.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        All eight judges rated citations more strictly than the human gold pass rate of 79.3%. The direction was the same for all of them: they lean conservative, crediting supporting citations less than they should. But that strictness spread from 42.9% to 72.0% across models. One direction, yet a magnitude scattered by nearly 30 percentage points.
+                    </p>
+
+                    <!-- Fig 1: pass-rate bias of 8 judges vs gold 79.3% -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">Citation pass rate by judge — all 8 rate below gold (79.3%)</text>
+                            <!-- X grid: 0~100% mapped to x=180..620 (440px = 100%, 4.4px/%)-->
+                            <line x1="290" y1="40" x2="290" y2="168" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <line x1="400" y1="40" x2="400" y2="168" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <line x1="510" y1="40" x2="510" y2="168" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                            <text x="290" y="38" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">25%</text>
+                            <text x="400" y="38" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">50%</text>
+                            <text x="510" y="38" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">75%</text>
+                            <!-- gold baseline 79.3% -> x = 180 + 79.3*4.4 = 529 -->
+                            <line x1="529" y1="46" x2="529" y2="176" stroke="#171719" stroke-width="1.5" stroke-dasharray="4,2"/>
+                            <text x="529" y="192" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">Gold 79.3%</text>
+                            <!-- Row: strictest judge 42.9% -> width = 42.9*4.4 = 189 -->
+                            <text x="172" y="62" text-anchor="end" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="var(--text-secondary)">Strictest judge</text>
+                            <rect x="180" y="48" width="440" height="24" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="180" y="48" width="189" height="24" rx="5" fill="#808080"/>
+                            <text x="377" y="65" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">42.9%</text>
+                            <!-- Row: most lenient judge 72.0% -> width = 72*4.4 = 317 -->
+                            <text x="172" y="98" text-anchor="end" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="var(--text-secondary)">Most lenient judge</text>
+                            <rect x="180" y="84" width="440" height="24" rx="5" fill="#808080" opacity="0.12"/>
+                            <rect x="180" y="84" width="317" height="24" rx="5" fill="#F86825"/>
+                            <text x="505" y="101" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">72.0%</text>
+                            <!-- bias spread bracket: 42.9% end(369) ~ 72.0% end(497) -->
+                            <line x1="369" y1="118" x2="369" y2="126" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="369" y1="122" x2="497" y2="122" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="497" y1="118" x2="497" y2="126" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="433" y="140" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">Bias spread ≈ 29pp</text>
+                            <text x="330" y="164" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">Direction is uniform (conservative). Magnitude diverges. Orange = most lenient judge, gray = strictest judge.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ All eight judges rated citations more strictly than the gold pass rate, but the degree scatters from 42.9% to 72.0%. Even at similar F1, the magnitude of this bias can differ — original Pebblous diagram | Source: <a href="https://arxiv.org/abs/2607.08700" target="_blank" rel="noopener" class="underline">Leung et al., arXiv:2607.08700</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The subtler point is that two judges with the same F1 can still have wildly different false-positive and false-negative rates. One judge tends to err by letting unsupported citations through; the other errs by failing perfectly good ones. When the two errors cancel out, the F1 scores land close together. So F1 alone makes the two judges look identical. Attach them to a downstream system, though, and they produce completely different outcomes.
+                    </p>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Use that bias as a reward and it amplifies</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Why the direction of the bias matters becomes clear once you see where these judges are used. Reinforcement learning now stands up an LLM judge for each scoring rubric, and while training runs, that judge is the reward model. If the judge says pass, reward goes up; if it says fail, reward goes down.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Now suppose you seat a judge that tends to err toward false negatives as the reward model. This judge keeps failing claims that are in fact supported. The reward signal grows that much sparser, and the downstream model learns as if it were punished every time it adds a citation. The result shows up two ways: it plays it too safe and avoids firm assertions, or it simply cites less. A one-sided bias in the judge hardens into a habit in the model as it passes through the training loop.
+                    </p>
+
+                    <!-- Fig 3: when a biased judge becomes the reward — amplification loop -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#1e293b)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">When a biased judge becomes the reward — amplification in the training loop</text>
+                            <!-- Box A: judge bias -->
+                            <rect x="30" y="45" width="190" height="56" rx="8" fill="#808080" opacity="0.12" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="125" y="68" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">Judge's bias</text>
+                            <text x="125" y="86" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">(e.g., skewed toward false negatives)</text>
+                            <!-- Box B: sparse reward -->
+                            <rect x="440" y="45" width="190" height="56" rx="8" fill="#808080" opacity="0.12" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="535" y="68" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">Reward signal sparsens</text>
+                            <text x="535" y="86" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">supported claims fail too</text>
+                            <!-- Box C: downstream habit -->
+                            <rect x="235" y="140" width="190" height="56" rx="8" fill="#F86825" opacity="0.12" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="330" y="163" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="#F86825">Downstream model's habit</text>
+                            <text x="330" y="181" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-secondary)">over-hedges · under-cites</text>
+                            <!-- Arrows: A -> B -> C -> A (loop) -->
+                            <line x1="220" y1="70" x2="435" y2="70" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="435,70 425,65 425,75" fill="var(--text-muted)"/>
+                            <line x1="520" y1="101" x2="400" y2="150" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="400,150 411,148 407,159" fill="var(--text-muted)"/>
+                            <line x1="255" y1="150" x2="150" y2="101" stroke="#F86825" stroke-width="1.5"/>
+                            <polygon points="150,101 154,112 143,108" fill="#F86825"/>
+                            <text x="330" y="120" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">Amplifies with every training loop</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Seat a false-negative-leaning judge as the reward model, and that bias hardens through the training loop into the downstream model's habit — over-hedging, under-citing — original Pebblous diagram | Source: <a href="https://arxiv.org/abs/2607.08700" target="_blank" rel="noopener" class="underline">Leung et al., arXiv:2607.08700</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Hence the paper's blunt conclusion: if you want to use a citation rubric as a reward signal, calibration comes first. Unless you measure and correct which way the judge leans and by how much, then no matter how high the F1, that bias flows straight downstream. And, the experiments show alongside, this calibration does not require the most expensive model.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The shape of the problem — a metric distorting behavior once it becomes a reward — is not unfamiliar. Pebblous has covered it before, in <a href="/blog/reward-hacking-proxy-metric/en/" class="text-orange-500 hover:text-orange-400 underline">the distortion of using a proxy metric as a reward</a> and in <a href="/report/rl-reward-data-provenance/en/" class="text-orange-500 hover:text-orange-400 underline">the traceability problem of the data that verifiable-reward RL learns from</a>. This paper moves the root of that distortion one step earlier. If the judge that produces the reward is already skewed, everything optimized on top of it skews with it.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Calibrate the verifier first</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Read as a data-trust problem, this paper converges on a single point. In an era where AI verifies data, the verifier itself becomes the new pressure point for trust. More and more LLM judges are taking the seat that decides whether a footnote is right, whether a label is accurate, whether an output obeyed the rules. Fail to measure which way that judge leans first, and the whole pipeline tilts, silently, to one side.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Bring it down to practice and two things remain. One, automating verification cheaply is now a realistic option; measurement shows a low-cost model holds even with frontier tier on relevance calls. Two, you still must not pick a judge on a single aggregate score like F1. Calibrate first — does it lean toward false positives or false negatives, and how much stricter or more lenient is it than gold — and only then attach it to a reward or a gate.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The AI-Ready Data that Pebblous talks about goes one step past data that is cleaned and labeled. Only when the bias of the tools that verify that data is also measured and corrected does the trust you build on top of it stay steady. Measuring the verifier before you trust it — that is the data-quality version of the old question of who judges the judges. Which way is the judge inside our pipeline leaning right now?
+                    </p>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Leung, E., Lumer, E., Feld, C., Huber, A., Subbiah, V. K., &amp; Paul, K. (2026). "<a href="https://arxiv.org/abs/2607.08700" target="_blank" rel="noopener">Do You Need a Frontier Model as a Citation Verifier? Benchmarking Rubric LLMs for Deep-Research Source Attribution</a>." arXiv:2607.08700.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">"<a href="https://arxiv.org/abs/2605.06635" target="_blank" rel="noopener">Cited but Not Verified: Parsing and Evaluating Source Attribution in LLM Deep Research Agents</a>." (2026). arXiv:2605.06635.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Pebblous</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">3.</span><span class="ref-body">Pebblous. "<a href="/blog/reward-hacking-proxy-metric/en/">Why Does AI Ace the Test but Fail the Job?</a>" blog.pebblous.ai.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Pebblous. "<a href="/report/rl-reward-data-provenance/en/">Nobody Can Trace, Atom by Atom, the Data That Verifiable-Reward RL Learned From</a>." blog.pebblous.ai.</span></li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/citation-download.js?v=20260713" defer></script>
+    <script src="/scripts/common-utils.js?v=20260713"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-12T17:07:18.630Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-12T17:19:11.576Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1783876038631-3wawdt",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-12T17:42:56.079Z"
+            },
+            mainTitle: "A Cheap LLM Judge Matched Frontier Models at Citation Verification",
+            subtitle: "GPT-5-mini scored F1 0.908 on source relevance, but pass-rate bias ranged from 42.9% to 72.0% across judges",
+            pageTitle: "LLM Judge Comparison: Is Low-Cost GPT-5-mini Enough for Citation Verification? | Pebblous",
+            category: "tech",
+            publishDate: "2026-07-13",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/citation-verifier-judge-bias/en/",
+            tags: ["LLM as a Judge", "Citation Verification", "RLVR", "Data Quality", "AI Evaluator", "Reinforcement Learning Reward", "GPT-5-mini", "AI-Ready Data"],
+            faqs: [
+                { question: "Why are the footnotes a deep-research agent attaches unreliable?", answer: "Prior work found that citations from deep-research agents have link validity above 94% and topical relevance above 80%, yet their factual accuracy — whether the citation actually supports the claim — is only 39–77%. A link resolving and the document supporting the sentence are two different things." },
+                { question: "Do you really need a frontier model for citation verification?", answer: "No. When the paper compared eight judges, the low-cost model GPT-5-mini topped source-relevance judgments at F1 0.908, ahead of frontier-tier models like Claude Opus 4.6 and Gemini 3.1 Pro. On factual-support judgments, all models' confidence intervals overlapped and were statistically indistinguishable." },
+                { question: "If the F1 is similar, does it matter which judge you use?", answer: "Yes. F1 is a scalar that lumps false positives and false negatives together, so which way a judge errs stays buried inside it. Two judges with the same F1 can have wildly different false-positive and false-negative rates, producing entirely different outcomes downstream." },
+                { question: "What does the pass-rate bias of 42.9–72.0% mean?", answer: "All eight judges rated citations more strictly than the human gold pass rate of 79.3%, and that strictness spread from 42.9% to 72.0% across models. The direction of the bias is uniformly conservative, but its magnitude scatters by about 30 percentage points." },
+                { question: "What is the risk of using this bias as a reinforcement-learning reward?", answer: "Seat a judge that errs toward false negatives as the reward model and it fails supported claims, making the reward signal sparser. The downstream model learns as if punished for citing, so it avoids firm assertions or cites less. The judge's bias gets amplified in the training loop." },
+                { question: "What should practitioners take away from this?", answer: "Two things. First, automating verification with a low-cost model is now a realistic option. Second, do not pick a judge on a single aggregate score like F1 — calibrate its false-positive/false-negative direction and its bias magnitude against gold first, then attach it to a reward or a gate." },
+                { question: "How does this relate to data quality?", answer: "In an era where AI verifies data, the verifier itself becomes the new pressure point for trust. Unless you first measure which way the judge deciding footnotes, labels, and outputs leans, the whole pipeline tilts silently to one side. A verifier whose bias is measured and corrected is a condition of AI-Ready Data." }
+            ]
+        });
+    </script>
+</body>
+</html>
