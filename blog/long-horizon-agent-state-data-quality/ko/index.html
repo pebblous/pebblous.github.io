@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 에이전트 장시간 작업 완주율과 OSWorld-V2의 상태 관리 실패 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="OSWorld-V2 벤치마크는 실제 업무 길이의 108개 작업에서 최상위 에이전트조차 완료율 20.6%에 그쳤음을 보였다. 한 시간을 넘기면 완주율이 무너지는 원인은 모델 지능이 아니라 몇 시간에 걸쳐 쌓인 상태를 데이터처럼 관리하지 못한 데 있다.">
+    <meta name="keywords" content="AI 에이전트 장시간 작업, 에이전트 상태 관리, OSWorld-V2, OSWorld 2.0, 장시간 작업 완주율, 컴퓨터 사용 에이전트, 에이전트 컨텍스트 오염, 에이전트 메모리, 데이터 품질, long-horizon agent, context rot">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/long-horizon-agent-state-data-quality/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/long-horizon-agent-state-data-quality/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/long-horizon-agent-state-data-quality/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/long-horizon-agent-state-data-quality/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="한 시간을 넘기면 무너지는 AI 에이전트의 장시간 완주율">
+    <meta property="og:description" content="OSWorld-V2의 108개 장시간 작업에서, 완료율은 한 시간을 넘기며 20% 아래로 떨어졌고 세 시간에 이르면 0이 됐다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/long-horizon-agent-state-data-quality/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/long-horizon-agent-state-data-quality/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="한 시간을 넘기면 무너지는 AI 에이전트의 장시간 완주율">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-07-14">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="한 시간을 넘기면 무너지는 AI 에이전트의 장시간 완주율">
+    <meta name="twitter:description" content="OSWorld-V2가 측정한 108개 실제 업무에서, 완료율은 한 시간을 넘기며 20% 아래로 떨어졌다. 병목은 지능이 아니라 상태였다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/long-horizon-agent-state-data-quality/ko/image/index.png">
+    <meta name="twitter:image:alt" content="장시간 작업에서 에이전트의 상태가 유실된다">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="한 시간을 넘기면 무너지는 AI 에이전트의 장시간 완주율">
+    <meta name="citation_author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="citation_publication_date" content="2026/07/14">
+    <meta name="citation_online_date" content="2026/07/14">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260714"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260714">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260714">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260714">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#solved-and-not" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 짧은 작업은 이미 풀렸다</a></li>
+                    <li><a href="#the-cliff" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 실제 업무 길이로 재면 완주율이 절벽처럼 떨어진다</a></li>
+                    <li><a href="#what-agents-forget" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 에이전트는 정확히 무엇을 잊는가</a></li>
+                    <li><a href="#data-quality" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 기억력이 아니라 데이터 품질 문제다</a></li>
+                    <li><a href="#not-a-bigger-model" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 더 큰 모델이 아니라 상태를 데이터로</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            몇 시간짜리 실제 업무를 AI 에이전트에게 통째로 맡길 수 있을까요. 이 질문을 정면으로 시험한 벤치마크가 새로 나왔습니다. 짧은 조작 과제를 모아 놓은 이전 세대에서는 최상위 에이전트가 83.5%까지 올라가 사실상 풀린 문제처럼 보였는데, 작업 길이를 실제 업무 수준으로 끌어올리자 같은 세대의 에이전트가 20% 안팎으로 주저앉았습니다. 이 글은 그 추락이 어디에서 오는지를 봅니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            OSWorld-V2의 108개 작업은 중앙값 소요 시간이 약 1.6시간입니다. 최상위 에이전트조차 500스텝 안에 끝낸 작업은 20.6%뿐이었고, 45분 이하 구간에서 20% 남짓하던 완료율은 두 시간을 넘기며 10% 아래로 내려갔으며 163분을 넘어가면 어떤 모델도 하나를 끝내지 못했습니다. 실패의 다수는 모델이 몰라서가 아니라, 초반에 확인한 제약과 도중에 도착한 정보를 끝까지 들고 가지 못해서 벌어졌습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            그렇다면 병목은 지능이 아니라 상태입니다. 몇 시간에 걸쳐 쌓이는 맥락은 결국 하나의 데이터셋이고, 스키마도 신선도 점검도 검증 게이트도 없이 방치하면 사람이 짠 파이프라인처럼 오염되고 무너집니다. 이 글은 그 상태를 관리 대상 데이터로 다루자고 제안합니다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2606.29537" target="_blank" rel="noopener" class="underline">OSWorld-V2 (arXiv:2606.29537)</a>, <a href="https://osworld-v2.xlang.ai/" target="_blank" rel="noopener" class="underline">프로젝트 사이트</a></p>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">20.6%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">최고 완료율</p>
+                            <p class="text-xs themeable-muted mt-1">최상위 에이전트가 500스텝 안에 끝낸 작업 비율</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">세 시간의 벽</p>
+                            <p class="text-xs themeable-muted mt-1">163분을 넘는 작업은 모든 모델이 완주 실패</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1.6시간</p>
+                            <p class="text-sm themeable-text-secondary mt-1">작업의 중앙값 길이</p>
+                            <p class="text-xs themeable-muted mt-1">이전 세대(약 2분)의 약 48배로 늘린 난이도</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">83.5% → 20%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">길이만 바꿨을 때</p>
+                            <p class="text-xs themeable-muted mt-1">짧은 작업 포화 성적이 실제 길이 앞에서 추락</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="solved-and-not" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">짧은 작업은 이미 풀렸다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        컴퓨터를 직접 조작하는 에이전트의 성능은 지난 2년 사이 놀랍게 좋아졌습니다. 표준 척도 역할을 해 온 OSWorld 1.0에서 프론티어 에이전트들은 80% 안팎까지 올라섰고, OSWorld 개발팀이 밝힌 바에 따르면 최고 성적은 83.5%에 이르렀습니다. 파일을 열고 설정을 바꾸고 웹에서 정보를 찾아 입력하는 정도의 과제라면, 이제 사람의 개입 없이도 대부분 처리한다는 뜻입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 그 83.5%가 무엇을 재고 있었는가입니다. OSWorld 1.0의 작업은 중앙값 소요 시간이 약 2분, 평균 30스텝 안팎의 단발 조작이었습니다. 숙련자가 2분이면 끝낼 일을 잘 해낸다는 사실은 분명 진보지만, 우리가 실제로 에이전트에게 맡기고 싶은 일은 그런 모양이 아닙니다. 자료를 여러 곳에서 모아 표를 만들고, 조건에 맞는 항목만 골라 문서를 정리하고, 중간에 바뀐 요구를 반영해 다시 손보는 일은 2분이 아니라 몇 시간짜리입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 OSWorld를 만든 XLang Lab은 후속 벤치마크를 내놓으며 이렇게 물었습니다. 짧은 작업이 포화됐다고 해서 문제가 풀린 것인가. 답은 아니었습니다. 벤치마크가 잰 난이도가 실제 업무의 난이도를 담지 못했을 뿐입니다. 착시를 걷어 내려면 작업을 실제 길이로 되돌려야 했습니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>핵심</strong>: 83.5%는 에이전트가 유능해졌다는 신호이자, 그 유능함을 재던 자가 너무 짧았다는 신호입니다. 짧은 작업의 포화는 문제 해결이 아니라 다음 질문의 출발점이었습니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="the-cliff" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">실제 업무 길이로 재면 완주율이 절벽처럼 떨어진다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2026년 6월 공개된 OSWorld-V2는 108개의 장시간 워크플로우로 구성됩니다. 7개 전문 영역과 21개 세부 카테고리를 다루고, 외부 서비스 변동에 흔들리지 않도록 31개 서비스를 자체 호스팅한 통제된 환경에서 돌아갑니다. 작업의 중앙값 소요 시간은 약 1.6시간, 전체의 69.6%가 한 시간을 넘깁니다. OSWorld 1.0의 약 2분과 비교하면 난이도의 축을 지식이 아니라 지속 시간 쪽으로 크게 옮긴 셈입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 세대의 프론티어 에이전트를 이 환경에 넣자 성적이 뒤집혔습니다. 최고 설정에서 최상위 에이전트가 500스텝 안에 끝낸 작업은 20.6%였고, 부분 점수까지 인정해도 54.8%에 그쳤습니다. 짧은 작업에서 83.5%를 받던 모델들이 실제 길이 앞에서 5분의 1 수준으로 내려앉은 것입니다. 모델이 갑자기 나빠진 게 아니라, 짧은 벤치마크가 가려 두었던 벽이 드러났습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 추락은 한 모델의 약점이 아니었습니다. 완료율 정상에 오른 에이전트는 다른 어떤 모델보다 많은 출력 토큰을 쏟아붓고도 그 자리에 머물렀고, 반대로 토큰을 가장 아낀 모델은 13% 안팎에 갇혔습니다. 연산을 더 들이거나 다른 프론티어 모델로 갈아탄다고 완주율이 크게 달라지지 않았다는 뜻입니다. 벽은 특정 모델이 아니라 작업 길이 그 자체에 있었습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 또렷한 그림은 작업 길이별 완료율에 있습니다. 45분 이하에서는 20%대를 유지하지만, 137분에서 163분 구간으로 가면 10% 아래로 떨어지고, 163분을 넘어가면 어떤 모델도 하나를 끝내지 못했습니다. 성능이 완만히 줄어드는 게 아니라, 한 시간 언저리에서 꺾이기 시작해 세 시간에 이르면 바닥에 닿는 절벽 곡선입니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 340" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg);" role="img" aria-labelledby="cliff-chart-title-ko">
+                            <title id="cliff-chart-title-ko">작업 길이별 완료율 절벽</title>
+                            <line x1="80" y1="280" x2="600" y2="280" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="80" y1="190" x2="600" y2="190" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4 4"/>
+                            <line x1="80" y1="100" x2="600" y2="100" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4 4"/>
+                            <text x="70" y="284" text-anchor="end" font-size="13" fill="var(--text-secondary)">0%</text>
+                            <text x="70" y="194" text-anchor="end" font-size="13" fill="var(--text-secondary)">10%</text>
+                            <text x="70" y="104" text-anchor="end" font-size="13" fill="var(--text-secondary)">20%</text>
+                            <rect x="130" y="82" width="120" height="198" fill="#F86825" rx="4"/>
+                            <rect x="290" y="190" width="120" height="90" fill="#F86825" rx="4" opacity="0.75"/>
+                            <rect x="450" y="278" width="120" height="2" fill="#F86825" rx="1" opacity="0.5"/>
+                            <text x="190" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="#F86825">20~24%</text>
+                            <text x="350" y="178" text-anchor="middle" font-size="15" font-weight="700" fill="#F86825">10% 이하</text>
+                            <text x="510" y="270" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">0%</text>
+                            <text x="190" y="308" text-anchor="middle" font-size="13" fill="var(--text-secondary)">45분 이하</text>
+                            <text x="350" y="308" text-anchor="middle" font-size="13" fill="var(--text-secondary)">137~163분</text>
+                            <text x="510" y="308" text-anchor="middle" font-size="13" fill="var(--text-secondary)">163분 초과</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 (Fig. 재해석) — 작업 길이가 늘수록 완료율은 완만히 줄지 않고 한 시간 언저리에서 꺾여 세 시간 지점에 바닥을 찍는다 | 출처: <a href="https://arxiv.org/abs/2606.29537" target="_blank" rel="noopener" class="underline">Yuan et al., OSWorld-V2 (arXiv:2606.29537)</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="overflow-x-auto my-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">작업 길이 구간</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">완료율(대략)</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">해석</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">45분 이하</td>
+                                    <td class="py-3 pr-4">20~24%</td>
+                                    <td class="py-3 pr-4">짧아도 실제 업무는 이미 어렵다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">137~163분</td>
+                                    <td class="py-3 pr-4">10% 이하</td>
+                                    <td class="py-3 pr-4">한 시간을 넘기며 완주율이 꺾인다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">163분 초과</td>
+                                    <td class="py-3 pr-4">0%</td>
+                                    <td class="py-3 pr-4">세 시간에 이르면 아무도 끝내지 못한다</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text-secondary text-sm mb-6">출처: <a href="https://arxiv.org/abs/2606.29537" target="_blank" rel="noopener" class="underline">Yuan et al., OSWorld-V2 (arXiv:2606.29537)</a>. 수치는 여러 모델의 대략적 구간별 완료율입니다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>핵심</strong>: 완주율은 작업이 길어질수록 완만히 낮아지는 것이 아니라 특정 지점에서 급격히 무너집니다. 시간이 곧 난이도인 세계에서, 데모의 성적과 실제 업무의 성적은 전혀 다른 곡선을 그립니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="what-agents-forget" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">에이전트는 정확히 무엇을 잊는가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        절벽이 어디에서 오는지는 실패를 뜯어봐야 알 수 있습니다. OSWorld-V2는 실패의 원인을 구조적으로 분류하는 방법론을 함께 제시했는데, 가장 어려운 카테고리는 화면에 드러나지 않은 상태를 스스로 복구해야 하는 작업(43개)이었고, 여러 출처의 정보를 엮어야 하는 작업(46개, 42.6%)이 뒤를 이었습니다. 두 유형의 공통점은 정보가 부족한 게 아니라, 이미 손에 쥔 정보를 끝까지 유지해야 한다는 데 있습니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 240" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg);" role="img" aria-labelledby="failure-chart-title-ko">
+                            <title id="failure-chart-title-ko">가장 어려운 실패 카테고리</title>
+                            <line x1="230" y1="40" x2="610" y2="40" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3"/>
+                            <text x="610" y="30" text-anchor="end" font-size="11" fill="var(--text-muted)">전체 108개 작업</text>
+                            <text x="220" y="90" text-anchor="end" font-size="14" fill="var(--text-secondary)">여러 출처 정보 결합</text>
+                            <rect x="230" y="70" width="162" height="36" fill="#F86825" rx="4"/>
+                            <text x="400" y="93" text-anchor="start" font-size="14" font-weight="700" fill="#F86825">46 (42.6%)</text>
+                            <text x="220" y="160" text-anchor="end" font-size="14" fill="var(--text-secondary)">화면 밖 상태 복구</text>
+                            <rect x="230" y="140" width="151" height="36" fill="#F86825" rx="4" opacity="0.8"/>
+                            <text x="389" y="163" text-anchor="start" font-size="14" font-weight="700" fill="#F86825">43 (39.8%)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 (Fig. 재해석) — 전체 108개 장시간 작업 중 가장 많은 실패를 부른 두 카테고리. 정보가 부족해서가 아니라 이미 확보한 정보를 끝까지 붙들지 못해 생기는 실패다 | 출처: <a href="https://arxiv.org/abs/2606.29537" target="_blank" rel="noopener" class="underline">Yuan et al., OSWorld-V2 (arXiv:2606.29537)</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        케이스 스터디에서 반복된 실패 서사는 네 가지로 좁혀집니다. 정보를 언제 그만 모아야 할지 판단을 놓치고, 작업 도중에 벌어진 변경을 알아채지 못하며, 사용자에게 확인하는 대신 값을 추측하고, 마지막에 결과를 검증하지 않고 그대로 제출합니다. 어느 것도 지식의 문제가 아닙니다. 초반에 세운 조건, 중간에 도착한 사실, 다시 확인해야 할 시점을 몇 시간 동안 붙들고 가지 못한 문제입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 지점이 이전 두 편의 글과 이어지면서도 갈라집니다. 앞서 페블러스는 <a href="/blog/agent-endurance-is-memory-not-intelligence/ko/" class="text-orange-500 underline">1년짜리 가상 경영 실험에서 생존을 가른 건 지능이 아니라 받아 적는 습관이었다</a>는 이야기를 했고, 그전에는 <a href="/report/agent-loops-harness-over-model/ko/" class="text-orange-500 underline">에이전트를 무너뜨리는 건 약한 모델이 아니라 약한 하네스</a>라는 이야기를 했습니다. 하네스라는 구조, 받아 적는 행동에 이어, 이번 글은 한 걸음 더 들어가 그 받아 적은 것 자체가 어떻게 망가지는가를 봅니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>핵심</strong>: 에이전트가 잊는 것은 지식이 아니라 상태입니다. 확정한 제약, 도중에 도착한 정보, 다시 확인할 시점 — 몇 시간에 걸쳐 붙들어야 할 이 세 가지가 소리 없이 새어 나가는 순간 유능한 모델도 헛돕니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="data-quality" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">기억력이 아니라 데이터 품질 문제다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        받아 적으면 해결된다는 처방은 절반만 맞습니다. 몇 시간에 걸쳐 쌓이는 맥락은 결국 에이전트가 계속 다시 읽는 하나의 데이터셋이고, 데이터셋은 관리하지 않으면 오염됩니다. OSWorld-V2가 관찰한 실패를 데이터 파이프라인의 언어로 옮기면, 우리가 사람의 데이터 품질에서 이미 알고 있던 실패와 정확히 겹칩니다.
+                    </p>
+
+                    <div class="overflow-x-auto my-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">에이전트가 보인 실패</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">데이터 품질의 언어로</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">초반에 정한 제약을 놓침</td>
+                                    <td class="py-3 pr-4">스키마 드리프트 — 확정한 조건이 상태 레코드에서 소리 없이 유실</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">작업 중 도착한 정보를 반영 못 함</td>
+                                    <td class="py-3 pr-4">증분 누락 — 초기 스냅샷만 참조하고 갱신을 흡수하지 못함</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">확인 대신 추측</td>
+                                    <td class="py-3 pr-4">무검증 삽입 — 출처 불명 값을 사실인 것처럼 상태에 기록</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">최종 검증 생략</td>
+                                    <td class="py-3 pr-4">QA 게이트 부재 — 산출물을 검증 없이 그대로 커밋</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 한 가지 반전이 더 있습니다. Chroma Research가 18개 프론티어 모델을 시험한 결과, 컨텍스트가 길어질수록 한도에 닿기 전부터 성능이 비균일하게 저하됐고, 오히려 구조가 잘 잡힌 깔끔한 입력이 더 빨리 저하를 부르기도 했습니다. 깨끗해 보이는 로그일수록 사람도 에이전트도 다시 검증하지 않게 된다는 데이터 신뢰의 역설이, 에이전트의 긴 상태에도 똑같이 나타납니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>핵심</strong>: 에이전트가 몇 시간짜리 일을 못 끝내는 건 더 똑똑한 모델이 없어서가 아니라, 그 몇 시간 동안 쌓인 상태를 하나의 데이터셋으로 관리하지 않았기 때문입니다. 스키마도 신선도 점검도 검증 게이트도 없는 데이터는 사람 손으로 짜도 파이프라인을 무너뜨립니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="not-a-bigger-model" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">더 큰 모델이 아니라 상태를 데이터로</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        자연스러운 반문은 이것입니다. 컨텍스트 창을 더 넓히면 되지 않는가. 앞의 결과가 답합니다. 넓은 창이 곧 잘 활용되는 창은 아닙니다. 모델은 긴 입력의 처음과 끝은 붙들면서 중간은 흘려보내고, 창이 커질수록 오히려 어디에 주목해야 할지를 잃습니다. 더 큰 모델과 더 긴 창은 이 병목을 자동으로 풀어 주지 않습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        해야 할 일은 상태를 관리 대상 데이터로 승격시키는 것입니다. 첫째, 에이전트가 붙들어야 할 제약과 결정을 자유 서술이 아니라 구조화된 상태로 적게 합니다. 무엇이 확정됐고 무엇이 미정인지를 필드로 구분해 두면, 나중에 조용히 뒤집히는 일을 줄일 수 있습니다. 둘째, 작업을 시간 기준으로 쪼개 명시적 체크포인트를 두고, 그 지점마다 초기 제약과 최신 상태를 다시 대조하게 합니다. 셋째, 산출물을 제출하기 전에 검증 스텝을 통과하게 만듭니다. 사람의 파이프라인에 두는 스키마 검사와 QA 게이트를 에이전트의 상태에도 그대로 두는 것입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 질문은 이렇게 바뀝니다. 당신의 에이전트를 데모가 아니라 실제 몇 시간짜리 업무에 올리려면, 더 큰 모델을 기다릴 것인가, 아니면 그가 몇 시간 동안 들고 갈 상태를 데이터 계약처럼 설계할 것인가. 파일럿을 30분·1시간·2시간 구간으로 나눠 완주율을 재 보면, 당신의 에이전트가 정확히 어디에서 상태를 흘리는지 곧 드러납니다. 거기서부터가 진짜 시작입니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>마무리</strong>: 긴 작업을 끝내는 힘은 더 큰 두뇌가 아니라 잘 관리된 상태에서 나옵니다. 에이전트가 몇 시간 동안 들고 가는 맥락은 데이터입니다. 그 데이터의 스키마와 신선도, 검증을 어떻게 다룰지가 자율화 시대의 실제 경쟁력입니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- 참고문헌 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 논문</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Yuan, M. et al. (2026). "<a href="https://arxiv.org/abs/2606.29537" target="_blank" rel="noopener">OSWorld 2.0: Benchmarking Computer Use Agents on Long-Horizon Real-World Tasks</a>." <em>arXiv:2606.29537</em>. — 108개 장시간 데스크톱 워크플로우. 중앙값 1.6시간, 최상위 에이전트 이진 완료율 20.6%, 163분 초과 작업은 모든 모델 0%.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">1차 소스</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">2.</span><span class="ref-body">XLang Lab. (2026). "<a href="https://osworld-v2.xlang.ai/" target="_blank" rel="noopener">OSWorld-V2 Project Page</a>." — 작업 길이 분포, 도메인 구성, 모델별 리더보드, exposure attribution 방법론 요약. 83.5% 포화 비교치 출처.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">XLang Lab. (2026). "<a href="https://github.com/xlang-ai/OSWorld-V2" target="_blank" rel="noopener">xlang-ai/OSWorld-V2</a>." <em>GitHub</em>. — 벤치마크 코드·태스크·평가 하네스. 31개 자체 호스팅 서비스로 외부 변동 통제.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">업계 리포트</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">4.</span><span class="ref-body">Chroma Research. (2025). "<a href="https://research.trychroma.com/context-rot" target="_blank" rel="noopener">Context Rot: How Increasing Input Tokens Impacts LLM Performance</a>." <em>Chroma</em>. — 18개 모델 실험. 컨텍스트가 길어질수록 비균일 저하, 구조가 잘 잡힌 입력이 더 빨리 저하를 유발하기도.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260714"></script>
+    <script src="/scripts/citation-download.js?v=20260714"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-13T19:18:11.902Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-13T19:30:23.978Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1783970291902-lmnamk",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-13T19:59:00.076Z"
+            },
+            mainTitle: "한 시간을 넘기면 무너지는 AI 에이전트의 장시간 완주율",
+            subtitle: "OSWorld-V2의 108개 장시간 작업에서, 완료율은 한 시간을 넘기며 20% 아래로 떨어졌다",
+            pageTitle: "AI 에이전트 장시간 작업 완주율과 OSWorld-V2의 상태 관리 실패 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-14",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/long-horizon-agent-state-data-quality/ko/",
+            tags: ["AI 에이전트 장시간 작업", "에이전트 상태 관리", "OSWorld-V2", "장시간 작업 완주율", "컴퓨터 사용 에이전트", "에이전트 컨텍스트 오염", "데이터 품질", "long-horizon agent"],
+            faqs: [
+                {
+                    question: "OSWorld-V2는 무엇을 측정하는 벤치마크인가요?",
+                    answer: "컴퓨터를 직접 조작하는 AI 에이전트를 실제 업무 길이의 작업으로 시험하는 벤치마크입니다. 108개 장시간 워크플로우로 구성되고, 7개 전문 영역과 21개 세부 카테고리를 다루며, 외부 서비스 변동에 흔들리지 않도록 31개 서비스를 자체 호스팅한 통제된 환경에서 돌아갑니다. 작업의 중앙값 소요 시간은 약 1.6시간이고 전체의 69.6%가 한 시간을 넘깁니다. 중앙값 약 2분의 단발 조작을 모아 둔 이전 세대 OSWorld 1.0과 달리, 난이도의 축을 지식이 아니라 지속 시간 쪽으로 옮긴 것이 핵심입니다."
+                },
+                {
+                    question: "'83.5%'와 '20%'는 각각 무엇을 가리키나요?",
+                    answer: "83.5%는 이전 세대 벤치마크인 OSWorld 1.0에서 최상위 에이전트가 받은 포화 성적으로, OSWorld 개발팀이 후속 벤치마크를 소개하며 비교치로 인용한 수치입니다. 논문 본문의 표 값이 아니라 개발팀의 코멘트에서 나온 값입니다. 반면 20%는 OSWorld-V2에서 최상위 에이전트가 500스텝 안에 끝낸 작업 비율(정확히는 20.6%)입니다. 같은 세대의 에이전트가 작업 길이만 실제 수준으로 바뀌자 5분의 1 수준으로 내려앉았다는 뜻입니다."
+                },
+                {
+                    question: "완주율은 작업이 길어지면 완만히 떨어지나요?",
+                    answer: "아닙니다. 특정 지점에서 급격히 꺾이는 절벽 곡선에 가깝습니다. 45분 이하 구간에서는 20%대를 유지하지만, 137분에서 163분 구간으로 가면 10% 아래로 떨어지고, 163분을 넘어가면 어떤 모델도 작업 하나를 끝내지 못했습니다. 성능이 서서히 감소하는 것이 아니라, 한 시간 언저리에서 무너지기 시작해 세 시간에 이르면 바닥에 닿습니다. 데모에서 통하던 성적과 실제 몇 시간짜리 업무의 성적이 전혀 다른 이유입니다."
+                },
+                {
+                    question: "에이전트는 긴 작업에서 정확히 무엇을 실패하나요?",
+                    answer: "OSWorld-V2의 실패 분류에서 가장 어려운 카테고리는 화면에 드러나지 않은 상태를 스스로 복구해야 하는 작업(43개)과 여러 출처의 정보를 엮어야 하는 작업(46개)이었습니다. 케이스 스터디의 공통 서사는 네 가지로, 정보를 언제 그만 모을지 판단을 놓치고, 작업 도중 벌어진 변경을 알아채지 못하며, 사용자에게 확인하는 대신 값을 추측하고, 마지막 검증을 생략합니다. 모두 지식 부족이 아니라, 초반에 확정한 제약과 도중에 도착한 정보를 끝까지 유지하지 못해서 생기는 실패입니다."
+                },
+                {
+                    question: "왜 이것이 기억력이 아니라 데이터 품질 문제인가요?",
+                    answer: "에이전트가 몇 시간에 걸쳐 쌓아 가며 계속 다시 읽는 맥락은 결국 하나의 데이터셋이기 때문입니다. 관찰된 실패를 데이터의 언어로 옮기면 익숙한 실패와 겹칩니다. 초반 제약을 놓치는 것은 스키마 드리프트, 도중 정보를 반영하지 못하는 것은 증분 누락, 확인 대신 추측하는 것은 무검증 삽입, 최종 검증을 생략하는 것은 QA 게이트 부재입니다. 스키마도 신선도 점검도 검증 게이트도 없는 데이터는 사람 손으로 짜도 파이프라인을 무너뜨리는데, 에이전트의 상태도 다르지 않습니다."
+                },
+                {
+                    question: "컨텍스트 창을 더 넓히면 해결되지 않나요?",
+                    answer: "넓히는 것만으로는 부족합니다. 넓은 창이 곧 잘 활용되는 창은 아니기 때문입니다. 모델은 긴 입력의 처음과 끝은 붙들면서 중간은 흘려보내고, 창이 커질수록 어디에 주목해야 할지를 잃기도 합니다. Chroma Research의 실험에서는 컨텍스트가 길어질수록 한도에 닿기 전부터 성능이 비균일하게 저하됐고, 구조가 잘 잡힌 깔끔한 입력이 오히려 더 빨리 저하를 부르기도 했습니다. 더 큰 모델과 더 긴 창은 상태 유실이라는 병목을 자동으로 풀어 주지 않습니다."
+                },
+                {
+                    question: "실무자는 지금 무엇을 점검해야 하나요?",
+                    answer: "상태를 관리 대상 데이터로 다루는 설계를 지금 넣는 것이 좋습니다. 첫째, 에이전트가 붙들어야 할 제약과 결정을 자유 서술이 아니라 구조화된 상태로 적게 해 무엇이 확정됐고 무엇이 미정인지를 필드로 구분합니다. 둘째, 작업을 시간 기준으로 쪼개 명시적 체크포인트를 두고 그 지점마다 초기 제약과 최신 상태를 다시 대조하게 합니다. 셋째, 산출물을 제출하기 전 검증 스텝을 통과시킵니다. 파일럿을 30분·1시간·2시간 구간으로 나눠 완주율을 재 보면 에이전트가 어디에서 상태를 흘리는지 드러납니다."
+                },
+                {
+                    question: "이 글은 페블러스의 이전 에이전트 글들과 어떻게 이어지나요?",
+                    answer: "세 편이 한 흐름을 이룹니다. 먼저 '에이전트를 무너뜨리는 건 약한 모델이 아니라 약한 하네스'가 도구 호출 루프와 컨텍스트 관리라는 구조를 다뤘고, 다음으로 '1년을 버틴 비결은 똑똑함이 아니라 메모장'이 받아 적는 행동을 다뤘습니다. 이번 글은 그 받아 적은 것 자체가 어떻게 오염되고 유실되는가로 한 걸음 더 들어가, 장기 상태를 데이터 품질의 문제로 봅니다. 구조에서 행동으로, 다시 관리 원칙으로 심화되는 순서입니다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
