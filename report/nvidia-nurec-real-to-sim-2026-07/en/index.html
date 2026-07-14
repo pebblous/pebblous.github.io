@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>NuRec Real-to-Sim — When Footage Becomes a Simulator Asset | Pebblous</title>
+    <meta name="description" content="NVIDIA NuRec reconstructs real-world footage with 3D Gaussian Splatting and packages it into simulator assets (usdz) for the real-to-sim pipeline.">
+    <meta name="keywords" content="NuRec, real-to-sim, Gaussian Splatting, 3DGS, 3DGRT, 3DGUT, neural reconstruction, Isaac Sim, OpenUSD, usdz, synthetic data, data quality, Physical AI, NVIDIA">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="When Footage Becomes a Simulator Asset">
+    <meta property="og:description" content="The real-to-sim pipeline NVIDIA NuRec and Gaussian Splatting open up — and the new bottleneck of asset quality.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="NuRec real-to-sim pipeline — how footage becomes a simulator asset">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="When Footage Becomes a Simulator Asset">
+    <meta name="twitter:description" content="The real-to-sim pipeline NVIDIA NuRec and Gaussian Splatting open up — and the new bottleneck of asset quality.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/en/image/index.png">
+    <meta name="twitter:image:alt" content="NuRec real-to-sim pipeline">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (fixed order) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260714">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260714">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260714">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Roots: Gaussian Splatting</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. What NuRec Adds</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. The Real-to-Sim Pipeline</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Honest Limits</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. The Complementary Map</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. A Shift in the Data View</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">Why Pebblous Cares</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">Film a factory or a road for a few minutes, and that scene turns into a standard asset inside a simulator. That is what NVIDIA's neural reconstruction stack, NuRec, does. Its roots trace to <strong>Gaussian Splatting (3DGS)</strong>, introduced at SIGGRAPH 2023. It represents a space as millions of translucent colored particles and optimizes them by pushing the pixel difference between the render and the real photograph back into the particles' parameters. Reconstruction (training) is heavy, but rendering the finished scene is rasterization — and therefore real-time. That was the decisive break from the NeRF era, which had to re-query a neural network for every viewpoint.</p>
+                        <p class="themeable-text leading-relaxed mt-4">NuRec lifts that research into an industrial pipeline. An RTX renderer composites the Gaussian particle cloud and ordinary 3D assets (robot and object meshes) into a single frame, matching even depth occlusion (3DGRT, 3DGUT, PPISP), and standardizes the result into a single OpenUSD file (.usdz), so a "real place" is distributed as a file and assembled by reference. This flow, which returns real footage into a simulator stage, is called <strong>real-to-sim</strong>. Finished reconstruction datasets are already public on HuggingFace, and adoption is especially fast on the autonomous-vehicle side.</p>
+                        <p class="themeable-text leading-relaxed mt-4">But a particle cloud captures appearance only. Physical interaction requires separate collision geometry; lighting is baked in at capture time, so relighting is hard; and quality depends on capture coverage. This is where the data view shifts. The moment a reconstruction becomes a distributable <strong>asset</strong>, the new bottleneck is not render speed but asset quality: reconstruction fidelity, capture coverage, and composition alignment. All three are axes you can diagnose and gate quantitatively, and this article follows where they come from.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">Four numbers compress the picture. Reconstruction training time has dropped sharply, render speed for distorted cameras has reached real-time, and finished reconstruction datasets are already public at meaningful scale.</p>
+
+                    <!-- STAT-CARD: figures confirmed from body (re-verified in Phase 5-D.5) -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">48h → 40min</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Reconstruction training time</p>
+                            <p class="text-xs themeable-muted mt-1">Training cost 3DGS cut versus NeRF-family baselines (Mip-NeRF360)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">265 vs 52 FPS</p>
+                            <p class="text-sm themeable-text-secondary mt-1">3DGUT vs 3DGRT render speed</p>
+                            <p class="text-xs themeable-muted mt-1">~5× on the same benchmark — distorted cameras in real time</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1,500+ scenes</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Public AV reconstruction dataset</p>
+                            <p class="text-xs themeable-muted mt-1">~2.9TB, as of version 26.04 (still growing)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">≥30 FPS</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Real-time render of a finished scene</p>
+                            <p class="text-xs themeable-muted mt-1">Rasterized render at 1080p (original 3DGS paper)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Roots: What Gaussian Splatting Changed</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">To understand NuRec, start with its root: 3D Gaussian Splatting (3DGS). 3DGS fills a single space with millions of tiny ellipsoids — 3D Gaussians. Each particle carries position, size, orientation, color, and opacity as parameters. Given photographs shot from many angles, the method projects these particles onto a view, renders them, measures how far the result diverges from the real photo, and pushes that error back into the particle parameters to correct them bit by bit. This process is called differentiable rendering: the pixel difference from the photo is itself the training signal.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The character of this approach splits into two phases. Building the scene — the reconstruction phase — is heavy, because millions of particles must be optimized iteratively. But once the scene is finished, drawing it to screen — the render phase — is light. It is rasterization, splatting particles onto the screen, an operation GPUs excel at, and it clears 30 frames per second at 1080p. This asymmetry, "training is slow, playback is fast," is the defining trait of 3DGS.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">This is exactly where it broke from its predecessor, NeRF. NeRF packed a scene into a single neural network and had to re-query that network for every pixel of every viewpoint. Rendering was slow (seconds per frame), and moving the camera around freely felt sluggish. 3DGS is also tens of times faster to train: on the representative Mip-NeRF360 benchmark, the original paper finishes a reconstruction in about 40 minutes, whereas a NeRF-family baseline under the same conditions took up to 48 hours. That speed pulled 3DGS out of the lab, and the industrial renderer and asset standard layered on top of it is the NuRec we turn to next.</p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-6" style="background:var(--card-bg); border:1px solid var(--card-border, #e5e7eb);">
+                            <svg viewBox="0 0 680 380" width="100%" role="img" aria-label="The differentiable rendering loop of 3D Gaussian Splatting: render the Gaussian particle cloud, compare against real photos, and backpropagate the difference into the particle parameters">
+                                <defs>
+                                    <marker id="arrowNeutral1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                        <path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"></path>
+                                    </marker>
+                                    <marker id="arrowOrange1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                        <path d="M0,0 L8,3 L0,6 Z" fill="#F86825"></path>
+                                    </marker>
+                                </defs>
+
+                                <line x1="260" y1="80" x2="420" y2="80" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral1)"></line>
+                                <line x1="530" y1="120" x2="530" y2="260" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral1)"></line>
+                                <line x1="260" y1="300" x2="420" y2="300" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral1)"></line>
+
+                                <path d="M420,300 L15,300 L15,80 L40,80" fill="none" stroke="#F86825" stroke-width="2.5" marker-end="url(#arrowOrange1)"></path>
+                                <text x="15" y="190" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825" transform="rotate(-90 15 190)">Backprop: loss → particle params</text>
+
+                                <rect x="40" y="40" width="220" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <text x="150" y="72" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">Gaussian Particle Cloud</text>
+                                <text x="150" y="96" text-anchor="middle" font-size="12" fill="var(--text-muted)">position · size · color · opacity</text>
+
+                                <rect x="420" y="40" width="220" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <text x="530" y="72" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">Rasterized Render</text>
+                                <text x="530" y="96" text-anchor="middle" font-size="12" fill="var(--text-muted)">fast on-screen projection</text>
+
+                                <rect x="420" y="260" width="220" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <text x="530" y="292" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">Pixel Difference</text>
+                                <text x="530" y="316" text-anchor="middle" font-size="12" fill="var(--text-muted)">render vs. real photo (loss)</text>
+
+                                <rect x="40" y="260" width="220" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <text x="150" y="292" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">Real Photos</text>
+                                <text x="150" y="316" text-anchor="middle" font-size="12" fill="var(--text-muted)">multi-view capture (ground truth)</text>
+                            </svg>
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Original Pebblous diagram (reinterpretation of the 3DGS differentiable-rendering loop) | Kerbl et al., SIGGRAPH 2023 (arXiv:2308.04079)</figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">This blog has covered the fundamentals of 3DGS several times already, so instead of repeating them, this article focuses on the contrast in character: the asymmetry between heavy reconstruction and real-time rendering, and what changes once the finished output becomes a "distributable asset." For the detailed mechanics of 3DGS, the <a href="/report/isaac-sim-3dgs-vla-synthetic-data-2026-04/en/" class="text-orange-500 hover:text-orange-600 transition-colors">Isaac Sim · 3DGS synthetic-data report</a> is a good companion read.</p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">NuRec: The Two Things NVIDIA Adds to 3DGS</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">NuRec is not 3DGS itself. It is a stack NVIDIA built by adding two things on top of research-grade 3DGS: renderer integration and assetization. These two are the line that separates a "technique in a paper" from an "industrial pipeline."</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>Renderer integration: particle cloud and mesh in one frame</h3>
+                    <p class="themeable-text leading-relaxed mb-6">The first axis is the RTX renderer's ability to composite the Gaussian particle cloud and ordinary 3D assets (robots, object meshes) into a single frame. It does not merely overlay them — it matches depth occlusion. Stand a robot-arm mesh on a reconstructed warehouse floor, and the shelving behind the arm is naturally hidden. Two lines of research make this compositing possible.</p>
+                    <p class="themeable-text leading-relaxed mb-6"><strong>3DGRT</strong> handles Gaussians with ray tracing. Because it casts rays that strike the particles, it can represent secondary rays such as reflection and refraction, and distorted cameras such as fisheye and rolling shutter — but it is slow. <strong>3DGUT</strong> uses a technique called the unscented transform to support the same distorted cameras and rolling shutter while keeping 3DGS-level rasterization speed. On a fisheye benchmark, the 3DGUT paper reports higher image quality (about +0.96 dB PSNR) using roughly a third as many particles as FisheyeGS (0.38M vs 1.07M). For real-to-sim, which has to handle the real camera distortion produced by smartphone, vehicle, and robot sensors, this combination is decisive. On top of that sits <strong>PPISP</strong>, which corrects the exposure, white-balance, and vignetting variance of real multi-camera capture, returning the reconstructed scene's photometry to what it was at capture time.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">A table makes the division of labor across the three clear. Speed and camera expressiveness used to be a trade-off; 3DGUT is a design that tries to hold both at once.</p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Method</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Render principle</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Distorted cameras · secondary rays</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Speed (Mip-NeRF360)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">3DGS</td>
+                                    <td class="border themeable-border px-4 py-3">Rasterization</td>
+                                    <td class="border themeable-border px-4 py-3">Not supported (assumes pinhole camera)</td>
+                                    <td class="border themeable-border px-4 py-3">Real-time (≥30 FPS)</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">3DGRT</td>
+                                    <td class="border themeable-border px-4 py-3">Ray tracing</td>
+                                    <td class="border themeable-border px-4 py-3">Supported (reflection, refraction, fisheye, rolling shutter)</td>
+                                    <td class="border themeable-border px-4 py-3">~52 FPS</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">3DGUT</td>
+                                    <td class="border themeable-border px-4 py-3">Rasterization + unscented transform</td>
+                                    <td class="border themeable-border px-4 py-3">Distorted cameras · rolling shutter supported</td>
+                                    <td class="border themeable-border px-4 py-3">~265 FPS</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-sm themeable-muted mt-2">Comparison on the same benchmark (Mip-NeRF360). FPS figures are cited from the reproduction table in the 3DGUT paper. The original 3DGRT paper reports higher numbers at other resolutions, so direct comparison here is limited to the values within this table. (arXiv:2412.12507)</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>Assetization: a site becomes a single file</h3>
+                    <p class="themeable-text leading-relaxed mb-6">The second axis is assetization: standardizing the reconstruction into a single OpenUSD file (.usdz). Inside that file sits not only the Gaussian reconstruction but also a collision mesh for physics, an occupancy map for placing robots, and the capture camera's trajectory — all as one bundle. Autonomous-vehicle assets go further, adding a neural reconstruction volume, an OpenDRIVE map, and object-tracking data.</p>
+                    <p class="themeable-text leading-relaxed mb-6">Why does assetization matter? Because the moment it becomes a usdz, a "real place" is distributed as a file and assembled by reference. Register one captured warehouse as an asset, and many simulations can pull it in by reference and place their own robots and objects on top. Because OpenUSD is already an industry standard, the reconstruction flows straight into existing Isaac Sim and Omniverse workflows. NuRec's real contribution is not render fidelity but that it ships footage inside this standard asset format.</p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Real-to-Sim Pipeline: From Footage to Training Data</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">String the technical pieces together in order and they form a single pipeline. It starts with a few minutes of filming a real site and ends with robot training data coming out. At each step, the output becomes the input to the next.</p>
+
+                    <ul class="space-y-3 mb-8 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>① Capture</strong> — Film a factory, warehouse, store, or road for a few minutes with a smartphone or vehicle camera. The inputs are video, photos, and the camera trajectory.</li>
+                        <li class="themeable-text leading-relaxed"><strong>② Reconstruction</strong> — Optimize the Gaussian scene with 3DGUT; PPISP corrects capture photometry. The outputs are the particle cloud and auxiliary meshes.</li>
+                        <li class="themeable-text leading-relaxed"><strong>③ Assetization</strong> — Bundle the reconstruction into a single usdz: Gaussians + collision mesh + occupancy map + capture trajectory, all in one set.</li>
+                        <li class="themeable-text leading-relaxed"><strong>④ Staging</strong> — Load the usdz into Isaac Sim / Omniverse by reference and set it up as a simulation stage.</li>
+                        <li class="themeable-text leading-relaxed"><strong>⑤ Digital twin + physics sim</strong> — Place a robot digital twin on the photoreal backdrop and run the physics engine. Contacts, collisions, and forces are computed together with ground-truth labels.</li>
+                        <li class="themeable-text leading-relaxed"><strong>⑥ Training-data generation</strong> — Extract labeled training data from the scene that fuses the photoreal backdrop with simulator physics.</li>
+                    </ul>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-6" style="background:var(--card-bg); border:1px solid var(--card-border, #e5e7eb);">
+                            <svg viewBox="0 0 680 340" width="100%" role="img" aria-label="The six-stage real-to-sim pipeline: capture, reconstruction, assetization, staging, digital twin with physics simulation, and training-data generation, in sequence">
+                                <defs>
+                                    <marker id="arrowNeutral2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                        <path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"></path>
+                                    </marker>
+                                </defs>
+
+                                <line x1="220" y1="80" x2="240" y2="80" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral2)"></line>
+                                <line x1="440" y1="80" x2="460" y2="80" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral2)"></line>
+                                <line x1="560" y1="120" x2="560" y2="220" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral2)"></line>
+                                <line x1="460" y1="260" x2="440" y2="260" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral2)"></line>
+                                <line x1="240" y1="260" x2="220" y2="260" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral2)"></line>
+
+                                <rect x="20" y="40" width="200" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <circle cx="42" cy="62" r="16" fill="#F86825"></circle>
+                                <text x="42" y="67" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">1</text>
+                                <text x="120" y="80" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-secondary)">Capture</text>
+                                <text x="120" y="102" text-anchor="middle" font-size="11" fill="var(--text-muted)">factory · warehouse · road</text>
+
+                                <rect x="240" y="40" width="200" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <circle cx="262" cy="62" r="16" fill="#F86825"></circle>
+                                <text x="262" y="67" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">2</text>
+                                <text x="340" y="80" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-secondary)">Reconstruction</text>
+                                <text x="340" y="102" text-anchor="middle" font-size="11" fill="var(--text-muted)">3DGUT + PPISP optimization</text>
+
+                                <rect x="460" y="40" width="200" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <circle cx="482" cy="62" r="16" fill="#F86825"></circle>
+                                <text x="482" y="67" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">3</text>
+                                <text x="560" y="80" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-secondary)">Assetization</text>
+                                <text x="560" y="102" text-anchor="middle" font-size="11" fill="var(--text-muted)">usdz standard packaging</text>
+
+                                <rect x="460" y="220" width="200" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <circle cx="482" cy="242" r="16" fill="#F86825"></circle>
+                                <text x="482" y="247" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">4</text>
+                                <text x="560" y="260" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-secondary)">Staging</text>
+                                <text x="560" y="282" text-anchor="middle" font-size="11" fill="var(--text-muted)">Isaac Sim · Omniverse reference</text>
+
+                                <rect x="240" y="220" width="200" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <circle cx="262" cy="242" r="16" fill="#F86825"></circle>
+                                <text x="262" y="247" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">5</text>
+                                <text x="340" y="260" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-secondary)">Digital Twin</text>
+                                <text x="340" y="282" text-anchor="middle" font-size="11" fill="var(--text-muted)">physics sim + ground truth</text>
+
+                                <rect x="20" y="220" width="200" height="80" rx="12" fill="none" stroke="#F86825" stroke-width="2.5"></rect>
+                                <circle cx="42" cy="242" r="16" fill="#F86825"></circle>
+                                <text x="42" y="247" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">6</text>
+                                <text x="120" y="260" text-anchor="middle" font-size="14" font-weight="700" fill="#F86825">Training Data</text>
+                                <text x="120" y="282" text-anchor="middle" font-size="11" fill="var(--text-muted)">photoreal backdrop + sim physics</text>
+                            </svg>
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Original Pebblous diagram — the six-stage real-to-sim pipeline</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">The finished products of this pipeline are already public. NVIDIA distributes completed usdz reconstruction assets as datasets on HuggingFace. There are two tracks — one for robotics and one for autonomous vehicles — differing in scale and license. To get a feel for what a single AV scene is: roughly a 20-second driving segment reconstructed from six front, side, and rear camera views makes up one scene. Scenes like that are stacked by the thousands in the table below.</p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Dataset</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Scale</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Contents</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">License · adoption signal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">PhysicalAI-Robotics-NuRec</td>
+                                    <td class="border themeable-border px-4 py-3">9 environments, ~63GB</td>
+                                    <td class="border themeable-border px-4 py-3">usdz + capture trajectory + occupancy map</td>
+                                    <td class="border themeable-border px-4 py-3">CC-BY-4.0 (open)</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">PhysicalAI-Autonomous-Vehicles-NuRec</td>
+                                    <td class="border themeable-border px-4 py-3">1,500+ scenes, ~2.9TB</td>
+                                    <td class="border themeable-border px-4 py-3">Neural reconstruction volume + OpenDRIVE map + object tracking</td>
+                                    <td class="border themeable-border px-4 py-3">Gated license; monthly downloads several times the robotics set</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-sm themeable-muted mt-2">Based on the HuggingFace dataset cards (version 26.04). The AV dataset's scene count is expanding from the 900 announced by NVIDIA to over 1,500; we use the latest figure here.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">Adoption is especially advanced on the autonomous-vehicle side. CARLA, the open-source AV simulator, folded in NuRec integration (25.07) with its 0.9.16 release, so a developer ecosystem on the order of 150,000 can now drop reconstruction assets straight in. Workflows that reconstruct driving logs to replay or vary real road scenes are entering AV validation and data generation as practical tools. Validation-infrastructure vendors such as Mcity, dSPACE, and Foretellix have also announced adoption.</p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Honest Limits</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">As attractive as real-to-sim is, reconstruction assets have three clear limits. The interesting part is that these limits become the very axes of quality control. Knowing what is weak tells you what to measure.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>A particle cloud holds only appearance</h3>
+                    <p class="themeable-text leading-relaxed mb-6">A Gaussian particle is a visual representation with color and opacity — it has no physical solidity or shape. Push a robot arm against a reconstructed box and the arm just passes through. To make physical interaction possible, you must supply collision geometry separately. That is exactly why the usdz bundles a collision mesh and an occupancy map. Appearance (Gaussians) and physics (meshes) are stored separately: render from the Gaussians for photorealism, simulate on the meshes.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>Lighting is baked in at capture time</h3>
+                    <p class="themeable-text leading-relaxed mb-6">Reconstruction etches the light at capture time straight into the particle colors. So relighting — turning a warehouse shot on a cloudy afternoon into midday sun, or switching lights on and off — is hard. Transforming the time of day or the weather of a scene is not the job of reconstruction itself; it passes to world-model-family techniques. NuRec is strong at faithfully capturing "the site exactly as shot" and weak at imagining "the site under different conditions."</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>Quality is tied to capture coverage</h3>
+                    <p class="themeable-text leading-relaxed mb-6">Any angle the camera never captured shows up in the reconstruction as a hole or as leftover drifting particles (floaters). Areas that are sparsely observed or move fast (night, fog, high-speed driving, a pedestrian's legs) are the known low-quality cases. The very fact that NVIDIA maintains a separate NuRec Fixer (based on Difix3D+) to inpaint artifacts is evidence that reconstructions come out with holes. In the end, a reconstruction's reliability depends heavily on how evenly it was filmed.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">Each of the three limits leads to one quantitative axis. The appearance-only problem is managed through <strong>composition alignment</strong> (matching the scale and depth of robots and backdrop); the difficulty of relighting through the limit on <strong>transformation range</strong>; and coverage dependence through <strong>fidelity and coverage metrics</strong> (PSNR, SSIM, unobserved angles). Knowing the limits is the same as knowing what to gate.</p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Complementary Map: Where Four Pieces Interlock</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">To put NuRec in its place, you have to see its relationship with neighboring technologies. The picture of making physically consistent synthetic data is built from four pieces pointing in different directions. Of the four, real-to-sim and sim-to-real point in exactly opposite directions.</p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>Physics simulator</strong> — the ground-truth ledger that computes contacts, collisions, and forces together with ground-truth labels. This is where training-data labels come from.</li>
+                        <li class="themeable-text leading-relaxed"><strong>Sim-to-real</strong> — a world model (Cosmos Transfer and the like) transforms synthetically generated scenes into a photoreal style. The direction is from simulator to reality.</li>
+                        <li class="themeable-text leading-relaxed"><strong>Real-to-sim</strong> — NuRec returns real footage into simulator assets. The direction is from reality to simulator — the exact opposite of sim-to-real.</li>
+                        <li class="themeable-text leading-relaxed"><strong>Quality proof</strong> — quantitatively validates and gates whether the data the other three produce is usable for training. The glue that keeps the remaining pieces physically consistent.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">The diagram below shows these four pieces interlocking into one pipeline. NuRec (real-to-sim) fills the "reality to simulator" piece that had long been empty in this picture.</p>
+
+                    <div class="mb-8 rounded-xl p-6" style="background:var(--card-bg); border:1px solid var(--card-border, #e5e7eb);">
+                        <svg viewBox="0 0 760 440" width="100%" role="img" aria-label="The four pieces of a physically consistent synthetic-data pipeline: physics simulator, sim-to-real, real-to-sim (NuRec), and quality proof">
+                            <defs>
+                                <marker id="arrowNeutral" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                    <path d="M0,0 L8,3 L0,6 Z" fill="#808080"></path>
+                                </marker>
+                                <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                    <path d="M0,0 L8,3 L0,6 Z" fill="#F86825"></path>
+                                </marker>
+                            </defs>
+
+                            <!-- connectors: four pieces → center -->
+                            <line x1="200" y1="120" x2="340" y2="200" stroke="#808080" stroke-width="2" marker-end="url(#arrowNeutral)"></line>
+                            <line x1="560" y1="120" x2="420" y2="200" stroke="#808080" stroke-width="2" marker-end="url(#arrowNeutral)"></line>
+                            <line x1="200" y1="330" x2="340" y2="245" stroke="#F86825" stroke-width="2.5" marker-end="url(#arrowOrange)"></line>
+                            <line x1="560" y1="330" x2="420" y2="245" stroke="#808080" stroke-width="2" marker-end="url(#arrowNeutral)"></line>
+
+                            <!-- center -->
+                            <circle cx="380" cy="222" r="66" fill="none" stroke="#585858" stroke-width="2"></circle>
+                            <text x="380" y="216" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">Physically</text>
+                            <text x="380" y="236" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">consistent</text>
+                            <text x="380" y="256" text-anchor="middle" font-size="13" fill="var(--text-muted)">synthetic data</text>
+
+                            <!-- top-left: physics simulator -->
+                            <rect x="60" y="70" width="240" height="66" rx="12" fill="none" stroke="#808080" stroke-width="2"></rect>
+                            <text x="180" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">Physics simulator</text>
+                            <text x="180" y="122" text-anchor="middle" font-size="12" fill="var(--text-muted)">Ground-truth labels · contact ledger</text>
+
+                            <!-- top-right: sim-to-real -->
+                            <rect x="460" y="70" width="240" height="66" rx="12" fill="none" stroke="#808080" stroke-width="2"></rect>
+                            <text x="580" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">Sim-to-real (world model)</text>
+                            <text x="580" y="122" text-anchor="middle" font-size="12" fill="var(--text-muted)">Sim → reality transform</text>
+
+                            <!-- bottom-left: real-to-sim NuRec (emphasis) -->
+                            <rect x="60" y="308" width="240" height="66" rx="12" fill="none" stroke="#F86825" stroke-width="2.5"></rect>
+                            <text x="180" y="338" text-anchor="middle" font-size="15" font-weight="700" fill="#F86825">Real-to-sim (NuRec)</text>
+                            <text x="180" y="360" text-anchor="middle" font-size="12" fill="var(--text-muted)">Reality → sim assetization</text>
+
+                            <!-- bottom-right: quality proof -->
+                            <rect x="460" y="308" width="240" height="66" rx="12" fill="none" stroke="#808080" stroke-width="2"></rect>
+                            <text x="580" y="338" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">Quality proof</text>
+                            <text x="580" y="360" text-anchor="middle" font-size="12" fill="var(--text-muted)">Fidelity · coverage · alignment gate</text>
+                        </svg>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">This map connects to the thesis of the <a href="/project/GraphicsForPhysicalAI/en/" class="text-orange-500 hover:text-orange-600 transition-colors">GraphicsForPhysicalAI hub</a> Pebblous covered earlier: that "differentiable rendering is the new data infrastructure." NuRec is the industrial, real-world evidence for that claim, and precisely the piece that fills the real-to-sim axis the hub had not yet completed.</p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A Shift in the Data View: What to Validate When a Reconstruction Becomes an Asset</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">Look back over the story so far through a data lens and one shift emerges. The question of the 3DGS era was "is the render real-time?" The answer is already in: yes. But the moment the reconstruction becomes a distributable asset called usdz, the question changes to "is this asset usable for training?" The bottleneck has moved from render speed to asset quality.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">Asset quality is not a vague phrase. The three limits from the previous section translate directly into three diagnostic axes.</p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>Reconstruction fidelity</strong> — how close the reconstructed scene is to reality. Measured with quantitative metrics like PSNR, SSIM, and LPIPS. An axis you can compare numerically on standard benchmarks.</li>
+                        <li class="themeable-text leading-relaxed"><strong>Capture coverage</strong> — which angles went unobserved. Unobserved angles show up as holes and floaters, so coverage sets the boundary of the region where the reconstruction is trustworthy.</li>
+                        <li class="themeable-text leading-relaxed"><strong>Composition alignment</strong> — whether the robot and object meshes laid over the reconstructed backdrop match it in scale and depth. When they don't, the physics sim and the training labels go wrong together.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">What matters is that all three axes are <strong>diagnosable and gateable</strong>. A defect from a low-quality case (night, fog, high-speed driving, a pedestrian's legs) propagates directly into a defect in the training asset, and becomes a performance risk in the model trained on it. So for a team adopting the "build a sim stage from a few minutes of footage" workflow, what will guarantee the quality of that stage becomes an immediate practical task. In the era where reconstructions become assets, data quality moves from a problem of labeling ground truth to a problem of validating the reconstruction itself and passing or rejecting it.</p>
+                </section>
+
+                <!-- Why Pebblous Cares -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Why Pebblous Is Watching This</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">NuRec fills a blank on the Physical AI data map Pebblous has been drawing. We have covered Isaac Sim (synthetic-data generation), OpenUSD (the asset standard), and world models (sim-to-real) in turn — but the real-to-sim piece, "returning real footage into 3D assets," was empty. As NuRec fills that spot, the four-piece picture of physics simulator, sim-to-real, real-to-sim, and quality proof interlocks physically.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">From a data-quality standpoint, the question this technology raises is clear. The moment a reconstruction becomes a distributable asset, the center of gravity of validation shifts from "is the render real-time?" to "is this asset usable for training?" Reconstruction fidelity, capture coverage, and composition alignment are all quality axes you can diagnose and gate. This overlaps precisely with the language Pebblous has used in DataClinic and AI-Ready Data. The more robotics and AV teams adopt the "build a sim stage from a few minutes of footage" workflow, the more how to guarantee that stage's quality becomes a training-performance risk.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">More broadly, NuRec is industrial, real-world evidence for the proposition that "differentiable rendering is the new data infrastructure." Footage has started to be distributed inside a standard asset format, and proving asset quality on top of that infrastructure emerges as the next task.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed"><strong>Editor's Note.</strong> This article is an overview organized around the technical facts of NuRec. The three quality axes noted above (fidelity, coverage, composition alignment) touch the frame through which Pebblous views reconstruction-asset validation, but the concrete diagnostic and gating methodology is beyond this article's scope. We cover it in a separate piece.</p>
+                    </div>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">References</h2>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Kerbl, B., Kopanas, G., Leimkühler, T., Drettakis, G. (2023). 3D Gaussian Splatting for Real-Time Radiance Field Rendering. ACM ToG 42(4), SIGGRAPH 2023. arXiv:2308.04079. <a href="https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/" target="_blank" rel="noopener">Project page</a></span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Moenne-Loccoz, N., et al. (NVIDIA Toronto AI Lab). 3D Gaussian Ray Tracing (3DGRT). arXiv:2407.07090. <a href="https://research.nvidia.com/labs/toronto-ai/3dgrt/" target="_blank" rel="noopener">Project page</a></span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Wu, Q., et al. (NVIDIA). 3DGUT: Enabling Distorted Cameras and Secondary Rays in Gaussian Splatting. CVPR 2025. arXiv:2412.12507. <a href="https://research.nvidia.com/labs/toronto-ai/3dgut/" target="_blank" rel="noopener">Project page</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Platform · Data</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">4.</span><span class="ref-body">NVIDIA. Isaac Sim Documentation (NuRec). <a href="https://docs.isaacsim.omniverse.nvidia.com/" target="_blank" rel="noopener">docs.isaacsim.omniverse.nvidia.com</a></span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">HuggingFace. nvidia/PhysicalAI-Robotics-NuRec (9 environments, ~63GB, CC-BY-4.0). <a href="https://huggingface.co/datasets/nvidia/PhysicalAI-Robotics-NuRec" target="_blank" rel="noopener">Dataset card</a></span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">HuggingFace. nvidia/PhysicalAI-Autonomous-Vehicles-NuRec (1,500+ scenes, ~2.9TB). <a href="https://huggingface.co/datasets/nvidia/PhysicalAI-Autonomous-Vehicles-NuRec" target="_blank" rel="noopener">Dataset card</a></span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">CARLA. Release 0.9.16 / NVIDIA NuRec integration. <a href="https://carla.org/" target="_blank" rel="noopener">carla.org</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Pebblous adjacent</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">8.</span><span class="ref-body">Pebblous. GraphicsForPhysicalAI (hub). <a href="/project/GraphicsForPhysicalAI/en/">blog.pebblous.ai/project/GraphicsForPhysicalAI/en/</a></span></li>
+                    </ul>
+
+                    <p class="text-sm themeable-muted">External links and figures were verified against their source rendering before publication. Dataset scale and download figures are as of version 26.04; because the datasets are still expanding, they may differ from the latest values.</p>
+                </section>
+
+                <!-- FAQ (rendered from config.faqs — keep empty section) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260714"></script>
+
+    <!-- Citation download (BibTeX/RIS) — Pebblous direct converter, no external lib -->
+    <script src="/scripts/citation-download.js?v=20260522" defer></script>
+
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "operator",
+                "at": "2026-07-14T08:05:16.972Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-14T08:09:09.465Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-14T08:32:06.510Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1784016316972-xr652o",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-14T09:13:57.734Z"
+            },
+            mainTitle: "When Footage Becomes a Simulator Asset",
+            subtitle: "The real-to-sim pipeline NVIDIA NuRec and Gaussian Splatting open up — and the new bottleneck of asset quality",
+            pageTitle: "NuRec Real-to-Sim — When Footage Becomes a Simulator Asset | Pebblous",
+            category: "tech",
+            publishDate: "2026-07-14",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/nvidia-nurec-real-to-sim-2026-07/en/",
+            tags: ["NuRec", "real-to-sim", "Gaussian Splatting", "3DGS", "neural reconstruction", "Isaac Sim", "OpenUSD", "synthetic data", "data quality", "Physical AI"],
+            faqs: [
+                { question: "Are NuRec and 3D Gaussian Splatting (3DGS) the same thing?", answer: "No. 3DGS is the reconstruction/render technique (the root) introduced at SIGGRAPH 2023, while NuRec is NVIDIA's stack that turns it into a simulator pipeline by adding RTX renderer integration (3DGRT, 3DGUT, PPISP) and usdz assetization on top." },
+                { question: "What is different from NeRF?", answer: "NeRF re-queried a neural network for every viewpoint, so rendering was slow — seconds per frame. 3DGS renders a finished scene by rasterization, so it is real-time (over 30 FPS at 1080p) and also tens of times faster to train (about 40 minutes vs. up to 48 hours)." },
+                { question: "Why are both 3DGRT and 3DGUT needed?", answer: "3DGRT (ray tracing) supports secondary rays like reflection and refraction and distorted cameras, but it is slow (~52 FPS). 3DGUT keeps 3DGS-level speed (~265 FPS) while handling fisheye and rolling shutter, so it processes real camera distortion in real time." },
+                { question: "What does PPISP do?", answer: "It is a post-processing module that corrects the exposure, white-balance, and vignetting variance produced in real multi-camera capture. It reproduces the camera's photometric characteristics at capture time so the reconstructed scene looks photoreal." },
+                { question: "What is inside the reconstruction output (usdz)?", answer: "The Gaussian reconstruction, a collision-detection mesh, an occupancy map, and the capture camera's trajectory come as one bundle. Autonomous-vehicle datasets also include a neural reconstruction volume, an OpenDRIVE map, and object-tracking data." },
+                { question: "How does real-to-sim differ from sim-to-real?", answer: "They face opposite directions. Real-to-sim (NuRec) turns real footage into simulator assets, while sim-to-real (world models, Cosmos Transfer) transforms synthetic scenes into a photoreal style. The two interlock complementarily in a single synthetic-data pipeline." },
+                { question: "Is there public data with ready-to-use NuRec reconstruction assets?", answer: "Yes. On HuggingFace, PhysicalAI-Robotics-NuRec for robotics (9 environments, ~63GB, CC-BY-4.0) and PhysicalAI-Autonomous-Vehicles-NuRec for autonomous vehicles (1,500+ scenes, ~2.9TB, gated license) are publicly available." },
+                { question: "Can a robot push or grasp objects in a reconstructed scene as a physics sim?", answer: "The Gaussian cloud itself captures only appearance and cannot do physical interaction. Physics sim becomes possible only when you supply the collision mesh bundled in the usdz — which is why reconstruction assets need separate geometry." },
+                { question: "How is reconstruction quality validated?", answer: "Fidelity is measured with quantitative metrics (PSNR, SSIM, LPIPS), capture coverage flags the risk of holes and floaters at unobserved angles, and composition alignment checks the scale-and-depth match between robots and backdrop. Night, fog, high-speed driving, and a pedestrian's legs are the known low-quality cases." }
+            ]
+        });
+    </script>
+</body>
+</html>
