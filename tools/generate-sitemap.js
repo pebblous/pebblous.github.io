@@ -94,11 +94,21 @@ xml += `
   </url>
 `;
 
+// URL-encode each path segment (slashes preserved), then XML-escape.
+// 폴더명에 공백이 있으면(예: "World Model") <loc>에 raw space가 들어가 sitemap XML이
+// 무효가 되고 canonical(%20)과 어긋난다 — Google이 그 URL을 거부 (2026-07-14 감사).
+function encodePathForLoc(p) {
+    return p.split('/').map(seg => encodeURIComponent(seg)).join('/');
+}
+function xmlEscape(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // Add published articles
 publishedArticles.forEach((article, index) => {
     const url = article.path.startsWith('http')
-        ? article.path
-        : `${SITE_URL}/${article.path}`;
+        ? xmlEscape(article.path)
+        : `${SITE_URL}/${xmlEscape(encodePathForLoc(article.path))}`;
 
     const lastmod = article.date || new Date().toISOString().split('T')[0];
     const changefreq = getChangeFreq(article.date);
