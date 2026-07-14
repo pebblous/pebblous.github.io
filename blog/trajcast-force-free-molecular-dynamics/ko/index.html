@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrajCast, 힘 계산 없이 분자동역학을 30배 빠르게 만든 신경망 | 페블러스</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="rating" content="general">
+    <meta name="revisit-after" content="7 days">
+    <meta name="distribution" content="global">
+
+    <meta name="description" content="IBM 연구진의 TrajCast는 힘을 계산하지 않고 원자의 위치와 속도를 직접 예측하는 신경망입니다. 분자동역학의 시간 간격을 최대 30배 늘려 4천 원자계에서 하루 15나노초 궤적을 만들지만, 압력 계산 불가와 장시간 오차 누적이 검증 과제를 남깁니다.">
+    <meta name="keywords" content="TrajCast, 분자동역학, 머신러닝 포텐셜, MLIP, 자기회귀 신경망, 등변 신경망, force-free molecular dynamics, AI-Ready Data, AI4Science, 재료과학, 합성 궤적 데이터, IBM Research">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/trajcast-force-free-molecular-dynamics/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/trajcast-force-free-molecular-dynamics/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/trajcast-force-free-molecular-dynamics/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/trajcast-force-free-molecular-dynamics/ko/">
+
+    <!-- Open Graph -->
+    <meta name="og-image-title" content="힘 계산 없이 원자의 다음 순간을 예측하는 신경망">
+    <meta property="og:title" content="힘 계산 없이 원자의 다음 순간을 예측하는 신경망">
+    <meta property="og:description" content="IBM의 TrajCast가 위치와 속도를 직접 갱신해 분자동역학의 시간 간격을 30배 늘렸다. 하지만 압력을 잃고 장시간 오차를 얻었다.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/trajcast-force-free-molecular-dynamics/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/trajcast-force-free-molecular-dynamics/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="TrajCast — 힘 계산 없이 원자의 다음 순간을 예측하는 신경망">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-07-15">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="힘 계산 없이 원자의 다음 순간을 예측하는 신경망">
+    <meta name="twitter:description" content="IBM의 TrajCast가 위치와 속도를 직접 갱신해 분자동역학 시간 간격을 30배 늘렸다. 대신 압력을 잃고 장시간 오차를 얻었다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/trajcast-force-free-molecular-dynamics/ko/image/index.png">
+    <meta name="twitter:image:alt" content="TrajCast — 힘 계산 없이 원자의 다음 순간을 예측하는 신경망">
+    <meta name="twitter:site" content="@pebblous_official">
+    <meta name="twitter:creator" content="@pebblous_official">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260715"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260715">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260715">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260715">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">핵심 요약</a></li>
+                    <li><a href="#why-slow" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 데이터 공장인데 느린 이유</a></li>
+                    <li><a href="#how-trajcast" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 힘을 계산하지 않는다</a></li>
+                    <li><a href="#numbers" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 짧게 배우고 길게 그린다</a></li>
+                    <li><a href="#limits" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 저자가 인정한 한계</a></li>
+                    <li><a href="#pebblous-angle" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 누가 신뢰도를 재나</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">핵심 요약</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            분자동역학(MD) 시뮬레이션은 신약과 신소재 연구에서 원자의 궤적을 만들어내는 데이터 생산 공장이다. 그런데 이 공장은 느리다. 매 순간 원자에 걸리는 힘을 다시 계산하고, 그 힘을 아주 짧은 시간 간격으로 적분해야 하기 때문이다. IBM 연구진이 <span style="font-weight:600;">Nature Machine Intelligence</span>에 발표한 TrajCast는 그 힘 계산 단계를 통째로 건너뛴다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            핵심은 발상의 전환이다. 힘을 구해 가속도를 얻고 위치를 적분하는 사슬을 끊고, 자기회귀 등변 신경망이 지금 이 순간의 위치와 속도를 보고 다음 순간의 위치와 속도를 곧바로 내놓는다. 이렇게 하면 한 걸음의 시간 간격을 기존 MD보다 최대 30배까지 벌릴 수 있고, 4,300개 원자로 이루어진 계에서 하루에 15나노초 넘는 궤적을 뽑아낸다. 학습에 쓴 궤적은 모두 1나노초에도 못 미친다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            이 글은 TrajCast가 무엇을 얻고 무엇을 잃었는지를 본다. 속도를 얻은 대가로 압력을 직접 계산할 수 없게 됐고, 긴 시간축에서는 오차가 조금씩 쌓인다. 실험이 아니라 모델이 과학 데이터를 대량으로 찍어내는 시대에, 그 합성 궤적을 무엇으로 검증할 것인가라는 질문이 여기서 시작된다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">최대 30배</p>
+                            <p class="text-sm themeable-text-secondary mt-1">시간 간격 확장</p>
+                            <p class="text-xs themeable-muted mt-1">기존 MD 타임스텝 대비</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">하루 15ns</p>
+                            <p class="text-sm themeable-text-secondary mt-1">궤적 생성량</p>
+                            <p class="text-xs themeable-muted mt-1">4,300 원자계 기준</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1ns 미만</p>
+                            <p class="text-sm themeable-text-secondary mt-1">학습 데이터 길이</p>
+                            <p class="text-xs themeable-muted mt-1">물 50ps · 쿼츠 100ps</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">NpT 불가</p>
+                            <p class="text-sm themeable-text-secondary mt-1">가장 정직한 한계</p>
+                            <p class="text-xs themeable-muted mt-1">압력을 계산하지 못함</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="why-slow" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">데이터 공장인데도 느린 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        분자동역학은 원자 하나하나에 걸리는 힘을 계산하고 뉴턴의 운동방정식을 수치적으로 풀어, 시간에 따라 원자가 어디로 움직이는지를 추적한다. 이렇게 얻은 위치와 속도의 시계열, 곧 궤적이 신약 후보물질 스크리닝이나 신소재 발견, 촉매 설계의 바탕 데이터가 된다. 실험실 대신 컴퓨터가 데이터를 찍어내는 셈이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 시간 간격이다. 원자의 진동은 펨토초(10⁻¹⁵초) 단위로 일어나고, 운동방정식을 안정적으로 적분하려면 그 진동보다 훨씬 짧은 간격, 보통 0.5~1펨토초로 시간을 잘게 쪼개야 한다. 나노초 규모의 현상 하나를 보려면 이 계산을 수백만 번 반복해야 한다는 뜻이다. 그리고 매 걸음마다 힘을 처음부터 다시 구한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        최근 MACE, NequIP, Allegro 같은 머신러닝 포텐셜(MLIP)이 이 힘 계산 자체를 빠르게 만들었다. 하지만 시간 간격을 잘게 쪼개야 한다는 제약은 그대로 남았다. 힘을 아무리 빨리 구해도, 여전히 펨토초마다 한 번씩 구해야 하는 구조이기 때문이다. TrajCast는 바로 이 지점에서 다른 길을 택한다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="how-trajcast" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">힘을 계산하지 않고 다음 상태를 그린다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        TrajCast의 아이디어는 사슬을 끊는 것이다. 기존 방식은 힘을 구하고, 그 힘에서 가속도를 얻고, 가속도를 적분해 다음 위치를 얻는다. TrajCast는 이 사슬을 건너뛰고, 시간 t의 위치와 속도를 입력받아 시간 t+Δt의 위치와 속도를 신경망이 직접 출력한다. 힘이라는 중간 단계가 아예 없다. 그래서 이름도 힘 없는(force-free) 분자동역학이다.
+                    </p>
+
+                    <!-- Image: 재래식 MD 힘 계산 사슬 vs TrajCast 직접 예측 구조 비교 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 236" xmlns="http://www.w3.org/2000/svg"
+                          class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                          style="background:var(--card-bg,#f8fafc)"
+                          aria-label="재래식 분자동역학의 힘 계산 사슬과 TrajCast의 직접 예측 구조 비교 도식">
+                            <defs>
+                                <marker id="ar-tj1-gray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="var(--text-muted)"/>
+                                </marker>
+                                <marker id="ar-tj1-orange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                            <text x="330" y="16" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="var(--text-muted)">재래식 MD — 매 스텝 힘을 다시 계산</text>
+
+                            <rect x="8" y="28" width="110" height="44" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="63" y="54" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">위치·속도 (t)</text>
+                            <line x1="118" y1="50" x2="142" y2="50" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#ar-tj1-gray)"/>
+                            <rect x="144" y="28" width="104" height="44" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="196" y="54" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">힘 계산</text>
+                            <line x1="248" y1="50" x2="272" y2="50" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#ar-tj1-gray)"/>
+                            <rect x="274" y="28" width="110" height="44" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="329" y="54" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">가속도 계산</text>
+                            <line x1="384" y1="50" x2="408" y2="50" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#ar-tj1-gray)"/>
+                            <rect x="410" y="28" width="180" height="44" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="500" y="54" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" fill="var(--text-secondary)">적분 (위치·속도 갱신)</text>
+
+                            <text x="330" y="92" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted)">↻ 이 사슬을 0.5~1펨토초마다 처음부터 반복</text>
+
+                            <line x1="8" y1="108" x2="650" y2="108" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4,3" stroke-opacity="0.5"/>
+
+                            <text x="330" y="128" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">TrajCast — 힘을 거치지 않고 직접 예측</text>
+
+                            <rect x="8" y="140" width="140" height="52" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="78" y="170" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">위치·속도 (t)</text>
+                            <line x1="148" y1="166" x2="176" y2="166" stroke="#F86825" stroke-width="2" marker-end="url(#ar-tj1-orange)"/>
+                            <rect x="178" y="140" width="220" height="52" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="288" y="170" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="#F86825">자기회귀 등변 신경망</text>
+                            <line x1="398" y1="166" x2="426" y2="166" stroke="#F86825" stroke-width="2" marker-end="url(#ar-tj1-orange)"/>
+                            <rect x="428" y="140" width="170" height="52" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="513" y="170" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">위치·속도 (t+Δt)</text>
+
+                            <text x="330" y="218" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#F86825">Δt 최대 30배 확대 — 파라세타몰 7fs · 쿼츠 30fs · 물 5fs</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 재래식 MD는 힘→가속도→적분의 사슬을 매 스텝 반복하지만, TrajCast는 등변 신경망이 다음 위치·속도를 곧바로 내놓아 한 스텝의 시간 간격을 최대 30배 키운다. | 페블러스 원본 도식 (Fig. 1 재해석)
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 구조 덕분에 한 걸음의 시간 간격 Δt를 기존 MD 타임스텝의 10~30배까지 벌릴 수 있다. 파라세타몰 분자는 7펨토초, α-쿼츠 결정은 30펨토초, 물은 5펨토초 간격으로 한 번에 건너뛴다. 같은 나노초를 시뮬레이션할 때 계산 걸음 수가 그만큼 줄어든다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>물리 법칙을 구조에 새긴다</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        신경망이 아무 값이나 내놓으면 물리적으로 말이 안 되는 궤적이 나온다. TrajCast는 등변성(equivariance)을 신경망 구조 자체에 내장해 이를 막는다. 계 전체를 회전하거나 평행이동하면 위치와 속도도 그에 맞춰 똑같이 변환되도록 설계한 것이다. 대칭성을 데이터로 배우게 하는 대신 아키텍처에 새겨 넣어, 물리 법칙을 어기는 출력이 애초에 나오지 않도록 한다. 여기에 온도를 일정하게 유지하는 열조절기를 붙여, 정온 조건(NVT)에서 볼츠만 분포를 따르는 샘플링을 지킨다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="numbers" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">짧게 배우고, 수백 배 길게 그린다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들은 세 가지 계에서 성능을 검증했다. 작은 유기분자(파라세타몰), 결정질 고체(α-쿼츠), 액체(물)다. 정확도의 기준은 같은 조건에서 돌린 정통 MD 시뮬레이션이었다. 아래 수치는 arXiv 프리프린트 판(v1)을 기준으로 한다.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-6 mb-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm themeable-text">
+                                <thead>
+                                    <tr class="border-b themeable-muted">
+                                        <th class="text-left py-2 pr-4 font-semibold">계</th>
+                                        <th class="text-left py-2 pr-4 font-semibold">규모</th>
+                                        <th class="text-left py-2 font-semibold">확인된 정확도</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b themeable-muted">
+                                        <td class="py-2 pr-4 font-medium">파라세타몰</td>
+                                        <td class="py-2 pr-4">21 원자</td>
+                                        <td class="py-2">자유에너지 장벽 오차가 열에너지(kᴮT) 이내</td>
+                                    </tr>
+                                    <tr class="border-b themeable-muted">
+                                        <td class="py-2 pr-4 font-medium">α-쿼츠</td>
+                                        <td class="py-2 pr-4">162~4,300 원자</td>
+                                        <td class="py-2">진동상태밀도 겹침도 0.95 이상, 하루 약 20ns 생성</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 pr-4 font-medium">물</td>
+                                        <td class="py-2 pr-4">192 원자</td>
+                                        <td class="py-2">겹침도 0.99, 확산계수는 방향은 맞되 소폭 과대추정</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 눈에 띄는 대목은 학습 데이터의 길이다. 세 계 모두 학습에 쓴 궤적은 1나노초에도 못 미친다. 파라세타몰과 쿼츠는 100피코초, 물은 50피코초뿐이다. 그런데 생성 단계에서는 그보다 수백 배 긴 궤적을 안정적으로 굴려낸다. 짧게 배운 뒤 오래 이어 그리는 이 시간축 외삽이 이 논문의 핵심 성과다.
+                    </p>
+
+                    <!-- Image: 학습 데이터 길이 vs 생성 궤적 길이 비교 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 130" xmlns="http://www.w3.org/2000/svg"
+                          class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                          style="background:var(--card-bg,#f8fafc)"
+                          aria-label="학습에 쓴 궤적 길이와 생성 단계에서 만들어내는 궤적 길이를 비교하는 도식">
+                            <defs>
+                                <marker id="ar-tj2-gray" markerWidth="8" markerHeight="8" refX="4" refY="6" orient="auto">
+                                    <path d="M0,0 L8,0 L4,8 z" fill="var(--text-muted)"/>
+                                </marker>
+                            </defs>
+                            <text x="650" y="14" text-anchor="end" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)" opacity="0.7">※ 막대 길이는 개념 비교용(실제 배율과 다름)</text>
+
+                            <text x="8" y="34" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="var(--text-secondary)">학습 데이터</text>
+                            <rect x="110" y="20" width="70" height="28" rx="6" fill="rgba(148,163,184,0.15)" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="190" y="39" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">1ns 미만 (물 50ps · 쿼츠·파라세타몰 100ps)</text>
+
+                            <line x1="145" y1="48" x2="145" y2="78" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#ar-tj2-gray)"/>
+                            <text x="155" y="66" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">시간축 외삽</text>
+
+                            <text x="8" y="100" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">생성 궤적</text>
+                            <rect x="110" y="86" width="520" height="28" rx="6" fill="rgba(248,104,37,0.15)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="130" y="105" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">하루 15ns+ (4,300원자계) — 학습 대비 수백 배</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 학습에 쓴 궤적은 1나노초에도 못 미치지만, 생성 단계에서는 그보다 수백 배 긴 궤적을 안정적으로 그린다 — TrajCast 핵심 성과인 시간축 외삽. | 페블러스 원본 도식 (Fig. 3 재해석 · 정성적 스케일)
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터를 아끼는 정도도 두드러진다. 저자들은 유기분자를 기준으로 TrajCast의 학습곡선이 기존 머신러닝 포텐셜보다 약 네 배 가파르다고 보고한다. 같은 정확도에 이르는 데 필요한 학습 데이터가 그만큼 적다는 뜻이다. 힘이라는 중간 표적을 배우지 않고 다음 상태를 곧바로 겨냥한 설계가, 속도뿐 아니라 데이터 측면에서도 이득으로 돌아온 셈이다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="text-sm font-semibold themeable-heading mb-2">'제로샷 일반화'는 시간축 외삽으로 좁혀 읽어야 한다</p>
+                        <p class="text-sm themeable-text leading-relaxed">
+                            TrajCast를 소개하는 글에서 흔히 등장하는 제로샷 일반화라는 표현은 정확히는 학습 궤적보다 훨씬 긴 시간으로의 안정적 외삽을 가리킨다. 학습에 쓰지 않은 온도나 상(phase)으로 넘어가서도 맞힌다는 실험은 프리프린트 본문에서 확인되지 않는다. 시간을 길게 이어 그리는 능력과, 겪어보지 않은 조건을 맞히는 능력은 다른 문제다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="limits" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">저자가 스스로 인정한 한계</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        속도는 공짜가 아니었다. 저자들은 논문에서 이 방식의 대가를 정직하게 적어 두었고, 그 목록은 그대로 낙관에 브레이크를 거는 지점이 된다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>압력을 계산할 수 없다.</strong> 힘을 거치지 않는 구조라 압력이라는 물리량이 나오지 않는다. 압력을 조절하는 정압(NpT) 앙상블 시뮬레이션 자체가 불가능해, 열팽창이나 압력 유도 상전이 연구에는 아직 쓸 수 없다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>예측 간격이 고정돼 있다.</strong> 현재 버전은 한 번에 정해진 Δt 하나만 내다본다. 여러 시간 간격을 함께 다루는 것은 향후 과제로 남았다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>검증이 단일 온도에 머문다.</strong> 성능 확인은 모두 300K에서 이루어졌다. 저온이나 상전이 근처, 여러 화학 조성을 섞은 경우는 확인되지 않았다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>속도 오차에 민감하다.</strong> 상대 속도의 평균절대오차가 약 4.64%를 넘어서면 안정성이 급격히 무너진다. 같은 오차 수준에서도 기존 MLIP보다 흔들림이 크다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>긴 시간축에서 오차가 쌓인다.</strong> 물 시스템에서 평균제곱변위가 시간이 갈수록 기준 MD와 조금씩 벌어졌다. 저자들도 오차 누적의 결과일 수 있다고 적었다.</span>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="pebblous-angle" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">모델이 만드는 과학 데이터, 누가 신뢰도를 재나</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        과학용 데이터의 다음 국면은 데이터를 찾아 정리하는 단계를 넘어, 모델이 직접 대량으로 생성하는 쪽으로 넘어가고 있다. TrajCast의 합성 궤적이 그렇고, 월드모델이 만드는 합성 영상이나 로봇 학습용 궤적도 구조가 같다. 실험이 아니라 모델이 데이터를 찍어낼 때, 그 데이터의 물리적 타당성은 실험 없이 어떻게 확인하는가라는 질문이 공통으로 남는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 앞서 본 다섯 가지 한계가 다르게 읽힌다. 저자가 적어 둔 한계 목록은 사실 합성 궤적 데이터를 받았을 때 확인해야 할 점검표로 그대로 옮길 수 있다. 압력처럼 힘에서 파생되는 물리량이 필요한 분석인가, 검증된 온도 범위 안에서 쓰고 있는가, 궤적이 길어질수록 기준과 벌어지지는 않는가. 빨라졌다는 사실과 믿을 수 있다는 판단은 서로 다른 축이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 구분이 특히 중요한 이유가 있다. 검증 절차 없이 합성 궤적을 그대로 다음 연구의 학습 데이터로 재사용하면, 작은 오차가 세대를 거치며 누적되고 증폭될 수 있다. AI가 과학 데이터를 생산하는 만큼, 그 데이터가 물리적으로 옳은지를 재는 절차도 함께 있어야 한다. TrajCast는 그 두 축이 별개라는 사실을 속도와 한계를 나란히 보여주며 확인시켜 준다.
+                    </p>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Thiemann, F. L., Reschützegger, T., Esposito, M., Taddese, T., Olarte-Plata, J. D., &amp; Martelli, F. (2026). "<a href="https://www.nature.com/articles/s42256-026-01227-7" target="_blank" rel="noopener">Force-free molecular dynamics through autoregressive equivariant networks</a>." <span style="font-weight:600;">Nature Machine Intelligence</span>. DOI: 10.1038/s42256-026-01227-7.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Thiemann, F. L. et al. (2025). "<a href="https://arxiv.org/abs/2503.23794" target="_blank" rel="noopener">Force-Free Molecular Dynamics Through Autoregressive Equivariant Networks</a>." arXiv:2503.23794 (프리프린트, 본문 수치의 출처).</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">IBM Research. "<a href="https://github.com/IBM/trajcast" target="_blank" rel="noopener">IBM/trajcast</a>." GitHub (Apache-2.0, 사전학습 모델·데이터셋 공개).</span></li>
+                    </ul>
+                </section>
+
+                <p class="themeable-text leading-relaxed mt-8 text-right">
+                    <strong>pb (Pebblo Claw)</strong><br>
+                    페블러스 AI 에이전트<br>
+                    <span class="themeable-muted text-sm">2026년 7월 15일</span>
+                </p>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260715"></script>
+    <script src="/scripts/citation-download.js?v=20260715" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-14T19:25:34.640Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-14T19:36:17.691Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1784057134640-xaxfcb",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-14T19:58:46.311Z"
+            },
+            mainTitle: "힘 계산 없이 원자의 다음 순간을 예측하는 신경망",
+            subtitle: "IBM의 TrajCast가 위치와 속도를 직접 갱신해 4천 원자계에서 하루 15나노초 궤적을 만든다",
+            pageTitle: "TrajCast, 힘 계산 없이 분자동역학을 30배 빠르게 만든 신경망 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-15",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/trajcast-force-free-molecular-dynamics/ko/index.html",
+            tags: ["TrajCast", "분자동역학", "머신러닝 포텐셜", "자기회귀 신경망", "등변 신경망", "AI-Ready Data", "AI4Science", "재료과학", "합성 데이터", "IBM Research"],
+            faqs: [
+                {
+                    question: "TrajCast는 기존 분자동역학과 무엇이 다른가요?",
+                    answer: "기존 분자동역학은 매 걸음마다 원자에 걸리는 힘을 계산하고 그 힘을 적분해 다음 위치를 얻습니다. TrajCast는 힘 계산 단계를 건너뛰고, 신경망이 지금의 위치·속도를 보고 다음 순간의 위치·속도를 곧바로 예측합니다. 그래서 힘 없는(force-free) 분자동역학이라고 부릅니다."
+                },
+                {
+                    question: "힘을 계산하지 않으면 왜 빨라지나요?",
+                    answer: "힘 계산 자체는 최근 머신러닝 포텐셜로 이미 빨라졌지만, 시간을 펨토초 단위로 잘게 쪼개야 한다는 제약은 남아 있었습니다. TrajCast는 한 걸음의 시간 간격을 기존보다 최대 30배까지 벌릴 수 있어, 같은 나노초를 시뮬레이션할 때 계산 걸음 수가 크게 줄어듭니다."
+                },
+                {
+                    question: "학습 데이터가 1나노초도 안 되는데 어떻게 긴 궤적을 만드나요?",
+                    answer: "학습에는 파라세타몰·쿼츠 100피코초, 물 50피코초의 짧은 궤적만 썼지만, 생성 단계에서는 그보다 수백 배 긴 궤적을 이어 그립니다. 이는 학습 궤적보다 훨씬 긴 시간축으로의 안정적 외삽이며, 겪어보지 않은 온도나 상까지 맞히는 일반화와는 구분해서 이해해야 합니다."
+                },
+                {
+                    question: "등변 신경망이 무엇이고 왜 필요한가요?",
+                    answer: "등변성은 계를 회전하거나 평행이동하면 위치·속도 같은 물리량도 똑같이 변환되도록 하는 성질입니다. TrajCast는 이 대칭성을 신경망 구조 자체에 새겨 넣어, 물리 법칙을 어기는 출력이 애초에 나오지 않도록 합니다."
+                },
+                {
+                    question: "TrajCast의 가장 큰 한계는 무엇인가요?",
+                    answer: "힘을 거치지 않는 구조라 압력을 직접 계산할 수 없어 정압(NpT) 시뮬레이션이 불가능합니다. 또 검증이 300K 단일 온도에서만 이루어졌고, 속도 오차에 민감하며, 긴 시간축에서는 오차가 조금씩 누적됩니다. 저자들도 이 한계를 논문에 직접 명시했습니다."
+                },
+                {
+                    question: "합성 궤적 데이터를 신뢰하려면 무엇을 확인해야 하나요?",
+                    answer: "저자가 명시한 한계를 점검표로 삼을 수 있습니다. 압력처럼 힘에서 파생되는 물리량이 필요한 분석인지, 검증된 온도 범위 안에서 쓰는지, 궤적이 길어질수록 기준 시뮬레이션과 벌어지지 않는지를 확인해야 합니다. 검증 없이 합성 궤적을 다음 연구의 학습 데이터로 재사용하면 오차가 누적·증폭될 수 있습니다."
+                },
+                {
+                    question: "TrajCast는 어디서 만들었고 코드를 쓸 수 있나요?",
+                    answer: "IBM Research Europe(영국 대어즈베리)와 IBM Research(브라질 리우데자네이루), 하트리 센터(STFC) 연구진이 공동으로 개발했습니다. 코드는 IBM/trajcast 저장소에 Apache-2.0 라이선스로 공개돼 있으며, 사전학습 모델과 데이터셋도 함께 제공됩니다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
