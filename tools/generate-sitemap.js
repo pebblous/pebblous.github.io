@@ -121,16 +121,16 @@ publishedArticles.forEach((article, index) => {
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>`;
 
-    // Add image if available
+    // Add image if available (image:loc도 <loc>와 동일하게 세그먼트 인코딩 — 공백 폴더명 %20)
     if (article.image) {
         const imageUrl = article.image.startsWith('http')
-            ? article.image
-            : `${SITE_URL}/${article.image}`;
+            ? xmlEscape(article.image)
+            : `${SITE_URL}/${xmlEscape(encodePathForLoc(article.image))}`;
 
         xml += `
     <image:image>
       <image:loc>${imageUrl}</image:loc>
-      <image:title>${article.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</image:title>
+      <image:title>${xmlEscape(article.title)}</image:title>
     </image:image>`;
     }
 
