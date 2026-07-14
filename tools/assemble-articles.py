@@ -77,6 +77,27 @@ def assemble(root):
     for s in load_sidecars(root):             # 사이드카가 덮어씀(수정 반영)
         merged[s["id"]] = s
     arts = list(merged.values())
+
+    # path 중복 가드 — 같은 path·같은 published 상태 항목이 여럿이면 하나만 유지(2026-07-14).
+    # merged는 id가 키라 id 중복만 막고 path 중복은 통과 → sitemap에 같은 URL이 2번 실림
+    # (샤딩 이전 base에 옛 id와 -ko/-en 마이그레이션 id가 공존한 잔재). 정보 풍부한 쪽을 남긴다.
+    # keeper 선정: 각 path에서 (tags 많음, 최신 date)를 우선. 나머지는 드롭.
+    def richness(a):
+        return (len(a.get("tags") or []), a.get("date") or "")   # 클수록 우선
+    best = {}
+    for a in arts:
+        p = a.get("path")
+        if not p:
+            continue
+        key = (p, a.get("published") is not False)
+        if key not in best or richness(a) > richness(best[key]):
+            best[key] = a
+    keep_ids = {a["id"] for a in best.values()}
+    dropped = [a["id"] for a in arts if a.get("path") and a["id"] not in keep_ids]
+    if dropped:
+        print(f"⚠ path 중복 제거: {len(dropped)}건 — {', '.join(dropped)}")
+    arts = [a for a in arts if (not a.get("path")) or a["id"] in keep_ids]
+
     arts.sort(key=lambda a: (a.get("id") or ""))                 # 안정성: id asc
     arts.sort(key=lambda a: (a.get("date") or ""), reverse=True) # 1순위: date desc
     return {"categories": categories, "articles": arts}
