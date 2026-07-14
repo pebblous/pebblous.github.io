@@ -1209,16 +1209,36 @@ const PebblousRelatedPosts = {
             const pageLang = document.documentElement.lang || 'ko';
 
             // Derive base path (without /ko/ or /en/) to exclude self in any language
-            const basePath = currentPath.replace(/\/(ko|en)\/(index\.html)?$/, '').replace(/\/index\.html$/, '');
+            const basePath = currentPath.replace(/\/(ko|en|ja)\/(index\.html)?$/, '').replace(/\/index\.html$/, '');
+
+            // ⭐ 빌드타임 related 필드 우선 (tools/compute-related.py 가 굽는다).
+            // 태그 유사도 상위 N + reverse-guarantee(orphan 구제)를 CI 에서 1회 계산해 각 글에
+            // related:[path,...] 로 저장 → 여기선 O(1) 로 읽기만. 런타임 O(N^2) 회피 + orphan 최소화.
+            // related 필드가 없는(옛) 항목은 아래 태그 계산으로 자동 fallback (하위호환).
+            const byPath = {};
+            data.articles.forEach(a => { if (a.path) byPath[a.path] = a; });
+            const self = Object.values(byPath).find(a => {
+                const b = (a.path || '').replace(/\/(ko|en|ja)\/(index\.html)?$/, '').replace(/\/index\.html$/, '');
+                const aLang = a.language || (a.path && a.path.includes('/en/') ? 'en' : (a.path && a.path.includes('/ja/') ? 'ja' : 'ko'));
+                return b === basePath && aLang === pageLang;
+            });
+            if (self && Array.isArray(self.related) && self.related.length > 0) {
+                const resolved = self.related
+                    .map(p => byPath[p])
+                    .filter(a => a && a.published)
+                    .slice(0, limit);
+                if (resolved.length > 0) return resolved;
+                // related 가 있으나 전부 미해결(경로 변경 등)이면 태그 계산으로 fallback
+            }
 
             // Filter: published, not self (any language), same language, has tags
             const candidates = data.articles.filter(article => {
                 if (!article.published || !article.tags || article.tags.length === 0) return false;
-                // Exclude self (compare base paths to catch ko/en variants)
-                const articleBase = (article.path || '').replace(/\/(ko|en)\/(index\.html)?$/, '').replace(/\/index\.html$/, '');
+                // Exclude self (compare base paths to catch ko/en/ja variants)
+                const articleBase = (article.path || '').replace(/\/(ko|en|ja)\/(index\.html)?$/, '').replace(/\/index\.html$/, '');
                 if (articleBase === basePath) return false;
                 // Match language: article.language field or detect from path
-                const articleLang = article.language || (article.path && article.path.includes('/en/') ? 'en' : 'ko');
+                const articleLang = article.language || (article.path && article.path.includes('/en/') ? 'en' : (article.path && article.path.includes('/ja/') ? 'ja' : 'ko'));
                 if (articleLang !== pageLang) return false;
                 return true;
             });
