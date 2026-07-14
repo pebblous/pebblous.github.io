@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>NuRec 리얼투심 — 촬영본이 시뮬레이터 자산이 되기까지 | 페블러스</title>
+    <meta name="description" content="엔비디아 NuRec은 실촬영 영상을 3D 가우시안 스플래팅으로 재구성해 시뮬레이터 자산(usdz)으로 만든다. 리얼투심 파이프라인의 구조와 3DGRT·3DGUT·PPISP, 그리고 재구성이 자산이 될 때 드러나는 데이터 품질 병목을 정리했다.">
+    <meta name="keywords" content="NuRec, 리얼투심, real-to-sim, 가우시안 스플래팅, 3DGS, 3DGRT, 3DGUT, 뉴럴 재구성, Isaac Sim, OpenUSD, usdz, 합성데이터, 데이터 품질, Physical AI, NVIDIA">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="촬영본이 시뮬레이터 자산이 되는 순간">
+    <meta property="og:description" content="엔비디아 NuRec과 가우시안 스플래팅이 여는 리얼투심 파이프라인, 그리고 자산 품질이라는 새 병목.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="NuRec 리얼투심 파이프라인 — 촬영본이 시뮬레이터 자산이 되기까지">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="촬영본이 시뮬레이터 자산이 되는 순간">
+    <meta name="twitter:description" content="엔비디아 NuRec과 가우시안 스플래팅이 여는 리얼투심 파이프라인, 그리고 자산 품질이라는 새 병목.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/nvidia-nurec-real-to-sim-2026-07/ko/image/index.png">
+    <meta name="twitter:image:alt" content="NuRec 리얼투심 파이프라인">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260714">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260714">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260714">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 뿌리: 가우시안 스플래팅</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. NuRec이 보탠 두 축</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 리얼투심 파이프라인</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 정직한 한계</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 상보 기술 지도</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 데이터 관점의 전환</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">페블러스 관심의 이유</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">공장이나 도로를 몇 분 촬영하면, 그 장면이 시뮬레이터 안의 표준 자산으로 바뀐다. 엔비디아의 뉴럴 재구성 스택 NuRec이 하는 일이다. 뿌리는 2023년 시그래프에서 나온 <strong>가우시안 스플래팅(3DGS)</strong>이다. 공간을 수백만 개의 반투명 색 입자로 표현하고, 렌더 결과와 실제 사진의 픽셀 차이를 그 입자들의 파라미터로 되돌려 최적화한다. 재구성(훈련)은 무겁지만 완성된 장면의 렌더는 래스터화라 실시간이라는 점이, 시점마다 신경망을 다시 조회하던 NeRF 시대와의 결정적 차이였다.</p>
+                        <p class="themeable-text leading-relaxed mt-4">NuRec은 이 연구를 산업 파이프라인으로 끌어올린다. RTX 렌더러가 가우시안 입자 구름과 로봇·물체 메시를 깊이 가림까지 맞춰 한 화면에 합성하고(3DGRT·3DGUT·PPISP), 그 결과를 OpenUSD 파일 하나(.usdz)로 표준화해 "실제 현장"이 파일로 유통되고 참조로 조립된다. 실촬영을 시뮬레이터 무대로 되돌리는 이 흐름을 <strong>리얼투심(real-to-sim)</strong>이라 부른다. 완제품 재구성 데이터셋은 이미 HuggingFace에 공개돼 있고, 자율주행 쪽 채택이 특히 빠르다.</p>
+                        <p class="themeable-text leading-relaxed mt-4">그런데 입자 구름은 겉모습만 담는다. 물리 상호작용에는 충돌 지오메트리를 따로 부여해야 하고, 조명은 촬영 시점으로 구워져 재조명이 어려우며, 품질은 촬영 커버리지에 좌우된다. 여기서 데이터 관점의 전환이 생긴다. 재구성이 유통 가능한 <strong>자산</strong>이 되는 순간, 새 병목은 렌더 속도가 아니라 자산 품질이다. 재구성 충실도, 촬영 커버리지, 합성 정합. 셋 다 정량으로 진단하고 게이팅할 수 있는 축이며, 이 글은 그 축들이 어디서 생기는지를 따라간다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">핵심 수치 넷으로 압축하면 이렇다. 재구성 학습 시간은 크게 줄었고, 왜곡 카메라를 다루는 렌더 속도는 실시간에 이르렀으며, 완제품 재구성 데이터셋은 이미 상당한 규모로 공개돼 있다.</p>
+
+                    <!-- STAT-CARD: 본문 확정 수치 (Phase 5-D.5에서 재검증) -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">48시간→40분</p>
+                            <p class="text-sm themeable-text-secondary mt-1">재구성 학습 시간</p>
+                            <p class="text-xs themeable-muted mt-1">3DGS가 NeRF 계열 대비 줄인 훈련 비용(Mip-NeRF360)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">265 vs 52 FPS</p>
+                            <p class="text-sm themeable-text-secondary mt-1">3DGUT 대 3DGRT 렌더 속도</p>
+                            <p class="text-xs themeable-muted mt-1">동일 벤치마크에서 약 5배, 왜곡 카메라를 실시간으로</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1,500+ 장면</p>
+                            <p class="text-sm themeable-text-secondary mt-1">공개 AV 재구성 데이터셋</p>
+                            <p class="text-xs themeable-muted mt-1">약 2.9TB, 버전 26.04 기준(확장 중)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">≥30 FPS</p>
+                            <p class="text-sm themeable-text-secondary mt-1">완성 장면 실시간 렌더</p>
+                            <p class="text-xs themeable-muted mt-1">1080p 기준 래스터화 렌더(3DGS 원 논문)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">뿌리: 가우시안 스플래팅이 바꾼 것</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">NuRec을 이해하려면 그 뿌리인 3D 가우시안 스플래팅(3DGS)부터 짚어야 한다. 3DGS는 하나의 공간을 수백만 개의 작은 타원체, 곧 3D 가우시안으로 채우는 방식이다. 각 입자는 위치와 크기, 방향, 색, 불투명도를 파라미터로 갖는다. 여러 각도에서 찍은 사진을 놓고, 이 입자들을 어떤 화면 위에 투영해 렌더한 결과가 실제 사진과 어긋난 만큼을 다시 입자 파라미터로 되돌려 조금씩 고친다. 이 과정을 미분 가능 렌더링이라 부른다. 사진과의 픽셀 차이가 곧 학습 신호가 되는 구조다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">이 방식의 성격은 두 국면으로 갈린다. 장면을 만드는 재구성 단계는 무겁다. 수백만 개 입자를 반복 최적화해야 하기 때문이다. 하지만 일단 완성된 장면을 화면에 그리는 렌더 단계는 가볍다. 입자들을 화면에 뿌리는 래스터화라서 그래픽카드가 잘하는 연산이고, 1080p에서 초당 30프레임을 넘긴다. "훈련은 느리고 재생은 빠르다"는 이 비대칭이 3DGS의 핵심 성격이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">앞세대인 NeRF와의 차이가 여기서 갈렸다. NeRF는 장면을 하나의 신경망으로 담아, 어떤 시점의 픽셀을 그릴 때마다 그 신경망을 다시 조회해야 했다. 렌더가 프레임당 초 단위로 느렸고, 시점을 자유롭게 돌려보기가 답답했다. 3DGS는 학습도 수십 배 빠르다. 대표 벤치마크인 Mip-NeRF360에서 원 논문 기준 약 40분이면 재구성이 끝나는데, 같은 조건의 NeRF 계열 베이스라인은 최대 48시간이 걸렸다. 이 속도가 3DGS를 연구실 밖으로 꺼냈고, 그 위에 산업용 렌더러와 자산 표준을 얹은 것이 다음 장에서 볼 NuRec이다.</p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-6" style="background:var(--card-bg); border:1px solid var(--card-border, #e5e7eb);">
+                            <svg viewBox="0 0 680 380" width="100%" role="img" aria-label="3D 가우시안 스플래팅의 미분 가능 렌더링 루프: 가우시안 입자 구름을 래스터화 렌더한 결과를 실촬영 사진과 비교해 그 차이를 입자 파라미터로 역전파한다">
+                                <defs>
+                                    <marker id="arrowNeutral1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                        <path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"></path>
+                                    </marker>
+                                    <marker id="arrowOrange1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                        <path d="M0,0 L8,3 L0,6 Z" fill="#F86825"></path>
+                                    </marker>
+                                </defs>
+
+                                <line x1="260" y1="80" x2="420" y2="80" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral1)"></line>
+                                <line x1="530" y1="120" x2="530" y2="260" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral1)"></line>
+                                <line x1="260" y1="300" x2="420" y2="300" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral1)"></line>
+
+                                <path d="M420,300 L15,300 L15,80 L40,80" fill="none" stroke="#F86825" stroke-width="2.5" marker-end="url(#arrowOrange1)"></path>
+                                <text x="15" y="190" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825" transform="rotate(-90 15 190)">역전파: 손실 → 입자 파라미터</text>
+
+                                <rect x="40" y="40" width="220" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <text x="150" y="72" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">가우시안 입자 구름</text>
+                                <text x="150" y="96" text-anchor="middle" font-size="12" fill="var(--text-muted)">위치·크기·색·불투명도</text>
+
+                                <rect x="420" y="40" width="220" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <text x="530" y="72" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">래스터화 렌더</text>
+                                <text x="530" y="96" text-anchor="middle" font-size="12" fill="var(--text-muted)">화면에 빠르게 투영</text>
+
+                                <rect x="420" y="260" width="220" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <text x="530" y="292" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">픽셀 차이 계산</text>
+                                <text x="530" y="316" text-anchor="middle" font-size="12" fill="var(--text-muted)">렌더 결과 vs 실촬영(손실)</text>
+
+                                <rect x="40" y="260" width="220" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <text x="150" y="292" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">실촬영 사진</text>
+                                <text x="150" y="316" text-anchor="middle" font-size="12" fill="var(--text-muted)">다각도 촬영본(정답)</text>
+                            </svg>
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ 페블러스 원본 도식(3DGS 미분 가능 렌더링 루프 재해석) | Kerbl et al., SIGGRAPH 2023 (arXiv:2308.04079)</figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">3DGS의 기초는 이 블로그에서 이미 여러 차례 다뤘다. 이 글은 반복 대신 성격의 대비에 집중한다. 무거운 재구성과 실시간 렌더의 비대칭, 그리고 그 완성물이 "유통 가능한 자산"이 될 때 무엇이 달라지는가. 상세한 3DGS 원리는 <a href="/report/isaac-sim-3dgs-vla-synthetic-data-2026-04/ko/" class="text-orange-500 hover:text-orange-600 transition-colors">Isaac Sim·3DGS 합성데이터 리포트</a>를 함께 보면 좋다.</p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">NuRec: 3DGS에 엔비디아가 보탠 두 축</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">NuRec은 3DGS 그 자체가 아니다. 연구용 3DGS 위에 엔비디아가 두 가지를 보태 만든 스택이다. 하나는 렌더러 통합이고, 다른 하나는 자산화다. 이 둘이 "논문 속 기법"과 "산업 파이프라인"을 가르는 경계다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>렌더러 통합: 입자 구름과 메시를 한 화면에</h3>
+                    <p class="themeable-text leading-relaxed mb-6">첫째 축은 RTX 렌더러가 가우시안 입자 구름과 일반 3D 자산(로봇, 물체 메시)을 한 화면에서 합성하는 능력이다. 단순히 겹쳐 그리는 게 아니라 깊이 가림까지 맞춘다. 재구성한 창고 바닥 위에 로봇 팔 메시를 세우면, 팔 뒤로 돌아간 선반이 자연스럽게 가려진다. 이 합성을 떠받치는 것이 두 편의 연구다.</p>
+                    <p class="themeable-text leading-relaxed mb-6"><strong>3DGRT</strong>는 가우시안을 레이트레이싱으로 다룬다. 광선을 쏘아 입자와 부딪히는 방식이라 반사·굴절 같은 2차 광선과 어안·롤링셔터 같은 왜곡 카메라를 표현할 수 있다. 대신 느리다. <strong>3DGUT</strong>는 언센티드 변환(unscented transform)이라는 기법으로 같은 왜곡 카메라와 롤링셔터를 지원하면서도 3DGS 수준의 래스터화 속도를 유지한다. 3DGUT 논문은 어안 벤치마크에서 FisheyeGS 대비 3분의 1 수준의 입자(0.38M 대 1.07M)로 오히려 더 높은 화질(약 +0.96dB PSNR)을 보고한다. 스마트폰, 차량, 로봇 센서가 만드는 실제 카메라 왜곡을 다뤄야 하는 리얼투심에서 이 조합이 결정적이다. 여기에 <strong>PPISP</strong>가 붙어, 실사 멀티카메라 촬영에서 생기는 노출·화이트밸런스·비네팅 편차를 보정해 재구성 장면의 광도를 촬영 당시로 되돌린다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">세 갈래가 어떻게 역할을 나누는지는 표로 보면 분명하다. 속도와 카메라 표현력은 맞바꾸는 관계였고, 3DGUT는 그 둘을 함께 잡으려는 설계다.</p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">방식</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">렌더 원리</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">왜곡 카메라·2차 광선</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">속도(Mip-NeRF360)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">3DGS</td>
+                                    <td class="border themeable-border px-4 py-3">래스터화</td>
+                                    <td class="border themeable-border px-4 py-3">미지원(핀홀 카메라 가정)</td>
+                                    <td class="border themeable-border px-4 py-3">실시간(≥30 FPS)</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">3DGRT</td>
+                                    <td class="border themeable-border px-4 py-3">레이트레이싱</td>
+                                    <td class="border themeable-border px-4 py-3">지원(반사·굴절·어안·롤링셔터)</td>
+                                    <td class="border themeable-border px-4 py-3">약 52 FPS</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">3DGUT</td>
+                                    <td class="border themeable-border px-4 py-3">래스터화 + 언센티드 변환</td>
+                                    <td class="border themeable-border px-4 py-3">왜곡 카메라·롤링셔터 지원</td>
+                                    <td class="border themeable-border px-4 py-3">약 265 FPS</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-sm themeable-muted mt-2">동일 벤치마크(Mip-NeRF360) 기준 비교. FPS는 3DGUT 논문의 재현 표에서 인용. 3DGRT 원 논문은 다른 해상도에서 더 높은 수치를 보고하므로 직접 비교는 이 표 안의 값으로 한정한다. (arXiv:2412.12507)</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>자산화: 현장이 파일 하나가 된다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">둘째 축은 자산화다. 재구성 결과를 OpenUSD 파일 하나(.usdz)로 표준화하는 것이다. 이 파일 안에는 가우시안 재구성뿐 아니라 충돌 감지용 메시, 로봇 배치를 위한 점유 지도, 촬영 카메라의 궤적이 한 벌로 담긴다. 자율주행용 자산에는 신경 재구성 볼륨과 OpenDRIVE 맵, 객체 추적 데이터까지 들어간다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">자산화가 왜 중요한가. usdz가 되는 순간 "실제 현장"이 파일로 유통되고 참조로 조립되기 때문이다. 촬영한 창고 하나를 자산으로 등록해 두면, 여러 시뮬레이션이 그 자산을 참조로 불러다 각자의 로봇과 물체를 얹는다. OpenUSD가 이미 산업 표준으로 자리 잡은 덕에, 재구성 결과가 기존 Isaac Sim·Omniverse 워크플로에 그대로 흘러든다. NuRec의 진짜 기여는 렌더 화질이 아니라, 촬영본을 이 표준 자산 형식에 실어 보낸다는 데 있다.</p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">리얼투심 파이프라인: 촬영에서 학습 데이터까지</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">기술 조각을 순서대로 이으면 하나의 파이프라인이 된다. 실제 현장을 몇 분 촬영하는 데서 시작해, 로봇 학습 데이터가 나오는 데서 끝난다. 각 단계가 남기는 산출물이 다음 단계의 입력이 되는 구조다.</p>
+
+                    <ul class="space-y-3 mb-8 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>① 촬영</strong> — 공장·창고·매장·도로를 스마트폰이나 차량 카메라로 몇 분 찍는다. 입력은 영상과 사진, 그리고 카메라 궤적이다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>② 재구성</strong> — 3DGUT로 가우시안 장면을 최적화한다. PPISP가 촬영 광도를 보정한다. 출력은 입자 구름과 보조 메시다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>③ 자산화</strong> — 재구성 결과를 usdz 하나로 묶는다. 가우시안 + 충돌 메시 + 점유 지도 + 촬영 궤적이 한 벌.</li>
+                        <li class="themeable-text leading-relaxed"><strong>④ 무대 배치</strong> — usdz를 Isaac Sim·Omniverse에 참조로 불러와 시뮬레이션 무대로 세운다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>⑤ 디지털 트윈 + 물리 시뮬</strong> — 실사 배경 위에 로봇 디지털 트윈을 놓고 물리 엔진을 돌린다. 접촉·충돌·힘이 정답 라벨과 함께 계산된다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>⑥ 학습 데이터 생성</strong> — 실사 배경과 시뮬레이터 물리가 결합된 장면에서 라벨 붙은 학습 데이터를 뽑는다.</li>
+                    </ul>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-6" style="background:var(--card-bg); border:1px solid var(--card-border, #e5e7eb);">
+                            <svg viewBox="0 0 680 340" width="100%" role="img" aria-label="리얼투심 파이프라인 6단계: 촬영, 재구성, 자산화, 무대 배치, 디지털 트윈과 물리 시뮬레이션, 학습 데이터 생성이 순서대로 이어진다">
+                                <defs>
+                                    <marker id="arrowNeutral2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                        <path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"></path>
+                                    </marker>
+                                </defs>
+
+                                <line x1="220" y1="80" x2="240" y2="80" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral2)"></line>
+                                <line x1="440" y1="80" x2="460" y2="80" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral2)"></line>
+                                <line x1="560" y1="120" x2="560" y2="220" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral2)"></line>
+                                <line x1="460" y1="260" x2="440" y2="260" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral2)"></line>
+                                <line x1="240" y1="260" x2="220" y2="260" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowNeutral2)"></line>
+
+                                <rect x="20" y="40" width="200" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <circle cx="42" cy="62" r="16" fill="#F86825"></circle>
+                                <text x="42" y="67" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">1</text>
+                                <text x="120" y="80" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-secondary)">촬영</text>
+                                <text x="120" y="102" text-anchor="middle" font-size="11" fill="var(--text-muted)">공장·창고·도로 촬영</text>
+
+                                <rect x="240" y="40" width="200" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <circle cx="262" cy="62" r="16" fill="#F86825"></circle>
+                                <text x="262" y="67" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">2</text>
+                                <text x="340" y="80" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-secondary)">재구성</text>
+                                <text x="340" y="102" text-anchor="middle" font-size="11" fill="var(--text-muted)">3DGUT + PPISP 최적화</text>
+
+                                <rect x="460" y="40" width="200" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <circle cx="482" cy="62" r="16" fill="#F86825"></circle>
+                                <text x="482" y="67" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">3</text>
+                                <text x="560" y="80" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-secondary)">자산화</text>
+                                <text x="560" y="102" text-anchor="middle" font-size="11" fill="var(--text-muted)">usdz 표준 패키징</text>
+
+                                <rect x="460" y="220" width="200" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <circle cx="482" cy="242" r="16" fill="#F86825"></circle>
+                                <text x="482" y="247" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">4</text>
+                                <text x="560" y="260" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-secondary)">무대 배치</text>
+                                <text x="560" y="282" text-anchor="middle" font-size="11" fill="var(--text-muted)">Isaac Sim·Omniverse 참조</text>
+
+                                <rect x="240" y="220" width="200" height="80" rx="12" fill="none" stroke="var(--text-muted)" stroke-width="2"></rect>
+                                <circle cx="262" cy="242" r="16" fill="#F86825"></circle>
+                                <text x="262" y="247" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">5</text>
+                                <text x="340" y="260" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-secondary)">디지털 트윈</text>
+                                <text x="340" y="282" text-anchor="middle" font-size="11" fill="var(--text-muted)">물리 시뮬 + 정답 라벨</text>
+
+                                <rect x="20" y="220" width="200" height="80" rx="12" fill="none" stroke="#F86825" stroke-width="2.5"></rect>
+                                <circle cx="42" cy="242" r="16" fill="#F86825"></circle>
+                                <text x="42" y="247" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">6</text>
+                                <text x="120" y="260" text-anchor="middle" font-size="14" font-weight="700" fill="#F86825">학습 데이터</text>
+                                <text x="120" y="282" text-anchor="middle" font-size="11" fill="var(--text-muted)">실사 배경 + 시뮬 물리</text>
+                            </svg>
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ 페블러스 원본 도식 — 리얼투심 파이프라인 6단계</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">이 파이프라인의 완제품은 이미 공개돼 있다. 엔비디아는 재구성이 끝난 usdz 자산을 HuggingFace에 데이터셋으로 배포한다. 로봇용과 자율주행용 두 갈래가 있고, 규모와 라이선스가 다르다. 자율주행 쪽 한 장면이 어떤 것인지 감을 잡자면, 대략 20초 분량의 주행 구간을 앞·측·후방 여섯 대의 카메라 뷰로 재구성한 것이 장면 하나다. 그런 장면이 아래 표의 수천 개 단위로 쌓여 있다.</p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">데이터셋</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">규모</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">구성</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">라이선스·채택 신호</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">PhysicalAI-Robotics-NuRec</td>
+                                    <td class="border themeable-border px-4 py-3">9개 환경, 약 63GB</td>
+                                    <td class="border themeable-border px-4 py-3">usdz + 촬영 궤적 + 점유 지도</td>
+                                    <td class="border themeable-border px-4 py-3">CC-BY-4.0 (개방)</td>
+                                </tr>
+                                <tr>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">PhysicalAI-Autonomous-Vehicles-NuRec</td>
+                                    <td class="border themeable-border px-4 py-3">1,500+ 장면, 약 2.9TB</td>
+                                    <td class="border themeable-border px-4 py-3">신경 재구성 볼륨 + OpenDRIVE 맵 + 객체 추적</td>
+                                    <td class="border themeable-border px-4 py-3">게이트 라이선스, 월 다운로드가 로봇용의 여러 배</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-sm themeable-muted mt-2">HuggingFace 데이터셋 카드(버전 26.04) 기준. AV 데이터셋 장면 수는 엔비디아 발표 시점의 900개에서 1,500개 이상으로 확장 중이며, 여기서는 최신치를 쓴다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">자율주행 쪽 채택이 특히 앞선다. 오픈소스 AV 시뮬레이터 CARLA는 0.9.16 릴리스에서 NuRec 통합(25.07)을 반영했다. 15만 명 규모의 개발자 생태계에 재구성 자산을 바로 얹을 수 있게 된 것이다. 주행 로그를 재구성해 실제 도로 장면을 리플레이하거나 변형하는 워크플로가 AV 검증·데이터 생성의 실무 도구로 들어가고 있다. Mcity, dSPACE, Foretellix 같은 검증 인프라 업체들도 도입을 발표했다.</p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">정직한 한계</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">리얼투심이 매력적인 만큼, 재구성 자산에는 뚜렷한 한계가 셋 있다. 흥미로운 점은 이 한계들이 그대로 품질 관리의 축이 된다는 것이다. 무엇이 약한지 알면 무엇을 재야 하는지도 알게 된다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>입자 구름은 겉모습만 담는다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">가우시안 입자는 색과 불투명도를 가진 시각 표현일 뿐, 단단함이나 형태를 물리적으로 갖지 않는다. 재구성한 상자에 로봇 팔을 대도 팔은 그냥 통과한다. 물리 상호작용을 시키려면 충돌 지오메트리를 따로 부여해야 한다. usdz에 충돌 메시와 점유 지도를 동봉하는 이유가 바로 이것이다. 겉모습(가우시안)과 물리(메시)를 나눠 담아, 렌더는 실사처럼 하고 시뮬은 메시로 돌린다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>조명이 촬영 시점으로 구워져 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">재구성은 촬영 당시의 빛을 그대로 입자 색에 새긴다. 그래서 흐린 오후에 찍은 창고를 한낮 햇살 아래로 바꾸거나, 조명을 새로 켜고 끄는 재조명이 어렵다. 장면의 시간대나 날씨를 바꾸는 변형은 재구성 자체의 몫이 아니라 월드모델 계열 기술의 몫으로 넘어간다. NuRec은 "찍힌 그대로의 현장"을 충실히 담는 데 강하고, "다른 조건의 현장"을 상상하는 데는 약하다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>품질이 촬영 커버리지에 종속된다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">한 번도 카메라에 담기지 않은 각도는 재구성에서 구멍이나 떠다니는 잔여 입자(플로터)로 나타난다. 야간, 안개, 고속 주행, 보행자의 다리처럼 관측이 성기거나 움직임이 빠른 부분이 알려진 저품질 케이스다. 엔비디아가 아티팩트를 인페인팅으로 메우는 NuRec Fixer(Difix3D+ 기반)를 별도로 두었다는 사실 자체가, 재구성엔 구멍이 난다는 방증이다. 결국 재구성의 신뢰도는 얼마나 골고루 찍었는가에 크게 좌우된다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">세 한계는 각각 하나의 정량 축으로 이어진다. 겉모습만 담는 문제는 <strong>합성 정합</strong>(로봇과 배경의 스케일·깊이 일치)으로, 재조명 곤란은 <strong>변형 범위</strong>의 한계로, 커버리지 종속은 <strong>충실도와 커버리지 지표</strong>(PSNR·SSIM·미관측 각도)로 관리된다. 한계를 안다는 것은 곧 무엇을 게이팅해야 하는지를 안다는 뜻이다.</p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">상보 기술 지도: 네 조각이 맞물리는 곳</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">NuRec을 제자리에 놓으려면 이웃 기술과의 관계를 봐야 한다. 물리적으로 일관된 합성데이터를 만드는 그림은 서로 방향이 다른 네 조각으로 이뤄진다. 그중 리얼투심과 심투리얼은 정확히 반대 방향을 향한다.</p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>물리 시뮬레이터</strong> — 접촉·충돌·힘을 정답 라벨과 함께 계산하는 정답 장부. 학습 데이터의 라벨이 여기서 나온다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>심투리얼(sim-to-real)</strong> — 월드모델(코스모스 트랜스퍼 등)이 합성으로 만든 장면을 실사풍으로 변형한다. 방향은 시뮬레이터에서 현실로.</li>
+                        <li class="themeable-text leading-relaxed"><strong>리얼투심(real-to-sim)</strong> — NuRec이 실촬영을 시뮬레이터 자산으로 되돌린다. 방향은 현실에서 시뮬레이터로. 심투리얼과 정반대다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>품질 증명</strong> — 위 셋이 만든 데이터가 학습에 쓸 만한지 정량으로 검증하고 게이팅한다. 나머지 조각이 물리적으로 일관되도록 묶는 접착제.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">아래 도식은 이 네 조각이 하나의 파이프라인으로 맞물리는 모습이다. NuRec(리얼투심)은 이 그림에서 오랫동안 비어 있던 "현실에서 시뮬레이터로" 조각을 채운다.</p>
+
+                    <div class="mb-8 rounded-xl p-6" style="background:var(--card-bg); border:1px solid var(--card-border, #e5e7eb);">
+                        <svg viewBox="0 0 760 440" width="100%" role="img" aria-label="물리적으로 일관된 합성데이터 파이프라인의 네 조각: 물리 시뮬레이터, 심투리얼, 리얼투심(NuRec), 품질 증명">
+                            <defs>
+                                <marker id="arrowNeutral" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                    <path d="M0,0 L8,3 L0,6 Z" fill="#808080"></path>
+                                </marker>
+                                <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                    <path d="M0,0 L8,3 L0,6 Z" fill="#F86825"></path>
+                                </marker>
+                            </defs>
+
+                            <!-- 연결선: 네 조각 → 중심 -->
+                            <line x1="200" y1="120" x2="340" y2="200" stroke="#808080" stroke-width="2" marker-end="url(#arrowNeutral)"></line>
+                            <line x1="560" y1="120" x2="420" y2="200" stroke="#808080" stroke-width="2" marker-end="url(#arrowNeutral)"></line>
+                            <line x1="200" y1="330" x2="340" y2="245" stroke="#F86825" stroke-width="2.5" marker-end="url(#arrowOrange)"></line>
+                            <line x1="560" y1="330" x2="420" y2="245" stroke="#808080" stroke-width="2" marker-end="url(#arrowNeutral)"></line>
+
+                            <!-- 중심 -->
+                            <circle cx="380" cy="222" r="66" fill="none" stroke="#585858" stroke-width="2"></circle>
+                            <text x="380" y="212" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">물리적으로</text>
+                            <text x="380" y="232" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">일관된</text>
+                            <text x="380" y="252" text-anchor="middle" font-size="13" fill="var(--text-muted)">합성데이터</text>
+
+                            <!-- 좌상: 물리 시뮬레이터 -->
+                            <rect x="60" y="70" width="240" height="66" rx="12" fill="none" stroke="#808080" stroke-width="2"></rect>
+                            <text x="180" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">물리 시뮬레이터</text>
+                            <text x="180" y="122" text-anchor="middle" font-size="12" fill="var(--text-muted)">정답 라벨·접촉 장부</text>
+
+                            <!-- 우상: 심투리얼 -->
+                            <rect x="460" y="70" width="240" height="66" rx="12" fill="none" stroke="#808080" stroke-width="2"></rect>
+                            <text x="580" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">심투리얼 (월드모델)</text>
+                            <text x="580" y="122" text-anchor="middle" font-size="12" fill="var(--text-muted)">시뮬 → 현실 변형</text>
+
+                            <!-- 좌하: 리얼투심 NuRec (강조) -->
+                            <rect x="60" y="308" width="240" height="66" rx="12" fill="none" stroke="#F86825" stroke-width="2.5"></rect>
+                            <text x="180" y="338" text-anchor="middle" font-size="15" font-weight="700" fill="#F86825">리얼투심 (NuRec)</text>
+                            <text x="180" y="360" text-anchor="middle" font-size="12" fill="var(--text-muted)">현실 → 시뮬 자산화</text>
+
+                            <!-- 우하: 품질 증명 -->
+                            <rect x="460" y="308" width="240" height="66" rx="12" fill="none" stroke="#808080" stroke-width="2"></rect>
+                            <text x="580" y="338" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-secondary)">품질 증명</text>
+                            <text x="580" y="360" text-anchor="middle" font-size="12" fill="var(--text-muted)">충실도·커버리지·정합 게이트</text>
+                        </svg>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">이 지도는 페블러스가 이전에 다룬 <a href="/project/GraphicsForPhysicalAI/ko/" class="text-orange-500 hover:text-orange-600 transition-colors">GraphicsForPhysicalAI 허브</a>의 논지와 이어진다. "미분 가능 렌더링은 새로운 데이터 인프라"라는 주장이 그것이다. NuRec은 그 주장의 산업 실물 증거이자, 허브가 아직 채우지 못했던 리얼투심 축을 정확히 메우는 조각이다.</p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">데이터 관점의 전환: 재구성이 자산이 될 때 무엇을 검증하나</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">지금까지의 이야기를 데이터의 눈으로 다시 보면 하나의 전환이 드러난다. 3DGS 시대의 질문은 "렌더가 실시간인가"였다. 답은 이미 나왔다. 그렇다. 그런데 재구성 결과가 usdz라는 유통 가능한 자산이 되는 순간, 질문이 바뀐다. "이 자산이 학습에 쓸 만한가"로. 병목이 렌더 속도에서 자산 품질로 옮겨간 것이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">자산 품질은 막연한 말이 아니다. 앞 장에서 본 세 한계가 그대로 세 개의 진단 축으로 번역된다.</p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>재구성 충실도</strong> — 재구성 장면이 실제와 얼마나 가까운가. PSNR·SSIM·LPIPS 같은 정량 지표로 잰다. 표준 벤치마크 위에서 수치로 비교할 수 있는 축이다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>촬영 커버리지</strong> — 어떤 각도가 관측되지 않았는가. 미관측 각도는 홀과 플로터로 나타나므로, 커버리지가 곧 재구성이 신뢰할 만한 영역의 경계를 정한다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>합성 정합</strong> — 재구성 배경 위에 얹은 로봇·물체 메시가 스케일과 깊이에서 배경과 맞는가. 어긋나면 물리 시뮬과 학습 라벨이 함께 틀어진다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">중요한 것은 이 세 축이 모두 <strong>진단 가능하고 게이팅 가능하다</strong>는 점이다. 저품질 케이스(야간·안개·고속 주행·보행자 다리)에서 생긴 결함은 그대로 학습 자산의 결함으로 전파되고, 그 자산으로 훈련한 모델의 성능 리스크가 된다. 그래서 "몇 분 촬영으로 시뮬 무대를 만든다"는 워크플로를 채택하는 팀에게, 그 무대의 품질을 무엇으로 보증할지가 곧 실무 과제가 된다. 재구성이 자산이 되는 시대의 데이터 품질은, 정답을 라벨링하는 문제가 아니라 재구성물 자체를 검증하고 통과·반려하는 문제로 이동한다.</p>
+                </section>
+
+                <!-- 페블러스 관심의 이유 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">페블러스가 이 기술에 주목하는 이유</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">NuRec은 페블러스가 그려 온 Physical AI 데이터 지도의 빈 칸 하나를 채운다. Isaac Sim(합성데이터 생성), OpenUSD(자산 표준), 월드모델(심투리얼)을 차례로 다뤘지만, "실촬영을 3D 자산으로 되돌리는" 리얼투심 조각은 비어 있었다. NuRec이 그 자리를 메우면서, 물리 시뮬레이터·심투리얼·리얼투심·품질 증명으로 이어지는 네 조각 그림이 물리적으로 맞물린다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">데이터 품질의 관점에서 이 기술이 던지는 질문은 분명하다. 재구성이 유통 가능한 자산이 되는 순간, 검증의 무게중심이 "렌더가 실시간인가"에서 "이 자산이 학습에 쓸 만한가"로 이동한다. 재구성 충실도, 촬영 커버리지, 합성 정합은 전부 진단하고 게이팅할 수 있는 품질 축이다. 이것은 페블러스가 데이터클리닉과 AI-Ready Data에서 써 온 언어와 정확히 겹친다. 로봇·자율주행 팀이 "몇 분 촬영으로 시뮬 무대를 만든다"는 워크플로를 채택할수록, 그 무대의 품질을 어떻게 보증할지가 곧 학습 성능 리스크가 된다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">더 넓게 보면, NuRec은 "미분 가능 렌더링은 새로운 데이터 인프라"라는 명제의 산업 실물 증거다. 촬영본이 표준 자산 형식에 실려 유통되기 시작했고, 그 인프라 위에서 자산 품질을 증명하는 일이 다음 과제로 떠오른다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed"><strong>Editor's Note.</strong> 이 글은 NuRec을 기술 사실 중심으로 정리한 개요다. 위에서 짚은 세 품질 축(충실도·커버리지·합성 정합)은 페블러스가 재구성 자산 검증을 바라보는 프레임과 맞닿아 있지만, 구체적인 진단·게이팅 방법론은 이 글의 범위를 벗어난다. 별도 글에서 다룬다.</p>
+                    </div>
+                </section>
+
+                <!-- 참고문헌 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">참고문헌</h2>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Kerbl, B., Kopanas, G., Leimkühler, T., Drettakis, G. (2023). 3D Gaussian Splatting for Real-Time Radiance Field Rendering. ACM ToG 42(4), SIGGRAPH 2023. arXiv:2308.04079. <a href="https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/" target="_blank" rel="noopener">프로젝트 페이지</a></span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Moenne-Loccoz, N., et al. (NVIDIA Toronto AI Lab). 3D Gaussian Ray Tracing (3DGRT). arXiv:2407.07090. <a href="https://research.nvidia.com/labs/toronto-ai/3dgrt/" target="_blank" rel="noopener">프로젝트 페이지</a></span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Wu, Q., et al. (NVIDIA). 3DGUT: Enabling Distorted Cameras and Secondary Rays in Gaussian Splatting. CVPR 2025. arXiv:2412.12507. <a href="https://research.nvidia.com/labs/toronto-ai/3dgut/" target="_blank" rel="noopener">프로젝트 페이지</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">플랫폼·데이터</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">4.</span><span class="ref-body">NVIDIA. Isaac Sim Documentation (NuRec). <a href="https://docs.isaacsim.omniverse.nvidia.com/" target="_blank" rel="noopener">docs.isaacsim.omniverse.nvidia.com</a></span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">HuggingFace. nvidia/PhysicalAI-Robotics-NuRec (9개 환경, 약 63GB, CC-BY-4.0). <a href="https://huggingface.co/datasets/nvidia/PhysicalAI-Robotics-NuRec" target="_blank" rel="noopener">데이터셋 카드</a></span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">HuggingFace. nvidia/PhysicalAI-Autonomous-Vehicles-NuRec (1,500+ 장면, 약 2.9TB). <a href="https://huggingface.co/datasets/nvidia/PhysicalAI-Autonomous-Vehicles-NuRec" target="_blank" rel="noopener">데이터셋 카드</a></span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">CARLA. Release 0.9.16 / NVIDIA NuRec integration. <a href="https://carla.org/" target="_blank" rel="noopener">carla.org</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스 인접</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">8.</span><span class="ref-body">페블러스. GraphicsForPhysicalAI (허브). <a href="/project/GraphicsForPhysicalAI/ko/">blog.pebblous.ai/project/GraphicsForPhysicalAI/ko/</a></span></li>
+                    </ul>
+
+                    <p class="text-sm themeable-muted">외부 링크와 수치는 게재 전 원문 렌더 확인을 거쳤다. 데이터셋 규모·다운로드 수치는 버전 26.04 시점 기준이며, 데이터셋이 확장 중이라 최신치와 차이가 있을 수 있다.</p>
+                </section>
+
+                <!-- FAQ (config.faqs로 렌더 — 빈 섹션 유지) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260714"></script>
+
+    <!-- Citation download (BibTeX/RIS) — Pebblous direct converter, no external lib -->
+    <script src="/scripts/citation-download.js?v=20260522" defer></script>
+
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "operator",
+                "at": "2026-07-14T08:05:16.972Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-14T08:09:09.465Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-14T08:32:06.510Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1784016316972-xr652o",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-14T09:13:57.734Z"
+            },
+            mainTitle: "촬영본이 시뮬레이터 자산이 되는 순간",
+            subtitle: "엔비디아 NuRec과 가우시안 스플래팅이 여는 리얼투심 파이프라인, 그리고 자산 품질이라는 새 병목",
+            pageTitle: "NuRec 리얼투심 — 촬영본이 시뮬레이터 자산이 되기까지 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-14",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/nvidia-nurec-real-to-sim-2026-07/ko/",
+            tags: ["NuRec", "리얼투심", "가우시안 스플래팅", "3DGS", "뉴럴 재구성", "Isaac Sim", "OpenUSD", "합성데이터", "데이터 품질", "Physical AI"],
+            faqs: [
+                { question: "NuRec과 3D 가우시안 스플래팅(3DGS)은 같은 것인가?", answer: "아니다. 3DGS는 SIGGRAPH 2023에서 발표된 재구성·렌더 기법(뿌리)이고, NuRec은 그 위에 RTX 렌더러 통합(3DGRT·3DGUT·PPISP)과 usdz 자산화를 얹어 시뮬레이터 파이프라인으로 만든 엔비디아의 스택이다." },
+                { question: "NeRF와 무엇이 다른가?", answer: "NeRF는 시점마다 신경망을 조회해 렌더가 프레임당 초 단위로 느렸다. 3DGS는 완성된 장면을 래스터화로 렌더해 실시간(1080p에서 30 FPS 이상)이고, 학습도 수십 배 빠르다(약 40분 대 최대 48시간)." },
+                { question: "3DGRT와 3DGUT는 왜 둘 다 필요한가?", answer: "3DGRT(레이트레이싱)는 반사·굴절 같은 2차 광선과 왜곡 카메라를 지원하지만 느리다(약 52 FPS). 3DGUT는 3DGS 수준 속도(약 265 FPS)를 유지하면서 어안·롤링셔터를 다뤄, 실제 촬영 카메라의 왜곡을 실시간으로 처리한다." },
+                { question: "PPISP는 무엇을 하나?", answer: "실사 멀티카메라 촬영에서 생기는 노출·화이트밸런스·비네팅 편차를 보정하는 후처리 모듈이다. 촬영 당시 카메라의 광도 특성을 재현해 재구성 장면이 실사처럼 보이게 만든다." },
+                { question: "재구성 결과물(usdz) 안에는 무엇이 들어 있나?", answer: "가우시안 재구성, 충돌 감지용 메시, 점유 지도(occupancy map), 촬영 카메라 궤적이 한 벌로 담긴다. 자율주행 데이터셋에는 신경 재구성 볼륨, OpenDRIVE 맵, 객체 추적 데이터도 함께 들어간다." },
+                { question: "리얼투심(real-to-sim)과 심투리얼(sim-to-real)은 어떻게 다른가?", answer: "방향이 반대다. 리얼투심(NuRec)은 실촬영을 시뮬레이터 자산으로 만들고, 심투리얼(월드모델·코스모스 트랜스퍼)은 합성 장면을 실사풍으로 변형한다. 둘은 하나의 합성데이터 파이프라인에서 상보적으로 맞물린다." },
+                { question: "NuRec 재구성 자산을 바로 쓸 수 있는 공개 데이터가 있나?", answer: "있다. HuggingFace에 로봇용 PhysicalAI-Robotics-NuRec(9개 환경, 약 63GB, CC-BY-4.0)과 자율주행용 PhysicalAI-Autonomous-Vehicles-NuRec(1,500개 이상 장면, 약 2.9TB, 게이트 라이선스)이 공개돼 있다." },
+                { question: "재구성한 장면에서 로봇이 물체를 밀거나 잡는 물리 시뮬이 되나?", answer: "가우시안 구름 자체는 겉모습만 담아 물리 상호작용을 하지 못한다. usdz에 동봉된 충돌 메시를 부여해야 물리 시뮬이 가능하며, 이것이 재구성 자산에 별도 지오메트리가 필요한 이유다." },
+                { question: "재구성 품질은 어떻게 검증하나?", answer: "정량 지표(PSNR·SSIM·LPIPS)로 충실도를, 촬영 커버리지로 미관측 각도에서 생기는 홀·플로터 위험을, 합성 정합으로 로봇과 배경의 스케일·깊이 일치를 검증한다. 야간·안개·고속 주행·보행자 다리가 알려진 저품질 케이스다." }
+            ]
+        });
+    </script>
+</body>
+</html>
