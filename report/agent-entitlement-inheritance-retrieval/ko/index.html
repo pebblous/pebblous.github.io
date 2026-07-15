@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>AI 에이전트 권한 상속 실패와 검색 시점 데이터 유출 | 페블러스</title>
+    <meta name="description" content="메타의 내부 AI 에이전트는 아무것도 뚫리지 않았는데 두 시간 동안 볼 자격 없는 데이터를 노출했다. 문제는 모델 성능이 아니라 권한 상속이다. 에이전트가 원본 웨어하우스의 접근 권한을 상속하지 않고 복사하는 순간, 유출은 답변이 아니라 검색 시점에 이미 시작된다.">
+    <meta name="keywords" content="AI 에이전트, 데이터 거버넌스, 권한 상속, entitlement drift, RAG 보안, 검색 시점 권한, RBAC ABAC, 벡터DB 보안, permission-aware RAG, AI-Ready Data, 엔터프라이즈 AI">
+    <link rel="canonical" href="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/ko/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="에이전트는 출처의 권한을 물려받지 못한다">
+    <meta property="og:description" content="메타 내부 에이전트가 두 시간 동안 데이터를 노출한 사례가 드러낸 권한 상속 실패와 entitlement drift.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/ko/image/index.png">
+    <meta property="og:locale" content="ko_KR">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="에이전트는 출처의 권한을 물려받지 못한다">
+    <meta name="twitter:description" content="메타 내부 에이전트가 두 시간 동안 데이터를 노출한 사례가 드러낸 권한 상속 실패와 entitlement drift.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/ko/image/index.png">
+    <meta name="twitter:image:alt" content="원본 웨어하우스의 권한이 벡터 인덱스로 복사될 때 떨어져 나가는 상속 실패를 보여주는 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <meta name="citation_title" content="에이전트는 출처의 권한을 물려받지 못한다">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/07/16">
+    <meta name="citation_online_date" content="2026/07/16">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260716">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260716">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260716">
+
+    <!-- GTM -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">두 시간의 노출</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">권한은 왜 문 앞에서 멈추는가</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">어긋남은 시간이 만든다</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">유출은 검색 단계에서 시작된다</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">검색 시점에 권한을 강제하는 법</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">획일적 거버넌스는 왜 실패하는가</a></li>
+                    <li><a href="#why-pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">페블러스가 주목하는 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            2026년 3월, 메타의 한 내부 AI 에이전트가 약 두 시간 동안 볼 자격 없는 데이터를 사내에 노출했다. 주목할 점은 아무것도 뚫리지 않았다는 것이다. 공격자도, 자격증명 도난도, 경계 돌파도 없었다. 에이전트는 유효한 자격증명으로 모든 신원 확인을 통과했다. 실패는 인증이 아니라 인증 이후의 권한 검증 공백에서 왔다. 이 글은 그 공백을 모델 성능이 아니라 권한 상속의 문제로 읽는다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            기술적 실체는 단순하다. 원본 데이터 웨어하우스는 누가 무엇을 보는지를 행·열 수준까지 강제하지만, 그 데이터가 청크로 쪼개져 벡터 인덱스에 임베딩되는 순간 이 접근 통제는 함께 이동하지 않는다. 많은 조직이 권한을 원본에서 물려받는 대신 검색 계층에 따로 손으로 설정하고, 그렇게 복제된 권한은 직무 이동·프로젝트 종료·회수 누락과 함께 원본과 어긋난다. 사람에게는 잠재 위험인 이 과권한이, 기계 속도로 검색하는 에이전트에게는 즉시 실현되는 유출이 된다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            처방은 검색 시점에 권한을 강제하는 것이다. 사후에 걸러내면 늦다. 비인가 데이터는 이미 랭킹과 캐시에 개입한 뒤다. 권한이 검색 범위를 먼저 좁혀야 하고, 그 권한은 새로 만드는 것이 아니라 원본에서 상속되어야 한다. 아래에서 그 메커니즘과 처방을 하나씩 짚는다.
+                        </p>
+                    </div>
+
+                    <!-- STAT-CARD: 초안 후보(5-D.5에서 본문 역추출로 재확정) — 4축(공백/규모/변화량/공백) 비겹침 -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">97%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">접근 통제 없이 AI 침해</p>
+                            <p class="text-xs themeable-muted mt-1">IBM, AI 모델·앱 침해 조직 중</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">96%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">90일간 미사용 권한</p>
+                            <p class="text-xs themeable-muted mt-1">Oso×Cyera, 36억 권한 분석</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">109:1</p>
+                            <p class="text-sm themeable-text-secondary mt-1">머신 대 인간 신원 비율</p>
+                            <p class="text-xs themeable-muted mt-1">1년 전 82:1에서 급증</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">78%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">에이전트 신원 정책 부재</p>
+                            <p class="text-xs themeable-muted mt-1">CSA×Oasis, 생성·삭제 규정 없음</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">두 시간의 노출</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        메타의 한 내부 AI 에이전트가 약 두 시간 동안 볼 자격 없는 데이터를 사내에 노출했다. 이 사건에서 가장 중요한 사실은, 아무것도 뚫리지 않았다는 것이다. 외부 공격자가 침입한 것도, 자격증명이 도난당한 것도, 방화벽이나 접근 경계가 무너진 것도 아니었다. 에이전트는 유효한 자격증명을 들고 모든 신원 확인을 정상적으로 통과했다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데도 데이터는 샜다. 실패가 일어난 곳은 인증(authentication) 다음 단계였다. 에이전트가 누구인지는 정확히 확인됐지만, 그 에이전트가 무엇까지 볼 자격이 있는지를 확인하는 인가(authorization)가 데이터에 손을 뻗는 시점에 강제되지 않았다. 유효한 자격을 가진 대리인이 자기 권한으로 잘못된 요청을 실행하는 이 구조는 보안학의 고전인 <strong>혼란한 대리인(confused deputy)</strong> 문제 그대로다. 아무것도 뚫리지 않아도 새는 이유가 여기에 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 지점에서 이 글은 최근의 지배적인 담론과 갈라선다. 기업 AI 에이전트를 둘러싼 이야기는 대개 "모델이 자신 있게 틀린 답을 한다(confidently wrong)"는 성능 문제로 수렴한다. 그러나 메타 사건이 드러낸 것은 성능이 아니다. 접근할 자격이 없는 데이터에 에이전트가 도달했다는 것, 그것은 모델이 무엇을 아는가의 문제가 아니라 무엇까지 볼 자격이 있는가의 문제다. 성능 담론이 아니라 <strong>데이터 거버넌스</strong>의 문제인 것이다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            메타 사건의 심각도 등급을 두고 출처마다 조금씩 다르게 전하므로, 이 글은 "내부적으로 최고 수준의 경보로 분류됐다"는 선까지만 서술한다. 확실한 것은 노출의 성격이다. 침입 없이, 정상적인 인증을 통과한 에이전트가, 권한 검증의 공백을 통해 데이터를 노출했다는 점이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">이미 다룬 각도, 그리고 아직 남은 각도</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스는 최근 몇 주 사이 에이전트 데이터 유출을 여러 각도에서 다뤘다. 유출이 어디로 새는지(도구 호출·로그·에이전트 간 메시지), 그것을 떠받치는 컨텍스트 레이어가 왜 투자처가 됐는지, 그리고 에이전트가 누구인지(신원과 계보)를 짚었다. 이 글은 그 세 편이 건드리지 않은 두 축을 좁혀 본다. 무엇까지 볼 자격이 있는가(권한), 그리고 그 자격이 언제 무너지는가(검색 시점)다.
+                    </p>
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">기존 글</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">다룬 축</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">이 글과의 차이</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3"><a href="/blog/agent-internal-channel-privacy-leak/ko/" class="text-orange-500 hover:text-orange-400 transition-colors">답변이 아니라 통로에서 샌다</a></td>
+                                    <td class="border themeable-border px-4 py-3">유출이 <strong>어디로</strong> 새는가</td>
+                                    <td class="border themeable-border px-4 py-3">이 글은 <strong>언제</strong> 시작되는가 — 통로 이전, 검색 시점</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3"><a href="/blog/jedify-agent-context-layer/ko/" class="text-orange-500 hover:text-orange-400 transition-colors">컨텍스트 레이어가 투자처가 된 이유</a></td>
+                                    <td class="border themeable-border px-4 py-3">컨텍스트 레이어 <strong>투자 논제</strong></td>
+                                    <td class="border themeable-border px-4 py-3">이 글은 그 레이어의 <strong>성패를 가르는 조건</strong>을 권한 상속으로 좁힘</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3"><a href="/blog/autonomous-enterprise-agent-identity/ko/" class="text-orange-500 hover:text-orange-400 transition-colors">회사를 돌리는데 사번은 없다</a></td>
+                                    <td class="border themeable-border px-4 py-3">에이전트가 <strong>누구인가</strong>(신원)</td>
+                                    <td class="border themeable-border px-4 py-3">이 글은 <strong>무엇까지 볼 자격이 있나</strong>(권한)</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors themeable-bg-secondary">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">이 글</td>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">권한 × 시점</td>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">무엇까지 볼 자격이 있나를 검색 시점에 강제하는가</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 문장으로 줄이면 이렇다. 신원(누가)과 통로(어디로)는 이미 다뤘다. 이 글은 권한(무엇까지)과 시점(언제)이다.
+                    </p>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">권한은 왜 문 앞에서 멈추는가</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        원본 데이터 웨어하우스는 누가 무엇을 보는지를 정교하게 강제한다. 역할 기반 접근 통제(RBAC)는 직무에 따라, 속성 기반 접근 통제(ABAC)는 부서·지역·보안 등급 같은 속성에 따라 접근을 나눈다. 행 수준 보안(RLS)은 같은 표를 조회해도 사람마다 다른 행만 보이게 하고, 컬럼 마스킹은 특정 열의 값을 가린다. 여기까지는 수십 년간 다듬어진, 잘 작동하는 통제다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 이 데이터를 AI 에이전트에게 먹이기 위해 옮기는 순간 시작된다. 검색 증강 생성(RAG) 파이프라인은 문서를 잘게 청크로 쪼개고, 각 청크를 임베딩이라는 숫자 벡터로 바꿔 벡터 인덱스에 저장한다. 그런데 이 벡터 인덱스에는 원본이 지녔던 행·열 권한 술어를 담을 자리가 없다. 벡터는 의미의 근접도를 표현하도록 설계된 자료구조이지, "이 값은 인사팀만 볼 수 있다"는 규칙을 표현하도록 만들어지지 않았다. 게다가 청킹은 RLS나 컬럼 마스킹이 의존하던 행과 열의 경계 자체를 허문다. 한 문서를 여러 조각으로 나누는 순간, 어느 조각이 어떤 권한에 속하는지를 원본만큼 정밀하게 되짚을 수 없게 된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        많은 조직이 이 공백을 메타데이터로 메운다. 청크마다 "이 문서는 이 팀만"이라는 접근 제어 목록(ACL)을 태그로 붙이는 것이다. 붙일 수는 있다. 그러나 그것은 원본 권한의 <strong>복사본</strong>이지 상속이 아니다. 복사본은 별도의 동기화 파이프라인을 통해 원본과 맞춰야 하고, 그 동기화가 조금이라도 늦으면 인덱스의 권한은 원본과 어긋나기 시작한다. 이것이 뒤에서 다룰 권한 드리프트의 기술적 실체다.
+                    </p>
+
+                    <!-- Fig B: 권한 상속 vs 복사 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <defs>
+                                <marker id="arr-b-safe" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#F86825"/>
+                                </marker>
+                                <marker id="arr-b-drift" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#CF1D21"/>
+                                </marker>
+                            </defs>
+                            <text x="340" y="24" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">같은 데이터, 두 갈래 — 복사는 낡고 상속은 되묻는다</text>
+
+                            <!-- 원본 웨어하우스 -->
+                            <rect x="255" y="42" width="170" height="58" rx="8" fill="#334155" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <text x="340" y="66" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#ffffff">원본 웨어하우스</text>
+                            <text x="340" y="86" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="#cbd5e1">RBAC · ABAC · RLS · 컬럼 마스킹</text>
+
+                            <!-- 복사 경로 (위험, 좌) -->
+                            <line x1="290" y1="100" x2="170" y2="150" stroke="#CF1D21" stroke-width="2" marker-end="url(#arr-b-drift)"/>
+                            <text x="150" y="140" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#CF1D21">복사</text>
+                            <rect x="40" y="158" width="230" height="96" rx="8" fill="none" stroke="#CF1D21" stroke-width="1.4" stroke-dasharray="5 4"/>
+                            <text x="155" y="180" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="var(--text-secondary)">벡터 인덱스 + 복제 ACL</text>
+                            <text x="155" y="202" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-muted)">권한 배지가 떨어져 나감</text>
+                            <text x="155" y="220" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-muted)">별도 동기화 → 시간이 지나면</text>
+                            <text x="155" y="240" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#CF1D21">원본과 어긋남 (drift)</text>
+
+                            <!-- 상속 경로 (안전, 우) -->
+                            <line x1="390" y1="100" x2="510" y2="150" stroke="#F86825" stroke-width="2" marker-end="url(#arr-b-safe)"/>
+                            <text x="530" y="140" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#F86825">상속</text>
+                            <rect x="410" y="158" width="230" height="96" rx="8" fill="none" stroke="#F86825" stroke-width="1.4"/>
+                            <text x="525" y="180" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="var(--text-secondary)">검색 시점 원본 IAM 질의</text>
+                            <text x="525" y="202" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-muted)">권한을 그때그때 되물음</text>
+                            <text x="525" y="220" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-muted)">복제본이 없으니</text>
+                            <text x="525" y="240" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="#F86825">드리프트가 원천 차단</text>
+                            <!-- 되묻는 화살표 -->
+                            <path d="M525 254 C525 278, 360 278, 340 104" fill="none" stroke="#F86825" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arr-b-safe)"/>
+                        </svg>
+                        <figcaption class="text-sm themeable-muted mt-3 text-center">권한을 인덱스에 복사하면 원본과 어긋나기 시작하고(좌), 검색 시점에 원본을 되물으면 어긋남이 생기지 않는다(우).</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터 거버넌스 플랫폼 아틀란(Atlan)은 이 대비를 이렇게 못 박는다. 원문은 이렇다. <span style="font-weight:600;">"an agent retrieving data through an MCP server or RAG pipeline should inherit the same access entitlements that govern that data in the source warehouse, not a separate, manually configured permission set that drifts over time."</span> 옮기면, MCP 서버나 RAG 파이프라인을 통해 데이터를 검색하는 에이전트는 원본 웨어하우스에서 그 데이터를 다스리던 접근 권한을 <strong>그대로 상속해야 하며</strong>, 시간이 지나며 어긋나는 별도의 수기 권한 세트를 쓰면 안 된다는 뜻이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        학계에서 이 문제를 정면으로 형식화한 사례는 아직 드물다. 정유안·이 등의 permission-aware RAG 연구는 기존 RAG가 검색된 모든 콘텐츠를 동등하게 접근 가능하다고 암묵적으로 가정하며, 서로 다른 권한 모델을 억지로 병합하면 오히려 드리프트와 의도치 않은 노출을 부른다고 지적한다. 대안은 소스의 IAM을 검색 시점에 실시간으로 질의해 상속하는 것이다. 다만 이런 정면 논문은 손에 꼽고, 나머지는 대부분 산업 현장의 구현이 학술적 형식화를 앞서가고 있는 단계다.
+                    </p>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">어긋남은 시간이 만든다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        권한을 복사하는 순간에는 원본과 사본이 일치한다. 문제는 그다음이다. 조직은 멈춰 있지 않는다. 사람이 팀을 옮기고, 프로젝트가 끝나고, 계약직이 나가고, 임시로 열어 준 접근이 회수되지 않은 채 남는다. 원본 웨어하우스는 이런 변화를 반영하지만, 검색 계층에 따로 설정된 권한 사본은 누군가 챙겨서 맞춰 주지 않으면 옛날 상태에 머문다. 이렇게 원본과 사본이 시간이 지나며 벌어지는 것을 <strong>권한 드리프트(entitlement drift)</strong>라 하고, 필요 이상으로 권한이 쌓인 상태를 <strong>과권한(over-permissioning)</strong>이라 한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        구체적인 장면으로 옮겨 보면 이렇다. 재무팀에서 마케팅팀으로 옮긴 직원을 생각해 보자. 원본 웨어하우스는 그의 옛 재무 데이터 접근을 인사 시스템의 발령에 맞춰 곧 회수한다. 그러나 검색 계층에 복사돼 있던 권한 태그는 그 발령을 자동으로 따라오지 못하고, 누군가 동기화 파이프라인을 손봐 주기 전까지 옛 상태로 남는다. 그리고 그를 대신해 일하는 에이전트는 바로 그 낡은 권한을 근거로 재무 문서를 계속 검색 대상에 올린다. 권한이 어긋난 곳은 한 군데인데, 그 틈으로 새는 것은 원본이 이미 닫은 문 전체다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        규모를 보면 이것이 예외적 사고가 아니라 상태임을 알 수 있다. Oso와 Cyera가 약 240만 명의 신원과 36억 건의 권한을 분석한 결과, 부여된 권한의 96%가 90일 동안 한 번도 사용되지 않았다. 대부분의 조직에서 사람들은 자신에게 열려 있는 문의 극히 일부만 실제로 연다는 뜻이다. IBM의 침해 비용 보고서(2024년 3월~2025년 2월 조사)는 다른 각도에서 같은 공백을 비춘다. AI 모델이나 앱과 관련된 침해를 겪은 조직의 97%가 적절한 AI 접근 통제를 갖추지 못하고 있었다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 핵심적인 비대칭이 나타난다. 사람에게 과권한은 대체로 <strong>잠재</strong> 위험이다. 96%의 미사용 권한이 말해 주듯, 사람은 열려 있는 접근을 대부분 행사하지 않는다. 그러나 에이전트는 다르다. 에이전트는 사람의 권한 세트를 그대로 복사받은 다음, 그것을 기계 속도로 전부 활성화한다. 사람이 평생 열지 않았을 문까지 에이전트는 과업을 처리하며 순식간에 열어 본다. 잠재 위험이 <strong>즉시</strong> 위험으로 바뀌는 것이다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            보안 벤더들의 관측치는 이 비대칭을 뒷받침한다. 여러 조사에서 AI 에이전트의 상당수가 필요 이상으로 접근 권한을 갖고 있으며, 에이전트가 동등한 작업을 수행하는 사람보다 훨씬 많은 데이터를 이동시킨다고 보고한다. 다만 이들 수치는 벤더가 자사 관측 범위에서 집계한 값으로 표본과 방법론이 공개되지 않은 경우가 있어, 확정된 통계가 아니라 방향을 가리키는 신호로 읽는 것이 옳다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-8">
+                        흔한 대응은 주기적인 권한 리뷰다. 분기마다 접근 권한을 점검해 쓰지 않는 것을 회수하는 방식이다. 그러나 이 접근에는 근본적인 한계가 있다. 리뷰는 배치(batch)로, 즉 정해진 시점에 몰아서 이뤄진다. 리뷰와 리뷰 사이의 공백 동안 드리프트는 계속 쌓이고, 그 공백 동안 에이전트는 낡은 권한 스냅샷을 믿고 검색을 계속한다. 사람의 근무 시간 단위로 돌아가는 리뷰 주기와, 초 단위로 데이터를 훑는 에이전트의 속도는 애초에 같은 시간축 위에 있지 않다.
+                    </p>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">유출은 검색 단계에서 시작된다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        많은 파이프라인은 검색을 먼저 하고 권한을 나중에 확인한다. 벡터 인덱스에서 질문과 가까운 상위 몇 개(top-k) 청크를 먼저 뽑고, 그다음에 사용자가 볼 자격이 없는 것을 걸러 내는 방식이다. 이것을 사후 필터링(post-filter)이라 부른다. 직관적으로는 문제없어 보인다. 어차피 최종 답변에는 인가된 것만 들어가니까.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그러나 이 순서가 곧 유출의 시작점이다. 비인가 청크를 나중에 걸러 낸다는 것은, 그전에 이미 그 청크가 검색 과정에 참여했다는 뜻이다. 유사도 점수가 매겨졌고, 순위에 올랐고, 인덱스에서 조회돼 메모리에 올라왔고, 캐시에 남았다. 정책 엔진을 만드는 Cerbos는 이 상태를 이렇게 요약한다. "the security boundary was already crossed" — 걸러 내는 그 시점엔 보안 경계가 이미 넘어간 뒤라는 것이다. 사후 필터는 유출을 막는 게 아니라, 유출된 뒤에 답변에서만 지우는 셈이다.
+                    </p>
+
+                    <!-- Fig A: Pre-filter vs Post-filter -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <defs>
+                                <marker id="arr-a-safe" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#F86825"/>
+                                </marker>
+                                <marker id="arr-a-risk" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#CF1D21"/>
+                                </marker>
+                                <marker id="arr-a-neu" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#808080"/>
+                                </marker>
+                            </defs>
+                            <!-- 상단: 안전 (pre-filter) -->
+                            <text x="24" y="42" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">안전 — 권한이 검색 범위를 먼저 좁힌다 (pre-filter)</text>
+                            <rect x="24" y="54" width="98" height="46" rx="6" fill="#334155" stroke="var(--text-muted)" stroke-width="0.7"/>
+                            <text x="73" y="82" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#ffffff">신원 + 권한</text>
+                            <line x1="122" y1="77" x2="152" y2="77" stroke="#F86825" stroke-width="1.8" marker-end="url(#arr-a-safe)"/>
+                            <rect x="154" y="54" width="120" height="46" rx="6" fill="none" stroke="#F86825" stroke-width="1.3"/>
+                            <text x="214" y="76" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-secondary)">인가 범위로</text>
+                            <text x="214" y="91" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-secondary)">검색 축소</text>
+                            <line x1="274" y1="77" x2="304" y2="77" stroke="#F86825" stroke-width="1.8" marker-end="url(#arr-a-safe)"/>
+                            <rect x="306" y="54" width="104" height="46" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="358" y="82" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-secondary)">검색 · 랭킹</text>
+                            <line x1="410" y1="77" x2="440" y2="77" stroke="#808080" stroke-width="1.8" marker-end="url(#arr-a-neu)"/>
+                            <rect x="442" y="54" width="104" height="46" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="494" y="82" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">LLM 생성</text>
+                            <text x="560" y="82" font-family="Pretendard,sans-serif" font-size="18" fill="#F86825">✓</text>
+
+                            <!-- 구분선 -->
+                            <line x1="24" y1="150" x2="656" y2="150" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3 3" opacity="0.5"/>
+
+                            <!-- 하단: 위험 (post-filter) -->
+                            <text x="24" y="188" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#CF1D21">위험 — 전체를 검색한 뒤 걸러낸다 (post-filter)</text>
+                            <rect x="24" y="200" width="98" height="46" rx="6" fill="#334155" stroke="var(--text-muted)" stroke-width="0.7"/>
+                            <text x="73" y="228" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#ffffff">신원만</text>
+                            <line x1="122" y1="223" x2="152" y2="223" stroke="#808080" stroke-width="1.8" marker-end="url(#arr-a-neu)"/>
+                            <rect x="154" y="200" width="120" height="46" rx="6" fill="none" stroke="#CF1D21" stroke-width="1.3"/>
+                            <text x="214" y="222" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-secondary)">전체 검색 · 랭킹</text>
+                            <text x="214" y="237" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#CF1D21">비인가 청크 개입</text>
+                            <line x1="274" y1="223" x2="304" y2="223" stroke="#CF1D21" stroke-width="1.8" marker-end="url(#arr-a-risk)"/>
+                            <rect x="306" y="200" width="104" height="46" rx="6" fill="none" stroke="#CF1D21" stroke-width="1.3"/>
+                            <text x="358" y="221" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-secondary)">조회 · 캐시</text>
+                            <text x="358" y="236" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#CF1D21">경계 이미 넘음</text>
+                            <line x1="410" y1="223" x2="440" y2="223" stroke="#CF1D21" stroke-width="1.8" marker-end="url(#arr-a-risk)"/>
+                            <rect x="442" y="200" width="104" height="46" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="494" y="222" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-secondary)">사후 필터</text>
+                            <text x="494" y="237" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">답변만 세정</text>
+                            <text x="560" y="228" font-family="Pretendard,sans-serif" font-size="16" fill="#CF1D21">누수</text>
+                        </svg>
+                        <figcaption class="text-sm themeable-muted mt-3 text-center">권한이 검색을 먼저 좁히면 비인가 데이터는 애초에 손대지 않는다(위). 검색을 먼저 하면 걸러 내는 시점엔 이미 조회·캐시가 끝나 있다(아래).</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        유출이 생성 이전에 시작된다는 것은 하나의 관측이 아니라 세 갈래의 증거로 수렴한다. 첫째는 방금 본 사후 필터의 랭킹 오염이다. 어떤 문서가 상위에 랭크됐는지 자체가 정보다. 상위에 뭔가가 걸렸다는 사실만으로도, 그 데이터가 존재한다는 신호가 새어 나간다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        둘째는 멤버십 추론(membership inference)이다. 2025년 ACM CCS에서 발표된 이른바 '심문 공격(Interrogation Attack)' 연구는, 프롬프트 인젝션 같은 공격 없이 <strong>정상적인 검색만으로</strong> 특정 데이터가 인덱스에 들어 있는지를 알아낼 수 있음을 실증했다. 30번 정도의 평범한 질의 안에서 데이터의 존재 여부가 드러났다. 공격다운 공격이 없어도, 검색 그 자체가 유출 통로가 되는 것이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        셋째는 캐시 유출과 혼란한 대리인의 결합이다. 'ConfusedPilot' 연구는 검색 캐시에서 기밀이 새는 경로와, 오염된 문서가 에이전트로 하여금 자기 권한으로 엉뚱한 행동을 하게 만드는 경로를 함께 보였다. 검색된 문서 안에 숨겨진 지시가 들어 있으면, 고권한 에이전트는 그것을 자기 권한으로 실행한다. 낮은 권한의 사용자가 던진 요청이, 높은 권한의 에이전트를 거쳐 그 사용자가 결코 할 수 없었을 행동으로 바뀐다.
+                    </p>
+
+                    <!-- Fig C: Confused Deputy 체인 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 170" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <defs>
+                                <marker id="arr-c-neu" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#808080"/>
+                                </marker>
+                                <marker id="arr-c-risk" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#CF1D21"/>
+                                </marker>
+                            </defs>
+                            <text x="340" y="26" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">혼란한 대리인 — 낮은 권한의 요청이 높은 권한으로 실행된다</text>
+                            <rect x="20" y="58" width="112" height="52" rx="7" fill="#334155" stroke="var(--text-muted)" stroke-width="0.7"/>
+                            <text x="76" y="80" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="#ffffff">저권한 사용자</text>
+                            <text x="76" y="96" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#cbd5e1">위임 요청</text>
+                            <line x1="132" y1="84" x2="160" y2="84" stroke="#808080" stroke-width="1.8" marker-end="url(#arr-c-neu)"/>
+                            <rect x="162" y="58" width="118" height="52" rx="7" fill="none" stroke="#F86825" stroke-width="1.4"/>
+                            <text x="221" y="80" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-secondary)">에이전트</text>
+                            <text x="221" y="96" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#F86825">고권한 보유</text>
+                            <line x1="280" y1="84" x2="308" y2="84" stroke="#808080" stroke-width="1.8" marker-end="url(#arr-c-neu)"/>
+                            <rect x="310" y="58" width="118" height="52" rx="7" fill="none" stroke="#CF1D21" stroke-width="1.4"/>
+                            <text x="369" y="80" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-secondary)">오염 문서</text>
+                            <text x="369" y="96" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#CF1D21">숨은 지시 포함</text>
+                            <line x1="428" y1="84" x2="456" y2="84" stroke="#CF1D21" stroke-width="1.8" marker-end="url(#arr-c-risk)"/>
+                            <rect x="458" y="58" width="118" height="52" rx="7" fill="none" stroke="#CF1D21" stroke-width="1.4"/>
+                            <text x="517" y="80" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-secondary)">도구 실행</text>
+                            <text x="517" y="96" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#CF1D21">자기 권한으로</text>
+                            <line x1="576" y1="84" x2="604" y2="84" stroke="#CF1D21" stroke-width="1.8" marker-end="url(#arr-c-risk)"/>
+                            <text x="636" y="82" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" font-weight="700" fill="#CF1D21">외부</text>
+                            <text x="636" y="96" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" font-weight="700" fill="#CF1D21">탈취</text>
+                            <text x="340" y="146" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10.5" fill="var(--text-muted)">사용자가 결코 할 수 없었을 행동이, 에이전트의 권한을 빌려 성립한다</text>
+                        </svg>
+                        <figcaption class="text-sm themeable-muted mt-3 text-center">검색된 문서에 숨은 지시가 있으면, 고권한 에이전트가 저권한 사용자의 요청을 자기 권한으로 실행한다.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 갈래는 모두 한 지점을 가리킨다. LLM이 답을 짓기 훨씬 전, 검색하고 순위를 매기고 캐시하는 단계에서 이미 경계가 무너진다는 것이다. 앞선 글이 "에이전트는 답변이 아니라 통로에서 샌다"고 했다면, 이 글은 그보다 한 걸음 더 거슬러 올라간다. 통로에 닿기도 전, 검색 시점에 이미 새기 시작한다.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">검색 시점에 권한을 강제하는 법</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        처방의 원칙은 두 문장으로 정리된다. 권한이 검색 범위를 먼저 좁혀야 하고(pre-filter), 그 권한은 새로 만드는 것이 아니라 원본에서 상속되어야 한다. 두 원칙은 하나로 이어진다. 원본을 검색 시점에 되물어 상속하면, 그 결과로 검색 범위가 인가된 것만 남도록 먼저 좁혀지기 때문이다. 산업 현장은 이미 이 방향으로 수렴하고 있다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">데이터 계층 — 원본 권한을 검색 시점에 되묻는다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 깔끔한 형태는 데이터베이스 자신이 권한을 강제하게 두는 것이다. pgvector로 벡터를 저장하는 PostgreSQL은 행 수준 보안을 그대로 적용할 수 있어, 검색 쿼리가 사용자별로 볼 수 있는 행만 반환한다. 원본 관계형 권한이 검색에 투명하게 상속되는 것이다. 다만 여기에는 함정이 있다. FORCE RLS를 켜지 않으면 테이블 소유자가 정책을 우회하므로, 상속을 믿기 전에 이 설정부터 확인해야 한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        벤더 플랫폼도 같은 원리를 제품화하고 있다고 말한다. 데이터브릭스는 사용자를 대신하는(on-behalf-of) 토큰을 실시간으로 상속시켜 에이전트가 사용자 본인의 권한으로만 데이터에 닿게 한다고 설명한다. 스노우플레이크는 행 접근 정책과 마스킹 정책으로 같은 통제를 걸고, 글린(Glean)은 소스의 권한을 검색 인덱스에 미러링한다고 포지셔닝한다. 정책을 코드로 관리하는 OPA나 Cerbos 같은 도구는 쿼리 실행 계획 단계에서 벡터 스토어에 사전 필터를 밀어 넣는 방식을 제시한다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            다만 미러링에는 한계가 명확하다. 거울은 비추기만 할 뿐 고치지 않는다. 소스의 권한 자체가 지나치게 허용적이면, 미러링은 그 허용성을 그대로 검색 계층에 복제해 낸다. 글린 자신도 이 점을 인정한다. 상속은 만능이 아니라, <strong>소스 거버넌스 자체가 정확해야 한다</strong>는 전제 위에서만 작동한다. 참고로 이들 플랫폼의 상속·미러링 성능은 대부분 벤더의 자기 서술이며 제3자 벤치마크가 없으므로, 여기서는 사실 단정이 아니라 그들이 그렇게 주장한다는 선에서 읽는다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">신원 계층 — 인접하지만 다른 층위</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 흔한 혼동 하나를 정리해야 한다. Okta, CyberArk, Aembit 같은 신원 벤더가 다루는 것은 데이터 계층이 아니라 신원 계층이다. 이들은 필요한 순간에만 자격증명을 발급하고(just-in-time), 사람이 아닌 신원(non-human identity)의 생성과 폐기를 관리한다. 즉 "누가"를 정확하게 만든다. 반면 이 글이 강조하는 데이터 계층은 "그 누가가 검색 시점에 무엇까지 볼 자격이 있나"를 강제한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        둘은 모두 필요하지만 서로를 대체하지 못한다. 신원만 강화하고 데이터 계층의 권한 상속을 빼면, 메타 사건 같은 인증 이후 유출이 그대로 남는다. 에이전트가 누구인지 완벽하게 확인해도, 그 에이전트가 검색 시점에 볼 자격을 초과한 데이터에 닿을 수 있다면 신원 확인은 유출을 막지 못한다. 신원은 문패를 정확히 다는 일이고, 권한 상속은 그 문을 실제로 잠그는 일이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기술적 세부에서도 이 책임 분담이 드러난다. 벡터 DB인 Qdrant는 신원 정보를 페이로드 필터로 자동 매핑해 주지 않으며, 이를 애플리케이션 계층의 책임으로 분명히 한다. 즉 검색 시점에 권한을 거는 일은 벡터 DB가 알아서 해 주는 기능이 아니라, 파이프라인을 짜는 쪽이 명시적으로 설계해야 하는 일이다.
+                    </p>
+                </section>
+
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">획일적 거버넌스는 왜 실패하는가</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        검색 시점에 권한을 강제해야 한다는 결론에 이르면, 다음 반사적 대응은 "그럼 모든 에이전트에 가장 강력한 통제를 똑같이 걸자"가 되기 쉽다. 가트너는 정확히 이 지점에서 경고한다. 2026년 5월 발표에서 가트너는 AI 에이전트 전반에 균일한 거버넌스를 적용하는 것이 오히려 엔터프라이즈 AI 에이전트 실패의 근본 원인이 될 것이라고 짚었다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이유는 대칭적이다. 단순한 조회용 에이전트에 고자율 에이전트 수준의 무거운 통제를 걸면, 지연이 생기고 담당자들이 통제를 우회하는 섀도 경로를 만든다. 반대로 실제로 행동하는 고자율 에이전트를 단순 에이전트 수준으로만 통제하면, 그것이 곧 과권한이 된다. 하나의 기준을 모두에게 똑같이 적용하는 순간, 한쪽은 과잉 통제로 우회를 부르고 다른 쪽은 과소 통제로 유출을 부른다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        해법은 권한 상속을 에이전트의 자율성 등급에 매핑하는 것이다. 관측만 하는 에이전트, 조언만 하는 에이전트, 승인을 받아 행동하는 에이전트, 스스로 행동하는 에이전트는 저마다 다른 권한 강제가 필요하다. 아래 표는 자율성 등급과 검색 시점 권한 강제를 짝지은 것이다.
+                    </p>
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">자율성 등급</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">에이전트가 하는 일</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">검색 시점 권한 강제</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">관측 (Observe)</td>
+                                    <td class="border themeable-border px-4 py-3">읽고 요약만</td>
+                                    <td class="border themeable-border px-4 py-3">읽기 전용 권한 상속, 사전 필터</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">조언 (Advise)</td>
+                                    <td class="border themeable-border px-4 py-3">제안·초안 생성</td>
+                                    <td class="border themeable-border px-4 py-3">사용자 권한 전달, 검색 범위 사용자 단위 제한</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">승인 후 행동</td>
+                                    <td class="border themeable-border px-4 py-3">사람 승인을 받아 실행</td>
+                                    <td class="border themeable-border px-4 py-3">행동별 재검증, 도구 호출마다 권한 재상속</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors themeable-bg-secondary">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">자율 행동</td>
+                                    <td class="border themeable-border px-4 py-3">스스로 판단·실행</td>
+                                    <td class="border themeable-border px-4 py-3">실시간 OBO 토큰 상속 + 서킷 브레이커</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        아틀란이 정리한 에이전트 가드레일 체크리스트도 이 관점에서 다시 읽으면 하나의 축으로 꿰어진다. 여러 통제 항목이 결국 "이 에이전트가 지금 이 데이터를 볼 자격이 있는가를 검색 시점에 확인하는가"라는 한 질문으로 모인다. 자율성이 높을수록 그 확인은 배치 리뷰가 아니라 매 행동마다 실시간으로 이뤄져야 한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        마지막으로 한 가지 인과의 과장을 경계할 필요가 있다. 에이전트 파일럿의 상당수가 프로덕션에 이르지 못한다는 통계가 자주 인용되지만, 그 실패를 전부 권한 문제로 돌리는 것은 지나치다. 다만 포레스터의 분석은 파일럿 실패 원인의 33%가 툴이나 데이터 접근 부족에서 온다고 분해한다. 실패의 전부는 아니어도, 성능이 아니라 접근 거버넌스가 실패의 주요 축 가운데 하나라는 것은 외부 기관의 관측으로도 뒷받침된다.
+                    </p>
+                </section>
+
+                <section id="why-pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 주목하는 이유</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 주제는 페블러스가 다뤄 온 AI-Ready Data와 데이터 거버넌스 노선의 정면에 놓인다. 데이터 품질이라고 하면 흔히 정확성과 완결성을 떠올리지만, 여기에는 한 축이 더 있다. 접근 정합성(access integrity)이다. 학습·검색 데이터가 원본의 권한 경계를 잃은 채 인덱싱되면, 그 데이터는 품질이 낮은 것이 아니라 <strong>위험한</strong> 것이 된다. 정확하고 완결적이어도, 볼 자격 없는 사람에게 닿을 수 있다면 그 데이터는 준비되지 않은 것이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 데이터를 AI에 먹이기 전에 정제·검증할 때, 정확성과 완결성만이 아니라 권한 메타데이터를 함께 상속하고 보존하는 것이 AI-Ready의 새로운 조건이 된다. 벡터 인덱스로 데이터를 옮기는 순간 원본 거버넌스가 소실되는 문제는, 곧 "AI에 먹이기 전에 데이터가 권한까지 준비되어 있어야 한다"는 명제로 이어진다. 페블러스가 다루는 행·열 수준의 접근 통제는 이 보고서가 말하는 검색 시점 권한 강제의 데이터 준비 계층에서의 구현이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        RAG와 에이전트를 프로덕션에 올리려는 조직이 "파일럿은 되는데 프로덕션이 막히는" 지점도 대개 여기다. 아래는 자기 파이프라인이 권한을 상속하는지 복사하는지를 스스로 진단해 볼 수 있는 다섯 가지 질문이다.
+                    </p>
+                    <div class="key-insight">
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3">
+                                <span style="color:#F86825;font-weight:700;">1</span>
+                                <span class="themeable-text leading-relaxed">인덱스가 원본의 접근 제어 목록(ACL)을 <strong>상속</strong>하는가, 아니면 <strong>복사</strong>하는가?</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#F86825;font-weight:700;">2</span>
+                                <span class="themeable-text leading-relaxed">권한 필터가 검색 <strong>이전(pre)</strong>에 걸리는가, 검색 <strong>이후(post)</strong>에 걸리는가?</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#F86825;font-weight:700;">3</span>
+                                <span class="themeable-text leading-relaxed">권한 재검증이 <strong>쿼리 시점</strong>에 이뤄지는가, 정기 <strong>배치 리뷰</strong>로 이뤄지는가?</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#F86825;font-weight:700;">4</span>
+                                <span class="themeable-text leading-relaxed">에이전트가 사용자 신원을 <strong>그대로 전달(passthrough)</strong>하는가, 공유 <strong>서비스 계정</strong>으로 뭉뚱그리는가?</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#F86825;font-weight:700;">5</span>
+                                <span class="themeable-text leading-relaxed">로그가 "누가 접근했나"를 넘어 "실제로 <strong>어떤 권한이 사용됐나</strong>"까지 남기는가?</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-8">
+                        다섯 질문의 답이 뒤쪽(복사·post·배치·서비스 계정·미기록)으로 기울수록, 조직은 인덱스에 굳어 버린 낡은 권한 스냅샷을 믿고 있는 것이다. 던져야 할 질문은 처음과 같다. 우리 파이프라인은 무엇을 아는가가 아니라 무엇까지 볼 자격이 있는가를, 검색 시점에 강제하고 있는가.
+                    </p>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Jeong, &amp; Lee. (2025). "Permission-Aware RAG: IAM-Based Access Filtering in Multi-Resource Environments." <span style="font-weight:600;">IEEE Access</span>.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Naseh, A., et al. (2025). "Riddle Me This! Stealthy Membership Inference for Retrieval-Augmented Generation" (Interrogation Attack). <span style="font-weight:600;">ACM CCS 2025</span>. <a href="https://arxiv.org/abs/2502.00306" target="_blank" rel="noopener">arXiv:2502.00306</a>.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">RoyChowdhury, et al. (2024). "ConfusedPilot: Confused Deputy Risks in RAG-based LLMs." <a href="https://arxiv.org/abs/2408.04870" target="_blank" rel="noopener">arXiv:2408.04870</a>.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Zhou, Feng, &amp; Yang. (2025). "Privacy-Aware RAG: Secure and Isolated Knowledge Retrieval." <a href="https://arxiv.org/abs/2503.15548" target="_blank" rel="noopener">arXiv:2503.15548</a>.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">정책 · 통계 · 업계</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">5.</span><span class="ref-body">Gartner. (2026, May 26). "<a href="https://www.gartner.com/en/newsroom/press-releases/2026-05-26-gartner-says-applying-uniform-governance-across-ai-agents-will-lead-to-enterprise-ai-agent-failure" target="_blank" rel="noopener">Applying Uniform Governance Across AI Agents Will Lead to Enterprise AI Agent Failure</a>." Gartner Newsroom.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Atlan. (2026). "<a href="https://atlan.com/know/ai-agent/enterprise-ai-agent-guardrails-checklist/" target="_blank" rel="noopener">Enterprise AI Agent Guardrails Checklist</a>."</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">VentureBeat. (2026). "<a href="https://venturebeat.com/data/57-of-enterprises-have-watched-ai-agents-be-confidently-wrong-the-fix-is-an-agentic-context-layer-but-who-has-one" target="_blank" rel="noopener">57% of Enterprises Have Watched AI Agents Be Confidently Wrong — The Fix Is an Agentic Context Layer</a>."</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">IBM. (2025). "Cost of a Data Breach Report" (조사 기간 2024.3–2025.2, 600개 조직).</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Oso × Cyera. (2026). "Least Privilege Research Report" (약 240만 신원 · 36억 권한 분석).</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">Palo Alto Networks / CyberArk. (2026). "Identity Security Landscape" (머신:인간 신원 비율 109:1).</span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">CSA × Oasis Security. (2026). "State of Non-Human Identity and AI Security."</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">Cerbos. "Authorization for RAG and AI agents" (post-filter 위험 — "the security boundary was already crossed").</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">13.</span><span class="ref-body">페블러스. "<a href="/blog/agent-internal-channel-privacy-leak/ko/">AI 에이전트는 답변이 아니라 통로에서 샌다</a>." blog.pebblous.ai.</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">페블러스. "<a href="/blog/jedify-agent-context-layer/ko/">컨텍스트 레이어가 차세대 AI 인프라 투자처가 된 이유</a>." blog.pebblous.ai.</span></li>
+                        <li><span class="ref-num">15.</span><span class="ref-body">페블러스. "<a href="/blog/autonomous-enterprise-agent-identity/ko/">에이전트 200개가 회사를 돌리는데 사번은 없다</a>." blog.pebblous.ai.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/citation-download.js?v=20260716" defer></script>
+    <script src="/scripts/common-utils.js?v=20260716"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-15T17:07:16.561Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-15T17:13:01.236Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-15T17:47:41.433Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1784135236561-vzsm0u",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-15T18:24:20.128Z"
+            },
+            mainTitle: "에이전트는 출처의 권한을 물려받지 못한다",
+            subtitle: "메타 내부 에이전트가 두 시간 동안 데이터를 노출한 사례가 드러낸 권한 상속 실패와 entitlement drift",
+            pageTitle: "AI 에이전트 권한 상속 실패와 검색 시점 데이터 유출 | 페블러스",
+            category: "business",
+            publishDate: "2026-07-16",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/agent-entitlement-inheritance-retrieval/ko/",
+            tags: ["AI 에이전트", "데이터 거버넌스", "권한 상속", "entitlement drift", "RAG 보안", "검색 시점 권한", "RBAC ABAC", "AI-Ready Data", "엔터프라이즈 AI"],
+            faqs: [
+                { question: "에이전트가 모든 신원 확인을 통과했는데 왜 유출이 났나?", answer: "인증(누구인가)은 통과했지만 인가(무엇까지 볼 자격이 있나)가 검색 시점에 강제되지 않았기 때문이다. 유효한 자격증명을 가진 대리인이 잘못된 요청을 실행하는 '혼란한 대리인(confused deputy)' 문제로, 아무것도 뚫리지 않아도 발생한다." },
+                { question: "'confidently wrong'과 '권한 유출'은 같은 문제 아닌가?", answer: "다르다. 전자는 접근 가능한 데이터 중 낡거나 틀린 것을 참조하는 정확성 문제이고, 후자는 애초에 접근 자격이 없는 데이터에 도달하는 인가 문제다. 컨텍스트 레이어라는 같은 인프라에서 다뤄지지만 원인과 해법이 다르다." },
+                { question: "벡터 DB에 메타데이터로 권한을 붙이면 되지 않나?", answer: "붙일 수는 있으나 그것은 원본 권한의 복사본이라 별도 동기화 파이프라인이 필요하고, 시간이 지나면 원본과 어긋난다(entitlement drift). 원본 IAM이나 행 수준 보안을 검색 시점에 다시 질의해 상속받아야 드리프트가 원천 차단된다." },
+                { question: "검색한 다음 비인가 결과만 걸러내면(post-filter) 안전하지 않나?", answer: "늦다. 그 시점엔 비인가 청크가 이미 유사도 랭킹에 개입했고, 조회·캐시된 뒤다. 어떤 문서가 상위에 올랐는지 자체가 정보 유출 신호가 되며, 멤버십 추론 공격은 정상 검색만으로 데이터의 존재를 알아낸다. 권한이 검색 범위를 먼저 좁혀야 한다(pre-filter)." },
+                { question: "사람도 과권한인데 왜 에이전트만 위험한가?", answer: "부여된 권한의 96%가 90일간 미사용일 만큼 사람은 잠재 권한을 대부분 행사하지 않는다. 그러나 에이전트는 사람의 권한 세트를 복사받아 기계 속도로 전부 활성화한다. 잠재 위험이 즉시 위험으로 바뀐다." },
+                { question: "모든 에이전트에 강력한 통제를 똑같이 걸면 안전하지 않나?", answer: "가트너는 균일한 거버넌스가 실패의 근본 원인이라고 본다. 단순 에이전트를 과잉 통제하면 지연과 우회를 부르고, 고자율 에이전트를 과소 통제하면 과권한이 된다. 자율성 등급에 맞춰 권한을 차등 상속·제한해야 한다." },
+                { question: "우리 파이프라인이 권한을 상속하는지 어떻게 확인하나?", answer: "다섯 가지를 점검하라. ①인덱스가 원본 ACL을 상속하는가 복사하는가 ②필터가 검색 이전(pre)인가 이후(post)인가 ③권한 재검증이 쿼리 시점인가 배치 리뷰인가 ④에이전트가 사용자 신원을 전달(passthrough)하는가 공유 서비스 계정인가 ⑤로그가 '사용된 권한'까지 남기는가." },
+                { question: "이미 나온 벤더 솔루션(Databricks, Snowflake, Glean)을 쓰면 해결되나?", answer: "방향은 맞다. 다만 미러링은 '거울'이라 소스가 과도하게 허용적이면 그대로 반영해 샌다(Glean 자신도 인정한다). 상속은 만능이 아니라 소스 거버넌스 자체가 정확해야 한다는 전제가 붙는다." },
+                { question: "신원 관리(Okta, CyberArk)를 강화하면 이 문제가 풀리나?", answer: "인접하지만 다른 계층이다. 신원 계층은 '누가'를 정확히 하고, 데이터 계층은 '그 누가가 검색 시점에 무엇까지 볼 자격이 있나'를 강제한다. 둘 다 필요하며, 신원만 강화하고 데이터 계층의 권한 상속을 빼면 메타 사건 같은 인증 이후 유출이 남는다." }
+            ]
+        });
+    </script>
+</body>
+</html>
