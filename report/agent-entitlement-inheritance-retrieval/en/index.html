@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>AI Agent Entitlement Inheritance Failure | Pebblous</title>
+    <meta name="description" content="A Meta AI agent exposed unauthorized data for two hours, unbreached. The real issue is entitlement inheritance, not model performance.">
+    <meta name="keywords" content="AI agents, data governance, entitlement inheritance, entitlement drift, RAG security, retrieval-time authorization, RBAC ABAC, vector database security, permission-aware RAG, AI-Ready Data, enterprise AI">
+    <link rel="canonical" href="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/en/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="AI Agents Don't Inherit Their Source's Permissions">
+    <meta property="og:description" content="Meta's internal AI agent exposed data for two hours without a breach, because vector indexes never inherited the source warehouse's permissions.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/en/image/index.png">
+    <meta property="og:locale" content="en_US">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI Agents Don't Inherit Their Source's Permissions">
+    <meta name="twitter:description" content="Meta's internal AI agent exposed data for two hours without a breach, because vector indexes never inherited the source warehouse's permissions.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/agent-entitlement-inheritance-retrieval/en/image/index.png">
+    <meta name="twitter:image:alt" content="Diagram showing the inheritance failure where source-warehouse permissions fall away when data is copied into a vector index">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <meta name="citation_title" content="AI Agents Don't Inherit Their Source's Permissions">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/07/16">
+    <meta name="citation_online_date" content="2026/07/16">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260716">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260716">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260716">
+
+    <!-- GTM -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">Two Hours of Exposure</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">Why Permissions Stop at the Door</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">Drift Is What Time Makes</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">The Leak Begins at Retrieval</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">Enforcing Permissions at Retrieval Time</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">Why Uniform Governance Fails</a></li>
+                    <li><a href="#why-pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">Why This Matters to Pebblous</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            In March 2026, a Meta internal AI agent exposed data it had no right to see across the company for roughly two hours. The striking part is that nothing was breached. There was no attacker, no stolen credential, no perimeter that fell. The agent held valid credentials and cleared every identity check. The failure did not come from authentication; it came from the gap in authorization that opens right after it. This report reads that gap not as a model-performance problem but as a problem of permission inheritance.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The technical reality is plain. A source data warehouse enforces who sees what down to the row and the column, but the instant that data is split into chunks and embedded into a vector index, those access controls do not travel with it. Many organizations, instead of inheriting permissions from the source, hand-configure a separate set at the retrieval layer, and that copied permission set drifts away from the source as people change roles, projects wind down, and temporary grants are never revoked. For a human, this over-permissioning is a latent risk; for an agent retrieving at machine speed, it becomes leakage the moment it exists.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The remedy is to enforce permissions at retrieval time. Filtering after the fact is too late — by then the unauthorized data has already touched the ranking and the cache. Permissions have to narrow the retrieval scope first, and those permissions must be inherited from the source rather than built anew. What follows walks through that mechanism and that remedy one step at a time.
+                        </p>
+                    </div>
+
+                    <!-- STAT-CARD: draft candidates (re-derive from body at 5-D.5) — 4 non-overlapping axes (gap/scale/change/gap) -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">97%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">AI breaches without access controls</p>
+                            <p class="text-xs themeable-muted mt-1">IBM, among orgs breached via AI models/apps</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">96%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Entitlements unused over 90 days</p>
+                            <p class="text-xs themeable-muted mt-1">Oso × Cyera, 3.6B entitlements analyzed</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">109:1</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Machine-to-human identity ratio</p>
+                            <p class="text-xs themeable-muted mt-1">Up sharply from 82:1 a year earlier</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">78%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">No agent-identity policy</p>
+                            <p class="text-xs themeable-muted mt-1">CSA × Oasis, no creation/deletion rules</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Two Hours of Exposure</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A Meta internal AI agent exposed data it had no right to see across the company for roughly two hours. The single most important fact about the incident is that nothing was breached. No outside attacker got in, no credential was stolen, no firewall or access perimeter came down. The agent carried valid credentials and passed every identity check exactly as designed.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        And yet the data leaked. The failure happened one step past authentication. Who the agent was had been verified precisely, but what that agent was entitled to see — authorization — was never enforced at the moment it reached for the data. A deputy holding valid credentials executing the wrong request on its own authority is the textbook <strong>confused deputy</strong> problem in security. That is why a system can leak even when nothing is breached.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This is where the report parts ways with the dominant conversation. The story around enterprise AI agents tends to converge on a performance problem: the model is "confidently wrong." But what the Meta incident revealed was not performance. An agent reached data it was not entitled to access, and that is not a question of what the model knows — it is a question of what it is entitled to see. It is not a performance story; it is a <strong>data governance</strong> story.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Because accounts of the incident's severity rating differ slightly from source to source, this report goes no further than "it was classified internally at the highest alert level." What is certain is the nature of the exposure: with no intrusion, an agent that passed normal authentication exposed data through a gap in authorization.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">The Angles Already Covered, and the One Still Open</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Over the past few weeks Pebblous has covered agent data leakage from several angles: where the leaks escape (tool calls, logs, agent-to-agent messages), why the context layer that underpins all of it became an investment thesis, and who the agent is (identity and lineage). This report narrows in on the two axes those three pieces did not touch — what an agent is entitled to see (permission), and when that entitlement breaks down (retrieval time).
+                    </p>
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Earlier piece</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Axis covered</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">How this piece differs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3"><a href="/blog/agent-internal-channel-privacy-leak/en/" class="text-orange-500 hover:text-orange-400 transition-colors">Leaks Through the Pipes, Not the Answers</a></td>
+                                    <td class="border themeable-border px-4 py-3"><strong>Where</strong> the leak escapes</td>
+                                    <td class="border themeable-border px-4 py-3">This piece asks <strong>when</strong> it begins — before the pipes, at retrieval time</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3"><a href="/blog/jedify-agent-context-layer/en/" class="text-orange-500 hover:text-orange-400 transition-colors">Why the Context Layer Became a Bet</a></td>
+                                    <td class="border themeable-border px-4 py-3">The context layer <strong>investment thesis</strong></td>
+                                    <td class="border themeable-border px-4 py-3">This piece narrows to the <strong>condition</strong> that makes that layer succeed or fail: permission inheritance</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3"><a href="/blog/autonomous-enterprise-agent-identity/en/" class="text-orange-500 hover:text-orange-400 transition-colors">200 Agents, No Employee ID</a></td>
+                                    <td class="border themeable-border px-4 py-3"><strong>Who</strong> the agent is (identity)</td>
+                                    <td class="border themeable-border px-4 py-3">This piece asks <strong>what it is entitled to see</strong> (permission)</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors themeable-bg-secondary">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">This piece</td>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">Permission × timing</td>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">Is what-it's-entitled-to-see enforced at retrieval time?</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In one sentence: identity (who) and the pipes (where) are already covered. This report is about permission (what) and timing (when).
+                    </p>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Permissions Stop at the Door</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A source data warehouse enforces who sees what with real precision. Role-based access control (RBAC) divides access by job function; attribute-based access control (ABAC) divides it by attributes like department, region, or clearance level. Row-level security (RLS) makes the same table return different rows to different people, and column masking hides the values in specific fields. Up to here we are dealing with controls that have been refined over decades and work well.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The trouble starts the moment that data is moved to feed an AI agent. A retrieval-augmented generation (RAG) pipeline splits documents into small chunks and turns each chunk into a numeric vector called an embedding, stored in a vector index. But that vector index has no place to hold the row and column permission predicates the source carried. A vector is a data structure designed to express semantic proximity, not the rule "only HR may see this value." Worse, chunking dissolves the very row and column boundaries that RLS and column masking depended on. The instant one document is split into several pieces, you can no longer trace which piece belongs to which permission as precisely as the source could.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Many organizations fill this gap with metadata — tagging each chunk with an access control list (ACL) that says "this document, this team only." You can do that. But it is a <strong>copy</strong> of the source permission, not an inheritance. A copy has to be reconciled with the source through a separate sync pipeline, and the moment that sync runs even slightly behind, the index's permissions begin to diverge from the source. This is the technical reality behind the entitlement drift we will get to shortly.
+                    </p>
+
+                    <!-- Fig B: permission inheritance vs copy -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <defs>
+                                <marker id="arr-b-safe" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#F86825"/>
+                                </marker>
+                                <marker id="arr-b-drift" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#CF1D21"/>
+                                </marker>
+                            </defs>
+                            <text x="340" y="24" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">Same data, two paths — a copy goes stale, inheritance re-asks</text>
+
+                            <!-- source warehouse -->
+                            <rect x="255" y="42" width="170" height="58" rx="8" fill="#334155" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <text x="340" y="66" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="#ffffff">Source warehouse</text>
+                            <text x="340" y="86" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="#cbd5e1">RBAC · ABAC · RLS · column masking</text>
+
+                            <!-- copy path (risk, left) -->
+                            <line x1="290" y1="100" x2="170" y2="150" stroke="#CF1D21" stroke-width="2" marker-end="url(#arr-b-drift)"/>
+                            <text x="150" y="140" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="700" fill="#CF1D21">Copy</text>
+                            <rect x="40" y="158" width="230" height="96" rx="8" fill="none" stroke="#CF1D21" stroke-width="1.4" stroke-dasharray="5 4"/>
+                            <text x="155" y="180" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="var(--text-secondary)">Vector index + copied ACL</text>
+                            <text x="155" y="202" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-muted)">Permission badge falls off</text>
+                            <text x="155" y="220" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-muted)">Separate sync → over time</text>
+                            <text x="155" y="240" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="700" fill="#CF1D21">diverges from source (drift)</text>
+
+                            <!-- inherit path (safe, right) -->
+                            <line x1="390" y1="100" x2="510" y2="150" stroke="#F86825" stroke-width="2" marker-end="url(#arr-b-safe)"/>
+                            <text x="530" y="140" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="700" fill="#F86825">Inherit</text>
+                            <rect x="410" y="158" width="230" height="96" rx="8" fill="none" stroke="#F86825" stroke-width="1.4"/>
+                            <text x="525" y="180" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="var(--text-secondary)">Query source IAM at retrieval</text>
+                            <text x="525" y="202" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-muted)">Re-asks permission each time</text>
+                            <text x="525" y="220" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-muted)">No copy to maintain</text>
+                            <text x="525" y="240" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="700" fill="#F86825">drift blocked at the root</text>
+                            <!-- re-ask arrow -->
+                            <path d="M525 254 C525 278, 360 278, 340 104" fill="none" stroke="#F86825" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arr-b-safe)"/>
+                        </svg>
+                        <figcaption class="text-sm themeable-muted mt-3 text-center">Copy permissions into the index and they start to diverge from the source (left); re-ask the source at retrieval time and no divergence ever forms (right).</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The data governance platform Atlan nails the contrast down: <span style="font-weight:600;">"an agent retrieving data through an MCP server or RAG pipeline should inherit the same access entitlements that govern that data in the source warehouse, not a separate, manually configured permission set that drifts over time."</span> In other words, an agent retrieving data through an MCP server or a RAG pipeline should <strong>inherit outright</strong> the access entitlements that governed that data in the source warehouse — not run on a separate, hand-configured permission set that drifts as time passes.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Cases that formalize this problem head-on in the academic literature are still rare. The permission-aware RAG work by Jeong, Lee, and others notes that conventional RAG implicitly assumes every retrieved piece of content is equally accessible, and that forcibly merging different permission models actually invites drift and unintended exposure. Their alternative is to query the source IAM in real time at retrieval and inherit from it. But such head-on papers can be counted on one hand; for the rest, industry implementation is running ahead of academic formalization.
+                    </p>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Drift Is What Time Makes</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        At the instant you copy a permission, source and copy match. The problem is everything after. Organizations do not stand still. People move between teams, projects end, contractors leave, and access opened up temporarily is left ungrantable. The source warehouse reflects all of this; the permission copy configured separately at the retrieval layer stays frozen in an old state unless someone tends to it. This growing gap between source and copy over time is <strong>entitlement drift</strong>, and the state of holding more access than needed is <strong>over-permissioning</strong>.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Put it in a concrete scene. Picture an employee who transfers from finance to marketing. The source warehouse soon revokes their old access to finance data, in step with the transfer recorded in the HR system. But the permission tag copied into the retrieval layer does not automatically follow that transfer; it stays in its old state until someone reworks the sync pipeline. And the agent acting on that employee's behalf keeps pulling finance documents into its retrieval set on the basis of exactly that stale permission. The permission is out of step in only one place, yet what leaks through the gap is the whole door the source has already closed.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The scale shows this is not an occasional accident but a standing condition. When Oso and Cyera analyzed roughly 2.4 million identities and 3.6 billion entitlements, 96% of granted permissions had gone unused for 90 days. Which means that in most organizations, people actually open only a tiny fraction of the doors that stand open to them. IBM's Cost of a Data Breach Report (survey window March 2024 to February 2025) lights up the same gap from another angle: 97% of organizations that suffered a breach involving an AI model or app lacked proper AI access controls.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here a crucial asymmetry appears. For people, over-permissioning is mostly a <strong>latent</strong> risk. As the 96% of unused entitlements shows, people leave most of their open access unexercised. Agents are different. An agent copies a person's permission set and then activates all of it at machine speed. Doors a person would never have opened in a lifetime, an agent opens in an instant while working through its task. The latent risk turns <strong>immediate</strong>.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Security vendors' observations back up this asymmetry. Several reports find that a large share of AI agents hold more access than they need, and that agents move far more data than a person doing equivalent work. That said, these figures are tallied by vendors within their own observation scope, and in some cases the sample and methodology are not disclosed — so they are best read as directional signals rather than settled statistics.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-8">
+                        The common response is periodic access review — checking entitlements each quarter and revoking what goes unused. But this approach has a fundamental limit. A review is a batch; it happens all at once at a fixed point in time. In the gap between one review and the next, drift keeps piling up, and during that gap the agent keeps retrieving on the strength of a stale permission snapshot. A review cycle that turns on human working hours and an agent that sweeps data by the second were never on the same time axis to begin with.
+                    </p>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Leak Begins at Retrieval</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Many pipelines retrieve first and check permissions later. They pull the top-k chunks closest to the question out of the vector index first, then filter out whatever the user is not entitled to see. This is called post-filtering. It looks harmless on its face — after all, only authorized material ends up in the final answer.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        But that ordering is precisely where the leak starts. Filtering an unauthorized chunk out afterward means it already took part in the retrieval process beforehand. A similarity score was assigned to it, it climbed the ranking, it was read out of the index into memory, and it was left in the cache. Cerbos, which builds policy engines, sums up this state plainly: "the security boundary was already crossed." By the time you filter, the boundary has already been crossed. A post-filter does not prevent the leak; it merely erases it from the answer after the fact.
+                    </p>
+
+                    <!-- Fig A: Pre-filter vs Post-filter -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <defs>
+                                <marker id="arr-a-safe" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#F86825"/>
+                                </marker>
+                                <marker id="arr-a-risk" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#CF1D21"/>
+                                </marker>
+                                <marker id="arr-a-neu" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#808080"/>
+                                </marker>
+                            </defs>
+                            <!-- top: safe (pre-filter) -->
+                            <text x="24" y="42" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="#F86825">Safe — permissions narrow the scope first (pre-filter)</text>
+                            <rect x="24" y="54" width="98" height="46" rx="6" fill="#334155" stroke="var(--text-muted)" stroke-width="0.7"/>
+                            <text x="73" y="82" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="#ffffff">Identity + perm</text>
+                            <line x1="122" y1="77" x2="152" y2="77" stroke="#F86825" stroke-width="1.8" marker-end="url(#arr-a-safe)"/>
+                            <rect x="154" y="54" width="120" height="46" rx="6" fill="none" stroke="#F86825" stroke-width="1.3"/>
+                            <text x="214" y="76" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-secondary)">Scope narrowed</text>
+                            <text x="214" y="91" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-secondary)">to authorized</text>
+                            <line x1="274" y1="77" x2="304" y2="77" stroke="#F86825" stroke-width="1.8" marker-end="url(#arr-a-safe)"/>
+                            <rect x="306" y="54" width="104" height="46" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="358" y="82" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-secondary)">Retrieve · rank</text>
+                            <line x1="410" y1="77" x2="440" y2="77" stroke="#808080" stroke-width="1.8" marker-end="url(#arr-a-neu)"/>
+                            <rect x="442" y="54" width="104" height="46" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="494" y="82" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">LLM generate</text>
+                            <text x="560" y="82" font-family="Outfit,sans-serif" font-size="18" fill="#F86825">✓</text>
+
+                            <!-- divider -->
+                            <line x1="24" y1="150" x2="656" y2="150" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="3 3" opacity="0.5"/>
+
+                            <!-- bottom: risk (post-filter) -->
+                            <text x="24" y="188" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="#CF1D21">Risky — retrieve everything, then filter (post-filter)</text>
+                            <rect x="24" y="200" width="98" height="46" rx="6" fill="#334155" stroke="var(--text-muted)" stroke-width="0.7"/>
+                            <text x="73" y="228" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="#ffffff">Identity only</text>
+                            <line x1="122" y1="223" x2="152" y2="223" stroke="#808080" stroke-width="1.8" marker-end="url(#arr-a-neu)"/>
+                            <rect x="154" y="200" width="120" height="46" rx="6" fill="none" stroke="#CF1D21" stroke-width="1.3"/>
+                            <text x="214" y="222" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-secondary)">Full retrieve · rank</text>
+                            <text x="214" y="237" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#CF1D21">unauth chunks join in</text>
+                            <line x1="274" y1="223" x2="304" y2="223" stroke="#CF1D21" stroke-width="1.8" marker-end="url(#arr-a-risk)"/>
+                            <rect x="306" y="200" width="104" height="46" rx="6" fill="none" stroke="#CF1D21" stroke-width="1.3"/>
+                            <text x="358" y="221" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-secondary)">Read · cache</text>
+                            <text x="358" y="236" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#CF1D21">boundary crossed</text>
+                            <line x1="410" y1="223" x2="440" y2="223" stroke="#CF1D21" stroke-width="1.8" marker-end="url(#arr-a-risk)"/>
+                            <rect x="442" y="200" width="104" height="46" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="494" y="222" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-secondary)">Post-filter</text>
+                            <text x="494" y="237" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">cleans answer only</text>
+                            <text x="560" y="228" font-family="Outfit,sans-serif" font-size="15" fill="#CF1D21">leak</text>
+                        </svg>
+                        <figcaption class="text-sm themeable-muted mt-3 text-center">When permissions narrow retrieval first, unauthorized data is never touched (top). Retrieve first and, by the time you filter, the read and cache are already done (bottom).</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That the leak begins before generation is not one observation but three lines of evidence converging. The first is the ranking contamination of the post-filter we just saw. Which document ranked at the top is itself information. The mere fact that something surfaced near the top leaks the signal that such data exists.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The second is membership inference. The so-called "Interrogation Attack" work presented at ACM CCS 2025 demonstrated that, without any attack like prompt injection, <strong>normal retrieval alone</strong> can reveal whether a particular piece of data is in the index. Within about 30 ordinary queries, the presence or absence of the data came out. Even with no attack worthy of the name, retrieval itself becomes a leakage channel.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The third is the combination of cache leakage and the confused deputy. The "ConfusedPilot" work showed together both the path by which secrets leak from the retrieval cache and the path by which a poisoned document makes an agent take the wrong action on its own authority. If a hidden instruction sits inside a retrieved document, a high-privilege agent executes it with its own privileges. A request thrown by a low-privilege user is turned, by way of a high-privilege agent, into an action that user could never have taken.
+                    </p>
+
+                    <!-- Fig C: Confused Deputy chain -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 170" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <defs>
+                                <marker id="arr-c-neu" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#808080"/>
+                                </marker>
+                                <marker id="arr-c-risk" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+                                    <path d="M0,1 L7,3.5 L0,6 z" fill="#CF1D21"/>
+                                </marker>
+                            </defs>
+                            <text x="340" y="26" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">Confused deputy — a low-privilege request runs with high privilege</text>
+                            <rect x="20" y="58" width="112" height="52" rx="7" fill="#334155" stroke="var(--text-muted)" stroke-width="0.7"/>
+                            <text x="76" y="80" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="#ffffff">Low-priv user</text>
+                            <text x="76" y="96" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#cbd5e1">delegated request</text>
+                            <line x1="132" y1="84" x2="160" y2="84" stroke="#808080" stroke-width="1.8" marker-end="url(#arr-c-neu)"/>
+                            <rect x="162" y="58" width="118" height="52" rx="7" fill="none" stroke="#F86825" stroke-width="1.4"/>
+                            <text x="221" y="80" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-secondary)">Agent</text>
+                            <text x="221" y="96" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#F86825">holds high privilege</text>
+                            <line x1="280" y1="84" x2="308" y2="84" stroke="#808080" stroke-width="1.8" marker-end="url(#arr-c-neu)"/>
+                            <rect x="310" y="58" width="118" height="52" rx="7" fill="none" stroke="#CF1D21" stroke-width="1.4"/>
+                            <text x="369" y="80" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-secondary)">Poisoned doc</text>
+                            <text x="369" y="96" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#CF1D21">hidden instruction</text>
+                            <line x1="428" y1="84" x2="456" y2="84" stroke="#CF1D21" stroke-width="1.8" marker-end="url(#arr-c-risk)"/>
+                            <rect x="458" y="58" width="118" height="52" rx="7" fill="none" stroke="#CF1D21" stroke-width="1.4"/>
+                            <text x="517" y="80" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-secondary)">Tool call</text>
+                            <text x="517" y="96" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#CF1D21">on its own authority</text>
+                            <line x1="576" y1="84" x2="604" y2="84" stroke="#CF1D21" stroke-width="1.8" marker-end="url(#arr-c-risk)"/>
+                            <text x="636" y="82" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" font-weight="700" fill="#CF1D21">Exfil-</text>
+                            <text x="636" y="96" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" font-weight="700" fill="#CF1D21">tration</text>
+                            <text x="340" y="146" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10.5" fill="var(--text-muted)">An action the user could never take becomes possible by borrowing the agent's privilege</text>
+                        </svg>
+                        <figcaption class="text-sm themeable-muted mt-3 text-center">If a hidden instruction sits in a retrieved document, a high-privilege agent executes a low-privilege user's request on its own authority.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        All three point to one place. Long before the LLM composes an answer — at the stage of retrieving, ranking, and caching — the boundary is already down. If an earlier piece said "agents leak through the pipes, not the answers," this report steps one further back upstream. Before it even reaches the pipes, at retrieval time, it has already begun to leak.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Enforcing Permissions at Retrieval Time</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The principle of the remedy comes down to two sentences. Permissions must narrow the retrieval scope first (pre-filter), and those permissions must be inherited from the source rather than built anew. The two connect into one: re-ask the source at retrieval time and inherit, and as a result the retrieval scope is narrowed up front to only what is authorized. Industry practice is already converging on this direction.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">The Data Layer — Re-Ask the Source's Permissions at Retrieval</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The cleanest form is to let the database itself enforce permissions. PostgreSQL storing vectors via pgvector can apply row-level security as is, so the retrieval query returns only the rows a given user is allowed to see. The source relational permissions are inherited into retrieval transparently. But there is a trap here: unless you turn on FORCE RLS, the table owner bypasses the policy — so before you trust the inheritance, check this setting first.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Vendor platforms say they are productizing the same principle. Databricks explains that it inherits on-behalf-of tokens in real time so an agent touches data only with the user's own permissions. Snowflake applies the same control through row access policies and masking policies, and Glean positions itself as mirroring the source's permissions into the retrieval index. Policy-as-code tools like OPA and Cerbos propose pushing a pre-filter into the vector store at the query planning stage.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Mirroring, however, has a clear limit. A mirror only reflects; it does not fix. If the source's permissions are themselves too permissive, mirroring replicates that permissiveness straight into the retrieval layer. Glean itself concedes the point. Inheritance is not a silver bullet — it works only on the premise that the <strong>source governance is itself correct</strong>. For the record, the inheritance and mirroring performance of these platforms is mostly the vendors' own account, with no third-party benchmark, so here we read it not as settled fact but at the level of what they claim.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4 mt-8">The Identity Layer — Adjacent but a Different Tier</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here we should clear up a common confusion. What identity vendors like Okta, CyberArk, and Aembit handle is not the data layer but the identity layer. They issue credentials only at the moment they are needed (just-in-time) and manage the creation and retirement of non-human identities. That is, they get "who" right. The data layer this report stresses, by contrast, enforces "what that who is entitled to see at retrieval time."
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Both are needed, but neither substitutes for the other. Strengthen identity alone and leave out data-layer permission inheritance, and post-authentication leaks like the Meta incident remain exactly as they were. However perfectly you verify who the agent is, if that agent can reach data beyond what it is entitled to see at retrieval time, identity verification does not stop the leak. Identity is putting the right nameplate on the door; permission inheritance is actually locking that door.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The division of responsibility shows up in the technical detail too. The vector database Qdrant does not automatically map identity information into payload filters, and makes clear that this is the application layer's responsibility. In other words, applying permissions at retrieval time is not something the vector DB handles for you — it is something the party building the pipeline has to design explicitly.
+                    </p>
+                </section>
+
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Uniform Governance Fails</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Once you reach the conclusion that permissions must be enforced at retrieval time, the reflexive next move is easy: "then let's apply the strongest controls uniformly to every agent." Gartner warns at exactly this point. In a May 2026 release, Gartner argued that applying uniform governance across AI agents will itself become a root cause of enterprise AI agent failure.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The reason is symmetric. Put high-autonomy-grade heavy controls on a simple read-only agent and you get latency, and the people responsible build shadow paths that route around the controls. Conversely, control a genuinely high-autonomy agent that actually takes action only at the level of a simple agent, and that is over-permissioning. The instant one standard is applied to everyone alike, one side over-controls and invites workarounds while the other under-controls and invites leakage.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The solution is to map permission inheritance to the agent's autonomy tier. An agent that only observes, one that only advises, one that acts with approval, and one that acts on its own each need a different kind of permission enforcement. The table below pairs autonomy tier with retrieval-time permission enforcement.
+                    </p>
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Autonomy tier</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">What the agent does</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Retrieval-time permission enforcement</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">Observe</td>
+                                    <td class="border themeable-border px-4 py-3">Reads and summarizes only</td>
+                                    <td class="border themeable-border px-4 py-3">Inherit read-only permission, pre-filter</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">Advise</td>
+                                    <td class="border themeable-border px-4 py-3">Generates suggestions and drafts</td>
+                                    <td class="border themeable-border px-4 py-3">Pass through user permission, scope retrieval per user</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">Act with approval</td>
+                                    <td class="border themeable-border px-4 py-3">Executes with human approval</td>
+                                    <td class="border themeable-border px-4 py-3">Re-verify per action, re-inherit permission on each tool call</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors themeable-bg-secondary">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">Act autonomously</td>
+                                    <td class="border themeable-border px-4 py-3">Decides and executes on its own</td>
+                                    <td class="border themeable-border px-4 py-3">Real-time OBO token inheritance + circuit breaker</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Atlan's enterprise AI agent guardrails checklist, read through this lens, threads onto a single axis. Its many control items ultimately gather into one question: does this agent verify, at retrieval time, whether it is entitled to see this data right now? The higher the autonomy, the more that verification has to happen in real time on every action rather than in a batch review.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Finally, one causal overstatement is worth guarding against. The statistic that many agent pilots never reach production is cited often, but pinning all of that failure on permissions is too much. That said, Forrester's analysis breaks down 33% of pilot failures as coming from insufficient tool or data access. Not the whole of the failure, but the point that access governance — not performance — is one of the main axes of failure is supported even by outside institutions' observations.
+                    </p>
+                </section>
+
+                <section id="why-pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why This Matters to Pebblous</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This topic sits squarely on the AI-Ready Data and data governance line Pebblous has been working. Say "data quality" and people usually think of accuracy and completeness — but there is one more axis: access integrity. When training or retrieval data is indexed without the source's permission boundaries, that data is not low-quality — it is <strong>dangerous</strong>. However accurate and complete it is, if it can reach someone with no right to see it, that data is not ready.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So when you clean and validate data before feeding it to AI, inheriting and preserving permission metadata alongside accuracy and completeness becomes a new condition of being AI-Ready. The problem of source governance being lost the instant data moves into a vector index leads straight to the proposition that data must be permission-ready, not just content-ready, before it is fed to AI. The row- and column-level access control Pebblous works on is the implementation, at the data-preparation layer, of the retrieval-time permission enforcement this report describes.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The place where organizations trying to put RAG and agents into production get stuck — "the pilot works but production stalls" — is usually right here. Below are five questions you can use to diagnose for yourself whether your pipeline inherits permissions or copies them.
+                    </p>
+                    <div class="key-insight">
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3">
+                                <span style="color:#F86825;font-weight:700;">1</span>
+                                <span class="themeable-text leading-relaxed">Does the index <strong>inherit</strong> the source's access control list (ACL), or does it <strong>copy</strong> it?</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#F86825;font-weight:700;">2</span>
+                                <span class="themeable-text leading-relaxed">Does the permission filter run <strong>before (pre)</strong> retrieval, or <strong>after (post)</strong>?</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#F86825;font-weight:700;">3</span>
+                                <span class="themeable-text leading-relaxed">Is re-authorization done at <strong>query time</strong>, or in a periodic <strong>batch review</strong>?</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#F86825;font-weight:700;">4</span>
+                                <span class="themeable-text leading-relaxed">Does the agent <strong>pass through</strong> the user's identity, or collapse it into a shared <strong>service account</strong>?</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span style="color:#F86825;font-weight:700;">5</span>
+                                <span class="themeable-text leading-relaxed">Do logs go beyond "who accessed" to record "<strong>which entitlement was actually used</strong>"?</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-8">
+                        The more the answers lean toward the back half — copy, post, batch, service account, unlogged — the more the organization is trusting a stale permission snapshot frozen into the index. The question to ask is the same one we started with. Is our pipeline enforcing, at retrieval time, not what it knows but what it is entitled to see?
+                    </p>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Jeong, &amp; Lee. (2025). "Permission-Aware RAG: IAM-Based Access Filtering in Multi-Resource Environments." <span style="font-weight:600;">IEEE Access</span>.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Naseh, A., et al. (2025). "Riddle Me This! Stealthy Membership Inference for Retrieval-Augmented Generation" (Interrogation Attack). <span style="font-weight:600;">ACM CCS 2025</span>. <a href="https://arxiv.org/abs/2502.00306" target="_blank" rel="noopener">arXiv:2502.00306</a>.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">RoyChowdhury, et al. (2024). "ConfusedPilot: Confused Deputy Risks in RAG-based LLMs." <a href="https://arxiv.org/abs/2408.04870" target="_blank" rel="noopener">arXiv:2408.04870</a>.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Zhou, Feng, &amp; Yang. (2025). "Privacy-Aware RAG: Secure and Isolated Knowledge Retrieval." <a href="https://arxiv.org/abs/2503.15548" target="_blank" rel="noopener">arXiv:2503.15548</a>.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Policy · Statistics · Industry</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">5.</span><span class="ref-body">Gartner. (2026, May 26). "<a href="https://www.gartner.com/en/newsroom/press-releases/2026-05-26-gartner-says-applying-uniform-governance-across-ai-agents-will-lead-to-enterprise-ai-agent-failure" target="_blank" rel="noopener">Applying Uniform Governance Across AI Agents Will Lead to Enterprise AI Agent Failure</a>." Gartner Newsroom.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Atlan. (2026). "<a href="https://atlan.com/know/ai-agent/enterprise-ai-agent-guardrails-checklist/" target="_blank" rel="noopener">Enterprise AI Agent Guardrails Checklist</a>."</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">VentureBeat. (2026). "<a href="https://venturebeat.com/data/57-of-enterprises-have-watched-ai-agents-be-confidently-wrong-the-fix-is-an-agentic-context-layer-but-who-has-one" target="_blank" rel="noopener">57% of Enterprises Have Watched AI Agents Be Confidently Wrong — The Fix Is an Agentic Context Layer</a>."</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">IBM. (2025). "Cost of a Data Breach Report" (survey window Mar 2024–Feb 2025, 600 organizations).</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Oso × Cyera. (2026). "Least Privilege Research Report" (~2.4M identities · 3.6B entitlements analyzed).</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">Palo Alto Networks / CyberArk. (2026). "Identity Security Landscape" (machine-to-human identity ratio 109:1).</span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">CSA × Oasis Security. (2026). "State of Non-Human Identity and AI Security."</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">Cerbos. "Authorization for RAG and AI agents" (post-filter risk — "the security boundary was already crossed").</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Pebblous</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">13.</span><span class="ref-body">Pebblous. "<a href="/blog/agent-internal-channel-privacy-leak/en/">AI Agents Leak Through the Pipes, Not the Answers</a>." blog.pebblous.ai.</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">Pebblous. "<a href="/blog/jedify-agent-context-layer/en/">Why the Context Layer Became the Next AI Infrastructure Bet</a>." blog.pebblous.ai.</span></li>
+                        <li><span class="ref-num">15.</span><span class="ref-body">Pebblous. "<a href="/blog/autonomous-enterprise-agent-identity/en/">200 Agents Run the Company, and None of Them Have an Employee ID</a>." blog.pebblous.ai.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/citation-download.js?v=20260716" defer></script>
+    <script src="/scripts/common-utils.js?v=20260716"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-15T17:07:16.561Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-15T17:13:01.236Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-15T17:47:41.433Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1784135236561-vzsm0u",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-15T18:24:20.128Z"
+            },
+            mainTitle: "AI Agents Don't Inherit Their Source's Permissions",
+            subtitle: "Meta's internal AI agent exposed data for two hours without a breach, because vector indexes never inherited the source warehouse's permissions",
+            pageTitle: "AI Agent Entitlement Inheritance Failure | Pebblous",
+            category: "business",
+            publishDate: "2026-07-16",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/agent-entitlement-inheritance-retrieval/en/",
+            tags: ["AI agents", "data governance", "entitlement inheritance", "entitlement drift", "RAG security", "retrieval-time authorization", "RBAC ABAC", "AI-Ready Data", "enterprise AI"],
+            faqs: [
+                { question: "The agent passed every identity check, so why did data leak?", answer: "Authentication (who it is) passed, but authorization (what it is entitled to see) was never enforced at retrieval time. This is the classic 'confused deputy' problem — a deputy with valid credentials executes a request it shouldn't — and it happens even when nothing is breached." },
+                { question: "Aren't 'confidently wrong' and 'permission leakage' the same problem?", answer: "No. The first is an accuracy problem — referencing stale or wrong data that is within reach. The second is an authorization problem — reaching data that was never within reach to begin with. They surface on the same context-layer infrastructure, but their causes and cures differ." },
+                { question: "Can't I just attach permissions as metadata on the vector DB?", answer: "You can, but that is a copy of the source permissions, not an inheritance. A copy needs its own sync pipeline and drifts from the source over time (entitlement drift). To eliminate drift at the root, re-query the source IAM or row-level security at retrieval time and inherit the answer." },
+                { question: "Isn't it safe to retrieve first and filter out unauthorized results afterward (post-filter)?", answer: "Too late. By then the unauthorized chunks have already influenced the similarity ranking and been read and cached. Which documents ranked highest is itself a leak signal, and membership-inference attacks reveal whether data exists using nothing but normal queries. Permissions must narrow the retrieval scope first (pre-filter)." },
+                { question: "People are over-permissioned too — why is only the agent dangerous?", answer: "With 96% of granted entitlements unused over 90 days, people exercise almost none of their latent access. An agent, however, copies a person's permission set and activates all of it at machine speed. Latent risk becomes immediate risk." },
+                { question: "Isn't it safe to apply the strongest controls uniformly to every agent?", answer: "Gartner argues that uniform governance is a root cause of failure. Over-controlling a simple agent invites latency and workarounds; under-controlling a high-autonomy agent creates over-permissioning. Inheritance and restriction must be graduated to each agent's autonomy tier." },
+                { question: "How do I check whether our pipeline inherits permissions?", answer: "Test five things: (1) does the index inherit or copy the source ACL; (2) does the filter run before (pre) or after (post) retrieval; (3) is re-authorization done at query time or in a batch review; (4) does the agent pass through the user's identity or collapse into a shared service account; (5) do logs record which entitlement was actually used, not just who accessed." },
+                { question: "Do the existing vendor solutions (Databricks, Snowflake, Glean) solve this?", answer: "The direction is right. But mirroring is a 'mirror' — if the source is over-permissive, it reflects that permissiveness straight through (Glean itself admits this). Inheritance is not a silver bullet; it carries the precondition that the source governance is itself correct." },
+                { question: "Will strengthening identity management (Okta, CyberArk) fix this?", answer: "Adjacent, but a different layer. The identity layer gets 'who' right; the data layer enforces 'what that who is entitled to see at retrieval time.' You need both — strengthen identity alone and skip data-layer permission inheritance, and post-authentication leaks like the Meta incident remain." }
+            ]
+        });
+    </script>
+</body>
+</html>
