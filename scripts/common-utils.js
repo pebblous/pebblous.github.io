@@ -947,6 +947,10 @@ const PebblousCTA = {
                     <span class="inline-block mt-3 text-sm font-semibold text-orange-500">${i18n.dataclinic.cta} →</span>
                 </a>
             </div>
+            <p class="text-sm themeable-muted text-center mt-4">
+                ${i18n.homeNote}
+                <a href="https://pebblous.ai/" target="_blank" rel="noopener" class="text-orange-500 hover:underline font-semibold">${i18n.homeLinkText}</a>
+            </p>
         `;
 
         // Insert before comments-section if exists, otherwise append to main
@@ -1034,7 +1038,9 @@ const PebblousCTA = {
                     title: 'DataClinic™',
                     desc: 'AI-powered data quality diagnostics. Try our platform with a free account.',
                     cta: 'Get Started'
-                }
+                },
+                homeNote: 'Learn more about how Pebblous builds AI-ready data at',
+                homeLinkText: 'pebblous.ai'
             };
         }
         return {
@@ -1053,7 +1059,9 @@ const PebblousCTA = {
                 title: 'DataClinic™',
                 desc: 'AI 기반 데이터 품질 진단 플랫폼. 무료 계정으로 시작하세요.',
                 cta: '시작하기'
-            }
+            },
+            homeNote: '페블러스가 AI-Ready 데이터를 만드는 방법이 궁금하다면',
+            homeLinkText: 'pebblous.ai'
         };
     }
 };
