@@ -46,6 +46,35 @@ BALANCED_PAIR = re.compile(r',\s*(그러나|하지만)')
 VERB_END = re.compile(r'(했다|한다|이다|된다|왔다|간다|졌다|난다|든다|섰다|쳤다|랐다|웠다)\s*$')
 TILDE = re.compile(r'~')
 
+# ── §0.0 주어 실종 훅 (2026-07-19) ─────────────────────────────────────────
+# "제목=도메인 주어 필수"의 결정론 근사. 의미 판단은 파이프라인 Claude 게이트
+# (blog-produce Phase 3.55 / seo-check Layer 0)가 담당하고, 여기선 "숫자·단위만 있고
+# 도메인 명사가 하나도 없는" 명백한 수치 전용 제목만 잡는다(오탐 최소화, precision 우선).
+# 가상 채점(titles_scored.json 453개)으로 검증: 규칙 A는 2건만 검출(오탐 0), 규칙 B(무주어
+# 동사훅)는 오탐 2/2로 폐기. 화이트리스트는 1차 오탐(철강·토큰 등)을 근거로 보강.
+DOMAIN_WHITELIST = (
+    'AI LLM GPT 데이터 모델 블로그 로봇 에이전트 알고리즘 칩 GPU 반도체 논문 벤치마크 '
+    '데이터셋 오픈소스 스타트업 규제 거버넌스 프로토콜 아키텍처 파이프라인 프레임워크 '
+    '플랫폼 네트워크 클라우드 스테이블코인 온톨로지 철강 미세조직 라벨링 토큰 실험실 '
+    '픽셀 센서 단백질 유전자 세포 뉴런 증류 양자 예보 기상 날씨 의사 환자 코드 버그 '
+    '서버 벡터 임베딩'
+).split()
+_DOMAIN_SUFFIX = re.compile(r'[가-힣]{2,}(성|화|론|학|법|권|체|망|량|률|정책|산업|기업|국가)')
+def _has_domain_noun(t: str) -> bool:
+    """도메인 주어(고유명사·기술용어·기관명) 존재를 형태+소형 화이트리스트로 근사."""
+    if re.search(r'[A-Z][a-zA-Z0-9]+', t):   # 영문 고유명사/제품명
+        return True
+    if re.search(r'[一-鿿]', t):              # 한자 병기
+        return True
+    if any(k in t for k in DOMAIN_WHITELIST):
+        return True
+    if _DOMAIN_SUFFIX.search(t):              # 2글자+ 한자어 명사 접미
+        return True
+    return False
+def _is_number_only_hook(t: str) -> bool:
+    """규칙 A: 숫자 2개 이상인데 도메인 명사가 하나도 없음 = 수치 전용 주어 실종 훅."""
+    return len(re.findall(r'\d+', t)) >= 2 and not _has_domain_noun(t)
+
 
 def eval_maintitle(t: str):
     """mainTitle — 헤드라인. 가장 엄격: 따옴표/대조/줄표·콜론/미완결/미끼 전면 금지."""
@@ -60,6 +89,8 @@ def eval_maintitle(t: str):
         labels.append('미완결 여운'); ded += 2
     if CLICKBAIT.search(t):
         labels.append('미끼'); ded += 3
+    if _is_number_only_hook(t):
+        labels.append('주어 실종 훅(§0.0)'); ded += 3  # 수치 전용·도메인 명사 0. 사람이 웹에서 최종 확인
     if BALANCED_PAIR.search(t):
         labels.append('균형 대구'); ded += 2
     if TILDE.search(t):
