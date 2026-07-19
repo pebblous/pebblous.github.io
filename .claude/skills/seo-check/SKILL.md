@@ -17,6 +17,7 @@ When this skill is invoked:
 4. **Check all 4 SEO layers** and report pass/fail for each (skip layers marked N/A for noindex pages):
 
    **Layer 0 — Title Quality** (참조: `docs/title-strategy.md` §0 보도기사·매거진 정본):
+   - ⛔ **제1 기준 게이트 (§0.0, FAIL 조건)**: `mainTitle`만 읽고 **무슨 글인지 5초 안에 파악되는가?** 글의 **도메인 주어(무엇에 관한 글인지)가 제목에 있는가?** 대조·여운·수치 대비만 있고 주어가 없으면 **FAIL** — "제목에 도메인 주어 없음(주어 실종 훅). 수치·대조는 주어를 꾸미는 정보이지 대체물이 아님. 주어 복원 필요." 예: "3일이 만든 128개, 5개월이 만든 883개"(무엇을 만들었는지 없음) → FAIL. EN도 동일(숫자만 있고 posts/articles 등 무엇인지 없으면 FAIL).
    - `pageTitle`은 `mainTitle`의 **검색 변형**인가 — 완전 동일이면 WARN(키워드 보강 기회 상실), 전혀 다른 이야기면 WARN(슬롯 표류)
    - `pageTitle` 핵심 키워드가 앞쪽 1/3에 위치하는가?
    - `mainTitle` 20-40자, **보도 헤드라인**인가 — 사실을 완결 구문으로, 전자신문/경향신문 지면에 실려도 자연스러운가? (감성 장치·키워드 나열 모두 감점)
