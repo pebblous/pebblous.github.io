@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>AI 학습 데이터 오염과 정제 파이프라인의 한계 | 페블러스</title>
+    <meta name="description" content="게시판 댓글에 심은 조작 텍스트가 중복 제거와 품질 필터를 살아남아 사전학습 데이터에 도달한다. arXiv 연구가 측정한 0.13% 침투율은 위키피디아 전체보다 많은 문서에 영향을 미치며, 정제가 콘텐츠 품질은 봐도 출처 계보는 검증하지 않음을 드러낸다.">
+    <meta name="keywords" content="AI 학습 데이터 오염, 사전학습 데이터 정제, 데이터 중복 제거 한계, 품질 필터 취약점, 데이터 계보 provenance, LLM 데이터 포이즈닝, AI-Ready Data 검증, FineWeb 교육적 가치 분류기">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/ko/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="게시판 댓글이 뚫은 AI 학습 데이터 정제">
+    <meta property="og:description" content="정제 파이프라인의 품질 필터를 통과한 댓글 오염이 모델 선호도를 최대 19% 이동시켰다. 0.13% 침투율이 던지는 데이터 계보 질문.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/ko/image/index.png">
+    <meta property="og:locale" content="ko_KR">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="게시판 댓글이 뚫은 AI 학습 데이터 정제">
+    <meta name="twitter:description" content="정제 파이프라인의 품질 필터를 통과한 댓글 오염이 모델 선호도를 최대 19% 이동시켰다. 0.13% 침투율이 던지는 데이터 계보 질문.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/ko/image/index.png">
+    <meta name="twitter:image:alt" content="정제 파이프라인의 3단계를 살아남는 댓글 오염을 보여주는 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260721">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260721">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260721">
+
+    <!-- GTM -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">정제는 무엇을 걸러내도록 만들어졌나</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">댓글란이라는 사각지대</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">250개면 충분하다</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">콘텐츠 신호와 출처 신호</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">정제됐다는 말을 받을 때</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            누군가 자기 소유도 아닌 뉴스 기사 밑 댓글창에 조작된 문장 몇 줄을 심는다. 그 몇 줄은 크롤러에 잡히고, 중복 제거와 언어 필터와 품질 분류기를 차례로 통과해, 결국 대형 모델의 사전학습 데이터 안에 남는다. 2026년 7월 워싱턴대와 Ai2 연구진이 이 경로의 생존율을 처음으로 측정했다. 그 결과는 "정제됐다"는 인증이 무엇을 보증하고 무엇은 보증하지 못하는지 다시 묻게 만든다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            댓글 오염이 정제를 통과해 학습 데이터에 도달할 최종 확률은 0.13%였다. 작아 보이지만, 이 데이터의 대부분을 차지하는 Common Crawl 규모에서는 위키피디아 전체가 차지하는 몫(0.067%)보다 더 많은 문서에 영향을 준다. 품질 필터가 이 오염을 못 잡는 이유는 성능이 낮아서가 아니라, 필터가 애초에 다른 것을 보도록 설계됐기 때문이다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            정제가 검증하는 것은 문서가 얼마나 그럴듯한가라는 콘텐츠 신호이지, 그 텍스트가 누구의 손을 거쳐 왔는가라는 출처 신호가 아니다. 그 구멍은 곧 데이터 계보(provenance)의 문제이고, AI-Ready Data 실무에서 정제가 끝난 뒤에도 출처를 왜 따로 물어야 하는지로 이어진다.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.13%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">최종 포함 확률</p>
+                            <p class="text-xs themeable-muted mt-1">댓글 오염이 정제를 통과해 학습 데이터에 도달하는 비율</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">+18.6%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">모델 선호도 이동</p>
+                            <p class="text-xs themeable-muted mt-1">토큰의 0.1%만 오염돼도 특정 엔티티 쪽으로 편향</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">47.1%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">품질 필터 생존율</p>
+                            <p class="text-xs themeable-muted mt-1">교육적 가치 분류기 단계를 통과한 오염 댓글 비율</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">65.3%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">재작성 후 생존</p>
+                            <p class="text-xs themeable-muted mt-1">AI로 재작성해 순화해도 살아남는 신념 조작형 오염</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">정제는 무엇을 걸러내도록 만들어졌나</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        웹에서 긁어 온 텍스트는 그대로 쓸 수 없다. 그래서 현대 사전학습 코퍼스(Dolma, FineWeb, DataComp-LM)는 세 겹의 정제를 거친다. 같은 문서가 여러 번 들어오는 것을 막는 중복 제거, 원치 않는 언어를 걸러내는 언어 필터, 그리고 문서가 얼마나 쓸 만한가를 점수화하는 품질 분류기다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 중 품질 분류기가 근래 성능 향상의 숨은 공신이었다. FineWeb-Edu의 교육적 가치 분류기가 대표적이다. Llama-3-70B가 생성한 합성 라벨로 훈련한 경량 회귀 모델인데, 이 필터로 걸러낸 데이터로 학습하자 MMLU가 12%, ARC가 24% 올랐다. "이 문서가 교과서처럼 유익한가"를 기계가 채점하게 한 것이 실제로 통했다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 놓치기 쉬운 사실이 하나 있다. 이 필터들이 채점하는 대상은 언제나 <strong>문서 전체</strong>다. "이 페이지가 위키피디아스러운가", "교육적 가치가 있는가"를 문서 단위로 본다. 잘 쓰인 뉴스 기사 한 편이 있으면, 그 기사는 품질 높음으로 통과한다. 문제는 그 기사 밑에 달린 댓글까지 함께 딸려 온다는 데 있다.
+                    </p>
+
+                    <!-- Fig 1: 문서 단위 채점의 사각지대 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 200" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">품질 분류기는 기사 본문과 댓글을 구분 없이 하나로 채점한다</text>
+                            <!-- Input document card -->
+                            <rect x="30" y="45" width="180" height="120" rx="8" stroke="var(--text-muted)" stroke-width="1.5" fill="none"/>
+                            <text x="120" y="60" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">입력 문서 (1개)</text>
+                            <rect x="42" y="68" width="156" height="60" rx="4" fill="var(--text-muted)" opacity="0.12"/>
+                            <text x="120" y="92" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">기사 본문</text>
+                            <text x="120" y="110" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">위키피디아스러움 높음</text>
+                            <rect x="42" y="132" width="156" height="26" rx="4" fill="none" stroke="#F86825" stroke-width="1.5" stroke-dasharray="4,3"/>
+                            <text x="120" y="149" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="#F86825">댓글 (조작 삽입)</text>
+                            <!-- Arrow -->
+                            <line x1="210" y1="105" x2="248" y2="105" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="248,101 256,105 248,109" fill="var(--text-muted)"/>
+                            <!-- Classifier box -->
+                            <rect x="256" y="70" width="140" height="70" rx="8" fill="#585858"/>
+                            <text x="326" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#ffffff">품질 분류기</text>
+                            <text x="326" y="120" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#ffffff">문서 전체를 한 번에 채점</text>
+                            <!-- Arrow -->
+                            <line x1="396" y1="105" x2="434" y2="105" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="434,101 442,105 434,109" fill="var(--text-muted)"/>
+                            <!-- Output score -->
+                            <rect x="442" y="78" width="188" height="54" rx="8" stroke="#F86825" stroke-width="2" fill="none"/>
+                            <text x="536" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="#F86825">품질 점수 92/100</text>
+                            <text x="536" y="118" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">본문·댓글 구분 없이 통과</text>
+                            <!-- Bottom note -->
+                            <text x="330" y="185" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-muted)">점수는 문서 단위 하나로 매겨진다 — 댓글만 따로 낮추지 않는다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 품질 분류기는 문서를 통째로 채점해, 본문에 딸려 온 댓글까지 같은 점수를 받는다 — 페블러스 원본 도식 | Source: <a href="https://arxiv.org/abs/2607.15267" target="_blank" rel="noopener" class="underline">Graf et al., arXiv:2607.15267</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">댓글란이라는 사각지대, 오염은 3단계를 살아남는다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공격자는 모델 학습 파이프라인에 접근할 필요가 없다. 자신이 소유하지도 않은 웹페이지의 댓글창이나 공개 게시판에 조작 텍스트를 심으면 된다. 소셜 프로파간다 캠페인이 쓰는 것과 똑같은 방식이다. 연구진이 스캔한 페이지의 3.4%가 댓글 플랫폼을 갖고 있었고, 그 상당수가 인증 없이 즉시 게시가 가능했다. WordPress 한 곳이 그 인프라의 85.2%를 차지했다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진은 오염이 학습 데이터에 도달할 확률을 세 단계의 곱으로 분해했다. 댓글창이 있어 주입이 가능한가, 크롤러가 그 댓글을 실제로 담아 오는가, 정제 필터를 통과하는가. 각 관문의 생존율은 아래와 같다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="py-3 pr-4 themeable-heading font-semibold">단계</th>
+                                    <th class="py-3 pr-4 themeable-heading font-semibold">관문</th>
+                                    <th class="py-3 themeable-heading font-semibold text-right">생존율</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">S1</td>
+                                    <td class="py-3 pr-4">댓글창이 있어 주입 가능한 페이지</td>
+                                    <td class="py-3 text-right font-semibold" style="color:#F86825;">3.4%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">S2</td>
+                                    <td class="py-3 pr-4">크롤러(Resiliparse)가 댓글을 실제로 캡처</td>
+                                    <td class="py-3 text-right font-semibold" style="color:#F86825;">71.9%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">S3</td>
+                                    <td class="py-3 pr-4">정제 3중 필터 통과 (휴리스틱 28.8% → 언어 40.4% → 품질 47.1%)</td>
+                                    <td class="py-3 text-right font-semibold" style="color:#F86825;">5.5%</td>
+                                </tr>
+                                <tr class="border-t-2 themeable-border">
+                                    <td class="py-3 pr-4 font-bold" colspan="2">최종 포함 확률 (S1 × S2 × S3)</td>
+                                    <td class="py-3 text-right font-bold" style="color:#F86825;">0.13%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        눈길을 끄는 건 품질 필터의 생존율이 47.1%로 세 필터 중 가장 높다는 점이다. 오염을 가장 잘 걸러낼 것 같던 관문이 오히려 가장 잘 통과시킨다. 이유는 3절에서 다룬다.
+                    </p>
+
+                    <!-- Fig 2: HalfLife 3단계 생존 퍼널 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">오염이 학습 데이터에 도달하기까지 (HalfLife 3단계)</text>
+                            <!-- Stage 1 -->
+                            <rect x="30" y="55" width="130" height="90" rx="8" fill="#F86825" opacity="0.85"/>
+                            <text x="95" y="95" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="#ffffff">3.4%</text>
+                            <text x="95" y="115" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#ffffff">주입 가능</text>
+                            <!-- Arrow -->
+                            <line x1="160" y1="100" x2="192" y2="100" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="192,96 200,100 192,104" fill="var(--text-muted)"/>
+                            <text x="176" y="90" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">×</text>
+                            <!-- Stage 2 -->
+                            <rect x="200" y="65" width="130" height="70" rx="8" fill="#585858"/>
+                            <text x="265" y="95" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="#ffffff">71.9%</text>
+                            <text x="265" y="115" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#ffffff">크롤 캡처</text>
+                            <!-- Arrow -->
+                            <line x1="330" y1="100" x2="362" y2="100" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="362,96 370,100 362,104" fill="var(--text-muted)"/>
+                            <text x="346" y="90" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">×</text>
+                            <!-- Stage 3 -->
+                            <rect x="370" y="78" width="130" height="44" rx="8" fill="#808080"/>
+                            <text x="435" y="98" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#ffffff">5.5%</text>
+                            <text x="435" y="113" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="#ffffff">정제 통과</text>
+                            <!-- Arrow to result -->
+                            <line x1="500" y1="100" x2="532" y2="100" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="532,96 540,100 532,104" fill="var(--text-muted)"/>
+                            <text x="516" y="90" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">=</text>
+                            <!-- Result -->
+                            <rect x="540" y="83" width="96" height="34" rx="8" stroke="#F86825" stroke-width="2" fill="none"/>
+                            <text x="588" y="100" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="#F86825">0.13%</text>
+                            <text x="588" y="113" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="8" fill="var(--text-muted)">학습 데이터 도달</text>
+                            <!-- Comparison note -->
+                            <text x="330" y="175" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">0.13% 침투율 &gt; 위키피디아 전체의 몫(0.067%)</text>
+                            <text x="330" y="194" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">Common Crawl이 사전학습 데이터의 97%를 차지하기 때문</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 세 관문의 생존율을 곱하면 최종 0.13%. 작아 보이지만 절대 문서 수로는 위키피디아 전체보다 크다 — 페블러스 원본 도식 | Source: <a href="https://arxiv.org/abs/2607.15267" target="_blank" rel="noopener" class="underline">Graf et al., arXiv:2607.15267</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">250개면 충분하다, 오염이 모델에 남는 방식</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        0.13%가 왜 무시할 수 없는 수치인지는 오염이 실제로 모델에 남는 방식에서 드러난다. 연구진은 OLMo-3 계열의 65M~1.3B 파라미터 모델에 토큰의 0.1%를 오염시켜, 실존 경쟁 브랜드(시트로엥 대 르노, 보잉 대 에어버스, 화이자 대 모더나)에 대한 선호도를 측정했다. 결과는 오염이 유도한 쪽으로 선호도가 18.6~19.0% 이동했고, 이 편향은 모델 크기와 무관하게 일정했다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 곤란한 것은 오염이 잘 지워지지 않는다는 점이다. 지도 미세조정(SFT)을 거쳐도 65M 모델은 효과의 40%를 유지했고, 1.3B 모델도 완전히 사라지진 않았다. AI로 문서를 재작성해 순화하는 흔한 정제 관행(WRAP류)을 거쳐도 신념 조작형 오염의 65.3%가 살아남았다. 주입 포맷을 대화형·문답형·라벨 없음으로 바꿔 봐도 세 가지 모두 강하게 오염됐다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        선행 연구(Souly 외, 2025)는 단 250개의 오염 문서만으로도 백도어를 심을 수 있음을 보였다. 0.13% 포함률을 역산하면, 10만~100만 개 페이지에 댓글을 다는 것으로 그 250개를 확보할 수 있다. 자동화된 댓글 봇이 하루면 도달하는 규모다. 작은 확률이 큰 규모를 만나면 더 이상 작지 않다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            흥미로운 대조도 있다. 프로그래매틱 광고는 같은 방식으로 오염될 수 없었다. 자바스크립트로 나중에 채워지는 빈 슬롯이 92.9%라 정적 크롤러에 잡히지 않기 때문이다. 위험한 것은 모든 웹 데이터가 아니라, 사람이 직접 텍스트를 남기는 개방형 지면 — 댓글, 포럼, 리뷰다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">품질 필터는 무엇이 쓰였나만 볼 뿐 누가 썼나는 보지 않는다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이제 품질 필터의 생존율이 왜 가장 높았는지로 돌아온다. 품질 분류기는 문서 전체의 통계적 그럴듯함을 본다. 그런데 오염은 낮은 품질의 문서로 들어오지 않는다. 이미 품질 높음으로 통과된 뉴스 기사나 블로그 글에 무임승차한 이물질이다. 필터 입장에서 그 문서는 여전히 교육적 가치가 높은 문서이고, 댓글 몇 줄은 그 판정에 거의 영향을 주지 않는다. 오염은 필터의 표적이 아니라 사각지대에 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        중복 제거도 마찬가지다. 같은 댓글이 여러 페이지에 반복되면, 필터에는 오히려 여러 출처에서 확인된 콘텐츠처럼 보여 생존에 유리할 수 있다. 반복 게시가 봇 탐지의 단서가 될 수 있지만, 현재 파이프라인엔 그것을 검사하는 전용 단계가 없다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결국 문제는 성능이 아니라 관점이다. 정제 파이프라인은 "이 텍스트가 무엇을 말하는가"라는 <strong>콘텐츠 신호</strong>만 검사한다. "이 텍스트를 누가, 어떤 신뢰 경로로 올렸는가"라는 <strong>출처 신호</strong>는 애초에 설계에 들어 있지 않다. 이 둘의 차이가 이 논문이 드러낸 구멍의 정체다.
+                    </p>
+
+                    <!-- Fig 3: 콘텐츠 신호 vs 출처 신호 -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 200" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <line x1="330" y1="12" x2="330" y2="188" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="5,5" opacity="0.4"/>
+                            <!-- LEFT: 콘텐츠 신호 (검사함) -->
+                            <text x="165" y="30" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">콘텐츠 신호</text>
+                            <text x="165" y="46" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#F86825">정제가 검사함 ✓</text>
+                            <rect x="45" y="62" width="240" height="112" rx="8" stroke="var(--text-muted)" stroke-width="1.5" fill="none"/>
+                            <text x="165" y="88" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">이 문서가 위키피디아스러운가</text>
+                            <text x="165" y="112" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">교육적 가치가 있는가</text>
+                            <text x="165" y="136" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">언어·형식이 깨끗한가</text>
+                            <text x="165" y="162" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">= 문서 전체의 그럴듯함</text>
+                            <!-- RIGHT: 출처 신호 (안 봄) -->
+                            <text x="495" y="30" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">출처 신호</text>
+                            <text x="495" y="46" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#CF1D21">설계에 없음 ✗</text>
+                            <rect x="375" y="62" width="240" height="112" rx="8" stroke="#CF1D21" stroke-width="1.5" fill="none" stroke-dasharray="5,3" opacity="0.8"/>
+                            <text x="495" y="88" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">누가 이 텍스트를 올렸나</text>
+                            <text x="495" y="112" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">인증을 거쳤나</text>
+                            <text x="495" y="136" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">본문인가 개방형 댓글인가</text>
+                            <text x="495" y="162" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">= 데이터 계보(provenance)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 정제는 왼쪽(콘텐츠)만 검사하고 오른쪽(출처)은 보지 않는다. 오염은 오른쪽 사각지대로 들어온다 — 페블러스 원본 도식 | Source: <a href="https://arxiv.org/abs/2607.15267" target="_blank" rel="noopener" class="underline">Graf et al., arXiv:2607.15267</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 제안하는 완화책 세 가지 — 댓글을 본문과 분리해 별도 검사하기, 인증 없는 개방형 게시 폼이 있는 페이지를 다운웨이트하는 출처 인지 필터링, 크롤 시점 간 콘텐츠 급변을 잡는 시간적 일관성 검사 — 는 방향이 하나로 모인다. 필터링의 기준을 콘텐츠 신호에서 소스·제출 경로 신호로 옮기자는 것이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        완화가 정제 파이프라인 안에서만 가능한 것도 아니다. 앞서 봤듯 댓글 인프라의 85.2%를 WordPress 한 곳이 차지하므로, 소수 플랫폼이 인증 게시나 속도 제한, 이상 패턴 모더레이션을 도입하는 것만으로도 주입 가능성 자체가 크게 낮아진다. 정제가 사후에 걸러내야 할 문제를, 애초에 심기 어렵게 만드는 문제로 되돌리는 접근이다.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">정제됐다는 말을 받을 때 물어야 할 것</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터를 사거나 만드는 실무자에게 이 논문은 개념 하나를 다시 정의한다. "정제됐다"는 인증은 그 데이터가 문서 품질 점수를 통과했다는 뜻이지, 그 안의 모든 텍스트가 신뢰할 만한 경로로 왔다는 보증이 아니다. 정제는 통과 검증이 아니라 통계적 그럴듯함 검사에 가깝다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문 스스로도 이 수치가 완결된 진단이 아님을 밝힌다. 프로덕션 크롤러의 대리 지표로 Common Crawl을 썼고, 추정은 단일 파이프라인(Dolma 3)을 기준으로 삼았으며, 실제 라이브 주입 대신 샌드박스에서 검증했다. 그래서 0.13%라는 숫자는 정답이라기보다, 내 데이터가 어디서 왔는지 스스로 점검해야 할 이유에 가깝다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 벤더의 "정제·검증 완료" 문구를 받을 때, 질문의 층위를 하나 더 올릴 필요가 있다. 아래는 그 출발점이 될 만한 물음들이다.
+                    </p>
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li>이 데이터셋의 품질 점수는 문서 단위인가, 아니면 문서 안 세그먼트(본문·댓글·인용)를 구분해서 매기는가?</li>
+                        <li>개방형 댓글·포럼·리뷰에서 온 텍스트가 얼마나 섞여 있고, 그 출처가 라벨로 남아 있는가?</li>
+                        <li>같은 문장이 여러 출처에 반복될 때, 그것을 신뢰의 근거로 보는가 봇 활동의 단서로 보는가?</li>
+                        <li>크롤 시점 간에 콘텐츠가 급변한 페이지를 걸러내는 시간적 일관성 검사가 있는가?</li>
+                    </ul>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 질문들은 모두 하나의 축으로 수렴한다. 데이터의 계보(provenance) — 무엇이 쓰였나를 넘어, 어디서 누구의 손을 거쳐 왔나를 추적할 수 있는가. 정제 이후에도 남는 문제는 바로 여기에 있고, AI-Ready Data가 콘텐츠 품질만이 아니라 출처 신뢰까지 다뤄야 하는 이유도 여기서 나온다. 데이터가 "깨끗하다"는 말은, 그 데이터가 어디서 왔는지 말할 수 있을 때 비로소 검증 가능한 주장이 된다.
+                    </p>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260721"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-20T17:07:05.431Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-20T17:16:43.533Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1784567225432-hkg9tt",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-20T17:45:17.994Z"
+            },
+            mainTitle: "게시판 댓글로 심은 조작 정보가 AI 학습 데이터 정제를 뚫었다",
+            subtitle: "중복 제거와 교육적 가치 분류기는 문서 단위 신호만 볼 뿐, 의도된 주입은 걸러내지 못한다",
+            pageTitle: "AI 학습 데이터 오염과 정제 파이프라인의 한계 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-21",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/pretraining-data-poisoning-curation/ko/",
+            tags: ["AI-Ready Data", "데이터 품질", "데이터 오염", "데이터 계보", "LLM 사전학습", "데이터 정제"],
+            faqs: [
+                { question: "정제 파이프라인은 데이터 오염을 걸러내지 못하나?", answer: "구조적으로 못 잡는 종류가 있다. 중복 제거·언어 필터·품질 분류기는 문서 전체의 그럴듯함을 검사하지, 문서 안에 의도적으로 심긴 조작 텍스트를 겨냥하지 않는다. 이 연구가 측정한 댓글 오염의 최종 포함 확률은 0.13%였다." },
+                { question: "왜 게시판 댓글이 특히 취약한가?", answer: "공격자가 학습 파이프라인에 접근할 필요 없이, 소유하지 않은 페이지의 댓글창에 인증 없이 텍스트를 심을 수 있기 때문이다. 스캔된 페이지의 3.4%가 댓글 플랫폼을 갖고 있었고 WordPress가 그 인프라의 85.2%를 차지했다." },
+                { question: "0.13%면 무시해도 되는 수치 아닌가?", answer: "사전학습 데이터의 97%를 차지하는 Common Crawl 규모에서는 위키피디아 전체가 차지하는 몫(0.067%)보다 더 많은 문서에 영향을 준다. 선행 연구는 250개 오염 문서만으로 백도어가 가능함을 보였는데, 0.13%면 10만~100만 페이지에 댓글을 다는 것으로 도달할 수 있다." },
+                { question: "품질 필터가 왜 오염을 가장 잘 통과시키나?", answer: "오염은 낮은 품질 문서로 들어오지 않고, 이미 품질 높음으로 통과된 좋은 문서에 무임승차하기 때문이다. 필터는 문서 전체를 여전히 유익하다고 판정하고, 댓글 몇 줄은 그 판정에 거의 영향을 주지 않는다." },
+                { question: "미세조정(SFT)으로 오염을 제거할 수 있나?", answer: "완전히는 아니다. SFT 이후에도 65M 모델은 효과의 40%를 유지했고, AI 재작성으로 순화해도 신념 조작형 오염의 65.3%가 살아남았다. 주입 포맷을 바꿔도 방어가 되지 않았다." },
+                { question: "데이터 계보(provenance)란 무엇인가?", answer: "그 텍스트가 어디서, 누구의 손을 거쳐, 어떤 신뢰 경로로 데이터셋에 들어왔는지를 추적할 수 있는 정보다. 정제가 보는 콘텐츠 신호(무엇이 쓰였나)와 달리, 계보는 출처 신호(누가 썼나)를 다룬다." },
+                { question: "AI-Ready Data를 조달할 때 무엇을 물어야 하나?", answer: "품질 점수가 문서 단위인지 세그먼트 단위인지, 개방형 댓글·포럼 텍스트의 비중과 출처 라벨 유무, 반복 콘텐츠를 신뢰 근거로 보는지 봇 단서로 보는지, 시간적 일관성 검사가 있는지를 확인하는 것이 출발점이다." }
+            ]
+        });
+    </script>
+</body>
+</html>
