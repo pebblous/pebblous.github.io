@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>How Poisoned Data Survives Pretraining Curation | Pebblous</title>
+    <meta name="description" content="Manipulated comment text survives deduplication and quality filters into pretraining data. An arXiv study measures a 0.13% infiltration rate curation misses.">
+    <meta name="keywords" content="AI training data poisoning, pretraining data curation, deduplication limits, quality filter vulnerability, data provenance, LLM data poisoning, AI-Ready Data, FineWeb educational value classifier">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/en/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="How Poisoned Comments Slip Through AI Data Curation">
+    <meta property="og:description" content="Comment poisoning that passes quality filters shifted model preference by up to 19%. What a 0.13% infiltration rate asks about data provenance.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/en/image/index.png">
+    <meta property="og:locale" content="en_US">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="How Poisoned Comments Slip Through AI Data Curation">
+    <meta name="twitter:description" content="Comment poisoning that passes quality filters shifted model preference by up to 19%. What a 0.13% infiltration rate asks about data provenance.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/pretraining-data-poisoning-curation/en/image/index.png">
+    <meta name="twitter:image:alt" content="Diagram showing comment poisoning surviving three stages of the curation pipeline">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260721">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260721">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260721">
+
+    <!-- GTM -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">What Curation Was Built to Remove</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">The Comment Section Blind Spot</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">250 Documents Is Enough</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">Content Signal vs. Source Signal</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">Questions to Ask About "Cleaned" Data</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">Frequently Asked Questions</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Someone drops a few fabricated sentences into the comment section under a news article they don't own. Those few lines get picked up by a crawler, pass through deduplication, language filters, and a quality classifier in turn, and end up sitting inside the pretraining data of a large model. In July 2026, researchers at the University of Washington and Ai2 measured the survival rate of that path for the first time. Their result reopens the word "cleaned": what does that certification actually guarantee, and what does it leave out?
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The final probability that comment poisoning survives curation and reaches training data was 0.13%. It sounds small, but at the scale of Common Crawl, which makes up most of this data, it affects more documents than all of Wikipedia does (0.067%). The reason quality filters miss this poisoning is not weak performance; it is that the filters were designed to look at something else entirely.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            What curation verifies is a content signal: how plausible a document looks. It is not a source signal, the record of whose hands the text passed through to get there. That gap is itself a data provenance problem, and in AI-Ready Data practice it is why you still have to ask where a document came from after curation is done.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.13%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Final inclusion rate</p>
+                            <p class="text-xs themeable-muted mt-1">Share of comment poisoning that survives curation to reach training data</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">+18.6%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Model preference shift</p>
+                            <p class="text-xs themeable-muted mt-1">Bias toward a target entity from poisoning just 0.1% of tokens</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">47.1%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Quality-filter survival</p>
+                            <p class="text-xs themeable-muted mt-1">Poisoned comments that passed the educational-value classifier stage</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">65.3%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Survival after rewriting</p>
+                            <p class="text-xs themeable-muted mt-1">Belief-manipulation poisoning that persists even after AI rewriting</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What Curation Was Built to Remove</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Text scraped from the web can't be used as-is. So modern pretraining corpora (Dolma, FineWeb, DataComp-LM) run it through three layers of curation: deduplication to stop the same document from entering many times, language filters to remove unwanted languages, and a quality classifier that scores how usable each document is.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Of these, the quality classifier has been the quiet driver of recent performance gains. FineWeb-Edu's educational-value classifier is the canonical example: a lightweight regression model trained on synthetic labels generated by Llama-3-70B. Training on data filtered through it raised MMLU by 12% and ARC by 24%. Letting a machine grade "is this document as useful as a textbook?" actually worked.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There's one easily missed fact here. What these filters grade is always the <strong>whole document</strong>. "Is this page Wikipedia-like?" and "does it have educational value?" are judged at the document level. A well-written news article passes as high quality. The problem is that the comments attached below that article come along with it.
+                    </p>
+
+                    <!-- Fig 1: The document-level scoring blind spot -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 200" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" fill="var(--text-secondary)">The quality classifier scores the article and its comments as one document</text>
+                            <!-- Input document card -->
+                            <rect x="30" y="45" width="180" height="120" rx="8" stroke="var(--text-muted)" stroke-width="1.5" fill="none"/>
+                            <text x="120" y="60" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">Input document (1)</text>
+                            <rect x="42" y="68" width="156" height="60" rx="4" fill="var(--text-muted)" opacity="0.12"/>
+                            <text x="120" y="92" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">Article body</text>
+                            <text x="120" y="110" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">High Wikipedia-likeness</text>
+                            <rect x="42" y="132" width="156" height="26" rx="4" fill="none" stroke="#F86825" stroke-width="1.5" stroke-dasharray="4,3"/>
+                            <text x="120" y="149" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" font-weight="700" fill="#F86825">Comments (poisoned)</text>
+                            <!-- Arrow -->
+                            <line x1="210" y1="105" x2="248" y2="105" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="248,101 256,105 248,109" fill="var(--text-muted)"/>
+                            <!-- Classifier box -->
+                            <rect x="256" y="70" width="140" height="70" rx="8" fill="#585858"/>
+                            <text x="326" y="100" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="#ffffff">Quality classifier</text>
+                            <text x="326" y="120" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#ffffff">Scores the whole doc at once</text>
+                            <!-- Arrow -->
+                            <line x1="396" y1="105" x2="434" y2="105" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="434,101 442,105 434,109" fill="var(--text-muted)"/>
+                            <!-- Output score -->
+                            <rect x="442" y="78" width="188" height="54" rx="8" stroke="#F86825" stroke-width="2" fill="none"/>
+                            <text x="536" y="100" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="#F86825">Quality score 92/100</text>
+                            <text x="536" y="118" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">Passes, body and comments alike</text>
+                            <!-- Bottom note -->
+                            <text x="330" y="185" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="var(--text-muted)">The score is a single per-document value — comments aren't downweighted separately</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ The quality classifier scores the document as a whole, so comments riding along with the article get the same score — original Pebblous diagram | Source: <a href="https://arxiv.org/abs/2607.15267" target="_blank" rel="noopener" class="underline">Graf et al., arXiv:2607.15267</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Comment Section Blind Spot, Where Poisoning Survives Three Stages</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        An attacker doesn't need access to the model's training pipeline. They plant manipulated text in the comment section or an open message board of a web page they don't even own. It's the same method social propaganda campaigns use. Of the pages the researchers scanned, 3.4% had a comment platform, and many of those allowed immediate posting with no authentication. WordPress alone accounted for 85.2% of that infrastructure.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The researchers decomposed the probability of poisoning reaching training data into the product of three stages: whether a comment section exists so injection is possible, whether the crawler actually captures the comment, and whether it passes the curation filters. The survival rate at each gate is below.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="py-3 pr-4 themeable-heading font-semibold">Stage</th>
+                                    <th class="py-3 pr-4 themeable-heading font-semibold">Gate</th>
+                                    <th class="py-3 themeable-heading font-semibold text-right">Survival</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">S1</td>
+                                    <td class="py-3 pr-4">Pages with a comment section open to injection</td>
+                                    <td class="py-3 text-right font-semibold" style="color:#F86825;">3.4%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">S2</td>
+                                    <td class="py-3 pr-4">Crawler (Resiliparse) actually captures the comment</td>
+                                    <td class="py-3 text-right font-semibold" style="color:#F86825;">71.9%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">S3</td>
+                                    <td class="py-3 pr-4">Passes the triple curation filter (heuristic 28.8% → language 40.4% → quality 47.1%)</td>
+                                    <td class="py-3 text-right font-semibold" style="color:#F86825;">5.5%</td>
+                                </tr>
+                                <tr class="border-t-2 themeable-border">
+                                    <td class="py-3 pr-4 font-bold" colspan="2">Final inclusion rate (S1 × S2 × S3)</td>
+                                    <td class="py-3 text-right font-bold" style="color:#F86825;">0.13%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What stands out is that the quality filter's survival rate, 47.1%, is the highest of the three. The gate you'd expect to catch poisoning best is the one that lets it through most. Section 3 explains why.
+                    </p>
+
+                    <!-- Fig 2: HalfLife 3-stage survival funnel -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <text x="330" y="22" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" fill="var(--text-secondary)">How poisoning reaches training data (HalfLife three stages)</text>
+                            <!-- Stage 1 -->
+                            <rect x="30" y="55" width="130" height="90" rx="8" fill="#F86825" opacity="0.85"/>
+                            <text x="95" y="95" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="#ffffff">3.4%</text>
+                            <text x="95" y="115" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#ffffff">Injectable</text>
+                            <!-- Arrow -->
+                            <line x1="160" y1="100" x2="192" y2="100" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="192,96 200,100 192,104" fill="var(--text-muted)"/>
+                            <text x="176" y="90" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">×</text>
+                            <!-- Stage 2 -->
+                            <rect x="200" y="65" width="130" height="70" rx="8" fill="#585858"/>
+                            <text x="265" y="95" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="#ffffff">71.9%</text>
+                            <text x="265" y="115" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#ffffff">Crawl capture</text>
+                            <!-- Arrow -->
+                            <line x1="330" y1="100" x2="362" y2="100" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="362,96 370,100 362,104" fill="var(--text-muted)"/>
+                            <text x="346" y="90" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">×</text>
+                            <!-- Stage 3 -->
+                            <rect x="370" y="78" width="130" height="44" rx="8" fill="#808080"/>
+                            <text x="435" y="98" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" font-weight="700" fill="#ffffff">5.5%</text>
+                            <text x="435" y="113" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#ffffff">Curation pass</text>
+                            <!-- Arrow to result -->
+                            <line x1="500" y1="100" x2="532" y2="100" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="532,96 540,100 532,104" fill="var(--text-muted)"/>
+                            <text x="516" y="90" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">=</text>
+                            <!-- Result -->
+                            <rect x="540" y="83" width="96" height="34" rx="8" stroke="#F86825" stroke-width="2" fill="none"/>
+                            <text x="588" y="100" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="#F86825">0.13%</text>
+                            <text x="588" y="113" text-anchor="middle" font-family="Outfit,sans-serif" font-size="8" fill="var(--text-muted)">Reaches data</text>
+                            <!-- Comparison note -->
+                            <text x="330" y="175" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">0.13% infiltration &gt; all of Wikipedia's share (0.067%)</text>
+                            <text x="330" y="194" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">because Common Crawl makes up 97% of pretraining data</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Multiply the three survival rates and you get 0.13%. It looks small, but in absolute document count it exceeds all of Wikipedia — original Pebblous diagram | Source: <a href="https://arxiv.org/abs/2607.15267" target="_blank" rel="noopener" class="underline">Graf et al., arXiv:2607.15267</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">250 Documents Is Enough, and How Poisoning Sticks in a Model</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Why 0.13% is not a number you can wave away becomes clear from how poisoning actually sticks in a model. The researchers poisoned 0.1% of the tokens for OLMo-3-family models from 65M to 1.3B parameters, then measured preference toward real competing brands (Citroën vs. Renault, Boeing vs. Airbus, Pfizer vs. Moderna). Preference shifted 18.6–19.0% toward the side the poisoning pushed, and the bias held constant regardless of model size.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        More troubling is that the poisoning doesn't wash out easily. After supervised fine-tuning (SFT), the 65M model retained 40% of the effect, and the 1.3B model didn't lose it entirely either. Even the common curation practice of rewriting documents with AI to sanitize them (WRAP-style) left 65.3% of belief-manipulation poisoning alive. Changing the injection format to conversational, Q&A, or unlabeled made no difference; all three came through strongly poisoned.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Prior work (Souly et al., 2025) showed that as few as 250 poisoned documents can plant a backdoor. Work backward from the 0.13% inclusion rate and you can secure those 250 by commenting on 100,000 to 1,000,000 pages, a scale an automated comment bot reaches in a day. A small probability meeting a large scale is no longer small.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            There's an interesting contrast. Programmatic advertising could not be poisoned the same way. Because 92.9% of ad slots are empty placeholders filled in later by JavaScript, a static crawler never captures them. The risk isn't all web data; it's the open surfaces where people leave text directly: comments, forums, reviews.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Quality Filters See What Was Written, Not Who Wrote It</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Now back to why the quality filter had the highest survival rate. A quality classifier looks at the statistical plausibility of the whole document. But poisoning doesn't arrive as a low-quality document. It's a foreign object hitching a ride on a news article or blog post that already passed as high quality. From the filter's point of view, that document is still one of high educational value, and a few lines of comments barely move the verdict. Poisoning isn't the filter's target; it's in its blind spot.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Deduplication is no different. When the same comment repeats across many pages, it can even look to the filter like content confirmed by multiple sources, which helps it survive. Repeated posting could be a clue for bot detection, but current pipelines have no dedicated stage that checks for it.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In the end the problem isn't performance, it's perspective. The curation pipeline inspects only the <strong>content signal</strong>: "what does this text say?" The <strong>source signal</strong>, "who posted this text, through what path of trust?", was never part of the design. The gap between those two is exactly the hole this paper exposed.
+                    </p>
+
+                    <!-- Fig 3: Content signal vs. source signal -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 200" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <line x1="330" y1="12" x2="330" y2="188" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="5,5" opacity="0.4"/>
+                            <!-- LEFT: content signal (checked) -->
+                            <text x="165" y="30" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">Content signal</text>
+                            <text x="165" y="46" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#F86825">Curation checks it ✓</text>
+                            <rect x="45" y="62" width="240" height="112" rx="8" stroke="var(--text-muted)" stroke-width="1.5" fill="none"/>
+                            <text x="165" y="88" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">Is this document Wikipedia-like?</text>
+                            <text x="165" y="112" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">Does it have educational value?</text>
+                            <text x="165" y="136" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">Is the language and format clean?</text>
+                            <text x="165" y="162" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">= plausibility of the whole document</text>
+                            <!-- RIGHT: source signal (not seen) -->
+                            <text x="495" y="30" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="var(--text-secondary)">Source signal</text>
+                            <text x="495" y="46" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#CF1D21">Not in the design ✗</text>
+                            <rect x="375" y="62" width="240" height="112" rx="8" stroke="#CF1D21" stroke-width="1.5" fill="none" stroke-dasharray="5,3" opacity="0.8"/>
+                            <text x="495" y="88" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">Who posted this text?</text>
+                            <text x="495" y="112" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">Did it go through authentication?</text>
+                            <text x="495" y="136" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="var(--text-secondary)">Body text, or an open comment?</text>
+                            <text x="495" y="162" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="var(--text-muted)">= data provenance</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Curation checks only the left (content) and never the right (source). Poisoning enters through the blind spot on the right — original Pebblous diagram | Source: <a href="https://arxiv.org/abs/2607.15267" target="_blank" rel="noopener" class="underline">Graf et al., arXiv:2607.15267</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The three mitigations the paper proposes — separating comments from body text for a dedicated check, provenance-aware filtering that down-weights pages with unauthenticated open posting forms, and a temporal-consistency check that catches abrupt content changes between crawl snapshots — all point in one direction: move the basis of filtering from content signal to source and submission-path signal.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Mitigation isn't confined to the curation pipeline either. As noted, WordPress alone accounts for 85.2% of comment infrastructure, so if a few platforms adopt authenticated posting, rate limits, or anomaly-pattern moderation, the possibility of injection itself drops sharply. It's an approach that turns a problem curation has to filter after the fact back into a problem that's hard to plant in the first place.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Questions to Ask When You're Told the Data Is "Cleaned"</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For a practitioner who buys or builds data, this paper redefines one concept. A "cleaned" certification means the data passed a document quality score, not a guarantee that every piece of text inside it arrived through a trustworthy path. Curation is closer to a plausibility check than a pass/fail verification.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper itself is clear that this figure is not a finished diagnosis. It used Common Crawl as a proxy for production crawlers, based the estimate on a single pipeline (Dolma 3), and validated in a sandbox rather than through live injection. So the number 0.13% is less an answer than a reason to check for yourself where your data came from.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So when you're handed a vendor's "curated and verified" line, it's worth raising the level of the question by one notch. Below are prompts that can serve as a starting point.
+                    </p>
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li>Is this dataset's quality score assigned per document, or does it distinguish segments within a document (body, comments, quotes)?</li>
+                        <li>How much text comes from open comments, forums, and reviews, and is that origin preserved as a label?</li>
+                        <li>When the same sentence repeats across multiple sources, is that treated as grounds for trust or as a clue of bot activity?</li>
+                        <li>Is there a temporal-consistency check that filters out pages whose content changed abruptly between crawl snapshots?</li>
+                    </ul>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        These questions all converge on one axis, data provenance: beyond what was written, can you trace where it came from and whose hands it passed through? The problem that remains after curation lives right here, and so does the reason AI-Ready Data has to address not only content quality but source trust. Calling data "clean" becomes a verifiable claim only when you can say where that data came from.
+                    </p>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260721"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-20T17:07:05.431Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-20T17:16:43.533Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1784567225432-hkg9tt",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-20T17:45:17.994Z"
+            },
+            mainTitle: "Manipulated Comments Slipped Past the Filters That Clean AI Training Data",
+            subtitle: "Deduplication and educational-value classifiers judge whole documents, never the text injected into them on purpose",
+            pageTitle: "How Poisoned Data Survives Pretraining Curation | Pebblous",
+            category: "tech",
+            publishDate: "2026-07-21",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/pretraining-data-poisoning-curation/en/",
+            tags: ["AI-Ready Data", "Data Quality", "Data Poisoning", "Data Provenance", "LLM Pretraining", "Data Curation"],
+            faqs: [
+                { question: "Can the curation pipeline filter out data poisoning?", answer: "There's a category it structurally cannot catch. Deduplication, language filters, and quality classifiers check the plausibility of the whole document; they don't target manipulated text deliberately planted inside a document. The final inclusion rate for comment poisoning measured in this study was 0.13%." },
+                { question: "Why are web comments especially vulnerable?", answer: "Because an attacker can plant text with no authentication in the comment section of a page they don't own, without any access to the training pipeline. Of the pages scanned, 3.4% had a comment platform, and WordPress accounted for 85.2% of that infrastructure." },
+                { question: "Isn't 0.13% a number you can ignore?", answer: "At the scale of Common Crawl, which makes up 97% of pretraining data, it affects more documents than all of Wikipedia does (0.067%). Prior work showed a backdoor is possible with just 250 poisoned documents, and at 0.13% you can reach that by commenting on 100,000 to 1,000,000 pages." },
+                { question: "Why does the quality filter let poisoning through most easily?", answer: "Because poisoning doesn't arrive as a low-quality document; it hitches a ride on a good document that already passed as high quality. The filter still judges the whole document useful, and a few lines of comments barely affect that verdict." },
+                { question: "Can fine-tuning (SFT) remove the poisoning?", answer: "Not entirely. After SFT, the 65M model retained 40% of the effect, and even AI rewriting to sanitize left 65.3% of belief-manipulation poisoning alive. Changing the injection format offered no defense." },
+                { question: "What is data provenance?", answer: "It's information that lets you trace where a piece of text came from, whose hands it passed through, and along what path of trust it entered the dataset. Unlike the content signal curation looks at (what was written), provenance addresses the source signal (who wrote it)." },
+                { question: "What should you ask when procuring AI-Ready Data?", answer: "A good starting point is to confirm whether quality scores are per-document or per-segment, the share of open comment and forum text and whether its origin is labeled, whether repeated content is treated as grounds for trust or a bot clue, and whether a temporal-consistency check exists." }
+            ]
+        });
+    </script>
+</body>
+</html>
