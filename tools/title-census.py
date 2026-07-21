@@ -43,7 +43,7 @@ DASH_COLON = re.compile(r'[—–]|:\s')
 INCOMPLETE_END = re.compile(r'(이후|전략|조건|과제)\s*$')
 CLICKBAIT = re.compile(r'충격|비밀|숨긴|N가지|\d+가지\s*비밀')
 BALANCED_PAIR = re.compile(r',\s*(그러나|하지만)')
-VERB_END = re.compile(r'(했다|한다|이다|된다|왔다|간다|졌다|난다|든다|섰다|쳤다|랐다|웠다)\s*$')
+VERB_END = re.compile(r'(했다|한다|이다|된다|왔다|간다|졌다|난다|든다|섰다|쳤다|랐다|웠다|이었다|었다|겼다|낸다|뚫었다|막았다|나왔다|진다|간다|온다|린다|킨다|한 셈이다|못한다)\s*$')
 TILDE = re.compile(r'~')
 
 # ── §0.0 주어 실종 훅 (2026-07-19) ─────────────────────────────────────────
@@ -95,13 +95,21 @@ def eval_maintitle(t: str):
         labels.append('균형 대구'); ded += 2
     if TILDE.search(t):
         labels.append('물결표'); ded += 1
-    if VERB_END.search(t):
-        labels.append('동사 종결(발견인지 확인)'); ded += 1  # soft — 발견-동사면 정상
     n = len(t)
+    if VERB_END.search(t):
+        # soft — 짧은 발견-동사("AI가 기상청을 이겼다")면 정상. 다만 길면 관성적 서술형(장황).
+        if n > 33:
+            # 장황 서술형(JH 2026-07-21): 동사 종결 + 33자 초과 = "~할 때마다 ~하는 ~이 나왔다"류.
+            # 명사구로 압축해야 할 문장형 헤드라인. 이중 신호로 하드 감점.
+            labels.append('장황한 서술형(동사종결+33자↑)'); ded += 3
+        else:
+            labels.append('동사 종결(발견인지 확인)'); ded += 1
     if n < 12:
         labels.append('짧음(추상 위험)'); ded += 1
     elif n > 45:
-        labels.append('김(45자 초과)'); ded += 1
+        labels.append('김(45자 초과)'); ded += 2   # 정본 20-40 대비 크게 초과 — 감점 강화
+    elif n > 40:
+        labels.append('김(40자 초과)'); ded += 1   # 정본 권장 상한(40) 초과
     return max(0, 10 - ded), labels
 
 
