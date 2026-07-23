@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>OpenAlex 데이터 품질 진단 — 무료 학술 그래프의 커버리지·저자 식별·무결성 | 페블러스</title>
+    <meta name="description" content="3억 편을 무료로 푼 오픈 학술 그래프 OpenAlex를 데이터 품질의 렌즈로 해부한다. 커버리지·저자 disambiguation·철회 반영·AI 오염을 실측 수치와 시각화로 진단하고, AI 파이프라인에 넣기 전 검증 체크리스트를 제시한다.">
+    <meta name="keywords" content="OpenAlex, 학술 데이터베이스, 데이터 품질, 지식그래프, 서지계량, AI 리서치 에이전트, RAG, 오픈 사이언스, disambiguation, AI-Ready Data, Scopus, Web of Science, 철회 논문, paper-mill">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/openalex-scholarly-graph-data-quality/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/openalex-scholarly-graph-data-quality/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/openalex-scholarly-graph-data-quality/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/openalex-scholarly-graph-data-quality/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="공짜로 열린 3억 편의 논문, 검증 없이 삼켜도 될까">
+    <meta property="og:description" content="무료·오픈 학술 그래프 OpenAlex를 데이터 품질의 렌즈로 진단한다. 커버리지·저자 식별·철회·AI 오염을 실측 수치와 시각화로.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/openalex-scholarly-graph-data-quality/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/openalex-scholarly-graph-data-quality/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="OpenAlex 데이터 품질 진단 리포트">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="공짜로 열린 3억 편의 논문, 검증 없이 삼켜도 될까">
+    <meta name="twitter:description" content="무료·오픈 학술 그래프 OpenAlex를 데이터 품질의 렌즈로 진단한다. 커버리지·저자 식별·철회·AI 오염을 실측 수치로.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/openalex-scholarly-graph-data-quality/ko/image/index.png">
+    <meta name="twitter:image:alt" content="OpenAlex 데이터 품질 진단 리포트">
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="공짜로 열린 3억 편의 논문, 검증 없이 삼켜도 될까 — OpenAlex 데이터 품질 진단">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/07/23">
+    <meta name="citation_online_date" content="2026/07/23">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Stylesheets (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260723">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260723">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260723">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 죽은 인프라를 오픈소스가 대체하다</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 넓다는 것의 두 얼굴</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 누가 누구인가 — 식별의 함정</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 분류와 무결성</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 파이프라인에 넣기 전에</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">페블러스에게 이 이야기는</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">마이크로소프트 아카데믹 그래프(MAG)가 2021년 문을 닫은 뒤, 그 공백을 메운 것은 상업 데이터베이스가 아니라 비영리 단체 OurResearch가 CC0로 개방한 OpenAlex였다. 3억 편이 넘는 저작물을 무료 API로 풀어, 지금은 Elicit·SciSpace·Consensus 같은 AI 리서치 에이전트와 수많은 RAG 파이프라인의 기본 지식 소스가 됐다. 그런데 이 글의 출발점이 된 소개 문구, "무료·키 불필요"는 이미 반은 과거형이다. 2026년 2월, OpenAlex는 API 키 의무화와 사용량 기반 과금을 공지했다.</p>
+                        <p class="themeable-text leading-relaxed mt-4">핵심은 규모가 아니라 넓힘의 대가다. OpenAlex가 커 보이는 이유의 상당 부분은 프리프린트·회색문헌까지 넓게 세는 "Work"의 정의 때문이고, 그 개방성은 곧 완비도의 희석과 오염 필터의 느슨함으로 되돌아온다. 저자 식별 정밀도는 알고리즘 개편으로 크게 좋아졌지만 92%라는 숫자는 "여덟 건 중 하나는 여전히 틀린다"는 뜻이고, 철회(retraction) 표시는 데이터베이스마다 딴판이라 네 곳이 모두 일치하는 철회 논문은 3%에 불과하다. 넓을수록 정의가 흐려지고, 무료일수록 품질을 검증할 책임이 데이터를 쓰는 쪽으로 넘어온다.</p>
+                        <p class="themeable-text leading-relaxed mt-4">그래서 이 리포트는 OpenAlex를 "쓰지 말라"고 말하지 않는다. 오히려 라이덴 랭킹이 3억 건 전체가 아니라 재현 가능한 930만 건으로 스코프를 좁혀 오픈 랭킹을 만든 것처럼, 넣기 전에 감사(audit)하고 목적에 맞게 좁히는 방법을 제시한다. 검증 없이 삼킨 개방성이 어떻게 AI 파이프라인의 리스크가 되는지, 그리고 그것을 어떻게 끊어낼지가 이 글의 범위다.</p>
+                    </div>
+
+                    <!-- Stat Cards (Phase 5-D.5에서 본문 역추출로 재확정 예정) -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">3.2억</p>
+                            <p class="text-sm themeable-text-secondary mt-1">색인된 저작물</p>
+                            <p class="text-xs themeable-muted mt-1">2026-07-23 실측 3억 2,097만 편 — 사용자가 알던 "2.5억"을 이미 넘어섰다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">92%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">저자 식별 정밀도</p>
+                            <p class="text-xs themeable-muted mt-1">개편으로 0.60→0.92까지 급개선 — 그래도 여덟 건 중 하나는 틀린다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">3%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">철회 4-DB 일치</p>
+                            <p class="text-xs themeable-muted mt-1">네 개 데이터베이스가 모두 "철회"로 표시한 논문의 비율 — 소스마다 딴판</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">3.0배</p>
+                            <p class="text-sm themeable-text-secondary mt-1">데이터셋 악용 논문</p>
+                            <p class="text-xs themeable-muted mt-1">공개 데이터셋을 악용한 paper-mill 논문의 2022년 대비 2025년 증가 폭</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">죽은 인프라를 오픈소스가 대체하다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">이야기는 하나의 죽음에서 시작한다. 마이크로소프트는 2016년부터 학술 지식그래프 마이크로소프트 아카데믹 그래프(MAG)를 무료로 제공하며 서지계량 연구의 공용 인프라 역할을 했다. 그런데 2021년, 마이크로소프트는 이 서비스를 예고 없이 종료했다. 수많은 연구·도구가 딛고 서 있던 바닥이 사라진 것이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">그 공백을 상업 데이터베이스가 아니라 비영리 단체가 메웠다. Unpaywall을 만든 OurResearch가 MAG의 오픈 후속판을 표방하며 <a href="https://arxiv.org/abs/2205.01833" target="_blank" rel="noopener noreferrer" style="color:#F86825;">OpenAlex</a>를 2022년에 공개한 것이다. 이름은 고대 알렉산드리아 도서관에서 따왔다. 논문·저자·저널·기관·주제를 하나의 그래프로 엮고, 전체를 CC0(퍼블릭 도메인)로 풀었으며, API는 키 없이 무료였다. 이 글의 출발점이 된 "약 2억 5천만 건, 키 불필요"라는 소개가 바로 그 시절의 OpenAlex다.</p>
+
+                    <!-- Image: OpenAlex 로고 -->
+                    <figure class="my-8">
+                        <div class="bg-white rounded-xl border themeable-border p-8 flex justify-center">
+                            <img src="./image/img-01-openalex-logo.png"
+                                 alt="OpenAlex 로고 — 비영리 단체 OurResearch가 운영하는 무료·오픈 학술 지식그래프"
+                                 class="max-w-[420px] w-full object-contain"
+                                 loading="lazy"
+                                 onerror="this.closest('figure').style.display='none'">
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 이름은 고대 알렉산드리아 도서관에서 따왔다. CC0로 공개된 무료 학술 지식그래프 OpenAlex의 로고(2025년 개편판). | Source: <a href="https://commons.wikimedia.org/wiki/File:OpenAlex_logo_2025.png" target="_blank" rel="noopener" class="underline">Wikimedia Commons — OurResearch</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">이 대체는 선언에 그치지 않았다. 소르본 대학은 2023년 클래리베이트 상용 도구 구독을 해지하고 OpenAlex를 포함한 오픈 대안으로 갈아탔고, 로렌·위트레흐트·취리히 등 유럽 대학들은 THE 세계대학랭킹 참여를 접으며 개방 데이터로의 전환을 명시했다. 프랑스 고등교육연구부는 2024년 OpenAlex와 다년 파트너십을 맺었다. 상업 데이터베이스가 도서관에 지우던 연 10억 달러 규모의 구독 비용, 그리고 특정 지역과 분야를 구조적으로 배제해 온 관행이 이 전환의 배경이었다. 무료·오픈이라는 명분은 그렇게 실제 기관들의 선택으로 이어졌다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">OpenAlex의 데이터 모델은 다섯 종류의 엔티티가 서로를 가리키는 그래프다. 저작물(Works)이 중심에 있고, 그 논문을 누가 썼는지(Authors), 어디에 실렸는지(Sources), 저자가 어디 소속인지(Institutions), 무엇에 관한 글인지(Topics)가 링크로 붙는다. 2026년 7월 23일 API 실측 기준 규모는 아래와 같다.</p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-4 sm:p-6 overflow-x-auto" style="background:var(--card-bg); border:1px solid var(--border-color);">
+                            <svg viewBox="0 0 800 400" width="100%" style="min-width:640px; height:auto;" role="img" aria-label="OpenAlex 5종 엔티티 관계도">
+                                <!-- links -->
+                                <g stroke="#BDBDBD" stroke-width="2">
+                                    <line x1="400" y1="200" x2="180" y2="90"/>
+                                    <line x1="400" y1="200" x2="620" y2="90"/>
+                                    <line x1="400" y1="200" x2="180" y2="310"/>
+                                    <line x1="400" y1="200" x2="620" y2="310"/>
+                                </g>
+                                <!-- center: Works -->
+                                <circle cx="400" cy="200" r="72" fill="#F86825"/>
+                                <text x="400" y="188" text-anchor="middle" fill="#ffffff" font-size="19" font-weight="700">Works</text>
+                                <text x="400" y="212" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">3.21억</text>
+                                <text x="400" y="230" text-anchor="middle" fill="#ffffff" font-size="11">저작물</text>
+                                <!-- satellites -->
+                                <g>
+                                    <circle cx="180" cy="90" r="52" fill="var(--card-bg)" stroke="#585858" stroke-width="2"/>
+                                    <text x="180" y="82" text-anchor="middle" fill="var(--text-secondary)" font-size="14" font-weight="700">Authors</text>
+                                    <text x="180" y="102" text-anchor="middle" fill="#F86825" font-size="14" font-weight="700">1.20억</text>
+                                    <text x="180" y="118" text-anchor="middle" fill="var(--text-muted)" font-size="10">저자</text>
+                                </g>
+                                <g>
+                                    <circle cx="620" cy="90" r="52" fill="var(--card-bg)" stroke="#585858" stroke-width="2"/>
+                                    <text x="620" y="82" text-anchor="middle" fill="var(--text-secondary)" font-size="14" font-weight="700">Sources</text>
+                                    <text x="620" y="102" text-anchor="middle" fill="#F86825" font-size="14" font-weight="700">28.3만</text>
+                                    <text x="620" y="118" text-anchor="middle" fill="var(--text-muted)" font-size="10">저널·리포지토리</text>
+                                </g>
+                                <g>
+                                    <circle cx="180" cy="310" r="52" fill="var(--card-bg)" stroke="#585858" stroke-width="2"/>
+                                    <text x="180" y="302" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-weight="700">Institutions</text>
+                                    <text x="180" y="322" text-anchor="middle" fill="#F86825" font-size="14" font-weight="700">13.1만</text>
+                                    <text x="180" y="338" text-anchor="middle" fill="var(--text-muted)" font-size="10">기관 (ROR)</text>
+                                </g>
+                                <g>
+                                    <circle cx="620" cy="310" r="52" fill="var(--card-bg)" stroke="#585858" stroke-width="2"/>
+                                    <text x="620" y="302" text-anchor="middle" fill="var(--text-secondary)" font-size="14" font-weight="700">Topics</text>
+                                    <text x="620" y="322" text-anchor="middle" fill="#F86825" font-size="14" font-weight="700">4,516</text>
+                                    <text x="620" y="338" text-anchor="middle" fill="var(--text-muted)" font-size="10">주제 (2024 신규)</text>
+                                </g>
+                            </svg>
+                        </div>
+                        <figcaption class="text-sm themeable-muted mt-3">OpenAlex 5종 엔티티 그래프. 저작물(Works)을 중심으로 저자·저널·기관·주제가 링크로 연결된다. 규모는 2026-07-23 API 실측치이며, 구 분류 체계 Concepts(6만 5,026개)는 2024년 유지보수가 중단됐다.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">주목할 것은 성장 속도다. 사용자가 알고 있던 2억 5천만 편은 2022~2023년 무렵의 수치이고, 실측 시점에는 이미 3억 2,097만 편을 넘어섰다. 학술 그래프의 통계는 이렇게 빠르게 변한다. 그래서 이 리포트의 모든 OpenAlex 자체 수치에는 "확인일 2026-07-23"이 따라붙는다. 그런데 빠르게 변하는 건 규모만이 아니다. "무료·키 불필요"라는 정체성 자체가 흔들리기 시작했다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">OpenAlex는 월 15억 건에 이르는 API 호출량(Crossref를 초과하는 규모)을 감당하기 위해, 2026년 2월 13일부로 API 키 의무화와 사용량 기반 과금을 공지했다. 키 없이 호출하면 100 크레딧을 소진한 뒤 오류를 반환하고, 오래 쓰이던 mailto 파라미터 방식은 단계적으로 폐지한다는 내용이었다. 다만 본 리포트가 실제로 호출해 본 2026년 7월 23일까지도 mailto 파라미터만으로 여러 건의 호출이 정상 응답했다. 발표와 실제 적용 사이에 다섯 달의 시차가 있었던 셈이다. 무료 오픈 인프라라도 정책은 빠르게 바뀐다는 것, 그 자체가 이 글이 던지는 첫 번째 경고다. 아래 타임라인은 그 계보를 한눈에 정리한 것이다.</p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-4 sm:p-6 overflow-x-auto" style="background:var(--card-bg); border:1px solid var(--border-color);">
+                            <svg viewBox="0 0 820 250" width="100%" style="min-width:680px; height:auto;" role="img" aria-label="MAG에서 OpenAlex 유료화까지의 계보 타임라인">
+                                <line x1="40" y1="125" x2="780" y2="125" stroke="#BDBDBD" stroke-width="3"/>
+                                <!-- 2016 MAG -->
+                                <circle cx="70" cy="125" r="7" fill="#808080"/>
+                                <text x="70" y="105" text-anchor="middle" fill="var(--text-muted)" font-size="13" font-weight="700">2016</text>
+                                <text x="70" y="150" text-anchor="middle" fill="var(--text-secondary)" font-size="11">MAG 시작</text>
+                                <!-- 2021 MAG 종료 -->
+                                <circle cx="200" cy="125" r="7" fill="#CF1D21"/>
+                                <text x="200" y="105" text-anchor="middle" fill="var(--text-muted)" font-size="13" font-weight="700">2021</text>
+                                <text x="200" y="150" text-anchor="middle" fill="var(--text-secondary)" font-size="11">MAG 종료</text>
+                                <!-- 2022 OpenAlex -->
+                                <circle cx="330" cy="125" r="9" fill="#F86825"/>
+                                <text x="330" y="102" text-anchor="middle" fill="#F86825" font-size="13" font-weight="700">2022</text>
+                                <text x="330" y="150" text-anchor="middle" fill="var(--text-secondary)" font-size="11">OpenAlex 공개</text>
+                                <!-- 2024 Topics + 채택 + Arcadia -->
+                                <circle cx="500" cy="125" r="7" fill="#585858"/>
+                                <text x="500" y="102" text-anchor="middle" fill="var(--text-muted)" font-size="13" font-weight="700">2024</text>
+                                <text x="500" y="150" text-anchor="middle" fill="var(--text-secondary)" font-size="11">Topics 전환·소르본</text>
+                                <text x="500" y="166" text-anchor="middle" fill="var(--text-muted)" font-size="10">라이덴 오픈·Arcadia $7.5M</text>
+                                <!-- 2026 API 과금 -->
+                                <circle cx="700" cy="125" r="9" fill="#CF1D21"/>
+                                <text x="700" y="102" text-anchor="middle" fill="#CF1D21" font-size="13" font-weight="700">2026-02</text>
+                                <text x="700" y="150" text-anchor="middle" fill="var(--text-secondary)" font-size="11">API 키·과금 공지</text>
+                            </svg>
+                        </div>
+                        <figcaption class="text-sm themeable-muted mt-3">MAG 종료(2021)의 공백을 OpenAlex가 메웠고(2022), 2024년 주제 분류 전환과 기관 단위 채택이 이어졌으며, 2026년 2월 무료·무제한 접근에 균열이 생겼다.</figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">넓다는 것의 두 얼굴</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">OpenAlex를 처음 만난 사람이 가장 먼저 놀라는 것은 규모다. 3억 편이 넘는 저작물은 Scopus나 Web of Science 같은 상업 데이터베이스의 서너 배로 보인다. 하지만 이 숫자를 액면 그대로 비교하면 반드시 오도된다. 데이터베이스마다 "무엇을 한 편의 저작물로 셀 것인가"의 정의가 다르기 때문이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">OpenAlex는 Crossref를 1차 공급원으로 삼아 프리프린트·학위논문·회색문헌·데이터셋까지 넓게 담는다. 반면 Scopus·WoS는 편집 심사를 거친 저널을 선별해 담는 "큐레이션형"이다. 그래서 아래 막대는 규모의 우열이 아니라 정의의 차이를 보여주는 그림으로 읽어야 한다.</p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-4 sm:p-6 overflow-x-auto" style="background:var(--card-bg); border:1px solid var(--border-color);">
+                            <svg viewBox="0 0 800 320" width="100%" style="min-width:640px; height:auto;" role="img" aria-label="주요 학술 데이터베이스 규모 비교 막대">
+                                <g font-size="13" fill="var(--text-secondary)" font-weight="700">
+                                    <text x="192" y="66" text-anchor="end">OpenAlex</text>
+                                    <text x="192" y="116" text-anchor="end">Semantic Scholar</text>
+                                    <text x="192" y="166" text-anchor="end">Dimensions</text>
+                                    <text x="192" y="216" text-anchor="end">Web of Science</text>
+                                    <text x="192" y="266" text-anchor="end">Scopus</text>
+                                </g>
+                                <!-- bars -->
+                                <rect x="200" y="48" width="560" height="28" rx="4" fill="#F86825"/>
+                                <rect x="200" y="98" width="349" height="28" rx="4" fill="#808080"/>
+                                <rect x="200" y="148" width="183" height="28" rx="4" fill="#808080"/>
+                                <rect x="200" y="198" width="174" height="28" rx="4" fill="#BDBDBD"/>
+                                <rect x="200" y="248" width="136" height="28" rx="4" fill="#BDBDBD"/>
+                                <!-- values -->
+                                <g font-size="13" font-weight="700">
+                                    <text x="770" y="67" text-anchor="start" fill="#F86825">3.21억</text>
+                                    <text x="559" y="117" text-anchor="start" fill="var(--text-muted)">~2억</text>
+                                    <text x="393" y="167" text-anchor="start" fill="var(--text-muted)">~1.05억</text>
+                                    <text x="384" y="217" text-anchor="start" fill="var(--text-muted)">~1억</text>
+                                    <text x="346" y="267" text-anchor="start" fill="var(--text-muted)">0.78~0.94억</text>
+                                </g>
+                            </svg>
+                        </div>
+                        <figcaption class="text-sm themeable-muted mt-3">주요 학술 데이터베이스의 대략적 규모. OpenAlex만 2026-07-23 라이브 실측(3억 2,097만)이고 나머지는 벤더 공식·비교연구 추정치다. Scopus의 0.78~0.94억은 "core records" 정의 기준. ⚠️ 정의(무엇을 저작물로 세는가)가 서로 달라 <strong>액면 비교는 금지</strong> — 이 막대는 규모의 우열이 아니라 "넓게 세느냐, 선별해 세느냐"의 차이를 보여준다.</figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>넓힘의 대가 — 완비도의 희석</h3>
+                    <p class="themeable-text leading-relaxed mb-6">넓게 담으면 총량은 커지지만, 각 필드가 얼마나 채워졌는지(완비도)는 낮아진다. 회색문헌·소논문은 DOI도, 초록도, 참고문헌 목록도 없는 경우가 많기 때문이다. 2026년 7월 23일 실측한 Works 필드별 채움 비율은 다음과 같다.</p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-bg-secondary">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">필드</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">채움 비율</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">해석</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">DOI 보유</td>
+                                    <td class="border themeable-border px-4 py-3">67.8%</td>
+                                    <td class="border themeable-border px-4 py-3">3분의 1은 DOI 없이 존재 — 식별·연결의 기준점 부재</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">Abstract 보유</td>
+                                    <td class="border themeable-border px-4 py-3">53.7%</td>
+                                    <td class="border themeable-border px-4 py-3">누적 스톡 기준 — 최신 연도만 보면 더 낮다(아래 참조)</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">참고문헌 보유</td>
+                                    <td class="border themeable-border px-4 py-3">31.5%</td>
+                                    <td class="border themeable-border px-4 py-3">인용 그래프를 그릴 수 있는 저작물은 3분의 1 이하</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">전문(fulltext) 인덱싱</td>
+                                    <td class="border themeable-border px-4 py-3">13.0%</td>
+                                    <td class="border themeable-border px-4 py-3">본문까지 색인된 저작물은 소수</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">기관 최소 1개 연결</td>
+                                    <td class="border themeable-border px-4 py-3">42.4%</td>
+                                    <td class="border themeable-border px-4 py-3">절반 이상이 기관 정보 없음 → 3장에서 다룸</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">여기서 오독하기 쉬운 함정이 있다. 완비도가 낮다는 것이 곧 품질이 나쁘다는 뜻은 아니다. Crossref처럼 좁게 담는 데이터베이스와 비교하면 OpenAlex의 완비도 %는 구조적으로 낮게 나올 수밖에 없다. 넓게 세는 분모에 회색문헌이 잔뜩 들어 있기 때문이다. 실제로 Culbert 연구팀이 세 데이터베이스가 공유하는 1,680만 건으로 표본을 통제해 비교하자, OpenAlex의 참고문헌 커버리지는 Scopus·WoS와 <strong>대등</strong>했다(<a href="https://arxiv.org/abs/2401.16359" target="_blank" rel="noopener noreferrer" style="color:#F86825;">Culbert et al., Scientometrics 2025</a>). 인문사회(SSH) 분야에서는 오히려 저널의 66.9%를 색인해 Scopus(48.2%)를 앞섰고, 프랑스어·스페인어·독일어 등 다국어 포괄성에서 우위를 보였다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">그러니 "크다"와 "부정확하다"는 별개의 이야기다. OpenAlex는 크면서도 통제 표본에서는 상업 DB와 대등하다. 문제는 넓게 세는 그 정의가 다른 곳에서 대가를 치른다는 데 있다. 아래 개념도는 두 방식의 관계를 근사적으로 보여준다.</p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-4 sm:p-6 overflow-x-auto" style="background:var(--card-bg); border:1px solid var(--border-color);">
+                            <svg viewBox="0 0 720 320" width="100%" style="min-width:560px; height:auto;" role="img" aria-label="넓은 커버리지와 선별형 커버리지의 관계 개념도">
+                                <circle cx="300" cy="160" r="140" fill="#F86825" fill-opacity="0.14" stroke="#F86825" stroke-width="2.5"/>
+                                <circle cx="450" cy="160" r="88" fill="#585858" fill-opacity="0.16" stroke="#585858" stroke-width="2.5"/>
+                                <text x="225" y="70" text-anchor="middle" fill="#F86825" font-size="15" font-weight="700">OpenAlex</text>
+                                <text x="225" y="90" text-anchor="middle" fill="var(--text-muted)" font-size="11">프리프린트·회색문헌까지 넓게</text>
+                                <text x="512" y="110" text-anchor="middle" fill="var(--text-secondary)" font-size="14" font-weight="700">Scopus·WoS</text>
+                                <text x="512" y="128" text-anchor="middle" fill="var(--text-muted)" font-size="11">선별형 순도</text>
+                                <text x="405" y="165" text-anchor="middle" fill="var(--text-secondary)" font-size="12">대등한</text>
+                                <text x="405" y="182" text-anchor="middle" fill="var(--text-secondary)" font-size="12">참고문헌 품질</text>
+                            </svg>
+                        </div>
+                        <figcaption class="text-sm themeable-muted mt-3">개념도(근사) — 실제 저작물 중복 비율이 아니다. 넓게 담는 OpenAlex가 선별형 상업 DB를 상당 부분 포괄하되, 겹치는 통제 표본 영역에서는 참고문헌 품질이 대등하다는 관계를 도식화한 것이다.</figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">한 가지는 OpenAlex의 잘못이 아니다. 초록 완비도가 최근 급락하는 것은, 2024년 말 이후 Elsevier·Springer Nature·IEEE 등 출판사들이 AI 학습을 견제하며 Crossref로의 초록 배포를 중단했기 때문이다. 일부 분석은 특정 출판사의 최신 논문 초록 보유율이 22.5%까지 떨어졌다고 보고한다. 데이터 품질은 데이터베이스 하나의 문제가 아니라 생산·유통 전 구간이 함께 지는 책임이라는 사실을, 이 급락이 그대로 보여준다.</p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">누가 누구인가 — 저자·기관 식별의 함정</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">"김민수가 쓴 논문"을 정확히 모으는 일은 생각보다 어렵다. 동명이인이 수백 명이고, 한 사람이 여러 표기(한글·영문·이니셜)로 흩어지기 때문이다. 이 문제를 저자 식별(disambiguation)이라 부른다. OpenAlex는 이 알고리즘을 대대적으로 개편해 실제로 큰 성과를 냈다. 교신저자를 정답 데이터와 대조한 정밀도가 0.60에서 0.92로 뛰었고, 이 개편으로 약 700만 편의 저작물에 올바른 교신저자가 새로 부여됐다. 개편의 규모 자체가 문제의 난도를 말해 준다. 저자 임베딩 1억여 건과 저작물 쌍별 유사도 7억여 건을 새로 계산했고, 그 과정에서 과잉병합됐던 저자 프로필 약 320만 건을 ORCID 원자료와 대조해 다시 쪼갰다.</p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-4 sm:p-6 overflow-x-auto" style="background:var(--card-bg); border:1px solid var(--border-color);">
+                            <svg viewBox="0 0 760 340" width="100%" style="min-width:600px; height:auto;" role="img" aria-label="저자 식별 알고리즘 개편 전후 정밀도·재현율·F1 변화">
+                                <!-- baseline -->
+                                <line x1="80" y1="280" x2="720" y2="280" stroke="#BDBDBD" stroke-width="2"/>
+                                <!-- legend -->
+                                <rect x="470" y="20" width="14" height="14" fill="#BDBDBD"/>
+                                <text x="490" y="32" fill="var(--text-muted)" font-size="12">개편 전</text>
+                                <rect x="560" y="20" width="14" height="14" fill="#F86825"/>
+                                <text x="580" y="32" fill="var(--text-muted)" font-size="12">개편 후</text>
+                                <!-- Precision -->
+                                <rect x="130" y="136" width="55" height="144" fill="#BDBDBD"/>
+                                <rect x="195" y="59" width="55" height="221" fill="#F86825"/>
+                                <text x="157" y="128" text-anchor="middle" fill="var(--text-muted)" font-size="12" font-weight="700">0.60</text>
+                                <text x="222" y="51" text-anchor="middle" fill="#F86825" font-size="12" font-weight="700">0.92</text>
+                                <text x="190" y="302" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-weight="700">정밀도</text>
+                                <!-- Recall -->
+                                <rect x="340" y="62" width="55" height="218" fill="#BDBDBD"/>
+                                <rect x="405" y="69" width="55" height="211" fill="#F86825"/>
+                                <text x="367" y="54" text-anchor="middle" fill="var(--text-muted)" font-size="12" font-weight="700">0.91</text>
+                                <text x="432" y="61" text-anchor="middle" fill="#F86825" font-size="12" font-weight="700">0.88</text>
+                                <text x="400" y="302" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-weight="700">재현율</text>
+                                <!-- F1 -->
+                                <rect x="550" y="107" width="55" height="173" fill="#BDBDBD"/>
+                                <rect x="615" y="64" width="55" height="216" fill="#F86825"/>
+                                <text x="577" y="99" text-anchor="middle" fill="var(--text-muted)" font-size="12" font-weight="700">0.72</text>
+                                <text x="642" y="56" text-anchor="middle" fill="#F86825" font-size="12" font-weight="700">0.90</text>
+                                <text x="610" y="302" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-weight="700">F1</text>
+                            </svg>
+                        </div>
+                        <figcaption class="text-sm themeable-muted mt-3">교신저자 식별 알고리즘 개편 전후. 정밀도가 크게 오르며 F1이 0.72→0.90으로 도약했다. 재현율은 0.91→0.88로 소폭 내렸는데, 정밀도를 높이면서 치른 트레이드오프다. (출처: OpenAlex 공식 블로그, hand-checked gold standard 대조)</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">그런데 정밀도 92%를 뒤집어 읽으면 이렇게 된다. <strong>여덟 건 중 하나는 여전히 틀린다.</strong> 게다가 이 정확도는 고르지 않다. 전자정보공학처럼 데이터가 풍부한 분야는 재현율이 90%를 넘지만, 일부 지역·분야에서는 눈에 띄게 낮다. 노벨 경제학상 수상자 클로디아 골딘의 논문이 최소 세 개의 별도 저자 프로필로 흩어져 있는 사례가 보고됐고, 정정 요청 폼은 있지만 수개월간 처리되지 않고 방치된 경우도 있다. AI 에이전트가 "이 저자의 논문 목록"을 그대로 신뢰해 인용하면, 그 8분의 1의 오류가 그대로 결과에 실린다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>ORCID의 두 얼굴 — 7.5%와 90%</h3>
+                    <p class="themeable-text leading-relaxed mb-6">저자 신원의 국제 표준 식별자 ORCID가 얼마나 붙어 있는지도 겉보기와 속내가 다르다. 저자 프로필 기준으로는 전체의 7.5%(약 907만 명)만 ORCID를 갖는다. 낮아 보인다. 하지만 논문 단위로 보면 다른 그림이다. Culbert 연구팀은 OpenAlex 논문의 90% 이상이 최소 하나의 ORCID를 포함한다고 보고한다. 다작 저자와 주저자에게 ORCID가 몰려 있기 때문이다. 다만 같은 연구는 이 90%대가 일부 잘못 배정된 ORCID 때문에 다소 과다해 보인다는 단서를 붙인다. 두 숫자 모두 참이며, 어느 단위로 보느냐에 따라 신뢰도가 갈린다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>기관은 "배정된 뒤"만 정확하다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">기관 정보는 더 미묘하다. OpenAlex의 기관 엔티티는 사실상 전량이 ROR(Research Organization Registry) ID를 갖는다. 그리고 아프리카 연구 커버리지를 검증한 논문은 "OpenAlex가 부여한 ROR ID를 레지스트리와 대조했을 때 모두 정확했다"고 보고한다. 즉 <strong>ROR이 일단 배정되면 정확하다.</strong> 문제는 배정 과정과 시점 반영에서 터진다.</p>
+
+                    <!-- Image: ROR 로고 -->
+                    <figure class="my-8">
+                        <div class="bg-white rounded-xl border themeable-border p-8 flex justify-center">
+                            <img src="./image/img-02-ror-logo.svg"
+                                 alt="ROR(Research Organization Registry) 로고 — OpenAlex가 기관 식별에 쓰는 글로벌 오픈 레지스트리"
+                                 class="max-w-[260px] w-full object-contain"
+                                 loading="lazy"
+                                 onerror="this.closest('figure').style.display='none'">
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ ROR — 연구 기관에 영구 식별자를 부여하는 오픈 레지스트리. OpenAlex 기관 엔티티는 사실상 전량이 ROR ID를 갖지만, "배정된 뒤"의 정확도와 "무엇을 배정할지"의 정확도는 별개다. | Source: <a href="https://commons.wikimedia.org/wiki/File:ROR_logo.svg" target="_blank" rel="noopener" class="underline">Wikimedia Commons — ROR (CC BY 4.0)</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">이 비대칭은 기관 단위 독립 검증에서도 드러난다. 프랑스 에콜 데 퐁의 출판물을 대조한 연구에서 재현율은 93%로 높아 실제 논문 대부분을 찾아냈지만, 검색된 결과의 약 4분의 1은 사실 다른 기관 소속이었다. 일단 배정된 ROR은 믿을 만해도, 무엇을 그 기관에 붙일지의 단계에서 오차가 쌓인다는 뜻이다. 그 오차는 크게 세 갈래로 나타난다.</p>
+
+                    <ul class="mb-6" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3 mb-3"><span style="color:#F86825;" class="mt-1 font-bold">·</span><span class="themeable-text leading-relaxed"><strong>소속 문자열 파싱 오류:</strong> 중국 AI 기업 SenseTime이 포함된 논문의 약 98%가 "Group Sense"로 오분류되고, 50종 이상의 소속 문자열 패턴이 국가를 잘못 매칭한다는 보고가 있다.</span></li>
+                        <li class="flex items-start gap-3 mb-3"><span style="color:#F86825;" class="mt-1 font-bold">·</span><span class="themeable-text leading-relaxed"><strong>경력 전체의 소급 반영:</strong> 저자 프로필이 쌓아 온 소속 이력 전체가 특정 논문 레코드에 소급 반영되는 구조적 특징이 있다. "발표 당시 소속"과 "저자의 전체 경력 기관"을 구분하지 않으면 대학 순위 같은 기관 단위 통계가 오귀인된다.</span></li>
+                        <li class="flex items-start gap-3"><span style="color:#F86825;" class="mt-1 font-bold">·</span><span class="themeable-text leading-relaxed"><strong>절반 이상은 아예 없다:</strong> 전체 저작물의 57.6%는 authorship에 기관 ID가 하나도 연결돼 있지 않다.</span></li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6"><span class="text-sm themeable-muted">경력 소급 반영은 본 리포트가 "Deep Learning"(Nature, 2015) 논문의 authorship 레코드를 직접 조회해 관찰한 사례로, 저자 한 명에게 Meta·NYU 등 복수 기관이 동시에 표시됐다. 이는 일반화된 오류율이 아니라 1건의 실측 관찰이며, 정량 오류율은 위 학술 연구 수치를 기준으로 삼는다.</span></p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">분류와 무결성 — 철회, 그리고 오염</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">논문이 무엇에 관한 글인지 분류하는 일도 2024년 크게 바뀌었다. OpenAlex는 위키데이터 기반의 구 분류 체계 Concepts(6만 5,026개)를 사실상 유지보수 중단하고, 도메인→필드→서브필드→토픽의 4단 계층을 가진 Topics(4,516개)로 전환했다. 더 정돈된 체계지만, 넓은 정의와 만나면 미분류·드리프트가 남는다. 실측 기준 전체의 12.1%는 아직 주제가 분류되지 않은 상태다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">분류보다 더 예민한 것이 무결성 신호, 그중에서도 철회(retraction) 반영이다. 철회된 논문을 걸러내지 못하면 잘못된 결론이 계속 인용된다. 아래는 이 장에서 다루는 다섯 가지 품질 이슈를 심각도로 정리한 스코어카드다.</p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-4 sm:p-6 overflow-x-auto" style="background:var(--card-bg); border:1px solid var(--border-color);">
+                            <svg viewBox="0 0 760 340" width="100%" style="min-width:600px; height:auto;" role="img" aria-label="OpenAlex 데이터 품질 이슈 스코어카드">
+                                <!-- header -->
+                                <text x="20" y="34" fill="var(--text-muted)" font-size="12" font-weight="700">품질 이슈</text>
+                                <text x="470" y="34" fill="var(--text-muted)" font-size="12" font-weight="700">심각도</text>
+                                <text x="600" y="34" fill="var(--text-muted)" font-size="12" font-weight="700">핵심 신호</text>
+                                <line x1="20" y1="44" x2="740" y2="44" stroke="var(--border-color)" stroke-width="1"/>
+                                <!-- rows -->
+                                <g font-size="13">
+                                    <!-- row1 -->
+                                    <text x="20" y="80" fill="var(--text-secondary)" font-weight="700">저자 식별 오류</text>
+                                    <rect x="470" y="66" width="96" height="20" rx="3" fill="#F86825" fill-opacity="0.4"/>
+                                    <text x="518" y="81" text-anchor="middle" fill="var(--text-primary)" font-size="11" font-weight="700">중간</text>
+                                    <text x="600" y="80" fill="var(--text-muted)" font-size="11">정밀도 92% (8건 중 1건)</text>
+                                    <!-- row2 -->
+                                    <text x="20" y="128" fill="var(--text-secondary)" font-weight="700">기관 소급 반영</text>
+                                    <rect x="470" y="114" width="96" height="20" rx="3" fill="#F86825" fill-opacity="0.62"/>
+                                    <text x="518" y="129" text-anchor="middle" fill="var(--text-primary)" font-size="11" font-weight="700">중간~높음</text>
+                                    <text x="600" y="128" fill="var(--text-muted)" font-size="11">57.6% 기관 미연결</text>
+                                    <!-- row3 -->
+                                    <text x="20" y="176" fill="var(--text-secondary)" font-weight="700">주제 분류 드리프트</text>
+                                    <rect x="470" y="162" width="96" height="20" rx="3" fill="#F86825" fill-opacity="0.4"/>
+                                    <text x="518" y="177" text-anchor="middle" fill="var(--text-primary)" font-size="11" font-weight="700">중간</text>
+                                    <text x="600" y="176" fill="var(--text-muted)" font-size="11">미분류 12.1%</text>
+                                    <!-- row4 -->
+                                    <text x="20" y="224" fill="var(--text-secondary)" font-weight="700">철회 반영 불일치</text>
+                                    <rect x="470" y="210" width="96" height="20" rx="3" fill="#CF1D21" fill-opacity="0.85"/>
+                                    <text x="518" y="225" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">높음</text>
+                                    <text x="600" y="224" fill="var(--text-muted)" font-size="11">4-DB 일치 단 3%</text>
+                                    <!-- row5 -->
+                                    <text x="20" y="272" fill="var(--text-secondary)" font-weight="700">초록 결측·급락</text>
+                                    <rect x="470" y="258" width="96" height="20" rx="3" fill="#F86825" fill-opacity="0.62"/>
+                                    <text x="518" y="273" text-anchor="middle" fill="var(--text-primary)" font-size="11" font-weight="700">높음</text>
+                                    <text x="600" y="272" fill="var(--text-muted)" font-size="11">출판사발, 최신 22.5%까지</text>
+                                    <!-- row6 -->
+                                    <text x="20" y="320" fill="var(--text-secondary)" font-weight="700">paper-mill·AI 오염</text>
+                                    <rect x="470" y="306" width="96" height="20" rx="3" fill="#CF1D21" fill-opacity="0.85"/>
+                                    <text x="518" y="321" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">높음</text>
+                                    <text x="600" y="320" fill="var(--text-muted)" font-size="11">2022 대비 3.0배 증가</text>
+                                </g>
+                            </svg>
+                        </div>
+                        <figcaption class="text-sm themeable-muted mt-3">OpenAlex 데이터 품질 이슈 스코어카드. 색이 진할수록 심각도가 높다. 붉은 두 칸(철회 반영 불일치, paper-mill 오염)은 검증 없이 쓰면 AI 파이프라인에 직접 리스크가 되는 항목이다.</figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>"철회됐다고 믿었는데, 그 DB만 그렇다"</h3>
+                    <p class="themeable-text leading-relaxed mb-6">철회 반영은 데이터베이스마다 딴판이다. 한 교차비교 연구는 Crossref·Retraction Watch·Scopus·WoS 네 곳이 <strong>모두 일치하게 철회로 표시한 논문이 전체의 3%뿐</strong>이라고 보고한다. 같은 논문을 두고도 데이터베이스별로 철회 건수가 크게 갈린다.</p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-4 sm:p-6 overflow-x-auto" style="background:var(--card-bg); border:1px solid var(--border-color);">
+                            <svg viewBox="0 0 760 240" width="100%" style="min-width:560px; height:auto;" role="img" aria-label="데이터베이스별 철회 논문 색인 건수 비교">
+                                <g font-size="13" fill="var(--text-secondary)" font-weight="700">
+                                    <text x="222" y="52" text-anchor="end">Retraction Watch</text>
+                                    <text x="222" y="102" text-anchor="end">Scopus</text>
+                                    <text x="222" y="152" text-anchor="end">Web of Science</text>
+                                    <text x="222" y="202" text-anchor="end">Crossref</text>
+                                </g>
+                                <rect x="230" y="36" width="470" height="26" rx="4" fill="#F86825"/>
+                                <rect x="230" y="86" width="257" height="26" rx="4" fill="#808080"/>
+                                <rect x="230" y="136" width="197" height="26" rx="4" fill="#808080"/>
+                                <rect x="230" y="186" width="176" height="26" rx="4" fill="#808080"/>
+                                <g font-size="13" font-weight="700">
+                                    <text x="708" y="55" fill="#F86825">39,301</text>
+                                    <text x="495" y="105" fill="var(--text-muted)">21,515</text>
+                                    <text x="435" y="155" fill="var(--text-muted)">16,434</text>
+                                    <text x="414" y="205" fill="var(--text-muted)">14,745</text>
+                                </g>
+                            </svg>
+                        </div>
+                        <figcaption class="text-sm themeable-muted mt-3">동일 비교 연구에서 데이터베이스별로 색인한 철회 논문 건수. 선별형 저널 기반 DB(Scopus·WoS·Crossref)는 withdrawal 자체를 색인하지 않는 경우가 많다. OpenAlex·The Lens 같은 비선별형 DB가 오히려 더 많이 잡지만, "많이 잡는 것"과 "정확히 잡는 것"은 다르다. (출처: Schneider et al.; Ortega &amp; Delgado-Quirós, Scientometrics 2024)</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">OpenAlex는 2023년 Crossref가 인수·공개한 Retraction Watch 데이터를 직접 흡수해 철회 필드를 보강했다. 그 덕에 withdrawal까지 넓게 색인한다. 다만 2023년 12월 22일부터 2024년 3월 19일 사이에는 <code>is_retracted</code> 불리언 필드가 일부 논문을 잘못 표시한 데이터 오류 구간이 있었고, 해당 기간 데이터를 쓴 이용자에게는 재확인이 권고됐다. 철회 여부를 단 하나의 불리언으로 단순화하면서 정보가 손실된 것이다. 결론은 하나다. 철회 여부는 어느 한 소스만 믿지 말고 여러 소스를 교차 확인해야 한다.</p>
+
+                    <!-- Image: Retraction Watch 로고 -->
+                    <figure class="my-8">
+                        <div class="bg-white rounded-xl border themeable-border p-8 flex justify-center">
+                            <img src="./image/img-03-retraction-watch-logo.webp"
+                                 alt="Retraction Watch 로고 — 철회 논문을 추적하는 비영리 감시 데이터베이스, OpenAlex가 2023년 데이터를 흡수한 소스"
+                                 class="max-w-[220px] w-full object-contain"
+                                 loading="lazy"
+                                 onerror="this.closest('figure').style.display='none'">
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Retraction Watch — 논문 철회를 추적해 온 비영리 감시 데이터베이스. OpenAlex는 2023년 이 데이터를 흡수했지만, 4개 주요 DB가 모두 일치하는 철회 표시는 여전히 3%뿐이다. | Source: <a href="https://commons.wikimedia.org/wiki/File:Retraction_Watch_logo.webp" target="_blank" rel="noopener" class="underline">Wikimedia Commons</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>넓은 정의가 필터를 느슨하게 한다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">마지막 위험은 오염이다. 공개 데이터셋(FDA 부작용 보고, UK Biobank 등)을 악용해 대량 생산되는 paper-mill 논문이, OpenAlex 색인 기준으로 2025년에만 2만 3,005건 관측됐다. 추세 예측을 1만 1,577건 초과하는 규모로, 2022년 대비 <strong>3.0배</strong>(중국발은 4.2배) 늘었다. OpenAlex가 Crossref 기반이라 "연구논문"의 정의가 넓어 전문·후문·회색문헌까지 통과시키는 구조적 소지가 있기 때문이다. 다만 같은 넓음이 비영어권 커버리지 격차를 메워, paper-mill 탐지 연구의 대조군으로도 쓰인다는 점은 역설적 장점이다. 이 오염 문제는 우리가 앞서 다룬 <a href="/report/ai-science-new-era/ko/" style="color:#F86825;">AI가 바꾸는 과학의 새 시대</a>에서 짚은 흐름의 데이터 인프라 버전이기도 하다.</p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">AI 리서치 파이프라인에 넣기 전에</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">지금까지의 이야기는 하나의 경로로 모인다. 오염되거나 잘못 귀속된 서지 데이터가 RAG 검색을 거쳐 에이전트에게 전달되면, 그 오류는 가짜 인용·오귀인·환각으로 증폭돼 사용자에게 도달한다. 문제는 이 경로에 아무 검증 게이트가 없을 때다.</p>
+
+                    <figure class="my-8">
+                        <div class="rounded-xl p-4 sm:p-6 overflow-x-auto" style="background:var(--card-bg); border:1px solid var(--border-color);">
+                            <svg viewBox="0 0 800 220" width="100%" style="min-width:680px; height:auto;" role="img" aria-label="오염된 서지 데이터가 AI 에이전트 출력으로 번지는 경로와 검증 게이트">
+                                <defs>
+                                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                                        <path d="M0,0 L8,3 L0,6 Z" fill="#808080"/>
+                                    </marker>
+                                </defs>
+                                <!-- box1 -->
+                                <rect x="20" y="70" width="150" height="70" rx="8" fill="#CF1D21" fill-opacity="0.12" stroke="#CF1D21" stroke-width="1.5"/>
+                                <text x="95" y="100" text-anchor="middle" fill="var(--text-primary)" font-size="13" font-weight="700">오염된 서지</text>
+                                <text x="95" y="120" text-anchor="middle" fill="var(--text-muted)" font-size="11">철회·오귀인·paper-mill</text>
+                                <!-- arrow with gate -->
+                                <line x1="170" y1="105" x2="250" y2="105" stroke="#808080" stroke-width="2" marker-end="url(#arrow)"/>
+                                <!-- gate -->
+                                <rect x="255" y="60" width="120" height="90" rx="8" fill="#F86825" fill-opacity="0.14" stroke="#F86825" stroke-width="2"/>
+                                <text x="315" y="92" text-anchor="middle" fill="#F86825" font-size="13" font-weight="700">검증 게이트</text>
+                                <text x="315" y="112" text-anchor="middle" fill="var(--text-secondary)" font-size="10">감사·교차대조·</text>
+                                <text x="315" y="126" text-anchor="middle" fill="var(--text-secondary)" font-size="10">스코프 축소</text>
+                                <line x1="375" y1="105" x2="455" y2="105" stroke="#808080" stroke-width="2" marker-end="url(#arrow)"/>
+                                <!-- box3 RAG -->
+                                <rect x="460" y="70" width="150" height="70" rx="8" fill="var(--card-bg)" stroke="#585858" stroke-width="1.5"/>
+                                <text x="535" y="100" text-anchor="middle" fill="var(--text-primary)" font-size="13" font-weight="700">RAG 검색</text>
+                                <text x="535" y="120" text-anchor="middle" fill="var(--text-muted)" font-size="11">임베딩·검색·주입</text>
+                                <line x1="610" y1="105" x2="620" y2="105" stroke="#808080" stroke-width="2"/>
+                                <!-- box4 output -->
+                                <rect x="628" y="70" width="150" height="70" rx="8" fill="var(--card-bg)" stroke="#585858" stroke-width="1.5"/>
+                                <text x="703" y="100" text-anchor="middle" fill="var(--text-primary)" font-size="13" font-weight="700">에이전트 출력</text>
+                                <text x="703" y="120" text-anchor="middle" fill="var(--text-muted)" font-size="11">신뢰 가능한 인용</text>
+                                <text x="315" y="185" text-anchor="middle" fill="var(--text-muted)" font-size="12">게이트가 없으면: 가짜 인용·오귀인·환각이 그대로 출력으로 번진다</text>
+                            </svg>
+                        </div>
+                        <figcaption class="text-sm themeable-muted mt-3">오염된 서지 데이터가 에이전트 출력으로 번지는 경로. 핵심은 데이터를 넣기 전 단계에 검증 게이트를 두는 것이다. 게이트가 없으면 오류가 그대로 최종 답변에 실린다.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">이 게이트를 실무에서 구성하는 다섯 가지 원칙은 다음과 같다. 각 항목은 앞선 장에서 진단한 결함에 하나씩 대응한다.</p>
+
+                    <ul class="mb-8" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3 mb-3"><span style="color:#F86825;" class="mt-1 font-bold">1</span><span class="themeable-text leading-relaxed"><strong>ORCID를 논문 단위 기준점으로.</strong> 저자 프로필(정밀도 92%)을 그대로 신뢰하지 말고, 논문 단위 ORCID로 저자 신원을 자체 대조한다. (3장 대응)</span></li>
+                        <li class="flex items-start gap-3 mb-3"><span style="color:#F86825;" class="mt-1 font-bold">2</span><span class="themeable-text leading-relaxed"><strong>철회는 다중 소스로 교차 확인.</strong> OpenAlex의 철회 플래그 하나에 의존하지 말고 Retraction Watch 등과 교차한다. 4-DB 일치가 3%뿐이라는 사실을 전제로 설계한다. (4장 대응)</span></li>
+                        <li class="flex items-start gap-3 mb-3"><span style="color:#F86825;" class="mt-1 font-bold">3</span><span class="themeable-text leading-relaxed"><strong>주제(Topic) 신뢰도는 하향 조정.</strong> 미분류 12.1%와 분류 드리프트를 감안해, 자동 분류를 절대 기준으로 쓰지 않고 보조 신호로만 취급한다. (4장 대응)</span></li>
+                        <li class="flex items-start gap-3 mb-3"><span style="color:#F86825;" class="mt-1 font-bold">4</span><span class="themeable-text leading-relaxed"><strong>발표 시점 소속과 경력 기관을 분리.</strong> 기관 단위 집계를 낼 때는 소급 반영된 이력 전체가 아니라 발표 당시 소속을 기준으로 필터링한다. (3장 대응)</span></li>
+                        <li class="flex items-start gap-3"><span style="color:#F86825;" class="mt-1 font-bold">5</span><span class="themeable-text leading-relaxed"><strong>목적에 맞게 스코프를 좁힌다.</strong> 3억 건 전체를 삼키지 말고, 쓰려는 목적에 맞는 부분집합으로 재현 가능하게 좁힌다. (2·4장 대응)</span></li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">다섯 번째 원칙에는 이미 검증된 모델이 있다. CWTS 라이덴 랭킹 오픈 에디션은 3억 건 전체가 아니라, 재현성을 확보할 수 있는 "핵심 국제 저널의 영어 논문·리뷰" 약 930만 건으로 스코프를 의도적으로 좁혀 오픈 랭킹을 만들었다. 넓은 소스를 그대로 삼키는 대신, 목적에 맞게 감사하고 좁혔을 때 비로소 신뢰할 만한 결과가 나온다는 것을 보여주는 사례다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">OpenAlex는 "쓰지 말아야 할 데이터"가 아니다. 커버리지 폭, 참고문헌 품질의 대등함, CC0 오픈 거버넌스는 분명한 장점이다. 다만 무료·오픈이라는 선의가 곧 품질 보증은 아니다. 데이터 품질은 소스가 착하냐가 아니라, 어디에 어떻게 쓰느냐(fit-for-purpose)에서 결정된다.</p>
+                    </div>
+                </section>
+
+                <!-- 페블러스 관심의 이유 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">P</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스에게 이 이야기는</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">페블러스가 OpenAlex를 눈여겨보는 이유는 학술 그래프 그 자체가 아니다. 이 초대형 오픈 데이터셋이 마주친 문제가, 페블러스 DataClinic이 산업 데이터에서 매일 진단하는 문제와 정확히 같은 구조이기 때문이다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">품질 결함은 1:1로 대응한다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">저자 식별 오류, 기관 매핑 부정확, 주제 분류 드리프트, 철회 반영 지연은 각각 라벨 오류·중복·분포 드리프트·결측이라는 전형적 데이터 품질 결함에 그대로 대응한다. OpenAlex는 "AI-Ready Data, 넣기 전에 감사하라"를 학술 지식그래프라는 구체적 소재로 실증하는 사례다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">품질은 모델 출력으로 이어진다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">학습·검색 데이터의 품질이 모델의 출력으로 이어진다는 명제를, 이 리포트는 "AI 리서치 에이전트가 오염된 서지를 검색하면 가짜 인용이 생긴다"는 구체적 인과로 보여준다. 완비도 희석, 정밀도 92%의 8분의 1 오류, 철회 3% 교차일치는 모두 "품질 신호가 소스마다 다르니 단일 소스를 맹신하지 말라"는 다중 소스 검증 원칙으로 수렴한다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">감사 절차 자체가 수요다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">RAG·에이전트·연구정보 시스템을 만드는 실무자에게 "무료 오픈 소스를 신뢰하기 전에 무엇을, 어떻게 감사할 것인가"의 실행 가능한 체크리스트(5장)를 제공하는 것. 이 감사 절차 자체가 페블러스가 언어화하고 자동화할 수 있는 데이터 품질 감사 수요다. 오픈 데이터 시대에 "데이터 품질 감사자"라는 관점을 선점하는 일이기도 하다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">표준 없이는 비교가 없고, 감사 없이는 신뢰가 없다. OpenAlex는 오픈 데이터 시대에 데이터 품질이 소스가 아니라 사용처에서 결정된다는 것을 보여주는 가장 생생한 실사례다.</p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 논문·프리프린트</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Priem, J., Piwowar, H., &amp; Orr, R. (2022). <a href="https://arxiv.org/abs/2205.01833" target="_blank" rel="noopener">OpenAlex: A fully-open index of scholarly works, authors, venues, institutions, and concepts</a>. arXiv:2205.01833. (OpenAlex 소개 원 논문)</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Culbert, J. et al. (2025). <a href="https://arxiv.org/abs/2401.16359" target="_blank" rel="noopener">Reference Coverage Analysis of OpenAlex compared to Web of Science and Scopus</a>. Scientometrics, 10.1007/s11192-025-05293-3. (1,680만 건 통제 표본 — 참고문헌 커버리지 대등)</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Analysis of the Publication and Document Types in OpenAlex, WoS, Scopus, PubMed and Semantic Scholar. <em>Quantitative Science Studies</em> (MIT Press), 10.1162/QSS.a.406 / arXiv:2406.15154. (문서 유형 분류 비교 — Semantic Scholar 완비도 37%)</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Beyond traditional metrics: Assessing OpenAlex and Scopus for SSH research evaluation. SAGE, 10.1177/01655515251411204 (2026). (SSH 저널 66.9% vs 48.2%)</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Accuracy Assessment of OpenAlex and Clarivate Scholar ID with an LLM-Assisted Benchmark. arXiv:2502.11610 (2025). (저자 식별 정확도 벤치마크 방법론)</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Hauschke, C., &amp; Nazarovets, S. (2025). (Non-)retracted academic papers in OpenAlex. SAGE, 10.1177/01655515251322478. (is_retracted 필드 오류 구간)</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Ortega, J. L., &amp; Delgado-Quirós, L. (2024). The indexation of retracted literature in seven principal scholarly databases. <em>Scientometrics</em>, 10.1007/s11192-024-05034-y. (비선별형 DB의 철회 색인 우위)</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Visser, M., van Eck, N. J., &amp; Waltman, L. (2021). Large-scale comparison of bibliographic data sources (Scopus, WoS, Dimensions, Crossref, MAG). <em>Quantitative Science Studies</em>. (통제 표본 규모 비교)</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">van Eck, N. J., &amp; Waltman, L. (2025). Crossref 초록 배포 감사 — abstract 커버리지 급락 분석. (출판사발 초록 배포 중단)</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">독일 기관 OpenAlex–Scopus 소속 정확도 비교. arXiv:2605.01337 (2026); 아프리카 연구 커버리지·ROR 검증. arXiv:2409.01120 (2024).</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">정책·공식 문서·통계</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">11.</span><span class="ref-body">OpenAlex 공식 블로그 — "A big improvement to our corresponding-author data" (교신저자 정밀도 0.60→0.92) 및 "OpenAlex: 2024 in Review" (소르본 전환, Arcadia $7.5M 그랜트).</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">OurResearch — <a href="https://github.com/ourresearch/openalex-help" target="_blank" rel="noopener">openalex-help/pricing.md</a> (GitHub) 및 2026-02 API 키·사용량 기반 과금 공지.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">CWTS Leiden Ranking Open Edition — <a href="https://open.leidenranking.com" target="_blank" rel="noopener">open.leidenranking.com</a>. (930만 건으로 스코프를 좁힌 재현 가능 오픈 랭킹)</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body"><a href="https://github.com/dataesr/openalex-affiliations" target="_blank" rel="noopener">dataesr/openalex-affiliations</a> (GitHub 공개 이슈 트래커) — 국가·소속 오매칭.</span></li>
+                        <li><span class="ref-num">15.</span><span class="ref-body">paper-mill·공개 데이터셋 악용 규모(2025년 23,005건, 2022 대비 3.0배). ScienceDirect 리뷰(2026); bioRxiv paper-mill 탐지 연구(2025).</span></li>
+                        <li><span class="ref-num">16.</span><span class="ref-body">직접 API 실측 — <a href="https://api.openalex.org" target="_blank" rel="noopener">api.openalex.org</a>, 확인일 2026-07-23 (엔티티 규모·완비도·기관·정책 실사).</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스 인접</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">17.</span><span class="ref-body">페블러스 블로그 — <a href="/report/ai-science-new-era/ko/" target="_blank" rel="noopener">AI가 바꾸는 과학의 새 시대</a> (AI 생성 논문 오염 — 본 리포트의 선행·심화 연결).</span></li>
+                    </ul>
+                </section>
+
+                <!-- FAQ (config.faqs로 렌더링) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <!-- Citation download (BibTeX/RIS) -->
+    <script src="/scripts/citation-download.js?v=20260723" defer></script>
+
+    <!-- Scripts -->
+    <script src="/scripts/common-utils.js?v=20260723"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "operator",
+                "at": "2026-07-23T01:39:18.571Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-23T01:42:00.122Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-23T02:10:06.346Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1784770758571-q8b93p",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-23T02:49:24.123Z"
+            },
+            mainTitle: "공짜로 열린 3억 편의 논문, 검증 없이 삼켜도 될까",
+            subtitle: "OpenAlex — 무료·오픈 학술 지식그래프의 커버리지·저자 식별·무결성을 데이터 품질의 렌즈로 진단한다",
+            pageTitle: "OpenAlex 데이터 품질 진단 — 무료 학술 그래프의 커버리지·저자 식별·무결성 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-23",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/openalex-scholarly-graph-data-quality/ko/",
+            tags: ["OpenAlex", "학술 데이터베이스", "데이터 품질", "지식그래프", "서지계량", "AI 리서치 에이전트", "RAG", "오픈 사이언스", "disambiguation", "AI-Ready Data"],
+            faqs: [
+                { question: "무료인데 정확도는 믿을 만한가요?", answer: "목적에 따라 다릅니다. 참고문헌 커버리지나 논문 단위 ORCID 연결은 Scopus·Web of Science와 대등한 수준이지만, 저자 프로필 정밀도(약 92%)·기관 소급 반영·철회 논문 반영은 검증 없이 신뢰하면 안 됩니다. '무료라서 저품질'도 '무료라서 완벽'도 아닌, 쓰려는 목적에 맞느냐(fit-for-purpose)로 판단해야 합니다." },
+                { question: "Scopus나 Web of Science 대신 써도 되나요?", answer: "커버리지 폭, 특히 인문사회·다국어·오픈액세스 영역에서는 오히려 OpenAlex가 우위입니다. 소르본 대학이나 라이덴 랭킹 오픈 에디션처럼 기관 단위 전환 사례도 늘고 있습니다. 다만 '선별형 순도'가 필요한 연구 평가 작업이라면 스코프를 좁혀 검증하는 절차가 반드시 필요합니다." },
+                { question: "정말 무료·키 불필요인가요?", answer: "2026년 2월 13일부로 API 키 의무화와 사용량 기반 과금이 공지됐습니다. 본 리포트 실측 시점(2026년 7월 23일)에는 mailto 파라미터만으로 소량 호출이 정상 응답했지만, 대량 호출은 키가 필요할 가능성이 높습니다. 실행 시점의 공식 문서를 반드시 다시 확인하세요." },
+                { question: "저자 프로필이 틀렸는데 어떻게 고치나요?", answer: "OpenAlex는 정정 요청 폼을 제공하지만, 요청이 수개월간 'open' 상태로 방치된 사례가 보고됩니다. 실무에서는 정정 요청과 별개로 ORCID를 논문 단위의 기준점으로 삼아 자체 대조하는 편이 안전합니다." },
+                { question: "철회(retraction)된 논문은 걸러지나요?", answer: "부분적으로만 걸러집니다. OpenAlex는 withdrawal까지 넓게 색인하지만 4개 주요 DB가 모두 일치하는 철회 논문은 3%뿐이고, 특정 기간에는 is_retracted 필드 오류도 있었습니다. Retraction Watch 등 여러 소스를 교차 확인하는 것을 권장합니다." },
+                { question: "AI 리서치 도구(RAG·에이전트)에 그대로 넣어도 안전한가요?", answer: "위험합니다. 오염되거나 잘못 귀속된 서지 데이터가 검색을 거쳐 가짜 인용·환각으로 번지는 경로가 실재합니다. 5장의 검증 체크리스트(여러 소스 대조, 신뢰도 하향, 스코프 축소)를 파이프라인에 넣어야 합니다." },
+                { question: "paper-mill·AI 생성 논문 오염은 얼마나 심각한가요?", answer: "OpenAlex 색인 기준으로 공개 데이터셋을 악용한 논문이 2025년에 추세 대비 약 3.0배(중국발은 4.2배) 증가했습니다. Crossref 기반의 넓은 '연구논문' 정의가 필터를 느슨하게 하는 구조적 소지가 있습니다." },
+                { question: "상업적으로 써도 되나요? (라이선스)", answer: "핵심 데이터·API·스냅샷은 CC0로 상업적 사용이 가능합니다. 다만 대량·상업 사용은 2026년 도입된 Premium/사용량 기반 과금 대상이 될 수 있으니 티어를 확인해야 합니다." },
+                { question: "Semantic Scholar와 뭐가 다른가요?", answer: "둘 다 넓은 오픈 그래프지만, Semantic Scholar는 웹 크롤링 기반이라 문서 유형 완비도가 약 37%로 낮고, OpenAlex는 Crossref 기반이라 메타데이터 계보가 다릅니다. 다만 여러 AI 도구가 두 소스를 함께 쓰기 때문에 결과가 서로 겹치는 경향이 있어, 오히려 '독립 소스로 대조했다'는 착각을 조심해야 합니다." }
+            ]
+        });
+    </script>
+</body>
+</html>
