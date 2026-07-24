@@ -13,9 +13,9 @@
  *
  * ⚠️ 소프트 게이트 = 소스 보기·JS 끄기로 우회 가능. 콘텐츠 보호가 아니라 가입 유도용.
  *
- * 인증: 현재는 sessionStorage 스텁. 실제 DataClinic Firebase 연동은 후속 PR —
- *   PBLS_GATE_AUTH 의 signInEmail/signUp/signInGoogle 안의 // FIREBASE: 주석 지점에
- *   firebase.auth() 호출을 꽂으면 된다.
+ * 인증: DataClinic Firebase(pbls-dataclinic-prod). 게이트 페이지에서만 SDK(compat)를 gstatic 에서
+ *   지연 로드해 firebase.auth() 로 로그인/가입한다. config 는 gated.json 의 firebase 필드(공개값).
+ *   ⚠️ 라이브 도메인에서 동작하려면 Firebase 콘솔의 승인된 도메인에 blog.pebblous.ai 를 추가해야 한다.
  *
  * SEO: 잠긴 글엔 schema.org Article.isAccessibleForFree=false + hasPart(cssSelector)
  *   를 주입해 구글에 "합법적 회원 게이트"임을 알린다(클로킹 회피).
@@ -24,8 +24,29 @@
   'use strict';
 
   var GATED_JSON = '/gated.json';
-  var SESSION_KEY = 'pbls_dc_member';         // 스텁 세션 (Firebase 연동 시 교체)
   var DEFAULT_FREE_HEIGHT = 1000;             // 무료 미리보기 높이(px). gated.json 으로 조정 가능.
+
+  // ── DataClinic Firebase (pbls-dataclinic-prod) ──
+  // config 는 gated.json 의 firebase 필드에서 읽는다(공개값 — 클라이언트 노출이 정상, 코드/데이터 분리).
+  // SDK(compat)는 게이트 페이지에서만 gstatic CDN 으로 지연 로드 → 비게이트 글은 무게 0.
+  var FB_VER = '10.14.1', FB = null, FB_CFG = null;
+  function loadScript(src) {
+    return new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  function ensureFirebase(cfg) {
+    if (FB) return Promise.resolve(FB);
+    return loadScript('https://www.gstatic.com/firebasejs/' + FB_VER + '/firebase-app-compat.js')
+      .then(function () { return loadScript('https://www.gstatic.com/firebasejs/' + FB_VER + '/firebase-auth-compat.js'); })
+      .then(function () {
+        if (!window.firebase.apps.length) window.firebase.initializeApp(cfg);
+        FB = window.firebase.auth();
+        return FB;
+      });
+  }
 
   // ── 현재 글 경로 정규화: "/report/foo/ko/index.html" → "report/foo/ko/" ──
   function currentPath() {
@@ -62,26 +83,17 @@
     }
   };
 
-  // ── 인증 (스텁) — 후속 PR 에서 Firebase 로 교체 ──
+  // ── 인증 — DataClinic Firebase (pbls-dataclinic-prod) ──
+  // 블로그 로그인 = DataClinic 회원 가입/로그인(같은 Firebase 프로젝트). 클릭 시 SDK 지연 로드 보장.
   var AUTH = {
-    isMember: function () { try { return sessionStorage.getItem(SESSION_KEY) === '1'; } catch (e) { return false; } },
-    _grant: function () { try { sessionStorage.setItem(SESSION_KEY, '1'); } catch (e) {} },
     signInEmail: function (email, pw) {
-      // FIREBASE: return firebase.auth().signInWithEmailAndPassword(email, pw)
-      return new Promise(function (res, rej) {
-        setTimeout(function () {
-          if (/.+@.+\..+/.test(email) && pw.length >= 6) { AUTH._grant(); res(); }
-          else rej(new Error('invalid'));
-        }, 350);
-      });
+      return ensureFirebase(FB_CFG).then(function (a) { return a.signInWithEmailAndPassword(email, pw); });
     },
     signUp: function (email, pw) {
-      // FIREBASE: return firebase.auth().createUserWithEmailAndPassword(email, pw)
-      return AUTH.signInEmail(email, pw);
+      return ensureFirebase(FB_CFG).then(function (a) { return a.createUserWithEmailAndPassword(email, pw); });
     },
     signInGoogle: function () {
-      // FIREBASE: return firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
-      return new Promise(function (res) { setTimeout(function () { AUTH._grant(); res(); }, 450); });
+      return ensureFirebase(FB_CFG).then(function (a) { return a.signInWithPopup(new window.firebase.auth.GoogleAuthProvider()); });
     }
   };
 
@@ -211,18 +223,23 @@
     var modal = buildModal(t);
     main.parentNode.insertBefore(modal, main.nextSibling);  // <main> 바로 뒤
     wire(modal, t);
+    // 이미 로그인한 DataClinic 회원이면 게이트 자동 해제 (Firebase 세션 확인)
+    if (cfg && cfg.firebase) {
+      ensureFirebase(cfg.firebase)
+        .then(function (a) { a.onAuthStateChanged(function (user) { if (user) reveal(); }); })
+        .catch(function () {});
+    }
   }
 
   function init() {
     try {
-      if (AUTH.isMember()) return;                      // 이미 회원 → 게이트 없음
       fetch(GATED_JSON, { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (data) {
           if (!data || !Array.isArray(data.gatedPaths)) return;
-          var path = currentPath();
-          if (data.gatedPaths.indexOf(path) === -1) return;   // 이 글은 게이트 대상 아님
-          applyGate({ freeHeight: data.defaultFreeHeight });
+          if (data.gatedPaths.indexOf(currentPath()) === -1) return;   // 이 글은 게이트 대상 아님
+          FB_CFG = data.firebase || null;                              // AUTH·자동해제가 사용
+          applyGate({ freeHeight: data.defaultFreeHeight, firebase: FB_CFG });
         })
         .catch(function () {});                          // gated.json 실패 → 게이트 없음(안전)
     } catch (e) {}
