@@ -30,17 +30,27 @@ Pebblous Blog (`blog.pebblous.ai`) — a static site on GitHub Pages for Pebblou
 
 ### 자동 동기화
 
-진본 main에 자산 2/3 변경 push → [`sync-to-sabon.yml`](.github/workflows/sync-to-sabon.yml) 자동 트리거 → 사본에 `auto-sync: 진본 blog-service@<sha>` PR 자동 생성 → 사람이 검토 후 머지.
+진본 main에 자산 2/3 변경 push → [`sync-to-sabon.yml`](.github/workflows/sync-to-sabon.yml) 자동 트리거 → 사본에 `auto-sync: 진본 blog-service@<sha>` PR 자동 생성 → **워크플로우가 그 PR을 자동 머지**(보통 3~4초). 자산 2/3은 진본→사본 단방향 미러라 PR 누적을 막기 위한 설계다.
+
+⚠️ **사람 검토는 충돌 시에만 개입한다.** 자동 머지가 실패해야(= reverse-divergence 충돌 등) PR이 열린 채 남는다. 즉 **사본에 나가는 걸 막을 마지막 관문은 사본 PR이 아니라 진본 머지 시점**이다 — 진본 main에 들어가는 순간 사실상 사본에도 나간다고 보고 검토할 것.
 
 상세: [`docs/blog-service/sync.md`](docs/blog-service/sync.md)
 
 ### Reverse-divergence 발생 시 (이미 사본에서 수정된 변경이 있다면)
 
-1. 자동 sync PR이 그 변경을 덮어쓰려 함 (보수적 모드라 삭제는 안 하지만 덮어쓰기는 함)
-2. 그런 PR은 머지 보류
-3. 사본의 변경을 명시적으로 진본에 reverse-sync (PR로 — 사본 → 진본 수동)
-4. 그 후 자동 sync 재트리거 → 깨끗한 새 PR → 머지
-5. (사례: 2026-05-24 PR #6 — 사본 PR #188의 `report-produce/skill.md` 변경을 진본에 reverse-sync)
+⛔ **먼저 알아둘 것**: 덮어쓰기는 git 충돌이 아니라서 **자동 머지를 막지 못한다.** "그런 PR은 머지
+보류" 같은 사후 대응은 성립하지 않는다 — PR은 3~4초 만에 이미 머지된 뒤다. 자동 머지가 걸리는 건
+진짜 충돌이 났을 때뿐이다.
+
+따라서 **예방이 유일한 방어**다. 사본의 자산 2/3을 직접 고치지 말 것(위 정책). 그게 지켜지면
+reverse-divergence 자체가 안 생긴다.
+
+이미 덮어써진 뒤라면 복구 절차:
+
+1. 사본에서 덮어써진 내용을 git 히스토리로 복원 (auto-sync 머지 커밋 직전 상태)
+2. 그 변경을 명시적으로 진본에 reverse-sync (PR로 — 사본 → 진본 수동)
+3. 진본 머지 → 자동 sync 재트리거 → 사본이 올바른 내용으로 다시 덮어써짐
+4. (사례: 2026-05-24 PR #6 — 사본 PR #188의 `report-produce/skill.md` 변경을 진본에 reverse-sync)
 
 ### 관련 문서
 

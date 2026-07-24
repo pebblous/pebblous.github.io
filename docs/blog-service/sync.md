@@ -20,8 +20,24 @@ rsync로 자산 2/3 복사 (--delete 없음, 보수적)
        ↓
 gh pr create — 자동 PR 생성 (auto-sync/<timestamp>-<sha>)
        ↓
-사람이 검토 후 수동 머지
+gh pr merge --squash --auto → 실패 시 즉시 squash 머지
+       ↓
+둘 다 실패(충돌 등)해야 PR이 열린 채 남음 → 그때만 사람 검토
 ```
+
+### 자동 머지 (기본 동작)
+
+자산 2/3은 진본→사본 **단방향 미러**라, PR을 쌓아두면 stall만 생긴다. 그래서 워크플로우가
+PR을 만든 직후 스스로 머지한다. 단계적 폴백으로 안전망을 남긴다:
+
+1. `gh pr merge --squash --delete-branch --auto` — 필수 체크가 있으면 통과 후 머지
+2. 실패 시 즉시 `--squash` 머지 (필수 체크가 없는 경우)
+3. 둘 다 실패하면 **PR을 열어둔 채 종료** — 충돌·reverse-divergence 가능성, 사람이 검토
+
+실측: 최근 auto-sync PR 6건 모두 **생성 후 3~4초 내 머지**됐다(2026-07-19 ~ 07-24).
+
+> ⚠️ 그래서 **사본 PR은 검토 관문이 아니다.** 진본 main에 머지하는 순간 사본에도 나간다고
+> 보고, 검토는 진본 PR 단계에서 끝내야 한다.
 
 ## Setup (한 번만)
 
@@ -47,8 +63,8 @@ gh pr create — 자동 PR 생성 (auto-sync/<timestamp>-<sha>)
 진본 main에 자산 2/3 영역의 작은 변경(예: `docs/blog-service/sync.md` 본 문서) push 후:
 
 1. 진본 [Actions 탭](https://github.com/joohaeng-pbls/blog-service/actions)에서 `Sync to 사본` 워크플로우 success 확인
-2. 사본 [PR 목록](https://github.com/pebblous/pebblous.github.io/pulls)에서 `auto-sync: 진본 blog-service@<sha>` PR 생성 확인
-3. PR diff 검토 후 머지
+2. 사본 [PR 목록](https://github.com/pebblous/pebblous.github.io/pulls)에서 `auto-sync: 진본 blog-service@<sha>` PR 확인 — 이미 머지돼 있으면 정상이므로 **closed 포함해서** 볼 것 (`gh pr list --repo pebblous/pebblous.github.io --state all --search auto-sync`)
+3. 머지된 PR의 diff로 의도한 파일만 갔는지 확인. 열린 채 남아 있다면 자동 머지가 실패한 것 — 충돌 확인
 
 ## 정책
 
