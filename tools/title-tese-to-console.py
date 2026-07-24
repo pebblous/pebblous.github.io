@@ -22,10 +22,14 @@ loadTese()가 읽는 형식 titles_translationese.json 으로 변환한다.
     ogVerdict, og, ogSuggest}]
   verdict/ogVerdict 는 "translationese" 또는 "" — 빈 문자열이면 해당 축은 문제없음.
 
+판정 파일은 tools/title-audit-data/translationese-verdicts-<날짜>.json 이며 **여러 개를 병합**한다.
+전수조사 1개 + 이후 신규 글 증분 판정 N개 구조라, 따라잡기는 작은 파일 하나만 추가하면 된다.
+같은 slug가 겹치면 파일명 날짜가 늦은 쪽이 이긴다(재판정 반영).
+
 사용:
-  python3 tools/title-tese-to-console.py                       # 최신 판정 → 사본 _workspace
+  python3 tools/title-tese-to-console.py                       # 전체 병합 → 사본 _workspace
   python3 tools/title-tese-to-console.py --repo <clone경로>
-  python3 tools/title-tese-to-console.py --verdicts <판정json>  # 판정 파일 지정
+  python3 tools/title-tese-to-console.py --verdicts <판정json>  # 병합 없이 이 파일만
   python3 tools/title-tese-to-console.py --dry-run             # 파일 안 쓰고 통계만
 """
 import argparse
@@ -90,15 +94,22 @@ def main():
 
     tools_dir = os.path.dirname(os.path.abspath(__file__))
     if args.verdicts:
-        verdicts_path = args.verdicts
+        paths = [args.verdicts]
     else:
-        cands = sorted(glob.glob(os.path.join(tools_dir, "title-audit-data", "translationese-verdicts-*.json")))
-        if not cands:
+        # 전수조사 1개 + 이후 증분 판정 N개를 모두 읽는다(파일명 날짜 오름차순).
+        # 같은 slug가 여러 파일에 있으면 나중 파일이 이긴다 — 재판정으로 갱신 가능.
+        paths = sorted(glob.glob(os.path.join(tools_dir, "title-audit-data", "translationese-verdicts-*.json")))
+        if not paths:
             print("판정 파일 없음: tools/title-audit-data/translationese-verdicts-*.json", file=sys.stderr)
             sys.exit(1)
-        verdicts_path = cands[-1]
 
-    verdicts = json.load(open(verdicts_path, encoding="utf-8"))
+    merged = {}
+    for p in paths:
+        for x in json.load(open(p, encoding="utf-8")):
+            if x.get("slug"):
+                merged[x["slug"]] = x
+    verdicts = list(merged.values())
+    verdicts_path = f"{len(paths)}개 파일 병합: " + ", ".join(os.path.basename(p) for p in paths)
     repo = os.path.abspath(args.repo)
 
     out = []
