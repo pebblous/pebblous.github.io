@@ -7,13 +7,20 @@ title-census.py(정규식 형태 게이트)가 못 잡는 "번역체 골격"(§0
 (tools/title-audit-data/translationese-verdicts-*.json)를 콘솔(/admin/titles)의
 loadTese()가 읽는 형식 titles_translationese.json 으로 변환한다.
 
+본문 제목(mainTitle)과 OG 이미지 제목(og-image-title)은 **독립적으로** 판정된다. 본문은
+멀쩡한데 OG만 번역체인 글, 그 반대인 글이 모두 있으므로 한쪽만 걸려도 콘솔에 올린다.
+
 변환 시 라이브 대조·과검출 제외를 함께 수행:
-  - 라이브 mainTitle ≠ 판정 당시 title 이면 이미 고쳐진 것 → 제외
-  - ② 단독이면서 "~한 X" 관형절이면 한국어 SOV 정상(§0.2 ② 오해 방지) → 제외
+  - 라이브 mainTitle ≠ 판정 당시 title 이면 이미 고쳐진 것 → 본문 판정만 해제
+  - 라이브 og-image-title ≠ 판정 당시 og 이면 이미 고쳐진 것 → OG 판정만 해제
+  - ② 단독이면서 "~한 X" 관형절이면 한국어 SOV 정상(§0.2 ② 오해 방지) → 본문 판정 해제
   - 대안이 §0.0(주어 실종)/§0.2①(추상명사 종결) 게이트에 걸리면 gate 표시(수락 버튼 숨김용)
+  - 둘 다 해제되면 그 글은 출력에서 빠진다
 
 출력은 콘솔 loadTese() 데이터 계약:
-  [{slug, verdict:"translationese", skeleton:[...], reason, suggest, gate:[...]}]
+  [{slug, verdict, skeleton:[...], reason, suggest, gate:[...],
+    ogVerdict, og, ogSuggest}]
+  verdict/ogVerdict 는 "translationese" 또는 "" — 빈 문자열이면 해당 축은 문제없음.
 
 사용:
   python3 tools/title-tese-to-console.py                       # 최신 판정 → 사본 _workspace
@@ -29,14 +36,24 @@ import re
 import sys
 
 
-def live_maintitle(repo, slug):
-    """slug의 라이브 mainTitle (ko 우선, 없으면 루트)."""
+# 엔진 title-review.ts RX_OGTITLE 과 동일 패턴 — 라이브 값을 같은 방식으로 읽어야 대조가 맞다.
+_RX_MAINTITLE = re.compile(r'mainTitle:\s*"([^"]*)"')
+_RX_OGTITLE = re.compile(r'<meta[^>]*name="og-image-title"[^>]*content="([^"]*)"', re.I)
+
+
+def live_fields(repo, slug):
+    """slug의 라이브 (mainTitle, ogTitle). 파일 없으면 None. ogTitle 없으면 ''.
+
+    OG 제목은 HTML 속성값 그대로 반환한다(줄바꿈이 &#10; 로 들어있는 글이 있어
+    언이스케이프하면 판정 당시 값과 대조가 어긋난다)."""
     for rel in (f"{slug}/ko/index.html", f"{slug}/index.html"):
         p = os.path.join(repo, rel)
         if os.path.exists(p):
-            m = re.search(r'mainTitle:\s*"([^"]*)"', open(p, encoding="utf-8").read())
-            return m.group(1) if m else None
-    return None
+            html = open(p, encoding="utf-8").read()
+            mt = _RX_MAINTITLE.search(html)
+            og = _RX_OGTITLE.search(html)
+            return (mt.group(1) if mt else None), (og.group(1) if og else "")
+    return None, ""
 
 
 # ── §0.2 ② 관형절 과검출 판별 ────────────────────────────────────────────────
@@ -84,37 +101,55 @@ def main():
     verdicts = json.load(open(verdicts_path, encoding="utf-8"))
     repo = os.path.abspath(args.repo)
 
-    out, skipped_fixed, skipped_over, skipped_nofile = [], 0, 0, 0
+    out = []
+    skipped_fixed = skipped_over = skipped_nofile = skipped_og_fixed = 0
     for x in verdicts:
-        if x.get("verdict") != "translationese":
+        body_t = x.get("verdict") == "translationese"
+        og_t = x.get("og_verdict") == "translationese"
+        if not (body_t or og_t):
             continue
         slug = x.get("slug", "")
-        lm = live_maintitle(repo, slug)
-        if lm is None:
+        live_mt, live_og = live_fields(repo, slug)
+        if live_mt is None:
             skipped_nofile += 1
             continue
-        if lm != x.get("title"):
-            skipped_fixed += 1  # 이미 라이브에서 고쳐짐
-            continue
+
         sk = x.get("skeleton", [])
-        if is_overcaught_2(x.get("title", ""), sk):
-            skipped_over += 1  # ② 관형절 과검출
+        if body_t:
+            if live_mt != x.get("title"):
+                body_t = False           # 이미 라이브에서 고쳐짐
+                skipped_fixed += 1
+            elif is_overcaught_2(x.get("title", ""), sk):
+                body_t = False           # ② 관형절 과검출
+                skipped_over += 1
+        if og_t and live_og != x.get("og"):
+            og_t = False                 # OG만 이미 고쳐짐
+            skipped_og_fixed += 1
+
+        if not (body_t or og_t):
             continue
-        suggest = x.get("suggest", "")
+
+        suggest = x.get("suggest", "") if body_t else ""
         out.append({
             "slug": slug,
-            "verdict": "translationese",
-            "skeleton": sk,
-            "reason": (x.get("reason", "") or "")[:90],
+            "verdict": "translationese" if body_t else "",
+            "skeleton": sk if body_t else [],
+            "reason": ((x.get("reason", "") or "")[:90]) if body_t else "",
             "suggest": suggest,
-            "gate": [g for g in gate_flags(suggest) if g != "통과"],
+            "gate": [g for g in gate_flags(suggest) if g != "통과"] if body_t else [],
+            "ogVerdict": "translationese" if og_t else "",
+            "og": x.get("og", "") if og_t else "",
+            "ogSuggest": (x.get("og_suggest", "") if og_t else ""),
         })
 
+    n_body = sum(1 for o in out if o["verdict"])
+    n_og = sum(1 for o in out if o["ogVerdict"])
     gated = sum(1 for o in out if o["gate"])
     print(f"판정 원본: {verdicts_path}")
-    print(f"번역체 → 콘솔 대상: {len(out)}개 "
-          f"(대안 통과 {len(out) - gated}, 재검 {gated})")
-    print(f"제외 — 이미 고쳐짐 {skipped_fixed}, ② 관형절 과검출 {skipped_over}, 파일없음 {skipped_nofile}")
+    print(f"콘솔 대상: {len(out)}개 글 (본문 번역체 {n_body}, OG 번역체 {n_og})")
+    print(f"  본문 대안 — 통과 {n_body - gated}, 재검 {gated}")
+    print(f"제외 — 본문 이미 고쳐짐 {skipped_fixed}, ② 관형절 과검출 {skipped_over}, "
+          f"OG 이미 고쳐짐 {skipped_og_fixed}, 파일없음 {skipped_nofile}")
 
     if args.dry_run:
         return
