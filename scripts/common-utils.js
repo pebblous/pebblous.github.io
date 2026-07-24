@@ -2358,3 +2358,13 @@ window.PebblousBreadcrumbs = PebblousBreadcrumbs;
 window.PebblousSchema = PebblousSchema;
 window.PebblousChart = PebblousChart;
 window.PebblousTabs = PebblousTabs;
+
+// ── 소프트 회원 게이트 로더 (2026-07-24) ──
+// 게이트 로직은 별도 모듈 pbls-gate.js 에 격리 — 여기선 로드만. pbls-gate.js 는 자체적으로
+// /gated.json 을 확인해 잠글 글에서만 동작하고, 아니면 아무것도 안 한다. 실패해도 페이지 무사.
+try {
+    var pblsGateScript = document.createElement('script');
+    pblsGateScript.src = '/scripts/pbls-gate.js?v=20260724';
+    pblsGateScript.defer = true;
+    document.head.appendChild(pblsGateScript);
+} catch (e) { /* 게이트 로드 실패는 무시 — 본문 렌더에 영향 없음 */ }
