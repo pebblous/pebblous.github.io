@@ -999,7 +999,7 @@ const PebblousCTA = {
 
                     if (res.ok) {
                         msgEl.textContent = lang === 'en' ? 'Subscribed! Check your email.' : '구독 완료! 이메일을 확인해주세요.';
-                        msgEl.className = 'cta-subscribe-msg mt-2 text-sm font-semibold text-center text-teal-500';
+                        msgEl.className = 'cta-subscribe-msg mt-2 text-sm font-semibold text-center text-orange-500';
                         emailInput.value = '';
                         privacyCheck.checked = false;
                     } else {
@@ -2032,7 +2032,7 @@ const PebblousChart = {
             labels,
             datasets,
             data,           // Simple mode: single dataset
-            color = this.colors.teal,
+            color = this.colors.orange,
             fill = false,
             tension = 0.3,
             showPoints = true,
@@ -2190,9 +2190,9 @@ const PebblousChart = {
         const ratio = value / max;
 
         if (ratio >= 0.8) return this.colors.orange;
-        if (ratio >= 0.5) return this.colors.teal;
+        if (ratio >= 0.5) return this.colors.orangeTint;
         if (ratio >= 0.3) return this.colors.blue;
-        return this.colors.slate;
+        return this.colors.neutralLight;
     }
 };
 

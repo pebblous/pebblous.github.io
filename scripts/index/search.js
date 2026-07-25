@@ -147,7 +147,7 @@ function performSearch(query, resultsContainer, countElement, resultsSection) {
         };
 
         const hubBadge = article.type === 'hub'
-            ? '<span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-400 ml-2">HUB</span>'
+            ? '<span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 ml-2">HUB</span>'
             : '';
 
         return `
