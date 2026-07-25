@@ -223,6 +223,7 @@ def build(args):
     }
     graph = {"nodes": [{"id": i} for i in range(n)], "links": links}
     meta = {
+        "schema_version": "1.0",
         "id": f"blog-{args.lang}" + (f"-{args.sample}" if args.sample and args.sample < 900 else ""),
         "name": "The Pebblous Blog Constellation",
         "short": f"Pebblous Blog ({args.lang.upper()})",
