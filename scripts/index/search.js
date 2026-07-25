@@ -64,6 +64,7 @@ function setupSearch() {
         const query = searchInput.value.trim().toLowerCase();
         if (query.length < 2) {
             searchResults.classList.remove('has-results');
+            searchResults.hidden = true;
             return;
         }
         performSearch(query, searchResultsList, searchCount, searchResults);
@@ -78,6 +79,7 @@ function setupSearch() {
         if (e.key === 'Escape') {
             searchInput.value = '';
             searchResults.classList.remove('has-results');
+            searchResults.hidden = true;
         }
     });
 
@@ -126,6 +128,7 @@ function performSearch(query, resultsContainer, countElement, resultsSection) {
     if (results.length === 0) {
         var t = window.IndexPage.t || function(k) { return k; };
         resultsContainer.innerHTML = '<p class="no-results text-center py-6">' + t('search.noResults') + '</p>';
+        resultsSection.hidden = false;
         resultsSection.classList.add('has-results');
         return;
     }
@@ -174,6 +177,7 @@ function performSearch(query, resultsContainer, countElement, resultsSection) {
         `;
     }).join('');
 
+    resultsSection.hidden = false;
     resultsSection.classList.add('has-results');
 
     const searchResultCards = Array.from(resultsContainer.querySelectorAll('.search-result-item'));
