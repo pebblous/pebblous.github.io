@@ -1,0 +1,61 @@
+# Pagefind 전문 검색 인덱스 자동 생성 — main push 시 /pagefind/ 커밋.
+#
+# 빌더(tools/build-search-index.py)는 자산 3 — 진본(blog-service PR #198) 관리,
+# sync로 미러. noindex/비번 보호 페이지는 스테이징에서 물리적으로 배제되므로
+# 기밀 본문이 인덱스에 실리지 않는다.
+#
+# 루프 방지: 이 워크플로우의 커밋은 pagefind/** 만 건드리고 (HTML 없음),
+# 트리거는 '**.html' paths 필터라 재트리거되지 않는다.
+
+name: Build Search Index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.html'
+  workflow_dispatch:
+
+concurrency:
+  group: build-search-index
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build index (noindex/보호 페이지 배제)
+        run: |
+          if [ ! -f tools/build-search-index.py ]; then
+            echo "⚠️ tools/build-search-index.py 없음 — 진본 sync 대기 중, 건너뜀"
+            exit 0
+          fi
+          python3 tools/build-search-index.py --site . --output-path pagefind
+
+      - name: Commit index if changed
+        run: |
+          if [ ! -d pagefind ]; then exit 0; fi
+          if [ -z "$(git status --porcelain pagefind)" ]; then
+            echo "인덱스 변경 없음"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pagefind
+          git commit -m "chore(search): pagefind 인덱스 재생성 [auto]"
+          for i in 1 2 3; do
+            git push && break
+            git pull --rebase origin main
+          done
