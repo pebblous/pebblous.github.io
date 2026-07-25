@@ -32,6 +32,9 @@
             'search.filterArticles': '기사',
             'search.filterHubs': '허브',
             'search.readMore': '자세히 보기 →',
+            'search.loadMore': '더 보기',
+            'search.fulltext': '본문 검색 결과',
+            'search.fulltextNote': '제목·태그에는 없지만 본문에서 발견된 글',
             // Articles
             'articles.empty': '게시된 기사가 없습니다.',
             'articles.showMore': '더 보기',
@@ -78,6 +81,9 @@
             'search.filterArticles': 'Articles',
             'search.filterHubs': 'Hubs',
             'search.readMore': 'Read More →',
+            'search.loadMore': 'Load more',
+            'search.fulltext': 'Full-text matches',
+            'search.fulltextNote': 'Found in article body text (not in title/tags)',
             // Articles
             'articles.empty': 'No published articles.',
             'articles.showMore': 'Show More',
@@ -117,10 +123,14 @@
     function setLanguage(lang) {
         if (LANGUAGES.indexOf(lang) === -1) return;
         localStorage.setItem(STORAGE_KEY, lang);
+        document.documentElement.lang = lang;
         updateToggleUI(lang);
         applyTranslations();
         if (window.IndexPage && window.IndexPage.applyLanguageFilter) {
             window.IndexPage.applyLanguageFilter(lang);
+        }
+        if (window.IndexPage && window.IndexPage.onLanguageChanged) {
+            window.IndexPage.onLanguageChanged(lang);
         }
     }
 
