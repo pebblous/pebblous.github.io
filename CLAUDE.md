@@ -157,6 +157,7 @@ python3 tools/scan-articles-meta.py --dry-run  # 변경 없이 미리보기
 node tools/generate-rss.js            # Regenerate RSS feed
 node tools/generate-sitemap.js        # Regenerate sitemap.xml
 python3 tools/generate-llms-txt.py  # Regenerate llms.txt (AI crawler index)
+python3 tools/check-cache-bust.py   # 공용 CSS/JS 변경 시 index.html ?v= 스테일 검사 (사본 CI check-cache-bust.yml이 PR마다 실행)
 
 # HTML-중립 본문 원고 (index.md) — 출간 후 인간 수정용
 python3 tools/extract-manuscript.py <path/index.html>   # 옆에 index.md 역추출
