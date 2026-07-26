@@ -100,15 +100,23 @@ function updateSearchURL(query) {
     history.replaceState(null, '', qs ? '?' + qs : location.pathname);
 }
 
+// 이 사이트는 GTM이 아니라 gtag.js 직결(G-44LQ2ZLX78) — GA4 이벤트는 gtag('event')로
+// 보내야 수집된다. dataLayer.push({event:...})는 GTM 문법이라 gtag 단독 환경에선 무시됨.
+function sendAnalyticsEvent(name, params) {
+    if (typeof window.gtag === 'function') {
+        window.gtag('event', name, params);
+    } else {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push(Object.assign({ event: name }, params));
+    }
+}
+
 function trackSearch(query, metaCount, fulltextCount) {
     if (query === lastTrackedQuery) return;
     lastTrackedQuery = query;
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-        event: 'blog_search',
+    sendAnalyticsEvent('blog_search', {
         search_term: query,
         results_count: metaCount,
-        fulltext_count: fulltextCount == null ? undefined : fulltextCount,
         search_filter: currentSearchFilter,
         search_language: (window.IndexPage.getCurrentLanguage && window.IndexPage.getCurrentLanguage()) || 'ko'
     });
@@ -368,9 +376,7 @@ async function renderFulltextSection(query, gen, resultsContainer, metaScored) {
     if (old) old.remove();
     resultsContainer.appendChild(section);
 
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-        event: 'blog_search_fulltext',
+    sendAnalyticsEvent('blog_search_fulltext', {
         search_term: query,
         fulltext_count: res.results.length
     });
