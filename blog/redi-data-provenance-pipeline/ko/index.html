@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>REDI 파이프라인, 과학 데이터 전처리 출처 추적과 재현성 | 페블러스</title>
+    <meta name="description" content="과학 데이터 전처리는 늘 연구자 개인의 스크립트에 갇혀 재현이 어려웠다. 미국 오크리지 국립연구소의 REDI 파이프라인은 수집부터 출력까지 다섯 단계의 데이터 변화를 자동으로 기록하고, 에이전트가 호출하는 다섯 개 운영 모드로 노출해 전처리를 추적 가능한 공용 인프라로 바꾼다.">
+    <meta name="keywords" content="REDI 프레임워크, 데이터 출처 추적, 과학 데이터 전처리 자동화, provenance 추적 AI 파이프라인, Flowcept, 에이전트 호출 데이터 파이프라인, AI-Ready Data, 재현성, HPC 데이터 준비">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/redi-data-provenance-pipeline/ko/">
+
+    <!-- hreflang -->
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/redi-data-provenance-pipeline/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/redi-data-provenance-pipeline/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/redi-data-provenance-pipeline/ko/">
+
+    <!-- OG -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="전처리 이력을 자동으로 남기는 과학 데이터 파이프라인 REDI">
+    <meta property="og:description" content="오크리지 국립연구소의 REDI는 다섯 단계 전처리마다 데이터 상태 변화를 Flowcept로 기록하고, 에이전트가 그 단계를 직접 호출한다. 전처리를 일회성 수작업에서 추적 가능한 공용 인프라로 옮기는 전환.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/redi-data-provenance-pipeline/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/redi-data-provenance-pipeline/ko/image/index.png">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="전처리 이력을 자동으로 남기는 과학 데이터 파이프라인 REDI">
+    <meta name="twitter:description" content="다섯 단계 전처리마다 출처를 기록하고 에이전트가 직접 호출하는 REDI. 과학 데이터 준비를 매번 새로 짜는 소모전에서 계보가 남는 인프라로 옮긴다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/redi-data-provenance-pipeline/ko/image/index.png">
+    <meta name="twitter:image:alt" content="전처리 이력을 자동으로 남기는 과학 데이터 파이프라인 REDI">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <!-- Stylesheets (순서 고정) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260729">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260729">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260729">
+
+    <!-- GTM -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">전처리가 개인 스크립트에 갇힌 이유</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">전처리 단계마다 무엇을 남기는가</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">에이전트가 부르는 다섯 개의 모드</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">일회성 스크립트가 공용 인프라가 될 때</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            과학 AI에서 데이터를 학습에 올릴 수 있게 다듬는 전처리는 거의 언제나 연구자 한 명의 노트북 안에서 벌어졌다. 스크립트는 논문에 실리지 않고, 다음 사람은 같은 작업을 처음부터 다시 짠다. 미국 오크리지 국립연구소가 내놓은 REDI는 이 전처리를 수집·전처리·변환·구조화·출력의 다섯 단계로 표준화하면서, 각 단계에서 데이터가 어떻게 바뀌었는지를 자동으로 기록하는 이력 계측을 파이프라인 안에 넣었다. 이 글은 '깨끗한 데이터'가 아니라 '지나온 길이 남는 데이터'가 무엇을 가능하게 하는지를 본다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            계측은 뜻밖의 부산물도 준다. 모든 단계의 실행 시간을 재 보니 파이프라인 비용을 지배하는 것은 알고리즘이 아니라 파일 입출력이었고, 저장 포맷을 NPZ에서 Zarr로 바꾸는 것만으로 병렬 접근 처리량이 약 세 배 올랐다. 이력을 남기는 습관이 최적화의 지도를 그려 준 셈이다. 다만 REDI도 깊이 도메인에 특화된 변환까지 자동화하지는 못한다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            REDI는 이 다섯 단계를 사람이 매번 다시 짜는 스크립트가 아니라 에이전트가 표준 인터페이스로 호출하는 다섯 개의 운영 모드로 노출한다. 전처리가 일회성 수작업에서 계보가 남는 공용 인프라로 옮겨 가는 지점이 바로 여기다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">약 3×</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Zarr의 병렬 처리량</p>
+                            <p class="text-xs themeable-muted mt-1">NPZ 대비. 계측이 드러낸 포맷 최적화의 첫 지렛대</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">86%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">핵융합 처리 시간의 수집 비중</p>
+                            <p class="text-xs themeable-muted mt-1">병목은 계산이 아니라 파일 I/O에 있었다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">η ≥ 0.95</p>
+                            <p class="text-sm themeable-text-secondary mt-1">20–800 워커 병렬 효율</p>
+                            <p class="text-xs themeable-muted mt-1">슈퍼컴 스케일에서 거의 이상적인 확장</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">r = 1.000</p>
+                            <p class="text-sm themeable-text-secondary mt-1">변환 검증 상관계수</p>
+                            <p class="text-xs themeable-muted mt-1">단백질 데이터. 이력이 재현성을 수치로 보증</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">전처리는 왜 늘 개인 스크립트에 갇혀 있었나</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        과학 AI 논문은 모델 구조와 성능 지표로 채워지지만, 그 앞단에서 실제로 시간을 가장 많이 잡아먹은 일은 데이터를 학습에 올릴 수 있는 형태로 바꾸는 전처리다. 문제는 그 전처리가 대개 연구자 한 사람의 로컬 환경 안에서만 굴러갔다는 데 있다. 데이터를 어떤 순서로 내려받아, 어떻게 격자를 맞추고, 무엇을 정규화하고, 어떤 포맷으로 저장했는지는 논문에 실리지 않는다. 결과 숫자만 남고 그 숫자에 이르는 과정은 사라진다. 다음 사람은 같은 데이터를 붙잡고 처음부터 스크립트를 다시 짠다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        미국 오크리지 국립연구소 계열 연구진이 발표한 논문 <strong>"Automated Data Readiness for Scientific AI"</strong>는 이 소모전을 정면으로 겨눈다. 논문의 진단은 단순하다. 지금까지 자동 변환, 준비도 평가, 출처 추적, 에이전트 통합을 하나의 프레임워크로 묶은 사례가 없었다는 것이다. 각각을 따로 하는 도구는 있었지만, 데이터가 원본에서 학습 가능한 상태로 바뀌는 전 과정을 재현 가능하게 계측하며 흘려보내는 파이프라인은 비어 있었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 빈자리를 메우려는 것이 <strong>REDI</strong>다. 초대형 과학 데이터셋을 AI 학습용으로 자동 변환하는 다섯 단계 파이프라인으로, 수집(ingest)에서 시작해 전처리(preprocess), 변환(transform), 구조화(structure)를 거쳐 출력(output)으로 끝난다. 풀어 놓으면 데이터를 내려받아(수집) 격자를 맞추고(전처리), 특성을 뽑아 정규화한 뒤(변환) 텐서나 그래프로 구조를 짜서(구조화) 학습용 포맷으로 저장하는(출력) 흐름이다. 각 단계는 하나의 <strong>PipelineStep</strong> 클래스로 캡슐화되고, 그 단계가 초기화될 때마다 이력을 남기는 계측이 자동으로 따라붙는다. 여기서 이 글이 파고들 질문이 나온다. 그 계측은 정확히 무엇을 남기고, 무엇을 가능하게 하는가.
+                    </p>
+
+                    <!-- Diagram: REDI five-stage IPTSO pipeline -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" aria-label="REDI의 5단계 IPTSO 파이프라인 도식 — 수집부터 출력까지 각 단계가 PipelineStep으로 캡슐화되고 계측이 자동 부착된다">
+                            <defs>
+                                <marker id="ipt-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="var(--text-muted)"/>
+                                </marker>
+                            </defs>
+                            <text x="350" y="22" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">다섯 단계, 각각이 하나의 PipelineStep</text>
+
+                            <g font-family="Pretendard,sans-serif">
+                                <rect x="20" y="48" width="110" height="66" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.3"/>
+                                <text x="75" y="75" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-primary)">Ingest</text>
+                                <text x="75" y="93" text-anchor="middle" font-size="11" fill="var(--text-secondary)">수집</text>
+
+                                <rect x="158" y="48" width="110" height="66" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.3"/>
+                                <text x="213" y="75" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-primary)">Preprocess</text>
+                                <text x="213" y="93" text-anchor="middle" font-size="11" fill="var(--text-secondary)">전처리</text>
+
+                                <rect x="296" y="48" width="110" height="66" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.3"/>
+                                <text x="351" y="75" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-primary)">Transform</text>
+                                <text x="351" y="93" text-anchor="middle" font-size="11" fill="var(--text-secondary)">변환</text>
+
+                                <rect x="434" y="48" width="110" height="66" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.3"/>
+                                <text x="489" y="75" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-primary)">Structure</text>
+                                <text x="489" y="93" text-anchor="middle" font-size="11" fill="var(--text-secondary)">구조화</text>
+
+                                <rect x="572" y="48" width="110" height="66" rx="8" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                                <text x="627" y="75" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">Output</text>
+                                <text x="627" y="93" text-anchor="middle" font-size="11" fill="var(--text-secondary)">출력</text>
+                            </g>
+
+                            <line x1="130" y1="81" x2="156" y2="81" stroke="var(--text-muted)" stroke-width="1.3" marker-end="url(#ipt-arr)"/>
+                            <line x1="268" y1="81" x2="294" y2="81" stroke="var(--text-muted)" stroke-width="1.3" marker-end="url(#ipt-arr)"/>
+                            <line x1="406" y1="81" x2="432" y2="81" stroke="var(--text-muted)" stroke-width="1.3" marker-end="url(#ipt-arr)"/>
+                            <line x1="544" y1="81" x2="570" y2="81" stroke="var(--text-muted)" stroke-width="1.3" marker-end="url(#ipt-arr)"/>
+
+                            <g font-family="Pretendard,sans-serif">
+                                <line x1="75" y1="114" x2="75" y2="123" stroke="#F86825" stroke-width="1.2"/>
+                                <rect x="20" y="123" width="110" height="22" rx="5" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1"/>
+                                <text x="75" y="138" text-anchor="middle" font-size="9" fill="var(--text-secondary)">계측 자동 부착</text>
+
+                                <line x1="213" y1="114" x2="213" y2="123" stroke="#F86825" stroke-width="1.2"/>
+                                <rect x="158" y="123" width="110" height="22" rx="5" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1"/>
+                                <text x="213" y="138" text-anchor="middle" font-size="9" fill="var(--text-secondary)">계측 자동 부착</text>
+
+                                <line x1="351" y1="114" x2="351" y2="123" stroke="#F86825" stroke-width="1.2"/>
+                                <rect x="296" y="123" width="110" height="22" rx="5" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1"/>
+                                <text x="351" y="138" text-anchor="middle" font-size="9" fill="var(--text-secondary)">계측 자동 부착</text>
+
+                                <line x1="489" y1="114" x2="489" y2="123" stroke="#F86825" stroke-width="1.2"/>
+                                <rect x="434" y="123" width="110" height="22" rx="5" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1"/>
+                                <text x="489" y="138" text-anchor="middle" font-size="9" fill="var(--text-secondary)">계측 자동 부착</text>
+
+                                <line x1="627" y1="114" x2="627" y2="123" stroke="#F86825" stroke-width="1.2"/>
+                                <rect x="572" y="123" width="110" height="22" rx="5" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1"/>
+                                <text x="627" y="138" text-anchor="middle" font-size="9" fill="var(--text-secondary)">계측 자동 부착</text>
+                            </g>
+
+                            <text x="350" y="178" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted)">각 단계가 PipelineStep으로 캡슐화되고, 초기화될 때 FlowceptTask가 자동으로 붙는다.</text>
+                            <text x="350" y="198" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted)">수집부터 출력까지, 다섯 단계 모두 같은 방식으로 계측된다.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ REDI의 IPTSO 5단계 파이프라인. 수집(Ingest)에서 출력(Output)까지 각 단계가 PipelineStep 클래스로 캡슐화되고, 초기화 시 계측이 자동으로 부착된다. | 페블러스 원본 도식 (논문 재해석)
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            같은 논문을 도메인별 잣대의 차이라는 각도에서 먼저 다룬 짝 글이 있다. <a href="/blog/ai-readiness-scientific-domains/ko/" class="text-orange-500 hover:text-orange-400 transition-colors">분야마다 다르게 재는 과학 데이터의 AI 준비도</a>가 그것이다. 그 글이 완전성·일관성·적합성의 기준이 도메인마다 어떻게 갈리는지를 봤다면, 이 글은 그 파이프라인이 지나온 길을 어떻게 기록하고 에이전트에게 넘기는지를 본다. 같은 논문, 다른 광맥이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">전처리 단계마다 무엇을 남기는가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        REDI의 이력 계측은 <strong>Flowcept</strong>라는 프레임워크가 담당한다. 파이프라인의 각 PipelineStep이 초기화될 때 <strong>FlowceptTask</strong>가 하나 생성되고, 이 태스크가 그 단계의 실행 전후를 관찰한다. 데이터가 들어오기 전의 상태와 나간 뒤의 상태를 함께 붙잡아, 평균과 표준편차 같은 통계값이 어떻게 달라졌는지, 그 변환에 시간이 얼마나 걸렸는지를 기록한다. 사람이 로그를 심는 것이 아니라, 단계를 만들면 계측이 저절로 따라온다는 점이 핵심이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이렇게 쌓인 기록은 <strong>PROVENANCE_CARD.md</strong>라는 사람이 읽을 수 있는 문서로 자동 정리된다. 이 데이터가 어떤 단계를 어떤 순서로 거쳐 지금의 상태가 됐는지를 되짚을 수 있는 감사 추적 카드다. 원본 숫자만 남고 과정이 사라지던 세계에서, 과정 자체가 산출물로 남는 세계로 넘어가는 자리다. 누군가 여섯 달 뒤에 같은 데이터셋을 다시 열어도, 정규화가 어디서 어떤 계수로 걸렸는지를 카드에서 읽어 낼 수 있다.
+                    </p>
+
+                    <!-- Diagram: provenance capture flow -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" aria-label="REDI의 이력 계측 흐름 도식 — 각 단계가 실행 전후 상태를 캡처해 PROVENANCE_CARD로 모인다">
+                            <defs>
+                                <marker id="prov-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="var(--text-muted)"/>
+                                </marker>
+                            </defs>
+                            <text x="350" y="26" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">단계를 만들면 이력이 저절로 따라온다</text>
+
+                            <!-- PipelineStep box -->
+                            <rect x="40" y="60" width="200" height="150" rx="10" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="140" y="84" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">PipelineStep</text>
+
+                            <rect x="60" y="100" width="160" height="34" rx="6" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1.2"/>
+                            <text x="140" y="122" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">실행 전 상태 (통계·형상)</text>
+
+                            <rect x="60" y="142" width="160" height="30" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="140" y="162" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="var(--text-primary)">변환 실행</text>
+
+                            <rect x="60" y="180" width="160" height="20" rx="6" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1.2"/>
+                            <text x="140" y="194" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-secondary)">실행 후 상태 + 소요 시간</text>
+
+                            <!-- FlowceptTask captures -->
+                            <line x1="240" y1="135" x2="330" y2="135" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#prov-arr)"/>
+                            <rect x="330" y="105" width="180" height="60" rx="10" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="420" y="130" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" font-weight="700" fill="#F86825">FlowceptTask</text>
+                            <text x="420" y="150" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">전후 상태를 자동 캡처</text>
+
+                            <!-- to provenance card -->
+                            <line x1="510" y1="135" x2="600" y2="135" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#prov-arr)"/>
+                            <rect x="585" y="60" width="95" height="150" rx="8" fill="var(--card-bg,#ffffff)" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <line x1="585" y1="88" x2="680" y2="88" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="632" y="80" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="700" fill="var(--text-primary)">PROVENANCE</text>
+                            <line x1="597" y1="104" x2="668" y2="104" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <line x1="597" y1="120" x2="668" y2="120" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <line x1="597" y1="136" x2="668" y2="136" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <line x1="597" y1="152" x2="668" y2="152" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <line x1="597" y1="168" x2="645" y2="168" stroke="var(--text-muted)" stroke-width="0.8"/>
+                            <text x="632" y="192" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" fill="var(--text-muted)">.md 감사 추적</text>
+
+                            <text x="350" y="250" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted)">다섯 단계가 모두 같은 방식으로 계측된다 — 결과 숫자가 아니라 지나온 길이 남는다.</text>
+                            <text x="350" y="272" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted)">부산물: 단계별 실행 시간이 곧 어디를 최적화할지의 지도가 된다.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ REDI의 이력 계측 흐름. 각 PipelineStep이 초기화되면 FlowceptTask가 실행 전후 상태를 자동으로 붙잡고, 그 기록이 PROVENANCE_CARD.md로 모인다. | 페블러스 원본 도식 (논문 재해석)
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        계측이 남긴 것은 재현성만이 아니었다. 모든 단계의 실행 시간을 나란히 놓고 보니, 파이프라인 비용을 지배하는 것은 정규화나 인코딩 같은 계산이 아니라 파일을 읽고 쓰는 입출력이었다. 핵융합 시뮬레이션 데이터는 처리 시간의 86%를 데이터를 읽어 들이는 수집 단계에서 썼다. 그래서 논문은 알고리즘을 손대기 전에 <strong>저장 포맷 선택이 최적화의 첫 번째 지렛대</strong>라고 짚는다. 실제로 청크 배열 포맷인 Zarr는 낱개 배열을 통째로 저장하는 NPZ보다 병렬 접근에서 약 세 배 높은 처리량을 냈다. 이력을 남기는 습관이, 어디를 고쳐야 하는지를 알려 주는 지도를 부산물로 그려 준 것이다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">에이전트가 직접 부르는 다섯 개의 모드</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이력이 남는다는 것만으로는 아직 개인 스크립트를 벗어나지 못한다. 결정적인 한 걸음은 REDI가 이 파이프라인을 사람이 매번 새로 짜는 코드가 아니라 <strong>에이전트가 호출할 수 있는 스킬</strong>로 노출한 데 있다. 논문의 표현으로는 "프리빌트된 도메인 인식 변환 로직을 에이전트 호출 가능한 스킬로 노출한다". 구체적으로는 다섯 개의 운영 모드가 있고, 각각이 AI 에이전트가 프로그래밍적으로 부를 수 있는 단위다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">모드</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">하는 일</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">redi run</td>
+                                    <td class="py-3 pr-4">수집부터 출력까지 엔드투엔드로 자동 실행한다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">redi discover</td>
+                                    <td class="py-3 pr-4">전처리 계획을 제안한다 — 사람이 검증할 수 있는 초안</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">redi inspect</td>
+                                    <td class="py-3 pr-4">이미 돌아가는 파이프라인을 관찰한다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">redi assess</td>
+                                    <td class="py-3 pr-4">데이터의 준비도를 정량적으로 평가한다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">redi validate</td>
+                                    <td class="py-3 pr-4">지정한 기준값과 대조해 검증한다</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 다섯 모드가 왜 중요한지는 <strong>discover</strong> 하나만 뜯어봐도 드러난다. 논문의 사례에서 discover는 TaiESM1 기후 모델의 CMIP6 데이터 32.94GB를 받아, 격자를 맞추는 xESMF 리그리딩을 추천하는 계획서를 내놓는다. 동시에 시간축을 섞으면 데이터 누수가 생긴다는 경고까지 붙인다. 사람이 매번 떠올려야 했던 도메인 함정을, 에이전트가 호출하는 표준 모드가 계획 단계에서 미리 짚어 주는 것이다. 실행(run)과 계획(discover)과 평가(assess)가 같은 인터페이스 위에 얹혀 있다는 점이, 스크립트를 손으로 다시 짜는 세계와 결정적으로 갈린다. 동반 도구 SetGo는 여기에 FAIR 준수 검증과 카탈로그 발행을 더한다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>감지만 하던 도구들과 무엇이 다른가</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전처리와 품질을 다루는 도구가 없던 것은 아니다. 다만 저마다 한쪽 조각만 쥐고 있었다. 아래는 논문이 관련 연구에서 짚은 도구들과 REDI의 자리를 나란히 놓은 것이다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Great Expectations</strong>는 데이터 품질 문제를 감지하지만, 그 문제를 자동으로 변환해 고치지는 않는다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>AIDRIN</strong>은 준비도를 열다섯 개 차원으로 점수화하지만, 거기서 멈춘다. 채점만 하고 변환은 없다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Nextflow·Snakemake</strong>는 워크플로를 잘 엮지만, NetCDF·HDF5·ADIOS2 같은 과학 데이터 포맷을 다루는 손은 약하다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>MLflow</strong>는 모델 하이퍼파라미터와 지표를 추적하지만, 데이터가 어떤 상태에서 어떤 상태로 바뀌었는지 그 변환 자체는 기록하지 않는다.</span>
+                        </li>
+                    </ul>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            REDI의 자리는 이들 사이의 빈틈이다. 변환과 준비도 평가와 출처 추적과 에이전트 통합을 하나의 파이프라인으로 묶었다는 것. 감지만 하거나, 점수만 매기거나, 모델 파라미터만 남기던 도구들이 각자 놓치던 조각을 한 흐름 위에 올려놓은 셈이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">일회성 스크립트가 공용 인프라가 될 때</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지금까지의 조각을 합치면 전환의 윤곽이 잡힌다. 전처리 과정이 계측되어 이력으로 남고(재현), 그 이력이 사람이 읽는 카드로 정리되며(감사), 파이프라인 전체가 에이전트가 부르는 표준 모드로 노출된다(재사용). 이 세 가지가 함께 성립할 때, 데이터를 준비하는 노하우는 개인의 노트북에서 나와 논문이나 코드처럼 공유되고 검증되는 자산이 된다. 매번 새로 짜는 소모전이 아니라, 계보가 이어지는 인프라다.
+                    </p>
+
+                    <!-- Diagram: three-step transition from private script to shared infrastructure -->
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" aria-label="개인 스크립트가 재현·감사·재사용 세 계단을 거쳐 공용 인프라가 되는 전환 도식">
+                            <defs>
+                                <marker id="tr-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="var(--text-muted)"/>
+                                </marker>
+                            </defs>
+
+                            <rect x="200" y="16" width="300" height="52" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.3" stroke-dasharray="4,3"/>
+                            <text x="350" y="38" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">개인 스크립트</text>
+                            <text x="350" y="57" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">매번 새로 다시 짜는 1회성 작업</text>
+
+                            <line x1="350" y1="68" x2="350" y2="95" stroke="var(--text-muted)" stroke-width="1.3" marker-end="url(#tr-arr)"/>
+
+                            <g font-family="Pretendard,sans-serif">
+                                <rect x="45" y="100" width="190" height="110" rx="10" fill="rgba(248,104,37,0.05)" stroke="#F86825" stroke-width="1.3"/>
+                                <text x="140" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825">재현</text>
+                                <text x="140" y="150" text-anchor="middle" font-size="10" fill="var(--text-secondary)">계측이 이력으로</text>
+                                <text x="140" y="166" text-anchor="middle" font-size="10" fill="var(--text-secondary)">남는다</text>
+
+                                <rect x="255" y="100" width="190" height="110" rx="10" fill="rgba(248,104,37,0.05)" stroke="#F86825" stroke-width="1.3"/>
+                                <text x="350" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825">감사</text>
+                                <text x="350" y="150" text-anchor="middle" font-size="10" fill="var(--text-secondary)">이력이 사람이 읽는</text>
+                                <text x="350" y="166" text-anchor="middle" font-size="10" fill="var(--text-secondary)">카드로 정리된다</text>
+
+                                <rect x="465" y="100" width="190" height="110" rx="10" fill="rgba(248,104,37,0.05)" stroke="#F86825" stroke-width="1.3"/>
+                                <text x="560" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825">재사용</text>
+                                <text x="560" y="150" text-anchor="middle" font-size="10" fill="var(--text-secondary)">표준 모드로 에이전트가</text>
+                                <text x="560" y="166" text-anchor="middle" font-size="10" fill="var(--text-secondary)">호출한다</text>
+                            </g>
+
+                            <line x1="350" y1="210" x2="350" y2="237" stroke="var(--text-muted)" stroke-width="1.3" marker-end="url(#tr-arr)"/>
+
+                            <rect x="175" y="242" width="350" height="60" rx="8" fill="rgba(248,104,37,0.06)" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="350" y="268" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">공용 재현 가능 인프라</text>
+                            <text x="350" y="288" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="var(--text-secondary)">계보가 이어지는 자산</text>
+
+                            <text x="350" y="325" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="var(--text-muted)">세 계단이 함께 성립할 때 노트북 안의 노하우가 공유·검증되는 자산이 된다.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 개인 스크립트가 재현·감사·재사용의 세 계단을 거쳐 공용 인프라로 바뀌는 전환. | 페블러스 원본 도식 (논문 재해석)
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 전환은 슈퍼컴 스케일에서도 무너지지 않았다. REDI는 20에서 800 워커까지 늘려도 병렬 효율이 0.95 이상을 유지했고, 변환의 정확도는 단백질 데이터에서 상관계수 1.000에 이르렀다. 규모를 키운다고 이력과 재현성이 흐트러지지 않는다는 것을 실측으로 보인 것이다. 물론 정직하게 남겨 둘 한계도 있다. REDI 스스로 깊이 도메인에 특화된 변환 시퀀스는 아직 자동으로 처리하지 못한다고 밝힌다. 무엇을 어떤 순서로 변환해야 하는지 아는 도메인 지식은 여전히 사람의 몫이고, 자동화가 잘하는 것은 그 지식이 남긴 과정을 빠짐없이 기록하고 재현하는 일이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 문제의식은 페블러스가 데이터를 다뤄 온 방식과 곧장 만난다. DataClinic이 데이터셋을 진단하며 지향해 온 방향도, 정제의 결과만이 아니라 그 정제가 어디서 어떻게 이뤄졌는지를 감사 가능한 이력으로 남기는 것이었다. REDI의 provenance 계측은 그 지향을 국립 슈퍼컴퓨터급 과학 데이터 위에서 구현한 한 사례로 읽힌다. 누가 데이터를 채점하는가라는 인접한 질문은 앞선 글 <a href="/report/ai-agent-science-data-readiness-scoring/ko/" class="text-orange-500 hover:text-orange-400 transition-colors">AI 준비도를 이제 AI가 채점한다</a>가 다뤘다. 그 글이 채점의 주체를 물었다면, 이 글은 준비 과정 자체가 어떻게 흔적을 남기는가를 물었다. 채점표를 손에 쥐기 전에, 데이터가 지나온 길이 먼저 남아 있어야 한다는 것이 두 글을 잇는 실이다.
+                    </p>
+                </section>
+
+                <!-- FAQ (placeholder — config.faqs로 렌더링) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Wilkinson, S. R. et al. (2026). "<a href="https://arxiv.org/abs/2607.02771" target="_blank" rel="noopener">Automated Data Readiness for Scientific AI</a>." arXiv:2607.02771.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Brewer, W. et al. (2026). "<a href="https://arxiv.org/abs/2507.23018" target="_blank" rel="noopener">Data Readiness Pipeline Patterns for Scientific AI at Scale</a>." AI Magazine, Wiley. DOI 10.1002/aaai.70056.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Hiniduma, K. et al. (2025). "Data Readiness for AI: A 360-Degree Survey." ACM Computing Surveys.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260729"></script>
+    <script src="/scripts/citation-download.js?v=20260729" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-28T19:50:49.389Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-28T20:02:29.159Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1785268249389-88g3im",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-28T20:30:50.349Z"
+            },
+            mainTitle: "전처리 이력을 자동으로 남기는 과학 데이터 파이프라인 REDI",
+            subtitle: "오크리지 국립연구소의 REDI가 다섯 단계 전처리마다 출처를 기록하고 에이전트가 직접 호출한다",
+            pageTitle: "REDI 파이프라인, 과학 데이터 전처리 출처 추적과 재현성 | 페블러스",
+            category: "tech",
+            publishDate: "2026-07-29",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/redi-data-provenance-pipeline/ko/",
+            tags: ["REDI 프레임워크", "출처 추적", "데이터 파이프라인", "재현성", "에이전트 스킬", "Flowcept", "과학 데이터", "AI-Ready Data", "HPC 데이터 준비"],
+            faqs: [
+                { question: "REDI는 무엇인가요?", answer: "미국 오크리지 국립연구소 계열 연구진이 제안한 자동 데이터 준비 프레임워크입니다. 초대형 과학 데이터셋을 수집·전처리·변환·구조화·출력의 다섯 단계로 AI 학습용으로 자동 변환하며, 각 단계의 데이터 상태 변화를 이력으로 기록합니다." },
+                { question: "Flowcept와 provenance 계측은 정확히 무엇을 남기나요?", answer: "각 파이프라인 단계가 초기화될 때 FlowceptTask가 생성되어 실행 전후의 데이터 상태(평균·표준편차 같은 통계값)와 소요 시간을 자동으로 캡처합니다. 이 기록이 쌓여 PROVENANCE_CARD.md라는 사람이 읽을 수 있는 감사 추적 문서로 정리되어, 데이터가 어떤 과정을 거쳐 지금 상태가 됐는지 되짚을 수 있게 합니다." },
+                { question: "'에이전트가 호출 가능한 스킬'이란 무슨 뜻인가요?", answer: "REDI는 파이프라인을 사람이 매번 새로 짜는 스크립트가 아니라, AI 에이전트가 프로그래밍적으로 부를 수 있는 다섯 개의 운영 모드(run·discover·inspect·assess·validate)로 노출합니다. 예컨대 discover 모드는 전처리 계획을 제안하고 데이터 누수 위험까지 경고합니다." },
+                { question: "기존 도구(MLflow 등)와 REDI는 무엇이 다른가요?", answer: "Great Expectations는 품질 문제를 감지만, AIDRIN은 준비도를 점수화만, MLflow는 모델 파라미터만 추적합니다. REDI는 변환·준비도 평가·출처 추적·에이전트 통합을 하나의 파이프라인으로 묶었다는 점에서 이들 사이의 빈틈을 메웁니다." },
+                { question: "왜 데이터 포맷이 병목의 원인이 되나요?", answer: "REDI의 계측이 모든 단계의 실행 시간을 재 보니, 파이프라인 비용을 지배하는 것은 계산이 아니라 파일 입출력이었습니다. 핵융합 데이터는 처리 시간의 86%를 수집 단계에서 썼습니다. 그래서 저장 포맷 선택이 첫 최적화 지렛대이며, 청크 배열 포맷인 Zarr는 NPZ 대비 병렬 접근에서 약 세 배 높은 처리량을 냈습니다." },
+                { question: "이런 자동화가 도메인 전문가를 대체하나요?", answer: "아직 아닙니다. REDI 스스로 깊이 도메인에 특화된 변환 시퀀스는 자동화하지 못한다고 밝힙니다. 무엇을 어떤 순서로 변환해야 하는지 아는 도메인 지식은 여전히 사람의 몫이고, 자동화가 잘하는 것은 그 지식이 남긴 과정을 빠짐없이 기록하고 재현하는 일입니다." },
+                { question: "같은 논문을 다룬 '도메인별 AI 준비도' 글과는 어떻게 다른가요?", answer: "두 글은 같은 REDI 논문을 다른 각도에서 봅니다. 짝 글 '분야마다 다르게 재는 과학 데이터의 AI 준비도'는 완전성·일관성·적합성의 기준이 도메인마다 어떻게 갈리는지를 다룹니다. 이 글은 그 파이프라인이 지나온 길을 어떻게 기록하고(provenance) 에이전트에게 어떻게 넘기는지(스킬화)를 다룹니다." },
+                { question: "REDI를 우리 조직의 전처리에도 적용할 수 있나요?", answer: "REDI 자체는 슈퍼컴퓨터 위 과학 데이터를 겨냥한 프레임워크지만, 그 설계 원칙(단계마다 상태 변화를 자동 계측하고, 감사 가능한 이력 카드로 남기며, 표준 인터페이스로 재사용 가능하게 노출)은 일반 조직의 데이터 전처리에도 그대로 옮길 수 있는 방향입니다." }
+            ]
+        });
+    </script>
+</body>
+</html>
