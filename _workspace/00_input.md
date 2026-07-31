@@ -1,22 +1,23 @@
 # Blog Produce Input
 
-## 주제
-페블러스 등록특허 — 합성 데이터의 스마트계약을 위한 가상 환경
+## 제목 방향
+재현할 수 없는 도구로 하는 과학
 
-## 소재
-- 특허번호: 제 10-2969395 호
-- 출원번호: 제 10-2023-0040247 호
-- 출원일: 2023년 03월 28일
-- 등록일: 2026년 05월 21일
-- 발명의 명칭: 합성 데이터의 스마트계약을 위한 가상 환경을 제공하는 전자 장치, 전자 장치의 동작 방법 및 전자 장치를 포함하는 시스템
-- 특허권자: 주식회사 페블러스
+## 훅
+10만 과학자가 최신 모델을 공짜로 쓰게 됐다. 그런데 그 모델의 무게와 학습 데이터는 아무도 열어볼 수 없다.
 
-## 방향
-페블러스가 합성 데이터 생성·유통을 스마트계약으로 자동화하는 가상 환경 기술을 특허 등록했습니다.
-이 특허를 중심으로 합성 데이터 산업의 신뢰·거래 인프라 관점에서 블로그 아티클을 작성.
+## 앵글 (페블러스 독자 관점)
+AI가 과학을 가속할수록 결과의 '재현 가능성'은 폐쇄 모델 뒤로 사라진다. 질의마다 조용히 바뀔 수 있는 API 위에서
+어떻게 실험을 재현하나. 데이터·모델 프로버넌스가 없으면 과학의 신뢰가 API 뒤에 인질로 잡힌다 — Pebblous가
+말하는 '검증 가능한 데이터'가 왜 실험실에도 필요한가로 번역된다.
 
-## 슬러그 (제안)
-blog/synthetic-data-smart-contract
+## 출처
+- https://openai.com/index/chatgpt-for-academic-researchers/
+- https://www.axios.com/2026/07/29/openai-academics-research-chatgpt-sol
+- https://siliconangle.com/2026/07/29/openai-opens-new-chatgpt-academic-researchers-program-100000-scientists/
+
+## 분야
+자연과학. 짧은 블로그.
 
 ## 모드
-express (KO + EN bilingual)
+research phase (blog-produce 파이프라인)

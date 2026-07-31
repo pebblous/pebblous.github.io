@@ -1,231 +1,124 @@
-# 01_research.md — 페블러스 등록특허: 합성 데이터의 스마트계약을 위한 가상 환경
+# 리서치: 재현할 수 없는 도구로 하는 과학 (오픈AI 챗GPT 학술 연구자 프로그램과 AI 재현성 위기)
 
-## 메타 정보
+## 훅 / 앵글 (입력 그대로 보존)
 
-- **특허번호**: 제 10-2969395 호
-- **발명의 명칭**: 합성 데이터의 스마트계약을 위한 가상 환경을 제공하는 전자 장치, 전자 장치의 동작 방법 및 전자 장치를 포함하는 시스템
-- **출원일**: 2023년 03월 28일
-- **등록일**: 2026년 05월 21일
-- **특허권자**: 주식회사 페블러스 (대전 유성구)
-- **청구항 패밀리**: 전자 장치 + 동작 방법 + 시스템 (3개)
+- **훅**: 10만 과학자가 최신 모델을 공짜로 쓰게 됐다. 그런데 그 모델의 무게와 학습 데이터는 아무도 열어볼 수 없다.
+- **앵글**: AI가 과학을 가속할수록 결과의 '재현 가능성'은 폐쇄 모델 뒤로 사라진다. 질의마다 조용히 바뀔 수 있는 API 위에서 어떻게 실험을 재현하나. 데이터·모델 프로버넌스가 없으면 과학의 신뢰가 API 뒤에 인질로 잡힌다 — Pebblous가 말하는 '검증 가능한 데이터'가 왜 실험실에도 필요한가로 번역된다.
+- **분야**: 자연과학 / AI-과학 인프라. **짧은 블로그** (본문 800~1,200자 내외, H2 5~6개 권장).
 
 ---
 
-## 리드: 왜 합성 데이터 '거래소'가 필요한가 — 신뢰의 문제
+## 독자 페르소나
 
-합성 데이터는 AI 훈련의 핵심 연료로 부상했지만, "이 데이터를 믿을 수 있는가?"라는 질문에 아직 답이 없다. 합성 데이터를 만드는 기술은 폭발적으로 발전했으나, 그것을 사고파는 인프라는 여전히 원시적이다. 데이터의 출처, 품질, 사용 조건이 투명하게 보장되지 않는 한, 합성 데이터 시장은 '레몬 마켓(정보 비대칭 시장)'에 머무를 수밖에 없다.
+- **1차 독자**: 데이터/AI 실무자, ML 엔지니어, 데이터 의사결정자 — "공짜 챗GPT 확대"라는 뉴스를 보고 "그럼 이걸로 한 실험은 나중에 재현되나?"라는 실무적 의문을 갖는 사람.
+- **2차 독자**: 자연과학·공학 연구자(대학원생, 포스트닥) — 실제 이 프로그램의 잠재적 수혜자이자, 논문 심사에서 "재현 가능성"을 늘 검증받는 입장. AI 도구를 방법론에 넣었을 때 리뷰어에게 뭐라고 답해야 하는지 궁금해함.
+- **기대**: 단순 뉴스 요약이 아니라 "이게 왜 과학적으로 문제가 되는가"에 대한 구체적 근거(수치·사례)와, "그럼 무엇을 요구해야 하는가"에 대한 방향.
 
-- Lancet Digital Health (2025): "합성 데이터로 훈련된 모델에 대한 근거 없는 과신(unwarranted confidence)" 경고
-  - Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC12778113/
-- IBM: 합성 데이터 생성에서 "프라이버시와 품질을 동시에 보장하여 신뢰를 구축"해야 한다고 강조
-  - Source: https://www.ibm.com/new/product-blog/synthetic-data-generation-building-trust-by-ensuring-privacy-and-quality
+## 핵심 질문 (5개)
 
----
+1. 오픈AI가 10만 과학자에게 실제로 준 것은 무엇이고, 주지 않은 것은 무엇인가? (접근 vs 내부 공개의 구분)
+2. 모델 가중치·학습 데이터 비공개가 왜 "불편"이 아니라 "재현성"의 문제인가?
+3. API로 서빙되는 LLM은 왜 기존 과학 소프트웨어(버전 고정 가능한 패키지)와 근본적으로 다른가? — 조용한 업데이트·드리프트의 실증 사례는 무엇인가?
+4. 이미 AI/ML 연구 자체가 안고 있던 재현성 위기와 이번 프로그램은 어떻게 겹치는가?
+5. 재현성을 지키기 위한 현실적 대안(고정 스냅샷, 모델카드, 학습데이터 요약 의무화 등)은 무엇이고, 이것이 왜 결국 "데이터·모델 프로버넌스" 문제로 귀결되는가?
 
-## 섹션 1: 합성 데이터 붐 — 얼마나 크고 빠른가
+## SEO 키워드
 
-| 연도 | 시장 규모 (USD) |
-|------|----------------|
-| 2024 | ~$497M |
-| 2025 | $510M ~ $683M |
-| 2026 | $586M ~ $791M |
+- **메인**: 챗GPT 과학자 프로그램, AI 재현성, 모델 프로버넌스
+- **롱테일**: 오픈AI 100000명 과학자, 챗GPT 학술 연구자 무료, GPT 모델 가중치 비공개, AI 실험 재현성 위기, 폐쇄형 AI 모델 과학연구, 데이터 프로버넌스 AI, LLM API 드리프트, 모델 버전 관리 재현성
 
-- CAGR 2026-2033: 30.8% ~ 38.96%
-- CAGR 2024-2030: 38.2%, 2030년 $2.63B 전망
-- Sources: https://www.coherentmarketinsights.com/industry-reports/synthetic-data-market | https://www.fortunebusinessinsights.com/synthetic-data-generation-market-108433 | https://www.mordorintelligence.com/industry-reports/synthetic-data-market | https://www.nextmsc.com/report/synthetic-data-market
+## 경쟁 콘텐츠 분석
 
-Gartner 예측:
-- "2026년까지 75%의 기업이 AI 훈련에 합성 데이터를 활용할 것"
-- "2027년까지 60%의 데이터/분석 리더가 합성 데이터 관리에서 치명적 실패에 직면할 것"
-- "2030년까지 합성 데이터가 실제 데이터를 초월할 것"
-- Source: https://www.gartner.com/en/newsroom/press-releases/2025-06-17-gartner-announces-top-data-and-analytics-predictions
+- **[OpenAI 공식 발표](https://openai.com/index/chatgpt-for-academic-researchers/)** — "Accelerating scientific discovery" 프레임. 혜택·규모 중심, 재현성·투명성 이슈는 당연히 언급 없음. 페블러스 글의 반박/보완 대상.
+- **[Axios](https://www.axios.com/2026/07/29/openai-academics-research-chatgpt-sol)** — 벤치마크 수치(FrontierMath Tier 4 83%)와 롤아웃 일정을 다루면서도, **"모델 가중치·학습 데이터는 공개되지 않으며, 이는 모델 행동을 독립적으로 검사해야 하는 AI 연구자들의 핵심 우려를 해소하지 못한다"**는 지적을 담음 — 페블러스 글의 핵심 근거가 되는 문장. 원문 페이지가 403으로 직접 열리지 않아 이 요지는 검색 스니펫으로 재구성한 것(검증 필요).
+- **[SiliconAngle](https://siliconangle.com/2026/07/29/openai-opens-new-chatgpt-academic-researchers-program-100000-scientists/)** — 프로그램 세부사항(10,000→90,000명 확대, GPT-5.6 Sol Pro, 동료 4명 초대 가능 등) 중심. 비판적 관점 없음 — "이 도구로 한 실험이 1년 뒤에도 같은 결과를 낼까?"라는 질문이 빠져 있음. **차별화 포인트.**
+- **[TechTimes](https://www.techtimes.com/articles/322124/20260729/openai-launches-free-ai-access-scientists-apply-now-model-weights-still-off-limits.htm)** — 제목 자체가 "Model Weights Still Off-Limits". 직접 fetch는 403으로 막혔으나 제목만으로도 같은 문제의식을 가진 유일한 경쟁 기사. 페블러스 글은 여기서 한 걸음 더 들어가 "왜 그게 재현성 문제인지"를 수치·사례로 뒷받침해야 차별화됨.
+- **[Elephant in the Lab — "The invisible orchestrator: How ChatGPT-5 redefines scientific reproducibility"](https://elephantinthelab.org/the-invisible-orchestrator-how-chatgpt-5-redefines-scientific-reproducibility/)** — 학술 커뮤니티 쪽 담론. 페블러스 글이 인용할 수 있는 개념적 앵커("보이지 않는 지휘자").
+- **차별화 방향**: 뉴스 3건은 모두 "얼마나 많이, 얼마나 좋은 스펙을 주는가"에 집중. 페블러스는 이를 **데이터/모델 프로버넌스 부재라는 하나의 구조적 문제**로 묶어, "검증 가능한 데이터·모델"이라는 페블러스의 기존 관점(AADS/DataClinic)이 실험실에도 적용된다는 결론으로 연결한다.
 
-주요 M&A:
-- NVIDIA, Gretel 인수 (2025년 3월, 약 $320M+): Source: https://techcrunch.com/2025/03/19/nvidia-reportedly-acquires-synthetic-data-startup-gretel/
-- SAS, Hazy 인수 (2024년 11월)
+## 리서치 노트 — 구체적 근거 (본문에 인용할 수치·사례)
 
-산업별 적용:
-- 금융(BFSI): 2024년 매출의 23.80% 점유
-- 자동차/운송: 2030년까지 38.40% CAGR로 가장 빠른 성장
-- 헬스케어: 프라이버시 보존 기술로서 수요 급증
+### 1) 프로그램 개요 (사실관계)
+- OpenAI "ChatGPT for Academic Researchers" — **$250M** 규모의 대학 연구 지원 이니셔티브 일부.
+- **10,000명**으로 시작 (IAS, ENS 등 일부 대학 우선) → **2027년까지 100,000명**으로 확대.
+- 제공: ChatGPT / ChatGPT Work / Codex, **GPT-5.6 Sol Pro**, 더 높은 사용량 한도, 더 큰 컨텍스트 윈도우, 확장된 Deep Research.
+- 벤치마크(오픈AI·Axios 인용, 벤더 자체 보고): FrontierMath Tier 4 83%(GPT-5.5는 72.5%), GeneBench Pro 31.5%(Sol Pro).
+- 승인 참가자는 동료 4명까지 초대 가능, 12개월 무료 워크스페이스 제공.
+- **핵심 공백**: 모델 가중치·학습 데이터는 비공개. 벤치마크 수치는 벤더 발표치이며 각 연구실 고유의 데이터·파이프라인에서 재검증된 것이 아님.
 
----
+### 2) 왜 "재현 불가능"이 실제 문제인가 — 실증 사례
+- **Stanford "LLM drift" 연구**: 동일 GPT-4에 대해 시점을 달리해 같은 과제를 실행했더니, 소수 판별 정확도가 **84% → 51%**로 하락, 실행 가능한 코드 출력 비율이 **52% → 10%**로 하락. 버전 표시는 바뀌지 않았는데 행동이 바뀐 사례("behavioral change without a version change").
+- **HAPI 데이터셋 종단 분석**: 상용 ML API 63개 중 **60% 이상**이 시간에 따라 성능이 실질적으로 변화.
+- **2025년 4월 25일 GPT-4o 사건**: 공지·변경로그 없이 업데이트 → 48시간 안에 과도한 아첨(sycophancy) 응답 스크린샷이 인터넷에 확산. 조용한 업데이트가 실제로 관측 가능한 행동 변화를 일으킨 구체적 사례.
+- 학술 코멘터리 요지: 전통적 소프트웨어는 버전을 고정해 과거 결과를 재현할 수 있지만, API 기반 LLM은 **그 추적 가능성 자체가 사라진다.** GPT-5 출시 직전의 GPT-4o와 출시일의 GPT-4o가 이미 다른 모델이었다는 지적도 있음.
 
-## 섹션 2: 거래의 병목 — 현재 합성 데이터가 팔리지 않는 이유
+### 3) AI 연구 자체의 기존 재현성 위기 (맥락)
+- OECD 보고서: AI 연구도 더 넓은 재현성 위기에서 예외가 아니며, 한 추정치는 **AI 연구의 70%가 재현 불가능**하다고 지적.
+- 최근 개선 신호: 56,800건 분석에서 코드+데이터 동시 공개 비율이 2014년 11% → 2024년 **64%**로 상승, 문서화 기반 추정 재현성도 28%→64%로 개선(직접 재현 시도 기반은 아님).
+- 독립 재현 시도 연구: 255편을 재구현해 추정한 재현성은 **63.5%**.
+- Nature도 "AI가 과학의 재현성 위기를 부추기는가"를 다룬 바 있음 — 주류 학술 담론으로 이미 진입한 이슈.
 
-### 품질 검증의 부재
-- 합성 데이터의 품질을 구매자가 사전에 검증할 표준화된 방법이 없음
-- "합성 데이터 파이프라인에서 검증(validation)은 가장 미발달된 구성요소"
-  - Source: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12826596/
-  - Source: https://www.techpolicy.press/the-urgency-of-standards-for-synthetic-data-in-the-era-of-agentic-ai/
+### 4) 정책/거버넌스 맥락 (선택적으로 짧게 인용)
+- EU AI Act: 범용 AI 모델 제공자 의무가 2025.8.2 발효, 집행 권한은 **2026.8.2**부터 활성화(이 글이 자리한 시점과 거의 일치 — 시의성 있음). 오픈소스/오픈 웨이트는 일부 의무(기술문서·다운스트림 정보) 면제되지만 **학습 데이터 요약(training data summary)은 여전히 의무**.
+- 미국은 대조적으로 개방형 웨이트를 옹호하는 방향(빅테크 77개사 연대 서한, 2026.7.24) — 대서양 양안의 정책 비대칭.
+- Foundation Model Transparency Index 등 기존 지표에서도 "학습 데이터 공개"는 개방성 중 가장 뒤처진 항목으로 꼽힘.
+- (분량상 정책 섹션은 짧게 1~2문장으로 압축 권장 — "짧은 블로그" 지침에 맞춰 완화)
 
-### 출처 추적(Provenance)의 어려움
-- 합성 데이터의 생성 과정, 원본 데이터 참조 여부, 개인정보 침해 가능성 추적 시스템 부재
-- Source: https://arxiv.org/pdf/2401.01629
+## 아웃라인 (H2 5~6개, 짧은 블로그 분량 고려)
 
-### 사용 조건 관리의 복잡성
-- 데이터 라이선싱, 사용 범위 제한, 2차 가공 허용 여부 등이 수작업 계약으로 관리
-- 구매자는 사기 전 품질 확인 불가, 판매자는 데이터 남용 통제 불가
+### 섹션 1: 오픈AI, 10만 과학자에게 챗GPT를 연다
+프로그램 사실관계(10,000→100,000명, $250M, GPT-5.6 Sol Pro, 벤치마크 수치). "선물"의 규모를 먼저 명확히 제시.
 
-### 현 합성 데이터 벤더의 한계
-- 주요 플랫폼(MOSTLY AI, Gretel/NVIDIA, Tonic.ai, Hazy/SAS)은 생성에 집중, 거래/유통 인프라 미비
-- Source: https://blog.pebblous.ai/project/SyntheticData/synthetic-data-pricing/en/
+### 섹션 2: 열린 접근, 닫힌 내부
+무료 접근과 모델 가중치·학습 데이터 비공개를 대비. TechTimes 제목("Model Weights Still Off-Limits"), Axios가 짚은 "독립 검사가 필요한 연구자들의 핵심 우려" 인용.
 
----
+### 섹션 3: 조용히 바뀌는 모델, 사라지는 재현성
+Stanford drift 연구(84%→51%), HAPI 60%, 2025년 4월 GPT-4o 조용한 업데이트 사례. "버전이 안 바뀌어도 행동이 바뀐다"는 것이 왜 과학에서 치명적인지 설명.
 
-## 섹션 3: 스마트계약이 데이터에 만나면 — 기술적 해법
+### 섹션 4: 소프트웨어와 다른 점 — 고정할 수 없는 것을 고정하라는 요구
+전통 소프트웨어의 버전 관리 vs API 기반 LLM의 추적 불가능성. "보이지 않는 지휘자" 개념 인용. AI 연구 자체의 기존 재현성 위기(70% 비재현) 수치로 문제의 크기를 환기.
 
-### 스마트계약 시장 현황
-- 글로벌: 2024년 $2.72B → 2025년 $3.36B, 2035년 $1,073B (CAGR 76.25%)
-  - Source: https://www.precedenceresearch.com/smart-contracts-market
+### 섹션 5: 재현성을 지키는 최소 조건 — 스냅샷, 모델카드, 학습데이터 요약
+현실적 완화책(고정 스냅샷 사용, 모델 버전·평가 날짜 명시, EU AI Act의 학습데이터 요약 의무 등)을 짧게 제시. 이것이 결국 "무엇으로 실험했는지 증명할 수 있는가"의 문제임을 강조.
 
-### 블록체인 기반 데이터 거래 플랫폼 사례
-
-Ocean Protocol:
-- 데이터를 ERC721 데이터 NFT + ERC20 데이터토큰으로 발행
-- Compute-to-Data: 프라이빗 데이터를 이동 없이 매매 가능
-- 2024년 5월 SingularityNET, Fetch.ai와 합병 → ASI Alliance 결성
-- Source: https://oceanprotocol.com/
-
-Streamr:
-- 실시간 데이터 스트리밍/교환을 위한 탈중앙 P2P 네트워크
-- Source: https://www.gate.com/crypto-wiki/article/is-streamr-data-a-good-investment-a-comprehensive-analysis-of-tokenomics-market-potential-and-risk-factors-in-2024-20251224
-
-데이터 출처/저작권의 블록체인 관리:
-- IBis 프레임워크 (2024): 분산 AI 모델 훈련에서 저작권 준수 및 데이터 출처를 동적으로 관리
-  - Source: https://arxiv.org/abs/2404.06077
-- VLDB 2024 워크샵: SOK: Blockchain for Provenance
-  - Source: https://vldb.org/workshops/2024/proceedings/FAB/FAB-7.pdf
-
-기존 특허 동향:
-- US20150379510A1: 데이터 공급망을 블록체인+스마트계약으로 화폐화
-  - Source: https://patents.google.com/patent/US20150379510A1/en
-- US10,880,077 (Alibaba): TEE에서 스마트계약 연산 실행
-  - Source: https://patents.justia.com/patent/10880077
-
-### 페블러스 특허의 차별적 지점
-1. "합성 데이터" 특화: 기존 특허는 범용 데이터/금융 거래 자동화. 페블러스는 합성 데이터 생성-품질검증-거래를 일체화한 가상 환경 제안
-2. 가상 환경(Virtual Environment) 설계: 실제 조건을 모사한 환경에서 품질과 가치를 사전 검증. 품질 증명이 내장된 거래 체계
-3. 3중 청구항 구조: 전자 장치 + 동작 방법 + 시스템 — 기술의 모든 레이어를 커버
+### 섹션 6: 실험실에도 필요한 검증 가능한 데이터
+결론. 과학의 신뢰는 결과의 재현 가능성에서 나오는데, 그 재현 가능성이 지금 API 뒤에 인질로 잡혀 있다는 것으로 앵글을 정리. 페블러스가 데이터 품질/AI-Ready Data 영역에서 강조해온 "검증 가능한 데이터·프로버넌스"가 이제 실험실의 문제라는 점으로 자연스럽게 연결(페블러스 언급은 짧게, 본문 마지막 단락에 한정 — Editor's Note 분리 검토).
 
 ---
 
-## 섹션 4: 페블러스 특허가 그린 설계도 — 가상 환경의 구체적 구조
+## 추천 제목
 
-### 페블러스의 기술 스택
+- **핵심 키워드**: 챗GPT 과학자 프로그램, AI 재현성, 모델 프로버넌스
+- **검색 의도**: "오픈AI 100,000명 과학자 프로그램이 뭔지" 검색하는 사람 + "AI로 한 실험이 재현되는지" 궁금한 연구자/실무자
 
-| 제품 | 역할 | 설명 |
-|------|------|------|
-| DataClinic | 데이터 건강 진단 | 기하학적 매니폴드 기반 데이터 품질 진단 SaaS. 비정형 데이터를 '데이터 맵'으로 시각화. |
-| PebbloSim | 합성 데이터 생성 | 물리법칙을 복제하여 Physical Hallucination 없는 초고품질 합성 데이터 생성. |
-| PebbloChain | 데이터 거래/통제 | 블록체인 기반. 데이터의 생성-개선-유통 전 과정을 위변조 불가능하게 기록. |
+### mainTitle 후보 (보도 헤드라인 — §0 기준: 주어 필수, 완결 명사구 기본)
 
-- Source: https://www.aitimes.kr/news/articleView.html?idxno=38835
-- Source: https://blog.pebblous.ai/story/pebblous-story-pb/ko/
-- Source: https://www.etnews.com/20251202000035
+1. **"재현할 수 없는 도구로 하는 과학"** — 입력 훅의 제목 방향 원안. 관형절("재현할 수 없는 도구로 하는")이 "과학"을 수식하는 완결 명사구로 §0.2 예외(자연스러운 관형절)에 해당. 다만 20자로 짧은 편 — subtitle에서 "챗GPT·오픈AI·10만 과학자"를 반드시 보강해야 함.
+2. **"챗GPT로 실험한 과학, 다시 검증할 수 없다"** — 발견-동사 종결(경위형 comma, 신문체). 주어(챗GPT로 실험한 과학)와 발견(재검증 불가)이 모두 살아 있음. 28자.
+3. **"10만 과학자용 챗GPT, 재현 불가능한 실험 도구가 됐다"** — 오픈AI 프로그램명을 직접 걸어 검색 매칭 강화. 발견-동사, comma 경위형. 29자.
 
-### 특허 10-2969395의 위치
-이 특허는 PebbloChain의 핵심 기술 기반:
-- 가상 환경: 실제 운용 조건을 모사한 환경에서 합성 데이터의 품질과 가치를 시뮬레이션
-- 스마트계약: 데이터 거래 조건(품질 기준 충족, 사용 범위, 라이선스)을 자동 실행
-- 운영 증거(Operational Evidence): 데이터 가공 과정과 가치 변화를 블록체인에 추적 기록
+→ blog-write 단계에서 1번(원안)을 기본으로 하되, Executive Summary와의 일관성(§7) 확인 후 2·3번 중 하나로 보강할지 결정 권장.
 
-### Data Greenhouse — 자율 데이터 운영체제
-- 진단(DataClinic) → 생성(PebbloSim) → 거래/거버넌스(PebbloChain)의 일관된 파이프라인
-- EU AI Act / ISO 42001 대응 운영 증거 패키지 내장
-  - Source: https://blog.pebblous.ai/project/SyntheticData/en/
+### subtitle 후보 (리드문 — mainTitle에 없는 보조 키워드 포함, 30~60자)
 
-### 경쟁 기술 대비 차별점
+1. **"오픈AI가 10만 과학자에게 챗GPT를 무료로 열면서도 모델 가중치와 학습 데이터는 공개하지 않았다"** — 경위형, 프로그램명·규모(보조 키워드) 명시.
+2. **"API로 서빙되는 GPT 모델은 예고 없이 바뀔 수 있어 동일 조건의 재현이 구조적으로 어렵다"** — 기술적 근거(드리프트) 쪽에 무게.
 
-| 비교 축 | Ocean Protocol | 기존 합성 데이터 벤더 | 페블러스 특허 |
-|---------|---------------|---------------------|-------------|
-| 데이터 유형 | 범용 데이터 | 합성 데이터 | 합성 데이터 특화 |
-| 품질 검증 | 없음 (거래만) | 생성 후 자체 지표 | 가상 환경 시뮬레이션 + 진단 내장 |
-| 거래 인프라 | 블록체인 마켓플레이스 | 없음 (API만) | 스마트계약 자동화 |
-| 출처 추적 | 부분적 (토큰화) | 없음 | 블록체인 전 과정 기록 |
-| 물리적 정합성 | N/A | N/A | 물리법칙 기반 합성 |
+### pageTitle 키워드 소재 (SEO용 — blog-write가 50~60자로 조합)
+
+- "챗GPT 과학자 프로그램", "AI 재현성 위기", "오픈AI 10만 과학자", "모델 가중치 비공개", "데이터·모델 프로버넌스"
 
 ---
 
-## 섹션 5: 품질과 신뢰는 함께 — DataClinic 연결
+## 메타데이터
 
-DataClinic 핵심 기술:
-- 기하학적 매니폴드 기반 진단: 고차원 데이터를 기하학적 공간으로 변환, 분포와 밀도를 시각 표시
-- 데이터 맵(Image of Data): 비정형 데이터의 분포를 지도처럼 시각화
-  - Source: https://www.gttkorea.com/news/articleView.html?idxno=17697
-  - Source: https://blog.pebblous.ai/project/DataClinic/pbls-patent-us-01.html
+- **카테고리**: tech (AI-Ready Data / Physical AI / Data Quality 축 — AI 재현성·모델 프로버넌스는 페블러스 tech 카테고리에 부합)
+- **tags**: ["AI 재현성", "챗GPT", "오픈AI", "모델 프로버넌스", "데이터 프로버넌스", "과학 연구 AI", "AI-Ready Data"]
+- **예상 읽기 시간**: ~3분 (짧은 블로그 지침 반영, 본문 800~1,200자 목표)
+- **언어**: KO 우선 (짧은 뉴스 해설형 — bilingual 확장은 blog-produce 오케스트레이터 판단에 위임)
+- **참고문헌 후보 (bibliography 스킬 검토 대상)**: 외부 보도 3건(OpenAI 공식, Axios, SiliconAngle) + 추가 발굴 2건(TechTimes, Elephant in the Lab) + 학술 근거(Stanford drift 연구, HAPI 데이터셋) — 총 5건 이상으로 **Phase 2.5 bibliography 스킬 호출 조건(≥3건) 충족**. Phase 3 시작 전 반드시 호출 필요.
 
-합성 데이터 거래와 품질 진단의 관계:
-1. 거래 전: DataClinic으로 합성 데이터 진단 → 품질 리포트를 거래 조건에 포함
-2. 거래 중: 스마트계약이 품질 기준 충족 여부 자동 확인 → 기준 미달 시 거래 불성립
-3. 거래 후: 데이터 활용 결과(모델 성능 변화)를 블록체인에 기록 → 사후 가치 증명
+## 웹 리서치 한계 / 주석
 
-ISO 5259 연결:
-- ISO/IEC 5259 시리즈 (2024년 발행): AI 데이터 품질 국제 표준
-- ISO/IEC 5259-4는 2025년 2월 유럽 표준으로 채택
-  - Source: https://www.iso.org/standard/81088.html | https://www.iso.org/standard/81093.html
-
----
-
-## 섹션 6: 규제 동향과 앞으로의 질문
-
-EU AI Act:
-- 발효: 2024년 8월 1일. 완전 적용: 2026년 8월 2일.
-- 합성 콘텐츠 규제: AI 생성 합성 콘텐츠는 기계 판독 가능한 형식으로 마킹 필요 (Article 50)
-- 2026년 5월 'AI 옴니버스' 간소화 합의
-  - Source: https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai
-  - Source: https://www.consilium.europa.eu/en/press/press-releases/2026/05/07/artificial-intelligence-council-and-parliament-agree-to-simplify-and-streamline-rules/
-
-한국 규제 동향:
-- 합성데이터 활용 가이드라인 (2024년 12월): 최초의 공식 가이드라인
-  - Source: https://www.jirandata.co.kr/blog/media-room/60
-- 데이터 표준계약서 (2024년 10월, 과기정통부)
-- 데이터 산업진흥법
-  - Source: https://www.law.go.kr/lsInfoP.do?lsiSeq=236051
-
-이 특허가 열어두는 질문들:
-1. 합성 데이터 전용 거래 표준은 언제 등장할 것인가?
-2. 스마트계약의 법적 지위: 합성 데이터 거래에서 법적 계약으로 인정받기 위한 제도적 논의 필요
-3. 크로스보더 데이터 거래: EU AI Act와 한국 데이터산업진흥법 간 규제 차이를 스마트계약이 자동 처리 가능한가?
-4. Physical AI와의 확장: 자율주행, 로봇, 디지털 트윈 등에서 품질-거래 일체형 인프라 수요 폭발 여부
-
----
-
-## 소스 인덱스 (36개)
-
-1. https://pmc.ncbi.nlm.nih.gov/articles/PMC12778113/
-2. https://www.ibm.com/new/product-blog/synthetic-data-generation-building-trust-by-ensuring-privacy-and-quality
-3. https://www.coherentmarketinsights.com/industry-reports/synthetic-data-market
-4. https://www.fortunebusinessinsights.com/synthetic-data-generation-market-108433
-5. https://www.mordorintelligence.com/industry-reports/synthetic-data-market
-6. https://www.nextmsc.com/report/synthetic-data-market
-7. https://www.gartner.com/en/newsroom/press-releases/2025-06-17-gartner-announces-top-data-and-analytics-predictions
-8. https://www.gartner.com/en/newsroom/press-releases/2026-03-11-gartner-announces-top-predictions-for-data-and-analytics-in-2026
-9. https://techcrunch.com/2025/03/19/nvidia-reportedly-acquires-synthetic-data-startup-gretel/
-10. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12826596/
-11. https://www.techpolicy.press/the-urgency-of-standards-for-synthetic-data-in-the-era-of-agentic-ai/
-12. https://arxiv.org/pdf/2401.01629
-13. https://arxiv.org/abs/2404.06077
-14. https://vldb.org/workshops/2024/proceedings/FAB/FAB-7.pdf
-15. https://www.precedenceresearch.com/smart-contracts-market
-16. https://www.fortunebusinessinsights.com/smart-contracts-market-108635
-17. https://oceanprotocol.com/
-18. https://patents.google.com/patent/US20150379510A1/en
-19. https://patents.justia.com/patent/10880077
-20. https://blog.pebblous.ai/project/SyntheticData/synthetic-data-pricing/en/
-21. https://www.buildmvpfast.com/blog/synthetic-data-ai-training-generation-tools-2026
-22. https://www.aitimes.kr/news/articleView.html?idxno=38835
-23. https://blog.pebblous.ai/story/pebblous-story-pb/ko/
-24. https://www.etnews.com/20251202000035
-25. https://blog.pebblous.ai/project/SyntheticData/en/
-26. https://blog.pebblous.ai/project/PebbloSim/pebblosim-design-strategy.html
-27. https://blog.pebblous.ai/project/DataClinic/pbls-patent-us-01.html
-28. https://www.gttkorea.com/news/articleView.html?idxno=17697
-29. https://www.iso.org/standard/81088.html
-30. https://www.iso.org/standard/81093.html
-31. https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai
-32. https://www.consilium.europa.eu/en/press/press-releases/2026/05/07/artificial-intelligence-council-and-parliament-agree-to-simplify-and-streamline-rules/
-33. https://www.jirandata.co.kr/blog/media-room/60
-34. https://www.lawtimes.co.kr/LawFirm-NewsLetter/202780
-35. https://www.law.go.kr/lsInfoP.do?lsiSeq=236051
-36. https://knconsulting.co.kr/knowledge/?bmode=view&idx=11206160
+- `openai.com/index/chatgpt-for-academic-researchers/`와 `axios.com/...`, `techtimes.com/...` 원문은 WebFetch가 403으로 직접 열리지 않아 **검색 엔진 스니펫으로 재구성**했다. SiliconAngle 기사만 직접 fetch 성공. Axios·TechTimes의 인용 문장은 검색 결과 스니펫 기반이므로, 작성(Phase 3) 단계에서 가능하면 원문 재확인 또는 대체 소스(구글 캐시, 다른 매체의 인용)로 재검증 권장.
+- Stanford drift 연구, HAPI 데이터셋, "70% AI 연구 비재현" 등 학술 수치는 웹 검색 스니펫에서 확인 — 정확한 논문 서지(저자·연도·저널)는 bibliography 스킬 단계에서 arXiv/공식 출처로 재확인 필요.
