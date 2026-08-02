@@ -622,6 +622,11 @@ Editor's Note는 **두 위치에 들어갈 수 있고**, 한 곳에만 있어야
 | **blog-polish** / **blog-polish-ko** | 제목·리드·소제목 다듬기 (SEO·슬롯 재작성) | 마무리 단계 |
 | **sns-write** | 블로그 글의 SNS 카피 생성 | 본문 발행 후. 7-B 단계에서 ko-prose-humanizer 필수 호출 |
 
+> **용어가 갈릴 때**: 낱말 하나가 두 이름으로 흔들리면(결측치/결측값 등) 그 자리에서
+> 정하지 말고 [`docs/terminology-ledger.md`](../../../docs/terminology-ledger.md)를 본다.
+> 판정 기준은 어원이 아니라 **격 일치** — 짝이 되는 낱말이 어느 쪽으로 굳었는지를 본다.
+> 대장에 없으면 실측부터 하고 항목을 추가한다.
+
 > **제목 분업**: `title-strategy.md`(전략 정본) → `blog-polish`(슬롯·SEO 재작성) → **ko-prose-humanizer**(제목의 AI 티 최종 제거). 셋은 같은 anti-slop 기준(T1·T2·T7)을 공유한다.
 
 **호출 순서 권장**: 작성 → text-reinforce → voice-edit (필요 시) → **ko-prose-humanizer** → blog-polish → seo-check → (게시 후) sns-write → **ko-prose-humanizer** (SNS 슬롯별)
