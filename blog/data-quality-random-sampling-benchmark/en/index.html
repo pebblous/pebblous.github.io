@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Sampling Beats Smart Sampling at Scale | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="rating" content="general">
+    <meta name="revisit-after" content="7 days">
+    <meta name="distribution" content="global">
+
+    <meta name="description" content="Profiling data quality at scale, schema-guided smart sampling was up to 40x less accurate than plain random sampling, a benchmark of 9 strategies found.">
+    <meta name="keywords" content="data quality monitoring, random sampling, data profiling, progressive sampling, smart sampling, IQR outliers, data-centric AI, DC-AI, MCMC sampling, sample representativeness">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/data-quality-random-sampling-benchmark/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/data-quality-random-sampling-benchmark/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/data-quality-random-sampling-benchmark/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/data-quality-random-sampling-benchmark/ko/">
+
+    <!-- Open Graph -->
+    <meta name="og-image-title" content="Random Sampling Beats Smart Sampling in a Data Quality Benchmark">
+    <meta property="og:title" content="Random Sampling Beats Smart Sampling in a Data Quality Benchmark">
+    <meta property="og:description" content="Profiling the quality of millions of rows in real time, schema-based proxy sampling was up to 40x more wrong. The verdict from a benchmark of 9 sampling strategies.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/data-quality-random-sampling-benchmark/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/data-quality-random-sampling-benchmark/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="A benchmark where random sampling beat smart sampling at auditing data quality at scale">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-08-03">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Random Sampling Beats Smart Sampling in a Data Quality Benchmark">
+    <meta name="twitter:description" content="Profiling the quality of millions of rows in real time, schema-based proxy sampling was up to 40x more wrong. The verdict from a benchmark of 9 sampling strategies.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/data-quality-random-sampling-benchmark/en/image/index.png">
+    <meta name="twitter:image:alt" content="A Pebblous blog post on a data quality sampling benchmark">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260803"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260803">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260803">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260803">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#why-sampling" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Measuring Millions of Rows in Real Time</a></li>
+                    <li><a href="#showdown" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Nine Sampling Strategies, Head to Head</a></li>
+                    <li><a href="#blind-proxy" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Smart Sampling Sees Only Half</a></li>
+                    <li><a href="#iot-collapse" class="block pl-4 themeable-toc-link transition-colors duration-200">4. On IoT Data It Collapses Entirely</a></li>
+                    <li><a href="#pebblous-view" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Cover Evenly Before You Aim</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Scanning a dataset of millions of rows end to end just to check its quality in real time is too slow. So teams sample a fraction and estimate the whole from it, and the engineer's instinct usually runs like this: if you know the schema and the statistical structure, surely a cleverly chosen sample beats grabbing rows at random. A benchmark released in 2026 put that instinct to the test across nine sampling strategies, and the result came out the other way.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            On 500,000 rows of NYC 311 service requests audited at a 5% budget, plain random sampling landed a mean relative error of 0.49%. Smart sampling that steered the draw with an attribute-dependency graph came in at 19.5% under the same conditions, roughly 40 times more wrong. Across real administrative data the gap ran from 11x to 49x, and cluster sampling, which uses no proxy at all and merely splits by position, tied random for practical purposes. What separated winners from losers was not cleverness but representativeness.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            That 40x traces back to two failures. One is a structural blind spot: smart sampling chases numeric outliers and misses the categorical columns where quality defects actually pile up. The other is worse: on IoT sensor data its outlier estimate collapses to essentially zero. For any team designing a real-time data quality gauge, the finding compresses into a single question. Which comes first, choosing where to look, or looking evenly?
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~40x</p>
+                            <p class="text-sm themeable-text-secondary mt-1">random sampling's accuracy edge</p>
+                            <p class="text-xs themeable-muted mt-1">NYC 311, 500K rows, 5% budget — RU 0.49% vs DAG 19.5% error</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">5% · &lt;1%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">budget and error</p>
+                            <p class="text-xs themeable-muted mt-1">seeing just 25K of 500K rows keeps all 4 metrics under 1% error</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">29.6% → 0%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">IoT outlier estimate collapse</p>
+                            <p class="text-xs themeable-muted mt-1">smart sampling barely sees the real defects even at 100% budget</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">12–47x</p>
+                            <p class="text-sm themeable-text-secondary mt-1">smart sampling's speed penalty</p>
+                            <p class="text-xs themeable-muted mt-1">the gap widens vs random as data grows to 5M–7.41M rows</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1: Why sampling -->
+                <section id="why-sampling" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Measuring Millions of Rows in Real Time</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In a data-centric AI pipeline, data quality profiling acts as a gate. Before data goes into training or serving, you measure things like missing rate, duplicate rate, outlier rate, and functional-dependency violation rate, then block what fails and let the rest through. The catch is speed. Scanning all 5 million rows to compute those metrics takes tens of seconds to a few minutes on a single machine. When data refreshes daily and pipelines run constantly, that cost becomes the wall that blocks real-time monitoring.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The standard alternative is progressive sampling. You draw only a fraction of the whole, a budget, and estimate overall quality from it. A 5% budget means you look at 250,000 of 5 million rows and defer the rest. The question that matters is which sampling strategy strikes the best balance between accuracy and cost.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here an old assumption enters. The expectation is that smart sampling, which exploits correlations between columns or schema structure to draw from "where problems are likely," should beat random sampling that pulls any row uniformly. Prior work, which found that quality errors cluster along data dependencies, has propped up that expectation. Laure Berti-Équille's benchmark tests the assumption with the first systematic measurement across nine sampling strategies.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>The setup</strong>: representativeness-based strategies such as random, geometric, Yamane, and cluster sampling were pitted against DAG-MCMC, Metropolis, stratified, and importance sampling, which steer the draw with an IQR error proxy, all on the same data and the same budget. One question sat on the scale: is choosing the sample cleverly really an advantage?
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2: Showdown -->
+                <section id="showdown" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Nine Sampling Strategies, Head to Head</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The benchmark used eight datasets, from controlled synthetic data to real administrative records to IoT sensor streams. The sharpest scene comes from 500,000 rows of New York City 311 complaints. With a 5% budget, that is 25,000 sampled rows, used to estimate four quality metrics, random sampling posted a mean relative error of 0.49%. Seeing just 5% of the data instead of scanning all of it, it pinned overall quality to under 1% error.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On the same data and the same 5% budget, DAG-guided sampling had an error of 19.5%. The two differ by roughly 40 times. That is, the cleverly chosen sample was 40 times less accurate than the random one. What matters is that this was not a fluke of one dataset. Across real administrative data, smart sampling ran 11x to 49x worse than random, and the gap was statistically significant under a signed-rank test.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 300" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" aria-label="Mean relative error by sampling strategy on NYC 311 data at a 5% budget — random 0.49% vs DAG-guided 19.5%">
+                            <text x="330" y="34" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="14" font-weight="700" fill="var(--text-primary)">NYC 311 · 500K rows · 5% budget — mean relative error (lower is better)</text>
+                            <!-- axis baseline -->
+                            <line x1="220" y1="250" x2="620" y2="250" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <!-- RU bar -->
+                            <text x="205" y="98" text-anchor="end" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="var(--text-secondary)">Random</text>
+                            <rect x="220" y="82" width="10" height="30" rx="3" fill="#F86825"/>
+                            <text x="240" y="103" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="#F86825">0.49%</text>
+                            <!-- Cluster bar -->
+                            <text x="205" y="148" text-anchor="end" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="var(--text-secondary)">Cluster</text>
+                            <rect x="220" y="132" width="11" height="30" rx="3" fill="#F86825" fill-opacity="0.55"/>
+                            <text x="241" y="153" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="var(--text-secondary)">essentially tied with random</text>
+                            <!-- DAG bar -->
+                            <text x="205" y="198" text-anchor="end" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="var(--text-secondary)">DAG-guided</text>
+                            <rect x="220" y="182" width="392" height="30" rx="3" fill="var(--text-muted)" fill-opacity="0.55"/>
+                            <text x="600" y="203" text-anchor="end" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">19.5%</text>
+                            <text x="330" y="284" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-muted)">bar length is proportional to error — smart sampling was ~40x more wrong than random</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Original Pebblous diagram — on the same data and budget, random and cluster sampling stay under 1% error while DAG-guided sampling hits 19.5%.
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The more telling comparison is cluster sampling. Cluster merely splits the data into √N blocks and draws blocks at random; it uses no error proxy and no schema at all. Yet that same cluster method reached nearly the same accuracy as random. Smart sampling armed with a proxy lost, and sampling with no proxy that merely split evenly by position won. That is where the conclusion comes from: the variable that decided accuracy was representativeness, not cleverness.
+                    </p>
+                </section>
+
+                <!-- Section 3: Blind proxy -->
+                <section id="blind-proxy" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Smart Sampling Sees Only Half</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Why did it lose? The crux is what smart sampling looks at to decide "where problems are likely." DAG and Metropolis methods assign each row an error-proxy score and bias the draw toward high-scoring rows. But that proxy looks only at numeric-column outliers (values outside the interquartile range) and missing rates. It reacts to extreme latitudes and longitudes, or a sudden jump in an amount, yet it is structurally unable to see quality defects in categorical or string columns.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The problem is where defects actually live in real data. In NYC 311, NYPD arrest records, and the UCI census, all three real datasets, quality defects sat mostly in categorical and string columns: a missing agency code, a state value that does not line up, a classification label that is mixed up. IQR-family proxies are congenitally blind to defects like these. So smart sampling herds its sample toward the numeric outliers, where there are in fact no defects, and leaves the categorical side, where the defects really are, empty.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 320" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" aria-label="A diagram of how the IQR proxy sees only numeric outliers and misses categorical quality defects">
+                            <text x="330" y="32" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="14.5" font-weight="700" fill="var(--text-primary)">What the IQR proxy sees — only half</text>
+                            <!-- numeric column (seen) -->
+                            <rect x="60" y="70" width="240" height="180" rx="12" fill="#F86825" fill-opacity="0.10" stroke="#F86825" stroke-width="2"/>
+                            <text x="180" y="98" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13.5" font-weight="700" fill="#F86825">Numeric columns</text>
+                            <text x="180" y="120" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">lat/long · amount · age</text>
+                            <text x="180" y="168" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="#F86825">proxy sees ✓</text>
+                            <text x="180" y="196" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-muted)">catches outliers well, but</text>
+                            <text x="180" y="216" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-muted)">few defects live here</text>
+                            <!-- categorical column (blind) -->
+                            <rect x="360" y="70" width="240" height="180" rx="12" fill="var(--text-muted)" fill-opacity="0.12" stroke="var(--text-muted)" stroke-width="2" stroke-dasharray="6 5"/>
+                            <text x="480" y="98" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13.5" font-weight="700" fill="var(--text-secondary)">Categorical / string columns</text>
+                            <text x="480" y="120" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-secondary)">agency code · status · label</text>
+                            <text x="480" y="168" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="13" font-weight="600" fill="var(--text-secondary)">proxy is blind ✗</text>
+                            <text x="480" y="196" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-muted)">yet most defects</text>
+                            <text x="480" y="216" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-muted)">pile up right here</text>
+                            <text x="330" y="298" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12" fill="var(--text-muted)">smart sampling crowds the low-defect side and empties the side where defects gather</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Original Pebblous diagram — the IQR error proxy reacts only to numeric outliers and structurally misses the categorical quality where real defects gather.
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Stratified and importance sampling suffer from the same illness. They only change the allocation or the weighting; because they use the same IQR proxy, they inherit the exact failure mode of DAG and Metropolis. Only cluster, which uses no proxy at all, holds on to random-level accuracy. A controlled experiment nails the cause too. Leave DAG's graph proposal in place and swap the IQR-based weights for uniform weights, and the error drops from 19.5% to 3.8%. The prime suspect for the bias was that proxy-weighting step itself.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Even the device meant to undo the bias later betrays you on this data. Proxy-guided sampling draws its sample, then reweights each row by the inverse of its proxy score to correct the bias after the fact. But in string-heavy data most rows' scores cluster near zero, and the inverse of that can shoot up to a million-fold. Even after you cap and clip it, a handful of over-weighted rows drag the whole estimate right back. Trying to fix a cleverly drawn sample cleverly, the correction device ends up inheriting the same proxy's blind spot.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>One observation</strong>: the price of cleverness is bias. The moment the proxy sees only half the data (the numeric half), the real defects massed in the other half (the categorical half) quietly vanish from the sample. When quality signals are spread evenly across the data, that is why sampling that looks evenly wins.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4: IoT collapse -->
+                <section id="iot-collapse" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">On IoT Data It Collapses Entirely</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The categorical blind spot is the first trap. But in numeric-dominated data the failure takes a different, worse shape. On 2.31 million rows of real IoT sensor data from the Intel Berkeley Research Lab, the true outlier rate was 29.6%. Random sampling hit that value to within 0.3 percentage points at a 5% budget. DAG-guided sampling, on the other hand, no matter how far you raised the budget, even at 100% of the data, stayed fixed on an outlier estimate badly off from the truth.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/img-01-iot-sensor-node.jpg"
+                             alt="A solar-powered wireless sensor node mounted on farm irrigation piping — a real-world example of IoT sensor data collection"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ A field-deployed wireless sensor network node (illustrative example, not the actual device used in the benchmark) | Source: <a href="https://commons.wikimedia.org/wiki/File:CSIRO_ScienceImage_3719_CSIROs_Fleck_wireless_sensor_network_technology.jpg" target="_blank" rel="noopener" class="underline">CSIRO ScienceImage (CC BY 3.0)</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The reason lies in how smart sampling works. DAG concentrates the sample on extreme-value rows. That pushes the quartile boundaries (Q1, Q3) outward within the sample, and the sample's IQR widens. Once the IQR widens, almost no row falls outside that range, and nothing inside the sample gets flagged as an outlier. As a result the estimate of an outlier rate that is truly 29.6% collapses to essentially zero. Drawing more of a sample does not fix it, because the estimator itself is structurally biased.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>The scariest failure</strong>: this is not simply being less accurate. If the real defect rate is 30% and the estimate is 0%, smart sampling confidently returns a completely wrong answer: "this data is clean." On sites where a missed sensor anomaly is not acceptable, such as predictive maintenance, that confident wrong answer is far more dangerous than a less accurate one.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The two failures point in opposite directions but share a root. One misses because the defects sit where the proxy cannot see (categorical); the other misses because the place the proxy concentrates on (numeric extremes) is exactly what breaks the estimator. Either way, once a biased sample loses representativeness, the quality estimate computed on top of it can no longer be trusted.
+                    </p>
+                </section>
+
+                <!-- Section 5: Pebblous view -->
+                <section id="pebblous-view" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Cover Evenly Before You Aim</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Accuracy is not the only problem. As data grows, random sampling's work rises almost linearly, but DAG-guided sampling rises superlinearly because it recomputes the entire candidate pool every batch. At 5 million rows, random took 14.3 seconds and DAG 169, about 12 times slower; at the 7.41 million-row scale the gap reached 28x, and on 5.98 million rows of taxi data it stretched to 47x. Even under injected errors, random's robustness led by roughly 5.6x. You end up piling schema-maintenance cost on top of sampling that is slower, less accurate, and less robust.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The practical conclusion is plain. If you are designing a real-time data quality gauge, standing up random or cluster sampling at a 5–10% budget, before you painstakingly build schema metadata or dependency graphs, is for now the best starting point. The more heterogeneous your sources and the more your schema keeps changing in production, the higher the cost of finely choosing "where to look," and its benefit did not hold up on any real dataset.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This result also connects directly to the view Pebblous has built up in real-time quality monitoring. In drift monitoring, a stable estimation error under 1% lets you trigger retraining only on meaningful shifts in missing or duplicate rate. When the estimate instead swings by several percentage points from run to run, retraining spins its wheels while the data is fine, and compute is wasted. The practical translation of this benchmark is that a quality gauge's reliability comes from representativeness, not from clever sampling.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note</strong>: the author leaves the limits honestly on the table. On genuinely relational data or knowledge graphs with strong correlation structure, the result could go differently, and this part still lacks statistical power. But across the broad production reality of administrative, census, and IoT structured tables, the conclusion compresses into a single sentence: before you cleverly choose where to look, look evenly first.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Berti-Équille, L. (2026). "<a href="https://arxiv.org/abs/2607.25356" target="_blank" rel="noopener">Data Quality Profiling at Scale with Progressive Sampling: A Benchmark for Data-Centric AI Pipelines</a>." <strong>arXiv:2607.25356</strong>.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Berti-Équille, L. (2026). "<a href="https://github.com/LaureBerti/progressive-profiling" target="_blank" rel="noopener">progressive-profiling</a>." GitHub / Zenodo (DOI: 10.5281/zenodo.21628028). Reproduction code for the 9 sampling strategies and datasets.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Intel Berkeley Research Lab. (2004). "<a href="http://db.csail.mit.edu/labdata/labdata.html" target="_blank" rel="noopener">Intel Berkeley Research Lab Sensor Data</a>." The benchmark's real IoT dataset (2.3M readings, 29.6% outlier rate).</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260803"></script>
+
+    <!-- Citation download (BibTeX/RIS) — Pebblous direct converter, no external lib -->
+    <script src="/scripts/citation-download.js?v=20260803" defer></script>
+
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-02T19:29:24.992Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-02T19:39:48.960Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1785698964992-rbw6xg",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-02T20:08:10.195Z"
+            },
+            mainTitle: "Random Sampling Beats Smart Sampling in a Data Quality Benchmark",
+            subtitle: "Measuring missing, duplicate, and outlier rates across millions of rows, schema-based proxy sampling was up to 40x more wrong",
+            pageTitle: "Random Sampling Beats Smart Sampling at Scale | Pebblous",
+            category: "tech",
+            publishDate: "2026-08-03",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/data-quality-random-sampling-benchmark/en/",
+            tags: ["data quality monitoring", "random sampling", "data profiling", "progressive sampling", "smart sampling", "IQR outliers", "data-centric AI", "MCMC", "benchmark"],
+            faqs: [
+                {
+                    question: "Why is smart sampling less accurate than random sampling?",
+                    answer: "Because the error proxy that smart sampling relies on sees only numeric outliers and missing values. In real datasets like NYC 311, NYPD, and the UCI census, quality defects sit mostly in categorical and string columns, and IQR-family proxies are structurally unable to see them. So the sample is biased toward defect-free numeric outliers, while the categorical side where defects actually gather is left empty and loses representativeness."
+                },
+                {
+                    question: "What exactly is the 40x difference?",
+                    answer: "Auditing 500,000 rows of NYC 311 service requests at a 5% budget (25,000 rows), random sampling had a mean relative error of 0.49% while DAG-guided sampling had 19.5%. The ratio of the two is roughly 40x. Across real administrative data, smart sampling ran 11x to 49x worse than random."
+                },
+                {
+                    question: "How small can the sample be?",
+                    answer: "In this benchmark, using random sampling at a 5% budget kept the estimates of all four metrics — missing rate, duplicate rate, outlier rate, and dependency-violation rate — under 1% error. For a 5-million-row dataset that means scanning just 250,000 rows, which is under 15 seconds versus 169 seconds for a full scan."
+                },
+                {
+                    question: "Why is cluster sampling such an important comparison?",
+                    answer: "Cluster sampling merely splits the data into √N blocks and draws blocks at random; it uses no error proxy and no schema at all. Even so, it reached nearly the same accuracy as random sampling. The fact that sampling which merely splits evenly by position, with no proxy, beat proxy-armed smart sampling shows the variable that decided accuracy was representativeness, not cleverness."
+                },
+                {
+                    question: "What does it mean that the outlier estimate collapses on IoT data?",
+                    answer: "The true outlier rate of the 2.31-million-row Intel Berkeley IoT sensor data was 29.6%, but DAG-guided sampling collapsed to an estimate near zero even when the budget was raised to 100%. Concentrating the sample on extreme-value rows pushes the sample's quartile boundaries outward and widens the IQR, so nothing inside the sample gets flagged as an outlier. It is a structural bias in the estimator itself, so drawing more of a sample does not fix it."
+                },
+                {
+                    question: "Does smart sampling at least have a speed advantage?",
+                    answer: "The opposite. Random sampling's work rises almost linearly as data grows, but DAG-guided sampling recomputes the candidate pool every batch and rises superlinearly. It was about 12x slower at 5 million rows, 28x at 7.41 million, and up to 47x on 5.98 million rows of taxi data. Random also led in robustness to injected errors by roughly 5.6x."
+                },
+                {
+                    question: "What is the lesson for designing a real-time quality gauge?",
+                    answer: "Before painstakingly building schema metadata or dependency graphs, standing up random or cluster sampling at a 5–10% budget is for now the best starting point. In drift monitoring especially, a stable estimation error under 1% prevents wasteful retraining triggers and cuts compute waste. A quality gauge's reliability comes from representativeness, not from sophisticated sampling."
+                },
+                {
+                    question: "What are the limits of this benchmark?",
+                    answer: "The author states plainly that the measured data is confined to administrative, census, and IoT structured tables. On genuinely relational data or knowledge graphs with strong correlation structure, guided sampling could turn out favorable, but the current experiments use few seeds and lack the statistical power to confirm that possibility. Time-series, multimodal, and multi-relational data are out of scope."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
