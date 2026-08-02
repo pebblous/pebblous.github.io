@@ -29,12 +29,38 @@ _STRIP = (
 
 
 def extract_body(path):
-    """HTML/Markdown에서 사람이 읽는 본문만 남긴다."""
+    """HTML/Markdown에서 사람이 읽는 본문만 남긴다.
+
+    (본문, 인용을 지운 본문) 두 벌을 돌려준다. 빈도의 분모는 본문 전체이고,
+    검출은 인용을 지운 쪽에서 한다.
+    """
     raw = open(path, encoding="utf-8").read()
     for pat in _STRIP:
         raw = re.sub(pat, " ", raw, flags=re.DOTALL)
-    text = re.sub(r"<[^>]+>", " ", raw)
-    return re.sub(r"\s+", " ", text).strip()
+    quoteless = re.sub(r"<blockquote[^>]*>.*?</blockquote>", " ", raw, flags=re.DOTALL)
+
+    def plain(s):
+        return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", s)).strip()
+
+    return plain(raw), mask_quotes(plain(quoteless))
+
+
+def mask_quotes(text):
+    """따옴표 안을 지운다.
+
+    남의 말은 우리 문체가 아니다. 인용문을 고치는 것은 이 스킬의 제1 원칙
+    (인용문 원문 보존) 위반이므로, 애초에 **검출되지 않아야** 한다.
+
+    v5는 인용문 보존을 교정 *후* 불변식으로만 두었다. 그래서 발행글 426편
+    전수 조사에서 잡스 발언("혁신적인 인터넷 소통 기기…"), 샌더스 발언,
+    Epoch AI 지표명이 그대로 걸렸다. 검출 단계로 앞당긴다.
+
+    길이 상한을 두는 이유: 닫는 따옴표가 없는 글에서 나머지 전체가 통째로
+    지워지는 것을 막는다.
+    """
+    text = re.sub(r'[""“”]([^""“”]{1,400})[""“”]', " ", text)
+    text = re.sub(r"[''‘’]([^''‘’]{1,200})[''‘’]", " ", text)
+    return text
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -51,10 +77,11 @@ CHECKS = [
     # (코드, 이름, 등급, 정규식, 1만 자당 임계)
     ("T1", "줄표(—) 재진술", "S2", r"—", 20.0),
     ("T4", "메타 예고문", "S2",
-     r"(옮긴다|풀어 쓰자면|짚어 본다|묶어 본다|한 발 더 들어가면|다시 읽어 본다"
-     r"|한눈에 본다|또렷해진다|풀어 두면)", 0.0),
+     r"(그대로 옮긴다|옮겨 적어 본다|옮겨 적는다|옮겨 본다|풀어 쓰자면|짚어 본다|묶어 본다"
+     r"|한 발 더 들어가면|다시 읽어 본다|한눈에 본다|또렷해진다|풀어 두면)", 0.0),
     ("T7", "고전 번역투", "S2",
-     r"(에 있어서|을 부른다|라는 진단이다|을 가능하게 한다|되어진|지어진다)", 0.0),
+     r"((?<!관계)(?<!상태)(?<!위치)(?<!상황)에 있어서|라는 진단이다"
+     r"|을 가능하게 한다|되어진|지어진다)", 0.0),
     ("T12a", "명사화 ~하는 것", "S2",
      r"(하|되|있|없|드러나|나타나)는 것(이|을|은|으로|도|만)", 2.5),
     ("T12b", "격조사 겹침", "S2", r"(에서의|로의|으로의|로서의)", 1.5),
@@ -64,14 +91,26 @@ CHECKS = [
      1.0),
     # 위키체·광고체 — voice-edit 공통 항목
     ("V1", "위키체", "S2", r"(본 보고서|규명한다|분석하고자|살펴본다|고찰한다)", 0.0),
-    ("V2", "광고체", "S2", r"(혁신적|획기적|놀라운|차세대|게임 체인저)", 0.0),
-    ("V3", "AI 접속부사", "S2", r"(흥미롭게도|주목할 만한|결론적으로|이러한 맥락에서)", 0.0),
+    ("V2", "광고체", "S2", r"(혁신적|획기적|게임 체인저)", 0.0),
+    ("V3", "AI 접속부사", "S2",
+     r"(흥미롭게도|주목할 만한(?! AI 모델)|결론적으로|이러한 맥락에서)", 0.0),
 ]
 
 # ⛔ 의도적으로 뺀 것 — 넣으면 사람 글을 AI 글로 오판한다
 #   · "것이다" 단독 빈도 → 사람이 AI보다 2배 많이 쓴다. T2는 종결 분포로 본다
 #   · "~를 통해"        → 비번역 한국어가 번역문보다 2배 많이 쓴다
 #   · 과의·와의          → 대부분 정상이고 '인과의'처럼 낱말 내부가 걸린다
+#
+# ⛔ 426편 전수 정독으로 걷어낸 것 (2026-08-02) — 오탐률이 정탐을 덮었다
+#   · "차세대"      오탐 84%. next-generation의 표준 번역이다.
+#                   "차세대 원전", "차세대 Vera Rubin GPU"는 기술 세대 표기지 광고가 아니다
+#   · "놀라운"      오탐 79%. 남의 연구 성과에 붙는 평가어는 광고체가 아니다
+#                   ("놀라운 정확도로 풀었다"). 자사를 수식할 때만 문제인데 그건 T11이 본다
+#   · "을 부른다"   오탐 88%. 그냥 우리말이다 — "반발을 부른다", "손실을 부른다"
+#   · "옮긴다"      오탐 84%. 본동사와 메타 예고가 형태가 같다.
+#                   "무게중심을 옮긴다"는 진짜 옮기는 것이다 → "그대로 옮긴다"류로 좁혔다
+#   · "에 있어서"   "관계에 있어서" = '있+어서'. 번역투 구문이 아니라 본동사다 → 앞말 예외
+#   · "주목할 만한" Epoch AI 지표명 "주목할 만한 AI 모델(notable AI models)"은 고유명사다
 
 
 def check_endings(text):
@@ -96,15 +135,17 @@ def check_endings(text):
     }
 
 
-def run_checks(text):
+def run_checks(text, detect):
+    """빈도의 분모는 본문 전체(text), 검출은 인용을 지운 쪽(detect)에서 한다."""
     chars = len(text)
     rows = []
     for code, name, sev, pat, threshold in CHECKS:
-        n = len(re.findall(pat, text))
+        n = len(re.findall(pat, detect))
+        in_quote = len(re.findall(pat, text)) - n   # 인용 안이라 제외한 건수
         per10k = n / chars * 10000 if chars else 0
         rows.append({
             "code": code, "name": name, "severity": sev,
-            "count": n, "per_10k": round(per10k, 2),
+            "count": n, "in_quote": in_quote, "per_10k": round(per10k, 2),
             "threshold": threshold, "flagged": per10k > threshold,
         })
     return rows
@@ -165,8 +206,9 @@ def report(path, text, rows, endings, lv):
     print(f"{'코드':<6} {'등급':<4} {'항목':<18} {'건수':>5} {'1만 자당 빈도':>14}  판정")
     for r in rows:
         mark = "⚠️ " if r["flagged"] else "   "
+        q = f"  (인용 {r['in_quote']}건 제외)" if r.get("in_quote") else ""
         print(f"{r['code']:<6} {r['severity']:<4} {r['name']:<18} "
-              f"{r['count']:>5} {r['per_10k']:>14.2f}  {mark}")
+              f"{r['count']:>5} {r['per_10k']:>14.2f}  {mark}{q}")
 
     if endings:
         mark = "⚠️  쏠림" if endings["flagged"] else "   정상"
@@ -198,13 +240,14 @@ def main():
     out = []
     for path in args.files:
         try:
-            text = extract_body(path)
+            text, detect = extract_body(path)
         except OSError as e:
             print(f"건너뜀: {path} ({e})", file=sys.stderr)
             continue
-        rows = run_checks(text)
-        endings = check_endings(text)
-        lv = find_light_verbs(text) if args.light_verbs else None
+        rows = run_checks(text, detect)
+        # 종결 분포·경동사도 인용을 뺀 쪽에서 본다 — 남의 말은 우리 문체가 아니다
+        endings = check_endings(detect)
+        lv = find_light_verbs(detect) if args.light_verbs else None
         if args.json:
             out.append({"path": path, "chars": len(text), "checks": rows,
                         "endings": endings, "light_verbs": lv})
