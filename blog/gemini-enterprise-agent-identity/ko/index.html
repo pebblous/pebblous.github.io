@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>구글 Agent Identity로 본 AI 에이전트 신원·권한 관리 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="구글의 Gemini Enterprise Agent Platform은 에이전트마다 SPIFFE 기반 암호화 신분증을 발급해 사람의 권한을 빌리지 않도록 했습니다. 신원과 툴 호출은 잠겼지만 벡터 검색 시점의 권한 상속은 여전히 하부 데이터 소스에 의존합니다.">
+    <meta name="keywords" content="Agent Identity, 에이전트 신원, 구글 Gemini Enterprise Agent Platform, AI 에이전트 권한 관리, SPIFFE, 에이전트 데이터 접근 통제, entitlement drift, 엔터프라이즈 AI 거버넌스, 에이전트 감사 로그, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/gemini-enterprise-agent-identity/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/gemini-enterprise-agent-identity/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/gemini-enterprise-agent-identity/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/gemini-enterprise-agent-identity/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="구글이 에이전트 하나하나에 암호화 신분증을 발급했다">
+    <meta property="og:description" content="에이전트마다 자기 이름의 암호화 신분증. 구글은 신원과 툴 호출까지는 잠갔지만, 벡터 검색이 원본 권한을 잃는 빈틈은 그대로 남았습니다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/gemini-enterprise-agent-identity/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/gemini-enterprise-agent-identity/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="구글이 에이전트 하나하나에 암호화 신분증을 발급했다 — Gemini Enterprise Agent Platform의 Agent Identity">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-08-05">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="구글이 에이전트 하나하나에 암호화 신분증을 발급했다">
+    <meta name="twitter:description" content="구글은 에이전트의 신원과 툴 호출까지는 잠갔습니다. 그런데 벡터 검색이 원본 권한을 잃는 빈틈은 여전히 하부 데이터 소스에 맡겨져 있습니다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/gemini-enterprise-agent-identity/ko/image/index.png">
+    <meta name="twitter:image:alt" content="에이전트마다 자기 이름의 신분증을 발급하는 구글의 기업 에이전트 플랫폼">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260805"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260805">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260805">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260805">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#own-name-badge" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 사람의 열쇠 대신 자기 이름표</a></li>
+                    <li><a href="#no-badge-no-audit" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 이름표가 없으면 감사도 없다</a></li>
+                    <li><a href="#who-and-which-tool" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 누가, 어떤 툴까지는 잠긴다</a></li>
+                    <li><a href="#not-the-only-answer" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 첫 답이지만 유일한 답은 아니다</a></li>
+                    <li><a href="#retrieval-gap" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 데이터 한 조각의 권한</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            2026년 4월 22일 라스베이거스에서 열린 Google Cloud Next '26에서 구글은 Gemini Enterprise Agent Platform을 정식 공개했습니다. 여러 발표 가운데 하나가 특히 눈에 띕니다. 이제 각 에이전트는 사람의 계정을 빌려 데이터를 만지지 않습니다. 자기 이름으로 발급받은 암호화 신분증을 들고, 관리자가 그 신분증에 직접 부여한 권한 안에서만 움직입니다. 이 글은 그 신분증이 실제로 무엇을 잠그고 무엇을 열어 두는지를 봅니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            핵심은 SPIFFE라는 표준입니다. 에이전트마다 위조할 수 없는 고유 식별자가 붙고, IAM 정책은 그 식별자에 곧바로 최소 권한을 겁니다. 24시간마다 자동 갱신되는 인증서가 토큰과 암호학적으로 묶여, 탈취한 토큰만으로는 아무것도 못 하게 됩니다. 지난 몇 달간 페블러스가 "에이전트는 누구인가"를 반복해 물었던 자리에, 처음으로 상용 인프라의 답 하나가 놓인 셈입니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            그런데 답은 절반에서 멈춥니다. "누가"와 "어떤 툴을 부를 자격이 있는가"는 확실히 잠겼지만, 그 툴이 돌려주는 데이터의 어느 행·열까지 볼 자격이 있는가는 여전히 하부 데이터 소스의 몫으로 남습니다. 잠긴 것은 어디까지고 남은 빈틈은 무엇인지, 그 경계를 따라가 봅니다.
+                        </p>
+                    </div>
+
+                    <!-- Image: Gemini Enterprise Agent Platform의 4대 축(Build/Scale/Govern/Optimize) -->
+                    <figure class="my-8">
+                        <img src="./image/img-01-platform-pillars.jpg"
+                             alt="구글 Gemini Enterprise Agent Platform의 네 가지 축 — Build, Scale, Govern, Optimize"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Agent Identity는 이 중 Govern 축에 속한 기능입니다 | Source: <a href="https://cloud.google.com/blog/products/ai-machine-learning/introducing-gemini-enterprise-agent-platform" target="_blank" rel="noopener" class="underline">Google Cloud Blog</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mt-6">
+                        네 개의 숫자가 이번 발표의 규모와 경계를 함께 보여 줍니다. 플랫폼이 접근하는 모델의 폭, 신분증을 뒷받침하는 인증서의 짧은 수명, 경쟁사가 같은 해법을 내놓기까지 걸린 시간, 그리고 여전히 하부 데이터 소스에 맡겨진 통제 계층입니다.
+                    </p>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">200+</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Model Garden 접근 모델</p>
+                            <p class="text-xs themeable-muted mt-1">Gemini·Claude 등 서드파티 포함 (Google Cloud, 2026-04)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">24시간</p>
+                            <p class="text-sm themeable-text-secondary mt-1">인증서 유효기간</p>
+                            <p class="text-xs themeable-muted mt-1">자동 갱신 X.509, 장기 키 미발급 (Agent Identity 문서)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">8일</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Okta GA와의 시차</p>
+                            <p class="text-xs themeable-muted mt-1">구글 04-22, Okta 04-30 — 같은 달의 답 (Okta)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">하부 소스</p>
+                            <p class="text-sm themeable-text-secondary mt-1">행·열 권한의 소재</p>
+                            <p class="text-xs themeable-muted mt-1">벡터 인덱스 단위 통제는 게이트 밖 (문서 미명시)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="own-name-badge" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">구글은 에이전트에게 사람의 열쇠 대신 자기 이름표를 줬다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지금까지 기업 안에서 에이전트가 데이터에 닿는 방식은 대개 하나였습니다. 사람이 만든 서비스 계정 하나를 여러 에이전트가 나눠 쓰고, 그 계정의 넓은 권한을 통째로 빌려 움직였습니다. 문제가 생겨 로그를 열어도 거기 찍힌 것은 공유 계정의 이름뿐입니다. 정확히 어느 에이전트가 무엇을 만졌는지는 사후에 복원하기 어려웠습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Gemini Enterprise Agent Platform의 Agent Identity는 이 구조를 뒤집습니다. 관리자가 배포하는 에이전트마다 <code>spiffe://TRUST_DOMAIN/resources/SERVICE/RESOURCE_PATH</code> 형식의 고유 암호화 식별자가 부여됩니다. SPIFFE는 서비스 사이의 신원을 표준화하는 오픈 규격으로, 여기서는 사람이 아니라 소프트웨어 행위자에게 위조 불가능한 이름표를 붙이는 데 쓰입니다. 공유 계정과 달리 다른 신원을 위장할 수 없고, 오래 유효한 키도 발급되지 않습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 식별자는 곧바로 IAM 정책의 주체(principal)로 들어갑니다. 관리자는 GCS 버킷이나 BigQuery 데이터셋 같은 리소스에 "이 에이전트에게만 이 권한을"이라고 직접 적어 둘 수 있습니다. 사람에게 최소 권한을 거는 방식 그대로, 에이전트 한 대 한 대에 접근 범위를 좁혀 두는 것입니다. 자격증명 쪽에서는 24시간마다 자동으로 갱신되는 X.509 인증서가 발급되고, mTLS로 액세스 토큰과 암호학적으로 묶입니다. 토큰만 훔쳐서는 재생할 수 없다는 뜻입니다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="no-badge-no-audit" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">이름표가 없으면 누가 만졌는지도 지울 수 없다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이번 발표를 제품 소식으로만 읽으면 절반을 놓칩니다. 구글이 신분증을 꺼낸 자리에는 이미 오래된 질문이 있었습니다. 페블러스도 지난 몇 달간 같은 자리를 세 번 짚었습니다. 순서대로 보면, 자율 기업이 에이전트에게 사번을 주지 않은 채 장부를 맡긴 문제, 검색이 원본의 권한을 상속하지 못하고 복사만 하는 문제, 그리고 이름표 없이 쌓인 기억은 나중에 지울 수도 없다는 문제였습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 편은 모두 "문제 제기"였습니다. 이번 글은 결이 다릅니다. 업계가 그 공백에 실제 구현물로 답하기 시작했고, 그 답을 뜯어보면 어디까지 잠겼고 어디는 아직 열려 있는지가 갈립니다. 아래 표는 이번 발표가 이전 세 편의 어느 축에 대한 답인지를 정리한 것입니다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b-2 themeable-toc-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">이전 글</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">짚은 축</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">이번 글과의 관계</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-toc-border align-top">
+                                    <td class="py-3 pr-4"><a href="/blog/autonomous-enterprise-agent-identity/ko/" class="text-orange-500 hover:text-orange-400">회사를 돌리는데 사번은 없다</a><br><span class="themeable-muted text-xs">2026-06-18 · SAP 자율 기업</span></td>
+                                    <td class="py-3 pr-4">에이전트 신원 정책의 부재. 조사 대상 78%가 정책조차 없음</td>
+                                    <td class="py-3">그 부재에 대한 한 벤더의 실제 구현물을 뜯어본다</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border align-top">
+                                    <td class="py-3 pr-4"><a href="/report/agent-entitlement-inheritance-retrieval/ko/" class="text-orange-500 hover:text-orange-400">에이전트는 출처의 권한을 물려받지 못한다</a><br><span class="themeable-muted text-xs">2026-07-16 · 메타 사건</span></td>
+                                    <td class="py-3 pr-4">벡터 인덱스가 원본 권한을 상속하지 않고 복사해 생기는 entitlement drift</td>
+                                    <td class="py-3">"그래서 업계는 무엇을 내놓았나"의 첫 상용 답을 이 메커니즘에 대입해 검증한다</td>
+                                </tr>
+                                <tr class="align-top">
+                                    <td class="py-3 pr-4"><a href="/report/agent-memory-provenance-deletion/ko/" class="text-orange-500 hover:text-orange-400">이름표 없는 기억은 지울 수 없다</a><br><span class="themeable-muted text-xs">2026-07-29 · 메모리 프로버넌스</span></td>
+                                    <td class="py-3 pr-4">쓰기 시점 이름표가 없으면 삭제가 소급 불가능</td>
+                                    <td class="py-3">이번 신분증은 기억이 아니라 행위자 자체의 이름표 — 계층은 달라도 테제는 같다</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 편을 관통하는 문장은 하나입니다. 이름표가 없으면 통제도 없습니다. 누가 만졌는지 모르면 권한을 좁힐 수도, 사고를 되짚을 수도, 잘못 들어간 데이터를 지울 수도 없습니다. Agent Identity는 바로 그 이름표를 행위자 계층에 새겨 넣은 첫 상용급 시도입니다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="who-and-which-tool" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">누가, 그리고 어떤 툴까지는 이제 확실히 잠긴다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        신분증 하나만으로는 통제가 끝나지 않습니다. 구글은 신원 위에 두 개의 관문을 더 세웠습니다. 첫째가 Agent Gateway입니다. 에이전트와 툴(MCP 서버 등) 사이를 지키는 관제탑으로, 어떤 에이전트가 어떤 툴을 호출할 수 있는지를 툴 이름 단위로, 그리고 읽기 전용인지 쓰기까지 허용인지 단위로 걸러냅니다. 프롬프트 인젝션과 데이터 유출을 막는 Model Armor도 이 경로에 붙습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        둘째가 위임 접근(delegated access)입니다. 에이전트가 사용자를 대신해 행동할 때는 자기 권한이 아니라, 사용자에게서 위임받은 OAuth 토큰을 씁니다. Agent Identity Auth Manager가 자격증명을 중개하고 암호화해서, 에이전트가 원본 자격증명을 직접 들여다볼 수 없게 설계돼 있습니다. 이 경로로 남는 로그에는 에이전트 ID와 사용자 ID가 함께 찍힙니다. "누가 시켜서 누가 했는가"가 한 줄에 남는 것입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기에 승인된 에이전트·툴·스킬을 한곳에 모아 두는 Agent Registry, 리버스 셸이나 악성 IP 연결을 실시간으로 잡아내는 Agent Threat Detection, 통계 모델과 LLM 심판을 함께 써서 비정상 추론을 표시하는 Agent Anomaly Detection이 더해집니다. 종합하면 "누가"(신원)와 "어떤 툴을 부를 자격이 있는가"(툴 게이트)는 확실히 잠깁니다. 여기까지는 페블러스가 던져 온 감사 질문에 대한 분명한 진전입니다.
+                    </p>
+
+                    <!-- Image: Govern 축 상세 아키텍처 (Agent Gateway, Agent Identity, Agent Registry 등) -->
+                    <figure class="my-8">
+                        <img src="./image/img-02-govern-architecture.jpg"
+                             alt="Gemini Enterprise Agent Platform의 Govern 축 아키텍처 — Agent Gateway, Agent Identity, Agent Registry, Agent Anomaly Detection, Model Armor, Agent Policy, Agent Security, Agent Compliance"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Govern 축에 나란히 놓인 Agent Gateway·Agent Identity·Agent Registry·Agent Anomaly Detection | Source: <a href="https://cloud.google.com/blog/products/ai-machine-learning/introducing-gemini-enterprise-agent-platform" target="_blank" rel="noopener" class="underline">Google Cloud Blog</a>
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            정리하면 계층이 뚜렷합니다. 신원은 SPIFFE 식별자가, 인증은 24시간 인증서와 mTLS가, 툴 호출 자격은 Agent Gateway가, 사용자 대행은 위임 OAuth가 맡습니다. 감사 질문 "누가 무슨 데이터를 만졌는가" 중에서 앞의 "누가"는 이제 인프라가 답합니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="not-the-only-answer" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">첫 답이긴 해도 유일한 답은 아니었다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        "산업의 첫 상용 해답"이라는 표현은 조심해서 써야 합니다. 구글이 신원을 상용 인프라로 못 박은 이른 사례인 것은 맞지만, 세계 최초나 유일한 해법은 아닙니다. 같은 달에 경쟁사들이 나란히 답을 내놓았기 때문입니다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Okta for AI Agents</strong> — 구글보다 8일 늦은 2026년 4월 30일 GA. Cross App Access(XAA) 프로토콜로, 에이전트가 사용자를 대신해 여러 다운스트림 서비스에 접근하는 흐름을 표준화했습니다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Auth0 Auth for GenAI</strong> — 2026년 5월 개발자 프리뷰. MCP와 자율 에이전트를 1급 신원으로 다루고 LangChain·LlamaIndex·Vercel AI SDK 등과 통합했습니다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>WorkOS</strong> — Okta 대비 경량 대안으로 포지셔닝하며, 별도 도구로 비인간 신원을 탐지합니다.</span>
+                        </li>
+                    </ul>
+
+                    <!-- Image: Okta for AI Agents 관리 콘솔 -->
+                    <figure class="my-8">
+                        <img src="./image/img-03-okta-ai-agent-governance.png"
+                             alt="Okta for AI Agents 관리 콘솔 — AI 에이전트 임포트와 소유자 지정 화면"
+                             class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Okta 관리자가 AI 에이전트를 임포트하고 소유자를 지정하는 화면 | Source: <a href="https://www.okta.com/blog/ai/okta-for-ai-agents-general-availability/" target="_blank" rel="noopener" class="underline">Okta Blog</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        방향이 겹친다는 사실 자체가 신호입니다. 클라우드 시큐리티 얼라이언스(CSA)는 비인간 신원 거버넌스의 공백이 기술 부족이 아니라 책임 소재를 아무도 정하지 않은 데서 온다고 진단했습니다. 실제로 CSA는 프로덕션에서 에이전트가 무엇을 하는지 믿을 만하게 거버넌스할 방법을 갖추지 못한 조직을 열에 아홉으로 봤습니다. 여러 벤더가 같은 달에 신원부터 손을 댄 것은, 그 공백이 더는 미룰 수 없는 실무 문제가 됐다는 뜻입니다. 그러니 이번 발표는 "구글이 혼자 푼 문제"가 아니라 "업계가 동시에 답하기 시작한 문제의 대표 사례"로 읽는 편이 정확합니다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="retrieval-gap" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">정작 데이터 한 조각의 권한은 아직 이름표 밖에 있다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 직전 리포트가 던진 질문을 다시 꺼내야 합니다. 벡터 인덱스는 원본 문서를 잘게 쪼개 저장하는데, 이 과정에서 원본이 갖고 있던 행·열 단위 권한(BigQuery의 RLS 같은)이 함께 넘어오지 않습니다. 권한이 상속되지 않고 복사만 되니, 원본에서 접근이 막힌 사람도 인덱스에 남은 조각을 통해 내용을 볼 수 있게 됩니다. 이것이 페블러스가 entitlement drift라고 부른 실패 지점입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그럼 Agent Identity는 이 지점을 풀었을까요. 공개된 문서를 기준으로 보면, 답은 "부분적으로만"입니다. Agent Gateway는 "어떤 에이전트가 어떤 툴을 부를 수 있는가"를 통제하는 계층이지, "그 툴이 돌려주는 데이터의 어느 행·열까지 볼 자격이 있는가"를 통제하는 계층이 아닙니다. Gateway 문서에는 행·열 단위 접근 통제나 벡터 인덱스 단위의 세분화된 권한 집행에 대한 언급이 확인되지 않습니다. RAG Engine 문서도 데이터 계보 추적과 위생 관리, 리전 상주 요건은 말하지만, 인덱스가 원본 권한을 잃는 문제를 명시적으로 해결한다는 근거는 보이지 않습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        경로에 따라 답이 갈립니다. 위임 OAuth로 사용자를 대신해 검색을 태우면, 하부 데이터 소스의 네이티브 보안이 그 사용자의 원본 권한을 그대로 적용해 줍니다. 이 경우 entitlement는 보존됩니다. 반대로 에이전트가 자기 고유 권한으로 RAG를 태우면, 결국 "누가 그 인덱스에 어떤 ACL 메타데이터를 붙여 뒀는가"에 의존하게 됩니다. 벡터 인덱스와 원본 시스템의 권한을 누군가 수작업으로 맞춰 놓아야 한다는 뜻입니다. 신원과 툴 게이트가 인프라로 내려온 것과 달리, 검색 시점의 데이터 권한은 아직 운영자의 손을 탑니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 감사 질문 "누가 무슨 데이터를 만졌는가"를 두 조각으로 나눠 보면 상태가 분명해집니다. 앞의 "누가"는 이번에 신원·툴 계층까지 인프라화됐습니다. 뒤의 "무슨 데이터를 만질 자격이 있었는가"는 위임 경로에서만 자동으로 보존되고, 그 밖에서는 여전히 데이터 계층의 이름표 관리에 달려 있습니다. 한 걸음이 더 남았습니다.
+                    </p>
+
+                    <!-- Editor's Note (자사 연결은 별도 카드로 분리 — T11 예방) -->
+                    <div class="themeable-card rounded-xl p-6 mt-8">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            페블러스가 AI-Ready Data를 이야기할 때 강조하는 지점이 정확히 이 마지막 한 걸음입니다. 행위자에게 이름표를 붙이는 일과, 데이터 한 조각 한 조각에 출처와 권한을 새겨 두는 일은 다른 계층의 작업입니다. Agent Identity는 앞쪽을 인프라로 만들었습니다. 뒤쪽, 즉 검색된 조각이 원본 권한을 잃지 않게 하는 일은 데이터를 만드는 단계에서부터 계보를 심어 두어야 풀립니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">구글 공식 발표·문서</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Google Cloud. (2026). "<a href="https://cloud.google.com/blog/products/ai-machine-learning/introducing-gemini-enterprise-agent-platform" target="_blank" rel="noopener">Introducing Gemini Enterprise Agent Platform</a>." Google Cloud Blog.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Google Cloud. "<a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/agent-identity-overview" target="_blank" rel="noopener">Agent Identity overview</a>." Google Cloud Docs.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Google Cloud. "<a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/scale/runtime/agent-identity" target="_blank" rel="noopener">Use Agent Identity with Agent Runtime</a>." Google Cloud Docs.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Google Cloud. "<a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/agent-gateway-overview" target="_blank" rel="noopener">Agent Gateway overview</a>." Google Cloud Docs.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">경쟁사 대응</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">5.</span><span class="ref-body">Okta. (2026). "<a href="https://www.okta.com/blog/ai/okta-for-ai-agents-general-availability/" target="_blank" rel="noopener">Okta for AI Agents: General Availability</a>." Okta Blog.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Auth0. (2026). "<a href="https://auth0.com/blog/securing-gemini-enterprise-agent-platform-runtime-auth0/" target="_blank" rel="noopener">Securing Gemini Enterprise Agent Platform Runtime</a>." Auth0 Blog.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">업계 진단</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">7.</span><span class="ref-body">Cloud Security Alliance. (2026). "<a href="https://labs.cloudsecurityalliance.org/research/csa-research-note-okta-ai-agent-iam-framework-enterprise-gap/" target="_blank" rel="noopener">AI Agent Identity Crisis: Standards Emerge as Enterprises Lag</a>." CSA Research Note.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">aiagentstore.ai. "<a href="https://aiagentstore.ai/ai-agent-news/this-week" target="_blank" rel="noopener">This week in AI agent news</a>."</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260805"></script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260805" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-04T18:35:56.614Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-04T18:48:11.738Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1785868556615-74yluz",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-04T19:17:56.768Z"
+            },
+            mainTitle: "구글이 에이전트 하나하나에 암호화 신분증을 발급했다",
+            subtitle: "사람의 권한을 빌리지 않는 에이전트, 그러나 검색 시점의 권한 상속에는 아직 빈자리가 남았다",
+            pageTitle: "구글 Agent Identity로 본 AI 에이전트 신원·권한 관리 | 페블러스",
+            category: "business",
+            publishDate: "2026-08-05",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/gemini-enterprise-agent-identity/ko/",
+            tags: ["AI 에이전트", "Agent Identity", "Gemini Enterprise Agent Platform", "데이터 거버넌스", "entitlement drift", "SPIFFE", "엔터프라이즈 AI", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "Gemini Enterprise Agent Platform은 무엇인가요?",
+                    answer: "구글이 2026년 4월 22일 Google Cloud Next '26에서 정식 공개한 기업용 에이전트 플랫폼입니다. Vertex AI의 진화형으로, 에이전트를 만들고(Build) 확장하고(Scale) 통제하고(Govern) 최적화하는(Optimize) 네 축을 묶었습니다. Agent Identity는 그중 Govern 축의 핵심 기능입니다."
+                },
+                {
+                    question: "Agent Identity는 기존 서비스 계정과 무엇이 다른가요?",
+                    answer: "기존에는 여러 에이전트가 하나의 서비스 계정을 공유하고 그 넓은 권한을 통째로 빌려 썼습니다. Agent Identity는 에이전트마다 위조 불가능한 고유 식별자를 부여하고, IAM 정책에서 그 식별자에 직접 최소 권한을 겁니다. 로그에도 공유 계정이 아니라 개별 에이전트의 신원이 남습니다."
+                },
+                {
+                    question: "SPIFFE가 무엇인가요?",
+                    answer: "SPIFFE(Secure Production Identity Framework for Everyone)는 서비스 사이의 신원을 표준화하는 오픈 규격입니다. Agent Identity는 이 규격을 써서 각 에이전트에 spiffe:// 형식의 암호화 식별자를 부여하고, 24시간마다 자동 갱신되는 X.509 인증서로 신원을 증명합니다."
+                },
+                {
+                    question: "이 플랫폼이 RAG 권한 상속 문제(entitlement drift)를 해결하나요?",
+                    answer: "부분적으로만 해결합니다. 위임 OAuth로 사용자를 대신해 검색을 태우면 하부 데이터 소스의 원본 권한이 그대로 적용됩니다. 반면 에이전트가 자기 고유 권한으로 RAG를 태우면, 벡터 인덱스에 붙은 ACL 메타데이터를 수작업으로 원본과 맞춰야 합니다. 공개 문서에는 벡터 인덱스 단위의 행·열 권한 집행에 대한 언급이 확인되지 않습니다."
+                },
+                {
+                    question: "위임 접근(delegated access)은 어떻게 작동하나요?",
+                    answer: "에이전트가 사용자를 대신해 행동할 때, 자기 권한이 아니라 사용자에게서 위임받은 OAuth 토큰을 사용합니다. Agent Identity Auth Manager가 자격증명을 중개·암호화해 에이전트가 원본 자격증명을 직접 보지 못하게 합니다. 이 경로의 로그에는 에이전트 ID와 사용자 ID가 함께 기록됩니다."
+                },
+                {
+                    question: "정말 '산업 최초'인가요? Okta·Auth0와 비교하면 어떤가요?",
+                    answer: "세계 최초나 유일한 해법은 아닙니다. Okta는 구글보다 8일 늦은 2026년 4월 30일 Cross App Access로 GA했고, Auth0도 5월에 Auth for GenAI 개발자 프리뷰를 냈습니다. 여러 벤더가 같은 달에 신원부터 손댄 것으로 보는 편이 정확합니다."
+                },
+                {
+                    question: "Agent Gateway와 Agent Registry는 어떻게 다른가요?",
+                    answer: "Agent Gateway는 에이전트가 어떤 툴을 호출할 수 있는지를 툴 이름·읽기/쓰기 단위로 통제하는 실행 시점의 관문입니다. Agent Registry는 사내에서 승인된 에이전트·툴·스킬을 한곳에 모아 디스커버리와 거버넌스를 돕는 카탈로그입니다."
+                },
+                {
+                    question: "데이터 거버넌스 담당자에게 이 발표가 왜 중요한가요?",
+                    answer: "감사 질문 '누가 무슨 데이터를 만졌는가' 중 앞의 '누가'가 처음으로 상용 인프라 계층에서 답을 얻었기 때문입니다. 다만 뒤의 '무슨 데이터를 만질 자격이 있었는가'는 위임 경로 밖에서 여전히 데이터 계층의 권한·계보 관리에 달려 있어, 조직 차원의 데이터 거버넌스가 여전히 필요합니다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
