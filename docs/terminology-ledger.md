@@ -7,6 +7,7 @@
 |---|---|
 | 실측 기준 | 사본 한국어 글 **426편, 3,670,537자** (2026-08-02) |
 | 측정 도구 | 본문만 추출해 낱말 빈도·공기(共起)·문서별 혼용 여부를 센다 |
+| 상위 문서 | [`docs/ko-style-standard.md`](ko-style-standard.md) — 판정 기준·격의 단위·예외 |
 | 관련 | [`docs/ko-prose-checker-v5.md`](ko-prose-checker-v5.md) · [`.claude/skills/ko-prose-humanizer/SKILL.md`](../.claude/skills/ko-prose-humanizer/SKILL.md) |
 
 ---
