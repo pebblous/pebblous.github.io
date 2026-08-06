@@ -562,6 +562,8 @@ For deeper reference, see `docs/`:
 - `docs/sns-writing-tone.md` — SNS "Warm Expert Tone" with data-farming metaphors
 - `docs/index-renovation.md` — Index page renovation history (P0-P3)
 - `docs/post-writing-lessons-for-pb.md` — pb(Pebblo Claw) 전용 포스팅 작성 가이드 (PR#23 리뷰 교훈)
+- `docs/ko-style-standard.md` — **한국어 문체·용어 표준** (판정 기준=격 일치, 중의성, 항목을 세우는 절차)
+- `docs/terminology-ledger.md` — **용어 대장** (낱말이 두 이름으로 갈릴 때의 결정과 근거)
 - `docs/ai-tone-detection.md` — **AI 문체 검출·교정 가이드** (T1~T11 11종 tell, BlogScope·외부 평가 에이전트 참조용 공식 문서)
 
 ## Skill Workflow Chain

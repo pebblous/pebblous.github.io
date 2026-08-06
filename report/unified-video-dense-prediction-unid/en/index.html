@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>UniD Unifies Dense Prediction from Fragmented Video Labels | Pebblous</title>
+    <meta name="description" content="Eight dense labels never live in one dataset. UniD stitches them via per-task latents and a diffusion prior. The bottleneck is data, not architecture.">
+    <meta name="keywords" content="UniD, unified dense prediction, disjoint annotation, diffusion prior, representation learning, knowledge distillation, DINOv3, Marigold, depth estimation, surface normals, semantic segmentation, albedo, AI-Ready Data, data quality, data fragmentation, Physical AI, computer vision, multi-task learning, Pebblous, DataClinic">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/unified-video-dense-prediction-unid/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/unified-video-dense-prediction-unid/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/unified-video-dense-prediction-unid/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/unified-video-dense-prediction-unid/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="A Model That Reads the Whole Scene Was Blocked by Scattered Labels">
+    <meta property="og:description" content="Eight dense labels never coexist in one dataset. How UniD filled that fragmentation through representation learning instead of new data collection — and why its success ultimately rests on data quality.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/unified-video-dense-prediction-unid/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/unified-video-dense-prediction-unid/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Unified scene understanding that stitches eight scattered dense labels into one backbone">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="A Model That Reads the Whole Scene Was Blocked by Scattered Labels">
+    <meta name="twitter:description" content="Unified dense prediction with UniD — how representation learning stitches fragmented labels, and the data quality that decides whether it works.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/unified-video-dense-prediction-unid/en/image/index.png">
+    <meta name="twitter:image:alt" content="Unified scene understanding that stitches eight scattered dense labels into one backbone">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="A Model That Reads the Whole Scene Was Blocked by Scattered Labels">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/07/31">
+    <meta name="citation_online_date" content="2026/07/31">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Stylesheets (fixed order) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260731">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260731">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260731">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. What No Single Dataset Can Hold</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Why Generative Pretraining</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Eight Tasks into One Backbone</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Geometry Wins, Semantics Still Lose</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Why This Is a Data-Quality Problem</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Robotics, AR, and content editing all demand reading a single scene at once across geometry (depth, surface normals), appearance (albedo, shading, materials), and semantics (segmentation, boundaries, human parts). Yet a dataset that carries all eight of these labels together essentially does not exist. Depth and normals come cheap and in bulk but stay trapped indoors; semantic segmentation is an expensive hand-drawn label that keeps datasets small; intrinsic decomposition like albedo and shading is nearly impossible to measure from real footage, so it leans on synthetic rendering. Labels scattered across different domains, scales, and cost structures — what the paper calls <strong>disjoint annotation</strong> — are the real bottleneck of unified scene understanding. This report reads UniD from the view that the bottleneck lies in the data, not the architecture.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The contribution of UniD (Adobe Research·Cornell, ECCV 2026) is that it fills this fragmentation through representation learning rather than new data collection. It never forces labels to overlap, nor fakes one task's labels from another. Instead it first learns a latent representation per task, lets a web-scale generative (diffusion) prior bridge the domain gap, and then unifies eight tasks into one backbone through lightweight distillation. The results support this view. Depth and normals, which drift out of geometric agreement when predicted separately, come out of a single backbone consistent with each other, and intrinsic representations learned only from synthetic data transfer to real-world benchmarks.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            At the same time, the limits show honestly. Unification helps geometry tasks, but tasks that need higher-order semantics — like semantic segmentation and materials — drop right after unification, recover much of the gap with a lightweight correction, yet still fall short of a specialist. From Pebblous's vantage, what makes this research valuable is not its conclusion but its premise. <strong>A deficit in data completeness and consistency is a real ceiling on model capability, and a well-organized representation becomes the detour around that deficit</strong> — precisely the terrain that AI-Ready Data and DataClinic aim at.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">39.0 vs 14.1</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Depth↔normal geometric consistency</p>
+                            <p class="text-xs themeable-muted mt-1">Two geometries that drift apart when predicted separately are ~2.8× more consistent in the unified model (Table 7)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">28% lower</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Real-world OOD albedo error (IIW WHDR)</p>
+                            <p class="text-xs themeable-muted mt-1">0.207 vs 0.289 — evidence that a synthetic-learned representation transfers to real footage (Table 4)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~8×</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Training GPU memory saved</p>
+                            <p class="text-xs themeable-muted mt-1">Latent distillation cuts ~650GB → 78GB — the efficiency of folding eight specialists into one backbone</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">37.8 → 58.4</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Semantic segmentation mIoU (specialist 64.1)</p>
+                            <p class="text-xs themeable-muted mt-1">Drops right after unification, recovers with a lightweight correction but stays below the specialist — an honest asymmetry (Table 5)</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Image: UniD teaser — eight dense predictions from a single input video -->
+                <figure class="my-8">
+                    <img src="./image/img-01-unid-teaser.jpg"
+                         alt="UniD's eight dense predictions from a single input video: monocular depth, surface normal, reflectance (albedo), shading, boundary, human part segmentation, semantic segmentation, and material segmentation"
+                         class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
+                         loading="lazy"
+                         onerror="this.parentElement.style.display='none'">
+                    <figcaption class="text-xs themeable-muted text-center mt-2">
+                        ▲ What the eight geometry, appearance, and semantics labels above actually look like — UniD's own output from a single input video. That these eight frames never naturally coexist in one dataset is the fragmentation problem this report is about. Source: <a href="https://unid-video.github.io/" target="_blank" rel="noopener" class="underline">UniD project page</a> (Sun et al., arXiv:2607.21592)
+                    </figcaption>
+                </figure>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What No Single Dataset Can Hold</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Let's start with the conclusion: reading a whole scene with one model was hard not because the architecture fell short, but because the data is scattered. Fully understanding a scene means reading <strong>geometry</strong> (depth, surface normals), <strong>appearance (intrinsics)</strong> (albedo, shading, materials), and <strong>semantics</strong> (segmentation, boundaries, human parts) all at once. The problem is that essentially no dataset carries these eight labels side by side on a single image. Each label grew up separately, on a different domain, at a different scale, under a different cost structure.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The three branches diverge because the way each label is obtained is fundamentally different. Depth and normals are captured automatically by RGB-D sensors, so they accumulate cheaply and in bulk — but those sensors work well only indoors, so the data stays trapped indoors. Semantic segmentation requires a human to paint pixels one by one, roughly 90 minutes per image, so it stays confined to small road or internet-image sets. Intrinsic decomposition like albedo and shading — "the object's own color separated from lighting effects" — is nearly impossible to measure accurately from real footage, so its ground truth comes only from synthetic rendering (like Hypersim).
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>Eight Fragments, Each at Its Own Scale and Cost</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The size of the fragmentation shows up in numbers. Per-task training scale spans from 22.0k to 121.3k frames — up to a 5.5× gap — and the cost of producing a single label ranges from 7 seconds for synthetic rendering to 90 minutes for manual semantic segmentation, a 771× difference. In video the gap widens further. Of the eight types, only three — depth, boundaries, and semantic segmentation — have per-frame video labels; the rest exist only on still images. The table below lays out how far apart these three axes (domain, scale, cost) really are.
+                    </p>
+
+                    <div class="overflow-x-auto my-8">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2" style="border-color:#F86825;">
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">Label family</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">Representative tasks</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">How the label is obtained</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">Domain limit</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">Video</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>Geometry</strong></td>
+                                    <td class="py-3 px-3">Depth · surface normals</td>
+                                    <td class="py-3 px-3">Auto-captured by RGB-D sensors (cheap)</td>
+                                    <td class="py-3 px-3">Mostly indoor</td>
+                                    <td class="py-3 px-3">Depth ✓</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>Semantics</strong></td>
+                                    <td class="py-3 px-3">Semantic segmentation · boundaries · human parts</td>
+                                    <td class="py-3 px-3">Manual human labeling (~90 min/image)</td>
+                                    <td class="py-3 px-3">Small scale · specific domains</td>
+                                    <td class="py-3 px-3">Some ✓</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3"><strong>Appearance (intrinsics)</strong></td>
+                                    <td class="py-3 px-3">Albedo · shading · materials</td>
+                                    <td class="py-3 px-3">Synthetic rendering (~7 sec/image)</td>
+                                    <td class="py-3 px-3">Trapped in the synthetic domain</td>
+                                    <td class="py-3 px-3">✗</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">Different labeling methods split the domain and scale a dataset gets trapped in. Labeling costs cite figures from a follow-up comparison study (arXiv:2212.07911) and Hypersim (ICCV 2021) for direction. Per-task training scale ranges 22.0k–121.3k frames.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Visually, these eight pieces are scattered like islands that never meet. Some images carry only depth labels, others only segmentation labels, and images with intrinsics come from an entirely synthetic world. The fact that no bridge connects these three islands is the whole problem.
+                    </p>
+
+                    <div class="my-8">
+                        <svg viewBox="0 0 720 250" class="w-full h-auto" role="img" aria-label="Eight dense labels scattered across three domain islands: geometry, semantics, appearance" style="background:var(--card-bg)">
+                            <text x="20" y="26" font-size="15" font-weight="700" fill="var(--text-primary)">Three islands, eight scattered labels</text>
+                            <!-- island 1: geometry -->
+                            <rect x="20" y="50" width="210" height="160" rx="12" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="125" y="74" font-size="13" font-weight="700" text-anchor="middle" fill="#F86825">Geometry · indoor RGB-D</text>
+                            <rect x="45" y="92" width="160" height="30" rx="6" fill="#FDEEE6"/>
+                            <text x="125" y="112" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Depth</text>
+                            <rect x="45" y="130" width="160" height="30" rx="6" fill="#FDEEE6"/>
+                            <text x="125" y="150" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Surface normals</text>
+                            <text x="125" y="190" font-size="11" text-anchor="middle" fill="var(--text-muted)">Cheap but trapped indoors</text>
+                            <!-- island 2: semantics -->
+                            <rect x="255" y="50" width="210" height="160" rx="12" fill="none" stroke="#808080" stroke-width="1.5"/>
+                            <text x="360" y="74" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-primary)">Semantics · manual labels</text>
+                            <rect x="280" y="92" width="160" height="26" rx="6" fill="#E5E5E5"/>
+                            <text x="360" y="110" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Semantic segmentation</text>
+                            <rect x="280" y="124" width="160" height="26" rx="6" fill="#E5E5E5"/>
+                            <text x="360" y="142" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Boundaries</text>
+                            <rect x="280" y="156" width="160" height="26" rx="6" fill="#E5E5E5"/>
+                            <text x="360" y="174" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Human parts</text>
+                            <text x="360" y="198" font-size="11" text-anchor="middle" fill="var(--text-muted)">Expensive, so small</text>
+                            <!-- island 3: intrinsic -->
+                            <rect x="490" y="50" width="210" height="160" rx="12" fill="none" stroke="#585858" stroke-width="1.5"/>
+                            <text x="595" y="74" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-primary)">Appearance · synthetic render</text>
+                            <rect x="515" y="92" width="160" height="26" rx="6" fill="#EDEDED"/>
+                            <text x="595" y="110" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Albedo</text>
+                            <rect x="515" y="124" width="160" height="26" rx="6" fill="#EDEDED"/>
+                            <text x="595" y="142" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Shading</text>
+                            <rect x="515" y="156" width="160" height="26" rx="6" fill="#EDEDED"/>
+                            <text x="595" y="174" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Materials</text>
+                            <text x="595" y="198" font-size="11" text-anchor="middle" fill="var(--text-muted)">Real GT nearly impossible</text>
+                            <!-- broken bridges -->
+                            <text x="242" y="135" font-size="18" text-anchor="middle" fill="var(--text-muted)">⋯</text>
+                            <text x="477" y="135" font-size="18" text-anchor="middle" fill="var(--text-muted)">⋯</text>
+                            <text x="360" y="238" font-size="12" text-anchor="middle" fill="var(--text-muted)">No shared label bridges the three islands — this is disjoint annotation</text>
+                        </svg>
+                        <p class="text-xs themeable-muted mt-2 text-center">The eight dense labels are scattered across three islands of different domain, scale, and cost, and never appear together on one image.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.2</span>Two Old Detours, and What They Cost</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Until now there were broadly two ways to handle this fragmentation, and both came at a steep price. One was <strong>using only fully co-labeled data</strong>. Training on just the images that carry all eight labels guarantees consistency, but such images barely exist, so the training scale collapses to almost nothing. The other was <strong>pseudo-labeling</strong> — using one task's model to estimate another task's labels and forcibly fill them in. This can match the scale, but the errors in the estimated labels flow straight into training and accumulate. Both detours failed to face the root problem — "the data is scattered" — head on, and settled for giving up either scale or accuracy.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Why this fragmentation is a data-engineering problem is something Pebblous has covered before. That simply merging perfectly labeled data does not improve unification was already observed in our <a href="/report/robot-data-curation-closed-loop-gap/en/" class="themeable-link" style="color:#F86825;text-decoration:underline;">robot data curation piece</a>. UniD goes one step further, proposing a third path that unifies without overlapping or filling labels in the first place.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The point is that the bottleneck of unification is not model design but the structure of the data. As long as the eight labels are scattered across islands of different domain, scale, and cost, no matter how large a backbone you stack on top, the ability to "read a whole scene at once" only grows as far as the data allows. Reframed, the question is not "which architecture is best" but <strong>"how do we connect the scattered labels."</strong>
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Generative Pretraining — Geometry Invariant to Appearance</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        UniD's first decision is not to shove the eight tasks straight into one backbone. Instead it first learns a <strong>latent representation</strong> separately per task. The reason is generalization. If each per-task latent space is trained well enough, unification can begin from a state where generalization to unseen examples is already secured. Training a shared backbone directly on scattered data burns each task's narrow domain bias wholesale into the backbone; refining per-task latents first simplifies the unification stage into a problem of reconstructing "already well-organized representations."
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>Discriminative Features Overfit to Appearance</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The second decision is the intellectual heart of this paper. As the basis for its per-task representations, UniD uses not discriminative features but a web-scale pretrained <strong>generative (diffusion) prior</strong>. Why? A discriminative feature is trained to answer "which class is this pixel," and along the way it also memorizes the <strong>correlation between appearance and geometry</strong> that happens to exist in the training data — a statistical shortcut like "surfaces with this texture usually sit at this angle." Such shortcuts help hit the right answer inside the training domain, but the moment the domain shifts and the appearance–geometry correlation changes, they collapse.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Generative pretraining learns something different. A model trained to draw images from scratch encodes appearance-invariant geometry — "whatever the appearance, this geometry looks like this." The sense that a ball's round shape itself doesn't change even when lighting and material change is already held inside the generative prior. So when you place a task latent on top of this representation, geometric information transfers even to domains never seen during training. This is exactly where UniD gets its theoretical grounds for crossing the domain gap "without collecting new data."
+                    </p>
+
+                    <div class="my-8">
+                        <svg viewBox="0 0 720 240" class="w-full h-auto" role="img" aria-label="Discriminative features overfit to the appearance-geometry correlation, while generative pretraining encodes appearance-invariant geometry" style="background:var(--card-bg)">
+                            <text x="20" y="26" font-size="15" font-weight="700" fill="var(--text-primary)">Same domain gap, two different endings</text>
+                            <!-- discriminative -->
+                            <rect x="20" y="46" width="320" height="170" rx="12" fill="none" stroke="#808080" stroke-width="1.5"/>
+                            <text x="180" y="70" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-primary)">Discriminative features</text>
+                            <text x="180" y="94" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Memorize the appearance↔geometry link</text>
+                            <line x1="60" y1="120" x2="300" y2="120" stroke="var(--border-color)" stroke-width="1"/>
+                            <text x="180" y="145" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Training domain: accurate</text>
+                            <text x="180" y="172" font-size="13" font-weight="700" text-anchor="middle" fill="#808080">Domain shifts ✗ collapse</text>
+                            <text x="180" y="196" font-size="11" text-anchor="middle" fill="var(--text-muted)">Once the correlation changes, the shortcut turns wrong</text>
+                            <!-- generative -->
+                            <rect x="380" y="46" width="320" height="170" rx="12" fill="#FDEEE6" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="540" y="70" font-size="13" font-weight="700" text-anchor="middle" fill="#F86825">Generative (diffusion) pretraining</text>
+                            <text x="540" y="94" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Encodes appearance-invariant geometry</text>
+                            <line x1="420" y1="120" x2="660" y2="120" stroke="#F86825" stroke-width="1" stroke-dasharray="3,3"/>
+                            <text x="540" y="145" font-size="12" text-anchor="middle" fill="var(--text-secondary)">Training domain: accurate</text>
+                            <text x="540" y="172" font-size="13" font-weight="700" text-anchor="middle" fill="#F86825">Domain shifts ✓ transfers</text>
+                            <text x="540" y="196" font-size="11" text-anchor="middle" fill="var(--text-muted)">Holds the sense that geometry stays even as appearance changes</text>
+                        </svg>
+                        <p class="text-xs themeable-muted mt-2 text-center">Discriminative models lean on the appearance–geometry shortcut; generative pretraining learns geometry independent of appearance. This is where they split under domain transfer.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>What Is Learned from Synthetic Crosses Over to Real</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This claim doesn't stay mere talk, because the evidence is attached. As we saw, intrinsic labels like albedo and shading exist only in the synthetic rendering domain. A model leaning on discriminative shortcuts should collapse when applying what it learned from synthetic data to real footage. Yet on the real-world intrinsic benchmark IIW, UniD's albedo error (WHDR) was about 28% lower than a representative baseline (0.207 vs 0.289). A representation that only ever saw ground truth in the synthetic world was more accurate on real photos it had never trained on — exactly what the "appearance-invariant geometry" hypothesis predicted.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This insight sits on a lineage of unified vision representations. Repurposing a generative prior back into perception has been built up by diffusion-for-perception work like Marigold, DepthAnything, and GeoWizard, and distilling multiple teachers' representations into one touches the unified-encoder lineage we examined in our <a href="/report/eupe-universal-encoder/en/" class="themeable-link" style="color:#F86825;text-decoration:underline;">Meta EUPE piece</a>. UniD combines those two threads on top of the data condition of "scattered labels."
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            From a data standpoint, this section's implication is clear. As much as which domain a label is trapped in, <strong>what you represent that label with governs transfer</strong>. The same synthetic intrinsic data won't cross to real footage if packed into an appearance-overfit representation, but it will if packed into an appearance-invariant one. It's a fairly concrete case of the proposition that data quality determines a model's internal representation.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Eight Tasks into One Backbone — Two-Stage Distillation</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Once the per-task latent representations are ready, the remaining problem is folding these eight representations into a single shared backbone. UniD's unification happens not by overlapping labels or filling them with pseudo-labels but through <strong>two-stage distillation</strong>. ① First secure the per-task learned representations (the specialists), then ② unify them with lightweight per-task projectors and knowledge distillation so that one shared backbone reconstructs those representations. Each task attaches just one thin projector behind the backbone to produce its own output, while the backbone itself is shared across all eight tasks.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The diagram below reinterprets this two-stage structure in the Pebblous theme rather than the original paper figure. On the left are the separately learned per-task representations (stage 1); on the right is the shared backbone reconstructing them plus the per-task projectors (stage 2).
+                    </p>
+
+                    <div class="my-8">
+                        <svg viewBox="0 0 760 320" class="w-full h-auto" role="img" aria-label="UniD two-stage distillation pipeline: from per-task representation learning to shared-backbone reconstruction" style="background:var(--card-bg)">
+                            <defs>
+                                <marker id="arrow-unid" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L6,3 L0,6 Z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                            <!-- Stage 1 label -->
+                            <text x="20" y="26" font-size="13" font-weight="700" fill="var(--text-primary)">Stage 1 · Per-task representation (specialist) learning</text>
+                            <!-- experts -->
+                            <g font-size="11" text-anchor="middle">
+                                <rect x="20" y="42" width="150" height="34" rx="7" fill="none" stroke="#808080" stroke-width="1.3"/>
+                                <text x="95" y="63" fill="var(--text-secondary)">Depth latent</text>
+                                <rect x="20" y="84" width="150" height="34" rx="7" fill="none" stroke="#808080" stroke-width="1.3"/>
+                                <text x="95" y="105" fill="var(--text-secondary)">Normal latent</text>
+                                <rect x="20" y="126" width="150" height="34" rx="7" fill="none" stroke="#808080" stroke-width="1.3"/>
+                                <text x="95" y="147" fill="var(--text-secondary)">Segmentation latent</text>
+                                <rect x="20" y="168" width="150" height="34" rx="7" fill="none" stroke="#808080" stroke-width="1.3"/>
+                                <text x="95" y="189" fill="var(--text-secondary)">Albedo latent</text>
+                                <rect x="20" y="210" width="150" height="34" rx="7" fill="none" stroke="#808080" stroke-width="1.3"/>
+                                <text x="95" y="231" fill="var(--text-secondary)">… +4 more</text>
+                            </g>
+                            <text x="95" y="268" font-size="10.5" text-anchor="middle" fill="var(--text-muted)">On a generative prior,</text>
+                            <text x="95" y="283" font-size="10.5" text-anchor="middle" fill="var(--text-muted)">each secures unseen generalization</text>
+
+                            <!-- distillation arrows to backbone -->
+                            <line x1="172" y1="59" x2="300" y2="120" stroke="#F86825" stroke-width="1.3" marker-end="url(#arrow-unid)"/>
+                            <line x1="172" y1="101" x2="300" y2="135" stroke="#F86825" stroke-width="1.3" marker-end="url(#arrow-unid)"/>
+                            <line x1="172" y1="143" x2="300" y2="150" stroke="#F86825" stroke-width="1.3" marker-end="url(#arrow-unid)"/>
+                            <line x1="172" y1="185" x2="300" y2="165" stroke="#F86825" stroke-width="1.3" marker-end="url(#arrow-unid)"/>
+                            <line x1="172" y1="227" x2="300" y2="180" stroke="#F86825" stroke-width="1.3" marker-end="url(#arrow-unid)"/>
+                            <text x="235" y="112" font-size="10.5" text-anchor="middle" fill="#F86825">knowledge</text>
+                            <text x="235" y="125" font-size="10.5" text-anchor="middle" fill="#F86825">distillation</text>
+
+                            <!-- Stage 2 label -->
+                            <text x="440" y="26" font-size="13" font-weight="700" fill="var(--text-primary)">Stage 2 · One shared backbone reconstructs</text>
+                            <!-- shared backbone -->
+                            <rect x="305" y="110" width="120" height="80" rx="10" fill="#FDEEE6" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="365" y="145" font-size="12" font-weight="700" text-anchor="middle" fill="#F86825">Shared backbone</text>
+                            <text x="365" y="164" font-size="10.5" text-anchor="middle" fill="var(--text-secondary)">one</text>
+                            <!-- projectors -->
+                            <g font-size="10.5" text-anchor="middle">
+                                <line x1="425" y1="130" x2="470" y2="70" stroke="var(--text-muted)" stroke-width="1.1"/>
+                                <line x1="425" y1="140" x2="470" y2="120" stroke="var(--text-muted)" stroke-width="1.1"/>
+                                <line x1="425" y1="150" x2="470" y2="170" stroke="var(--text-muted)" stroke-width="1.1"/>
+                                <line x1="425" y1="165" x2="470" y2="220" stroke="var(--text-muted)" stroke-width="1.1"/>
+                                <rect x="470" y="54" width="130" height="30" rx="6" fill="none" stroke="var(--border-color)" stroke-width="1.2"/>
+                                <text x="535" y="73" fill="var(--text-secondary)">projector→depth</text>
+                                <rect x="470" y="106" width="130" height="30" rx="6" fill="none" stroke="var(--border-color)" stroke-width="1.2"/>
+                                <text x="535" y="125" fill="var(--text-secondary)">projector→normal</text>
+                                <rect x="470" y="156" width="130" height="30" rx="6" fill="none" stroke="var(--border-color)" stroke-width="1.2"/>
+                                <text x="535" y="175" fill="var(--text-secondary)">projector→segm.</text>
+                                <rect x="470" y="206" width="130" height="30" rx="6" fill="none" stroke="var(--border-color)" stroke-width="1.2"/>
+                                <text x="535" y="225" fill="var(--text-secondary)">projector→…</text>
+                            </g>
+                            <text x="660" y="145" font-size="11" text-anchor="middle" fill="var(--text-muted)">Per-task</text>
+                            <text x="660" y="160" font-size="11" text-anchor="middle" fill="var(--text-muted)">lightweight heads</text>
+                            <text x="365" y="300" font-size="10.5" text-anchor="middle" fill="var(--text-muted)">Video shares cross-frame context via extended self-attention</text>
+                        </svg>
+                        <p class="text-xs themeable-muted mt-2 text-center">UniD two-stage distillation. Without overlapping or filling labels, per-task representations are distilled so a shared backbone reconstructs them. (Paper figure reinterpreted.)</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>How It Handles Video — Extended Self-Attention</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        UniD is "video" dense prediction because it doesn't process single frames in isolation. Through extended self-attention it references features across several frames together, so one frame's prediction shares context with the frames before and after. This design is the basis for the temporal-consistency gains we'll see later. Stitching together separately predicted frames produces flicker, but sharing cross-frame context makes predictions smooth along the time axis.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>The Cost of Folding Eight Specialists into One Backbone</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The practical benefit of two-stage distillation shows up in resources. Pushing all eight tasks' representations into the backbone at once requires holding every specialist in memory simultaneously during training, so GPU memory explodes. UniD greatly reduces this burden through latent distillation, lowering training GPU memory from about 650GB to 78GB — roughly an 8× saving. Folding eight specialists into one shared backbone, instead of maintaining and deploying them separately, also means cutting eight inference passes down to one at serving time.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The real virtue of two-stage distillation is that it unifies "with neither overlap nor fake labels." Rather than artificially manufacturing data to stitch together, if you represent each already-scattered label well, the shared backbone connects them naturally as it reconstructs those representations. It's a design that chose <strong>organizing the data you have rather than inventing the data you lack</strong>.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Geometry Wins, Semantics Still Lose</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Whether unification actually hurts or helps splits by the nature of the task. Summing up UniD's results in one line: <strong>unification helps geometry, but still hurts semantics</strong>. This section examines that asymmetry with balance. On the benefit side first: depth beat a representative foundation backbone (DINOv3-H) across all five benchmarks, and on ScanNet depth the unified model (AbsRel 0.063) was more accurate than the individual specialist (0.069). That unification improved on the specialist means the eight tasks, far from interfering with each other's learning, refined the geometric representation together.
+                    </p>
+
+                    <div class="overflow-x-auto my-8">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2" style="border-color:#F86825;">
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">Metric (benchmark)</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">UniD unified</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">Individual specialist</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">DINOv3-H<sup>†</sup></th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-bold">How to read it</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3">Depth AbsRel (NYUv2)</td>
+                                    <td class="py-3 px-3"><strong style="color:#F86825;">0.059</strong></td>
+                                    <td class="py-3 px-3">–</td>
+                                    <td class="py-3 px-3">0.092</td>
+                                    <td class="py-3 px-3">Lower is better · unified wins</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3">Depth AbsRel (ScanNet)</td>
+                                    <td class="py-3 px-3"><strong style="color:#F86825;">0.063</strong></td>
+                                    <td class="py-3 px-3">0.069</td>
+                                    <td class="py-3 px-3">–</td>
+                                    <td class="py-3 px-3">Lower is better · unified beats the specialist</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3">Depth↔normal consistency</td>
+                                    <td class="py-3 px-3"><strong style="color:#F86825;">39.0</strong></td>
+                                    <td class="py-3 px-3">14.1</td>
+                                    <td class="py-3 px-3">–</td>
+                                    <td class="py-3 px-3">Higher is better · ~2.8× more consistent (Table 7)</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3">Albedo WHDR (IIW, real-world OOD)</td>
+                                    <td class="py-3 px-3"><strong style="color:#F86825;">0.207</strong></td>
+                                    <td class="py-3 px-3">0.289</td>
+                                    <td class="py-3 px-3">–</td>
+                                    <td class="py-3 px-3">Lower is better · 28% lower (Table 4)</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3">Normal temporal consistency (mVC-16)</td>
+                                    <td class="py-3 px-3"><strong style="color:#F86825;">75.8</strong></td>
+                                    <td class="py-3 px-3">–</td>
+                                    <td class="py-3 px-3">63.6</td>
+                                    <td class="py-3 px-3">Higher is better · 16-frame consistency</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3">Semantic segmentation mIoU (Cityscapes)</td>
+                                    <td class="py-3 px-3">37.8 → <strong>58.4</strong></td>
+                                    <td class="py-3 px-3">64.1</td>
+                                    <td class="py-3 px-3">65.6</td>
+                                    <td class="py-3 px-3">Higher is better · <strong>unification hurts</strong>, still short after correction (Table 5)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2"><sup>†</sup> DINOv3-H figures come from retraining task decoders under the same conditions as UniD, so they are not directly comparable to the linear-probe numbers in Meta's own blog (e.g., Cityscapes 81.1) — the protocols differ. Do not misread this as "DINOv3 is unusually weak." Benchmark figures follow the arXiv HTML source; the direction (better/worse) is reliable while exact decimals follow the source tables. Sources: UniD arXiv:2607.21592 · DINOv3 arXiv:2508.10104.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>The Highlight Is Cross-Task Consistency</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Unification's most dramatic value lies not in individual scores but in <strong>consistency between tasks</strong>. Depth and normals are really two faces of the same surface — the gradient of depth should be the normal. Yet in specialist models that predict the two separately, they drift out of geometric agreement: the surface depth draws and the surface normals draw are different. When both come out of a single backbone as in UniD, this mismatch shrinks sharply, and the consistency metric rose from 14.1 to 39.0 — about 2.8×. When a robot grasps an object from these predictions, or AR places a virtual object on a surface, whether depth and normals line up becomes practical quality on the spot.
+                    </p>
+
+                    <div class="my-8">
+                        <svg viewBox="0 0 680 200" class="w-full h-auto" role="img" aria-label="Depth-normal consistency comparison: separate baseline 14.1 vs UniD unified 39.0" style="background:var(--card-bg)">
+                            <text x="20" y="26" font-size="15" font-weight="700" fill="var(--text-primary)">Predict apart vs together — depth↔normal consistency</text>
+                            <text x="20" y="72" font-size="13" fill="var(--text-secondary)">Separate prediction (baseline)</text>
+                            <rect x="20" y="82" width="600" height="26" rx="4" fill="#E5E5E5"/>
+                            <rect x="20" y="82" width="217" height="26" rx="4" fill="#808080"/>
+                            <text x="247" y="101" font-size="13" font-weight="700" fill="var(--text-primary)">14.1</text>
+                            <text x="20" y="146" font-size="13" fill="var(--text-secondary)">UniD unified (one backbone)</text>
+                            <rect x="20" y="156" width="600" height="26" rx="4" fill="#E5E5E5"/>
+                            <rect x="20" y="156" width="600" height="26" rx="4" fill="#F86825"/>
+                            <text x="588" y="175" font-size="13" font-weight="700" fill="#ffffff">39.0</text>
+                        </svg>
+                        <p class="text-xs themeable-muted mt-2 text-center">Predicting depth and normals together from one backbone makes two geometries that drift apart when predicted separately consistent with each other. (UniD Table 7)</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>The Gain Widens as Video Grows Longer</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Unification's benefit grows as the sequence lengthens. In temporal consistency the unified model leads the baseline, and the gap widens as frames accumulate (normal 16-frame consistency 75.8 vs 63.6). Efficiency shows an interesting reversal too. On a single frame DINOv3-H is faster, but in the video setting that processes 16 frames of context together, the unified model ran at 1.56 FPS — about 2.3× the baseline's 0.69 FPS. The specialist configuration that runs eight experts separately is slowest even on a single frame (1.17 FPS). The design that folds into one backbone earns speed back in long-video, multi-task settings.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Why physical and geometric consistency across frames of generated video matters is something we covered in our <a href="/report/world-model-physics-verification/en/" class="themeable-link" style="color:#F86825;text-decoration:underline;">world-model physics verification piece</a>. UniD's temporal-consistency gain sits on the same terrain as that concern — it takes a signal that flickers when predicted frame by frame and smooths it by sharing context.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>An Honest Limit — Unification Hurts Semantic Tasks</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Telling only the gains is half the story. Tasks needing higher-order semantics — semantic segmentation, materials, human parts — dropped clearly right after unification. Cityscapes semantic segmentation mIoU was 37.8 immediately after unification, far below the individual specialist (64.1). Lightweight projector fine-tuning recovered it to 58.4, but it still doesn't reach the specialist or DINOv3-H (64.1/65.6). Geometry saw the eight tasks help one another, but for semantics unification got in the way. There's one more practical risk here: as of this writing the code is not released. The GitHub repo (YihongSun/UniD) exists but only carries a "Code Release TBA" README and a project-page link (star/fork counts may change over time). The method can be reviewed via the arXiv paper, but it can't be run right now.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            So the practical lesson isn't "unification is a cure-all." For robotics and AR perception where geometry like depth and normals and cross-task consistency matter, unification is a clear win; but when semantic tasks like segmentation and materials are the core, a specialist model is still better. This very asymmetry — <strong>you have to choose unification or specialist by task nature</strong> — creates the need to judge in advance when unified training works and when it fails.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why This Is a Data-Quality Problem</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Reading UniD again through the eyes of data, the message this research delivers goes beyond one CV paper's results table. Its starting point was the data reality that "no single fully labeled dataset exists," and its solution was the data strategy of "representing what you have well rather than collecting anew." A deficit in data <strong>completeness</strong> and <strong>consistency</strong> creates a real ceiling on model capability, and a well-organized representation becomes the detour around that deficit — this is the view running through the whole piece.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>Representation Decides Transfer</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The insight from Section 2 — that discriminative features overfit to appearance bias while generative pretraining encodes appearance-invariant geometry — is a refined case of "how training-data bias gets imprinted on a model's internal representation." The same synthetic intrinsic data can cross to real footage or collapse depending on which representation it's packed into. There's a layer here that you miss if you view data quality only as "how accurate the labels are." What data teaches depends not only on label accuracy but also on which representation space that label is consumed in.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>A Pipeline That Doesn't Throw Away Incomplete Labels</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Teams handling multi-task, multi-modal data almost always face "data that is only partially labeled." Some samples carry only segmentation, others only depth. UniD's distillation detour is a reference case for pipeline designs that use such incomplete-label data rather than discarding it. But as Section 4's asymmetry warns, unification is no cure-all. It helps geometry tasks but can hurt semantic ones, and whether a synthetic-learned representation transfers to real footage also varies by task and data. The terrain this application targets — a Physical AI perception stack where a robot reads a scene in geometry, semantics, and materials at once — sits on a demand curve where robot vision rose to 38% of new robot installations in 2025 (IFR).
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The frame that "the bottleneck of model unification is not architecture but data fragmentation" reaffirms the value of diagnosing data consistency and completeness with verifiable metrics. UniD detoured around that deficit through representation learning, but the success of that detour itself rests on data quality — how far synthetic bias transfers, and on which tasks unification hurts. Judging in advance when unified training works and when it fails remains the practical task of the fragmented-data era.
+                        </p>
+                    </div>
+
+                    <div class="mt-8 p-5 rounded-xl themeable-card" style="border-left:4px solid #F86825;">
+                        <p class="text-sm themeable-muted mb-2"><strong>Editor's Note</strong></p>
+                        <p class="themeable-text leading-relaxed">
+                            Pebblous has worked on the problem of diagnosing the quality of fragmented, incomplete-label data through AI-Ready Data and DataClinic. We read UniD's "fill a data deficit with representation" approach as a case that widens the possibilities of the latter — organizing the data you have well, as opposed to manufacturing data anew. This piece is a research note that organizes UniD from that vantage.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-6 text-right">
+                            <strong>Pebblous Data Communication Team</strong><br>
+                            <span class="themeable-muted text-sm">July 31, 2026</span>
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">References</h2>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Core papers · datasets</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Sun, Y., Oh, S.W., Huang, J., Hariharan, B., Lee, J.Y. "<a href="https://arxiv.org/abs/2607.21592" target="_blank" rel="noopener">Unified Video Dense Prediction from Disjoint Data</a>" (UniD), arXiv:2607.21592 (2026), ECCV 2026.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Roberts, M., Paczan, N., et al. "<a href="https://arxiv.org/abs/2011.02523" target="_blank" rel="noopener">Hypersim: A Photorealistic Synthetic Dataset for Holistic Indoor Scene Understanding</a>," ICCV 2021.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Cordts, M., et al. "The Cityscapes Dataset for Semantic Urban Scene Understanding," CVPR 2016 (labeling-cost figure cited from a follow-up comparison study, <a href="https://arxiv.org/abs/2212.07911" target="_blank" rel="noopener">arXiv:2212.07911</a>).</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Adjacent lineage — unified representations · diffusion-for-perception</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">4.</span><span class="ref-body">Meta AI. "<a href="https://arxiv.org/abs/2508.10104" target="_blank" rel="noopener">DINOv3: Self-supervised learning for vision at unprecedented scale</a>," arXiv:2508.10104 · <a href="https://ai.meta.com/blog/dinov3-self-supervised-vision-model/" target="_blank" rel="noopener">Meta AI blog</a>.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Ke, B., et al. "<a href="https://arxiv.org/abs/2312.02145" target="_blank" rel="noopener">Marigold: Repurposing Diffusion-Based Image Generators for Monocular Depth Estimation</a>," CVPR 2024 · Depth Anything V1·V2 · GeoWizard (the diffusion-for-perception thread).</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Project · code · industry</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">6.</span><span class="ref-body">UniD project page: <a href="https://unid-video.github.io/" target="_blank" rel="noopener">unid-video.github.io</a> · GitHub (code not released, README only): <a href="https://github.com/YihongSun/UniD" target="_blank" rel="noopener">YihongSun/UniD</a>.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">International Federation of Robotics (IFR) — share of vision-equipped robot installations (38% in 2025, cited for direction) · <a href="https://www.fortunebusinessinsights.com/robotic-vision-market-113863" target="_blank" rel="noopener">Fortune Business Insights robotic vision market report</a>.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">NVIDIA Isaac GR00T — unified perception framework for robotics (GTC 2026, industry context).</span></li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260731"></script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260731" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "operator",
+                "at": "2026-07-30T22:43:13.260Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-30T22:47:59.801Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-30T23:12:41.118Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1785451393261-mali94",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-30T23:50:00.123Z"
+            },
+            mainTitle: "A Model That Reads the Whole Scene Was Blocked by Scattered Labels",
+            subtitle: "Unified scene understanding from disjoint, incomplete labels, as shown by UniD (Adobe·Cornell, ECCV 2026)",
+            pageTitle: "UniD Unifies Dense Prediction from Fragmented Video Labels | Pebblous",
+            category: "tech",
+            publishDate: "2026-07-31",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/unified-video-dense-prediction-unid/en/",
+            tags: ["dense-prediction", "unified-model", "diffusion-prior", "AI-Ready-Data", "data-quality", "physical-ai", "computer-vision", "multi-task-learning"],
+            faqs: [
+                { question: "What exactly is 'disjoint annotation' (scattered, incomplete labels)?", answer: "It's the state where the eight dense labels don't all live in one dataset but are scattered across datasets of different domain, scale, and cost. Depth and normals come cheaply from RGB-D sensors but stay trapped indoors; semantic segmentation is an expensive manual label taking ~90 minutes per image, so it stays small; albedo and shading have nearly impossible real-world ground truth, so they lean on synthetic rendering. The key point is that the labels aren't paired together." },
+                { question: "How is this different from pseudo-labeling?", answer: "Pseudo-labeling uses one task's model to estimate another task's labels and forcibly fills them in to create co-labels. UniD neither fills labels nor makes them artificially overlap; it distills per-task learned representations (latents) so a shared backbone reconstructs them. The difference is that it avoids the error accumulation that comes from fake labels." },
+                { question: "Why a generative (diffusion) prior rather than discriminative features?", answer: "This is the paper's core insight. Discriminative features overfit to the 'appearance↔geometry' correlation in the training data and collapse when the domain shifts. A web-scale pretrained generative model, by contrast, encodes appearance-invariant geometry, so it transfers well even to domains not seen during training. The result that intrinsics learned only from synthetic data transfer to a real-world benchmark (IIW) is the empirical proof of this claim." },
+                { question: "Doesn't doing eight tasks at once make it worse than individual specialists?", answer: "It depends on the task. Geometry tasks like depth and normals stay close to or even beat the specialist when unified (on ScanNet depth, unified beats the specialist), and depth↔normal consistency, which drifts when predicted separately, improves greatly. Conversely, higher-order semantic tasks like segmentation and materials drop right after unification, recover with a lightweight correction, but still fall short of the specialist." },
+                { question: "How robust is it really to OOD (domains not seen in training)?", answer: "On the real-world intrinsic benchmark IIW, albedo error (WHDR) is about 28% lower than a representative baseline (0.207 vs 0.289), and on animation-frame-based normal OOD (Sintel) unification reduced error more than the specialist too. The key evidence is that a synthetic-learned representation transfers to real footage." },
+                { question: "How does temporal consistency improve in video?", answer: "The unified model's predictions are more stable across frames, and the gain grows with sequence length (normal 16-frame consistency 75.8 vs 63.6). Efficiency also reverses in long context: at 16-frame memory, the unified model is about 2.3× faster than the baseline (1.56 vs 0.69 FPS)." },
+                { question: "When will the code be released? Can I use it now?", answer: "As of this writing the code is not released. The GitHub repo (YihongSun/UniD) exists but only carries a 'Code Release TBA' README and a project-page link. The paper is public as arXiv 2607.21592 (ECCV 2026), so the method can be reviewed." },
+                { question: "What does this have to do with data quality?", answer: "UniD's very starting point is the data problem that 'no single fully labeled dataset exists.' A deficit in data completeness and consistency creates a ceiling on model capability, and UniD detours around it through representation learning rather than new collection. But the success of that detour (how far synthetic bias transfers, on which tasks unification hurts) ultimately rests on data quality — which is the practical meaning of data diagnosis (AI-Ready Data · DataClinic)." }
+            ]
+        });
+    </script>
+</body>
+</html>
