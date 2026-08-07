@@ -1,0 +1,113 @@
+# PebbloScope Blog Constellation 자동 갱신 — 풀 모델의 블로그 쪽 절반.
+#
+# 흐름 (Scholar 이슈 #1 합의, 배포 방식 (b) — JH 확정 2026-07-25):
+#   Scholar refresh-blog-ko.yml (주 1회) → 슬림 single-file을 public 배포 레포에 게시
+#   → 이 워크플로우가 토큰 0개로 fetch → noindex 주입 → 변경 시 봇 PR 자체머지로
+#     /pebbloscope/index.html 교체
+#
+# 소스 계약: joohaeng-pbls/PebbloScope-Scholar (public) main의
+#   release/blog-ko/index.html  — 경로 변경 시 여기와 Scholar 워크플로우 동시 수정.
+# 산출물이 아직 없거나(404) 형식 검증 실패 시 조용히 skip (기존 배포 유지).
+
+name: Refresh PebbloScope
+
+on:
+  schedule:
+    - cron: '0 21 * * 0'   # 일요일 21:00 UTC (월요일 06:00 KST) — Scholar 주간 빌드 이후
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-pebbloscope
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write   # 봇 PR 자체머지 (main ruleset #289)
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Fetch slim artifact (public — 토큰 불요)
+        id: fetch
+        run: |
+          SRC="https://raw.githubusercontent.com/joohaeng-pbls/PebbloScope-Scholar/main/release/blog-ko/index.html"
+          if ! curl -fsSL "$SRC" -o /tmp/scope-new.html; then
+            echo "⚠️ 산출물 없음/접근 불가 ($SRC) — skip (기존 배포 유지)"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # 형식 검증: HTML 문서 + 앱 마커 + 최소 크기 (깨진 산출물 배포 방지)
+          size=$(stat -c%s /tmp/scope-new.html)
+          if [ "$size" -lt 1000000 ] || ! head -c 2000 /tmp/scope-new.html | grep -qi "<!doctype html" || ! grep -q "PebbloScope Scholar" /tmp/scope-new.html; then
+            echo "::error::산출물 형식 검증 실패 (size=$size) — 배포 중단"
+            exit 1
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Inject noindex + compare
+        id: prep
+        if: steps.fetch.outputs.skip == 'false'
+        run: |
+          python3 - <<'EOF'
+          import re
+          s = open('/tmp/scope-new.html', encoding='utf-8').read()
+          if 'noindex' not in s[:3000]:
+              anchor = '<meta charset="UTF-8" />'
+              if anchor not in s:
+                  anchor = '<meta charset="UTF-8">'
+              assert anchor in s, 'charset meta 앵커 없음'
+              s = s.replace(anchor, anchor + '\n    <meta name="robots" content="noindex" />', 1)
+          # 페이지 타이틀 — JH 확정 (Scholar가 빌드에 구우면 자동 no-op)
+          TITLE = 'PebbloScope: Blog Constellation'
+          if f'<title>{TITLE}</title>' not in s:
+              s = re.sub(r'<title>[^<]*</title>', f'<title>{TITLE}</title>', s, count=1)
+          open('/tmp/scope-new.html', 'w', encoding='utf-8').write(s)
+          EOF
+          if cmp -s /tmp/scope-new.html pebbloscope/index.html; then
+            echo "변경 없음 — 종료"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit & merge via PR
+        if: steps.fetch.outputs.skip == 'false' && steps.prep.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          cp /tmp/scope-new.html pebbloscope/index.html
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          BRANCH="auto/pebbloscope-refresh-${{ github.run_id }}-${{ github.run_attempt }}"
+          git checkout -b "$BRANCH"
+          git add pebbloscope/index.html
+          git commit -m "chore(pebbloscope): Blog Constellation 주간 갱신 [skip ci]"
+          git push origin "$BRANCH"
+
+          cleanup() { git push origin --delete "$BRANCH" >/dev/null 2>&1 || true; }
+          if ! gh pr create --base main --head "$BRANCH" \
+            --title "chore(pebbloscope): Blog Constellation 주간 갱신 [skip ci]" \
+            --body "refresh-pebbloscope.yml 자동 갱신 — Scholar public 배포 레포에서 슬림 빌드 fetch (+noindex). 풀 모델 (b), 이슈 #1 합의."; then
+            cleanup
+            echo "::error::갱신 PR 생성 실패 — INDEX_PUSH_TOKEN 확인(#289)."
+            exit 1
+          fi
+
+          merged=false
+          for i in 1 2 3; do
+            if gh pr merge "$BRANCH" --merge --delete-branch; then merged=true; break; fi
+            sleep 5
+          done
+          if [ "$merged" != "true" ]; then
+            gh pr close "$BRANCH" --delete-branch >/dev/null 2>&1 || cleanup
+            echo "::error::갱신 PR 머지 실패 — INDEX_PUSH_TOKEN 권한/ruleset 확인(#289)."
+            exit 1
+          fi

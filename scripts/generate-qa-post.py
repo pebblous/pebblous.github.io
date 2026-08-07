@@ -36,7 +36,7 @@ def generate_content_sections(metadata):
     # Intro Section HTML
     intro_html = f"""
     <p class="themeable-text mb-4">
-        본 포스팅에서는 <strong class="teal-text">{domain}</strong> 분야의 LLM 파인튜닝을 위한 고품질 QA 데이터셋 구축 과정을 소개합니다.
+        본 포스팅에서는 <strong class="orange-text">{domain}</strong> 분야의 LLM 파인튜닝을 위한 고품질 QA 데이터셋 구축 과정을 소개합니다.
     </p>
     <p class="themeable-text mb-4">
         총 <strong class="orange-text">{dataset_count}개</strong>의 데이터셋에서 <strong class="orange-text">{qa_count}개</strong>의 QA 쌍을 구축하였으며,
@@ -52,7 +52,7 @@ def generate_content_sections(metadata):
     <h3 class="text-xl font-bold themeable-heading mb-4">QA 유형 설명</h3>
     <div class="grid md:grid-cols-2 gap-4 mb-6">
         <div class="themeable-card rounded-lg p-4">
-            <div class="font-bold teal-text mb-2">유형 A: 도메인 정의/목적</div>
+            <div class="font-bold orange-text mb-2">유형 A: 도메인 정의/목적</div>
             <p class="text-sm themeable-text-secondary">데이터셋의 목적, 배경, 적용 범위 등 도메인 정의 관련 질문</p>
         </div>
         <div class="themeable-card rounded-lg p-4">
@@ -60,7 +60,7 @@ def generate_content_sections(metadata):
             <p class="text-sm themeable-text-secondary">데이터 스키마, 필드 구성, 데이터 관계 등 구조 관련 질문</p>
         </div>
         <div class="themeable-card rounded-lg p-4">
-            <div class="font-bold teal-text mb-2">유형 C: AI 모델/임무</div>
+            <div class="font-bold orange-text mb-2">유형 C: AI 모델/임무</div>
             <p class="text-sm themeable-text-secondary">AI 모델 적용, 머신러닝 태스크, 알고리즘 선택 등 AI 관련 질문</p>
         </div>
         <div class="themeable-card rounded-lg p-4">

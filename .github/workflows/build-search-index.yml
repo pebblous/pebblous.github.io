@@ -1,0 +1,93 @@
+# Pagefind 전문 검색 인덱스 자동 생성 — main push 시 /pagefind/ 갱신.
+#
+# 빌더(tools/build-search-index.py)는 자산 3 — 진본(blog-service PR #198) 관리,
+# sync로 미러. noindex/비번 보호 페이지는 스테이징에서 물리적으로 배제되므로
+# 기밀 본문이 인덱스에 실리지 않는다.
+#
+# main 직접 push 는 ruleset(pull_request 필수)이 GH013 으로 거부(#289) →
+# update-sitemap/assemble-articles 와 동일하게 봇 PR 자체머지 방식.
+# 루프 방지: 인덱스 커밋은 pagefind/** 만 (HTML 없음) — '**.html' 트리거에 안 걸림.
+
+name: Build Search Index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.html'
+  workflow_dispatch:
+
+concurrency:
+  group: build-search-index
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write   # 봇 PR 생성·머지 (main ruleset 우회, #289)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # PAT 우선(미설정 시 GITHUB_TOKEN). org 정책이 GITHUB_TOKEN 의
+          # PR 생성을 막으므로(#289) PAT(INDEX_PUSH_TOKEN)로 PR 생성·머지.
+          token: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build index (noindex/보호 페이지 배제)
+        run: |
+          if [ ! -f tools/build-search-index.py ]; then
+            echo "⚠️ tools/build-search-index.py 없음 — 진본 sync 대기 중, 건너뜀"
+            exit 0
+          fi
+          python3 tools/build-search-index.py --site . --output-path pagefind
+
+      - name: Commit & merge via PR
+        env:
+          GH_TOKEN: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ! -d pagefind ]; then
+            echo "인덱스 없음(빌더 미동기화) — 종료"
+            exit 0
+          fi
+          if [ -z "$(git status --porcelain pagefind)" ]; then
+            echo "인덱스 변경 없음"
+            exit 0
+          fi
+
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          BRANCH="auto/search-index-${{ github.run_id }}-${{ github.run_attempt }}"
+          git checkout -b "$BRANCH"
+          git add pagefind
+          git commit -m "chore(search): pagefind 인덱스 재생성 [skip ci]"
+          git push origin "$BRANCH"
+
+          cleanup() { git push origin --delete "$BRANCH" >/dev/null 2>&1 || true; }
+          if ! gh pr create --base main --head "$BRANCH" \
+            --title "chore(search): pagefind 인덱스 재생성 [skip ci]" \
+            --body "build-search-index.yml 자동 생성 — noindex/보호 페이지 배제 인덱스. main ruleset(#289) 때문에 봇 PR 자체머지."; then
+            cleanup
+            echo "::error::인덱스 PR 생성 실패 — INDEX_PUSH_TOKEN 확인(#289)."
+            exit 1
+          fi
+
+          merged=false
+          for i in 1 2 3; do
+            if gh pr merge "$BRANCH" --merge --delete-branch; then merged=true; break; fi
+            sleep 5
+          done
+          if [ "$merged" != "true" ]; then
+            gh pr close "$BRANCH" --delete-branch >/dev/null 2>&1 || cleanup
+            echo "::error::인덱스 PR 머지 실패 — INDEX_PUSH_TOKEN 권한/ruleset 확인(#289)."
+            exit 1
+          fi

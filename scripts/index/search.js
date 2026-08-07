@@ -49,8 +49,78 @@ function updateCategoryTitles() {
     });
 }
 
+// ============================================================
+// Search v2 — 다단어 AND + 가중 랭킹 + 결과 상한 + URL 상태 +
+//             Pagefind 본문 검색 (인덱스 없으면 조용히 생략)
+// ============================================================
+
 // Current search type filter: 'all' | 'article' | 'hub'
 let currentSearchFilter = 'all';
+
+const SEARCH_PAGE_SIZE = 20;
+const FULLTEXT_MAX = 10;
+
+let searchGeneration = 0;   // 비동기(본문 검색) 결과의 최신성 보장
+let visibleCount = SEARCH_PAGE_SIZE;
+let lastScored = [];        // 마지막 검색의 전체 결과 (더 보기용)
+let lastTokens = [];
+let lastTrackedQuery = '';  // GTM 중복 push 방지
+
+function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function tokenize(query) {
+    return query.toLowerCase().split(/\s+/).filter(Boolean);
+}
+
+// 필드 가중 점수: 제목 3 · 태그 2 · 설명 1 · 카테고리 1. 토큰 전부 매치(AND) 필수.
+function scoreArticle(article, tokens) {
+    const title = (article.title || '').toLowerCase();
+    const desc = (article.description || '').toLowerCase();
+    const tags = (article.tags || []).join(' ').toLowerCase();
+    const cat = (article.category || '').toLowerCase();
+    let total = 0;
+    for (const tk of tokens) {
+        let s = 0;
+        if (title.includes(tk)) s += 3;
+        if (tags.includes(tk)) s += 2;
+        if (desc.includes(tk)) s += 1;
+        if (cat.includes(tk)) s += 1;
+        if (s === 0) return 0;
+        total += s;
+    }
+    return total;
+}
+
+function updateSearchURL(query) {
+    const params = new URLSearchParams(location.search);
+    if (query) params.set('q', query); else params.delete('q');
+    const qs = params.toString();
+    history.replaceState(null, '', qs ? '?' + qs : location.pathname);
+}
+
+// 이 사이트는 GTM이 아니라 gtag.js 직결(G-44LQ2ZLX78) — GA4 이벤트는 gtag('event')로
+// 보내야 수집된다. dataLayer.push({event:...})는 GTM 문법이라 gtag 단독 환경에선 무시됨.
+function sendAnalyticsEvent(name, params) {
+    if (typeof window.gtag === 'function') {
+        window.gtag('event', name, params);
+    } else {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push(Object.assign({ event: name }, params));
+    }
+}
+
+function trackSearch(query, metaCount, fulltextCount) {
+    if (query === lastTrackedQuery) return;
+    lastTrackedQuery = query;
+    sendAnalyticsEvent('blog_search', {
+        search_term: query,
+        results_count: metaCount,
+        search_filter: currentSearchFilter,
+        search_language: (window.IndexPage.getCurrentLanguage && window.IndexPage.getCurrentLanguage()) || 'ko'
+    });
+}
 
 function setupSearch() {
     const searchInput = document.getElementById('search-input');
@@ -60,16 +130,24 @@ function setupSearch() {
 
     let debounceTimer;
 
+    function hideResults() {
+        searchGeneration++;
+        searchResults.classList.remove('has-results');
+        searchResults.hidden = true;
+        updateSearchURL('');
+    }
+
     function triggerSearch() {
-        const query = searchInput.value.trim().toLowerCase();
-        if (query.length < 2) {
-            searchResults.classList.remove('has-results');
+        const query = searchInput.value.trim();
+        if (query.replace(/\s+/g, '').length < 2) {
+            hideResults();
             return;
         }
+        visibleCount = SEARCH_PAGE_SIZE;
         performSearch(query, searchResultsList, searchCount, searchResults);
     }
 
-    searchInput.addEventListener('input', (e) => {
+    searchInput.addEventListener('input', () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(triggerSearch, 300);
     });
@@ -77,7 +155,11 @@ function setupSearch() {
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             searchInput.value = '';
-            searchResults.classList.remove('has-results');
+            hideResults();
+        }
+        if (e.key === 'Enter') {
+            clearTimeout(debounceTimer);
+            triggerSearch();
         }
     });
 
@@ -93,93 +175,211 @@ function setupSearch() {
 
     document.querySelectorAll('.keyword-filter').forEach(btn => {
         btn.addEventListener('click', () => {
-            const keyword = btn.textContent.trim();
-            searchInput.value = keyword;
+            searchInput.value = btn.textContent.trim();
             searchInput.focus();
             searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            performSearch(keyword.toLowerCase(), searchResultsList, searchCount, searchResults);
+            triggerSearch();
         });
     });
+
+    // "더 보기" — 결과 컨테이너 이벤트 위임
+    searchResults.addEventListener('click', (e) => {
+        if (e.target.closest('.search-load-more')) {
+            visibleCount += SEARCH_PAGE_SIZE;
+            renderMetaResults(searchResultsList, searchCount, searchResults);
+        }
+    });
+
+    // 언어 전환 시 현재 검색 재실행 (applyLanguageFilter가 _allArticles를 갱신한 뒤)
+    window.IndexPage.onLanguageChanged = () => {
+        if (searchInput.value.trim().replace(/\s+/g, '').length >= 2) triggerSearch();
+    };
+
+    // URL 상태 복원: /?q=검색어 → 즉시 검색, /?q= (빈 값) → 포커스만
+    const initialQ = new URLSearchParams(location.search).get('q');
+    if (initialQ !== null) {
+        searchInput.value = initialQ;
+        searchInput.scrollIntoView({ behavior: 'auto', block: 'center' });
+        searchInput.focus();
+        if (initialQ.trim().replace(/\s+/g, '').length >= 2) triggerSearch();
+    }
+}
+
+function highlightTokens(text, tokens) {
+    if (!tokens.length) return text;
+    const re = new RegExp('(' + tokens.map(escapeRegExp).join('|') + ')', 'gi');
+    return text.replace(re, '<span class="search-highlight">$1</span>');
+}
+
+function articleCardHTML(article, tokens, categories) {
+    const categoryInfo = categories[article.category];
+    const categoryName = categoryInfo ? `${categoryInfo.icon} ${categoryInfo.name}` : article.category;
+
+    const tagsHtml = (article.tags || []).map(tag =>
+        `<span class="tag">${highlightTokens(tag, tokens)}</span>`
+    ).join('');
+
+    const hubBadge = article.type === 'hub'
+        ? '<span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 ml-2">HUB</span>'
+        : '';
+
+    return `
+        <div class="search-result-item p-4 rounded-lg border transition-colors">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                <div class="flex-grow min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 text-xs search-meta mb-2">
+                        <span>${article.date}</span>
+                        <span>• ${categoryName}</span>${hubBadge}
+                    </div>
+                    <h4 class="text-base sm:text-lg font-bold mb-1">${highlightTokens(article.title, tokens)}</h4>
+                    <p class="text-sm search-desc">${highlightTokens(article.description, tokens)}</p>
+                    <div class="tags-container mt-2">
+                        <div class="tags-scroll">
+                            ${tagsHtml}
+                        </div>
+                    </div>
+                </div>
+                <a href="${article.path}" ${article.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="flex-shrink-0 accent-bg text-white text-sm font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity whitespace-nowrap self-start">
+                    ${(window.IndexPage.t || function(k){ return k; })('search.readMore')}
+                </a>
+            </div>
+        </div>
+    `;
+}
+
+function renderMetaResults(resultsContainer, countElement, resultsSection) {
+    const t = window.IndexPage.t || function(k) { return k; };
+    const categories = window.IndexPage._categories || {};
+
+    countElement.textContent = lastScored.length;
+
+    if (lastScored.length === 0) {
+        resultsContainer.innerHTML = '<p class="no-results text-center py-6">' + t('search.noResults') + '</p>';
+    } else {
+        const visible = lastScored.slice(0, visibleCount);
+        let html = visible.map(s => articleCardHTML(s.article, lastTokens, categories)).join('');
+        if (lastScored.length > visibleCount) {
+            html += `
+                <div class="text-center pt-2">
+                    <button type="button" class="search-load-more accent-bg text-white text-sm font-semibold px-6 py-2 rounded-md hover:opacity-90 transition-opacity">
+                        ${t('search.loadMore')} (${lastScored.length - visibleCount})
+                    </button>
+                </div>`;
+        }
+        resultsContainer.innerHTML = html;
+    }
+
+    resultsSection.hidden = false;
+    resultsSection.classList.add('has-results');
+
+    const cards = Array.from(resultsContainer.querySelectorAll('.search-result-item'));
+    if (cards.length > 0 && window.IndexPage.initCardInteractions) {
+        window.IndexPage.initCardInteractions(cards);
+    }
 }
 
 function performSearch(query, resultsContainer, countElement, resultsSection) {
-    const allArticles = window.IndexPage._allArticles;
-    const categories = window.IndexPage._categories;
+    const gen = ++searchGeneration;
+    const tokens = tokenize(query);
+    const allArticles = window.IndexPage._allArticles || [];
 
-    const results = allArticles.filter(article => {
-        // Type filter
-        if (currentSearchFilter === 'hub' && article.type !== 'hub') return false;
-        if (currentSearchFilter === 'article' && article.type === 'hub') return false;
+    const scored = [];
+    for (const article of allArticles) {
+        if (currentSearchFilter === 'hub' && article.type !== 'hub') continue;
+        if (currentSearchFilter === 'article' && article.type === 'hub') continue;
+        const score = scoreArticle(article, tokens);
+        if (score > 0) scored.push({ article, score });
+    }
+    scored.sort((a, b) => (b.score - a.score) || (new Date(b.article.date) - new Date(a.article.date)));
 
-        const searchText = [
-            article.title,
-            article.description,
-            ...article.tags,
-            article.category
-        ].join(' ').toLowerCase();
+    lastScored = scored;
+    lastTokens = tokens;
+    renderMetaResults(resultsContainer, countElement, resultsSection);
 
-        return searchText.includes(query);
-    });
+    updateSearchURL(query);
+    trackSearch(query, scored.length);
+    renderFulltextSection(query, gen, resultsContainer, scored);
+}
 
-    countElement.textContent = results.length;
+// ============================================================
+// Pagefind 본문 검색 (lazy) — /pagefind/ 인덱스는 CI가 생성.
+// 인덱스가 없거나 로드 실패하면 메타 검색만 동작 (조용히 생략).
+// ============================================================
 
-    if (results.length === 0) {
-        var t = window.IndexPage.t || function(k) { return k; };
-        resultsContainer.innerHTML = '<p class="no-results text-center py-6">' + t('search.noResults') + '</p>';
-        resultsSection.classList.add('has-results');
+let pagefindMod = null;
+let pagefindLang = null;
+let pagefindBroken = false;
+
+async function getPagefind() {
+    if (pagefindBroken) return null;
+    const lang = (window.IndexPage.getCurrentLanguage && window.IndexPage.getCurrentLanguage()) || 'ko';
+    try {
+        if (!pagefindMod) {
+            document.documentElement.lang = lang;
+            pagefindMod = await import('/pagefind/pagefind.js');
+            await pagefindMod.init();
+            pagefindLang = lang;
+        } else if (pagefindLang !== lang && pagefindMod.destroy) {
+            await pagefindMod.destroy();
+            document.documentElement.lang = lang;
+            await pagefindMod.init();
+            pagefindLang = lang;
+        }
+        return pagefindMod;
+    } catch (err) {
+        pagefindBroken = true;
+        return null;
+    }
+}
+
+async function renderFulltextSection(query, gen, resultsContainer, metaScored) {
+    const pf = await getPagefind();
+    if (!pf || gen !== searchGeneration) return;
+
+    let res;
+    try {
+        res = await pf.search(query);
+    } catch (err) {
         return;
     }
+    if (gen !== searchGeneration) return;
 
-    resultsContainer.innerHTML = results.map(article => {
-        const categoryInfo = categories[article.category];
-        const categoryName = categoryInfo ? `${categoryInfo.icon} ${categoryInfo.name}` : article.category;
+    // 메타 검색에 이미 나온 글 제외 (path 정규화: 선행/후행 슬래시)
+    const known = new Set(metaScored.map(s => '/' + String(s.article.path || '').replace(/^\/+/, '')));
+    const picks = [];
+    for (const r of res.results) {
+        if (picks.length >= FULLTEXT_MAX) break;
+        const d = await r.data();
+        if (gen !== searchGeneration) return;
+        if (known.has(d.url)) continue;
+        picks.push(d);
+    }
+    if (gen !== searchGeneration || picks.length === 0) return;
 
-        const tagsHtml = article.tags.map(tag => {
-            const highlighted = tag.toLowerCase().includes(query)
-                ? `<span class="search-highlight">${tag}</span>`
-                : tag;
-            return `<span class="tag">${highlighted}</span>`;
-        }).join('');
-
-        const highlightText = (text) => {
-            const regex = new RegExp(`(${query})`, 'gi');
-            return text.replace(regex, '<span class="search-highlight">$1</span>');
-        };
-
-        const hubBadge = article.type === 'hub'
-            ? '<span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-400 ml-2">HUB</span>'
-            : '';
-
+    const t = window.IndexPage.t || function(k) { return k; };
+    const itemsHtml = picks.map(d => {
+        const title = (d.meta && d.meta.title) ? d.meta.title : d.url;
         return `
-            <div class="search-result-item p-4 rounded-lg border transition-colors">
-                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                    <div class="flex-grow min-w-0">
-                        <div class="flex flex-wrap items-center gap-2 text-xs search-meta mb-2">
-                            <span>${article.date}</span>
-                            <span>• ${categoryName}</span>${hubBadge}
-                        </div>
-                        <h4 class="text-base sm:text-lg font-bold mb-1">${highlightText(article.title)}</h4>
-                        <p class="text-sm search-desc">${highlightText(article.description)}</p>
-                        <div class="tags-container mt-2">
-                            <div class="tags-scroll">
-                                ${tagsHtml}
-                            </div>
-                        </div>
-                    </div>
-                    <a href="${article.path}" ${article.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="flex-shrink-0 accent-bg text-white text-sm font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity whitespace-nowrap self-start">
-                        ${(window.IndexPage.t || function(k){return k;})('search.readMore')}
-                    </a>
-                </div>
-            </div>
-        `;
+            <a href="${d.url}" class="search-fulltext-item block p-4 rounded-lg border transition-colors">
+                <h4 class="text-base font-bold mb-1">${title}</h4>
+                <p class="search-excerpt text-sm search-desc">${d.excerpt || ''}</p>
+            </a>`;
     }).join('');
 
-    resultsSection.classList.add('has-results');
+    const section = document.createElement('div');
+    section.id = 'search-fulltext';
+    section.innerHTML = `
+        <h3 class="text-lg font-bold mt-8 mb-1">${t('search.fulltext')} (${res.results.length})</h3>
+        <p class="text-xs search-meta mb-4">${t('search.fulltextNote')}</p>
+        <div class="space-y-3">${itemsHtml}</div>`;
+    const old = document.getElementById('search-fulltext');
+    if (old) old.remove();
+    resultsContainer.appendChild(section);
 
-    const searchResultCards = Array.from(resultsContainer.querySelectorAll('.search-result-item'));
-    if (searchResultCards.length > 0) {
-        window.IndexPage.initCardInteractions(searchResultCards);
-    }
+    sendAnalyticsEvent('blog_search_fulltext', {
+        search_term: query,
+        fulltext_count: res.results.length
+    });
 }
 
 // Export to namespace

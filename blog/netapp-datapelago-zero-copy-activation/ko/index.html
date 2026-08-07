@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>넷앱 DataPelago 인수, 제로카피 활성화로 저장 계층 AI 데이터 구현 | 페블러스</title>
+    <meta name="description" content="넷앱이 2026년 7월 AI 데이터 스타트업 DataPelago를 인수했다. 데이터를 GPU로 옮기지 않고 저장 계층에서 곧바로 AI에 쓰는 제로카피 활성화가, 데이터 품질과 거버넌스 실무에 남기는 질문을 짚는다.">
+    <meta name="keywords" content="넷앱 DataPelago 인수, 제로카피 활성화, AI-레디 데이터, Nucleus 엔진, 저장 계층 AI 데이터, 데이터 거버넌스, 스토리지 인프라, AI 데이터 병목, NetApp, DataPelago">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/netapp-datapelago-zero-copy-activation/ko/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/netapp-datapelago-zero-copy-activation/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/netapp-datapelago-zero-copy-activation/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/netapp-datapelago-zero-copy-activation/ko/">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="넷앱이 저장 계층에 심은 AI-레디 데이터 엔진">
+    <meta property="og:description" content="데이터를 옮겨서 정제하는 시대에서, 있는 자리에서 곧바로 활성화하는 시대로. 넷앱의 DataPelago 인수가 데이터 품질·거버넌스에 남기는 질문을 본다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/netapp-datapelago-zero-copy-activation/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/netapp-datapelago-zero-copy-activation/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="저장 계층에서 곧바로 AI에 활성화되는 데이터를 그린 도식">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="넷앱이 저장 계층에 심은 AI-레디 데이터 엔진">
+    <meta name="twitter:description" content="데이터를 옮겨서 정제하는 시대에서, 있는 자리에서 곧바로 활성화하는 시대로. 넷앱의 DataPelago 인수가 데이터 품질·거버넌스에 남기는 질문을 본다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/netapp-datapelago-zero-copy-activation/ko/image/index.png">
+    <meta name="twitter:image:alt" content="저장 계층에서 곧바로 AI에 활성화되는 데이터를 그린 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260726">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260726">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260726">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">넷앱, DataPelago를 인수하다</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">제로카피 활성화의 안쪽</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">넷앱만의 움직임이 아니다</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">잡무에서 인프라 속성으로</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">품질과 거버넌스는 어디로 가는가</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            넷앱이 2026년 7월 16일 AI 데이터 인프라 스타트업 DataPelago를 인수했다. 금액은 공개하지 않았고, DataPelago는 넷앱의 완전 자회사로 운영된다. 넷앱은 이 인수를 통해 스스로를 "기업 데이터의 제로카피 활성화를 실현하는 회사"로 규정했다. 문제의식은 분명하다. AI 시대의 진짜 병목은 GPU가 아니라 데이터를 준비하고 다스리고 쓸 수 있게 만드는 속도라는 것이다. 그 진단이 옳다면, 흔들리는 것은 스토리지 제품 하나가 아니라 데이터를 다루는 순서 전체다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            DataPelago의 Nucleus 엔진은 데이터를 별도의 컴퓨트 클러스터로 옮기지 않고 저장된 자리에서 CPU와 GPU로 곧바로 질의하고 변환한다. 넷앱만의 움직임도 아니다. Dell, HPE, VAST Data, Everpure가 저마다 다른 방식으로 같은 방향을 향한다. 2026년 1분기 스토리지 지출이 전년 대비 22.7% 뛰었고, 그 돈은 "AI가 곧바로 쓸 수 있는 데이터"를 만드는 플랫폼으로 몰렸다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            그래서 페블러스 독자에게 이 사건은 인수 뉴스 이상이다. 블로그의 간판 주제인 'AI-레디 데이터'가 파이프라인 속 한 단계에서 저장 계층 자체의 속성으로 격상되는 장면이기 때문이다. 이 글은 그 격상이 데이터 품질·거버넌스 실무에 무엇을 넘기고, 무엇을 여전히 사람의 몫으로 남기는지까지 짚는다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://www.netapp.com/newsroom/press-releases/news-rel-20260716-210092/" target="_blank" rel="noopener" class="text-orange-400 hover:text-orange-300 transition-colors">넷앱 보도자료</a> · 벤치마크는 <a href="https://www.blocksandfiles.com/ai-ml/2026/07/17/netapp-buys-datapelago-to-become-full-stack-ai-data-infrastructure-provider/5274250" target="_blank" rel="noopener" class="text-orange-400 hover:text-orange-300 transition-colors">Blocks&amp;Files</a> · 지출 통계는 <a href="https://www.forbes.com/sites/stevemcdowell/2026/07/24/enterprise-storage-is-rebuilding-itself-around-ai-ready-data/" target="_blank" rel="noopener" class="text-orange-400 hover:text-orange-300 transition-colors">Forbes</a></p>
+                    <p class="themeable-text leading-relaxed mb-6">아래 네 숫자가 이 글의 뼈대다. 앞의 둘은 저장 계층에서 바로 처리한다는 것이 성능·비용으로 무엇을 뜻하는지, 뒤의 둘은 이 흐름이 개별 벤더 마케팅이 아니라 업계 구조 변화임을 보여 준다.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">최대 10배</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Nucleus 처리 가속</p>
+                            <p class="text-xs themeable-muted mt-1">엔비디아 cuDF 대비 project 10.5·filter 10.1배</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1/2~1/3</p>
+                            <p class="text-sm themeable-text-secondary mt-1">처리 비용</p>
+                            <p class="text-xs themeable-muted mt-1">기존 컴퓨팅 대비 DataPelago 주장</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">+22.7%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">스토리지 지출 급증</p>
+                            <p class="text-xs themeable-muted mt-1">2026년 1분기 전년 대비 (Forbes)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">7,500만 달러+</p>
+                            <p class="text-sm themeable-text-secondary mt-1">DataPelago 누적 조달</p>
+                            <p class="text-xs themeable-muted mt-1">2021년 창업, 인수 시점까지</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">넷앱, DataPelago를 인수하다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        스스로를 "지능형 데이터 인프라 회사"로 부르는 넷앱이 2026년 7월 16일 DataPelago 인수를 발표했다. DataPelago는 캘리포니아 마운틴뷰에 자리한 AI 데이터 인프라 스타트업으로, AI와 분석 워크로드의 데이터 처리 병목을 없애는 접근으로 이름을 알렸다. 인수 금액은 공개되지 않았고, DataPelago는 넷앱의 완전 자회사로 편입된다. 넷앱이 최근 이어 온 시스코, 구글 클라우드, 레드햇, SK텔레콤과의 파트너십에 뒤이은 확장 행보로 소개됐다.
+                    </p>
+                    <figure class="my-8">
+                        <img src="./image/img-01-netapp-hq.jpg"
+                             alt="캘리포니아 서니베일에 위치한 넷앱 본사 건물과 로고"
+                             class="max-w-[560px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 캘리포니아 서니베일의 넷앱 본사. 이번 DataPelago 인수를 발표한 곳이다. | Source: <a href="https://commons.wikimedia.org/wiki/File:NetApp_Headquarters_Sunnyvale.jpg" target="_blank" rel="noopener" class="underline">Wikimedia Commons</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        넷앱이 밝힌 문제 정의가 이 인수의 성격을 압축한다. "AI는 우리 시대를 규정하는 플랫폼 전환이지만, 기업들은 가장 큰 병목이 데이터를 AI에 투입할 만큼 빠르게 준비하고 다스리고 활성화하는 일에 있음을 깨닫고 있다." 병목은 연산 자원이 아니라 데이터를 쓸 수 있는 상태로 만드는 속도라고 봤다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        넷앱 최고제품책임자 샴 네어는 인수의 핵심을 이렇게 설명했다. DataPelago의 Nucleus 엔진이 소프트웨어로 정의된 가속을 저장 계층에 직접 가져와, CPU와 GPU에 걸쳐 데이터를 처리함으로써 기업이 데이터를 옮기지 않고도 AI용으로 준비·거버넌스·활성화할 수 있게 한다는 것이다. 그는 이를 "진정한 제로카피 활성화"라고 못 박았다. DataPelago 창업자이자 CEO인 라잔 고얄은 "AI 혁신이 잠재력에 닿는 것을 막는 데이터 처리 병목을 없애겠다는 우리의 사명을, 업계 최고의 데이터 인프라 포트폴리오와 결합할 기회"라고 화답했다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            핵심 단어는 "옮기지 않고"다. 지금까지 기업 데이터는 저장소에 있고, AI는 그 데이터를 GPU가 있는 곳으로 대량 복사해 와서야 학습과 분석을 시작했다. 넷앱이 사들인 것은 그 복사 단계를 지워, 데이터가 놓인 자리에서 곧바로 AI에 쓰이게 만드는 기술이다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">제로카피 활성화의 안쪽</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        DataPelago의 Nucleus는 2024년 10월 스텔스에서 나올 때 "세계 최초의 범용 데이터 처리 엔진"으로 공개됐다. 구조는 두 층으로 나뉜다. 하나는 가속 컴퓨팅 가상 머신으로, 데이터 연산에 특화된 명령어 집합으로 CPU·GPU 같은 이종 하드웨어를 하나의 추상 계층 아래 묶는다. 다른 하나는 DataOS로, 각 연산을 그 순간 가장 적합한 하드웨어 자원에 배치한다. 정형·반정형·비정형 데이터를 가리지 않고, 데이터를 별도 컴퓨트 클러스터로 옮기는 대신 저장된 자리에서 곧장 질의하고 변환하며 AI에 쓸 상태로 준비한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        성능 주장도 구체적이다. DataPelago는 기존 컴퓨팅 대비 최대 10배 빠르고 비용은 절반에서 3분의 1 수준이라고 밝혔다. 엔비디아 cuDF와 비교한 벤치마크에서는 project 연산 최대 10.5배, filter 연산 최대 10.1배, aggregate 연산 최대 4.3배의 가속을 보고했다. Fast Company는 인수 이전인 2026년 3월 DataPelago를 "세계에서 가장 혁신적인 기업" 데이터 사이언스 부문 4위에 올렸다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기존 방식에서 데이터는 GPU가 있는 곳으로 대량 복사된 다음에야 처리됐다. 제로카피 방식은 그 복사 단계를 건너뛴다. 두 경로를 나란히 놓으면 "제로카피"가 지우는 지점이 어디인지 드러난다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 640 300" class="w-full max-h-[520px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" role="img" aria-label="기존 방식과 제로카피 활성화 방식의 데이터 경로 비교 도식">
+                            <defs>
+                                <marker id="mkr-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <polygon points="0 0, 8 3, 0 6" fill="var(--text-muted)"/>
+                                </marker>
+                                <marker id="mkr-flow-o" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <polygon points="0 0, 8 3, 0 6" fill="#F86825"/>
+                                </marker>
+                            </defs>
+
+                            <text x="320" y="26" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="var(--text-secondary)">데이터를 옮기던 방식 vs 저장 계층에서 바로 처리하는 방식</text>
+
+                            <!-- 기존 방식 -->
+                            <text x="40" y="76" font-family="Pretendard, sans-serif" font-size="11" font-weight="700" fill="var(--text-muted)">기존</text>
+                            <rect x="90" y="58" width="120" height="44" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="150" y="84" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="var(--text-secondary)">저장 계층</text>
+                            <line x1="212" y1="80" x2="352" y2="80" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#mkr-flow)"/>
+                            <text x="282" y="70" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="var(--text-muted)">대량 복사</text>
+                            <rect x="354" y="58" width="120" height="44" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="414" y="84" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="var(--text-secondary)">GPU 컴퓨트</text>
+                            <line x1="476" y1="80" x2="540" y2="80" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#mkr-flow)"/>
+                            <text x="556" y="84" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="var(--text-secondary)">처리</text>
+                            <text x="282" y="122" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="var(--text-muted)">이동 비용 · 지연 · 사본 관리 부담이 붙는다</text>
+
+                            <line x1="90" y1="150" x2="556" y2="150" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="2,5" opacity="0.4"/>
+
+                            <!-- 제로카피 방식 -->
+                            <text x="40" y="206" font-family="Pretendard, sans-serif" font-size="11" font-weight="700" fill="#F86825">제로카피</text>
+                            <rect x="90" y="180" width="260" height="52" rx="6" fill="#F86825" fill-opacity="0.06" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="220" y="203" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">저장 계층 + Nucleus 엔진</text>
+                            <text x="220" y="220" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="var(--text-muted)">CPU·GPU로 그 자리에서 질의·변환</text>
+                            <line x1="352" y1="206" x2="476" y2="206" stroke="#F86825" stroke-width="1.5" marker-end="url(#mkr-flow-o)"/>
+                            <text x="414" y="196" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="#F86825">복사 없음</text>
+                            <rect x="478" y="184" width="78" height="44" rx="6" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="517" y="210" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" fill="var(--text-secondary)">AI 활성화</text>
+
+                            <text x="320" y="278" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9" fill="var(--text-muted)" opacity="0.6">페블러스 원본 도식 (넷앱·DataPelago 발표 내용 기반)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 제로카피가 지우는 것은 데이터를 GPU로 옮기는 복사 단계다 | 페블러스 원본 도식
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 방향이 우연이 아님은 창업자 이력에서도 읽힌다. 라잔 고얄은 스탠퍼드 출신으로 가속 컴퓨팅을 20여 년 다뤄 온 엔지니어이며, 데이터센터 인프라 칩 회사 펀지블의 최고기술책임자를 지냈다. 펀지블은 2022년 마이크로소프트에 인수됐다. 특허 150건 이상을 보유한 그가 2021년 세운 DataPelago는, 연산을 데이터가 있는 곳으로 끌고 가려는 같은 문제의식의 연장선이다. 넷앱은 그 근육을 자사 스토리지 위에 얹었다.
+                    </p>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">넷앱만의 움직임이 아니다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 인수를 넷앱 한 회사의 승부수로만 읽으면 그림을 절반만 보는 것이다. 2026년 스토리지 업계 전체가 같은 메시지를 내고 있다. 경쟁의 축이 저장 용량과 성능에서 데이터 준비성과 거버넌스, AI 파이프라인 자동화로 옮겨 갔다는 것이다. 접근법은 회사마다 다르지만 향하는 곳은 겹친다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-400 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Dell</strong>은 엔비디아 생태계와 "AI 팩토리" 배포 대수를 앞세우고, 수십억 개 비정형 파일 인덱싱과 거버넌스된 파이프라인 통합, Starburst 기반 GPU 가속 SQL 엔진을 함께 내놓았다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-400 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>HPE</strong>는 주니퍼 인수 이후의 하이브리드 클라우드·네트워킹 서사에 데이터를 붙인다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-400 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>VAST Data</strong>는 처음부터 AI 워크로드 전용으로 설계된 아키텍처와 하이퍼스케일 레퍼런스 고객을 앞세운다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-400 mt-1 flex-shrink-0">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Everpure</strong>(옛 퓨어스토리지)는 GPU 클러스터에 사람 손 없이 데이터를 계속 공급하는 자동화 시스템 "Data Stream"을 베타로 공개했다.</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이것이 개별 마케팅이 아니라 구조 변화임을 뒷받침하는 숫자가 지출이다. 포브스의 스티브 맥다월은 2026년 1분기 스토리지 지출이 전년 대비 22.7% 뛰었다고 전하며, 기업들이 GPU에 돈을 쏟고도 파편화되고 다스려지지 않은 데이터 때문에 AI가 정체하고 값비싼 연산이 놀고 있다고 진단했다. 늘어난 지출은 "AI가 곧바로 쓸 수 있는 데이터를 안전하고 빠르게 만드는 플랫폼"으로 흘러갔다. 애널리스트 롭 스트레치는 DataPelago가 넷앱의 파일·오브젝트 스토리지와 멀티모달 기업 데이터, 아파치 스파크 같은 현대 분석 엔진 사이를 잇는 연결 계층으로 진화할 수 있다고 봤다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 걸음 물러서서 보면 전선은 둘로 갈린다. 넷앱 같은 인프라 벤더는 저장 계층에서 위로 기능을 끌어올리고, 팔란티어 같은 애플리케이션 플랫폼은 위에서 아래로 데이터에 손을 뻗는다. 데이터를 발견하고 카탈로그로 정리하고 공유하고 접근을 통제하는 영역을 두고 두 방향이 동시에 좁혀 오는 중이다. 넷앱의 이번 인수는 그 아래쪽 전선에서 나온 한 수다. 그래서 이 사건은 개별 딜을 넘어 <strong>데이터가 놓이는 자리 자체가 경쟁의 무대가 됐다</strong>는 신호로 읽힌다. 다음 절이 다루는 'AI-레디 데이터의 격상'은 바로 이 무대 이동의 다른 이름이다.
+                    </p>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">잡무에서 인프라 속성으로</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 페블러스 독자에게 중요한 지점이 열린다. 지금까지 'AI-레디 데이터'는 대개 파이프라인 안의 한 단계로 취급됐다. 수집하고, 정제하고, 라벨을 붙이고, 학습에 넘기는 여러 공정 중 하나. 그 단계는 언제나 데이터를 어딘가로 옮긴 다음에야 시작됐다. 넷앱의 인수가 보여 주는 것은 그 공정이 저장 계층 자체의 속성으로 흡수되는 방향이다. "옮겨서 정제한다"에서 "있는 자리에서 활성화한다"로의 이동이다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 640 260" class="w-full max-h-[500px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" role="img" aria-label="AI-레디 데이터가 파이프라인 단계에서 저장 계층 속성으로 이동하는 도식">
+                            <text x="320" y="26" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="13" font-weight="600" fill="var(--text-secondary)">'AI-레디'가 놓이는 자리의 이동</text>
+
+                            <!-- 전: 파이프라인 단계 -->
+                            <text x="320" y="58" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="700" fill="var(--text-muted)">전 — 옮긴 뒤 처리하는 한 단계</text>
+                            <rect x="70" y="72" width="96" height="34" rx="5" fill="none" stroke="var(--text-muted)" stroke-width="1.3"/>
+                            <text x="118" y="93" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="var(--text-secondary)">수집</text>
+                            <rect x="186" y="72" width="96" height="34" rx="5" fill="none" stroke="var(--text-muted)" stroke-width="1.3"/>
+                            <text x="234" y="93" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="var(--text-secondary)">이동·정제</text>
+                            <rect x="302" y="72" width="96" height="34" rx="5" fill="#F86825" fill-opacity="0.08" stroke="#F86825" stroke-width="1.3"/>
+                            <text x="350" y="93" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" font-weight="700" fill="#F86825">AI-레디</text>
+                            <rect x="418" y="72" width="96" height="34" rx="5" fill="none" stroke="var(--text-muted)" stroke-width="1.3"/>
+                            <text x="466" y="93" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="10" fill="var(--text-secondary)">학습</text>
+
+                            <line x1="166" y1="89" x2="184" y2="89" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="282" y1="89" x2="300" y2="89" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="398" y1="89" x2="416" y2="89" stroke="var(--text-muted)" stroke-width="1"/>
+
+                            <line x1="70" y1="140" x2="570" y2="140" stroke="var(--text-muted)" stroke-width="0.5" stroke-dasharray="2,5" opacity="0.4"/>
+
+                            <!-- 후: 저장 계층 속성 -->
+                            <text x="320" y="172" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="11" font-weight="700" fill="#F86825">후 — 저장 계층에 내장된 속성</text>
+                            <rect x="150" y="188" width="340" height="48" rx="8" fill="#F86825" fill-opacity="0.06" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="320" y="210" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="12" font-weight="700" fill="var(--text-secondary)">저장 계층 = AI-레디</text>
+                            <text x="320" y="227" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="9.5" fill="var(--text-muted)">데이터가 놓인 자리에서 준비·활성화가 함께 일어난다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ AI-레디가 파이프라인의 한 칸에서 저장 계층의 속성으로 옮겨 간다 | 페블러스 원본 도식
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 격상은 실무의 무게중심을 옮긴다. 데이터를 옮기는 수고, 사본을 관리하는 수고, 옮겨 온 데이터가 원본과 어긋나지 않는지 확인하는 수고가 줄어든다. 저장 계층이 처음부터 AI가 읽을 수 있는 형태로 데이터를 내주면, 준비를 위해 별도 공정을 세우던 팀의 일은 가벼워진다. 여기까지는 분명한 진전이다.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">품질과 거버넌스는 어디로 가는가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그렇다면 지금까지 별도 단계로 서 있던 데이터 품질 진단과 정제, 거버넌스는 어디로 가는가. 저장 계층이 데이터를 빠르게 활성화한다고 해서, 그 데이터가 무엇이 맞고 무엇이 틀렸는지 판정하는 일까지 대신해 주는 것은 아니다. 오히려 활성화 속도가 빨라질수록, 잘못된 데이터가 더 빨리 더 널리 퍼질 위험도 함께 커진다. 인프라는 데이터를 옮기는 수고를 없애 준다. 그러나 이 데이터를 써도 되는지, 이 값이 믿을 만한지 판단하는 수고는 대신하지 못한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        과장은 경계할 필요가 있다. 인수 금액도, 통합 로드맵도 아직 공개되지 않았다. Nucleus가 넷앱 스토리지 전 제품군에 언제 어떤 형태로 들어갈지도 확정되지 않았다. 그리고 "제로카피"가 지우는 것은 데이터를 옮기는 비용이지, 거버넌스 규칙이나 품질 기준 그 자체가 아니다. 어떤 데이터에 누가 접근해도 되는지, 어떤 값이 정확하고 완전한지를 정하는 일은 여전히 사람과 정책의 몫으로 남는다. 저장 계층은 그 규칙을 더 빠르게 적용해 줄 수는 있어도, 규칙을 대신 만들어 주지는 않는다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 이 사건이 남기는 결론은 역설에 가깝다. 인프라가 데이터를 대신 준비해 줄수록, 무엇을 준비할지 아는 일의 값은 도리어 오른다. 옮기고 정제하는 손이 자동화될 때, 어떤 데이터가 쓸 만하고 어떤 데이터가 위험한지 먼저 가려내는 눈이 병목의 새 자리로 이동한다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note.</strong> 페블러스가 AI-레디 데이터를 이야기할 때 '진단 후 정제'를 강조해 온 이유가 여기에 있다. 무엇이 문제인지 먼저 드러내고 그다음 고친다는 순서다. 넷앱의 인수가 그리는 '내장형 준비'는 그 순서와 부딪치기보다 짝을 이룬다. 저장 계층이 준비를 내장할수록, 무엇을 준비 대상으로 삼을지 판정하는 진단은 사라지지 않고 오히려 앞자리로 나온다. 인프라가 활성화를 맡는다면, 그 활성화가 옳은 데이터를 향하는지 확인하는 일이 그다음 층이다. 우리가 관심을 두는 곳이 바로 거기다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- 참고문헌 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-lg font-semibold themeable-heading mb-3">공식 발표</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">NetApp. (2026). "<a href="https://www.netapp.com/newsroom/press-releases/news-rel-20260716-210092/" target="_blank" rel="noopener">NetApp Establishes Itself as the Company That Makes Zero-Copy Activation of Enterprise Data for AI Real</a>." <em>NetApp Newsroom</em>. — DataPelago 인수 공식 발표, 샴 네어·라잔 고얄 인용 원문.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">DataPelago. (2024). "<a href="https://www.datapelago.io/press-release/2024-10-01-launch" target="_blank" rel="noopener">DataPelago Launch Announcement — Universal Data Processing Engine</a>." <em>DataPelago</em>. — Nucleus 2계층 아키텍처 스텔스 탈출 발표.</span></li>
+                    </ul>
+
+                    <h3 class="text-lg font-semibold themeable-heading mb-3">업계·보도</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">3.</span><span class="ref-body">HPCwire / BigDATAwire. (2026). "<a href="https://www.hpcwire.com/bigdatawire/this-just-in/netapp-acquires-datapelago-making-data-ai-ready-at-the-infrastructure-layer/" target="_blank" rel="noopener">NetApp Acquires DataPelago, Making Data AI-Ready at the Infrastructure Layer</a>." <em>HPCwire</em>.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Blocks &amp; Files. (2026). "<a href="https://www.blocksandfiles.com/ai-ml/2026/07/17/netapp-buys-datapelago-to-become-full-stack-ai-data-infrastructure-provider/5274250" target="_blank" rel="noopener">NetApp buys DataPelago to become full-stack AI data infrastructure provider</a>." <em>Blocks &amp; Files</em>. — Nucleus 벤치마크 수치 출처.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">TechTarget. (2026). "<a href="https://www.techtarget.com/searchstorage/news/366645908/NetAppDataPelago-deal-ups-AI-data-management-ante" target="_blank" rel="noopener">NetApp-DataPelago deal ups AI data management ante</a>." <em>TechTarget (SearchStorage)</em>. — 애널리스트 Rob Strechay 코멘트.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">McDowell, S. (2026). "<a href="https://www.forbes.com/sites/stevemcdowell/2026/07/24/enterprise-storage-is-rebuilding-itself-around-ai-ready-data/" target="_blank" rel="noopener">Enterprise Storage Is Rebuilding Itself Around AI-Ready Data</a>." <em>Forbes</em>. — 2026년 1분기 스토리지 지출 22.7% 급증 수치 출처.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">NAND Research. (2026). "<a href="https://nand-research.com/why-netapp-acquired-datapelago-nucleus-and-its-enterprise-ai-strategy/" target="_blank" rel="noopener">Why NetApp Acquired DataPelago: Nucleus and Its Enterprise AI Strategy</a>." <em>NAND Research</em>. — Dell·HPE·VAST Data·Everpure 업계 비교.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Pulse2. (2024). "<a href="https://pulse2.com/datapelago-universal-data-processing-engine-and-47-million-funding-revealed/" target="_blank" rel="noopener">DataPelago Universal Data Processing Engine And $47 Million Funding Revealed</a>." <em>Pulse2</em>. — 창업 초기 펀딩·창업자 배경.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260726"></script>
+    <script src="/scripts/citation-download.js?v=20260726"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-07-25T18:36:10.554Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-07-25T18:46:51.309Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1785004570554-20piky",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-07-25T19:16:36.686Z"
+            },
+            mainTitle: "넷앱이 저장 계층에 심은 AI-레디 데이터 엔진",
+            subtitle: "인수한 DataPelago의 Nucleus 엔진, 데이터를 옮기지 않고 저장 계층에서 곧바로 AI에 활성화한다",
+            pageTitle: "넷앱 DataPelago 인수, 제로카피 활성화로 저장 계층 AI 데이터 구현 | 페블러스",
+            category: "business",
+            publishDate: "2026-07-26",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/netapp-datapelago-zero-copy-activation/ko/",
+            tags: ["넷앱 DataPelago 인수", "제로카피 활성화", "AI-Ready Data", "Nucleus 엔진", "저장 계층 AI 데이터", "데이터 거버넌스", "스토리지 인프라", "AI 데이터 병목", "NetApp", "DataPelago"],
+            faqs: [
+                { question: "넷앱은 DataPelago를 언제, 얼마에 인수했나요?", answer: "넷앱은 2026년 7월 16일 AI 데이터 인프라 스타트업 DataPelago 인수를 발표했습니다. 인수 금액은 공개되지 않았고, DataPelago는 넷앱의 완전 자회사로 운영됩니다. DataPelago는 2021년 창업 이후 인수 시점까지 누적 7,500만 달러 이상을 조달했습니다." },
+                { question: "'제로카피 활성화(zero-copy activation)'가 무슨 뜻인가요?", answer: "데이터를 GPU가 있는 별도 컴퓨트 클러스터로 대량 복사해 옮기지 않고, 데이터가 저장된 자리에서 곧바로 AI에 쓸 수 있게 준비·처리하는 방식입니다. 복사 단계를 지우기 때문에 이동 비용과 지연, 사본 관리 부담이 줄어듭니다. 넷앱 최고제품책임자 샴 네어는 이 인수의 핵심을 '진정한 제로카피 활성화'라고 표현했습니다." },
+                { question: "DataPelago의 Nucleus 엔진은 어떻게 작동하나요?", answer: "Nucleus는 두 계층으로 이뤄집니다. 데이터 연산에 특화된 명령어로 CPU·GPU 등 이종 하드웨어를 추상화하는 가속 컴퓨팅 가상 머신과, 각 연산을 가장 적합한 하드웨어에 배치하는 DataOS입니다. 정형·반정형·비정형 데이터를 저장된 자리에서 곧장 질의·변환합니다. DataPelago는 기존 컴퓨팅 대비 최대 10배 빠르고 비용은 절반에서 3분의 1 수준이라고 주장합니다." },
+                { question: "이 인수가 넷앱만의 움직임인가요?", answer: "아닙니다. 2026년 스토리지 업계 전체가 경쟁의 축을 저장 용량·성능에서 데이터 준비성과 거버넌스로 옮기고 있습니다. Dell은 AI 팩토리와 GPU 가속 SQL 엔진을, VAST Data는 AI 전용 아키텍처를, Everpure는 GPU에 데이터를 자동 공급하는 Data Stream을 내놓았습니다. 2026년 1분기 스토리지 지출은 전년 대비 22.7% 뛰었습니다." },
+                { question: "왜 'AI-레디 데이터'가 인프라 속성으로 격상된다고 보나요?", answer: "지금까지 AI-레디 데이터는 수집·정제·라벨링·학습으로 이어지는 파이프라인 속 한 단계로 취급됐고, 그 단계는 언제나 데이터를 옮긴 뒤에야 시작됐습니다. 넷앱의 인수는 그 준비 공정이 저장 계층 자체의 속성으로 흡수되는 방향을 보여 줍니다. '옮겨서 정제한다'에서 '있는 자리에서 활성화한다'로의 이동입니다." },
+                { question: "그러면 데이터 품질 진단과 거버넌스는 더 이상 필요 없나요?", answer: "그렇지 않습니다. 저장 계층이 데이터를 빠르게 활성화한다고 해서, 그 데이터가 맞는지 틀리는지 판정하는 일까지 대신하지는 않습니다. 오히려 활성화가 빨라질수록 잘못된 데이터가 더 빨리 퍼질 위험이 커집니다. 인프라는 데이터를 옮기는 수고는 없애도, 써도 되는 데이터인지 판단하는 수고는 대신하지 못합니다." },
+                { question: "이 흐름이 페블러스의 관점과 어떻게 맞닿나요?", answer: "페블러스는 AI-레디 데이터를 이야기할 때 '진단 후 정제', 즉 무엇이 문제인지 먼저 드러내고 그다음 고치는 순서를 강조해 왔습니다. 넷앱이 그리는 '내장형 준비'는 이 순서와 부딪치기보다 짝을 이룹니다. 저장 계층이 준비를 내장할수록, 무엇을 준비 대상으로 삼을지 판정하는 진단이 오히려 앞자리로 나오기 때문입니다." },
+                { question: "실무자 입장에서 지금 당장 무엇이 바뀌나요?", answer: "당장의 변화는 제한적입니다. 인수 금액과 통합 로드맵이 공개되지 않았고, Nucleus가 넷앱 제품군에 언제 들어갈지도 확정되지 않았습니다. 다만 방향은 분명합니다. 데이터를 옮기고 사본을 관리하던 수고가 줄어드는 대신, 어떤 데이터가 쓸 만하고 어떤 데이터가 위험한지 먼저 가려내는 진단의 값이 상대적으로 커집니다." }
+            ]
+        });
+    </script>
+</body>
+</html>

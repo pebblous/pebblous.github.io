@@ -30,17 +30,30 @@ Pebblous Blog (`blog.pebblous.ai`) — a static site on GitHub Pages for Pebblou
 
 ### 자동 동기화
 
-진본 main에 자산 2/3 변경 push → [`sync-to-sabon.yml`](.github/workflows/sync-to-sabon.yml) 자동 트리거 → 사본에 `auto-sync: 진본 blog-service@<sha>` PR 자동 생성 → 사람이 검토 후 머지.
+진본 main에 자산 2/3 변경 push → [`sync-to-sabon.yml`](.github/workflows/sync-to-sabon.yml) 자동 트리거 → 사본에 `auto-sync: 진본 blog-service@<sha>` PR 자동 생성 → **워크플로우가 그 PR을 자동 머지**(보통 3~4초). 자산 2/3은 진본→사본 단방향 미러라 PR 누적을 막기 위한 설계다.
+
+⚠️ **사람 검토는 충돌 시에만 개입한다.** 자동 머지가 실패해야(= reverse-divergence 충돌 등) PR이 열린 채 남는다. 즉 **사본에 나가는 걸 막을 마지막 관문은 사본 PR이 아니라 진본 머지 시점**이다 — 진본 main에 들어가는 순간 사실상 사본에도 나간다고 보고 검토할 것.
 
 상세: [`docs/blog-service/sync.md`](docs/blog-service/sync.md)
 
 ### Reverse-divergence 발생 시 (이미 사본에서 수정된 변경이 있다면)
 
-1. 자동 sync PR이 그 변경을 덮어쓰려 함 (보수적 모드라 삭제는 안 하지만 덮어쓰기는 함)
-2. 그런 PR은 머지 보류
-3. 사본의 변경을 명시적으로 진본에 reverse-sync (PR로 — 사본 → 진본 수동)
-4. 그 후 자동 sync 재트리거 → 깨끗한 새 PR → 머지
-5. (사례: 2026-05-24 PR #6 — 사본 PR #188의 `report-produce/skill.md` 변경을 진본에 reverse-sync)
+⛔ **먼저 알아둘 것**: 덮어쓰기는 git 충돌이 아니라서 **자동 머지를 막지 못한다.** "그런 PR은 머지
+보류" 같은 사후 대응은 성립하지 않는다 — PR은 3~4초 만에 이미 머지된 뒤다. 자동 머지가 걸리는 건
+진짜 충돌이 났을 때뿐이다.
+
+따라서 **예방이 유일한 방어**다. 사본의 자산 2/3을 직접 고치지 말 것(위 정책). 그게 지켜지면
+reverse-divergence 자체가 안 생긴다.
+
+이미 덮어써진 뒤라면 복구 절차:
+
+0. **어느 파일이 갈라졌는지부터 확정한다** — 진본 Actions 의 `Audit 사본 divergence` 를 수동
+   실행하면 ⛔ 표시로 목록이 나온다 (`node tools/audit-sabon-divergence.js`). 주 1회 자동 실행되고,
+   갈라진 파일이 있으면 job 이 실패한다.
+1. 사본에서 덮어써진 내용을 git 히스토리로 복원 (auto-sync 머지 커밋 직전 상태)
+2. 그 변경을 명시적으로 진본에 reverse-sync (PR로 — 사본 → 진본 수동)
+3. 진본 머지 → 자동 sync 재트리거 → 사본이 올바른 내용으로 다시 덮어써짐
+4. (사례: 2026-05-24 PR #6 — 사본 PR #188의 `report-produce/skill.md` 변경을 진본에 reverse-sync)
 
 ### 관련 문서
 
@@ -147,6 +160,10 @@ python3 tools/scan-articles-meta.py --dry-run  # 변경 없이 미리보기
 node tools/generate-rss.js            # Regenerate RSS feed
 node tools/generate-sitemap.js        # Regenerate sitemap.xml
 python3 tools/generate-llms-txt.py  # Regenerate llms.txt (AI crawler index)
+python3 tools/check-cache-bust.py   # 공용 CSS/JS 변경 시 index.html ?v= 스테일 검사 (사본 CI check-cache-bust.yml이 PR마다 실행)
+python3 tools/build-search-index.py  # Pagefind 전문 검색 인덱스 빌드 — noindex/보호 페이지 자동 배제 (사본 CI build-search-index.yml이 main push마다 실행, /pagefind/ 커밋)
+python3 tools/build-article-graph.py --site <사본경로> --output <dir>  # 블로그 지식그래프 → PebbloScope Scholar 규격 (graph/corpus/meta.json; --sample N 층화 축소판)
+node tools/audit-sabon-divergence.js --sabon <사본경로>  # 진본↔사본 자산 2/3 갈라짐(reverse-divergence) 감사 — 사본 auto-sync PR이 충돌로 막혔을 때 첫 진단 (CI audit-sabon-divergence.yml 주 1회 + 수동)
 
 # HTML-중립 본문 원고 (index.md) — 출간 후 인간 수정용
 python3 tools/extract-manuscript.py <path/index.html>   # 옆에 index.md 역추출
@@ -549,6 +566,8 @@ For deeper reference, see `docs/`:
 - `docs/sns-writing-tone.md` — SNS "Warm Expert Tone" with data-farming metaphors
 - `docs/index-renovation.md` — Index page renovation history (P0-P3)
 - `docs/post-writing-lessons-for-pb.md` — pb(Pebblo Claw) 전용 포스팅 작성 가이드 (PR#23 리뷰 교훈)
+- `docs/ko-style-standard.md` — **한국어 문체·용어 표준** (판정 기준=격 일치, 중의성, 항목을 세우는 절차)
+- `docs/terminology-ledger.md` — **용어 대장** (낱말이 두 이름으로 갈릴 때의 결정과 근거)
 - `docs/ai-tone-detection.md` — **AI 문체 검출·교정 가이드** (T1~T11 11종 tell, BlogScope·외부 평가 에이전트 참조용 공식 문서)
 
 ## Skill Workflow Chain
