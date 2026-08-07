@@ -47,6 +47,9 @@ reverse-divergence 자체가 안 생긴다.
 
 이미 덮어써진 뒤라면 복구 절차:
 
+0. **어느 파일이 갈라졌는지부터 확정한다** — 진본 Actions 의 `Audit 사본 divergence` 를 수동
+   실행하면 ⛔ 표시로 목록이 나온다 (`node tools/audit-sabon-divergence.js`). 주 1회 자동 실행되고,
+   갈라진 파일이 있으면 job 이 실패한다.
 1. 사본에서 덮어써진 내용을 git 히스토리로 복원 (auto-sync 머지 커밋 직전 상태)
 2. 그 변경을 명시적으로 진본에 reverse-sync (PR로 — 사본 → 진본 수동)
 3. 진본 머지 → 자동 sync 재트리거 → 사본이 올바른 내용으로 다시 덮어써짐
@@ -160,6 +163,7 @@ python3 tools/generate-llms-txt.py  # Regenerate llms.txt (AI crawler index)
 python3 tools/check-cache-bust.py   # 공용 CSS/JS 변경 시 index.html ?v= 스테일 검사 (사본 CI check-cache-bust.yml이 PR마다 실행)
 python3 tools/build-search-index.py  # Pagefind 전문 검색 인덱스 빌드 — noindex/보호 페이지 자동 배제 (사본 CI build-search-index.yml이 main push마다 실행, /pagefind/ 커밋)
 python3 tools/build-article-graph.py --site <사본경로> --output <dir>  # 블로그 지식그래프 → PebbloScope Scholar 규격 (graph/corpus/meta.json; --sample N 층화 축소판)
+node tools/audit-sabon-divergence.js --sabon <사본경로>  # 진본↔사본 자산 2/3 갈라짐(reverse-divergence) 감사 — 사본 auto-sync PR이 충돌로 막혔을 때 첫 진단 (CI audit-sabon-divergence.yml 주 1회 + 수동)
 
 # HTML-중립 본문 원고 (index.md) — 출간 후 인간 수정용
 python3 tools/extract-manuscript.py <path/index.html>   # 옆에 index.md 역추출
