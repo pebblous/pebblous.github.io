@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>AI 에이전트 재현성 — 실행 중 바뀌는 모델·인덱스와 의미 격리 | 페블러스</title>
+    <meta name="description" content="에이전트 실행이 멈췄다 재개되는 사이 모델 별칭과 검색 인덱스가 갱신되면서, 호출은 모두 성공해도 결과는 앞뒤가 맞지 않게 된다. arXiv 논문은 이를 네 가지 이상 현상으로 정리하고 LangGraph 저장소 100개 중 7.4%가 방어 없이 리소스를 참조한다고 보고했다.">
+    <meta name="keywords" content="AI 에이전트 재현성, 의미 격리, semantic isolation, 에이전트 워크플로우 버전 드리프트, 데이터 버저닝, 데이터 계보, 트랜잭션 격리 수준, LangGraph 체크포인트, 불변 바인딩, AI 에이전트 감사">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/agent-semantic-isolation/ko/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/agent-semantic-isolation/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/agent-semantic-isolation/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/agent-semantic-isolation/ko/">
+
+    <meta name="citation_title" content="AI 에이전트 재현성 — 실행 중 바뀌는 모델·인덱스와 의미 격리">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/08/09">
+    <meta name="citation_online_date" content="2026/08/09">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="멈췄다 재개된 AI 에이전트가 다른 모델로 답을 완성한다">
+    <meta property="og:description" content="실행이 멈춰 있는 사이 모델 별칭과 검색 인덱스가 각자 갱신된다. 호출은 전부 성공하는데 결과만 앞뒤가 맞지 않는다. 데이터베이스가 40년 전 트랜잭션 격리로 풀었던 문제가 의미 계층에서 되돌아왔다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/agent-semantic-isolation/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/agent-semantic-isolation/ko/image/index.png">
+    <meta property="og:locale" content="ko_KR">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="멈췄다 재개된 AI 에이전트가 다른 모델로 답을 완성한다">
+    <meta name="twitter:description" content="실행이 멈춰 있는 사이 모델 별칭과 검색 인덱스가 각자 갱신된다. 호출은 전부 성공하는데 결과만 앞뒤가 맞지 않는다. 데이터베이스가 40년 전 트랜잭션 격리로 풀었던 문제가 의미 계층에서 되돌아왔다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/agent-semantic-isolation/ko/image/index.png">
+    <meta name="twitter:image:alt" content="워크플로우 실행이 멈춰 있는 동안 검색 인덱스와 모델 별칭이 갱신되는 구조를 나타낸 타임라인 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260809">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260809">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260809">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">에러 로그에는 아무것도 남지 않는다</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">실행이 자기가 시작된 환경보다 오래 산다</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">어긋남에 네 개의 이름이 붙었다</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">데이터베이스는 이 문제를 40년 전에 풀었다</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">공개 저장소 100개를 열어 보니 7.4%가 무방비였다</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">무엇을 근거로 판단했는지가 남아 있는가</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            승인을 기다리느라 두 시간 멈춰 있던 에이전트가 다시 움직인다. 그사이 검색 인덱스는 다시 쌓였고 모델 별칭은 새 버전을 가리키게 됐다. 재개된 실행은 처음 근거를 모을 때와 다른 전제 위에서 답을 마무리하는데, 호출은 하나도 실패하지 않는다. 실행은 멈춤과 재시도, 분기, 위임을 거치며 몇 시간씩 늘어진다. 그동안 프롬프트와 모델 별칭, 검색 인덱스, 정책은 서로에 아랑곳없이 각자 배포된다. 이름은 그대로인 채 그 이름이 가리키는 대상만 바뀐다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            바르잔 모자파리(Barzan Mozafari)가 8월 5일 arXiv에 올린 논문은 저장된 상태와 바뀐 전제가 한 실행 안에서 만나면 모든 호출이 성공해도 결과가 앞뒤가 맞지 않을 수 있다고 정리한다. 실행 가능한 LangGraph 코드를 담은 스타 상위 100개 공개 저장소를 훑은 결과, 상태를 이어 가는 워크플로우를 쓰는 코드베이스의 7.4%가 살아 있는 리소스나 실행 중 고르는 리소스를 불변 바인딩 없이 참조하고 있었다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            논문의 형식적 증명보다 실무자에게 중요한 것은 이 어긋남이 조용하다는 사실이다. 예외도 재시도 실패도 없고 로그에는 정상 종료만 남는다. 이 글은 논문이 그 어긋남을 데이터베이스의 격리 문제로 정식화하며 붙인 네 가지 이름을 하나씩 보고, 데이터를 가진 쪽이 무엇을 기록해 두어야 하는지까지 따라간다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2608.05412" target="_blank" rel="noopener" class="text-orange-400 hover:text-orange-300 transition-colors">arXiv:2608.05412</a></p>
+                    <p class="themeable-text leading-relaxed mb-6">이 문제는 아직 오지 않은 위험이 아니라 이미 배포된 코드에서 확인된 상태다.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">7.4%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">방어 없이 리소스를 참조한 코드베이스</p>
+                            <p class="text-xs themeable-muted mt-1">상태를 이어 가는 워크플로우를 쓰면서 불변 바인딩이 보이지 않는 비율</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">100개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">감사 대상 공개 저장소</p>
+                            <p class="text-xs themeable-muted mt-1">실행 가능한 LangGraph 코드를 담은 스타 상위 저장소, 별도 벤치마크가 아닌 실제 코드</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">마이크로초</p>
+                            <p class="text-sm themeable-text-secondary mt-1">프로토타입의 검사 비용</p>
+                            <p class="text-xs themeable-muted mt-1">SemIso가 비호환 리소스와 분기 병합을 실행 중에 막는 데 드는 시간 단위</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">에러 로그에는 아무것도 남지 않는다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        승인 요청 하나를 앞에 두고 에이전트가 멈춰 있다고 하자. 1단계에서 사내 문서를 검색해 근거를 모아 뒀고, 2단계에서는 그 근거로 답을 종합할 참이다. 담당자가 결재를 누르기까지 두 시간이 걸렸고 그사이 야간 배치가 검색 인덱스를 다시 쌓았다. 재개된 실행은 새 인덱스 위에서 답을 마무리한다. 근거를 모은 세계와 답을 쓴 세계가 서로 다른 셈이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 실패는 예외로 드러나지 않는다. 검색도 성공했고 모델 호출도 성공했다. 재시도가 돌지도 않았고 타임아웃도 나지 않았다. 관측 도구가 보여 주는 것은 정상 종료된 실행 하나뿐이다. 논문이 짚는 지점이 여기다. 워크플로우는 저장해 둔 상태와 그사이 바뀐 전제를 한자리에서 섞어 쓰게 되고, 그 결과는 모든 호출이 성공한 상태에서도 스스로 앞뒤가 맞지 않는다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 까다로운 것은 이름이 바뀌지 않는다는 점이다. 논문의 표현으로는 안정된 이름이 새로운 동작을 얻는다. 코드에 적힌 모델 별칭은 지난달과 같고 프롬프트 템플릿의 경로도 같고 벡터 인덱스의 이름도 같다. 바뀐 것은 그 이름이 오늘 가리키는 대상이다. 배포 파이프라인 입장에서는 정상적인 업데이트이고, 실행 중인 워크플로우 입장에서는 발밑이 갈린 것이다.
+                    </p>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">실행이 자기가 시작된 환경보다 오래 산다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문은 첫 문장에서 조건을 못 박는다. AI 실행은 이제 자신이 시작된 환경보다 오래 살아남을 수 있다. 한 번의 모델 호출 안에 들어가던 일이 멈춤과 재시도, 분기, 서브에이전트, 모델이 고르는 도구 호출로 펼쳐지면서 실행의 수명이 길어졌다. 수명이 길어진 만큼 그 아래에서 리소스가 갈아치워질 시간도 함께 늘어난다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        아래 도식은 두 개의 시간대를 겹쳐 놓은 것이다. 위쪽은 워크플로우의 진행이고 아래쪽은 그 워크플로우가 참조하는 리소스의 배포다. 두 시간대는 서로를 모른 채 각자 흐른다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 250" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" aria-label="워크플로우 실행 타임라인과 리소스 배포 타임라인을 겹쳐 놓은 도식. 실행이 사람 승인을 기다리며 멈춰 있는 동안 검색 인덱스가 재구축되고 모델 별칭이 갱신되며, 재개된 단계는 바뀐 리소스 위에서 답을 완성한다">
+                            <text x="340" y="26" text-anchor="middle" font-family="Outfit,Pretendard,sans-serif" font-size="12" font-weight="600" style="fill:var(--text-secondary)">멈춰 있는 동안 아래쪽이 바뀐다</text>
+
+                            <rect x="240" y="44" width="200" height="176" rx="10" fill="#F86825" fill-opacity="0.06" stroke="#F86825" stroke-opacity="0.4" stroke-width="1.2" stroke-dasharray="5 4"/>
+                            <text x="340" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">사람 승인을 기다리는 두 시간</text>
+
+                            <text x="128" y="98" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" style="fill:var(--text-secondary)">워크플로우 실행</text>
+                            <line x1="142" y1="94" x2="652" y2="94" stroke-width="1.6" style="stroke:var(--text-muted)"/>
+                            <circle cx="184" cy="94" r="5" fill="#F86825"/>
+                            <text x="184" y="116" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-secondary)">1단계 검색</text>
+                            <circle cx="240" cy="94" r="5" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="240" y="132" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-muted)">체크포인트 저장</text>
+                            <circle cx="440" cy="94" r="5" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="440" y="82" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-secondary)">재개</text>
+                            <circle cx="600" cy="94" r="5" fill="#F86825"/>
+                            <text x="600" y="116" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-secondary)">2단계 종합</text>
+
+                            <path d="M440 176 V108" fill="none" stroke="#F86825" stroke-width="1.4" stroke-dasharray="4 3"/>
+                            <path d="M435 114 L440 104 L445 114 Z" fill="#F86825"/>
+
+                            <text x="128" y="190" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" style="fill:var(--text-secondary)">리소스 배포</text>
+                            <line x1="142" y1="186" x2="652" y2="186" stroke-width="1.6" style="stroke:var(--text-muted)"/>
+                            <circle cx="298" cy="186" r="5" fill="#F86825" fill-opacity="0.55"/>
+                            <text x="298" y="172" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-secondary)">검색 인덱스 재구축</text>
+                            <circle cx="392" cy="186" r="5" fill="#F86825" fill-opacity="0.55"/>
+                            <text x="392" y="208" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-secondary)">모델 별칭 갱신</text>
+
+                            <text x="600" y="212" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" font-weight="600" fill="#F86825">모든 호출 성공</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ 페블러스 원본 도식 — 체크포인트는 실행의 상태를 되살리지만, 그 상태가 가리키던 리소스까지 되살리지는 않는다.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 구분은 실무에서 이미 논쟁거리였다. 체크포인트를 남긴다는 것과 그 체크포인트가 참조하는 리소스가 여전히 유효하다는 것은 다른 보장이라는 지적이 프로덕션 에이전트 런타임을 다루는 쪽에서 반복해서 나왔다. 세션 메모리가 남아 있다고 해서 어떤 셸 명령이 실제로 실행됐는지, 재시도가 부작용을 두 번 일으키지 않았는지가 증명되는 것은 아니다. 상태 복원과 전제 복원은 다른 일이다.
+                    </p>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">어긋남에 네 개의 이름이 붙었다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문의 실질적인 기여는 이 어긋남을 자동으로 검출 가능한 네 가지 이상 현상으로 갈라놓은 데 있다. 이름이 붙기 전까지 이 증상들은 재현되지 않는 버그 하나로 뭉뚱그려졌다. 네 가지는 발생하는 지점이 서로 다르고, 그래서 막는 방법도 다르다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        붙은 이름은 semantic read skew, compatibility skew, context escape, merge skew다. 아래 표는 각각이 어느 대목에서 생기고 현장에서는 어떤 모습으로 나타나는지를 나란히 둔 것이다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-table-header-row">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">이상 현상</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">언제 생기는가</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">현장에서의 모습</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">semantic read skew</td>
+                                    <td class="border themeable-border px-4 py-3">한 실행이 리소스의 옛 정의와 새 정의를 섞어 읽을 때</td>
+                                    <td class="border themeable-border px-4 py-3">1단계는 구버전 인덱스로 근거를 찾고, 2단계는 재구축된 인덱스로 답을 종합한다</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">compatibility skew</td>
+                                    <td class="border themeable-border px-4 py-3">함께 맞물려야 할 리소스가 따로 갱신될 때</td>
+                                    <td class="border themeable-border px-4 py-3">임베딩 모델만 올라가고 벡터 인덱스는 옛 임베딩 그대로여서 유사도 순위가 조용히 어긋난다</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">context escape</td>
+                                    <td class="border themeable-border px-4 py-3">의미 컨텍스트가 하위 실행으로 상속되지 않을 때</td>
+                                    <td class="border themeable-border px-4 py-3">상위 에이전트는 새 정책으로 승인받았는데 위임받은 서브에이전트가 캐시된 옛 정책을 읽는다</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">merge skew</td>
+                                    <td class="border themeable-border px-4 py-3">전제가 다른 분기들이 하나로 합쳐질 때</td>
+                                    <td class="border themeable-border px-4 py-3">서로 다른 시점의 가격 데이터로 계산한 두 결과를 합산해, 어느 시점에도 없던 값이 나온다</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        넷을 관통하는 문제는 하나다. 무엇을 근거로 판단했는지가 실행 내내 고정되지 않았다. 첫 번째는 시간축에서, 두 번째는 리소스 사이의 짝에서, 세 번째는 위임의 경계에서, 네 번째는 분기를 합치는 자리에서 그 고정이 풀린다. 풀리는 자리만 다를 뿐 잃는 것은 같다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            검출 가능성이 이 분류의 핵심이다. 네 가지 모두 실행 시점의 리소스 식별자를 기록해 두면 기계가 판정할 수 있는 조건으로 쓰였다. 사람이 결과를 읽고 이상하다고 느끼는 단계까지 기다릴 필요가 없다는 뜻이고, 뒤집어 말하면 그 식별자를 남기지 않은 시스템은 네 가지 중 어느 것도 판정할 수 없다는 뜻이다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">데이터베이스는 이 문제를 40년 전에 풀었다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문은 이것을 격리 문제라고 부른다. 데이터베이스 트랜잭션은 동시에 일어나는 데이터 갱신을 제약하지만, 워크플로우 체크포인팅에는 의미 환경의 동시 변경에 대응하는 계약이 없다. 같은 종류의 위험인데 한쪽에는 사십 년 묵은 규율이 있고 다른 쪽에는 아무것도 없다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자가 누구인지가 이 진단의 무게를 정한다. 바르잔 모자파리는 미시간대에서 데이터베이스 동시성 제어와 근사 질의 처리를 연구해 온 사람이고, 지금은 데이터 웨어하우스를 에이전트로 최적화하는 회사를 운영한다. AI 워크플로우에 트랜잭션을 비유로 갖다 붙인 것이 아니라, 격리 이론을 만들던 계보의 연구자가 자기 분야의 도구를 한 계층 위로 옮겨 놓았다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        옮겨 놓는 방식도 데이터베이스 쪽 문법을 따른다. 서로 독립적인 세 가지 보장을 정의하고, 그 조합에서 격리 수준의 부분 순서를 끌어낸다. 어떤 이상 현상까지 허용할지가 곧 어느 수준을 고를지가 된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 가지는 각각 다른 것을 지킨다. 리소스 안정성은 실행이 참조하는 정의가 도중에 바뀌지 않게 붙잡는다. 리소스 간 호환성은 임베딩 모델과 벡터 인덱스처럼 맞물려 쓰이는 짝이 어긋난 조합으로 만나지 않는지를 검증한다. 이어받기 상속은 체크포인트에서 되살아난 실행과 서브에이전트에게 넘어간 작업에도 처음의 전제가 따라붙게 한다. 셋은 서로를 대신하지 못한다. 안정성만 걸어 두면 짝이 어긋나는 경우를 놓치고, 상속이 빠지면 위임하는 순간에 전제가 끊긴다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        조합에서 나오는 이름들도 낯익다. 직렬 가능성과 스냅샷 격리는 1980년대와 90년대의 동시성 제어 연구가 다듬어 놓은 눈금이고, 논문은 같은 눈금의 이름 앞에 의미를 붙여 Semantic Read Committed와 Semantic Snapshot Isolation을 세운다. 아래 도식은 왼쪽의 세 보장이 어떻게 오른쪽의 수준으로 이어지는지를 정리한 것이다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 268" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" aria-label="리소스 안정성, 리소스 간 호환성, 이어받기 상속이라는 세 가지 독립 보장을 조합해 Semantic Read Committed부터 Semantic Snapshot Isolation까지의 격리 수준을 도출하는 구조를 보여주는 도식">
+                            <text x="340" y="26" text-anchor="middle" font-family="Outfit,Pretendard,sans-serif" font-size="12" font-weight="600" style="fill:var(--text-secondary)">세 가지 보장을 조합해 격리 수준을 만든다</text>
+
+                            <text x="130" y="56" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" style="fill:var(--text-muted)">독립 보장</text>
+
+                            <rect x="30" y="70" width="200" height="44" rx="8" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="130" y="89" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#F86825">리소스 안정성</text>
+                            <text x="130" y="105" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" style="fill:var(--text-secondary)">실행 중 정의가 흔들리지 않는다</text>
+
+                            <rect x="30" y="126" width="200" height="44" rx="8" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="130" y="145" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#F86825">리소스 간 호환성</text>
+                            <text x="130" y="161" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" style="fill:var(--text-secondary)">맞물려 쓰이는 짝이 어긋나지 않는다</text>
+
+                            <rect x="30" y="182" width="200" height="44" rx="8" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="130" y="201" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#F86825">이어받기 상속</text>
+                            <text x="130" y="217" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" style="fill:var(--text-secondary)">재개와 위임에 전제가 따라간다</text>
+
+                            <path d="M238 92 H272 Q282 92 282 104 V140" fill="none" stroke-width="1.3" style="stroke:var(--text-muted)"/>
+                            <path d="M238 148 H282" fill="none" stroke-width="1.3" style="stroke:var(--text-muted)"/>
+                            <path d="M238 204 H272 Q282 204 282 192 V156" fill="none" stroke-width="1.3" style="stroke:var(--text-muted)"/>
+                            <path d="M290 148 H322" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <path d="M316 143 L326 148 L316 153 Z" fill="#F86825"/>
+
+                            <text x="500" y="56" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" style="fill:var(--text-muted)">격리 수준의 부분 순서</text>
+
+                            <rect x="340" y="70" width="310" height="44" rx="8" fill="#F86825" fill-opacity="0.18" stroke="#F86825" stroke-width="1.8"/>
+                            <text x="495" y="89" text-anchor="middle" font-family="Outfit,Pretendard,sans-serif" font-size="11" font-weight="700" fill="#F86825">Semantic Snapshot Isolation</text>
+                            <text x="495" y="105" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" style="fill:var(--text-secondary)">네 가지를 모두 막는다</text>
+
+                            <rect x="340" y="126" width="310" height="44" rx="8" fill="none" stroke-width="1.4" stroke-dasharray="5 4" style="stroke:var(--text-muted)"/>
+                            <text x="495" y="152" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" style="fill:var(--text-muted)">보장을 어떻게 조합했는지에 따른 중간 수준들</text>
+
+                            <rect x="340" y="182" width="310" height="44" rx="8" fill="#F86825" fill-opacity="0.06" stroke="#F86825" stroke-width="1.4"/>
+                            <text x="495" y="201" text-anchor="middle" font-family="Outfit,Pretendard,sans-serif" font-size="11" font-weight="700" style="fill:var(--text-secondary)">Semantic Read Committed</text>
+                            <text x="495" y="217" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" style="fill:var(--text-secondary)">허용 범위가 가장 넓다</text>
+
+                            <path d="M666 214 V86" fill="none" stroke-width="1.3" style="stroke:var(--text-muted)"/>
+                            <path d="M661 92 L666 82 L671 92 Z" style="fill:var(--text-muted)"/>
+                            <text x="495" y="250" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-muted)">위로 갈수록 허용하는 이상 현상이 줄어든다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ 페블러스 원본 도식 — 데이터베이스가 Read Committed와 Snapshot Isolation을 나눠 쓰듯, 의미 계층에도 고를 수 있는 눈금이 생겼다.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        눈금이 생겼다는 사실 자체가 실무에는 더 쓸모 있다. 지금까지 에이전트의 재현성은 있거나 없거나 둘 중 하나로 이야기됐다. 격리 수준이 부분 순서로 정의되면 어디까지 비용을 치를지 고를 수 있게 된다. 사람 승인이 끼는 장시간 실행에는 높은 수준을 걸고, 짧게 끝나는 조회형 작업에는 낮은 수준을 두는 식의 선택이 가능해진다.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">공개 저장소 100개를 열어 보니 7.4%가 무방비였다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이론만 있는 논문이었다면 여기서 끝났을 것이다. 저자는 실행 가능한 LangGraph 코드를 담은 스타 상위 100개 공개 저장소를 대상으로 소스 감사를 돌렸다. 판정 기준은 보수적으로 잡았다. 상태를 이어 가는 워크플로우를 쓰면서, 살아 있는 리소스나 실행 중 고르는 의미 리소스를 같은 워크플로우 안에서 참조하는데, 불변 바인딩이 눈에 띄지 않는 경우만 셌다. 그 조건에서 7.4%가 걸렸다.
+                    </p>
+
+                    <figure class="my-8">
+                        <div class="grid grid-cols-10 gap-1.5 max-w-[220px] mx-auto" role="img" aria-label="공개 저장소 100개를 10x10 격자로 나타낸 그림. 그중 7개 칸이 오렌지색으로 강조되어 있으며, 이는 불변 바인딩 없이 리소스를 참조한 저장소의 비율 7.4%를 나타낸다">
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-3">▲ 페블러스 원본 도식 — 감사한 공개 저장소 100개 중 7.4%(강조 칸)가 불변 바인딩 없이 리소스를 참조했다.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        열세 개 중 하나꼴이다. 스타를 많이 받아 참고 구현으로 복사되는 저장소들이라는 점을 감안하면 숫자보다 파급이 크다. 게다가 보수적 기준이었으므로 실제 노출은 이보다 넓을 여지가 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 이름을 붙이기 전부터 같은 증상은 관측되고 있었다. LangGraph 저장소에 올라온 공개 RFC 하나는 체크포인트를 건널 때 나타나는 행동 드리프트를 다룬다. 에러 없이 특정 어휘가 사라지거나 도구 호출 패턴이 달라지는데 실행 로그만 보면 정상 성공으로 읽힌다는 관찰이다. 논문의 semantic read skew와 사실상 같은 현상을 실무자가 자기 언어로 먼저 불러낸 셈이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        에이전트가 유독 버전 드리프트에 노출돼 있다는 분석도 같은 시기에 나왔다. 하나의 논리적 스텝이 모델 버전과 프롬프트 텍스트, 도구 스키마, 검색 인덱스, 메모리 스냅샷, 샌드박스 이미지, 정책 규칙에 동시에 매달려 있기 때문이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 내놓은 프로토타입 SemIso는 이 보장들을 미들웨어에서 강제한다. 의미 컨텍스트를 하위 실행으로 전파하고, 호환되지 않는 리소스와 분기 병합을 실행 중에 막는다. 검사 비용은 마이크로초 단위로 보고됐다. 재현성을 위해 실행 속도를 크게 내주지 않아도 된다는 뜻이다. 다만 다른 런타임에서도 같은 값이 나오는지는 아직 확인되지 않았다.
+                    </p>
+                </section>
+
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">무엇을 근거로 판단했는지가 남아 있는가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        네 가지 이상 현상은 모두 실행 시점의 리소스 식별자가 남아 있어야 판정된다. 이 조건은 미들웨어의 문제이기 이전에 데이터 쪽의 문제다. 인덱스가 어느 스냅샷이었는지, 임베딩 모델이 어느 버전이었는지, 정책 문서가 몇 차 개정이었는지가 어딘가에 적혀 있지 않으면 미들웨어도 판정할 근거가 없다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        재현되지 않는 실행은 그래서 감사도 디버깅도 되지 않는다. 규제 대응 자리에서 왜 이 결정을 내렸느냐는 질문을 받으면 그 시점의 근거 집합을 다시 세울 수 있어야 하는데, 리소스가 버전 없이 흘러갔다면 되돌릴 좌표가 없다. 사고 원인을 찾는 자리에서도 마찬가지다. 같은 입력을 넣었을 때 같은 답이 나오지 않는다면 무엇을 고쳐야 하는지 확인할 방법이 없다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터를 운영하는 쪽에서 지금 확인할 수 있는 것은 두 가지다.
+                    </p>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>실행이 시작될 때 무엇을 붙잡았는지 기록되는가.</strong> 모델 별칭과 인덱스 스냅샷, 프롬프트 버전, 정책 개정 번호를 실행 로그가 아니라 실행의 전제로 남긴다. 이름이 아니라 그 시점에 이름이 가리키던 대상을 적어야 뒤에 대조할 수 있다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>그 기록이 재개와 위임을 건너서도 따라가는가.</strong> 체크포인트에서 되살아난 실행, 서브에이전트에게 넘어간 작업, 병렬 분기가 합쳐지는 지점에서 전제가 끊기면 앞의 기록도 소용이 없다. 계보를 남긴다는 말은 결국 이 세 경계를 건너서도 같은 좌표가 유지된다는 뜻이다.</span>
+                        </li>
+                    </ul>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터 버저닝과 계보 관리는 오랫동안 분석 재현과 규제 대응을 위한 장치로 이야기됐다. 사람이 나중에 확인하려고 남기는 기록이었다. 실행 중에 그 기록을 읽고 다음 단계를 막을지 말지 판단하는 주체가 생기면 성격이 달라진다. 있으면 좋은 문서에서 없으면 판정이 불가능한 배관으로 옮겨 간다.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color:#F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            페블러스가 AI-Ready Data를 이야기할 때 품질과 함께 강조해 온 것이 어떤 데이터가 어떤 판단에 쓰였는지를 남기는 일이다. 이 논문은 그 기록이 사후 감사용이 아니라 실행 중 판정의 입력이 되는 조건을 보여 준다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 논문</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Mozafari, Barzan. (2026). "<a href="https://arxiv.org/abs/2608.05412" target="_blank" rel="noopener">BEGIN AI TRANSACTION: Semantic Isolation for Durable AI Workflows</a>." arXiv:2608.05412 [cs.DB].</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">업계 관찰·공개 논의</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">langchain-ai/langgraph Issue #7327. "<a href="https://github.com/langchain-ai/langgraph/issues/7327" target="_blank" rel="noopener">RFC: Observability hook for cross-checkpoint behavioral drift in long-running agents</a>." GitHub.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Zylos Research. (2026). "<a href="https://zylos.ai/research/2026-04-24-durable-execution-agent-runtimes/" target="_blank" rel="noopener">Durable Execution for AI Agent Runtimes: Checkpointing, Replay, and Recovery</a>."</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Diagrid. (2026). "<a href="https://www.diagrid.io/blog/checkpoints-are-not-durable-execution-why-langgraph-crewai-google-adk-and-others-fall-short-for-production-agent-workflows" target="_blank" rel="noopener">Why Checkpoints Aren't Durable Execution</a>."</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">arXiv. "<a href="https://arxiv.org/list/cs.DB/recent" target="_blank" rel="noopener">cs.DB Recent Submissions</a>." 데이터베이스 분야 최신 논문 목록.</span></li>
+                    </ul>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260809"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-08T18:57:53.577Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-08T19:12:38.456Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1786215473578-e8qpyn",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-08T19:53:01.500Z"
+            },
+            mainTitle: "멈췄다 재개된 AI 에이전트가 다른 모델로 답을 완성한다",
+            subtitle: "데이터베이스가 40년 전 트랜잭션 격리로 풀었던 문제를 AI 워크플로우가 다시 만났다",
+            pageTitle: "AI 에이전트 재현성 — 실행 중 바뀌는 모델·인덱스와 의미 격리 | 페블러스",
+            category: "tech",
+            publishDate: "2026-08-09",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/agent-semantic-isolation/ko/",
+            tags: ["AI 에이전트", "데이터 버저닝", "데이터 계보", "트랜잭션 격리", "LangGraph", "재현성", "semantic isolation", "AI-Ready Data"],
+            faqs: [
+                { question: "의미 격리(semantic isolation)가 무엇인가요?", answer: "AI 워크플로우가 실행되는 동안 그 워크플로우가 참조하는 프롬프트, 모델, 검색 인덱스, 정책 같은 의미 리소스가 바뀌지 않도록 보장하는 개념입니다. 데이터베이스 트랜잭션의 격리가 동시에 일어나는 데이터 갱신으로부터 트랜잭션을 지켜 주듯, 의미 격리는 동시에 일어나는 리소스 배포로부터 실행 중인 워크플로우를 지킵니다." },
+                { question: "호출이 전부 성공했는데 어떻게 결과가 틀릴 수 있나요?", answer: "각 호출은 자기 시점에서 유효한 리소스로 정상 응답을 돌려줍니다. 문제는 한 실행 안에서 서로 다른 시점의 리소스가 섞이는 데서 생깁니다. 저장된 상태는 옛 전제 위에 있고 재개된 단계는 새 전제 위에서 돌아가므로, 개별 호출이 모두 성공해도 최종 결과는 스스로 앞뒤가 맞지 않게 됩니다. 예외가 발생하지 않으니 로그에는 정상 종료만 남습니다." },
+                { question: "네 가지 이상 현상은 각각 무엇인가요?", answer: "semantic read skew는 한 실행이 리소스의 옛 정의와 새 정의를 섞어 읽는 현상, compatibility skew는 임베딩 모델과 벡터 인덱스처럼 맞물려야 할 리소스가 따로 갱신되는 현상, context escape는 의미 컨텍스트가 서브에이전트에게 상속되지 않는 현상, merge skew는 서로 다른 전제로 실행된 분기가 병합될 때 생기는 불일치입니다. 네 가지 모두 자동으로 검출 가능한 조건으로 정의됐습니다." },
+                { question: "체크포인트를 저장하면 해결되는 문제 아닌가요?", answer: "체크포인트는 실행의 상태를 되살립니다. 그 상태가 참조하던 리소스가 여전히 같은 대상을 가리키는지는 보장하지 않습니다. 논문은 이 지점을 워크플로우 체크포인팅에 의미 환경의 동시 변경에 대응하는 계약이 없다는 말로 정리합니다. 프로덕션 에이전트 런타임을 다루는 쪽에서도 상태 복원과 전제 복원은 다른 보장이라는 지적이 반복해서 나왔습니다." },
+                { question: "7.4%라는 숫자는 어떻게 나온 것인가요?", answer: "실행 가능한 LangGraph 코드를 담은 스타 상위 100개 공개 저장소를 보수적 기준으로 감사한 결과입니다. 상태를 이어 가는 워크플로우를 쓰면서, 살아 있는 리소스나 실행 중 선택되는 의미 리소스를 같은 워크플로우 안에서 참조하는데 불변 바인딩이 눈에 띄지 않는 코드베이스만 셌습니다. 기준이 보수적이었으므로 실제 노출 범위는 이보다 넓을 수 있습니다." },
+                { question: "불변 바인딩(immutable binding)이란 무엇을 말하나요?", answer: "실행이 참조하는 리소스를 이름이 아니라 그 시점의 구체적 버전으로 묶어 두는 방식입니다. 모델 별칭 대신 해당 별칭이 가리키던 버전 식별자를, 인덱스 이름 대신 그 스냅샷 식별자를 실행의 전제로 고정합니다. 이렇게 묶어 두면 그 이름이 뒤에 다른 대상을 가리키게 되어도 실행 중인 워크플로우는 영향을 받지 않습니다." },
+                { question: "격리 수준을 나눈다는 것은 실무에서 어떤 의미인가요?", answer: "재현성을 있거나 없거나로 다루는 대신 비용을 고를 수 있게 된다는 뜻입니다. 논문은 리소스 안정성, 리소스 간 호환성, 이어받기 상속이라는 세 가지 독립 보장을 조합해 Semantic Read Committed부터 Semantic Snapshot Isolation까지의 부분 순서를 끌어냅니다. 사람 승인이 끼는 장시간 실행에는 높은 수준을, 짧게 끝나는 조회형 작업에는 낮은 수준을 적용하는 선택이 가능해집니다." },
+                { question: "SemIso는 얼마나 무거운가요?", answer: "논문은 SemIso가 미들웨어에서 의미 컨텍스트를 전파하고 호환되지 않는 리소스와 분기 병합을 차단하며, 그 검사가 마이크로초 단위로 이뤄진다고 보고합니다. 재현성을 위해 실행 속도를 크게 내주지 않아도 된다는 주장입니다. 다만 이는 프로토타입 수준의 결과이므로 다른 런타임과 실제 운영 부하에서의 검증이 남아 있습니다." },
+                { question: "데이터 실무자는 무엇부터 확인해야 하나요?", answer: "두 가지입니다. 먼저 실행이 시작될 때 무엇을 붙잡았는지가 기록되는지 확인합니다. 모델 별칭과 인덱스 스냅샷, 프롬프트 버전, 정책 개정 번호를 이름이 아니라 그 시점에 이름이 가리키던 대상으로 남겨야 합니다. 다음으로 그 기록이 체크포인트 재개와 서브에이전트 위임, 분기 병합을 건너서도 유지되는지 확인합니다. 세 경계에서 전제가 끊기면 앞의 기록도 대조 근거가 되지 못합니다." }
+            ]
+        });
+    </script>
+    <script src="/scripts/citation-download.js?v=20260809" defer></script>
+</body>
+</html>
