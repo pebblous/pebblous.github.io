@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>AI Agent Reproducibility — Semantic Isolation | Pebblous</title>
+    <meta name="description" content="While an agent waits, its model alias and search index keep shipping. A new arXiv paper names the four anomalies that follow and audits 100 LangGraph repos.">
+    <meta name="keywords" content="AI agent reproducibility, semantic isolation, agent workflow version drift, data versioning, data lineage, transaction isolation levels, LangGraph checkpoint, immutable binding, durable AI workflows, AI audit trail">
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/agent-semantic-isolation/en/">
+
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/agent-semantic-isolation/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/agent-semantic-isolation/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/agent-semantic-isolation/ko/">
+
+    <meta name="citation_title" content="AI Agent Reproducibility: Semantic Isolation for Runs That Outlive Their Environment">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/08/09">
+    <meta name="citation_online_date" content="2026/08/09">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="A Paused Agent Resumes on a Model That Changed While It Waited">
+    <meta property="og:description" content="Every call succeeds and the answer still contradicts itself. A new arXiv paper carries database isolation levels up to the layer where prompts, models, and search indexes live.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/agent-semantic-isolation/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/agent-semantic-isolation/en/image/index.png">
+    <meta property="og:locale" content="en_US">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="A Paused Agent Resumes on a Model That Changed While It Waited">
+    <meta name="twitter:description" content="Every call succeeds and the answer still contradicts itself. A new arXiv paper carries database isolation levels up to the layer where prompts, models, and search indexes live.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/agent-semantic-isolation/en/image/index.png">
+    <meta name="twitter:image:alt" content="Timeline diagram showing a search index rebuild and a model alias update landing while a workflow run is paused for human approval">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260809">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260809">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260809">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">Nothing Shows Up in the Error Log</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">The Run Outlives the Environment It Started In</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">Four Names for the Slippage</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">Databases Solved This 40 Years Ago</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">An Audit of 100 Public Repos Found 7.4% Unguarded</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">What Did the Answer Rest On</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <main class="max-w-[800px] px-4 sm:px-6">
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            An agent that sat still for two hours waiting on an approval starts moving again. In those two hours the search index was rebuilt and the model alias came to point at a new version. The resumed run finishes its answer on premises that differ from the ones it gathered evidence under, and not one call fails. Runs now stretch for hours through pauses and retries, through branches and delegation, while the prompts, model aliases, search indexes, and policies underneath them ship on their own schedules, unaware of each other. The name in the code holds still and only what that name points at moves.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Barzan Mozafari posted the paper to arXiv on August 5. Its claim is that when saved state meets changed premises inside one run, every call can succeed and the result can still contradict itself. A source audit of the 100 most-starred public repositories containing runnable LangGraph code found that 7.4% of codebases using durable workflows reference live or runtime-selected resources with no immutable binding in sight.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            For practitioners, the formal proofs matter less than one property of this failure: it is quiet. No exception, no failed retry, nothing in the logs but a clean completion. What follows walks through the four names the paper gives that gap as it formalizes it into a database isolation problem, what each one looks like in production, and what the data side has to record for any of them to be detectable at all.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Numbers</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: <a href="https://arxiv.org/abs/2608.05412" target="_blank" rel="noopener" class="text-orange-400 hover:text-orange-300 transition-colors">arXiv:2608.05412</a></p>
+                    <p class="themeable-text leading-relaxed mb-6">This is not a risk waiting to arrive. It was measured in code that is already deployed.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">7.4%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Codebases referencing resources unguarded</p>
+                            <p class="text-xs themeable-muted mt-1">Share running durable workflows with no immutable binding visible in the source</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">100</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Public repositories audited</p>
+                            <p class="text-xs themeable-muted mt-1">Top-starred repos with runnable LangGraph code, not a synthetic benchmark</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">Microseconds</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Cost of the prototype's checks</p>
+                            <p class="text-xs themeable-muted mt-1">Time scale at which SemIso blocks incompatible resources and unsafe branch merges at runtime</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Nothing Shows Up in the Error Log</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Picture an agent parked in front of an approval request. Step 1 searched the internal document store and gathered the evidence; step 2 will turn that evidence into an answer. The reviewer takes two hours to click approve, and during those two hours a nightly batch rebuilds the search index. The resumed run finishes its answer on top of the new index. The world the evidence came from and the world the answer was written in are not the same world.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This failure never surfaces as an exception. The retrieval succeeded. The model call succeeded. No retry fired, no timeout tripped. What the observability stack shows is one run that completed normally. That is exactly the point the paper presses on: a workflow ends up mixing state it saved with premises that moved underneath it, and the result can be internally inconsistent while every single call reports success.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The harder part is that none of the names change. In the paper's phrasing, stable names acquire new behavior. The model alias in the code is the one from last month, the prompt template lives at the same path, the vector index answers to the same identifier. What moved is the thing those names point at today. From the deployment pipeline's side this is a routine update. From the running workflow's side the ground has split.
+                    </p>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Run Outlives the Environment It Started In</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper sets its condition in the first sentence. AI executions can now outlive the environments they started in. Work that used to fit inside a single model call now unfolds across pauses and retries, across branches, subagents, and tool calls the model chooses at runtime. The longer a run lives, the more room there is underneath it for resources to be swapped out.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The diagram below lays two clocks on top of each other. The upper track is the workflow's progress; the lower one is the deployment schedule of the resources that workflow depends on. Neither track knows the other exists.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 250" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" aria-label="Diagram overlaying a workflow execution timeline on a resource deployment timeline. While the run is paused waiting for human approval, the search index is rebuilt and the model alias is updated, and the resumed step completes its answer on the changed resources">
+                            <text x="340" y="26" text-anchor="middle" font-family="Outfit,Pretendard,sans-serif" font-size="12" font-weight="600" style="fill:var(--text-secondary)">The ground shifts while the run is paused</text>
+
+                            <rect x="240" y="44" width="200" height="176" rx="10" fill="#F86825" fill-opacity="0.06" stroke="#F86825" stroke-opacity="0.4" stroke-width="1.2" stroke-dasharray="5 4"/>
+                            <text x="340" y="62" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" fill="#F86825">Two hours awaiting approval</text>
+
+                            <text x="128" y="98" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" style="fill:var(--text-secondary)">Workflow run</text>
+                            <line x1="142" y1="94" x2="652" y2="94" stroke-width="1.6" style="stroke:var(--text-muted)"/>
+                            <circle cx="184" cy="94" r="5" fill="#F86825"/>
+                            <text x="184" y="116" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-secondary)">Step 1 retrieval</text>
+                            <circle cx="240" cy="94" r="5" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="240" y="132" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-muted)">Checkpoint saved</text>
+                            <circle cx="440" cy="94" r="5" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="440" y="82" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-secondary)">Resume</text>
+                            <circle cx="600" cy="94" r="5" fill="#F86825"/>
+                            <text x="600" y="116" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-secondary)">Step 2 synthesis</text>
+
+                            <path d="M440 176 V108" fill="none" stroke="#F86825" stroke-width="1.4" stroke-dasharray="4 3"/>
+                            <path d="M435 114 L440 104 L445 114 Z" fill="#F86825"/>
+
+                            <text x="128" y="190" text-anchor="end" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" style="fill:var(--text-secondary)">Resource deploys</text>
+                            <line x1="142" y1="186" x2="652" y2="186" stroke-width="1.6" style="stroke:var(--text-muted)"/>
+                            <circle cx="298" cy="186" r="5" fill="#F86825" fill-opacity="0.55"/>
+                            <text x="298" y="172" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-secondary)">Search index rebuilt</text>
+                            <circle cx="392" cy="186" r="5" fill="#F86825" fill-opacity="0.55"/>
+                            <text x="392" y="208" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-secondary)">Model alias updated</text>
+
+                            <text x="600" y="212" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" font-weight="600" fill="#F86825">Every call succeeds</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Pebblous original diagram. A checkpoint restores the state of a run, but not the resources that state was pointing at.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Practitioners were already arguing about this distinction. Teams working on production agent runtimes have made the point repeatedly: writing a checkpoint and guaranteeing that the resources the checkpoint references are still valid are two different guarantees. Session memory surviving a crash proves nothing about which shell commands actually ran, or whether a retry fired a side effect twice. Restoring state and restoring premises are separate jobs.
+                    </p>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Four Names for the Slippage</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's practical contribution is splitting this slippage into four anomalies that a machine can detect. Until they had names, these symptoms were lumped together as one unreproducible bug. The four arise at different points in a run, which is why they call for different defenses.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The names are semantic read skew, compatibility skew, context escape, and merge skew. The table below sets each one next to the moment it arises and the shape it takes in production.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-table-header-row">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Anomaly</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">When it arises</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">What it looks like in production</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">semantic read skew</td>
+                                    <td class="border themeable-border px-4 py-3">One run reads both the old and the new definition of a resource</td>
+                                    <td class="border themeable-border px-4 py-3">Step 1 gathers evidence from the previous index; step 2 writes the answer against the rebuilt one</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">compatibility skew</td>
+                                    <td class="border themeable-border px-4 py-3">Resources that have to move together are updated separately</td>
+                                    <td class="border themeable-border px-4 py-3">The embedding model is upgraded while the vector index still holds old embeddings, and similarity rankings quietly drift</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">context escape</td>
+                                    <td class="border themeable-border px-4 py-3">Semantic context fails to be inherited by a child execution</td>
+                                    <td class="border themeable-border px-4 py-3">The parent agent was approved under the new policy while the delegated subagent reads a cached copy of the old one</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3 font-semibold">merge skew</td>
+                                    <td class="border themeable-border px-4 py-3">Branches built on different premises are combined</td>
+                                    <td class="border themeable-border px-4 py-3">Two results computed from price data of different vintages are summed into a figure that was never true at any moment</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One problem runs through all four. What the answer rested on was never held fixed for the length of the run. The first comes loose along the time axis, the second between paired resources, the third at the boundary of delegation, the fourth where branches come back together. Only the place it comes loose differs; what gets lost is the same.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Detectability is what makes this taxonomy useful. All four are written as conditions a machine can evaluate, provided the run recorded which resource versions it used. You do not have to wait for a human to read the output and sense that something is off. Read it the other way around and it says something sharper: a system that never recorded those identifiers cannot decide any of the four.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Databases Solved This 40 Years Ago</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper calls this an isolation problem. Database transactions constrain concurrent data updates, but workflow checkpointing has no comparable contract for concurrent changes to the semantic environment. Same class of hazard, and one side has four decades of discipline while the other side has nothing.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Who wrote it sets the weight of that diagnosis. Barzan Mozafari spent his research career at the University of Michigan on database concurrency control and approximate query processing, and now runs a company that optimizes data warehouses with agents. This is not someone borrowing transactions as a metaphor for AI workflows. It is a researcher from the lineage that built isolation theory moving his own field's instruments up one layer.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The way he moves them follows database grammar too. He defines three independent guarantees, then derives a partial order of isolation levels from how they combine. How many anomalies you are willing to tolerate becomes the question of which level you pick.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Each guarantee protects something different. Resource stability holds the definitions a run references so they cannot change underneath it. Cross-resource compatibility checks that resources meant to work as a pair, like an embedding model and its vector index, never meet in a mismatched combination. Continuation inheritance carries the original premises into runs revived from a checkpoint and into work handed off to subagents. None of the three substitutes for another. Stability alone misses mismatched pairs, and without inheritance the premises are severed the moment work is delegated.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The names that fall out of the combinations are familiar too. Serializability and snapshot isolation are calibration marks that concurrency control research refined through the 1980s and 1990s, and the paper puts the word semantic in front of the same marks to define Semantic Read Committed and Semantic Snapshot Isolation. The diagram below shows how the three guarantees on the left lead to the levels on the right.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 268" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff)" aria-label="Diagram showing how three independent guarantees, resource stability, cross-resource compatibility and continuation inheritance, combine to derive isolation levels ranging from Semantic Read Committed to Semantic Snapshot Isolation">
+                            <text x="340" y="26" text-anchor="middle" font-family="Outfit,Pretendard,sans-serif" font-size="12" font-weight="600" style="fill:var(--text-secondary)">Three guarantees combine into isolation levels</text>
+
+                            <text x="130" y="56" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" style="fill:var(--text-muted)">Independent guarantees</text>
+
+                            <rect x="30" y="70" width="200" height="44" rx="8" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="130" y="89" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#F86825">Resource stability</text>
+                            <text x="130" y="105" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" style="fill:var(--text-secondary)">definitions hold still mid-run</text>
+
+                            <rect x="30" y="126" width="200" height="44" rx="8" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="130" y="145" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#F86825">Cross-resource compatibility</text>
+                            <text x="130" y="161" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" style="fill:var(--text-secondary)">paired resources stay in step</text>
+
+                            <rect x="30" y="182" width="200" height="44" rx="8" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <text x="130" y="201" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" font-weight="600" fill="#F86825">Continuation inheritance</text>
+                            <text x="130" y="217" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" style="fill:var(--text-secondary)">premises follow resume and handoff</text>
+
+                            <path d="M238 92 H272 Q282 92 282 104 V140" fill="none" stroke-width="1.3" style="stroke:var(--text-muted)"/>
+                            <path d="M238 148 H282" fill="none" stroke-width="1.3" style="stroke:var(--text-muted)"/>
+                            <path d="M238 204 H272 Q282 204 282 192 V156" fill="none" stroke-width="1.3" style="stroke:var(--text-muted)"/>
+                            <path d="M290 148 H322" fill="none" stroke="#F86825" stroke-width="1.6"/>
+                            <path d="M316 143 L326 148 L316 153 Z" fill="#F86825"/>
+
+                            <text x="500" y="56" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" font-weight="600" style="fill:var(--text-muted)">Partial order of isolation levels</text>
+
+                            <rect x="340" y="70" width="310" height="44" rx="8" fill="#F86825" fill-opacity="0.18" stroke="#F86825" stroke-width="1.8"/>
+                            <text x="495" y="89" text-anchor="middle" font-family="Outfit,Pretendard,sans-serif" font-size="11" font-weight="700" fill="#F86825">Semantic Snapshot Isolation</text>
+                            <text x="495" y="105" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" style="fill:var(--text-secondary)">blocks all four anomalies</text>
+
+                            <rect x="340" y="126" width="310" height="44" rx="8" fill="none" stroke-width="1.4" stroke-dasharray="5 4" style="stroke:var(--text-muted)"/>
+                            <text x="495" y="152" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" style="fill:var(--text-muted)">intermediate levels, by how you combine them</text>
+
+                            <rect x="340" y="182" width="310" height="44" rx="8" fill="#F86825" fill-opacity="0.06" stroke="#F86825" stroke-width="1.4"/>
+                            <text x="495" y="201" text-anchor="middle" font-family="Outfit,Pretendard,sans-serif" font-size="11" font-weight="700" style="fill:var(--text-secondary)">Semantic Read Committed</text>
+                            <text x="495" y="217" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9" style="fill:var(--text-secondary)">the most permissive level</text>
+
+                            <path d="M666 214 V86" fill="none" stroke-width="1.3" style="stroke:var(--text-muted)"/>
+                            <path d="M661 92 L666 82 L671 92 Z" style="fill:var(--text-muted)"/>
+                            <text x="495" y="250" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="9.5" style="fill:var(--text-muted)">fewer anomalies allowed as you move up</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Pebblous original diagram. Just as databases let you choose between Read Committed and Snapshot Isolation, the semantic layer now has marks to choose from.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Having the marks at all is the more useful part for practitioners. Agent reproducibility has been discussed as something a system either has or does not. Once isolation levels are defined as a partial order, you get to decide how much you are willing to pay for. A long-running workflow with a human approval step can be pinned at a strict level while a short lookup task runs at a loose one.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">An Audit of 100 Public Repos Found 7.4% Unguarded</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A theory-only paper would have stopped there. Instead the author ran a source audit across the 100 most-starred public repositories containing runnable LangGraph code. The criterion was deliberately conservative. It counted only cases where a durable workflow references a live resource or a runtime-selected semantic resource inside the same workflow, with no immutable binding anywhere in sight. Under that condition, 7.4% were flagged.
+                    </p>
+
+                    <figure class="my-8">
+                        <div class="grid grid-cols-10 gap-1.5 max-w-[220px] mx-auto" role="img" aria-label="100 public repositories shown as a 10 by 10 grid. Seven squares are highlighted in orange, representing the 7.4 percent of repositories that referenced resources with no immutable binding">
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:#F86825"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                            <div class="aspect-square rounded-sm" style="background:var(--text-muted);opacity:.22"></div>
+                        </div>
+                        <figcaption class="text-xs themeable-muted text-center mt-3">▲ Pebblous original diagram. 7.4% (highlighted squares) of the 100 audited public repositories referenced resources with no immutable binding.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That is roughly one in thirteen. Given that these are the heavily starred repositories people copy as reference implementations, the reach matters more than the number. And because the bar was conservative, real exposure is likely wider.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The symptom was being observed before the paper gave it a name. A public RFC filed against the LangGraph repository describes behavioral drift across checkpoints: specific vocabulary disappears or tool-calling patterns change with no error raised, and the execution logs read as clean successes. That is effectively the paper's semantic read skew, surfaced first by a practitioner in their own words.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        An analysis published around the same time argued that agents are unusually exposed to version drift, because a single logical step hangs simultaneously on the model version, the prompt text, the tool schema, the retrieval index, the memory snapshot, the sandbox image, and the policy rules.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        SemIso, the prototype the paper ships, enforces these guarantees in middleware. It propagates semantic context into child executions and blocks incompatible resources and unsafe branch merges at runtime. The reported cost of those checks is on the order of microseconds. The claim is that reproducibility does not have to be bought with a large slice of execution speed. Whether the same numbers hold on other runtimes has yet to be tested.
+                    </p>
+                </section>
+
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What Did the Answer Rest On</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        All four anomalies are decidable only if the resource identifiers in force at execution time are still around. That condition belongs to the data side before it belongs to middleware. If nothing records which snapshot the index was on, which version the embedding model was, which revision the policy document had reached, then the middleware has nothing to decide against either.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That is why an unreproducible run can be neither audited nor debugged. When a regulator asks why a given decision was made, you have to be able to reconstruct the evidence set as it stood at that moment, and if the resources flowed past without versions there are no coordinates to go back to. The same holds in a postmortem. If the same input no longer produces the same answer, there is no way to confirm what needs fixing.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Two things are worth checking on the data operations side right now.
+                    </p>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Is there a record of what the run pinned when it started?</strong> Model alias, index snapshot, prompt version, policy revision, captured as premises of the execution rather than lines in an application log. Write down what the name pointed at in that moment, not the name, or there is nothing to compare against later.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Does that record survive resumption and delegation?</strong> If the premises are cut at a checkpoint restore, at a handoff to a subagent, or where parallel branches merge, the record made earlier stops being useful. Keeping lineage ultimately means the same coordinates hold across those three boundaries.</span>
+                        </li>
+                    </ul>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Data versioning and lineage have long been discussed as instruments for analytical reproducibility and regulatory response. They were records kept so a person could check them later. The character changes once something reads those records mid-run and decides whether the next step is allowed to proceed. What was nice-to-have documentation becomes plumbing, and without it nothing can be decided at all.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color:#F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            When Pebblous talks about AI-Ready Data, the point we press alongside quality is keeping a record of which data went into which judgment. This paper shows the conditions under which that record stops being an artifact for after-the-fact audit and becomes an input to a decision made during the run.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic Papers</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Mozafari, Barzan. (2026). "<a href="https://arxiv.org/abs/2608.05412" target="_blank" rel="noopener">BEGIN AI TRANSACTION: Semantic Isolation for Durable AI Workflows</a>." arXiv:2608.05412 [cs.DB].</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Industry Observation and Public Discussion</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">langchain-ai/langgraph Issue #7327. "<a href="https://github.com/langchain-ai/langgraph/issues/7327" target="_blank" rel="noopener">RFC: Observability hook for cross-checkpoint behavioral drift in long-running agents</a>." GitHub.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Zylos Research. (2026). "<a href="https://zylos.ai/research/2026-04-24-durable-execution-agent-runtimes/" target="_blank" rel="noopener">Durable Execution for AI Agent Runtimes: Checkpointing, Replay, and Recovery</a>."</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Diagrid. (2026). "<a href="https://www.diagrid.io/blog/checkpoints-are-not-durable-execution-why-langgraph-crewai-google-adk-and-others-fall-short-for-production-agent-workflows" target="_blank" rel="noopener">Why Checkpoints Aren't Durable Execution</a>."</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">arXiv. "<a href="https://arxiv.org/list/cs.DB/recent" target="_blank" rel="noopener">cs.DB Recent Submissions</a>." Latest papers in the databases category.</span></li>
+                    </ul>
+                </section>
+
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260809"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-08T18:57:53.577Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-08T19:12:38.456Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1786215473578-e8qpyn",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-08T19:53:01.500Z"
+            },
+            mainTitle: "A Paused Agent Resumes on a Model That Changed While It Waited",
+            subtitle: "A new arXiv paper carries the isolation problem databases solved 40 years ago up to the semantic layer",
+            pageTitle: "AI Agent Reproducibility — Semantic Isolation | Pebblous",
+            category: "tech",
+            publishDate: "2026-08-09",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/agent-semantic-isolation/en/",
+            tags: ["AI agents", "data versioning", "data lineage", "transaction isolation", "LangGraph", "reproducibility", "semantic isolation", "AI-Ready Data"],
+            faqs: [
+                { question: "What is semantic isolation?", answer: "It is the guarantee that the semantic resources a workflow depends on, such as prompts, models, retrieval indexes and policies, do not change while that workflow is running. Just as transaction isolation in a database protects a transaction from concurrent data updates, semantic isolation protects a running workflow from concurrent resource deployments." },
+                { question: "How can the result be wrong when every call succeeded?", answer: "Each call returns a valid response against the resources in force at its own moment. The problem appears when resources from different moments are mixed inside a single run. Saved state rests on the old premises while the resumed step runs on the new ones, so the final result can contradict itself even though every individual call succeeded. Because no exception is raised, the logs show only a clean completion." },
+                { question: "What are the four anomalies?", answer: "Semantic read skew is one run reading both the old and the new definition of a resource. Compatibility skew is resources that must move together, such as an embedding model and its vector index, being updated separately. Context escape is semantic context failing to be inherited by a subagent. Merge skew is the inconsistency produced when branches executed under different premises are combined. All four are defined as conditions that can be detected automatically." },
+                { question: "Doesn't checkpointing already solve this?", answer: "A checkpoint restores the state of an execution. It does not guarantee that the resources that state referenced still point at the same things. The paper frames this as workflow checkpointing having no contract for concurrent changes to the semantic environment. Teams building production agent runtimes have made the same point repeatedly: restoring state and restoring premises are different guarantees." },
+                { question: "Where does the 7.4% figure come from?", answer: "It comes from a conservative audit of the 100 most-starred public repositories containing runnable LangGraph code. It counted only codebases that use durable workflows and reference a live or runtime-selected semantic resource inside the same workflow with no immutable binding visible. Because the bar was conservative, actual exposure may be wider." },
+                { question: "What is an immutable binding?", answer: "It is the practice of tying the resources a run references to a concrete version rather than to a name. Instead of a model alias, you pin the version identifier that alias resolved to; instead of an index name, the snapshot identifier. Once they are pinned as premises of the execution, the running workflow is unaffected when those names later start pointing at something else." },
+                { question: "What does having isolation levels mean in practice?", answer: "It means treating reproducibility as a cost you can choose rather than a property you either have or lack. The paper combines three independent guarantees, resource stability, cross-resource compatibility and continuation inheritance, into a partial order running from Semantic Read Committed to Semantic Snapshot Isolation. A long-running workflow with a human approval step can be pinned at a strict level while a short lookup task runs at a loose one." },
+                { question: "How heavy is SemIso?", answer: "The paper reports that SemIso propagates semantic context in middleware, blocks incompatible resources and unsafe branch merges, and performs those checks on the order of microseconds. The claim is that reproducibility does not cost a large slice of execution speed. This is a prototype result, so validation on other runtimes and under real production load is still outstanding." },
+                { question: "What should data practitioners check first?", answer: "Two things. First, whether there is a record of what the run pinned when it started. Model alias, index snapshot, prompt version and policy revision have to be captured as what the name pointed at in that moment, not as the name. Second, whether that record survives checkpoint resumption, delegation to subagents and branch merges. If the premises are cut at any of those three boundaries, the earlier record stops being a basis for comparison." }
+            ]
+        });
+    </script>
+    <script src="/scripts/citation-download.js?v=20260809" defer></script>
+</body>
+</html>
