@@ -21,6 +21,7 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 jobs:
   heal:
@@ -104,3 +105,62 @@ jobs:
           done
 
           echo "요약: 치유 $healed · 보류/건너뜀 $skipped"
+
+      # 치유가 정상으로 돌아오면 열려 있던 경보를 닫는다 — 사람이 손으로 닫을 일을 만들지 않는다.
+      - name: 회복 시 경보 닫기
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          num=$(gh issue list --label autoheal-down --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "${num:-}" ]; then
+            gh issue comment "$num" --body "✅ 자동치유가 정상으로 돌아왔습니다 (실행 [#${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))." || true
+            gh issue close "$num" || true
+            echo "경보 이슈 #$num 닫음"
+          fi
+
+  # 봇이 조용히 죽는 것을 막는 장치. 단발 실패는 넘기고 연속 2회부터 알린다 —
+  # 2026-08-06 에 세 번 연속 실패했는데 우연히 발견하기 전까지 아무도 몰랐다.
+  alert:
+    needs: heal
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      actions: read
+    steps:
+      - name: 연속 실패면 이슈로 알린다
+        env:
+          GH_TOKEN: ${{ secrets.INDEX_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          # 직전 실행도 실패였는지 확인(이번 실행 제외). 단발 깜빡임으로 이슈를 만들지 않는다.
+          prev=$(gh run list --workflow pr-conflict-autoheal.yml --limit 5 \
+                   --json databaseId,conclusion \
+                   --jq "[.[] | select(.databaseId != ${{ github.run_id }})] | .[0].conclusion // empty")
+          echo "직전 실행 결과: ${prev:-없음}"
+          if [ "${prev:-}" != "failure" ] && [ "${prev:-}" != "cancelled" ]; then
+            echo "단발 실패 — 알리지 않음"; exit 0
+          fi
+
+          url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          num=$(gh issue list --label autoheal-down --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "${num:-}" ]; then
+            gh issue comment "$num" --body "❌ 또 실패했습니다 — [실행 기록]($url)" || true
+            echo "기존 경보 이슈 #$num 에 덧붙임"
+          else
+            gh label create autoheal-down --color B60205 --description "충돌 자동치유 봇 실패" 2>/dev/null || true
+            gh issue create --label autoheal-down \
+              --title "충돌 자동치유 봇이 연속 실패하고 있습니다" \
+              --body "$(printf '%s\n' \
+                "PR 충돌 자동치유 워크플로가 **연속 2회 이상** 실패했습니다." \
+                "" \
+                "이 봇이 멈추면 글 PR이 \\`articles.json\\` 에서 어긋난 채 쌓입니다. 겉으로는 조용하고, 머지하려 할 때에야 드러납니다." \
+                "" \
+                "- 실패한 실행: $url" \
+                "- 손으로 푸는 법: PR 브랜치에서 \\`git merge origin/main\\` (union 드라이버 등록 필요 — \\`bash tools/setup-merge-drivers.sh\\`) 후 push" \
+                "" \
+                "치유가 정상으로 돌아오면 이 이슈는 자동으로 닫힙니다.")" || true
+            echo "새 경보 이슈 생성"
+          fi
