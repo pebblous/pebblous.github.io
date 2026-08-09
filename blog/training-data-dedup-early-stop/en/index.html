@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Data Deduplication: 8x Faster IVF Early Stop | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="SieveIVF stops IVF search early and runs 8.38x faster on DEEP-100M, giving up 2.29 points of top-10 recall. The stopping window never reaches the dataset card.">
+    <meta name="keywords" content="training data deduplication, embedding deduplication, IVF vector search, early stopping, SieveIVF, recall loss, near-duplicate detection, dataset card, data governance, AI training data quality, data cleaning pipeline, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/training-data-dedup-early-stop/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/training-data-dedup-early-stop/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/training-data-dedup-early-stop/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/training-data-dedup-early-stop/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="The Early-Stop Rule That Made Training Data Deduplication 8x Faster">
+    <meta property="og:description" content="SieveIVF stops IVF search early and runs 8.38x faster on DEEP-100M, giving up 2.29 points of top-10 recall. The stopping window never reaches the dataset card.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/training-data-dedup-early-stop/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/training-data-dedup-early-stop/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="The Early-Stop Rule That Made Training Data Deduplication 8x Faster">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-08-10">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Early-Stop Rule That Made Training Data Deduplication 8x Faster">
+    <meta name="twitter:description" content="Searching 100 million embeddings for duplicates got 8.38x faster. The price was 2.29 points of recall, set by one parameter that nobody writes down.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/training-data-dedup-early-stop/en/image/index.png">
+    <meta name="twitter:image:alt" content="How the early-stop window W sets the trade between speed and recall">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="The Early-Stop Rule That Made Training Data Deduplication 8x Faster">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/08/10">
+    <meta name="citation_online_date" content="2026/08/10">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260810"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260810">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260810">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260810">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#silent-cost" class="block pl-4 themeable-toc-link transition-colors duration-200">1. The Compute Deduplication Quietly Eats</a></li>
+                    <li><a href="#eight-times" class="block pl-4 themeable-toc-link transition-colors duration-200">2. A Rule That Buys 8x and Pays 2.3 Points</a></li>
+                    <li><a href="#missed-duplicates" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Where the Missed Duplicates Go</a></li>
+                    <li><a href="#unrecorded-w" class="block pl-4 themeable-toc-link transition-colors duration-200">4. W Is Written Down Nowhere</a></li>
+                    <li><a href="#five-lines" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Where to Write the Number Down</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">Frequently Asked Questions</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Stripping duplicates out of training data is mostly an embedding search problem now. Vectors are split into partitions ahead of time, and every query probes a fixed number of those partitions looking for neighbors above a similarity threshold. SieveIVF, a new paper built on production Hunyuan workloads, argues that this search can stop far earlier. If W partitions in a row turn up no candidate above the threshold, the query is simply abandoned.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            On DEEP-100M, a public dataset of 100 million vectors, that rule ran 8.38 times faster than fixed probing. In exchange it missed 2.29 percentage points of the top-10 neighbors above the threshold. Speed and loss move together through a single knob, W, which means the real design order is not how fast you want the job to run but how much you can afford to miss.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            This piece takes up the question that comes next. What those missing 2.29 points leave behind in the model trained on that corpus, and why the W that sized the loss appears on no dataset card anywhere.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Numbers</h3>
+                    <p class="themeable-text leading-relaxed mb-3">
+                        The first three numbers are the terms of the trade the paper measured. The speed you gain, the recall you give up, and the extra loss that shows up in real deployments. The last one comes from a separate line of research and shows why the duplicates you miss matter later.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">Sources: <a href="https://arxiv.org/abs/2608.03199" target="_blank" rel="noopener" style="color:#F86825;">SieveIVF (arXiv:2608.03199)</a>, <a href="https://arxiv.org/abs/2107.06499" target="_blank" rel="noopener" style="color:#F86825;">Lee et al. 2022</a></p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">8.38x</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Speedup on DEEP-100M</p>
+                            <p class="text-xs themeable-muted mt-1">100M vectors, W=8, against fixed probing</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">2.29 pts</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Recall lost under the same setup</p>
+                            <p class="text-xs themeable-muted mt-1">top-10 neighbors above the threshold</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.27–2.88 pts</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Extra loss under approximate assignment</p>
+                            <p class="text-xs themeable-muted mt-1">Experiments assumed exact centroid assignment</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">about 10x</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Memorization cut by deduplication</p>
+                            <p class="text-xs themeable-muted mt-1">Lee et al. 2022, verbatim reproduction</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="silent-cost" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Compute Deduplication Quietly Eats</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Deduplication is the step nobody watches in a data cleaning pipeline. It takes nowhere near the human labor that labeling does, and it does not change the output as dramatically as filtering. But once a training corpus reaches hundreds of millions of records, this is the step that holds the cluster longest, because every one of those vectors has to be checked against the others for near neighbors.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The standard answer is IVF, the inverted file index. Vectors are sorted into thousands of partitions in advance, and when a query arrives, only the few most promising partitions get searched. The problem is that those few are handed out identically to every query. Deduplication only needs neighbors above a similarity threshold, and fixed-probe IVF allocates its budget with no knowledge of that condition. An easy query finds its answer in the first partition and keeps digging through the rest anyway; a hard query runs out of budget without finding anything.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        When the authors took apart four production Hunyuan workloads, the scale of the waste became visible. The exact top-10 neighbors that satisfied the threshold were scattered as deep as rank 16 at the 90th percentile, yet between 93.76% and 99.95% of them already sat inside the first eight partitions. For most queries, eight partitions were enough.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The subjects of that analysis were four indexes of 10 million 768-dimensional vectors each, with the vectors spread across 2,400 partitions. The similarity threshold for calling something a duplicate ranged from 0.85 to 0.93 depending on the character of the workload. At corpus scale the same structure simply grows. A few wasted partitions per query, repeated a hundred million times.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What makes the waste quiet is that it never surfaces as a failure. The search completes normally and the duplicates get filtered properly. The excess just drains into the cloud bill and the cleaning lead time. It is a cost nobody opens a ticket for.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="eight-times" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A Rule That Buys 8x and Pays 2.3 Points</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The rule SieveIVF introduces fits in one sentence. If W partitions in a row produce no candidate that satisfies the threshold, the query stops searching. Any qualifying result along the way resets the counter to zero and the search continues. Because each query now stops at a different point, partition access scatters, so the authors preserved cache locality by regrouping queries on the fly whenever they were ready to visit the same partition.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Ending a search early is not a new idea in itself. Earlier work trained a separate predictor to guess when a given query should stop. SieveIVF removes that training. No training queries, no predictor, just a count of how many partitions in a row came back empty. Adoption costs almost nothing, but the basis for the decision is thin in exactly the same proportion. All the information behind the stop is whatever has already been searched.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The diagram below shows how fixed probing and early stopping handle the same query differently. The top row is the conventional approach burning through its entire partition budget. The bottom row is a query that satisfies the threshold at the third partition, then hits eight empty partitions in a row and stops at the eleventh.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 640 250" xmlns="http://www.w3.org/2000/svg"
+                             class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border"
+                             style="background:var(--card-bg,#ffffff)">
+                            <!-- Row A: fixed probe -->
+                            <text x="24" y="52" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" style="fill:var(--text-secondary)">Fixed probe</text>
+                            <text x="24" y="70" font-family="Pretendard,sans-serif" font-size="10" style="fill:var(--text-muted)">Full budget spent</text>
+                            <rect x="120" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="150" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="180" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="210" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="240" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="270" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="300" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="330" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="360" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="390" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="420" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="450" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="480" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="510" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="540" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="570" y="42" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <text x="358" y="24" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" style="fill:var(--text-muted)">16 partitions scanned</text>
+
+                            <!-- Row B: SieveIVF -->
+                            <text x="24" y="162" font-family="Pretendard,sans-serif" font-size="13" font-weight="700" style="fill:var(--text-secondary)">SieveIVF</text>
+                            <text x="24" y="180" font-family="Pretendard,sans-serif" font-size="10" style="fill:var(--text-muted)">Stops at W=8</text>
+                            <rect x="120" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="150" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="180" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="210" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="240" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="270" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="300" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="330" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="360" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="390" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="420" y="152" width="26" height="26" rx="4" fill="#F86825" opacity="0.85"/>
+                            <rect x="450" y="152" width="26" height="26" rx="4" fill="none" stroke-width="1.5" stroke-dasharray="4 3" style="stroke:var(--text-muted)" opacity="0.55"/>
+                            <rect x="480" y="152" width="26" height="26" rx="4" fill="none" stroke-width="1.5" stroke-dasharray="4 3" style="stroke:var(--text-muted)" opacity="0.55"/>
+                            <rect x="510" y="152" width="26" height="26" rx="4" fill="none" stroke-width="1.5" stroke-dasharray="4 3" style="stroke:var(--text-muted)" opacity="0.55"/>
+                            <rect x="540" y="152" width="26" height="26" rx="4" fill="none" stroke-width="1.5" stroke-dasharray="4 3" style="stroke:var(--text-muted)" opacity="0.55"/>
+                            <rect x="570" y="152" width="26" height="26" rx="4" fill="none" stroke-width="1.5" stroke-dasharray="4 3" style="stroke:var(--text-muted)" opacity="0.55"/>
+
+                            <!-- hit marker on 3rd partition -->
+                            <circle cx="193" cy="132" r="9" fill="#F86825"/>
+                            <text x="193" y="136" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#ffffff" font-weight="700">✓</text>
+                            <text x="193" y="118" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" fill="#F86825" font-weight="600">Threshold met</text>
+
+                            <!-- bracket for 8 consecutive empty -->
+                            <path d="M210 190 L210 198 L446 198 L446 190" fill="none" stroke-width="1.5" style="stroke:var(--text-muted)"/>
+                            <text x="328" y="214" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" style="fill:var(--text-secondary)">8 partitions in a row with no qualifying candidate</text>
+
+                            <!-- stop line -->
+                            <line x1="448" y1="140" x2="448" y2="182" stroke="#F86825" stroke-width="1.5" stroke-dasharray="4 3"/>
+                            <text x="512" y="134" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11" fill="#F86825" font-weight="600">Stops here</text>
+                            <text x="523" y="238" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="10" style="fill:var(--text-muted)">Partitions never scanned</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Partition traversal under fixed probing and under SieveIVF. Early stopping abandons a query at the point where qualifying hits dry up | Pebblous original diagram
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        With W set to 8, the four 10-million-vector Hunyuan workloads ran between 4.1 and 7.6 times faster, and recall loss landed between 0.03 and 1.13 percentage points. On the two public 100-million-vector datasets the speedups came out between 6.1x and 8.4x. The number in the headline is the far end of that range, DEEP-100M, which ran 8.38 times faster and lost 2.29 points. Under identical conditions LAION-100M came in at 6.11x and 1.43 points.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b themeable-border">
+                                    <th class="text-left py-3 px-4 font-semibold">Early-stop window</th>
+                                    <th class="text-center py-3 px-4 font-semibold">Speedup</th>
+                                    <th class="text-center py-3 px-4 font-semibold" style="color: #F86825;">top-10 recall loss</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">Fixed probe (baseline)</td>
+                                    <td class="text-center py-3 px-4">1.0x</td>
+                                    <td class="text-center py-3 px-4">0 pts</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">W = 8</td>
+                                    <td class="text-center py-3 px-4">6.11x / 8.38x</td>
+                                    <td class="text-center py-3 px-4" style="color: #F86825; font-weight: 600;">1.43 pts / 2.29 pts</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">W = 12</td>
+                                    <td class="text-center py-3 px-4">5.6x–5.8x</td>
+                                    <td class="text-center py-3 px-4">0.88 pts–1.34 pts</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">Measured on the two public 100M workloads, LAION-100M and DEEP-100M. Source: arXiv:2608.03199</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What the table is really saying is not in any single figure but in the fact that both columns move together. Widen the window from 8 to 12 and the loss drops below half while the speed gain shrinks with it. The authors left the index structure, the centroids, and the in-partition search logic untouched. W is the only parameter tuned at run time. So the practical message of the paper is less about how fast search can be made and more about the need to decide, in numbers, how much you are willing to miss. The appendix rests on the same premise. It proposes running 2% of a batch as a sample and picking the W that meets a target loss of 0.5% automatically.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>One condition to add</strong>: the figures above come from experiments that computed centroid assignment exactly. Use the HNSW-assisted assignment common in large pipelines and some vectors land in the wrong partition, adding another 0.27 to 2.88 points of loss at W=8. The terms of the trade in a real deployment can be worse than the paper's table.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            There is also a regime where the trade does not hold at all. Set the threshold loosely enough and nearly every partition yields a qualifying candidate, so the counter keeps resetting. The stop almost never triggers, only the scheduling overhead remains, and throughput actually falls to between 0.71x and 0.99x of fixed probing. The threshold at which gains begin varies by workload: the web document workload turned positive at 0.35, while the tabular workload needed 0.90. That is one more reason you cannot lift someone else's W.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="missed-duplicates" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Where the Missed Duplicates Go</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What the paper measures is search quality. The 2.29 points are the share of neighbors that should have been found and were not, not a measure of how much worse the trained model gets. That link sits outside the paper's scope. Yet it is exactly the link that matters to anyone operating the data, because the missed duplicates are not deleted. They stay in the training corpus.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What happens when duplicates stay is comparatively well measured. The study Lee and colleagues presented at ACL 2022 reported that removing repeated strings from training data cut how often a model emits training sentences verbatim by roughly a factor of ten, from over 1% of output tokens down to around 0.1%. The same study also produced field measurements: 6.7% of C4 and 18.6% of RealNews were duplicates.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        More importantly, that risk is not evenly distributed. Follow-up work from Carlini and colleagues showed that the degree of memorization scales log-linearly with the number of times a sequence appears in training data. Kandpal and colleagues confirmed that the same structure carries through to the success rate of data extraction attacks. So how dangerous the missing 2.29 points actually are depends not on the percentage but on how often the missed items repeat inside the corpus. Missing 2.29 points of items that appear once each is not the same number as missing a document cluster that repeats hundreds of times.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The risk does not pile up inside the model alone. The same Lee study reported that in standard datasets, more than 4% of the validation set overlapped with the training set. When duplicates survive, evaluation scores come out higher than the model's real ability, and the judgments made on those scores go on to steer the next round of training. Missed duplicates contaminate the ruler as well as the model.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Which kind of duplicate early stopping misses more often is not in the paper. Given the nature of the rule, the missed neighbors are not random: they cluster among queries whose matches sit near the threshold and deep in the partition ranking. How that distribution relates to duplication frequency is something nobody has measured yet. That is why a single recall number cannot stand in for downstream risk.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="unrecorded-w" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">W Is Written Down Nowhere</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This is where the governance problem starts. A decision has been made that affects model quality, and there is no place that records it. Dataset cards and datasheets increasingly ask for provenance, collection method, licensing, even safety filtering. The documentation around C4 and RedPajama serves as a de facto template. Nowhere on that list is a field for how early the approximate search was stopped.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Even the fields that are on the list get filled in poorly. A study that audited widely used medical imaging datasets against documentation standards found only 20% to 39% of the required items satisfied, with provenance and quality the biggest gaps. An approximation parameter from the cleaning pipeline never made it onto the required list in the first place, so it is not even a candidate for that compliance rate.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's automatic W selection makes the gap sharper rather than smaller. If each batch runs a sample and picks the W that meets a target loss, then W is no longer a constant written down once somewhere in the pipeline. It becomes a runtime value that differs from batch to batch. A value chosen that way may survive in the logs, but it does not make it into the documents that describe the dataset. Months later, when something turns up in the model, there is no way to reconstruct how aggressively that batch was cleaned.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Regulation is inching in this direction. The EU AI Act and the NIST AI RMF both push toward explicit documentation of training data and models. Cases where the required items reach down to approximation parameters in the cleaning pipeline are still rare. There is no reason to wait for regulation to get there. The first reason to keep this record is not audit but self-tracking.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="five-lines" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Where to Write the Number Down</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is not much a team running deduplication can do about this today beyond adding a paragraph to the dataset card. But five things have to appear in that paragraph as numbers for it to be useful later.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span style="color:#F86825;" class="mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">The similarity threshold used to declare a duplicate, and the embedding model behind it</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span style="color:#F86825;" class="mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">How early the search was stopped, meaning the early-stop window or the probe budget</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span style="color:#F86825;" class="mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Whether centroid assignment was computed exactly or approximated</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span style="color:#F86825;" class="mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">The measured recall loss and the method used to measure it, sample size included</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span style="color:#F86825;" class="mt-1">•</span>
+                            <span class="themeable-text leading-relaxed">Where the per-batch values are kept, if the setting varies from batch to batch</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Five lines will do. With them, when a model later reproduces training sentences verbatim or an evaluation set looks contaminated, the cleaning stage can be put on the list of suspects. Without them, that stage drops out of the investigation entirely. The 2.29 points of recall are not a defect. They are a calculated trade, and the paper disclosed it honestly. The problem is that the party making the trade does not write down its terms.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note</strong>: this is also what Pebblous means by AI-Ready Data. The quality of a dataset is not a score you measure at the end but the sum of the records each stage of the pipeline leaves behind. Which value was chosen, and what was surrendered in exchange, has to travel with the data for the model built from it to be explainable later.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260810"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "The Early-Stop Rule That Made Training Data Deduplication 8x Faster",
+            subtitle: "Speed bought with 2.3 points of recall, from a setting that never reaches the dataset card",
+            pageTitle: "Training Data Deduplication: 8x Faster IVF Early Stop | Pebblous",
+            category: "tech",
+            publishDate: "2026-08-10",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/training-data-dedup-early-stop/en/",
+            tags: ["data cleaning", "deduplication", "vector search", "AI training data", "data governance", "IVF", "embeddings", "dataset cards", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "How is embedding-based deduplication different from something like MinHash?",
+                    answer: "MinHash and SimHash look at overlap at the string or byte level. Change the wording slightly and the same content counts as a different document. Embedding-based deduplication converts documents into vectors and judges by similarity between those vectors, so it catches duplicates that mean the same thing in different words. The cost is far higher, because it has to find near neighbors among hundreds of millions of vectors. Approximate nearest neighbor search such as IVF exists to bring that cost down."
+                },
+                {
+                    question: "What does it mean to say fixed-probe IVF is wasteful?",
+                    answer: "IVF divides vectors into many partitions and searches a fixed number of them per query. Handing out that same number to every query is what fixed probing means. Deduplication only needs neighbors above a similarity threshold, and fixed probing has no knowledge of that condition. So a query that already found its answer in the first partition keeps burning through the remaining budget. In the Hunyuan workload analysis, between 93.76% and 99.95% of the neighbors satisfying the threshold sat inside the first eight partitions."
+                },
+                {
+                    question: "How exactly does the SieveIVF early-stop rule work?",
+                    answer: "The search walks partitions in order, and when W partitions in a row yield no candidate satisfying the similarity threshold, that query stops. Any qualifying result in between resets the counter to zero. Unlike earlier early-termination techniques that require a trained predictor, this only counts observed empty partitions, and it leaves the index structure, the centroids, and the in-partition search logic alone. W is the only value tuned at run time."
+                },
+                {
+                    question: "Under what conditions were 8.38x and 2.29 points measured?",
+                    answer: "On DEEP-100M, a public dataset of 100 million vectors, with W set to 8 and compared against fixed probing. Speed improved 8.38 times and recall over the top-10 neighbors above the threshold fell by 2.29 percentage points. Under the same conditions LAION-100M gave 6.11x and 1.43 points, and the four 10-million-vector Hunyuan workloads gave 4.1x to 7.6x with losses of 0.03 to 1.13 points. One caveat matters: these experiments computed centroid assignment exactly."
+                },
+                {
+                    question: "How do I reduce the recall loss?",
+                    answer: "Widen the window W. On the two public workloads, raising W to 12 brought losses down to 0.88 and 1.34 points while the speed gain shrank to between 5.6x and 5.8x. Speed and loss are geared to the same knob, so there is no free lunch. In practice the right order is not to decide how fast the job should run but to decide how much this particular dataset can afford to miss and then pick the W that fits. The paper's appendix likewise proposes sampling 2% of a batch to select W against a target loss automatically."
+                },
+                {
+                    question: "What do the 2.29 points of missed duplicates do to the trained model?",
+                    answer: "The paper measures search quality only and does not address model impact. Related work points in a direction, though. Lee and colleagues reported in 2022 that removing duplicates cut verbatim reproduction of training sentences by roughly a factor of ten. Carlini and colleagues showed that memorization scales log-linearly with how many times a sequence appears in the data. So the risk is governed less by the percentage missed than by how often the missed items repeat. Missing items that appear once each is not the same 2.29 points as missing a cluster that repeats hundreds of times."
+                },
+                {
+                    question: "Why should the early-stop window W go on the dataset card?",
+                    answer: "Because W determines how many duplicates were left in that dataset. Dataset cards increasingly ask for provenance, collection method, and safety filtering, but approximation parameters from the cleaning pipeline are almost never on the required list. Without that record, there is no way to put the cleaning stage on the list of suspects months later when memorization or evaluation contamination shows up. The threshold, the early-stop window, the centroid assignment method, the measured recall loss and how it was measured, and where the per-batch values live are enough."
+                },
+                {
+                    question: "Can the loss be larger in production than in the paper?",
+                    answer: "It can. The paper's experiments computed centroid assignment exactly, but large pipelines often assign vectors to partitions approximately, using something like HNSW, for speed. Some vectors then land in the wrong partition, adding another 0.27 to 2.88 points of recall loss at W=8. And when the threshold is very loose, the overhead of early stopping itself can exceed the gain. That is why the number you record has to be one you measured in your own environment."
+                },
+                {
+                    question: "Does this compete with deduplication methods like SemDeDup?",
+                    answer: "No. SemDeDup is closer to a policy for deciding what counts as a duplicate in embedding space and what gets removed. SieveIVF speeds up the search stage that supplies the candidate neighbors such a policy needs. They sit at different layers and can be used together. That said, if the search stage misses a candidate, no amount of sophistication in the policy downstream will catch it, and the duplicate survives. Which is another reason to record the policy and the search parameters together."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
