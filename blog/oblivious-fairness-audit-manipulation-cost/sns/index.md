@@ -11,13 +11,13 @@
 
 감사에 어느 문항이 쓰일지 감추자, 불공정을 감추는 데 필요한 응답 위조가 38건에서 152건으로 늘었습니다.
 
-AIES 2026에 채택된 respir 프로토콜의 실험 결과입니다. 감사자와 제공자가 먼저 큰 후보 집합에 합의하고, 제공자는 그 후보 전체에 모델을 돌려 답을 냅니다. 감사자는 사적 정보 검색이라는 암호 기법으로 자기가 쓸 부분집합만 꺼내 오는데, 제공자는 후보에 무엇이 들어 있는지는 알아도 그중 어느 항목이 실제 판정에 들어갔는지는 알 수 없습니다.
+AIES 2026에 채택된 respir 프로토콜의 실험 결과입니다. 감사자와 제공자가 먼저 큰 후보 집합에 합의하고, 제공자는 그 후보 전체에 모델을 돌려 답을 냅니다. 감사자는 사적 정보 검색이라는 암호 기법으로 자기가 쓸 부분집합만 꺼내 옵니다. 제공자는 후보에 무엇이 들어 있는지는 알아도, 그중 어느 항목이 실제 판정에 들어갔는지는 알 수 없습니다.
 
-값이 오르는 이유는 단순합니다. 어느 항목이 쓰일지 모르면 후보 집합 전체에 걸쳐 일관되게 답을 비틀어야 하고, 손댄 면적이 넓어질수록 감사자가 심어 둔 카나리 질의에 걸릴 확률도 같이 올라갑니다. COMPAS의 인종 속성에서 카나리 다섯 개를 심었을 때 적발 확률은 10.7%에서 20.5%로 올랐습니다.
+값이 오르는 이유는 단순합니다. 어느 항목이 쓰일지 모르면 후보 집합 전체에 걸쳐 일관되게 답을 비틀어야 합니다. 손댄 면적이 넓어질수록 감사자가 심어 둔 카나리 질의에 걸릴 확률도 같이 오릅니다. COMPAS의 인종 속성에서 카나리 다섯 개를 심었을 때 적발 확률은 10.7%에서 20.5%로 올랐습니다.
 
 도입 부담은 가벼운 편입니다. 모델 쪽에 요구하는 변경은 없고, 감사자가 지는 비용은 8GiB 데이터베이스 조회 기준 3.6초입니다.
 
-막지는 못합니다. 후보 집합 자체는 제공자에게 공개되므로 후보 전체에 통일된 전략을 쓰는 길은 열려 있고, 보호집단이 후보의 8% 수준으로 작으면 카나리를 쉰 개까지 늘려도 적발률이 낮게 유지됩니다. 후보 집합이 실제 운영 환경을 대표하지 못하면 감사를 통과해도 공정성은 보장되지 않습니다.
+막지는 못합니다. 후보 집합 자체는 제공자에게 공개되므로, 후보 전체에 통일된 전략을 쓰는 길은 열려 있습니다. 보호집단이 후보의 8% 수준으로 작으면 카나리를 쉰 개까지 늘려도 적발률이 낮게 유지됩니다. 후보 집합이 실제 운영 환경을 대표하지 못하면 감사를 통과해도 공정성은 보장되지 않습니다.
 
 감사 가능성을 규제 문서에 요건으로 적어 두는 일과, 그 감사가 조작을 얼마나 견디도록 설계됐는지를 말하는 일은 다른 작업입니다.
 
@@ -105,7 +105,7 @@ What does an exam measure when you hand out the syllabus first?
 
 The ability, or the syllabus?
 
-Algorithmic fairness audits have been sat under those conditions for a long time.
+Algorithmic fairness audits have long been taken under exactly those conditions.
 
 Reuters, working from internal documents, described the shape of it. Meta knew which search terms Japanese regulators and reporters used in its ad library, ran those searches itself first, and removed the scam ads that surfaced. One memo recorded four straight days at zero. Meta's response was that the drop reflected real enforcement.
 
