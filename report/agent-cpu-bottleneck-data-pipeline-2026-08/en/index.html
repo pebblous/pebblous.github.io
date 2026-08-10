@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="&copy; 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>Agent CPU Bottleneck and the Data Pipeline Bill | Pebblous</title>
+    <meta name="og-image-title" content="Agents Wait Longer for Data Than for the Model">
+    <meta name="description" content="AI's bottleneck is drifting from the accelerator to what surrounds it: Intel's CPU-to-GPU ratio, measured agent runtimes, and why more cores won't help.">
+    <meta name="keywords" content="agent infrastructure, CPU, GPU, data pipeline, cloud computing, AI infrastructure cost, AI-Ready Data, Intel, AWS, agentic AI, tool calls, orchestration, TTFT, tokenization">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Agents Wait Longer for Data Than for the Model">
+    <meta property="og:description" content="Intel says the eight GPUs once sharing a CPU are now nearly one-to-one. Most of an agent's runtime drains into CPU-side retrieval, parsing and summarization — yet CPU utilization sits near 10 percent.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Agents wait longer for data than for the model — a breakdown of the CPU segments in agent runtime">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_official">
+    <meta name="twitter:creator" content="@pebblous_official">
+    <meta name="twitter:title" content="Agents Wait Longer for Data Than for the Model">
+    <meta name="twitter:description" content="The bottleneck moved off the GPU. In tool-dominated agent workloads, up to 88 percent of runtime goes to CPU-side tool processing, yet CPU utilization there is about 10 percent.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/en/image/index.png">
+    <meta name="twitter:image:alt" content="Agents wait longer for data than for the model">
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="Agents Wait Longer for Data Than for the Model">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/08/11">
+    <meta name="citation_online_date" content="2026/08/11">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (order fixed: theme-variables → tailwind-build → common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260811">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260811">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260811">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* Stat cards */
+        .stat-card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.75rem 0 0.5rem;
+        }
+        @media (max-width: 640px) {
+            .stat-card-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .stat-card {
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color, #e2e8f0);
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #F86825;
+            line-height: 1.2;
+        }
+        .stat-card .stat-label { font-size: 0.85rem; margin-top: 0.4rem; }
+        /* Comparison table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+        .comparison-table th {
+            background: var(--bg-secondary, #f1f5f9);
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 2px solid var(--border-color, #e2e8f0);
+        }
+        .comparison-table td {
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            vertical-align: top;
+        }
+        .comparison-table tbody tr:hover { background: rgba(248, 104, 37, 0.04); }
+        /* Quote box */
+        .quote-box {
+            border-left: 4px solid #F86825;
+            background: var(--bg-secondary, #f8fafc);
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.85;
+        }
+        .quote-box .quote-source {
+            display: inline-block;
+            background: #F86825;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.18rem 0.65rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.6rem;
+        }
+        /* Horizontal bars */
+        .bar-row { display: grid; grid-template-columns: 150px 1fr 80px; align-items: center; gap: 0.75rem; margin-bottom: 0.7rem; font-size: 0.85rem; }
+        .bar-row .bar-label { font-weight: 600; }
+        .bar-track { background: var(--bg-secondary, #f1f5f9); border-radius: 0.4rem; height: 1.4rem; overflow: hidden; }
+        .bar-fill { height: 100%; background: #F86825; border-radius: 0.4rem 0 0 0.4rem; }
+        .bar-fill.neutral { background: #808080; }
+        .bar-row .bar-value { text-align: right; font-weight: 700; color: #F86825; }
+    </style>
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Firmer Than Hearsay</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The Ratio Intel Put on Record</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. One Lap Around the Loop</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Most of That Time Is Data Work</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. The Price List Only Half Agrees</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. Counting the Data-Prep Share</a></li>
+                    <li><a href="#section-7" class="block pl-4 themeable-toc-link transition-colors duration-200">7. Why Pebblous Watches This</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The AI infrastructure story of summer 2026 is fixed on GPUs and power. Just outside that frame, another axis has quietly moved. On Intel's April earnings call, CEO Lip-Bu Tan said the ratio of CPUs to GPUs used to be one to eight, is now one to four, and could move toward parity or beyond. In July the CFO added that it is almost at parity and could skew further toward CPUs on a unit basis. In the same window, Amazon CEO Andy Jassy wrote in his shareholder letter that two large customers had asked to buy all of AWS's 2026 Graviton capacity, and that Amazon had turned them down. Graviton is a CPU.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Why CPUs, specifically? Researchers from Georgia Tech and Intel profiled five agent workloads and found that in the tool-dominated ones, up to 88 percent of runtime drained into CPU-side tool processing. Open that segment and you find retrieval, summarization, file I/O and preprocessing. Separate work shows that on long-sequence inference, tokenization alone can consume up to half of total latency, and that giving a serving stack enough CPU improves time to first token several times over without adding a single GPU. What the agent waits on, in other words, is not the model. It is data.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Summarizing that as "we are short on CPUs" gets it wrong, though. In the same measurements, average CPU utilization during agent execution sits around 10 percent. The cores are not scarce; the data path is narrow. Cloud price lists do not back the shortage story either. The visible pressure is still on GPUs, while general-purpose instance pricing has held steady or fallen. So the conclusion here is not "buy more CPUs." It is a question: has anyone in your organization ever counted, in seconds and in dollars, the data-preparation share of your agent budget?
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6">
+                        Four numbers carry this report. The first three point toward a bottleneck that has moved outside the accelerator. The fourth says that movement must not be read as a CPU shortage. Where those four appear to contradict each other is exactly what this piece is about.
+                    </p>
+
+                    <div class="stat-card-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">1:8 → ~1:1</div>
+                            <p class="stat-label themeable-muted">CPUs per GPU, as stated by Intel<br>(Apr 2026 → Jul 2026)</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">up to 88%</div>
+                            <p class="stat-label themeable-muted">of runtime spent on CPU-side tool<br>processing in tool-dominated workloads</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">1.36–5.40×</div>
+                            <p class="stat-label themeable-muted">time-to-first-token improvement from<br>adequate CPU alone, with no added GPU</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">7.6–13.2%</div>
+                            <p class="stat-label themeable-muted">and yet: average CPU utilization<br>during agent execution</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Series note -->
+                <div class="mb-16 fade-in-card">
+                    <div class="quote-box">
+                        <span class="quote-source">Series note</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">This is the third piece in a series on AI compute resources. The first, <a href="/report/meta-compute-semiconductor-shock/en/" class="text-orange-500 hover:text-orange-400 font-semibold">"The Bill for Spare Servers,"</a> located the bottleneck in overestimated demand; the second, <a href="/report/ai-datacenter-power-wall-2026/en/" class="text-orange-500 hover:text-orange-400 font-semibold">"AI Hit a Wall This Summer,"</a> located it in electricity. This one is not about the size of the bottleneck but about its <strong>location</strong>.</p>
+                    </div>
+                </div>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Some Documents Are Firmer Than Hearsay</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This story began with a single scoop. On August 7, 2026, <a href="https://www.theinformation.com/" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 font-semibold">The Information</a> reported that at an internal meeting in May, AWS leadership told engineers to conserve capacity by every available means. Teams were given deadlines to cut usage before year-end, and were asked to tear down idle EC2 instances they no longer needed so that the capacity could go to customers. Both AI-chip servers and CPU servers were reportedly in scope. One engineer said CPU server capacity that used to arrive within hours now takes days.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The more appealing a story is, the more honest it is to show its sourcing first. This report sits behind a paywall, and its core evidence is an account from anonymous engineers. Everything that followed, including the <a href="https://www.tomshardware.com/pc-components/cpus/amazon-cracks-down-on-cpu-waste-among-engineers-as-agentic-ai-crunch-intensifies-cpu-demand-makes-low-utilization-ec2-instances-a-hot-commodity" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">Tom's Hardware</a> write-up, is a re-report of that same original, so no one should inflate the source count by saying "three outlets reported it." As of this report's writing on August 11, 2026, no independent confirmation from a Reuters- or Bloomberg-tier newsroom had appeared. The Information carried its own caveats: the shortfall was largely a spot-instance problem, and one consultant said there was no shortage in contracted capacity.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AWS pushed back. Nothing has changed in how it manages compute resources, the company said, and it continues to meet the "overwhelming majority" of demand from both internal teams and customers. A spokesperson described demand for its services, EC2 included, as "incredibly strong and continuing to grow," and added that reclaiming idle instances and rightsizing are long-standing practices, so reading such efficiency measures as evidence of a new capacity constraint is "incorrect."
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">What exactly was denied</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">What AWS denied is <strong>the causal reading that its operating posture fundamentally changed</strong>, not the existence of the efficiency measures. That idle instances were reclaimed and that they were reclaimed because of a capacity crunch are two separate claims, and the company contested the second. Blur that distinction and you end up misquoting both sides.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>Why anonymous accounts are not the anchor here</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Adjudicating whether that report is true is not what this piece is for, because it does not need to be. That AWS faces CPU capacity constraints stands without leaning on anonymous sourcing at all. CEO Andy Jassy wrote it down himself in his <a href="https://www.aboutamazon.com/news/company-news/amazon-ceo-andy-jassy-2025-shareholder-letter" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 font-semibold">2025 letter to shareholders</a>, published April 9, 2026.
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">Andy Jassy, 2025 shareholder letter</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;"><strong>Two large customers asked to buy "all" of AWS's 2026 Graviton capacity</strong>, and Amazon declined out of fairness to other customers. AWS added 3.9 GW of new power capacity in 2025 alone, plans to double its total power capacity by the end of 2027, and spends capital 6 to 24 months before the meter starts running.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Graviton is a <strong>CPU</strong> that AWS designs itself. A statement that two customers wanted to buy a full year of CPU capacity outright, and that the cloud provider had to say no, is far firmer than one engineer's sense of how long queues have gotten. It is a written statement from a chief executive to shareholders. So the anchor changes here. The wait-time anecdotes quoted below stay qualitative and never make it into a table or a metric; the load-bearing weight is split between Jassy's sentence and Intel's earnings calls in the next section.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Ratio Intel Put on the Record</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If the AWS side straddles hearsay and a shareholder letter, the Intel side is much simpler. Named executives said numbers out loud on earnings calls, and the transcripts exist. On the first-quarter call of April 23, 2026, CEO Lip-Bu Tan summarized the CPU-to-GPU ratio this way.
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">Lip-Bu Tan, Intel CEO, 2026-04-23</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">"The ratio of CPU to GPUs used to be 1-to-8, and now it is 1-to-4, and I think it could move towards parity or even better."</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Nail down the reading direction first. The notation runs <strong>CPU count to GPU count</strong>. A configuration where eight GPUs shared a single CPU became four GPUs per CPU, and then roughly one to one, which means this shift is a story about CPUs <strong>increasing</strong>. Flip the order and read it as "four to one became one to one" and it looks like CPUs shrank. The opposite is true.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On the same call, CFO David Zinsner broke the ratio out by workload. Training runs about seven or eight GPUs per CPU, inference three or four, and once you get to agentic and multi-agent work the direction "may invert somewhat." That is the most important sentence here, because a named CFO attributed the ratio shift to <strong>agents</strong>. The three months of remarks that followed point the same way. On the second-quarter call of July 23, Zinsner said the ratio was "almost in parity" and could "skew more to CPUs on a unit basis," declining to give a precise figure and citing customer spending inputs and visibility from long-term supply agreements as his basis.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Line the four statements up chronologically and the direction of travel becomes visible. The column to watch is the last one. The left-hand number is the CPU count and the right-hand number is the GPU count, so a larger left-hand share means more CPUs attached to the same number of accelerators. Moving from training to inference to agents, that share grew nearly eightfold.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>When</th><th>Statement</th><th>CPU : GPU (units)</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Past (training)</td><td>"used to be 1-to-8" / training runs 7–8 GPUs per CPU</td><td>1 : 8</td></tr>
+                            <tr><td>2026-04 (inference)</td><td>"now it is 1-to-4" / inference is 3–4 to 1</td><td>1 : 4</td></tr>
+                            <tr><td>2026-05 (some agentic customers)</td><td>"four CPU to one GPU" — <strong>notation reversed</strong></td><td>4 : 1</td></tr>
+                            <tr><td>2026-07</td><td>"almost in parity … could skew more to CPUs on a unit basis"</td><td>~1 : 1</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="themeable-muted text-sm mb-8">The CPU-to-GPU unit ratio as described by Intel executives. The third row is written in the opposite order from the rows around it, so the numbers cannot be compared directly.</p>
+
+                    <div class="my-8 p-5 rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff);">
+                        <p class="text-sm font-bold themeable-heading mb-1">How many CPUs per GPU</p>
+                        <p class="text-xs themeable-muted mb-4">Each square is one unit. Orange is CPU, gray is GPU. CPU is held fixed at one; only the GPU count next to it shrinks, tracing the shift in the ratio.</p>
+                        <div class="flex items-center gap-3 mb-3 flex-wrap">
+                            <span class="text-xs themeable-muted" style="width:130px;">Past (training)</span>
+                            <div class="flex gap-1">
+                                <div style="width:16px;height:16px;border-radius:4px;background:#F86825;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                            </div>
+                            <span class="text-xs font-bold" style="color:#F86825;">1 : 8</span>
+                        </div>
+                        <div class="flex items-center gap-3 mb-3 flex-wrap">
+                            <span class="text-xs themeable-muted" style="width:130px;">2026-04 (inference)</span>
+                            <div class="flex gap-1">
+                                <div style="width:16px;height:16px;border-radius:4px;background:#F86825;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                            </div>
+                            <span class="text-xs font-bold" style="color:#F86825;">1 : 4</span>
+                        </div>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <span class="text-xs themeable-muted" style="width:130px;">2026-07 (agentic)</span>
+                            <div class="flex gap-1">
+                                <div style="width:16px;height:16px;border-radius:4px;background:#F86825;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                            </div>
+                            <span class="text-xs font-bold" style="color:#F86825;">~1 : 1</span>
+                        </div>
+                    </div>
+                    <p class="themeable-muted text-sm mb-8">Original Pebblous diagram — the number of GPUs (gray) attached to one CPU (orange), per Intel executive statements. The same one CPU handled fewer and fewer GPUs, from eight down to one, moving from training to inference to agentic work. Read the other way, that means each GPU now needs that many more CPUs alongside it.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That third row needs care. At the JPMorgan Global TMC Conference in May 2026, Tan said some customers now tell him it is four to one: four CPUs to one GPU. The "1-to-4" of the earlier rows and the "four to one" here are written in <strong>opposite orders</strong>, and this one is a secondhand account of specific customer cases. Set them side by side and read only the digits, and a reader will be confused every time. Tan attributed the remark to frontier model companies and startups telling him CPUs were more useful for reinforcement learning, orchestration across multiple agents, and workload optimization.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>Intel's CEO named data as the reason</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        More important to this piece than the ratio itself is the <strong>reason</strong> Tan gave. Asked why CPUs matter more as you move to inference, he named three things.
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">Lip-Bu Tan, on why CPUs</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">"On the inference side, in terms of <strong>orchestration, control plane, and also managing all the different agents with data</strong>, CPU is much more efficient."</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The last of those three is where this report stands. The CEO of a company that sells CPUs named <strong>handling data</strong> as a driver of CPU demand. On the same call he redefined the CPU as "the orchestration layer and critical control plane for the entire AI stack." Section 4 returns to that sentence.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>The people saying this are the people selling it</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Better to fold vendor incentives into the arithmetic now rather than defer the judgment. The loudest voices on the CPU renaissance are precisely the companies that sell CPUs. Intel published its own white paper in March 2026 on "the rising CPU-to-GPU ratio in AI infrastructure," raised server CPU prices by 10 to 20 percent after March, and is reported to be planning another 8 to 10 percent in the second half. Some Xeon SKUs got more than a thousand dollars more expensive. AMD projects a $220 billion server CPU market by 2030 and uses that as its growth thesis. <strong>A scarcity narrative justifies a price increase all by itself.</strong>
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What is interesting is that Intel also offered a different explanation. Intel VP Tasha Chuang told TrendForce that the price adjustments primarily reflected changes in manufacturing costs across the supply chain. That frames it as costs rising, not demand exploding. A demand story and a cost story coexist inside one company, which makes it premature to convert a price increase directly into evidence of a CPU shortage. What this piece takes from Intel's remarks is <strong>the direction of the ratio</strong> and <strong>the fact that data was named as the reason</strong>, not their conclusion.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What the CPU Does While an Agent Takes One Lap</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So far this is what companies say. Where the time actually goes is something you have to measure. Fortunately, people have. <a href="https://arxiv.org/abs/2511.00739" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 font-semibold">arXiv:2511.00739</a>, in which Ritik Raj and colleagues from Georgia Tech and Intel profiled five agent workloads from a CPU-centric perspective, is currently the paper that answers this question most directly. That two of the five authors are at Intel is worth keeping in mind throughout.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        First, the citation conditions. The paper has been revised three times since its November 2025 first version, and the "up to 90.6% of end-to-end latency" line in the original abstract became <strong>up to 88 percent</strong> in the current v3 (April 16, 2026), where the percentage was dropped from the abstract entirely. Every figure below comes from the v3 body. And 88 percent is not an average across the five workloads; it is <strong>an upper bound in tool-dominated workloads</strong>. Strip that condition off in a citation and the sentence becomes false immediately.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The team ran the same workloads on two systems. Sys 1 paired a high-end CPU (Intel 6th-gen Xeon Granite Rapids) with a relatively modest GPU (RTX Pro 6000 Blackwell); Sys 2 paired a high-end CPU (NVIDIA Grace) with a high-end GPU (H200). Two things are worth reading in the table: which stage held the clock longest in each workload, and what share that stage took on each of the two systems. The workload-level results follow.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Workload</th><th>Stage that dominated the time</th><th>Sys 1</th><th>Sys 2</th><th>Nature</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Haystack RAG</td><td>ENNS vector search</td><td>81–83%</td><td>up to 89%</td><td>Data work</td></tr>
+                            <tr><td>ChemCrow</td><td>RDKit conformer generation</td><td>85%</td><td>88%</td><td>Data work</td></tr>
+                            <tr><td>SWE-Agent</td><td>Bash and Python execution</td><td>25–38%</td><td>up to 65%</td><td>Data work</td></tr>
+                            <tr><td>LangChain (web-augmented)</td><td>LexRank summarization</td><td>48–55%</td><td>—</td><td>Data work</td></tr>
+                            <tr><td><strong>Toolformer</strong></td><td><strong>LLM inference</strong></td><td><strong>~88%</strong></td><td>—</td><td><strong>Model compute (counterexample)</strong></td></tr>
+                        </tbody>
+                    </table>
+                    <p class="themeable-muted text-sm mb-8">Per-workload latency breakdown from Raj et al. (arXiv:2511.00739 v3). The bottom row is a counterexample to this article's thesis: in Toolformer, the 88 percent belongs to LLM inference, not to tools.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is a temptation to delete that last row, and deleting it would make this article false. The same paper contains a case in which <strong>the agent is not CPU-bound</strong>. Toolformer's 88 percent is model compute, not tool processing. So the accurate sentence is not "agents are CPU-bound" but "<strong>in tool-dominated workloads</strong>, most of the runtime drains through the CPU side." Which category a given workload falls into is something you have to measure, and that is arguably the most practical implication of the table.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>Upgrading the GPU made the bottleneck easier to see</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Reading the Sys 1 and Sys 2 columns side by side produces the most interesting result in this piece. Swapping in the better GPU made the tool segment's share <strong>grow, not shrink</strong>. RAG went from 83 to 89 percent; SWE-Agent went from 38 to 65 percent. This is obvious and important at the same time. As the GPU's slice of total runtime shrank, the CPU segment that stayed exactly where it was stood out proportionally more.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That observation answers the natural objection, "won't this resolve itself once GPU supply loosens up?" As accelerators get cheaper and faster, the effect does not ease. It intensifies. One paper showed the direction with nothing more than a two-system comparison.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>The same thing happens one layer down, in serving</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If that paper works at the agent layer, the same phenomenon shows up a layer below, in inference serving infrastructure. <a href="https://arxiv.org/abs/2603.22774" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 font-semibold">Chung et al. (arXiv:2603.22774)</a> catalogued three mechanisms by which the CPU induces slowdowns in multi-GPU LLM inference. The first is <strong>tokenization</strong>. Serving Llama 3.1 8B across four H200s with 16 CPU cores allocated, the single step of chopping text into tokens consumed up to half of total latency on long-sequence requests. The second is <strong>collective communication sync</strong>: when the CPU is oversubscribed, one rank arriving a millisecond late at an NCCL barrier puts all eight GPUs into a wait. The third is <strong>shared-memory contention</strong>, where they reported dequeue latency in the vLLM V1 broadcast queue degrading from 12 milliseconds to 228, a factor of nineteen.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's practical conclusion is that this is an allocation problem. With sufficient CPU, time to first token improved 1.36 to 5.40 times <strong>without adding a single GPU</strong>. And real clusters are mostly allocated the other way. Across 4.65 million job scheduler records the authors analyzed, the median CPU cores per GPU on educational clusters was one to two, and on research clusters roughly 60 percent of jobs ran with fewer than eight cores per GPU.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>What one lap looks like on a timeline</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The third measurement comes from an operating-systems angle. <a href="https://arxiv.org/abs/2602.09345" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 font-semibold">AgentCgroup (arXiv:2602.09345 v3)</a>, from researchers at UC Santa Cruz, decomposed execution time while running 144 SWE-rebench tasks through the Claude Code harness. A single task took five to eleven minutes. Of that, LLM inference took 40 to 45 percent, tool execution 20 to 35 percent of active time, and initialization 31 to 48 percent. Grouping initialization and tool execution together, OS-level overhead accounted for 55 to 60 percent of the completion time a user actually experiences. Below, that loop is stretched out along a timeline.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The orange blocks are the data work running on the CPU. Calling tools, searching, reading files, parsing what comes back and packing it into the next prompt, and summarizing the result at the end all live there. The model itself runs in only two gray blocks: planning and replanning. Bar lengths represent the order and relative weight of the stages conceptually, not measured proportions from any one workload.
+                    </p>
+
+                    <div class="my-8 p-4 rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff);">
+                        <svg viewBox="0 0 760 260" width="100%" role="img" aria-label="Timeline decomposition of one agent execution: initialization, planning on GPU, tool calls on CPU, observation and parsing on CPU, replanning on GPU, with CPU stages occupying most of the loop">
+                            <text x="0" y="18" font-size="13" font-weight="700" fill="var(--text-secondary, #475569)">Timeline of one agent execution</text>
+                            <text x="0" y="38" font-size="11" fill="var(--text-muted, #808080)">The filled blocks are data work running on the CPU</text>
+
+                            <rect x="0" y="58" width="90" height="34" rx="5" fill="#BDBDBD"/>
+                            <text x="45" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#171719">Init</text>
+                            <rect x="94" y="58" width="70" height="34" rx="5" fill="#585858"/>
+                            <text x="129" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">Plan</text>
+                            <rect x="168" y="58" width="200" height="34" rx="5" fill="#F86825"/>
+                            <text x="268" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">Tool calls · search · file I/O</text>
+                            <rect x="372" y="58" width="130" height="34" rx="5" fill="#F86825"/>
+                            <text x="437" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">Parse · serialize</text>
+                            <rect x="506" y="58" width="70" height="34" rx="5" fill="#585858"/>
+                            <text x="541" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">Replan</text>
+                            <rect x="580" y="58" width="120" height="34" rx="5" fill="#F86825"/>
+                            <text x="640" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">Summarize · clean</text>
+                            <rect x="704" y="58" width="56" height="34" rx="5" fill="#BDBDBD"/>
+                            <text x="732" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#171719">Teardown</text>
+
+                            <path d="M 0 108 L 760 108" stroke="var(--text-muted, #808080)" stroke-width="1"/>
+                            <text x="0" y="126" font-size="11" fill="var(--text-muted, #808080)">start</text>
+                            <text x="760" y="126" font-size="11" text-anchor="end" fill="var(--text-muted, #808080)">done</text>
+
+                            <rect x="0" y="150" width="14" height="14" rx="3" fill="#F86825"/>
+                            <text x="22" y="162" font-size="12" fill="var(--text-secondary, #475569)">CPU — search, parsing, serialization, summarization, file I/O (all data work)</text>
+                            <rect x="0" y="176" width="14" height="14" rx="3" fill="#585858"/>
+                            <text x="22" y="188" font-size="12" fill="var(--text-secondary, #475569)">GPU — model inference (planning and replanning)</text>
+                            <rect x="0" y="202" width="14" height="14" rx="3" fill="#BDBDBD"/>
+                            <text x="22" y="214" font-size="12" fill="var(--text-secondary, #475569)">Init and teardown — starting the harness and tool environment (31–48% per AgentCgroup)</text>
+                            <text x="0" y="242" font-size="11" fill="var(--text-muted, #808080)">Bar lengths are conceptual, not measured proportions from a specific workload.</text>
+                        </svg>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The breakdown itself depends heavily on the environment. Where AgentCgroup put initialization at 31 to 48 percent, <a href="https://arxiv.org/abs/2603.18897" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">PASTE (arXiv:2603.18897)</a>, which parallelizes tool execution with LLM generation, reported initialization at under 20 percent of tool latency in its own traces. Different harnesses and different traces produce different decompositions. No single number here works as a universal constant.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Most of That Time Is Data Work</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The question narrows to one thing here. What exactly is happening inside those CPU segments? Write the stages that held the clock in the previous section back under the names of the work they actually do, and the answer appears.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Stage the measurements named</th><th>What it actually does</th><th>Name of the data task</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>ENNS search (Haystack RAG)</td><td>Finds nearest neighbors in an embedding index</td><td>Vector search</td></tr>
+                            <tr><td>LexRank summarization (LangChain)</td><td>Picks the key sentences out of scraped web documents</td><td>Text cleaning</td></tr>
+                            <tr><td>Bash and Python execution (SWE-Agent)</td><td>Walks the repository, reads and writes files</td><td>File I/O</td></tr>
+                            <tr><td>Conformer generation (ChemCrow)</td><td>Turns molecular structures into a computable form</td><td>Preprocessing</td></tr>
+                            <tr><td>Tokenization (serving layer)</td><td>Converts text into the numbers a model consumes</td><td>Encoding</td></tr>
+                            <tr><td>Parsing and serialization (agent loop)</td><td>Structures tool responses and loads them into the next prompt</td><td>Format conversion</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="themeable-muted text-sm mb-8">The time-dominating stages from section 3, rewritten under the names of data tasks. None of them is model compute.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is not a single model operation in the right-hand column. It is all moving, selecting, cleaning and reshaping data. The claim that a large share of what gets called agent infrastructure cost is really <strong>data pipeline cost</strong> stops being rhetoric here and becomes an inventory. The sentence in section 2 where Intel's CEO named "managing all the different agents with data" as a driver of CPU demand and this table are saying the same thing from two angles. One is the observation of someone selling chips, the other is the output of a profiler, and the stages they point at overlap.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>The money goes to the GPU; the time goes to the CPU</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Two apparently contradictory pieces of evidence need to sit side by side here. <a href="https://arxiv.org/abs/2601.14735" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">A study decomposing the cost of MCP-based agentic workflows (arXiv:2601.14735)</a> reported that across two applications, the LLM accounted for 61 to 94 percent of total cost, agent execution about 13 percent, and MCP function execution around 3 percent. That looks like a head-on collision with section 3's finding that tools eat 88 percent of the time.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        It is not a collision. The two numbers measure different things. One is <strong>money</strong> and the other is <strong>time</strong>. Token charges flow to the inference servers running on GPUs, while orchestration and tool execution run long and slow on far cheaper CPUs. Look only at the invoice and this is a GPU problem; look at the clock and it is a data problem. Same system, two different instruments.
+                    </p>
+
+                    <div class="my-8">
+                        <div class="bar-row">
+                            <span class="bar-label">Cost — LLM inference (GPU)</span>
+                            <span class="bar-track"><span class="bar-fill" style="width:80%;"></span></span>
+                            <span class="bar-value">61–94%</span>
+                        </div>
+                        <div class="bar-row">
+                            <span class="bar-label">Time — tool execution (CPU)</span>
+                            <span class="bar-track"><span class="bar-fill" style="width:88%;"></span></span>
+                            <span class="bar-value">up to 88%</span>
+                        </div>
+                    </div>
+                    <p class="themeable-muted text-sm mb-8">Original Pebblous diagram — the cost share is the LLM's share of total cost from arXiv:2601.14735 (two applications); the time share is the tool-dominated upper bound from arXiv:2511.00739. The two figures come from different studies and workloads, so they are not a single execution split exactly in half — this is a conceptual diagram showing only which side dominates when the same system is read through a different instrument.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">That distinction is also the relationship between this piece and an earlier one. In June 2026, <a href="/blog/ai-agent-token-cost-retry-loop/en/" class="text-orange-500 hover:text-orange-400 font-semibold">"The Cheaper Tokens Get, the Bigger the Bill"</a> examined how 73 percent of enterprises overrun their AI budgets even as token prices fell to a third of what they were. The material there was one analysis citing a thirtyfold increase from $0.04 to $1.20 per run, and retry loops inflating invoices as much as fiftyfold. That article followed <strong>the axis of the token bill</strong>; this one follows <strong>the axis of CPU time</strong>. Where the money goes and where the time goes are different questions, and unless you count both, half of your agent budget stays invisible.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>And yet CPU utilization is 10 percent</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Everything so far leads easily to "so we are short on CPUs." The same AgentCgroup measurements block that conclusion head-on. Average CPU utilization during agent execution was 13.2 percent on a Claude Haiku 4.5 backend and 7.6 percent on a GLM backend. The authors' conclusion is even sharper: what constrains multi-tenancy density is not CPU but <strong>memory</strong>, with a 185 MB framework baseline on top of which tool calls push peak usage to 15.4 times the average.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Hiding that number would make this article false, and not hiding it makes the argument more precise. The 88 percent does not flow while the cores burn. <strong>Time accumulates on top of cores that are mostly idle.</strong> It is the result of serial stretches stacked end to end: waiting on a search result, waiting for a file to open, waiting for a full response before parsing can start. So the bottleneck is not compute volume but waiting and serialization, and the prescription changes accordingly. Buying more cores does not shorten a wait. What shortens it is fixing the path.
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">The argument of this report</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">Agents do not wait on the GPU. <strong>They wait on data.</strong> Most of the runtime drains through CPU-side stages that search, parse, summarize and read files, and in those stages CPU utilization sits near 10 percent. Nothing is burning cores; time is piling up on a serialized data path. Which is why swapping in a better GPU does not remove the bottleneck. It makes it <strong>more visible.</strong></p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>Where this argument has to stop</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Push the argument one step further and it goes like this: the dirtier the data, the more parsing fails, the more schema mismatches trigger retries, and the more CPU time it costs. Plausible, and probably right. But <strong>this report does not present that as a measured fact</strong>, because no study was found that connects "dirty data" and "extra CPU seconds" inside a single experiment.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What exists are fragments of the chain. There are benchmarks observing tool-call schema error rates of 6.4 to 9.8 percent in multi-turn conversations. There is a case study in which an agent loop raised API calls from 308 to 504 against a zero-shot baseline and pushed cost up 52 percent, driven mainly by 196 retries. There are observations that missing required parameters spike as schema complexity rises. The fragments point the same way, but it is this report that connected them, not an experiment. Read it as <strong>circumstantial, not causal</strong>.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One fragment is operationally certain, though. A call that returned a 400 or 422 because of a missing required field or a type mismatch will return the same error if you resend it with the same parameters. Those retries are not partially recovered cost; they are <strong>pure waste</strong>. In organizations that aggregate retry metrics into a single number, that waste disappears into transient errors and rate-limit retries.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Price List Only Half Agrees</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If demand really has shifted toward CPUs, prices should have risen or supply should have tightened. Check, and it turns out to be <strong>half true</strong>. At the manufacturing stage the pressure is unmistakable. On cloud price lists it is barely visible.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>Manufacturing: the pressure is real</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In an April 15, 2026 release, the research firm TrendForce cut its forecast for total server shipment growth that year from 20 percent to 13 percent. The reason was components, not demand. Lead times for PCBs and CPUs stretched to roughly a year; power management ICs went from 21–26 weeks to 35–40, and baseboard management controllers from 11–16 weeks to 21–26. In an August 5 release, the same firm <strong>raised</strong> its growth forecast for AI server shipments from 28 percent to nearly 31 percent, and projected that combined 2026 capital expenditure at the top nine cloud providers would rise about 90 percent year over year.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The picture only resolves when you read the two numbers together. The overall server market's forecast came down because components are scarce; the AI server forecast went up because demand is strong. Components are being allocated to AI servers first, and general-purpose servers are queued behind them. That pressure sits <strong>across the whole supply chain</strong> regardless of what happened inside AWS, which is why no single company's statement erases it.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>Cloud price lists: not there yet</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On the screen where cloud customers actually pay, though, that pressure has not arrived. No basis was found for 2026 increases in on-demand pricing for AWS general-purpose instances (M7i, C7i, R7i), and older generations such as m5, c5 and r5 came down 3 to 7 percent. The Graviton4 families (r8g, c8g, m8g) run 10 to 15 percent cheaper than the prior generation. The GPU side is unambiguous in the other direction: EC2 GPU Capacity Block prices rose 15 percent in January and another 20 percent in July.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Reduce it to directions and the split is clean. Exactly one line item rose in 2026, and it was GPU capacity; the general-purpose instances that contain CPUs held flat or fell. Had the demand shift reached consumer pricing, the picture would look the other way around.
+                    </p>
+
+                    <div class="bar-row">
+                        <span class="bar-label">GPU Capacity Block</span>
+                        <span class="bar-track"><span class="bar-fill" style="width:100%;"></span></span>
+                        <span class="bar-value">+15%, +20%</span>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">Current general-purpose</span>
+                        <span class="bar-track"><span class="bar-fill neutral" style="width:3%;"></span></span>
+                        <span class="bar-value" style="color:#808080;">no change</span>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">Older gen · Graviton4</span>
+                        <span class="bar-track"><span class="bar-fill neutral" style="width:14%;"></span></span>
+                        <span class="bar-value" style="color:#808080;">3–15% lower</span>
+                    </div>
+                    <p class="themeable-muted text-sm mb-8">Direction of 2026 AWS instance price changes, on-demand. The pressure showed up as pricing only on the GPU side.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So this report does not say CPUs have become expensive in the cloud. Writing that would contradict the evidence. The accurate sentence is that <strong>manufacturing-stage pressure has not yet propagated to cloud price lists</strong>. Lead-time signals suggest it may show up with a lag, but as of August 2026 that transmission is not observable.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Not every cloud is alike, however. Azure is close to an exception. Bloomberg reported that new subscription restrictions in core regions including Northern Virginia and Texas were expected to run through the first half of 2026, attributed to shortages of physical space and servers, and explicitly affecting <strong>traditional CPU-based workloads, not only GPUs</strong>. Morgan Stanley expects relief starting in the second half of 2026. No comparable signal was found for GCP or OCI. That <strong>asymmetry stands as written</strong>: two of four providers confirmed, two not. Generalizing to "CPUs are short across every cloud" is wrong, and shrinking it to "an AWS-specific quirk" is also wrong.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.3</span>Six ways this article could be wrong</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Rather than tuck these in defensively, this report stands them up as a list of their own. The six below weaken this article's thesis or attach conditions to it, and whatever survives a full reading of them is the report's actual claim.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li><strong>The most visible bottleneck is still the GPU.</strong> NVIDIA's most recent quarterly data center revenue was $51.2 billion, and Jensen Huang has said cloud GPUs are sold out. The CPU story sits on top of that one; it does not replace it.</li>
+                        <li><strong>The real constraint is connectivity, not compute.</strong> Futurum argues the binding constraint on agentic inference is scale-up networking data movement for mixture-of-experts models rather than CPU compute, and Marvell's CEO has framed AI scaling as fundamentally a connectivity problem. This objection partly favors the argument here, though: saying data movement is the bottleneck is still saying the data path is the bottleneck.</li>
+                        <li><strong>The bottleneck is power.</strong> Gartner expects 40 percent of AI data centers to face operational constraints from power availability by 2027. That axis got its own treatment in <a href="/report/ai-datacenter-power-wall-2026/en/" class="text-orange-500 hover:text-orange-400">an earlier report</a>.</li>
+                        <li><strong>The people saying this are the people selling it.</strong> The vendor incentives from section 2 apply here too, and two of the five authors of the core paper this article relies on are at Intel.</li>
+                        <li><strong>Scheduling recovers a good deal of the bottleneck.</strong> Techniques proposed in that same paper improved P50 latency by 1.7 times and end-to-end latency for certain request types by 2.37 to 2.49 times. Structural is not the same as inevitable.</li>
+                        <li><strong>Both camps cite the same data.</strong> In a SambaNova demo, a 45-second agentic task used the GPU for 2 seconds. The CPU camp cites this as evidence the bottleneck has moved; the GPU camp cites the fact that those 2 seconds produced most of the tokens. It stands here as an illustration of how far the interpretations diverge.</li>
+                    </ul>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">How to Count the Data-Prep Share</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        After all of that, one question remains: what about us? Most organizations do not know, because the cost dashboard shows only tokens. The six items below use nothing but figures already introduced above, and each can be checked in your own environment. There are no new numbers here.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>Split the time axis first</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Measure a single agent run in five segments: LLM wait, tool execution, serialization and parsing, retrieval and preprocessing, and initialization. All three papers in section 3 started from this decomposition, and without it there is no way to know which segment dominates in your environment. If yours is a workload like Toolformer, where model inference dominates, the prescriptions in this article do not apply to you. There is no reason to leave that determination to anyone else.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>Watch wait time, not utilization</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        CPU utilization of 10 percent reads as "plenty of headroom," but it can also mean "currently waiting." The 7.6 to 13.2 percent in section 4 was exactly that situation. Drop the CPU side from your investigation because the utilization graph looks flat, and you skip the segment where time accumulates most. What to look at instead is I/O wait, queue delay, and the length of the serial stretches.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>Check your CPU cores per GPU</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        As section 3 showed, real clusters commonly run one or two CPU cores per GPU, and that is under-provisioning. Given the result that adequate allocation improved time to first token by 1.36 to 5.40 times, this is a cheap thing to verify before buying more GPUs. Pulling the ratio out of your own cluster's job specs takes less than a day.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.4</span>Time tokenization and retrieval separately</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For services handling long sequences, tokenization can reach half of total latency. The same goes for the retrieval stage. Both are usually buried inside a single "model call" bucket in application metrics, and they do not announce themselves until you pull them out and time them on their own.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.5</span>Break retries out by type</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This is where the distinction from section 4.3 becomes a metric. A retry after a transient error or a rate limit has a chance of succeeding on resend; a retry after a 400 or 422 caused by a schema mismatch will fail again. Aggregate the two into one line and the retry rate can look perfectly normal while pure waste hides inside it. Benchmarks put multi-turn tool-call schema error rates around 6.4 to 9.8 percent. If your environment runs higher than that, that is your priority by itself.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.6</span>Split the budget into three lines</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The last item is this article's actual request. Account for your agent budget in three lines: token spend, accelerator time, and <strong>data path time</strong>. Most organizations already watch the first two. The third is usually absent from every dashboard, which means that whether it is large or small, it never enters the conversation. Count it and you at least learn its size, and once you know the size you can judge whether it deserves priority. That is as far as this report asks the reader to go.
+                    </p>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Watches This Subject</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Every product Pebblous builds sits outside the model. DataClinic diagnoses the condition of a dataset, AI-Ready Data covers the stage before anything reaches training, and DataGreenhouse and PebbloSim are the layer where data gets generated and validated. That is why this subject held our attention for a long time. The signals observable at both Intel and AWS say the center of gravity for AI system resources is moving into precisely that layer.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.1</span>Data quality shows up as time before it shows up as accuracy</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Data quality problems are usually described as degraded model performance: accuracy drops, hallucinations rise, benchmark scores fall. In an agent architecture they are likely to appear first as <strong>time</strong>. Parsing fails, schema mismatches attach retries, and the clock runs while preprocessing is redone. As noted in section 4.3, no study has yet measured that connection inside a single experiment. So this is a Pebblous claim, not a fact this report has proven, and the proving is better done in your own environment with the instrumentation in section 6.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.2</span>The line missing from the quote</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Organizations evaluating agent adoption generally calculate token costs and accelerator costs. What this report points at is the third line that is not on that quote. Cloud capacity planning, data pipeline redesign and tool-call failure rate management are all directly coupled to the condition of the data, and all three are usually not line items at all. Without a line item, improvements cannot be measured, and what cannot be measured does not attract investment.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.3</span>Why this piece is about the clock, not the ledger</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Back in June, Pebblous published <a href="/blog/ai-agent-token-cost-retry-loop/en/" class="text-orange-500 hover:text-orange-400 font-semibold">a piece treating the agent invoice as an accounting problem</a>. This is not a repeat of that story but a reading from a different instrument. That one followed the flow of money; this one follows the flow of time. Back when the bottleneck sat on the GPU, data preparation never even registered as a cost line. As the center of gravity moves outward, that layer starts to show up in seconds, and after that in dollars.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed"><strong>Editor's Note.</strong> The conclusion of this article is not "buy more CPUs," and it is not "buy a particular product." What the measurements say is that a substantial share of agent runtime drains through stages that move, select and clean data, and that the CPU during those stages is mostly idle. If so, the thing to fix is the path, not the hardware. That is why Pebblous reads this issue as a data path problem rather than a semiconductor news story, and this article only proposes that lens. It does not substitute for your own measurements.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The 2026 conversation about AI infrastructure still revolves around how many of the biggest accelerators you can secure. Not because that question is unimportant, but because it alone cannot tell you what an agent is actually waiting on. Before the next quarterly plan gets written, the clock is worth a look. If what your agent waits on is not the model, buying a better model will not shorten the wait.
+                    </p>
+                </section>
+
+                <!-- FAQ Section (PebblousPage.init fills this from config.faqs) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">📚</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic (arXiv / papers)</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Raj, R., Kundu, S., Vohra, I., Wang, H., Krishna, T., "Towards Understanding, Analyzing, and Optimizing Agentic AI Execution: A CPU-Centric Perspective," 2025–2026 (v1 2025-11-01, v3 2026-04-16). Georgia Tech / Intel. <a href="https://arxiv.org/abs/2511.00739" target="_blank" rel="noopener">arXiv:2511.00739</a> — source of the 88 percent figure, the per-workload breakdown, and the two-system comparison</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Chung, E., Jia, Y., Jezghani, A., Kim, H., "Characterizing CPU-Induced Slowdowns in Multi-GPU LLM Inference," 2026-03-24. <a href="https://arxiv.org/abs/2603.22774" target="_blank" rel="noopener">arXiv:2603.22774</a> — TTFT 1.36–5.40×, tokenization at 50 percent, real-world core allocation</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Zheng, Y., Fan, J., Fu, Q., Yang, Y., Zhang, W., Quinn, A., "AgentCgroup: Understanding and Controlling OS Resources of AI Agents," v3 2026-07-23. UC Santa Cruz. <a href="https://arxiv.org/abs/2602.09345" target="_blank" rel="noopener">arXiv:2602.09345</a> — the time decomposition and CPU utilization of 7.6–13.2 percent</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">"Parallelizing Tool Execution and LLM Generation for Low-Latency Agent Serving" (PASTE), 2026-03. <a href="https://arxiv.org/abs/2603.18897" target="_blank" rel="noopener">arXiv:2603.18897</a> — the conflicting observation on initialization share</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">"Schema First Tool APIs for LLM Agents," 2026. <a href="https://arxiv.org/abs/2603.13404" target="_blank" rel="noopener">arXiv:2603.13404</a> — a taxonomy of tool-call failures</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Cost decomposition of MCP-based agentic workflows (FaaS environment, two applications), 2026. <a href="https://arxiv.org/abs/2601.14735" target="_blank" rel="noopener">arXiv:2601.14735</a> — LLM at 61–94 percent of cost</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Corporate primary sources (earnings calls, shareholder letters, IR)</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">7.</span><span class="ref-body">Intel, Q1 2026 earnings call transcript, 2026-04-23 — remarks by Lip-Bu Tan and David Zinsner. <a href="https://www.fool.com/earnings-call-transcripts/" target="_blank" rel="noopener">fool.com</a> (via transcript service)</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Intel, Q2 2026 earnings call, 2026-07-23 — the "almost in parity" remark. <a href="https://www.intc.com/news-events/press-releases" target="_blank" rel="noopener">intc.com</a></span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Amazon, "CEO Andy Jassy's 2025 Letter to Shareholders," 2026-04-09 — the Graviton capacity request and refusal, 3.9 GW, capex lead time. <a href="https://www.aboutamazon.com/news/company-news/amazon-ceo-andy-jassy-2025-shareholder-letter" target="_blank" rel="noopener">aboutamazon.com</a></span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">AMD, Q2 2026 earnings press release, 2026-08-04 — server CPU growth and the 2030 market projection. <a href="https://ir.amd.com/news-events/press-releases" target="_blank" rel="noopener">ir.amd.com</a></span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">J.P. Morgan 54th Annual Global TMC Conference, Intel fireside chat, 2026-05-19 — the "four CPU to one GPU" remark (the reversed-notation case)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Research firms and statistics</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">12.</span><span class="ref-body">TrendForce, press release on the lowered server shipment forecast and component lead times, 2026-04-15. <a href="https://www.trendforce.com/presscenter/news/20260415-13013.html" target="_blank" rel="noopener">trendforce.com</a></span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">TrendForce, press release raising the AI server shipment forecast, 2026-08-05. <a href="https://www.trendforce.com/presscenter/news/20260803-13161.html" target="_blank" rel="noopener">trendforce.com</a></span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">Gartner, "Lack of AI-Ready Data Puts AI Projects at Risk," press release, 2025-02-26 (N=248, Q3 2024). <a href="https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk" target="_blank" rel="noopener">gartner.com</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Press (secondary, traced back to primary sources)</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">15.</span><span class="ref-body">The Information, exclusive report on AWS internal capacity-conservation instructions, 2026-08-07 (paywalled). <a href="https://www.theinformation.com/" target="_blank" rel="noopener">theinformation.com</a></span></li>
+                        <li><span class="ref-num">16.</span><span class="ref-body">Tom's Hardware, re-report of the AWS story with the AWS statement. <a href="https://www.tomshardware.com/pc-components/cpus/amazon-cracks-down-on-cpu-waste-among-engineers-as-agentic-ai-crunch-intensifies-cpu-demand-makes-low-utilization-ec2-instances-a-hot-commodity" target="_blank" rel="noopener">tomshardware.com</a></span></li>
+                        <li><span class="ref-num">17.</span><span class="ref-body">Tom's Hardware, confirmation of Intel server and consumer CPU price increases, 2026-04. <a href="https://www.tomshardware.com/pc-components/cpus/intel-confirms-price-hikes-on-select-consumer-and-server-cpus-citing-supply-costs-and-demand-select-xeon-processors-now-over-usd1-000-more-expensive" target="_blank" rel="noopener">tomshardware.com</a></span></li>
+                        <li><span class="ref-num">18.</span><span class="ref-body">AI Times, report on the AWS internal CPU usage crackdown. <a href="https://www.aitimes.com/news/articleView.html?idxno=213735" target="_blank" rel="noopener">aitimes.com</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Adjacent Pebblous work (cross-links)</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">19.</span><span class="ref-body">Pebblous, "The Cheaper Tokens Get, the Bigger the Bill" (2026-06-13) — the axis of the token bill. <a href="/blog/ai-agent-token-cost-retry-loop/en/">blog/ai-agent-token-cost-retry-loop</a></span></li>
+                        <li><span class="ref-num">20.</span><span class="ref-body">Pebblous, "AI Hit a Wall This Summer, and It Wasn't Chips or Money" (2026-08-01). <a href="/report/ai-datacenter-power-wall-2026/en/">report/ai-datacenter-power-wall-2026</a></span></li>
+                        <li><span class="ref-num">21.</span><span class="ref-body">Pebblous, "The Bill for Spare Servers" (2026-07-03). <a href="/report/meta-compute-semiconductor-shock/en/">report/meta-compute-semiconductor-shock</a></span></li>
+                        <li><span class="ref-num">22.</span><span class="ref-body">Pebblous, "The GPU Was Never the Bottleneck — Data Was" (2026-05-12). <a href="/report/nvidia-virtual-cell-challenge-2026-05/en/">report/nvidia-virtual-cell-challenge-2026-05</a></span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260811"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-10T18:10:38.566Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-10T18:17:10.085Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-10T18:58:23.815Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1786385438566-bee33j",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-10T19:53:46.455Z"
+            },
+            mainTitle: "Agents Wait Longer for Data Than for the Model",
+            subtitle: "Intel's shifting CPU-to-GPU ratio, and the data path that fills an agent's runtime",
+            pageTitle: "Agent CPU Bottleneck and the Data Pipeline Bill | Pebblous",
+            category: "tech",
+            publishDate: "2026-08-11",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/agent-cpu-bottleneck-data-pipeline-2026-08/en/",
+            tags: ["agent infrastructure", "CPU", "GPU", "data pipeline", "cloud computing", "AI infrastructure cost", "AI-Ready Data", "Intel", "AWS", "agentic AI"],
+            faqs: [
+                { question: "Did AWS actually reclaim CPU servers internally?", answer: "There is no way to say for certain. On August 7, 2026, The Information cited anonymous engineers reporting that AWS reclaimed idle internal EC2 instances and set per-team reduction deadlines, and every subsequent article is a re-report of that exclusive. AWS responded that nothing has changed in how it manages compute resources and that reclaiming idle instances and rightsizing are long-standing practices. That AWS faces CPU capacity constraints, however, stands without that report at all: CEO Andy Jassy wrote in his 2025 shareholder letter that two large customers asked to buy all of AWS's 2026 Graviton capacity and that Amazon declined." },
+                { question: "If the CPU-to-GPU ratio went from 1-to-8 to 1-to-1, does that mean more CPUs or fewer?", answer: "More. The notation runs CPU count to GPU count, so where eight GPUs once shared a single CPU, the pairing is now close to one to one. In other words, running the same number of GPUs takes nearly eight times as many CPUs. Intel CEO Lip-Bu Tan said on the April 2026 earnings call that 1-to-8 had become 1-to-4 and could move toward parity or beyond, and in July CFO David Zinsner said it was almost at parity and could skew further toward CPUs on a unit basis." },
+                { question: "Why does the time go to the CPU rather than the GPU when running an agent?", answer: "An agent does not call the model once and stop. It runs a loop: plan, call a tool, take the result and organize it, then plan again. In that loop only model inference runs on the GPU; everything else runs on the CPU. When researchers from Georgia Tech and Intel profiled five agent workloads, tool-dominated ones spent up to 88 percent of runtime on CPU-side tool processing. The contents of that segment were vector search, text summarization, file I/O, and molecular structure preprocessing." },
+                { question: "How can the CPU be the bottleneck if utilization is only 10 percent?", answer: "Because the bottleneck is waiting and serialization, not compute volume. When UC Santa Cruz researchers measured 144 tasks through the Claude Code harness, average CPU utilization during agent execution was 7.6 to 13.2 percent. Nothing is burning cores; time accumulates in serial stretches that wait on search results, read files and parse responses. So buying more CPUs is not the prescription. The real constraint on multi-tenancy that the same team identified was memory." },
+                { question: "Why call tool calls and orchestration data work?", answer: "Because opening up the stages the measurements named shows all of them moving, selecting and cleaning data. The dominant stage in Haystack RAG, ENNS search, is vector search; LexRank summarization in the LangChain workload is text cleaning; Bash and Python execution in SWE-Agent is file I/O; conformer generation in ChemCrow is preprocessing. The same holds in the serving layer, where tokenization, which took up to half of total latency on long sequences, is the encoding step that converts text into numbers. Intel CEO Lip-Bu Tan himself named orchestration, the control plane, and 'managing all the different agents with data' as the reasons for CPU demand." },
+                { question: "How much extra CPU time does bad data actually cost?", answer: "No study has measured it directly. Within what this report could verify, figures exist for schema error rates (6.4 to 9.8 percent multi-turn) and for retry-driven cost increases (plus 52 percent), but no experiment converts those into CPU seconds. So the claim that dirty data increases CPU time is an inference connecting two sets of measurements, not a fact this report has measured. One thing is certain in practice, though: a call that returned a 400 or 422 for a missing required field or a type mismatch will fail again on resend with the same parameters, which makes that retry pure waste rather than partially recovered cost." },
+                { question: "How do we calculate the data-prep share of our own agent budget?", answer: "Start by splitting the time axis. Measure a single agent run in five segments: LLM wait, tool execution, serialization and parsing, retrieval and preprocessing, and initialization. Most cost dashboards show tokens and never show this axis. Then look at CPU wait time rather than CPU utilization, check the CPU cores allocated per GPU (one or two per GPU is under-provisioning), instrument tokenization and retrieval separately, and count schema-mismatch retries apart from other retries. Finally, account for the budget in three lines: token spend, accelerator time, and data path time." },
+                { question: "Is this a temporary supply issue or an architectural shift?", answer: "Both are overlapping right now, and they need to be read apart. The architectural evidence is the measurement that upgrading the GPU makes the CPU segment's share grow rather than shrink. In the same paper, moving to a Grace plus H200 system took RAG's tool segment from 83 to 89 percent and SWE-Agent's from 38 to 65 percent. If supply loosens and GPUs become plentiful, the effect intensifies rather than easing. Component lead-time pressure, by contrast, is a function of the supply cycle, and Morgan Stanley expects Azure's capacity constraints to ease from the second half of 2026. The ratio shift is structure; the supply tightness is a phase." },
+                { question: "Isn't Intel just positioning to sell more of its own CPUs?", answer: "That should factor into how you read it. The loudest voices on the CPU renaissance are the companies that sell CPUs. Intel published its own white paper, raised server CPU prices 10 to 20 percent after March, and is expected to raise them again in the second half. AMD projects a $220 billion server CPU market by 2030. A scarcity narrative justifies a price increase all by itself. That said, this report's conclusion differs from Intel's. Intel says therefore buy more CPUs; this report says that buying more CPUs will not change the clock if the data path stays the same." }
+            ]
+        });
+    </script>
+    <script src="/scripts/citation-download.js?v=20260811" defer></script>
+</body>
+</html>
