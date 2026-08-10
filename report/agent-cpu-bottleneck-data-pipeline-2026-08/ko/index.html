@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="&copy; 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>에이전트 CPU 병목과 데이터 파이프라인 비용 | 페블러스</title>
+    <meta name="og-image-title" content="에이전트는 모델보다 데이터를 더 오래 기다린다">
+    <meta name="description" content="에이전트 워크로드가 늘면서 AI 인프라의 병목이 가속기에서 그 주변부로 옮겨 가고 있다. 인텔이 밝힌 CPU 대 GPU 비율 이동과, 에이전트 실행 시간 대부분이 검색·파싱·요약 같은 CPU 데이터 작업에서 흐른다는 실측을 함께 읽는다.">
+    <meta name="keywords" content="에이전트 인프라, CPU, GPU, 데이터 파이프라인, 클라우드 컴퓨팅, AI 인프라 비용, AI-Ready Data, 인텔, AWS, 에이전틱 AI, 도구 호출, 오케스트레이션, TTFT, 토크나이제이션">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="에이전트는 모델보다 데이터를 더 오래 기다린다">
+    <meta property="og:description" content="인텔은 GPU 8대에 붙던 CPU가 이제 거의 대등해졌다고 말한다. 실측을 열어 보면 에이전트 실행 시간의 대부분은 검색·파싱·요약이 도는 CPU 구간에서 흐른다. 그런데 그 구간의 CPU 사용률은 10% 안팎이다.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="에이전트는 모델보다 데이터를 더 오래 기다린다 — 에이전트 실행 시간의 CPU 구간 분해">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_official">
+    <meta name="twitter:creator" content="@pebblous_official">
+    <meta name="twitter:title" content="에이전트는 모델보다 데이터를 더 오래 기다린다">
+    <meta name="twitter:description" content="병목이 GPU에서 그 주변부로 옮겨 갔다. 도구가 지배하는 에이전트 워크로드에서 실행 시간의 최대 88%가 CPU 측 도구 처리에 쓰인다. 그런데 CPU 사용률은 10% 안팎이다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/agent-cpu-bottleneck-data-pipeline-2026-08/ko/image/index.png">
+    <meta name="twitter:image:alt" content="에이전트는 모델보다 데이터를 더 오래 기다린다">
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="에이전트는 모델보다 데이터를 더 오래 기다린다">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/08/11">
+    <meta name="citation_online_date" content="2026/08/11">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정: theme-variables → tailwind-build → common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260811">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260811">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260811">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* 통계 카드 */
+        .stat-card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.75rem 0 0.5rem;
+        }
+        @media (max-width: 640px) {
+            .stat-card-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .stat-card {
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color, #e2e8f0);
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #F86825;
+            line-height: 1.2;
+        }
+        .stat-card .stat-label { font-size: 0.85rem; margin-top: 0.4rem; }
+        /* 비교표 */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+        .comparison-table th {
+            background: var(--bg-secondary, #f1f5f9);
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 2px solid var(--border-color, #e2e8f0);
+        }
+        .comparison-table td {
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            vertical-align: top;
+        }
+        .comparison-table tbody tr:hover { background: rgba(248, 104, 37, 0.04); }
+        /* 인용 박스 */
+        .quote-box {
+            border-left: 4px solid #F86825;
+            background: var(--bg-secondary, #f8fafc);
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.85;
+        }
+        .quote-box .quote-source {
+            display: inline-block;
+            background: #F86825;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.18rem 0.65rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.6rem;
+        }
+        /* 수평 바 */
+        .bar-row { display: grid; grid-template-columns: 150px 1fr 80px; align-items: center; gap: 0.75rem; margin-bottom: 0.7rem; font-size: 0.85rem; }
+        .bar-row .bar-label { font-weight: 600; }
+        .bar-track { background: var(--bg-secondary, #f1f5f9); border-radius: 0.4rem; height: 1.4rem; overflow: hidden; }
+        .bar-fill { height: 100%; background: #F86825; border-radius: 0.4rem 0 0 0.4rem; }
+        .bar-fill.neutral { background: #808080; }
+        .bar-row .bar-value { text-align: right; font-weight: 700; color: #F86825; }
+    </style>
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 전언보다 단단한 문서</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 인텔이 실명으로 말한 비율</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 한 바퀴 도는 동안 CPU가 하는 일</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 그 시간의 대부분은 데이터 작업이다</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 요금표는 아직 절반만 동의한다</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 데이터 준비 몫을 세는 법</a></li>
+                    <li><a href="#section-7" class="block pl-4 themeable-toc-link transition-colors duration-200">7. 페블러스가 이 주제를 보는 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            2026년 여름의 AI 인프라 이야기는 GPU와 전력에 고정돼 있다. 그 시야 밖에서 조용히 자리를 옮긴 축이 하나 있다. 인텔 CEO 립부 탄은 4월 실적 발표에서 GPU 8대에 CPU 1대가 붙던 비율이 이제 4대에 1대가 됐고 앞으로 대등해질 수 있다고 말했다. 7월에는 CFO가 거의 대등하며 대수 기준으로는 CPU 쪽으로 더 기울 수도 있다고 덧붙였다. 같은 시기 아마존 CEO 앤디 재시는 주주서한에, 대형 고객 두 곳이 2026년 Graviton 용량을 통째로 사겠다고 요청해 거절했다고 적었다. Graviton은 CPU다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            왜 하필 CPU인가. 조지아공대와 인텔 연구진이 에이전트 워크로드 다섯 종을 실측했더니, 도구가 지배하는 워크로드에서 실행 시간의 최대 88%가 CPU 측 도구 처리에서 흘렀다. 그 내역을 열어 보면 검색이고 요약이고 파일 입출력이고 전처리다. 다른 연구는 긴 시퀀스 추론에서 토크나이제이션 하나가 전체 지연의 절반까지 차지하고, GPU를 늘리지 않고 CPU만 충분히 배정해도 첫 토큰 지연이 몇 배씩 개선된다는 것을 보였다. 에이전트가 기다리는 대상은 모델이 아니라 데이터인 셈이다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            다만 이 이야기를 "CPU가 모자란다"로 요약하면 틀린다. 같은 실측에서 에이전트의 평균 CPU 사용률은 10% 안팎에 그친다. 코어가 부족한 게 아니라 데이터 경로가 좁은 것이다. 클라우드 요금표도 아직 이 서사를 지지하지 않는다. 압박이 뚜렷한 쪽은 여전히 GPU이고, 범용 인스턴스 가격은 오히려 안정적이다. 그래서 이 보고서의 결론은 CPU를 더 사라가 아니다. 당신 조직의 에이전트 예산에서 데이터 준비 몫이 몇 초이고 몇 원인지 따로 세어 본 적이 있는지를 묻는 것이다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6">
+                        이 보고서가 딛고 선 숫자는 넷이다. 앞의 셋은 병목이 가속기 바깥으로 옮겨 갔다는 쪽을 가리키고, 마지막 하나는 그 이동을 "CPU가 모자란다"로 읽으면 안 된다는 쪽을 가리킨다. 넷이 서로 어긋나 보이는 자리가 이 글이 다루는 지점이다.
+                    </p>
+
+                    <div class="stat-card-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">1:8 → ~1:1</div>
+                            <p class="stat-label themeable-muted">GPU에 붙는 CPU 대수 비율<br>(인텔, 2026-04 → 2026-07)</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">최대 88%</div>
+                            <p class="stat-label themeable-muted">도구 지배 워크로드의 실행 시간 중<br>CPU 측 도구 처리 비중</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">1.36~5.40배</div>
+                            <p class="stat-label themeable-muted">GPU 추가 없이 CPU만 충분히 줬을 때<br>첫 토큰 지연 개선</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">7.6~13.2%</div>
+                            <p class="stat-label themeable-muted">그럼에도 에이전트의<br>평균 CPU 사용률</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 삼부작 안내 -->
+                <div class="mb-16 fade-in-card">
+                    <div class="quote-box">
+                        <span class="quote-source">연재 안내</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">AI 컴퓨팅 자원을 다룬 세 번째 글이다. 첫 글 <a href="/report/meta-compute-semiconductor-shock/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">「메타의 컴퓨트 쇼크」</a>는 병목을 수요 과대추정에서, 두 번째 글 <a href="/report/ai-datacenter-power-wall-2026/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">「전력의 벽」</a>은 전력에서 찾았다. 이번 글의 논점은 병목의 크기가 아니라 <strong>위치</strong>다.</p>
+                    </div>
+                </div>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">전언보다 단단한 문서가 있다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 이야기는 한 건의 보도에서 시작했다. 2026년 8월 7일 <a href="https://www.theinformation.com/" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 font-semibold">디 인포메이션</a>은 AWS 경영진이 5월 사내 회의에서 엔지니어들에게 "가능한 모든 수단으로 용량을 아껴라"고 지시했다고 보도했다. 팀별로 연내 감축 기한이 걸렸고, 더 이상 필요 없는 유휴 EC2 인스턴스를 해체해 그 용량을 고객에게 돌리라는 요구가 뒤따랐다는 것이다. 대상은 AI 칩 서버와 CPU 탑재 서버 양쪽이었다고 한다. 한 엔지니어는 몇 시간이면 나오던 CPU 서버 용량이 이제 며칠씩 걸린다고 말했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기사가 매력적인 만큼 소스 구조를 먼저 드러내는 편이 정직하다. 이 보도는 페이월 뒤의 단독이고, 핵심 근거는 익명 엔지니어의 전언이다. 이후 나온 <a href="https://www.tomshardware.com/pc-components/cpus/amazon-cracks-down-on-cpu-waste-among-engineers-as-agentic-ai-crunch-intensifies-cpu-demand-makes-low-utilization-ec2-instances-a-hot-commodity" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">Tom's Hardware</a>를 비롯한 후속 기사는 전부 같은 원 보도의 재인용이라, "세 매체가 보도했다"는 식으로 소스 수를 부풀리면 안 된다. 로이터·블룸버그급의 독립 확인 보도는 이 보고서를 쓴 2026년 8월 11일까지 확인되지 않았다. 디 인포메이션 자신도 단서를 달았다. 부족은 대체로 스팟 인스턴스 쪽 문제이며, 한 컨설턴트는 계약된 용량에는 부족이 없었다고 말했다는 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AWS는 반박했다. 컴퓨팅 자원을 관리하는 방식에 바뀐 것이 없고, 사내 팀과 고객 양쪽 수요의 "압도적 다수"를 계속 충족하고 있다는 것이다. 대변인은 EC2를 포함한 서비스 수요가 "믿기 어려울 만큼 강하고 계속 커지는 중"이라고 했고, 유휴 인스턴스 회수와 라이트사이징은 오래전부터 해온 관행이므로 이런 효율화 조치를 새로운 용량 제약의 증거로 읽는 것은 "잘못"이라고 덧붙였다.
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">무엇을 부인했는가</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">AWS가 부인한 것은 <strong>"운영 방식이 근본적으로 바뀌었다"는 인과 해석</strong>이지 효율화 조치의 존재 자체가 아니다. 유휴 인스턴스를 회수했다는 사실과 그것이 용량 부족 때문이라는 해석은 별개이며, 회사가 반박한 쪽은 후자다. 이 구분을 흐리면 양쪽 모두를 잘못 인용하게 된다.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>익명 전언을 앵커로 쓰지 않는 이유</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        보도가 사실인지 아닌지를 판정하는 데 이 글의 지면을 쓸 생각은 없다. 그럴 필요가 없기 때문이다. AWS에 CPU 용량 제약이 존재한다는 사실은 익명 전언에 기대지 않고도 성립한다. 앤디 재시 CEO가 <a href="https://www.aboutamazon.com/news/company-news/amazon-ceo-andy-jassy-2025-shareholder-letter" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 font-semibold">2025년 주주서한</a>(2026년 4월 9일 공개)에 직접 써 놓았다.
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">앤디 재시, 2025년 주주서한</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">대형 고객 <strong>두 곳이 AWS의 2026년 Graviton 용량 "전부"를 사겠다고 요청</strong>했고, 아마존은 다른 고객과의 형평성을 이유로 거절했다. AWS는 2025년에만 3.9GW의 신규 전력 용량을 추가했고 2027년 말까지 총 전력 용량을 두 배로 늘릴 계획이며, 설비 투자는 과금이 시작되기 6~24개월 전에 집행된다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Graviton은 AWS가 직접 설계한 <strong>CPU</strong>다. 고객 두 곳이 1년치 CPU 용량을 통째로 사겠다고 했고 클라우드 사업자가 그것을 거절해야 했다는 서술은, 익명 엔지니어의 대기시간 체감보다 훨씬 단단하다. 회사의 CEO가 주주에게 문서로 남긴 진술이기 때문이다. 그래서 이 글은 여기서부터 앵커를 갈아탄다. 아래에서 인용하는 대기시간 이야기는 정성적 전언이므로 표나 지표에 올리지 않고, 논지의 하중은 재시의 문장과 다음 섹션의 인텔 실적 발표가 나눠 진다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">인텔이 실명으로 말한 비율</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AWS 쪽 이야기가 전언과 서한 사이에 걸쳐 있다면, 인텔 쪽은 훨씬 단순하다. 실명의 임원이 실적 발표 자리에서 숫자를 말했고 그 발언이 트랜스크립트로 남아 있다. 2026년 4월 23일 1분기 실적 콜에서 립부 탄 CEO는 CPU 대 GPU 비율을 이렇게 정리했다.
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">립부 탄 (인텔 CEO), 2026-04-23</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">"The ratio of CPU to GPUs used to be 1-to-8, and now it is 1-to-4, and I think it could move towards parity or even better."<br>
+                        <span class="themeable-muted">(CPU 대 GPU 비율은 예전에 1대 8이었고 지금은 1대 4다. 앞으로는 대등해지거나 그 이상으로 갈 수 있다고 본다.)</span></p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        읽는 방향을 먼저 못 박아 두자. 이 표기는 <strong>CPU 대수 대 GPU 대수</strong> 순서다. GPU 8대에 CPU 1대가 붙던 구성이 GPU 4대에 1대로, 다시 거의 1대 1로 옮겨 갔다는 뜻이므로, 이 이동은 CPU가 <strong>늘어난</strong> 이야기다. 순서를 뒤집어 "4대 1에서 1대 1로 갔다"고 읽으면 CPU가 줄어든 것처럼 보인다. 정반대다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 콜에서 데이비드 진스너 CFO는 이 비율을 워크로드별로 갈라 놓았다. 학습은 CPU 1대에 GPU 7~8대, 추론은 3~4대 수준인데, 에이전틱과 멀티 에이전트로 가면 "방향이 조금 뒤집힐 수도 있다"는 것이다. 이 글에 가장 중요한 문장이다. 비율 이동의 원인으로 실명의 CFO가 <strong>에이전트</strong>를 지목했기 때문이다. 그 뒤 3개월치 발언도 같은 방향을 가리킨다. 7월 23일 2분기 콜에서 진스너는 비율이 "거의 대등하며 대수 기준으로는 CPU 쪽으로 더 기울 수도 있다"고 말했고, 구체적 숫자 제시는 거부하면서 근거로 고객 지출 인풋과 장기공급계약의 가시성을 들었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        발언 네 건을 시점 순으로 한자리에 놓으면 이동의 방향이 눈에 들어온다. 볼 것은 오른쪽 열 하나다. 왼쪽 숫자가 CPU 대수, 오른쪽이 GPU 대수이며, 왼쪽 몫이 커질수록 같은 수의 가속기를 돌리는 데 더 많은 CPU가 붙는다는 뜻이다. 학습에서 추론으로, 다시 에이전트로 넘어가면서 그 몫이 여덟 배 가까이 늘었다.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>시점</th><th>발언</th><th>CPU : GPU (대수)</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>과거 (학습)</td><td>"used to be 1-to-8" / 학습은 CPU 1에 GPU 7~8</td><td>1 : 8</td></tr>
+                            <tr><td>2026-04 (추론)</td><td>"now it is 1-to-4" / 추론은 3~4 대 1</td><td>1 : 4</td></tr>
+                            <tr><td>2026-05 (일부 에이전틱 고객)</td><td>"four CPU to one GPU" — <strong>방향이 뒤집힌 사례</strong></td><td>4 : 1</td></tr>
+                            <tr><td>2026-07</td><td>"almost in parity … could skew more to CPUs on a unit basis"</td><td>~1 : 1</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="themeable-muted text-sm mb-8">인텔 임원 발언에 나타난 CPU 대 GPU 대수 비율의 이동. 세 번째 줄은 앞뒤 줄과 표기 방향이 반대이므로 숫자만 비교하면 안 된다.</p>
+
+                    <div class="my-8 p-5 rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff);">
+                        <p class="text-sm font-bold themeable-heading mb-1">GPU 한 대에 CPU가 몇 대 붙는가</p>
+                        <p class="text-xs themeable-muted mb-4">사각형 하나 = 1대. 오렌지가 CPU, 회색이 GPU다. CPU는 항상 1대로 고정하고 그 옆의 GPU 수만 줄여서 비율의 이동을 그렸다.</p>
+                        <div class="flex items-center gap-3 mb-3 flex-wrap">
+                            <span class="text-xs themeable-muted" style="width:130px;">과거 (학습)</span>
+                            <div class="flex gap-1">
+                                <div style="width:16px;height:16px;border-radius:4px;background:#F86825;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                            </div>
+                            <span class="text-xs font-bold" style="color:#F86825;">1 : 8</span>
+                        </div>
+                        <div class="flex items-center gap-3 mb-3 flex-wrap">
+                            <span class="text-xs themeable-muted" style="width:130px;">2026-04 (추론)</span>
+                            <div class="flex gap-1">
+                                <div style="width:16px;height:16px;border-radius:4px;background:#F86825;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                            </div>
+                            <span class="text-xs font-bold" style="color:#F86825;">1 : 4</span>
+                        </div>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <span class="text-xs themeable-muted" style="width:130px;">2026-07 (에이전틱)</span>
+                            <div class="flex gap-1">
+                                <div style="width:16px;height:16px;border-radius:4px;background:#F86825;"></div>
+                                <div style="width:16px;height:16px;border-radius:4px;background:#BDBDBD;"></div>
+                            </div>
+                            <span class="text-xs font-bold" style="color:#F86825;">~1 : 1</span>
+                        </div>
+                    </div>
+                    <p class="themeable-muted text-sm mb-8">페블러스 원본 도식 — 인텔 임원 발언 기준 CPU(오렌지) 1대에 붙는 GPU(회색) 대수의 변화. 같은 CPU 1대가 감당하던 GPU 수가 학습→추론→에이전틱으로 갈수록 8대에서 1대로 줄었다. 뒤집어 보면 GPU 1대당 필요한 CPU가 그만큼 늘었다는 뜻이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표의 세 번째 줄에는 주의가 필요하다. 탄은 2026년 5월 JPMorgan 글로벌 TMC 콘퍼런스에서 "일부 고객은 이제 나에게 4대 1이라고 말한다. CPU 4대에 GPU 1대"라고 발언했다. 앞 줄들의 "1대 4"와 여기의 "4대 1"은 <strong>표기 방향이 정반대</strong>이며, 이것은 일부 고객 사례에 대한 전언이다. 나란히 놓고 숫자만 보면 독자는 반드시 혼동한다. 탄은 프런티어 모델 기업과 스타트업이 강화학습, 여러 에이전트의 오케스트레이션, 워크로드 최적화에서 CPU가 더 유용하다고 말하더라고 그 발언을 귀속했다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>인텔 CEO가 직접 지목한 이유는 데이터였다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비율 숫자보다 이 글에 중요한 것은 탄이 밝힌 <strong>이유</strong>다. 왜 추론으로 넘어가면 CPU가 중요해지느냐는 대목에서 그는 세 가지를 들었다.
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">립부 탄, 왜 CPU인가</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">"On the inference side, in terms of <strong>orchestration, control plane, and also managing all the different agents with data</strong>, CPU is much more efficient."<br>
+                        <span class="themeable-muted">(추론 쪽에서는 오케스트레이션, 컨트롤 플레인, 그리고 여러 에이전트를 데이터로 관리하는 일에서 CPU가 훨씬 효율적이다.)</span></p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 항목 중 마지막이 이 보고서가 딛는 자리다. CPU 수요가 늘어나는 이유로 CPU를 파는 회사의 CEO가 <strong>데이터를 다루는 일</strong>을 직접 지목했다. 같은 콜에서 그는 CPU를 "AI 스택 전체의 오케스트레이션 계층이자 핵심 컨트롤 플레인"으로 재정의하기도 했다. 4절에서 이 문장으로 다시 돌아온다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>말하는 쪽이 파는 쪽이다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 판단을 미루지 않고 벤더 인센티브를 바로 계산에 넣는 편이 낫다. CPU 르네상스를 가장 크게 말하는 주체가 정확히 CPU를 파는 회사들이기 때문이다. 인텔은 2026년 3월 "AI 인프라에서 높아지는 CPU 대 GPU 비율"이라는 자사 백서를 냈고, 3월 이후 서버 CPU 가격을 10~20% 올렸으며 하반기 8~10% 추가 인상이 예상된다는 보도가 나왔다. 일부 Xeon SKU는 1,000달러 넘게 비싸졌다. AMD는 2030년 서버 CPU 시장을 2,200억 달러로 전망하며 자사 성장 논거로 삼는다. <strong>희소성 서사는 그 자체로 가격 인상을 정당화한다.</strong>
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        흥미로운 것은 인텔 스스로 다른 설명도 내놓았다는 점이다. 인텔 VP 타샤 추앙은 TrendForce와의 인터뷰에서 가격 조정이 주로 공급망 전반의 제조 비용 변화를 반영한 것이라고 말했다. 수요가 폭증해서가 아니라 원가가 올라서라는 프레이밍이다. 같은 회사 안에서 수요발 서사와 비용발 서사가 공존하는 셈이니, 가격 인상을 곧바로 "CPU가 부족하다"의 증거로 환산하는 것은 성급하다. 이 글이 인텔 발언에서 가져오는 것은 <strong>비율의 방향</strong>과 <strong>그 이유로 데이터가 지목됐다는 사실</strong>이지, 그들의 결론이 아니다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">에이전트가 한 바퀴 도는 동안 CPU가 하는 일</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기까지는 기업의 말이다. 실제로 시간이 어디서 흐르는지는 재 봐야 안다. 다행히 재 본 사람들이 있다. 조지아공대와 인텔 연구진(Ritik Raj 외)이 에이전트 워크로드 다섯 종을 CPU 관점에서 프로파일링한 <a href="https://arxiv.org/abs/2511.00739" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 font-semibold">arXiv:2511.00739</a>이 지금으로선 이 질문에 가장 직접적으로 답하는 논문이다. 저자 다섯 중 둘이 인텔 소속이라는 점은 읽는 내내 감안할 필요가 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        먼저 인용 조건을 정리해 둔다. 이 논문은 2025년 11월 초판 이후 세 번 개정됐고, 초판 초록의 "총지연의 최대 90.6%"라는 문장은 현행 v3(2026년 4월 16일)에서 <strong>최대 88%</strong>로 바뀌었으며 v3 초록에는 이 퍼센트 자체가 빠졌다. 아래 수치는 모두 v3 본문 기준이다. 그리고 88%는 다섯 워크로드의 평균이 아니라 <strong>도구가 지배하는 워크로드에서의 상한</strong>이다. 이 조건을 떼고 인용하면 곧바로 틀린 문장이 된다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문은 두 시스템에서 같은 워크로드를 돌렸다. Sys 1은 고성능 CPU(인텔 6세대 Xeon Granite Rapids)에 상대적으로 낮은 성능의 GPU(RTX Pro 6000 Blackwell)를 붙였고, Sys 2는 고성능 CPU(NVIDIA Grace)에 고성능 GPU(H200)를 붙였다. 표에서 볼 것은 두 가지다. 각 워크로드에서 시간을 가장 오래 붙잡은 구간이 무엇이었는지, 그리고 그 구간이 두 시스템에서 각각 몇 퍼센트를 차지했는지다. 워크로드별 결과는 이렇다.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>워크로드</th><th>시간을 지배한 구간</th><th>Sys 1</th><th>Sys 2</th><th>성격</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Haystack RAG</td><td>ENNS 벡터 검색</td><td>81~83%</td><td>최대 89%</td><td>데이터 작업</td></tr>
+                            <tr><td>ChemCrow</td><td>RDKit conformer 생성</td><td>85%</td><td>88%</td><td>데이터 작업</td></tr>
+                            <tr><td>SWE-Agent</td><td>Bash·Python 실행</td><td>25~38%</td><td>최대 65%</td><td>데이터 작업</td></tr>
+                            <tr><td>LangChain (웹 증강)</td><td>LexRank 요약</td><td>48~55%</td><td>—</td><td>데이터 작업</td></tr>
+                            <tr><td><strong>Toolformer</strong></td><td><strong>LLM 추론</strong></td><td><strong>약 88%</strong></td><td>—</td><td><strong>모델 연산 (반례)</strong></td></tr>
+                        </tbody>
+                    </table>
+                    <p class="themeable-muted text-sm mb-8">Raj 외(arXiv:2511.00739 v3)의 워크로드별 지연 분해. 맨 아랫줄은 이 글의 논지에 대한 반례다. Toolformer에서 88%를 차지한 것은 도구가 아니라 LLM 추론이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표의 마지막 줄을 지우고 싶은 유혹이 있지만, 지우면 이 글이 거짓이 된다. 같은 논문 안에 <strong>에이전트가 CPU 바운드가 아닌 사례</strong>가 함께 있다. Toolformer의 88%는 도구 처리가 아니라 모델 연산이다. 따라서 정확한 문장은 "에이전트는 CPU 바운드다"가 아니라 "<strong>도구가 지배하는 워크로드에서는</strong> 실행 시간의 대부분이 CPU 측에서 흐른다"이다. 어떤 워크로드가 어느 쪽인지는 재 봐야 안다는 것이 실은 이 표의 가장 실용적인 함의다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>GPU를 좋은 걸로 바꾸자 병목이 더 잘 보였다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표에서 Sys 1과 Sys 2 열을 나란히 보면 이 글에서 가장 흥미로운 대목이 나온다. GPU를 더 좋은 것으로 바꿨더니 도구 구간의 비중이 <strong>줄어든 게 아니라 커졌다</strong>. RAG는 83%에서 89%로, SWE-Agent는 38%에서 65%로 올라갔다. 당연한 결과이면서 동시에 중요한 결과다. 전체 실행 시간에서 GPU가 차지하던 몫이 줄어들자, 그대로 남아 있던 CPU 구간의 비중이 상대적으로 도드라진 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 관찰은 "GPU 공급이 풀리면 해결될 문제 아니냐"는 반론에 직접 답한다. 가속기가 흔해지고 빨라질수록 이 현상은 완화되지 않고 심해진다. 한 논문이 두 시스템 비교만으로 그 방향을 보여준 셈이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>서빙 계층에서도 같은 일이 벌어진다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        위 논문이 에이전트 층위의 이야기라면, 한 층 아래 추론 서빙 인프라에서도 같은 현상이 잡힌다. <a href="https://arxiv.org/abs/2603.22774" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 font-semibold">Chung 외(arXiv:2603.22774)</a>는 멀티 GPU LLM 추론에서 CPU가 유발하는 지연을 세 가지 기제로 정리했다. 첫째는 <strong>토크나이제이션</strong>이다. Llama 3.1 8B를 H200 4장으로 서빙하며 CPU 16코어를 준 조건에서, 긴 시퀀스 요청의 경우 텍스트를 토큰으로 쪼개는 이 한 단계가 총지연의 최대 절반을 먹었다. 둘째는 <strong>집합통신 동기화</strong>다. CPU가 과다구독되면 NCCL 배리어에서 한 랭크가 1밀리초 늦는 것만으로 GPU 8장이 통째로 대기 상태로 들어간다. 셋째는 <strong>공유메모리 경합</strong>으로, vLLM V1의 브로드캐스트 큐에서 dequeue 지연이 12밀리초에서 228밀리초로 19배 악화된 사례를 보고했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문의 실용적 결론은 배정 문제다. CPU를 충분히 준 경우 <strong>GPU를 한 장도 추가하지 않고</strong> 첫 토큰 지연이 1.36~5.40배 개선됐다. 그리고 실제 클러스터는 대체로 반대로 배정돼 있다. 저자들이 분석한 465만 건의 잡 스케줄러 레코드에서 교육용 클러스터의 GPU당 CPU 코어 수 중앙값은 1~2개였고, 연구용 클러스터에서도 GPU당 8코어 미만인 잡이 약 60%였다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>한 번 도는 루프를 시간 축으로 펴 보면</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 번째 실측은 운영체제 관점에서 나왔다. UC 산타크루즈 연구진의 <a href="https://arxiv.org/abs/2602.09345" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 font-semibold">AgentCgroup(arXiv:2602.09345 v3)</a>은 Claude Code 하네스로 SWE-rebench 144개 태스크를 돌리며 시간을 분해했다. 태스크 하나에 5~11분이 걸렸고, 그중 LLM 추론이 40~45%, 도구 실행이 활성 시간의 20~35%, 초기화가 31~48%였다. 초기화와 도구 실행을 묶은 운영체제 수준 오버헤드는 사용자가 체감하는 완료 시간의 55~60%를 차지했다. 아래는 이 루프를 시간 축으로 편 그림이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그림에서 오렌지로 채워진 구간이 CPU에서 도는 데이터 작업이다. 도구를 부르고, 검색하고, 파일을 읽고, 돌아온 응답을 파싱해 다음 프롬프트에 싣고, 마지막에 결과를 요약하는 일이 전부 여기 들어간다. 모델이 실제로 도는 구간은 회색 두 칸, 즉 계획과 재계획뿐이다. 막대 길이는 특정 워크로드의 실측 비율이 아니라 구간의 순서와 상대적 무게를 나타낸 개념도다.
+                    </p>
+
+                    <div class="my-8 p-4 rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff);">
+                        <svg viewBox="0 0 760 260" width="100%" role="img" aria-label="에이전트 1회 실행의 시간 축 분해 — 초기화, 계획(GPU), 도구 호출(CPU), 관측·파싱(CPU), 재계획(GPU) 순서로 이어지는 루프에서 CPU 구간이 대부분을 차지한다">
+                            <text x="0" y="18" font-size="13" font-weight="700" fill="var(--text-secondary, #475569)">에이전트 1회 실행의 시간 축</text>
+                            <text x="0" y="38" font-size="11" fill="var(--text-muted, #808080)">색이 채워진 구간이 CPU에서 도는 데이터 작업이다</text>
+
+                            <rect x="0" y="58" width="90" height="34" rx="5" fill="#BDBDBD"/>
+                            <text x="45" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#171719">초기화</text>
+                            <rect x="94" y="58" width="70" height="34" rx="5" fill="#585858"/>
+                            <text x="129" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">계획</text>
+                            <rect x="168" y="58" width="200" height="34" rx="5" fill="#F86825"/>
+                            <text x="268" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">도구 호출 · 검색 · 파일 I/O</text>
+                            <rect x="372" y="58" width="130" height="34" rx="5" fill="#F86825"/>
+                            <text x="437" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">파싱 · 직렬화</text>
+                            <rect x="506" y="58" width="70" height="34" rx="5" fill="#585858"/>
+                            <text x="541" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">재계획</text>
+                            <rect x="580" y="58" width="120" height="34" rx="5" fill="#F86825"/>
+                            <text x="640" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">요약 · 정제</text>
+                            <rect x="704" y="58" width="56" height="34" rx="5" fill="#BDBDBD"/>
+                            <text x="732" y="80" font-size="11" font-weight="700" text-anchor="middle" fill="#171719">정리</text>
+
+                            <path d="M 0 108 L 760 108" stroke="var(--text-muted, #808080)" stroke-width="1"/>
+                            <text x="0" y="126" font-size="11" fill="var(--text-muted, #808080)">시작</text>
+                            <text x="760" y="126" font-size="11" text-anchor="end" fill="var(--text-muted, #808080)">완료</text>
+
+                            <rect x="0" y="150" width="14" height="14" rx="3" fill="#F86825"/>
+                            <text x="22" y="162" font-size="12" fill="var(--text-secondary, #475569)">CPU — 검색, 파싱, 직렬화, 요약, 파일 입출력 (전부 데이터 작업)</text>
+                            <rect x="0" y="176" width="14" height="14" rx="3" fill="#585858"/>
+                            <text x="22" y="188" font-size="12" fill="var(--text-secondary, #475569)">GPU — 모델 추론 (계획·재계획)</text>
+                            <rect x="0" y="202" width="14" height="14" rx="3" fill="#BDBDBD"/>
+                            <text x="22" y="214" font-size="12" fill="var(--text-secondary, #475569)">초기화·정리 — 하네스와 도구 환경 기동 (AgentCgroup 기준 31~48%)</text>
+                            <text x="0" y="242" font-size="11" fill="var(--text-muted, #808080)">막대 길이는 개념도이며 특정 워크로드의 실측 비율이 아니다.</text>
+                        </svg>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        분해 수치 자체는 환경에 크게 좌우된다는 점도 함께 적어 둔다. AgentCgroup이 초기화를 31~48%로 잡은 반면, 도구 실행과 LLM 생성을 병렬화한 <a href="https://arxiv.org/abs/2603.18897" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">PASTE(arXiv:2603.18897)</a>는 자체 트레이스에서 초기화가 도구 지연의 20% 미만이라고 보고했다. 하네스와 트레이스가 다르면 분해도 다르다. 어떤 단일 수치도 보편 상수처럼 쓸 수 없다는 뜻이다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">그 시간의 대부분은 데이터 작업이다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 질문은 하나로 좁혀진다. 그 CPU 구간에서는 정확히 무슨 일이 벌어지고 있는가. 앞 절에서 시간을 붙잡고 있던 구간들을 원래 하는 일의 이름으로 다시 적어 보면 답이 나온다.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>실측이 지목한 구간</th><th>실제로 하는 일</th><th>데이터 작업의 이름</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>ENNS 검색 (Haystack RAG)</td><td>임베딩 인덱스에서 근접 이웃을 찾는다</td><td>벡터 검색</td></tr>
+                            <tr><td>LexRank 요약 (LangChain)</td><td>긁어 온 웹 문서에서 핵심 문장을 고른다</td><td>텍스트 정제</td></tr>
+                            <tr><td>Bash·Python 실행 (SWE-Agent)</td><td>저장소를 뒤지고 파일을 읽고 쓴다</td><td>파일 입출력</td></tr>
+                            <tr><td>conformer 생성 (ChemCrow)</td><td>분자 구조를 계산 가능한 형태로 만든다</td><td>전처리</td></tr>
+                            <tr><td>토크나이제이션 (서빙 계층)</td><td>텍스트를 모델이 먹을 숫자로 바꾼다</td><td>인코딩</td></tr>
+                            <tr><td>파싱·직렬화 (에이전트 루프)</td><td>도구 응답을 구조화하고 다음 프롬프트에 싣는다</td><td>포맷 변환</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="themeable-muted text-sm mb-8">3절 실측에서 시간을 지배한 구간을 데이터 작업의 이름으로 다시 적은 것. 어느 것도 모델 연산이 아니다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        오른쪽 열에 모델 연산은 하나도 없다. 전부 데이터를 옮기고, 고르고, 다듬고, 모양을 바꾸는 일이다. 에이전트 인프라 비용이라 불리는 것의 상당 부분이 실은 <strong>데이터 파이프라인 비용</strong>이라는 말은 여기서 수사가 아니라 항목의 나열이 된다. 2절에서 인텔 CEO가 CPU 수요의 이유로 "여러 에이전트를 데이터로 관리하는 일"을 지목했던 문장과, 이 표는 같은 것을 다른 각도에서 말하고 있다. 한쪽은 칩을 파는 사람의 관찰이고 다른 쪽은 프로파일러의 출력인데, 가리키는 구간이 겹친다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>돈은 GPU로 가고 시간은 CPU로 간다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 모순처럼 보이는 자료 두 개를 나란히 놓아야 한다. MCP 기반 에이전틱 워크플로의 비용을 분해한 <a href="https://arxiv.org/abs/2601.14735" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400">한 연구(arXiv:2601.14735)</a>는 애플리케이션 두 건에서 LLM이 전체 비용의 61~94%를 차지하고 에이전트 실행은 13% 남짓, MCP 함수 실행은 3% 수준이라고 보고했다. 도구가 시간의 88%를 먹는다는 3절의 수치와 정면으로 부딪히는 것처럼 보인다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        부딪히지 않는다. 두 수치는 서로 다른 것을 재고 있다. 하나는 <strong>돈</strong>이고 다른 하나는 <strong>시간</strong>이다. 토큰 요금은 GPU 위에서 돌아가는 추론 서버로 흘러가고, 오케스트레이션과 도구 실행은 훨씬 싼 CPU 위에서 오래 돈다. 청구서만 보면 이것은 GPU 문제로 보이고, 시계를 보면 데이터 문제로 보인다. 같은 시스템을 두 개의 다른 계기판으로 읽은 결과다.
+                    </p>
+
+                    <div class="my-8">
+                        <div class="bar-row">
+                            <span class="bar-label">비용 — LLM 추론(GPU)</span>
+                            <span class="bar-track"><span class="bar-fill" style="width:80%;"></span></span>
+                            <span class="bar-value">61~94%</span>
+                        </div>
+                        <div class="bar-row">
+                            <span class="bar-label">시간 — 도구 처리(CPU)</span>
+                            <span class="bar-track"><span class="bar-fill" style="width:88%;"></span></span>
+                            <span class="bar-value">최대 88%</span>
+                        </div>
+                    </div>
+                    <p class="themeable-muted text-sm mb-8">페블러스 원본 도식 — 비용 비중은 arXiv:2601.14735(애플리케이션 2건)의 LLM 비용 비중, 시간 비중은 arXiv:2511.00739의 도구 지배 워크로드 상한이다. 두 수치는 서로 다른 연구·워크로드를 잰 것이라 한 실행을 정확히 반으로 쪼갠 값은 아니며, 같은 시스템을 다른 계기판으로 읽었을 때 어느 쪽이 도드라지는지의 방향만 보여주는 개념도다.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">이 구분은 페블러스가 앞서 다룬 글과 이 글의 관계이기도 하다. 2026년 6월 <a href="/blog/ai-agent-token-cost-retry-loop/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">「가격이 내릴수록 청구서가 커진다」</a>는 토큰 단가가 3분의 1로 떨어졌는데도 기업의 73%가 AI 예산을 초과하는 현상을 다뤘다. 한 분석이 인용한 회당 0.04달러에서 1.20달러로의 30배 증가, 재시도 루프가 청구서를 50배까지 부풀리는 구조가 그 글의 재료였다. 그 글은 <strong>토큰 청구서의 축</strong>을 따라갔고, 이 글은 <strong>CPU 시간의 축</strong>을 따라간다. 돈이 어디로 가는지와 시간이 어디서 흐르는지는 다른 질문이며, 둘 다 세어 보지 않으면 에이전트 예산의 절반이 보이지 않는다.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>그런데 CPU 사용률은 10%다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지금까지의 서술은 "그러니 CPU가 모자란다"로 이어지기 쉽다. 그런데 같은 AgentCgroup 실측이 그 결론을 정면으로 막는다. 에이전트의 평균 CPU 사용률은 Claude Haiku 4.5 백엔드에서 13.2%, GLM 백엔드에서 7.6%였다. 저자들의 결론은 더 분명하다. 다중 테넌시 밀도를 제약하는 것은 CPU가 아니라 <strong>메모리</strong>이며, 프레임워크가 기본으로 쓰는 185MB 위에 도구 호출이 얹히면서 최대 사용량이 평균의 15.4배까지 튄다는 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 숫자를 숨기면 글이 거짓이 된다. 그리고 숨기지 않으면 논지가 오히려 정확해진다. 코어를 다 태우면서 88%가 흐르는 게 아니다. <strong>거의 놀고 있는 코어 위에서 시간만 쌓인다.</strong> 검색 결과를 기다리고, 파일이 열리기를 기다리고, 응답이 다 와야 파싱을 시작하는 직렬 구간이 줄줄이 이어진 결과다. 그러니 병목의 성격은 연산량이 아니라 대기와 직렬화이며, 처방도 달라진다. 코어를 더 사도 대기는 줄지 않는다. 줄어드는 것은 경로를 고쳤을 때다.
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">이 글의 논지</span>
+                        <p class="themeable-text leading-relaxed" style="margin:0;">에이전트는 GPU를 기다리지 않는다. <strong>데이터를 기다린다.</strong> 실행 시간의 대부분은 검색하고 파싱하고 요약하고 파일을 읽는 CPU 측 구간에서 흐르지만, 그 구간에서 CPU 사용률은 10% 안팎이다. 코어를 태우는 게 아니라 직렬화된 데이터 경로 위에서 시간이 쌓이는 것이다. 그래서 GPU를 더 좋은 것으로 바꾸면 병목은 사라지지 않고 <strong>더 도드라진다.</strong></p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>여기서 멈춰야 하는 지점</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논지를 한 걸음 더 밀면 이렇게 된다. 데이터가 지저분할수록 파싱이 실패하고, 스키마가 어긋나 재시도가 늘고, 그만큼 CPU 시간이 더 든다. 그럴듯하고, 아마 맞을 것이다. 그런데 <strong>이 보고서는 그것을 측정된 사실로 제시하지 않는다.</strong> "더러운 데이터"와 "늘어난 CPU 초"를 한 실험 안에서 이은 연구를 찾지 못했기 때문이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        찾은 것은 사슬의 조각들이다. 멀티턴 대화에서 도구 호출 스키마 오류율이 6.4~9.8%로 관측된 벤치마크가 있고, 에이전트 루프가 제로샷 대비 API 호출을 504건 대 308건으로 늘리며 비용을 52% 올렸고 그 주원인이 196회의 재시도였다는 사례 연구가 있다. 스키마 복잡도가 높아질수록 필수 파라미터 누락이 급증한다는 관측도 있다. 조각들은 같은 방향을 가리키지만, 이어 붙인 것은 이 보고서이지 실험이 아니다. <strong>인과가 아니라 정황</strong>으로 읽어 주기 바란다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        대신 조각 하나는 실무적으로 확실하다. 필수 필드 누락이나 타입 불일치로 400이나 422를 받은 호출은, 같은 파라미터로 다시 보내도 또 400이다. 그런 재시도는 부분적으로라도 회수되는 비용이 아니라 <strong>순수한 낭비</strong>다. 재시도 지표를 한 덩어리로 집계하는 조직에서는 이 낭비가 일시적 오류나 속도 제한 재시도에 섞여 보이지 않게 된다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">요금표는 아직 절반만 동의한다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        수요가 정말로 CPU 쪽으로 옮겨 갔다면 값이 오르거나 구하기 어려워졌을 것이다. 확인해 보면 <strong>절반만 맞는다.</strong> 제조 단계에서는 압박이 뚜렷하고, 클라우드 요금표에서는 거의 보이지 않는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>제조 단계 — 압박이 뚜렷하다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        시장조사기관 TrendForce는 2026년 4월 15일 자료에서 그해 전체 서버 출하량 성장률 전망을 20%에서 13%로 내렸다. 이유는 수요 감소가 아니라 부품이었다. PCB와 CPU의 리드타임이 약 1년으로 늘었고, 전원관리 반도체(PMIC)는 21~26주에서 35~40주로, 서버 관리 컨트롤러(BMC)는 11~16주에서 21~26주로 벌어졌다. 반면 같은 기관은 8월 5일 자료에서 <strong>AI 서버</strong> 출하량 성장률 전망을 28%에서 31% 가까이로 올렸다. 상위 9개 클라우드 사업자의 2026년 설비투자 합계는 전년 대비 약 90% 늘어날 것으로 봤다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 숫자를 붙여 읽어야 그림이 맞다. 전체 서버 시장은 부품이 없어서 전망이 내려갔고, AI 서버는 수요가 세서 전망이 올라갔다. 부품이 AI 서버 쪽으로 우선 배정되면서 일반 서버가 뒤로 밀린 것이다. 이 압박은 AWS 사내에서 무슨 일이 있었느냐와 무관하게 <strong>공급망 전체에 걸려 있고</strong>, 그래서 개별 기업의 해명으로 지워지지 않는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>클라우드 요금표 — 아직 보이지 않는다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 클라우드 소비자가 실제로 결제하는 화면에는 이 압박이 도착하지 않았다. AWS의 범용 인스턴스(M7i·C7i·R7i) 온디맨드 가격에서 2026년 중 인상 근거를 찾지 못했고, m5·c5·r5 같은 구세대는 오히려 3~7% 내렸다. Graviton4 계열(r8g·c8g·m8g)은 이전 세대 대비 10~15% 저렴하다. 반대로 GPU 쪽은 명확하다. EC2 GPU Capacity Block 가격은 1월에 15%, 7월에 다시 20% 올랐다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        방향만 추려 놓으면 갈림이 분명해진다. 2026년 중 요금이 오른 항목은 GPU 용량 하나이고, CPU가 들어가는 범용 인스턴스는 제자리이거나 오히려 내렸다. 수요 이동이 소비자 가격에 도달했다면 반대 그림이 나왔어야 한다.
+                    </p>
+
+                    <div class="bar-row">
+                        <span class="bar-label">GPU Capacity Block</span>
+                        <span class="bar-track"><span class="bar-fill" style="width:100%;"></span></span>
+                        <span class="bar-value">+15%, +20%</span>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">범용 인스턴스 (현행)</span>
+                        <span class="bar-track"><span class="bar-fill neutral" style="width:3%;"></span></span>
+                        <span class="bar-value" style="color:#808080;">변화 없음</span>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">구세대 · Graviton4</span>
+                        <span class="bar-track"><span class="bar-fill neutral" style="width:14%;"></span></span>
+                        <span class="bar-value" style="color:#808080;">3~15% 인하</span>
+                    </div>
+                    <p class="themeable-muted text-sm mb-8">2026년 AWS 인스턴스 가격 변화 방향(온디맨드 기준). 압박은 GPU 쪽에만 요금으로 나타났다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 이 보고서는 "지금 클라우드에서 CPU가 비싸졌다"고 쓰지 않는다. 그렇게 쓰면 사실과 어긋난다. 정확한 문장은 <strong>제조 단계의 압박이 아직 클라우드 요금표로 전이되지 않았다</strong>이다. 리드타임 신호로 보아 시차를 두고 나타날 수는 있지만, 2026년 8월 현재 그 전이는 확인되지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다만 클라우드가 다 같지는 않다. Azure는 예외에 가깝다. 블룸버그 보도에 따르면 버지니아 북부와 텍사스 등 핵심 리전의 신규 구독 제한이 2026년 상반기까지 이어질 것으로 전망됐고, 그 사유는 물리적 공간과 서버 부족이며 <strong>GPU 전용이 아니라 CPU 기반 전통 워크로드에도 영향</strong>을 준다고 명시됐다. 모건스탠리는 2026년 하반기부터 완화될 것으로 본다. GCP와 OCI에서는 이만한 신호를 찾지 못했다. 네 사업자 중 둘은 확인되고 둘은 확인되지 않는다는 <strong>비대칭을 그대로</strong> 적어 둔다. 모든 클라우드에서 CPU가 부족하다고 일반화해도 틀리고, AWS만의 특수 사정으로 축소해도 틀린다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.3</span>이 글이 틀릴 수 있는 여섯 자리</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        방어적으로 덧붙이는 대신 독립된 목록으로 세워 둔다. 아래 여섯 가지는 이 글의 논지를 약화시키거나 조건을 다는 근거이며, 이것들을 다 읽고도 남는 만큼이 이 보고서의 실제 주장이다.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li><strong>가장 가시적인 병목은 여전히 GPU다.</strong> 엔비디아의 최근 분기 데이터센터 매출은 512억 달러였고, 젠슨 황은 클라우드 GPU가 매진 상태라고 말했다. CPU 이야기는 그 위에 얹히는 이야기이지 그것을 대체하는 이야기가 아니다.</li>
+                        <li><strong>진짜 제약은 연산이 아니라 연결성이라는 반론.</strong> Futurum은 에이전틱 추론을 실제로 묶어 두는 것이 CPU 연산이 아니라 전문가 혼합 모델의 스케일업 네트워킹 데이터 이동이라고 본다. Marvell CEO는 AI 스케일링을 근본적으로 연결성 문제로 규정했다. 다만 이 반론은 이 글에 부분적으로 유리하다. 데이터 이동이 병목이라는 말 역시 결국 데이터 경로의 문제이기 때문이다.</li>
+                        <li><strong>병목은 전력이라는 반론.</strong> 가트너는 2027년까지 AI 데이터센터의 40%가 전력 가용성 때문에 운영 제약을 받을 것으로 본다. 이 축은 <a href="/report/ai-datacenter-power-wall-2026/ko/" class="text-orange-500 hover:text-orange-400">앞선 글</a>에서 따로 다뤘다.</li>
+                        <li><strong>말하는 쪽이 파는 쪽이다.</strong> 2절에서 다룬 벤더 인센티브는 여기서도 유효하다. 이 글이 근거로 삼은 핵심 논문의 저자 다섯 중 둘도 인텔 소속이다.</li>
+                        <li><strong>병목은 스케줄링으로 상당 부분 회수된다.</strong> 같은 논문이 제안한 기법들은 P50 지연을 1.7배, 특정 요청 유형의 총지연을 2.37~2.49배 개선했다. 구조적이라는 것과 불가피하다는 것은 다르다.</li>
+                        <li><strong>같은 데이터를 양쪽이 인용한다.</strong> SambaNova 데모에서 에이전틱 태스크 45초 중 GPU가 쓴 시간은 2초였다. CPU 진영은 이것을 병목 이동의 증거로 인용하고, GPU 진영은 그 2초가 토큰의 대부분을 만들었다는 점을 인용한다. 해석이 얼마나 갈리는지 보여주는 사례로 남겨 둔다.</li>
+                    </ul>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">데이터 준비 몫을 세는 법</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기까지 읽고 나면 남는 질문은 하나다. 우리 조직은 어떤가. 대부분의 조직은 답을 모른다. 비용 대시보드가 토큰만 보여주기 때문이다. 아래 여섯 가지는 앞 절들에서 나온 수치만 가지고 자기 환경에서 확인할 수 있는 항목이다. 새 숫자는 없다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>시간 축부터 쪼갠다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        에이전트 1회 실행을 LLM 대기, 도구 실행, 직렬화·파싱, 검색·전처리, 초기화의 다섯 구간으로 나눠 잰다. 3절의 세 논문이 전부 이 분해에서 출발했고, 분해하지 않으면 어느 구간이 자기 환경의 지배 구간인지 알 수 없다. Toolformer처럼 모델 추론이 지배하는 워크로드라면 이 글의 처방은 해당되지 않는다. 그 판정을 남에게 맡길 이유가 없다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>사용률이 아니라 대기시간을 본다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        CPU 사용률 10%는 "여유 있음"으로 읽히지만 "기다리는 중"일 수도 있다. 4절의 7.6~13.2%가 정확히 그 상황이었다. 사용률 그래프가 평평하다는 이유로 CPU 쪽을 조사 대상에서 빼면, 시간이 가장 많이 쌓이는 구간을 통째로 놓친다. 봐야 할 것은 I/O 대기, 큐 지연, 직렬 구간의 길이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>GPU당 CPU 코어 배정을 확인한다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        3절에서 본 대로 실제 클러스터의 GPU당 CPU 코어는 1~2개인 경우가 흔하고, 이것은 과소 배정이다. 충분히 배정했을 때 첫 토큰 지연이 1.36~5.40배 개선된 결과가 있으니, GPU를 더 사기 전에 확인할 항목으로는 값이 싸다. 자기 클러스터의 잡 스펙에서 이 비율을 뽑아 보는 데는 하루가 걸리지 않는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.4</span>토크나이제이션과 검색 구간을 따로 잰다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        긴 시퀀스를 다루는 서비스라면 토크나이제이션이 총지연의 절반까지 갈 수 있다. 검색 구간도 마찬가지다. 두 구간은 대개 애플리케이션 지표에서 "모델 호출" 한 덩어리에 묻혀 있어서, 따로 떼어 재기 전까지는 존재를 드러내지 않는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.5</span>재시도를 종류별로 나눈다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        4.3절의 구분이 지표가 되는 자리다. 일시적 오류나 속도 제한으로 인한 재시도는 다시 보내면 성공할 여지가 있지만, 스키마 불일치로 400·422를 받은 재시도는 다시 보내도 실패한다. 두 종류를 한 줄로 집계하면 재시도율이 정상 범위로 보이는 동안 순수한 낭비가 그 안에 숨는다. 도구 호출 스키마 오류율은 벤치마크에서 멀티턴 기준 6.4~9.8% 수준으로 관측된다. 자기 환경의 값이 그보다 높다면 그 자체가 우선순위다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.6</span>예산 항목을 세 줄로 나눈다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        마지막이 이 글의 요청이다. 에이전트 예산을 토큰비, 가속기 시간, <strong>데이터 경로 시간</strong>의 세 줄로 나눠 계상하라. 앞의 두 줄은 대부분의 조직이 이미 본다. 세 번째 줄은 대개 어느 대시보드에도 없고, 그래서 그 값이 크든 작든 논의의 대상이 되지 않는다. 세어 보면 최소한 크기를 알게 되고, 크기를 알면 그것이 우선순위인지 아닌지를 판단할 수 있다. 이 보고서가 독자에게 부탁하는 것은 거기까지다.
+                    </p>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 이 주제를 보는 이유</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스의 제품군은 전부 모델 바깥에 서 있다. DataClinic은 데이터셋의 상태를 진단하고, AI-Ready Data는 학습에 들어가기 전 단계를 다루며, DataGreenhouse와 PebbloSim은 데이터를 만들고 검증하는 층이다. 그래서 이 주제를 오래 들여다봤다. 인텔과 AWS 양쪽에서 관측되는 신호는 AI 시스템의 자원 무게중심이 정확히 그 층으로 옮겨 가고 있다는 것이기 때문이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.1</span>데이터 품질이 성능이 아니라 시간으로 나타난다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터 품질 문제는 보통 모델 성능 저하로 나타난다고 이야기된다. 정확도가 떨어지고, 환각이 늘고, 벤치마크 점수가 내려간다는 식이다. 에이전트 아키텍처에서는 그 이전에 <strong>시간</strong>으로 나타날 가능성이 크다. 파싱이 실패하고, 스키마가 어긋나 재시도가 붙고, 전처리를 다시 돌리는 동안 시계가 흐른다. 4.3절에서 적었듯 이 연결을 한 실험 안에서 측정한 연구는 아직 없다. 그래서 이것은 페블러스의 주장이지 이 보고서가 증명한 사실이 아니며, 증명은 각자의 환경에서 6절의 계측으로 하는 편이 낫다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.2</span>견적서에 빠져 있는 줄</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        에이전트 도입을 검토하는 조직은 대개 토큰 비용과 가속기 비용을 계산한다. 이 보고서가 지목하는 것은 그 견적서에 없는 세 번째 줄이다. 클라우드 용량 계획, 데이터 파이프라인 재설계, 도구 호출 실패율 관리는 셋 다 데이터의 상태에 직접 연동되는데, 셋 다 대개 항목으로 서 있지 않다. 항목이 없으면 개선의 효과도 측정되지 않고, 측정되지 않으면 투자 대상이 되지 못한다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.3</span>이 글이 회계가 아니라 시계를 다루는 이유</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스는 6월에 이미 <a href="/blog/ai-agent-token-cost-retry-loop/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">에이전트 청구서를 회계의 문제로 다룬 글</a>을 썼다. 이 글은 같은 이야기의 반복이 아니라 다른 계기판의 이야기다. 그쪽이 돈의 흐름을 따라갔다면 이쪽은 시간의 흐름을 따라간다. 병목이 GPU에 있던 시절에는 데이터 준비가 비용 항목에조차 잡히지 않았다. 무게중심이 주변부로 옮겨 가면 그 층은 초 단위로, 그다음에는 숫자로 나타난다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed"><strong>Editor's Note.</strong> 이 글의 결론은 CPU를 더 사라가 아니고 특정 제품을 사라도 아니다. 실측이 말하는 바는 에이전트 실행 시간의 상당 부분이 데이터를 옮기고 고르고 다듬는 구간에서 흐르며, 그 구간의 CPU는 대체로 놀고 있다는 것이다. 그렇다면 고칠 대상은 하드웨어가 아니라 경로다. 페블러스가 이 이슈를 반도체 뉴스가 아니라 데이터 경로의 문제로 읽는 이유가 그것이고, 이 글은 그 관점을 제안할 뿐 독자의 계측을 대신하지는 않는다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2026년의 AI 인프라 논의는 여전히 얼마나 큰 가속기를 몇 장 확보하느냐를 중심으로 돈다. 그 질문이 중요하지 않아서가 아니라, 그 질문만으로는 에이전트가 실제로 무엇을 기다리는지 알 수 없다. 다음 분기 계획서를 쓰기 전에 한 번쯤 시계를 들여다볼 만하다. 기다리는 대상이 모델이 아니라면, 더 좋은 모델을 사는 일은 그 기다림을 줄이지 못한다.
+                    </p>
+                </section>
+
+                <!-- FAQ Section (PebblousPage.init이 config.faqs로 자동 채움) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">📚</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 (arXiv / 논문)</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Raj, R., Kundu, S., Vohra, I., Wang, H., Krishna, T., "Towards Understanding, Analyzing, and Optimizing Agentic AI Execution: A CPU-Centric Perspective," 2025~2026 (v1 2025-11-01, v3 2026-04-16). Georgia Tech / Intel. <a href="https://arxiv.org/abs/2511.00739" target="_blank" rel="noopener">arXiv:2511.00739</a> — 본문의 88%·워크로드별 분해·두 시스템 비교의 출처</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Chung, E., Jia, Y., Jezghani, A., Kim, H., "Characterizing CPU-Induced Slowdowns in Multi-GPU LLM Inference," 2026-03-24. <a href="https://arxiv.org/abs/2603.22774" target="_blank" rel="noopener">arXiv:2603.22774</a> — TTFT 1.36~5.40배, 토크나이제이션 50%, 코어 배정 실태</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Zheng, Y., Fan, J., Fu, Q., Yang, Y., Zhang, W., Quinn, A., "AgentCgroup: Understanding and Controlling OS Resources of AI Agents," v3 2026-07-23. UC Santa Cruz. <a href="https://arxiv.org/abs/2602.09345" target="_blank" rel="noopener">arXiv:2602.09345</a> — 시간 분해와 CPU 사용률 7.6~13.2%</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">"Parallelizing Tool Execution and LLM Generation for Low-Latency Agent Serving" (PASTE), 2026-03. <a href="https://arxiv.org/abs/2603.18897" target="_blank" rel="noopener">arXiv:2603.18897</a> — 초기화 비중에 대한 상충 관측</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">"Schema First Tool APIs for LLM Agents," 2026. <a href="https://arxiv.org/abs/2603.13404" target="_blank" rel="noopener">arXiv:2603.13404</a> — 도구 호출 실패의 유형 분류</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">MCP 기반 에이전틱 워크플로의 비용 분해 (FaaS 환경, 애플리케이션 2건), 2026. <a href="https://arxiv.org/abs/2601.14735" target="_blank" rel="noopener">arXiv:2601.14735</a> — LLM 비용 61~94%</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">기업 1차 (실적 콜 · 주주서한 · IR)</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">7.</span><span class="ref-body">Intel, 2026년 1분기 실적 콜 트랜스크립트, 2026-04-23 — 립부 탄·데이비드 진스너 발언. <a href="https://www.fool.com/earnings-call-transcripts/" target="_blank" rel="noopener">fool.com</a> (트랜스크립트 서비스 경유)</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Intel, 2026년 2분기 실적 콜, 2026-07-23 — "almost in parity" 발언. <a href="https://www.intc.com/news-events/press-releases" target="_blank" rel="noopener">intc.com</a></span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Amazon, "CEO Andy Jassy's 2025 Letter to Shareholders," 2026-04-09 — Graviton 용량 요청과 거절, 3.9GW, 설비투자 선행. <a href="https://www.aboutamazon.com/news/company-news/amazon-ceo-andy-jassy-2025-shareholder-letter" target="_blank" rel="noopener">aboutamazon.com</a></span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">AMD, 2026년 2분기 실적 보도자료, 2026-08-04 — 서버 CPU 성장률과 2030년 시장 전망. <a href="https://ir.amd.com/news-events/press-releases" target="_blank" rel="noopener">ir.amd.com</a></span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">J.P. Morgan 54th Annual Global TMC Conference, 인텔 파이어사이드 챗, 2026-05-19 — "four CPU to one GPU" 발언(방향 역전 사례)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">조사기관 · 통계</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">12.</span><span class="ref-body">TrendForce, 서버 출하 전망 하향 및 부품 리드타임 보도자료, 2026-04-15. <a href="https://www.trendforce.com/presscenter/news/20260415-13013.html" target="_blank" rel="noopener">trendforce.com</a></span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">TrendForce, AI 서버 출하 전망 상향 보도자료, 2026-08-05. <a href="https://www.trendforce.com/presscenter/news/20260803-13161.html" target="_blank" rel="noopener">trendforce.com</a></span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">Gartner, "Lack of AI-Ready Data Puts AI Projects at Risk," 보도자료, 2025-02-26 (표본 N=248, 2024 Q3). <a href="https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk" target="_blank" rel="noopener">gartner.com</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">보도 (2차 — 원출처 소급 후 인용)</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">15.</span><span class="ref-body">The Information, AWS 사내 용량 절감 지시 관련 단독 보도, 2026-08-07 (페이월). <a href="https://www.theinformation.com/" target="_blank" rel="noopener">theinformation.com</a></span></li>
+                        <li><span class="ref-num">16.</span><span class="ref-body">Tom's Hardware, AWS 보도 재인용 및 AWS 성명 게재. <a href="https://www.tomshardware.com/pc-components/cpus/amazon-cracks-down-on-cpu-waste-among-engineers-as-agentic-ai-crunch-intensifies-cpu-demand-makes-low-utilization-ec2-instances-a-hot-commodity" target="_blank" rel="noopener">tomshardware.com</a></span></li>
+                        <li><span class="ref-num">17.</span><span class="ref-body">Tom's Hardware, 인텔 서버·소비자 CPU 가격 인상 확인 보도, 2026-04. <a href="https://www.tomshardware.com/pc-components/cpus/intel-confirms-price-hikes-on-select-consumer-and-server-cpus-citing-supply-costs-and-demand-select-xeon-processors-now-over-usd1-000-more-expensive" target="_blank" rel="noopener">tomshardware.com</a></span></li>
+                        <li><span class="ref-num">18.</span><span class="ref-body">AI타임스, AWS 사내 CPU 사용 단속 보도. <a href="https://www.aitimes.com/news/articleView.html?idxno=213735" target="_blank" rel="noopener">aitimes.com</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스 인접 (교차 링크)</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">19.</span><span class="ref-body">페블러스, "가격이 내릴수록 청구서가 커진다" (2026-06-13) — 토큰 청구서의 축. <a href="/blog/ai-agent-token-cost-retry-loop/ko/">blog/ai-agent-token-cost-retry-loop</a></span></li>
+                        <li><span class="ref-num">20.</span><span class="ref-body">페블러스, "전력의 벽에 가로막힌 미국 AI 데이터센터 붐" (2026-08-01). <a href="/report/ai-datacenter-power-wall-2026/ko/">report/ai-datacenter-power-wall-2026</a></span></li>
+                        <li><span class="ref-num">21.</span><span class="ref-body">페블러스, 메타의 컴퓨트 쇼크 (2026-07-03). <a href="/report/meta-compute-semiconductor-shock/ko/">report/meta-compute-semiconductor-shock</a></span></li>
+                        <li><span class="ref-num">22.</span><span class="ref-body">페블러스, 엔비디아 가상 세포 챌린지 — GPU는 충분했고 부족한 것은 데이터였다 (2026-05-12). <a href="/report/nvidia-virtual-cell-challenge-2026-05/ko/">report/nvidia-virtual-cell-challenge-2026-05</a></span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260811"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-10T18:10:38.566Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-10T18:17:10.085Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-10T18:58:23.815Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1786385438566-bee33j",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-10T19:53:46.455Z"
+            },
+            mainTitle: "에이전트는 모델보다 데이터를 더 오래 기다린다",
+            subtitle: "인텔이 밝힌 CPU 대 GPU 비율 이동과 에이전트 실행 시간을 채우는 데이터 경로",
+            pageTitle: "에이전트 CPU 병목과 데이터 파이프라인 비용 | 페블러스",
+            category: "tech",
+            publishDate: "2026-08-11",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/agent-cpu-bottleneck-data-pipeline-2026-08/ko/",
+            tags: ["에이전트 인프라", "CPU", "GPU", "데이터 파이프라인", "클라우드 컴퓨팅", "AI 인프라 비용", "AI-Ready Data", "인텔", "AWS", "에이전틱 AI"],
+            faqs: [
+                { question: "AWS가 실제로 사내 CPU 서버를 회수했나?", answer: "확정적으로 말할 수 없다. 디 인포메이션이 2026년 8월 7일 익명 엔지니어를 인용해 AWS가 사내 유휴 EC2 인스턴스를 회수하고 팀별 감축 기한을 뒀다고 보도했고, 후속 기사들은 모두 이 단독 보도의 재인용이다. AWS는 컴퓨팅 자원 관리 방식에 바뀐 것이 없으며 유휴 인스턴스 회수와 라이트사이징은 오래된 관행이라고 반박했다. 다만 AWS에 CPU 용량 제약이 있다는 사실 자체는 이 보도 없이도 성립한다. 앤디 재시 CEO가 2025년 주주서한에 대형 고객 두 곳이 2026년 Graviton 용량 전량을 사겠다고 요청했고 아마존이 거절했다고 직접 적었다." },
+                { question: "CPU 대 GPU 비율이 1대 8에서 1대 1로 갔다는 건 CPU가 늘었다는 뜻인가, 줄었다는 뜻인가?", answer: "늘었다는 뜻이다. 이 표기는 CPU 대수 대 GPU 대수 순서이며, 예전에는 GPU 8대에 CPU 1대가 붙었지만 지금은 거의 1대 1로 붙는다는 의미다. 즉 같은 수의 GPU를 돌리는 데 필요한 CPU가 여덟 배 가까이 늘었다. 인텔 립부 탄 CEO는 2026년 4월 실적 발표에서 1대 8이 1대 4가 됐고 대등해지거나 그 이상으로 갈 수 있다고 말했고, 7월에는 데이비드 진스너 CFO가 거의 대등하며 대수 기준으로는 CPU 쪽으로 더 기울 수 있다고 밝혔다." },
+                { question: "에이전트를 돌리는데 왜 GPU가 아니라 CPU 쪽에서 시간이 흐르나?", answer: "에이전트는 모델을 한 번 호출하고 끝나는 게 아니라 계획하고, 도구를 부르고, 결과를 받아 정리하고, 다시 계획하는 루프를 돈다. 이 루프에서 모델 추론만 GPU에서 실행되고 나머지는 전부 CPU에서 실행된다. 조지아공대와 인텔 연구진이 에이전트 워크로드 다섯 종을 실측한 결과, 도구가 지배하는 워크로드에서는 실행 시간의 최대 88%가 CPU 측 도구 처리에서 흘렀다. 그 내역은 벡터 검색, 텍스트 요약, 파일 입출력, 분자 구조 전처리였다." },
+                { question: "CPU 사용률이 10%밖에 안 되는데 어떻게 CPU가 병목인가?", answer: "병목의 성격이 연산량이 아니라 대기와 직렬화이기 때문이다. UC 산타크루즈 연구진이 Claude Code 하네스로 144개 태스크를 실측한 결과 에이전트의 평균 CPU 사용률은 7.6~13.2%에 그쳤다. 코어를 다 태우고 있는 게 아니라, 검색 결과를 기다리고 파일을 읽고 응답을 파싱하는 직렬 구간에서 시간이 쌓인다. 그래서 CPU를 더 사는 것은 처방이 아니다. 같은 연구진이 지목한 다중 테넌시의 진짜 제약은 메모리였다." },
+                { question: "도구 호출과 오케스트레이션이 왜 데이터 작업인가?", answer: "실측이 지목한 구간을 하나씩 열어 보면 전부 데이터를 옮기고 고르고 다듬는 일이기 때문이다. Haystack RAG의 지배 구간인 ENNS 검색은 벡터 검색이고, LangChain 워크로드의 LexRank 요약은 텍스트 정제이며, SWE-Agent의 Bash·Python 실행은 파일 입출력이고, ChemCrow의 conformer 생성은 전처리다. 서빙 계층에서도 마찬가지여서, 긴 시퀀스에서 총지연의 최대 절반을 차지한 토크나이제이션은 텍스트를 숫자로 바꾸는 인코딩 작업이다. 인텔 립부 탄 CEO 본인도 CPU 수요의 이유로 오케스트레이션, 컨트롤 플레인과 함께 '데이터로 여러 에이전트를 관리하는 일'을 지목했다." },
+                { question: "데이터 품질이 나쁘면 CPU 시간이 얼마나 더 드나?", answer: "직접 측정한 연구는 아직 없다. 이 보고서가 확인한 범위에서, 스키마 오류율(멀티턴 6.4~9.8%)이나 재시도로 인한 비용 증가(+52%) 같은 수치는 있지만 그것을 CPU 초로 환산한 실험은 존재하지 않는다. 따라서 '더러운 데이터가 CPU 시간을 늘린다'는 이 보고서에서 측정된 사실이 아니라 두 실측을 잇는 추론이다. 다만 실무에서 확실한 것은 하나 있다. 필수 필드 누락이나 타입 불일치로 400·422를 받은 호출은 같은 파라미터로 다시 보내도 또 실패하므로, 그 재시도는 부분 회수가 아니라 순수한 낭비다." },
+                { question: "우리 조직의 에이전트 예산에서 데이터 준비 몫을 어떻게 계산하나?", answer: "먼저 시간 축을 쪼개야 한다. 에이전트 1회 실행을 LLM 대기, 도구 실행, 직렬화·파싱, 검색·전처리, 초기화의 다섯 구간으로 나눠 재라. 대부분의 비용 대시보드는 토큰만 보여주고 이 축을 보여주지 않는다. 그다음 CPU 사용률이 아니라 CPU 대기시간을 보고, GPU당 배정한 CPU 코어 수를 확인하고(GPU당 1~2코어는 과소 배정이다), 토크나이제이션과 검색 구간을 따로 계측하고, 스키마 불일치로 인한 재시도를 다른 재시도와 분리해 집계한다. 마지막으로 예산 항목을 토큰비, 가속기 시간, 데이터 경로 시간 세 줄로 나눠 계상한다." },
+                { question: "이건 일시적 수급 문제인가, 아키텍처 변화인가?", answer: "둘이 지금 겹쳐 있고, 분리해서 봐야 한다. 아키텍처 쪽 근거는 GPU를 더 좋은 것으로 바꿀수록 CPU 구간 비중이 오히려 커진다는 실측이다. 같은 논문 안에서 시스템을 Grace+H200으로 바꾸자 RAG의 도구 구간이 83%에서 89%로, SWE-Agent가 38%에서 65%로 늘었다. 수급이 풀려 GPU가 흔해지면 이 현상은 완화되는 게 아니라 심해진다. 반면 부품 리드타임 압박은 공급망 사이클의 함수이고, 모건스탠리는 Azure의 용량 제약이 2026년 하반기부터 완화될 것으로 본다. 비율 이동은 구조이고 공급 타이트는 국면이다." },
+                { question: "인텔의 발언은 자사 CPU 판매를 위한 포지셔닝 아닌가?", answer: "그 점을 감안해서 읽어야 한다. CPU 르네상스를 가장 크게 말하는 주체가 CPU를 파는 회사들이다. 인텔은 자사 백서를 냈고, 3월 이후 서버 CPU 가격을 10~20% 올렸으며, 하반기 추가 인상이 예상된다. AMD는 2030년 서버 CPU 시장을 2,200억 달러로 전망한다. 희소성 서사는 그 자체로 가격 인상을 정당화한다. 다만 이 보고서의 결론은 인텔의 결론과 다르다. 인텔은 그러니 CPU를 더 사라고 말하고, 이 보고서는 CPU를 더 사도 데이터 경로가 그대로면 시간은 그대로 흐른다고 말한다." }
+            ]
+        });
+    </script>
+    <script src="/scripts/citation-download.js?v=20260811" defer></script>
+</body>
+</html>
