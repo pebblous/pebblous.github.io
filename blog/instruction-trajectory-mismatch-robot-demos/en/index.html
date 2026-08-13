@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instruction-Trajectory Mismatch in Robot Demos | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="Robot demos with clean trajectories but wrong instructions slip past quality checks. MMPF fixes their labels without training, raising policy success to 90.0%.">
+    <meta name="keywords" content="robot demonstration data, instruction-trajectory mismatch, ITM, MMPF, VLA policy learning, robot data curation, label error detection, LIBERO benchmark, demonstration relabeling, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Robot Demos That Run Clean With the Wrong Instruction">
+    <meta property="og:description" content="Robot demos with clean trajectories but wrong instructions slip past quality checks. MMPF fixes their labels without training, raising policy success to 90.0%.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Robot Demos That Run Clean With the Wrong Instruction">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-08-14">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Robot Demos That Run Clean With the Wrong Instruction">
+    <meta name="twitter:description" content="Finding the mislabeled demos is the easy part. Filtering them out gave 78.8%, fixing only their labels gave 90.0%, and no threshold yet tells you which to pick.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/en/image/index.png">
+    <meta name="twitter:image:alt" content="Bar chart comparing per-stage policy success rates for filtering and relabeling">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260814"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260814">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260814">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260814">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#plausible-corruption" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Corruption That Looks Normal</a></li>
+                    <li><a href="#training-free-audit" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Three Modalities Vote, No Training</a></li>
+                    <li><a href="#detect-vs-correct" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Detection and Correction Are Two Different Scores</a></li>
+                    <li><a href="#filter-or-relabel" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Filter It Out or Fix It Up</a></li>
+                    <li><a href="#curation-criteria" class="block pl-4 themeable-toc-link transition-colors duration-200">5. The Criterion Is Still a Rule of Thumb</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Robot demonstration data holds more than records of the arm dropping an object or bumping into something. It also holds episodes whose trajectory ran to a clean finish while the natural-language instruction attached to it points at a different action. A picking motion carries an instruction to place. A trajectory that closes an oven carries an instruction to open it. A paper from the Matsuo-Iwasawa Lab at the University of Tokyo and the AI Robot Association (AIRoA), accepted for publication in IEEE RA-L, gives this defect a name, Instruction-Trajectory Mismatch, and proposes a way to audit for it after the fact.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The proposed method, MMPF, located and repaired the misattached instructions without training a single parameter. What comes after that is the interesting part. Should the suspect demonstrations be pulled out of the dataset, or left in place with only their labels fixed? In real-robot experiments the two choices left policy success 11.2 points apart, and filtering came out below doing nothing at all at the stage where the robot sets an object down.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            This article weighs the decision that follows detection more heavily than the detection method itself. The criterion that separates what to discard from what to repair still sits at the level of a qualitative recommendation.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Numbers</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        The first three numbers are what the audit gained. The last one records that the gain did not arrive evenly across every stage.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: <a href="https://arxiv.org/abs/2608.07895" target="_blank" rel="noopener" class="underline">arXiv:2608.07895</a>, Table VII and the LIBERO results</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">73.8% → 90.0%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Policy success after relabeling</p>
+                            <p class="text-xs themeable-muted mt-1">Real-robot Table dataset, 1,260 demos, 30% of instructions corrupted</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">78.8%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Policy success after filtering</p>
+                            <p class="text-xs themeable-muted mt-1">11.2 points below relabeling on the same data</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">100%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Label correction accuracy across 8 LIBERO settings</p>
+                            <p class="text-xs themeable-muted mt-1">Share of detected true mismatches restored to the right label</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">50% → 40%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Place success rate that filtering pushed down</p>
+                            <p class="text-xs themeable-muted mt-1">The one stage that lost out when demonstrations were removed</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="plausible-corruption" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Corruption That Looks Normal</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A human teleoperates the robot to produce a demonstration, and a sentence describing the motion gets attached to that episode. Vision-language-action (VLA) policies learn from instructions and trajectories paired this way. The pairing comes apart during bulk collection. Several tasks are recorded back to back and the ordering slips, an annotator picks the wrong entry from a list of similar tasks, or a hand slides after hours of labeling.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The trouble is that the result looks fine. A demonstration where the robot drops an object announces itself the moment you play the video, and pipelines that flag failures automatically already exist. A demonstration with only the instruction wrong executes cleanly from start to finish. It passes the same eyeball quality check a human performs while scrolling through a dataset.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The damage to the policy is a different kind of damage as well. A failed rollout adds bad motion to the mix, but a misattached instruction inverts the correspondence between language and action itself. Show a policy enough cases where the word for picking is paired with the motion of placing, and it loses any basis for telling the two words apart. The harm is largest in settings where the instruction is what distinguishes one task from another.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To reproduce the defect experimentally, the authors injected corruption two ways. One raises the probability of a flipped label for borderline episodes whose nearest neighbor belongs to a different task. The other splits each task's demonstrations into five chunks and moves an entire chunk under a different task label. The corruption rate was set to 30% in both cases. The first mimics an annotator who is genuinely confused; the second mimics one collection session mislabeled as a block. Set next to <a href="/blog/agibot-world-failure-annotation/en/" class="underline">AgiBotWorld labeling the robot's fumbles</a>, where failed demonstrations were annotated rather than discarded and turned into an asset, this defect sits on the opposite side. Here the demonstration succeeded and the sentence attached to it is wrong.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="training-free-audit" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Three Modalities Vote, No Training</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        MMPF (Multimodal Probabilistic Fusion) looks at a single episode through three channels: the head-mounted camera, the wrist camera, and the proprioceptive record of joint positions and actions. Each channel is treated as an independent expert and asked, on its own, which task label this episode should be carrying.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A single expert's judgment blends two signals. The first is local neighborhood agreement. It finds the 30 nearest episodes in embedding space and reads the distribution of their labels, giving closer neighbors a larger vote. The second is global prototype similarity. The mean embedding of every episode carrying a given task label becomes that task's prototype, and the expert measures which prototype the current episode sits closest to. Neighbors alone get swept along by corruption that clusters locally; prototypes alone miss the variation inside a task. The two signals were mixed evenly at λ=0.5.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In the final step the three experts' judgments are multiplied together. How sharply peaked each expert's distribution is decides how much it gets to say, so the confident ones speak louder. When something occludes the wrist camera and it can no longer distinguish anything, the wrist camera's vote shrinks on its own. There was a real stretch of data that needed this. The authors seeded one real-robot dataset with cases where the operator neglected the head-camera view, at a rate of 10%, and in those episodes the head camera's judgment goes blurry while the remaining two experts carry more of the decision.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 760 360" class="w-full max-w-[700px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)" role="img" aria-label="Diagram of the MMPF architecture: the head camera, wrist camera, and proprioception experts each combine neighbor consensus and prototype similarity, and a confidence-weighted product decides the final label">
+                            <text x="20" y="24" font-size="13" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">MMPF architecture — three modalities judge independently, fused by confidence</text>
+
+                            <!-- Row 1: head camera -->
+                            <rect x="20" y="45" width="130" height="70" rx="10" fill="#BDBDBD" opacity="0.25" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="85" y="75" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Head camera</text>
+                            <text x="85" y="93" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-family="Pretendard, sans-serif">Cosmos-Embed1</text>
+
+                            <line x1="150" y1="80" x2="205" y2="80" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="205,80 197,76 197,84" fill="var(--text-muted)"/>
+
+                            <rect x="210" y="45" width="210" height="70" rx="10" fill="#808080" opacity="0.18" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="315" y="68" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Expert 1</text>
+                            <text x="315" y="86" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Neighbor consensus (k=30)</text>
+                            <text x="315" y="101" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">+ prototype sim. (λ=0.5)</text>
+
+                            <!-- Row 2: wrist camera -->
+                            <rect x="20" y="145" width="130" height="70" rx="10" fill="#BDBDBD" opacity="0.25" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="85" y="175" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Wrist camera</text>
+                            <text x="85" y="193" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-family="Pretendard, sans-serif">Cosmos-Embed1</text>
+
+                            <line x1="150" y1="180" x2="205" y2="180" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="205,180 197,176 197,184" fill="var(--text-muted)"/>
+
+                            <rect x="210" y="145" width="210" height="70" rx="10" fill="#808080" opacity="0.18" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="315" y="168" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Expert 2</text>
+                            <text x="315" y="186" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Neighbor consensus (k=30)</text>
+                            <text x="315" y="201" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">+ prototype sim. (λ=0.5)</text>
+
+                            <!-- Row 3: proprioception -->
+                            <rect x="20" y="245" width="130" height="70" rx="10" fill="#BDBDBD" opacity="0.25" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="85" y="271" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Proprioception</text>
+                            <text x="85" y="289" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-family="Pretendard, sans-serif">Lightweight encoder</text>
+
+                            <line x1="150" y1="280" x2="205" y2="280" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="205,280 197,276 197,284" fill="var(--text-muted)"/>
+
+                            <rect x="210" y="245" width="210" height="70" rx="10" fill="#808080" opacity="0.18" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="315" y="268" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Expert 3</text>
+                            <text x="315" y="286" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Neighbor consensus (k=30)</text>
+                            <text x="315" y="301" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">+ prototype sim. (λ=0.5)</text>
+
+                            <!-- Converging arrows into fusion box -->
+                            <line x1="420" y1="80" x2="475" y2="180" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <line x1="420" y1="180" x2="475" y2="180" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <line x1="420" y1="280" x2="475" y2="180" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <polygon points="480,180 470,175 470,185" fill="var(--text-muted)"/>
+
+                            <!-- Fusion box -->
+                            <rect x="480" y="60" width="160" height="240" rx="12" fill="none" stroke="#F86825" stroke-width="2"/>
+                            <text x="560" y="165" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825" font-family="Pretendard, sans-serif">Confidence-weighted</text>
+                            <text x="560" y="183" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825" font-family="Pretendard, sans-serif">product fusion</text>
+                            <text x="560" y="250" text-anchor="middle" font-size="9" fill="var(--text-muted)" font-family="Pretendard, sans-serif">e.g. occluded wrist cam</text>
+                            <text x="560" y="264" text-anchor="middle" font-size="9" fill="var(--text-muted)" font-family="Pretendard, sans-serif">→ weight auto-shrinks</text>
+
+                            <line x1="640" y1="180" x2="675" y2="180" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="675,180 667,176 667,184" fill="var(--text-muted)"/>
+
+                            <!-- Output -->
+                            <rect x="680" y="145" width="60" height="70" rx="10" fill="#F86825" opacity="0.15" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="710" y="176" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825" font-family="Pretendard, sans-serif">Label</text>
+                            <text x="710" y="192" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825" font-family="Pretendard, sans-serif">decision</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ MMPF's three-modality expert fusion architecture. Original Pebblous diagram | Method described in <a href="https://arxiv.org/abs/2608.07895" target="_blank" rel="noopener" class="underline">arXiv:2608.07895</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The pipeline as a whole trains nothing. Visual embeddings come from the public Cosmos-Embed1 model as is, and the proprioceptive side, which has no standard pretrained encoder available, uses a lightweight encoder trained separately with masked reconstruction and inverse dynamics. That encoder never saw a task label. When the thing under audit is the label itself, using a classifier trained on those labels as the auditor means learning the corruption along with everything else, so judging by statistics over representations that never saw a label has a structural advantage on this problem.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="detect-vs-correct" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Detection and Correction Are Two Different Scores</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Audit performance is counted with two separate metrics. Detection is the job of pointing at which episodes are corrupted; correction is the job of guessing the label the episode should have carried in the first place. Doing the former well without the latter leaves deletion as the only available option. Read the two together and the conclusion changes.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Measurement happened in three places. LIBERO is a simulation benchmark widely used for robot manipulation learning, and its four suites, each with a different character, were combined with the two corruption schemes above to produce eight settings. The other two are collected on real hardware. Table holds 1,260 episodes of four basic actions performed on paper and mugs: fixing the gaze, approaching, picking, and placing. Bottle-mug holds 2,980 episodes of a two-stage manipulation, picking up a bottle or mug and setting it at a target spot. All three record the head camera, the wrist camera, and proprioception together.
+                    </p>
+
+                    <div class="comparison-table mb-6">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Dataset</th>
+                                    <th scope="col">Detection F1</th>
+                                    <th scope="col">Label correction accuracy</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>LIBERO, 8 settings</td>
+                                    <td>88.9–100</td>
+                                    <td>100.0</td>
+                                </tr>
+                                <tr>
+                                    <td>Real-robot Table (1,260)</td>
+                                    <td>94.3</td>
+                                    <td>94.9</td>
+                                </tr>
+                                <tr>
+                                    <td>Real-robot Bottle-mug (2,980)</td>
+                                    <td>91.8</td>
+                                    <td>97.9</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text-secondary text-sm mb-6">Values in %. LIBERO combines 4 suites with 2 corruption schemes for 8 settings. Source: <a href="https://arxiv.org/abs/2608.07895" target="_blank" rel="noopener" class="underline">arXiv:2608.07895</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The 100% correction accuracy comes from a simulation benchmark, and it is measured only over the true mismatches that were detected. Episodes missed at the detection stage never enter that denominator. It has to be read alongside the detection F1, which swings between 88.9% and 100% depending on the setting.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There were three points of comparison. Confident Learning flags suspects using the predicted probabilities of a classifier trained on the labels. Retrieval matches instruction against video using CLIP-style vision-language similarity. LEMoN reasons from neighbors in the representation space and neighbors in the label embedding space at once. How the three scored depended heavily on the character of the corruption. Confident Learning, the standard tool for label error detection, fell to 64.8% F1 on LIBERO-Spatial, where object placement varies, once it met borderline-case corruption. MMPF scored 99.6% under the same conditions. When labels flip at the boundaries that are easy to confuse, a method that reasons from the predictions of a classifier trained on those labels ends up learning the corruption as if it were normal. For a fair comparison, the authors reimplemented every baseline on the same embeddings.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="filter-or-relabel" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Filter It Out or Fix It Up</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Once the audit finishes, a decision remains. Pull the suspect demonstrations out of the dataset, or leave them in place and change the label attached to them. The authors trained policies on 30% corrupted real-robot data and compared the two strategies head to head. Real-robot evaluation was counted over 10 rollouts per task, and the policy was trained with the open VLA framework pi0.5. The Table results split across the four actions named earlier: fixing the gaze on the target (Focus), moving toward it (Navigation), grasping it (Pick), and setting it down (Place).
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 640 310" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)" role="img" aria-label="Bar chart comparing per-stage policy success rates on the Table dataset for no filter, filtering, and relabeling">
+                            <text x="20" y="26" font-size="14" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Table dataset: success rate by stage (%)</text>
+
+                            <rect x="330" y="14" width="12" height="12" fill="#BDBDBD"/>
+                            <text x="348" y="25" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">No filter</text>
+                            <rect x="415" y="14" width="12" height="12" fill="#808080"/>
+                            <text x="433" y="25" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Filtered</text>
+                            <rect x="495" y="14" width="12" height="12" fill="#F86825"/>
+                            <text x="513" y="25" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Relabeled</text>
+
+                            <line x1="60" y1="50" x2="620" y2="50" stroke="var(--text-muted)" stroke-width="1" opacity="0.3"/>
+                            <line x1="60" y1="150" x2="620" y2="150" stroke="var(--text-muted)" stroke-width="1" opacity="0.3"/>
+                            <line x1="60" y1="250" x2="620" y2="250" stroke="var(--text-muted)" stroke-width="1.5" opacity="0.6"/>
+                            <text x="52" y="54" text-anchor="end" font-size="11" fill="var(--text-muted)" font-family="Pretendard, sans-serif">100</text>
+                            <text x="52" y="154" text-anchor="end" font-size="11" fill="var(--text-muted)" font-family="Pretendard, sans-serif">50</text>
+                            <text x="52" y="254" text-anchor="end" font-size="11" fill="var(--text-muted)" font-family="Pretendard, sans-serif">0</text>
+
+                            <!-- Focus -->
+                            <rect x="81" y="60" width="30" height="190" fill="#BDBDBD"/>
+                            <rect x="115" y="50" width="30" height="200" fill="#808080"/>
+                            <rect x="149" y="50" width="30" height="200" fill="#F86825"/>
+                            <text x="96" y="54" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">95</text>
+                            <text x="130" y="44" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">100</text>
+                            <text x="164" y="44" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">100</text>
+                            <text x="130" y="270" text-anchor="middle" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Focus</text>
+
+                            <!-- Navigation -->
+                            <rect x="221" y="80" width="30" height="170" fill="#BDBDBD"/>
+                            <rect x="255" y="50" width="30" height="200" fill="#808080"/>
+                            <rect x="289" y="50" width="30" height="200" fill="#F86825"/>
+                            <text x="236" y="74" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">85</text>
+                            <text x="270" y="44" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">100</text>
+                            <text x="304" y="44" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">100</text>
+                            <text x="270" y="270" text-anchor="middle" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Navigation</text>
+
+                            <!-- Pick -->
+                            <rect x="361" y="120" width="30" height="130" fill="#BDBDBD"/>
+                            <rect x="395" y="100" width="30" height="150" fill="#808080"/>
+                            <rect x="429" y="60" width="30" height="190" fill="#F86825"/>
+                            <text x="376" y="114" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">65</text>
+                            <text x="410" y="94" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">75</text>
+                            <text x="444" y="54" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">95</text>
+                            <text x="410" y="270" text-anchor="middle" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Pick</text>
+
+                            <!-- Place -->
+                            <rect x="501" y="150" width="30" height="100" fill="#BDBDBD"/>
+                            <rect x="535" y="170" width="30" height="80" fill="#808080"/>
+                            <rect x="569" y="120" width="30" height="130" fill="#F86825"/>
+                            <text x="516" y="144" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">50</text>
+                            <text x="550" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#CF1D21" font-family="Pretendard, sans-serif">40</text>
+                            <text x="584" y="114" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">65</text>
+                            <text x="550" y="270" text-anchor="middle" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Place</text>
+
+                            <text x="20" y="296" font-size="11" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Overall: no filter 73.8 · filtered 78.8 · relabeled 90.0. Only filtering falls below no filter at Place.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Per-stage success rates on the Table dataset, 1,260 demos with 30% of instructions corrupted. Original Pebblous diagram | Figures from <a href="https://arxiv.org/abs/2608.07895" target="_blank" rel="noopener" class="underline">arXiv:2608.07895, Table VII</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On overall success rate alone, relabeling wins outright. It went from 73.8% to 90.0%, 11.2 points above the 78.8% that filtering produced. On the second dataset, Bottle-mug, relabeling pulled 62.5% up to 77.5%.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Break it down by stage and the character of each strategy shows through. On the early stages of fixing the gaze and approaching, both strategies hit 100%. As long as the instruction is attached correctly, there is nothing to confuse about which task this is. At the Place stage, where the robot sets an object down, filtering sank to 40%. That is below the 50% of doing nothing at all. Deleting the corrupted demonstrations deleted the perfectly good trajectories inside them, and the policy was left short of examples for learning low-level control.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The judgment criterion the authors wrote into the paper lives right at this point. When the dataset is large enough and the mislabeled demonstrations are hard to trust down to the trajectory, filtering is the better move. When the dataset is small enough that losing control trajectories hurts and the motion itself is sound, repairing is better even if correction accuracy is short of perfect. Neither branch carries a numerical threshold.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="curation-criteria" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Criterion Is Still a Rule of Thumb</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The question a team working with robot data actually faces is not what the detection rate is. It is what to delete and what to repair, standing in front of the list of demonstrations the audit flagged. The most practical result this paper leaves behind is that the decision moves overall success and per-stage success in opposite directions. Same audit output, same tooling, and which lever you pull is worth 11.2 points.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Making that decision requires knowing a few things about the dataset.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li>Is the trajectory of the flagged demonstration sound on its own, or are label and trajectory both suspect</li>
+                        <li>How many demonstrations of that task remain. Which stage runs short of examples for low-level control once you delete</li>
+                        <li>Does the instruction do the work of distinguishing tasks, or do the observations distinguish them already</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        All three questions are answered by the dataset's own records, not by the audit tool. Whether the original instruction survives alongside the corrected one, which session a demonstration came from and in what order, how many demonstrations each task holds. Those have to be attached to the record for the questions to have answers. A related problem came up in <a href="/report/robot-data-curation-closed-loop-gap/en/" class="underline">We Mixed in Flawless Data, and the Robot Got Worse</a>: how hard it is to verify in closed loop what happens to policy performance when you change mixture ratios and demonstration selection. The final experiment in this paper reads as a case of filling part of that gap with measurement, narrowed to two strategies.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The method has clear limits of its own. Its judgments lean on the quality of the trajectory embedding, and unlike video, robot proprioception still lacks usable pretrained resources. It assumes the list of task labels is fixed in advance, so it does not transfer as is to datasets where instructions are written freely. The authors listed replacing rigid task classes with soft neighborhood relations in instruction embedding space as the next problem to solve.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note</strong>: This kind of history is what Pebblous means by data that is AI-Ready. If a label has been corrected once, the record needs to hold what the original was and on what grounds it changed. Only then can a team revisit the filter-or-repair decision dataset by dataset later on. However far detection accuracy climbs, that judgment stays with people.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Holk, S., Takanami, R., Matsushima, T., Iwasawa, Y., Matsuo, Y., Wu, Y.-H., &amp; Ota, K. (2026). "<a href="https://arxiv.org/abs/2608.07895" target="_blank" rel="noopener">Auditing Instruction-Trajectory Mismatches in Multimodal Robot Demonstrations</a>." <strong>arXiv:2608.07895</strong> (accepted, IEEE RA-L).</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260814"></script>
+    <script src="/scripts/citation-download.js?v=20260814" defer></script>
+
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-13T22:12:40.893Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-13T22:26:49.493Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1786659160893-4b0gn6",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-13T23:08:38.164Z"
+            },
+            mainTitle: "Robot Demos That Run Clean With the Wrong Instruction",
+            subtitle: "MMPF flags mislabeled demonstrations without training a single parameter, and relabeling them lifted real-robot policy success from 73.8% to 90.0%",
+            pageTitle: "Instruction-Trajectory Mismatch in Robot Demos | Pebblous",
+            category: "tech",
+            publishDate: "2026-08-14",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/instruction-trajectory-mismatch-robot-demos/en/",
+            tags: ["robot demonstration data", "instruction-trajectory mismatch", "VLA policy learning", "robot data curation", "label error detection", "LIBERO", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "What is instruction-trajectory mismatch (ITM)?",
+                    answer: "It refers to robot demonstration data where the trajectory executed normally but the natural-language instruction attached to it is semantically wrong. A picking motion carries an instruction to place, or a trajectory that closes an oven carries an instruction to open it. The paper calls this Instruction-Trajectory Mismatch."
+                },
+                {
+                    question: "How is it different from a failed rollout?",
+                    answer: "A failed rollout is a record of the robot dropping or bumping into something, so it stands out on video alone. An instruction-trajectory mismatch executes smoothly from start to finish, which makes it look like a normal demonstration inside the dataset and lets it pass human eyeball inspection. The effect on the policy differs too: a failed rollout mixes in bad motion, while a misattached instruction corrupts the correspondence between language and action itself."
+                },
+                {
+                    question: "How does MMPF find errors without training?",
+                    answer: "It treats the head camera, the wrist camera, and proprioception as three independent experts. Each expert builds a label distribution by mixing the label distribution of its 30 nearest neighbors in embedding space with the distance to each task prototype at λ=0.5, and the experts are multiplied together with more weight given to the confident ones. Visual embeddings come from the public Cosmos-Embed1 model and the proprioceptive encoder was pretrained without task labels, so the audit pipeline itself trains no parameters."
+                },
+                {
+                    question: "Why not use a classifier trained on the labels for the audit?",
+                    answer: "Because the labels are what is under audit, and training a classifier on them means learning the corrupted pairings along the way. Confident Learning, the standard tool for label error detection, fell to 64.8% F1 on the LIBERO-Spatial setting where corruption concentrates at borderline cases, while MMPF scored 99.6% under the same conditions."
+                },
+                {
+                    question: "How do detection accuracy and correction accuracy differ?",
+                    answer: "Detection is the job of pointing at which episodes are corrupted; correction is the job of guessing the label the episode should have carried. MMPF recorded 100% correction accuracy across all 8 LIBERO settings, but that figure covers only the true mismatches that were detected. Detection F1 swings between 88.9% and 100% depending on the setting."
+                },
+                {
+                    question: "Which worked better, filtering or relabeling?",
+                    answer: "On the real-robot Table dataset, policy success was 73.8% with no treatment, 78.8% after filtering out the suspect demonstrations, and 90.0% after fixing only their labels. On the Bottle-mug dataset, relabeling pulled 62.5% up to 77.5%. These results come from the scale and composition of those two datasets."
+                },
+                {
+                    question: "Can filtering ever make things worse?",
+                    answer: "Yes. In the same Table experiment, the success rate of the Place stage, where the robot sets an object down, was 40% after filtering, below the 50% of doing nothing at all. The reading is that deleting the corrupted demonstrations also deleted the sound trajectories inside them, leaving the policy short of examples for learning low-level control."
+                },
+                {
+                    question: "Is there a clear criterion for choosing between the two?",
+                    answer: "No numerical threshold is given. The authors recommend filtering when the dataset is large and the mislabeled demonstrations are hard to trust down to the trajectory, and relabeling when the dataset is small enough that losing control trajectories hurts and the motion itself is sound. The information needed for that call comes from the dataset's records, not from the audit tool."
+                },
+                {
+                    question: "What are the limits of this method?",
+                    answer: "It depends on the quality of the trajectory embedding, and unlike video, robot proprioception still lacks usable pretrained resources. It also assumes the list of task labels is fixed in advance, so it does not transfer as is to datasets where instructions are written freely. The authors propose replacing task classes with soft neighborhood relations in instruction embedding space as follow-up work."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
