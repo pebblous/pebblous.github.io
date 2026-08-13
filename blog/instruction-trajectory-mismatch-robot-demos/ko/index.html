@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로봇 시연 데이터 지시-궤적 불일치, 학습 없이 검출하고 라벨 고치기 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="궤적은 정상인데 언어 지시만 잘못 붙은 로봇 시연은 데이터셋 안에서 정상으로 보입니다. MMPF는 학습 없이 세 모달리티의 합의로 이를 찾아냈고, 실기 실험에서는 걸러 내기보다 라벨을 고쳤을 때 정책 성공률이 73.8%에서 90.0%로 올랐습니다.">
+    <meta name="keywords" content="로봇 시연 데이터, 지시-궤적 불일치, ITM, MMPF, VLA 정책 학습, 로봇 데이터 큐레이션, 라벨 오류 검출, LIBERO 벤치마크, 시연 재라벨링, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="행동은 맞고 지시문만 틀린 로봇 시연 데이터">
+    <meta property="og:description" content="궤적은 정상인데 언어 지시만 잘못 붙은 로봇 시연은 데이터셋 안에서 정상으로 보입니다. MMPF는 학습 없이 세 모달리티의 합의로 이를 찾아냈고, 실기 실험에서는 걸러 내기보다 라벨을 고쳤을 때 정책 성공률이 73.8%에서 90.0%로 올랐습니다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="행동은 맞고 지시문만 틀린 로봇 시연 데이터">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-08-14">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="행동은 맞고 지시문만 틀린 로봇 시연 데이터">
+    <meta name="twitter:description" content="잘못 라벨링된 시연을 찾아낸 다음이 문제입니다. 걸러 냈을 때 78.8%, 라벨만 고쳤을 때 90.0%였고, 두 전략을 가르는 기준은 아직 정해져 있지 않습니다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/instruction-trajectory-mismatch-robot-demos/ko/image/index.png">
+    <meta name="twitter:image:alt" content="필터링과 재라벨링의 단계별 정책 성공률을 비교한 막대 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260814"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260814">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260814">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260814">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#plausible-corruption" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 정상으로 보이는 오염</a></li>
+                    <li><a href="#training-free-audit" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 학습 없이 세 모달리티가 투표한다</a></li>
+                    <li><a href="#detect-vs-correct" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 검출과 교정은 다른 점수다</a></li>
+                    <li><a href="#filter-or-relabel" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 걸러 낼 것인가 고쳐 쓸 것인가</a></li>
+                    <li><a href="#curation-criteria" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 기준은 아직 경험 법칙이다</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            로봇 시연 데이터에는 로봇이 물건을 놓치거나 부딪힌 실패 기록만 섞여 있는 것이 아닙니다. 궤적은 매끄럽게 잘 끝났는데 거기 붙은 자연어 지시가 다른 동작을 가리키는 에피소드가 있습니다. 집는 동작에 놓으라는 지시가 붙거나, 오븐을 닫는 궤적에 열라는 지시가 붙는 식입니다. 도쿄대 마쓰오·이와사와 연구실과 AI Robot Association(AIRoA)이 함께 쓴 논문은 이 결함에 지시-궤적 불일치(Instruction-Trajectory Mismatch)라는 이름을 붙이고 사후 감사(audit) 방법을 제안했습니다. IEEE RA-L 게재가 확정된 연구입니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            제안된 MMPF는 파라미터를 하나도 학습하지 않고 잘못 붙은 지시를 찾아 고쳤습니다. 흥미로운 대목은 그다음입니다. 의심스러운 시연을 데이터셋에서 빼는 것과, 그대로 두고 라벨만 고치는 것 중 어느 쪽이 나은가. 실기 로봇 실험에서 두 선택이 만든 정책 성공률은 11.2%p 차이가 났고, 물건을 내려놓는 단계에서는 걸러 내기 쪽 성공률이 아무 처리도 하지 않았을 때보다 오히려 낮았습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            이 글은 검출 방법보다 검출 이후의 결정에 무게를 둡니다. 찾아낸 시연을 버릴지 고칠지 가르는 기준이 아직 정성적인 권고에 머물러 있기 때문입니다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        앞의 세 숫자는 감사가 만든 개선이고, 마지막 숫자는 그 개선이 모든 단계에 고르게 오지는 않았다는 기록입니다.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2608.07895" target="_blank" rel="noopener" class="underline">arXiv:2608.07895</a> Table VII 및 LIBERO 실험 결과</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">73.8% → 90.0%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">라벨을 고쳤을 때 정책 성공률</p>
+                            <p class="text-xs themeable-muted mt-1">실기 Table 데이터셋 1,260건, 지시 30% 오염</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">78.8%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">걸러 냈을 때 정책 성공률</p>
+                            <p class="text-xs themeable-muted mt-1">같은 데이터에서 재라벨링보다 11.2%p 낮음</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">100%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">LIBERO 8개 세팅 라벨 교정 정확도</p>
+                            <p class="text-xs themeable-muted mt-1">검출된 진짜 불일치를 올바른 라벨로 되돌린 비율</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">50% → 40%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">걸러 내기가 떨어뜨린 Place 성공률</p>
+                            <p class="text-xs themeable-muted mt-1">시연 수가 줄어 손해를 본 단일 단계</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="plausible-corruption" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">정상으로 보이는 오염</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        사람이 원격조종으로 로봇을 움직여 시연을 만들고, 그 에피소드에 동작을 설명하는 문장이 붙습니다. 시각-언어-행동(VLA) 정책은 이렇게 짝지어진 지시와 궤적을 보고 배웁니다. 이 짝은 대량 수집 과정에서 어긋납니다. 여러 태스크를 연속으로 녹화하다 순서가 밀리거나, 태스크 목록에서 비슷한 항목을 잘못 고르거나, 오랜 시간 어노테이션을 하다 손이 미끄러집니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 결과물이 멀쩡해 보인다는 점입니다. 로봇이 물건을 떨어뜨린 시연은 영상만 재생해도 티가 나고, 실패 여부를 자동으로 표시하는 파이프라인도 이미 있습니다. 반면 지시만 잘못 붙은 시연은 궤적이 처음부터 끝까지 정상으로 실행됩니다. 사람이 데이터셋을 훑으며 하는 품질 점검을 그대로 통과합니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정책이 입는 피해의 성격도 다릅니다. 실패한 롤아웃은 나쁜 동작을 섞어 넣는 데 그치지만, 잘못 붙은 지시는 언어와 행동을 잇는 대응 관계 자체를 뒤집습니다. 집으라는 말이 놓는 동작과 짝지어진 사례를 충분히 보면, 정책은 두 낱말을 구분할 근거를 잃습니다. 이 손상은 지시문으로 태스크를 구분해야 하는 환경에서 특히 크게 나타납니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들은 이 결함을 실험으로 재현하기 위해 두 가지 방식으로 오염을 주입했습니다. 하나는 다른 태스크의 최근접 이웃을 가진 경계 사례일수록 라벨이 뒤집힐 확률을 높이는 방식이고, 다른 하나는 태스크별 시연을 다섯 덩어리로 나눈 뒤 한 덩어리를 통째로 다른 태스크 라벨로 옮기는 방식입니다. 오염률은 30%로 맞췄습니다. 앞의 방식은 어노테이터가 헷갈리는 상황을, 뒤의 방식은 수집 세션 하나가 통째로 잘못 표시된 상황을 흉내 냅니다. 실패한 시연을 버리지 않고 라벨링해 자산으로 쓴 <a href="/blog/agibot-world-failure-annotation/ko/" class="underline">AgiBotWorld의 헛손질 라벨링</a>과 견주면, 이번 결함은 반대편에 있습니다. 성공한 시연에 붙은 문장이 틀린 경우입니다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="training-free-audit" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">학습 없이 세 모달리티가 투표한다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        MMPF(Multimodal Probabilistic Fusion)는 한 에피소드를 세 갈래로 나눠 봅니다. 머리에 달린 카메라, 손목 카메라, 그리고 관절 위치와 액션이 남긴 고유감각 기록입니다. 각 갈래를 독립된 전문가로 놓고, 이 에피소드에 붙어야 할 태스크 라벨이 무엇인지 각자 판단하게 합니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전문가 한 명의 판단은 두 신호를 섞어 만듭니다. 첫째는 국소 이웃 합의입니다. 임베딩 공간에서 가장 가까운 30개 에피소드를 찾아 그들에게 붙은 라벨의 분포를 보되, 거리가 가까울수록 큰 표를 줍니다. 둘째는 전역 프로토타입 유사도입니다. 각 태스크 라벨이 붙은 모든 에피소드의 평균 임베딩을 그 태스크의 전형으로 삼고, 지금 에피소드가 어느 전형에 가까운지를 잽니다. 이웃만 보면 국소적으로 뭉친 오염에 함께 휩쓸리고, 전형만 보면 태스크 안의 변형을 놓칩니다. 두 신호는 λ=0.5로 동등하게 섞였습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        마지막 단계에서 세 전문가의 판단을 곱해 합칩니다. 이때 각 전문가의 분포가 얼마나 뾰족한지를 재서, 확신이 큰 쪽에 더 큰 표를 줍니다. 손목 카메라가 무언가에 가려 아무것도 구분하지 못하는 에피소드에서는 손목 카메라의 발언권이 자동으로 줄어듭니다. 이 장치가 필요한 구간은 실제로 있었습니다. 저자들은 실기 데이터셋 하나에 작업자가 머리 카메라를 제대로 잡지 못한 상황을 10% 섞어 두었는데, 그런 에피소드에서는 머리 카메라의 판단이 흐려지고 남은 두 전문가가 그만큼 더 말하게 됩니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 760 360" class="w-full max-w-[700px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)" role="img" aria-label="MMPF 구조 도식: 머리 카메라, 손목 카메라, 고유감각 세 전문가가 각각 이웃 합의와 프로토타입 유사도를 결합하고, 확신도 가중 곱으로 최종 라벨을 결정한다">
+                            <text x="20" y="24" font-size="13" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">MMPF 구조 — 세 모달리티가 독립적으로 판단하고 확신도로 합친다</text>
+
+                            <!-- Row 1: 머리 카메라 -->
+                            <rect x="20" y="45" width="130" height="70" rx="10" fill="#BDBDBD" opacity="0.25" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="85" y="75" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">머리 카메라</text>
+                            <text x="85" y="93" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-family="Pretendard, sans-serif">Cosmos-Embed1</text>
+
+                            <line x1="150" y1="80" x2="205" y2="80" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="205,80 197,76 197,84" fill="var(--text-muted)"/>
+
+                            <rect x="210" y="45" width="210" height="70" rx="10" fill="#808080" opacity="0.18" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="315" y="68" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">전문가 1</text>
+                            <text x="315" y="86" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">이웃 합의(k=30)</text>
+                            <text x="315" y="101" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">+ 프로토타입 유사도(λ=0.5)</text>
+
+                            <!-- Row 2: 손목 카메라 -->
+                            <rect x="20" y="145" width="130" height="70" rx="10" fill="#BDBDBD" opacity="0.25" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="85" y="175" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">손목 카메라</text>
+                            <text x="85" y="193" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-family="Pretendard, sans-serif">Cosmos-Embed1</text>
+
+                            <line x1="150" y1="180" x2="205" y2="180" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="205,180 197,176 197,184" fill="var(--text-muted)"/>
+
+                            <rect x="210" y="145" width="210" height="70" rx="10" fill="#808080" opacity="0.18" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="315" y="168" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">전문가 2</text>
+                            <text x="315" y="186" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">이웃 합의(k=30)</text>
+                            <text x="315" y="201" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">+ 프로토타입 유사도(λ=0.5)</text>
+
+                            <!-- Row 3: 고유감각 -->
+                            <rect x="20" y="245" width="130" height="70" rx="10" fill="#BDBDBD" opacity="0.25" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="85" y="271" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">고유감각</text>
+                            <text x="85" y="289" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-family="Pretendard, sans-serif">관절·액션 경량 인코더</text>
+
+                            <line x1="150" y1="280" x2="205" y2="280" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="205,280 197,276 197,284" fill="var(--text-muted)"/>
+
+                            <rect x="210" y="245" width="210" height="70" rx="10" fill="#808080" opacity="0.18" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="315" y="268" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">전문가 3</text>
+                            <text x="315" y="286" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">이웃 합의(k=30)</text>
+                            <text x="315" y="301" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">+ 프로토타입 유사도(λ=0.5)</text>
+
+                            <!-- Converging arrows into fusion box -->
+                            <line x1="420" y1="80" x2="475" y2="180" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <line x1="420" y1="180" x2="475" y2="180" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <line x1="420" y1="280" x2="475" y2="180" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <polygon points="480,180 470,175 470,185" fill="var(--text-muted)"/>
+
+                            <!-- Fusion box -->
+                            <rect x="480" y="60" width="160" height="240" rx="12" fill="none" stroke="#F86825" stroke-width="2"/>
+                            <text x="560" y="165" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825" font-family="Pretendard, sans-serif">확신도 가중</text>
+                            <text x="560" y="183" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825" font-family="Pretendard, sans-serif">곱 결합</text>
+                            <text x="560" y="250" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-family="Pretendard, sans-serif">예: 손목 카메라 가려짐</text>
+                            <text x="560" y="264" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-family="Pretendard, sans-serif">→ 그 전문가 가중치 자동 감소</text>
+
+                            <line x1="640" y1="180" x2="675" y2="180" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="675,180 667,176 667,184" fill="var(--text-muted)"/>
+
+                            <!-- Output -->
+                            <rect x="680" y="145" width="60" height="70" rx="10" fill="#F86825" opacity="0.15" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="710" y="176" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825" font-family="Pretendard, sans-serif">라벨</text>
+                            <text x="710" y="192" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825" font-family="Pretendard, sans-serif">결정</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ MMPF의 세 모달리티 전문가 융합 구조. 페블러스 원본 도식 | 방법 설명 출처: <a href="https://arxiv.org/abs/2608.07895" target="_blank" rel="noopener" class="underline">arXiv:2608.07895</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전체 파이프라인은 파라미터를 학습하지 않습니다. 시각 임베딩은 공개 모델 Cosmos-Embed1을 그대로 쓰고, 사전학습된 표준 인코더가 없는 고유감각 쪽은 마스크 재구성과 역동역학으로 따로 학습한 경량 인코더를 씁니다. 이 인코더는 태스크 라벨을 보지 않고 배웠습니다. 감사 대상이 라벨인데 라벨로 학습한 분류기를 감사자로 쓰면 오염을 함께 배우기 때문에, 라벨을 보지 않은 표현 위에서 통계만으로 판단하는 구성은 이 문제에서 설계상 이점이 있습니다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="detect-vs-correct" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">검출과 교정은 다른 점수다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        감사 성능은 두 지표로 따로 셉니다. 검출은 어떤 에피소드가 오염됐는지 짚어내는 일이고, 교정은 그 에피소드에 원래 붙었어야 할 라벨을 맞히는 일입니다. 앞의 것을 잘해도 뒤의 것을 못하면 쓸 수 있는 선택지는 삭제뿐입니다. 두 지표를 섞어 읽으면 결론이 달라집니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        측정은 세 곳에서 이뤄졌습니다. LIBERO는 로봇 조작 학습에 널리 쓰이는 시뮬레이션 벤치마크입니다. 저자들은 성격이 다른 네 개 스위트를 앞서 말한 두 가지 오염 방식과 조합해 여덟 개 세팅을 만들었습니다. 나머지 둘은 실제 로봇으로 모은 데이터입니다. Table은 종이와 머그를 대상으로 응시·접근·집기·놓기 네 가지 기본 동작을 담은 1,260건이고, Bottle-mug는 병과 머그를 집어 목표 지점에 놓는 두 단계 조작 2,980건입니다. 세 곳 모두 머리 카메라, 손목 카메라, 고유감각이 함께 기록돼 있습니다.
+                    </p>
+
+                    <div class="comparison-table mb-6">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">데이터</th>
+                                    <th scope="col">검출 F1</th>
+                                    <th scope="col">라벨 교정 정확도</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>LIBERO 8개 세팅</td>
+                                    <td>88.9~100</td>
+                                    <td>100.0</td>
+                                </tr>
+                                <tr>
+                                    <td>실기 Table (1,260건)</td>
+                                    <td>94.3</td>
+                                    <td>94.9</td>
+                                </tr>
+                                <tr>
+                                    <td>실기 Bottle-mug (2,980건)</td>
+                                    <td>91.8</td>
+                                    <td>97.9</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text-secondary text-sm mb-6">단위 %. LIBERO는 4개 스위트와 2가지 오염 방식을 조합한 8개 세팅. 출처: <a href="https://arxiv.org/abs/2608.07895" target="_blank" rel="noopener" class="underline">arXiv:2608.07895</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        교정 정확도 100%는 시뮬레이션 벤치마크에서 나온 값이고, 검출된 진짜 불일치에 한정된 값입니다. 검출 단계에서 놓친 에피소드는 이 분모에 들어가지 않습니다. 검출 쪽 F1이 88.9%에서 100% 사이로 세팅마다 흔들린다는 점을 함께 읽어야 합니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비교 대상은 세 가지였습니다. 라벨로 학습한 분류기의 예측 확률로 의심 사례를 짚는 Confident Learning, CLIP 계열의 비전-언어 유사도로 지시문과 영상을 맞대 보는 Retrieval, 표현 공간의 이웃과 라벨 임베딩 공간의 이웃을 함께 근거로 삼는 LEMoN입니다. 세 방법의 성적은 오염의 성격에 따라 크게 갈렸습니다. 라벨 오류 검출의 표준으로 쓰이는 Confident Learning은 물체 배치가 다른 LIBERO-Spatial에서 경계 사례형 오염을 만나자 F1 64.8%로 떨어졌습니다. 같은 조건에서 MMPF는 99.6%였습니다. 헷갈리기 쉬운 경계에서 라벨이 뒤집힐 때, 그 라벨로 학습한 분류기의 예측을 근거로 삼는 방법은 오염을 정상으로 학습해 버립니다. 저자들은 공정한 비교를 위해 모든 베이스라인을 같은 임베딩 위에 다시 구현했습니다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="filter-or-relabel" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">걸러 낼 것인가 고쳐 쓸 것인가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        감사가 끝나면 결정이 남습니다. 의심스러운 시연을 데이터셋에서 빼거나, 그대로 두고 라벨만 바꿔 답니다. 저자들은 30% 오염된 실기 데이터로 정책을 학습시켜 두 전략을 직접 비교했습니다. 실기 평가는 태스크당 10회 롤아웃으로 셌고, 정책은 공개 VLA 프레임워크 pi0.5로 학습했습니다. Table 데이터셋의 결과는 앞서 말한 네 동작, 곧 대상을 응시하는 Focus, 접근하는 Navigation, 집는 Pick, 내려놓는 Place 단계별로 갈렸습니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 640 310" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)" role="img" aria-label="Table 데이터셋에서 무필터, 필터링, 재라벨링 세 전략의 단계별 정책 성공률을 비교한 막대 도식">
+                            <text x="20" y="26" font-size="14" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Table 데이터셋 단계별 성공률 (%)</text>
+
+                            <rect x="330" y="14" width="12" height="12" fill="#BDBDBD"/>
+                            <text x="348" y="25" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">무필터</text>
+                            <rect x="405" y="14" width="12" height="12" fill="#808080"/>
+                            <text x="423" y="25" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">필터링</text>
+                            <rect x="480" y="14" width="12" height="12" fill="#F86825"/>
+                            <text x="498" y="25" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">재라벨링</text>
+
+                            <line x1="60" y1="50" x2="620" y2="50" stroke="var(--text-muted)" stroke-width="1" opacity="0.3"/>
+                            <line x1="60" y1="150" x2="620" y2="150" stroke="var(--text-muted)" stroke-width="1" opacity="0.3"/>
+                            <line x1="60" y1="250" x2="620" y2="250" stroke="var(--text-muted)" stroke-width="1.5" opacity="0.6"/>
+                            <text x="52" y="54" text-anchor="end" font-size="11" fill="var(--text-muted)" font-family="Pretendard, sans-serif">100</text>
+                            <text x="52" y="154" text-anchor="end" font-size="11" fill="var(--text-muted)" font-family="Pretendard, sans-serif">50</text>
+                            <text x="52" y="254" text-anchor="end" font-size="11" fill="var(--text-muted)" font-family="Pretendard, sans-serif">0</text>
+
+                            <!-- Focus -->
+                            <rect x="81" y="60" width="30" height="190" fill="#BDBDBD"/>
+                            <rect x="115" y="50" width="30" height="200" fill="#808080"/>
+                            <rect x="149" y="50" width="30" height="200" fill="#F86825"/>
+                            <text x="96" y="54" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">95</text>
+                            <text x="130" y="44" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">100</text>
+                            <text x="164" y="44" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">100</text>
+                            <text x="130" y="270" text-anchor="middle" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Focus</text>
+
+                            <!-- Navigation -->
+                            <rect x="221" y="80" width="30" height="170" fill="#BDBDBD"/>
+                            <rect x="255" y="50" width="30" height="200" fill="#808080"/>
+                            <rect x="289" y="50" width="30" height="200" fill="#F86825"/>
+                            <text x="236" y="74" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">85</text>
+                            <text x="270" y="44" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">100</text>
+                            <text x="304" y="44" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">100</text>
+                            <text x="270" y="270" text-anchor="middle" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Navigation</text>
+
+                            <!-- Pick -->
+                            <rect x="361" y="120" width="30" height="130" fill="#BDBDBD"/>
+                            <rect x="395" y="100" width="30" height="150" fill="#808080"/>
+                            <rect x="429" y="60" width="30" height="190" fill="#F86825"/>
+                            <text x="376" y="114" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">65</text>
+                            <text x="410" y="94" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">75</text>
+                            <text x="444" y="54" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">95</text>
+                            <text x="410" y="270" text-anchor="middle" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Pick</text>
+
+                            <!-- Place -->
+                            <rect x="501" y="150" width="30" height="100" fill="#BDBDBD"/>
+                            <rect x="535" y="170" width="30" height="80" fill="#808080"/>
+                            <rect x="569" y="120" width="30" height="130" fill="#F86825"/>
+                            <text x="516" y="144" text-anchor="middle" font-size="10" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">50</text>
+                            <text x="550" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#CF1D21" font-family="Pretendard, sans-serif">40</text>
+                            <text x="584" y="114" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">65</text>
+                            <text x="550" y="270" text-anchor="middle" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">Place</text>
+
+                            <text x="20" y="296" font-size="12" fill="var(--text-secondary)" font-family="Pretendard, sans-serif">전체 성공률: 무필터 73.8 · 필터링 78.8 · 재라벨링 90.0. 필터링만 Place 단계에서 무필터보다 낮다.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Table 데이터셋 1,260건, 지시 30% 오염 조건의 단계별 성공률. 페블러스 원본 도식 | 수치 출처: <a href="https://arxiv.org/abs/2608.07895" target="_blank" rel="noopener" class="underline">arXiv:2608.07895 Table VII</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전체 성공률만 보면 재라벨링의 완승입니다. 73.8%에서 90.0%로 올랐고, 걸러 내기가 만든 78.8%보다 11.2%p 높습니다. 두 번째 데이터셋인 Bottle-mug에서도 재라벨링은 62.5%를 77.5%로 끌어올렸습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        단계별로 쪼개면 두 전략의 성격이 드러납니다. 대상을 응시하고 접근하는 앞 단계에서는 두 전략 모두 100%를 찍었습니다. 지시문만 제대로 붙으면 어느 태스크인지 헷갈릴 일이 없는 구간입니다. 반면 물건을 내려놓는 Place 단계에서 걸러 내기는 40%로 내려앉았습니다. 아무 처리도 하지 않은 50%보다 낮습니다. 오염된 시연을 지우면서 그 안에 들어 있던 정상 궤적까지 함께 지웠고, 저수준 제어를 배울 예시가 부족해진 것입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들이 논문에 적은 판단 기준도 이 지점에 있습니다. 데이터셋이 충분히 크고 잘못 라벨링된 시연이 궤적까지 신뢰하기 어려울 때는 걸러 내는 편이 낫고, 데이터셋이 작아 제어 궤적의 손실이 아픈데 행동 자체는 정상일 때는 교정 정확도가 완벽하지 않더라도 고쳐 쓰는 편이 낫다는 것입니다. 어느 쪽도 수치로 된 문턱값을 갖고 있지 않습니다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="curation-criteria" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">기준은 아직 경험 법칙이다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        로봇 데이터를 다루는 팀이 실제로 마주하는 질문은 검출률이 몇 %인지가 아닙니다. 감사가 표시한 시연 목록을 앞에 두고 무엇을 지우고 무엇을 고칠지 정해야 합니다. 이 논문이 남긴 가장 실무적인 결과는 그 결정이 전체 성공률뿐 아니라 단계별 성공률을 서로 반대 방향으로 움직인다는 사실입니다. 같은 감사 결과에 같은 도구를 써도 어느 손잡이를 당기느냐에 따라 결과가 11.2%p 갈립니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결정을 내리려면 데이터셋에 대해 몇 가지를 알고 있어야 합니다.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li>표시된 시연의 궤적 자체가 정상인가, 아니면 라벨과 궤적이 함께 의심스러운가</li>
+                        <li>해당 태스크의 시연이 몇 건 남는가. 지웠을 때 저수준 제어를 배울 예시가 부족해지는 단계는 어디인가</li>
+                        <li>지시문이 태스크를 구분하는 역할을 하는가, 아니면 관측만으로도 구분되는가</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 질문 모두 감사 도구가 아니라 데이터셋의 기록이 답합니다. 원본 지시문과 교정된 지시문이 함께 남아 있는지, 시연이 어느 세션에서 어떤 순서로 수집됐는지, 태스크별 시연 수가 얼마인지가 레코드에 붙어 있어야 답할 수 있습니다. 혼합 비율과 시연 선별을 바꿨을 때 정책 성능이 어떻게 움직이는지 폐루프로 확인하기 어렵다는 문제는 <a href="/report/robot-data-curation-closed-loop-gap/ko/" class="underline">완벽한 데이터를 섞었는데 로봇이 더 나빠졌다</a>에서 다룬 적이 있습니다. 이번 논문의 마지막 실험은 그 공백을 두 전략에 한정해 실측으로 메운 사례에 가깝습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        방법 자체의 한계도 분명합니다. 판단이 궤적 임베딩의 품질에 기대는데, 영상 쪽과 달리 로봇 고유감각은 쓸 만한 사전학습 자원이 아직 부족합니다. 태스크 라벨의 목록이 미리 정해져 있다고 가정하기 때문에, 지시문이 자유롭게 서술되는 데이터셋에는 그대로 적용되지 않습니다. 저자들은 딱딱한 태스크 클래스를 지시문 임베딩 공간의 부드러운 이웃 관계로 바꾸는 방향을 다음 과제로 적었습니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note</strong>: 페블러스가 AI-Ready Data를 말할 때 데이터에 붙어 있어야 한다고 보는 것이 이런 이력입니다. 라벨이 한 번 고쳐졌다면 무엇이 원본이었고 어떤 근거로 바뀌었는지가 레코드에 남아야, 나중에 걸러 낼지 고쳐 쓸지를 데이터셋마다 다시 판단할 수 있습니다. 검출 정확도가 아무리 올라가도 그 판단은 사람의 몫으로 남습니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500 transition-colors">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Holk, S., Takanami, R., Matsushima, T., Iwasawa, Y., Matsuo, Y., Wu, Y.-H., &amp; Ota, K. (2026). "<a href="https://arxiv.org/abs/2608.07895" target="_blank" rel="noopener">Auditing Instruction-Trajectory Mismatches in Multimodal Robot Demonstrations</a>." <strong>arXiv:2608.07895</strong> (IEEE RA-L accepted).</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260814"></script>
+    <script src="/scripts/citation-download.js?v=20260814" defer></script>
+
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-13T22:12:40.893Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-13T22:26:49.493Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1786659160893-4b0gn6",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-13T23:08:38.164Z"
+            },
+            mainTitle: "행동은 맞고 지시문만 틀린 로봇 시연 데이터",
+            subtitle: "MMPF는 학습 없이 잘못 붙은 지시를 찾아 고쳤고, 실기 정책 성공률은 73.8%에서 90.0%로 올랐다",
+            pageTitle: "로봇 시연 데이터 지시-궤적 불일치, 학습 없이 검출하고 라벨 고치기 | 페블러스",
+            category: "tech",
+            publishDate: "2026-08-14",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/instruction-trajectory-mismatch-robot-demos/ko/",
+            tags: ["로봇 시연 데이터", "지시-궤적 불일치", "VLA 정책 학습", "로봇 데이터 큐레이션", "라벨 오류 검출", "LIBERO", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "지시-궤적 불일치(ITM)란 무엇인가요?",
+                    answer: "로봇 시연 데이터에서 궤적은 정상으로 실행됐는데 거기 붙은 자연어 지시가 의미적으로 틀린 경우를 가리킵니다. 집는 동작에 놓으라는 지시가 붙거나, 오븐을 닫는 궤적에 열라는 지시가 붙는 식입니다. 논문에서는 Instruction-Trajectory Mismatch로 부릅니다."
+                },
+                {
+                    question: "실패한 롤아웃과 무엇이 다른가요?",
+                    answer: "실패한 롤아웃은 로봇이 물건을 놓치거나 부딪힌 기록이라 영상만 봐도 눈에 띕니다. 지시-궤적 불일치는 궤적이 처음부터 끝까지 매끄럽게 실행되기 때문에 데이터셋 안에서 정상 시연처럼 보이고, 사람이 훑는 품질 점검을 통과합니다. 정책에 미치는 영향도 달라서, 실패 롤아웃은 나쁜 동작을 섞는 데 그치지만 잘못 붙은 지시는 언어와 행동의 대응 관계 자체를 오염시킵니다."
+                },
+                {
+                    question: "MMPF는 어떻게 학습 없이 오류를 찾아내나요?",
+                    answer: "머리 카메라, 손목 카메라, 고유감각 세 모달리티를 각각 독립된 전문가로 놓습니다. 전문가마다 임베딩 공간에서 가장 가까운 30개 이웃의 라벨 분포와 각 태스크 프로토타입까지의 거리를 λ=0.5로 섞어 라벨 분포를 만들고, 확신이 큰 전문가에게 더 큰 가중치를 주어 곱해 합칩니다. 시각 임베딩은 공개 모델 Cosmos-Embed1을 쓰고 고유감각 인코더는 태스크 라벨 없이 사전학습했기 때문에, 감사 파이프라인 자체는 파라미터를 학습하지 않습니다."
+                },
+                {
+                    question: "왜 라벨로 학습한 분류기를 감사에 쓰면 안 되나요?",
+                    answer: "감사 대상이 라벨인데 그 라벨로 분류기를 학습시키면 오염된 짝짓기를 함께 배우기 때문입니다. 실제로 라벨 오류 검출의 표준으로 쓰이는 Confident Learning은 경계 사례에 오염이 몰린 LIBERO-Spatial 세팅에서 F1 64.8%로 떨어졌고, 같은 조건에서 MMPF는 99.6%였습니다."
+                },
+                {
+                    question: "검출 정확도와 교정 정확도는 어떻게 다른가요?",
+                    answer: "검출은 어떤 에피소드가 오염됐는지 짚어내는 일이고, 교정은 그 에피소드에 원래 붙었어야 할 라벨을 맞히는 일입니다. MMPF는 LIBERO 8개 세팅 전부에서 교정 정확도 100%를 기록했지만, 이는 검출된 진짜 불일치에 한정된 값입니다. 검출 F1은 세팅에 따라 88.9%에서 100% 사이로 흔들립니다."
+                },
+                {
+                    question: "걸러 내기와 재라벨링 중 무엇이 나았나요?",
+                    answer: "실기 Table 데이터셋에서 아무 처리도 하지 않았을 때 정책 성공률은 73.8%였고, 의심 시연을 걸러 냈을 때 78.8%, 라벨만 고쳤을 때 90.0%였습니다. Bottle-mug 데이터셋에서도 재라벨링이 62.5%를 77.5%로 끌어올렸습니다. 다만 이는 두 데이터셋의 규모와 구성에서 나온 결과입니다."
+                },
+                {
+                    question: "걸러 내기가 오히려 손해인 경우도 있나요?",
+                    answer: "있습니다. 같은 Table 실험에서 물건을 내려놓는 Place 단계의 성공률은 걸러 냈을 때 40%로, 아무 처리도 하지 않은 50%보다 낮았습니다. 오염된 시연을 지우면서 그 안에 들어 있던 정상 궤적까지 사라져 저수준 제어를 배울 예시가 부족해진 결과로 해석됩니다."
+                },
+                {
+                    question: "두 전략을 가르는 명확한 기준이 있나요?",
+                    answer: "수치로 된 문턱값은 제시되지 않았습니다. 저자들은 데이터셋이 크고 잘못 라벨링된 시연이 궤적까지 신뢰하기 어려울 때는 걸러 내기를, 데이터셋이 작아 제어 궤적의 손실이 아픈데 행동 자체는 정상일 때는 재라벨링을 권했습니다. 판단에 필요한 정보는 감사 도구가 아니라 데이터셋의 기록에서 나옵니다."
+                },
+                {
+                    question: "이 방법의 한계는 무엇인가요?",
+                    answer: "궤적 임베딩의 품질에 의존하는데, 영상과 달리 로봇 고유감각 쪽에는 쓸 만한 사전학습 자원이 아직 부족합니다. 또한 태스크 라벨의 목록이 미리 정해져 있다고 가정하기 때문에 지시문이 자유롭게 서술되는 데이터셋에는 그대로 적용되지 않습니다. 저자들은 태스크 클래스를 지시문 임베딩 공간의 부드러운 이웃 관계로 대체하는 방향을 후속 과제로 제시했습니다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
