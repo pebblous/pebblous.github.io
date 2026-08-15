@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnnoIndex: Schema-First Document Index at 0.87 F1 | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="AnnoIndex from HKUST Guangzhou induces a schema from the corpus and extracts values before a query arrives, reaching 0.87 average F1 at 18.3K tokens per query.">
+    <meta name="keywords" content="AnnoIndex, SchemaLoop, annotation index, schema induction, unstructured document analytics, RAG limitations, vector similarity search, GraphRAG, AI-Ready Data, LLM token cost, arXiv 2608.13384">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="AnnoIndex Extracts Document Values Before the Question Arrives">
+    <meta property="og:description" content="Querying an unstructured corpus with an LLM every time makes cost scale with the number of questions. AnnoIndex induces a schema first and reports 0.87 average F1.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="AnnoIndex extracts document values before the question arrives">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-08-16">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AnnoIndex Extracts Document Values Before the Question Arrives">
+    <meta name="twitter:description" content="Five randomly chosen documents decide whether an auto-generated schema is good enough. No accuracy check sits inside that loop.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/en/image/index.png">
+    <meta name="twitter:image:alt" content="Diagram of the three-layer annotation schema AnnoIndex induces from a corpus before any query arrives">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260816"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260816">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260816">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260816">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#vector-limits" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Vector search cannot enforce born before 1985</a></li>
+                    <li><a href="#schemaloop" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The schema comes from the corpus, in three layers</a></li>
+                    <li><a href="#verification" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Five documents decide whether a schema is good enough</a></li>
+                    <li><a href="#query-engine" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Only the survivors reach the LLM, and the values come back</a></li>
+                    <li><a href="#numbers" class="block pl-4 themeable-toc-link transition-colors duration-200">5. The numbers from three datasets and their conditions</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Systems that answer questions about a pile of documents are usually built as retrieval systems. A question comes in, similar documents are pulled, and those documents go into an LLM that writes the answer. AnnoIndex, posted to arXiv on August 13, 2026, reverses that order. Before any question arrives, it scans the corpus, decides which fields are worth extracting, fills in the values, and stores the result as an index. The authors are Teng Lin, Yuyu Luo, and Nan Tang of the Hong Kong University of Science and Technology in Guangzhou.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Across legal provisions, Wikipedia pages, and templated web pages, the average F1 is 0.87. The strongest comparison system, QUEST, scored 0.80, and feeding whole documents to GPT-4o scored 0.73. Even after the cost of building the index is amortized across the query workload, each query consumes 18.3K tokens, one eleventh of the whole-document baseline.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            What decides whether an auto-generated schema is good enough, though, is five randomly chosen documents and two proxy metrics. No step inside that loop checks whether the extracted values are actually right. The channel for human feedback, as the authors state plainly, is still an interface and nothing more.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key figures</h3>
+                    <p class="themeable-text leading-relaxed mb-3">
+                        The first three numbers are what the system gains by extracting values before questions arrive. The last one is the size of the sample that decides whether the schema doing that extraction is sound.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: <a href="https://arxiv.org/abs/2608.13384" target="_blank" rel="noopener" style="color:#F86825;">arXiv:2608.13384</a>, Table I, §VI-B and §VI-D</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.87</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Average F1 across three datasets</p>
+                            <p class="text-xs themeable-muted mt-1">QUEST reached 0.80 and direct GPT-4o querying 0.73 under the same setup</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">18.3K</p>
+                            <p class="text-sm themeable-text-secondary mt-1">LLM tokens per query</p>
+                            <p class="text-xs themeable-muted mt-1">Index construction is amortized over 500 queries, leaving one eleventh of the direct GPT-4o cost</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">48 → 13</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Extraction calls falling across batches</p>
+                            <p class="text-xs themeable-muted mt-1">Economical mode over five batches of 100 queries, a 73 percent drop</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">5 docs</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Documents opened to verify one schema</p>
+                            <p class="text-xs themeable-muted mt-1">Five random documents give an extraction success rate and a filtering efficiency, never a correctness check</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="vector-limits" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Vector search cannot enforce born before 1985</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The example question the paper opens with is an ordinary one. What is the average age of the active players on NBA teams with more than five championships? To a person that is a single sentence. To a system it is a conditional filter, an aggregation, and a join across documents, all at once. On questions like this, the authors argue, existing approaches break in two places.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The first is retrieval. Turning documents and questions into vectors and returning the nearest K measures whether the topic is close, not whether a condition holds. Ask for a birth year earlier than 1985 and you get documents that are merely on topic with the wrong year, while documents that satisfy the condition without making it prominent drop out. What drops out here is not recovered later. Real systems therefore push the retrieved documents back through an LLM to check the conditions one by one, and the bill grows in proportion to how many documents came back.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The second is computation. Averages, comparisons, and joins are operations that assume values already sit in columns. What vector retrieval returns is a bag of text fragments with no order and no schema, so there is nowhere to attach those operations. Knowledge graphs do pre-extract entities and relations, but they behave like path traversal engines, so averaging over a filtered set or connecting two sets with no edge between them still ends with a subgraph being handed to an LLM.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What the paper identifies underneath both failures is not accuracy but cost structure. Neither approach separates the cost of extracting attributes from the cost of running a query. Ask the same corpus ten questions and the attributes are extracted ten times; ask a hundred and they are extracted a hundred times. As long as cost scales with the number of queries, large-scale analytical work is hard to put on top of it. That is where this paper starts.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="schemaloop" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The schema comes from the corpus, in three layers</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AnnoIndex answers by moving the work earlier. Instead of searching documents once a question lands, it sweeps the corpus beforehand, decides which fields to extract, and fills them in. The paper calls the resulting table an annotation index. A condition such as a birth year earlier than 1985 becomes a single numeric comparison on that index, and the LLM is never called.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The module that builds the schema is SchemaLoop, and its structure is borrowed straight from relational databases. The dataset layer splits the corpus into logical databases, the table layer groups documents into entity types, and the document layer decides the fine-grained fields to extract from each document. Each layer is designed to narrow the search space for the layer below, so by the time the document-level filters apply, the candidate set has already shrunk considerably.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Who sets the schema differs by layer. The dataset layer is defined by people in advance. The table and document layers are drafted by GPT-4o, called once per document group. Humans draw the outer boundary of the corpus and the model fills in the fields inside it. Neither fully automatic nor fully manual, and that division is what defines the character of the system.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of the three-layer annotation schema in which humans define the dataset layer while GPT-4o generates the table and document layers" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="24" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">The three schema layers and who decides each one</text>
+
+                            <text x="150" y="46" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="var(--text-muted)">Schema layer</text>
+                            <text x="404" y="46" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="var(--text-muted)">Who decides</text>
+                            <text x="576" y="46" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="var(--text-muted)">DB analog</text>
+
+                            <rect x="30" y="56" width="240" height="48" rx="8" fill="rgba(100,116,139,0.08)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="150" y="76" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">Dataset layer</text>
+                            <text x="150" y="94" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Splits the corpus into logical DBs</text>
+                            <rect x="316" y="62" width="176" height="36" rx="8" fill="rgba(100,116,139,0.06)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="404" y="85" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">Predefined by humans</text>
+                            <text x="576" y="85" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" fill="var(--text-muted)">Database</text>
+
+                            <rect x="30" y="114" width="240" height="48" rx="8" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="150" y="134" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="#F86825">Table layer</text>
+                            <text x="150" y="152" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Groups documents into entity types</text>
+                            <rect x="316" y="120" width="176" height="36" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="404" y="143" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">Generated by GPT-4o</text>
+                            <text x="576" y="143" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" fill="var(--text-muted)">Table</text>
+
+                            <rect x="30" y="172" width="240" height="48" rx="8" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="150" y="192" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="#F86825">Document layer</text>
+                            <text x="150" y="210" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Fields to extract from each document</text>
+                            <rect x="316" y="178" width="176" height="36" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="404" y="201" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">Generated by GPT-4o</text>
+                            <text x="576" y="201" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" fill="var(--text-muted)">Column</text>
+
+                            <line x1="150" y1="104" x2="150" y2="112" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <line x1="150" y1="162" x2="150" y2="170" stroke="var(--text-muted)" stroke-width="1.5"/>
+
+                            <text x="330" y="240" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Diagram of arXiv:2608.13384 §IV-A and §VI-B | Pebblous original</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ People draw only the outer boundary while the model fills in the fields | Pebblous original diagram</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Once values are extracted, the question of representation follows. Dates are converted to a single format such as ISO 8601, numbers are given consistent units and decimal notation, and categorical strings are trimmed and normalized. The target formats are derived from the value shapes that recur in the corpus, and the normalization rules themselves cycle through the same feedback loop as the schema. When candidate schemas contain fields that mean the same thing, synonym matching and embedding similarity collapse them into one. The normalization and deduplication a data team used to do by hand have moved inside the index build.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper also counts what this preparation costs. The dataset layer calls no model at all, and the table and document layers call GPT-4o exactly once per document group. Verification, which actually extracts values to test a schema, runs on a small model, with a full-size model reserved for the final document-level check when necessary. The index that comes out of this typically shrinks the document scanning scope by two to three orders of magnitude, and on a corpus of 1,600 documents the entire schema induction and index build cost the equivalent of one or two online queries. The claim that preparing before the question is cheaper rests on that arithmetic.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="verification" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Five documents decide whether a schema is good enough</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        An auto-generated schema is not adopted as is. Every time SchemaLoop produces a candidate, a verification phase follows. Five documents are drawn at random from the corresponding document group, Mistral-7B extracts values for every field, and two metrics score the result. One is the extraction success rate, the share of attribute-document pairs that came back non-empty. The other is filtering efficiency, which measures how evenly documents spread across the distinct value combinations of the schema. The thresholds are 0.6 and 0.3.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If either metric falls short, the failure is handed back to the model, which merges, splits, or redefines fields. Iteration continues until both metrics stabilize, capped at five rounds, and the authors report that the document layer usually converges within three to five.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Those two numbers, 0.6 and 0.3, are applied identically to all three datasets. The same bar governs legal provisions averaging more than 6,000 tokens per document and templated web pages that repeat the same layout. There is no experiment in the paper showing what happens when the thresholds are tuned to the character of a corpus.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of the verification loop that extracts values from five random documents and checks only extraction success rate and filtering efficiency, never correctness" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="24" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">What the verification loop measures, and what it leaves out</text>
+
+                            <rect x="24" y="52" width="128" height="52" rx="8" fill="rgba(100,116,139,0.08)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="88" y="74" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">Candidate schema</text>
+                            <text x="88" y="92" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">drafted by GPT-4o</text>
+
+                            <line x1="154" y1="78" x2="180" y2="78" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="178,74 190,78 178,82" fill="var(--text-muted)"/>
+
+                            <rect x="192" y="52" width="140" height="52" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="262" y="74" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="#F86825">5 random documents</text>
+                            <text x="262" y="92" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Mistral-7B extracts values</text>
+
+                            <line x1="334" y1="78" x2="360" y2="78" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="358,74 370,78 358,82" fill="var(--text-muted)"/>
+
+                            <rect x="372" y="44" width="150" height="34" rx="8" fill="rgba(100,116,139,0.06)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="447" y="65" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-secondary)">Extraction success ≥ 0.6</text>
+                            <rect x="372" y="86" width="150" height="34" rx="8" fill="rgba(100,116,139,0.06)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="447" y="107" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-secondary)">Filtering efficiency ≥ 0.3</text>
+
+                            <line x1="524" y1="82" x2="552" y2="82" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="550,78 562,82 550,86" fill="var(--text-muted)"/>
+                            <rect x="564" y="62" width="72" height="40" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="600" y="87" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">Adopted</text>
+
+                            <path d="M447 120 L447 148 L262 148 L262 108" fill="none" stroke="var(--text-muted)" stroke-width="1.3" stroke-dasharray="4,4"/>
+                            <polygon points="258,110 262,100 266,110" fill="var(--text-muted)"/>
+                            <text x="356" y="142" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Below threshold: merge, split, or redefine and retry (max 5 rounds)</text>
+
+                            <rect x="24" y="170" width="612" height="46" rx="8" fill="rgba(248,104,37,0.05)" stroke="#F86825" stroke-width="1.5" stroke-dasharray="5,4"/>
+                            <text x="330" y="190" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" font-weight="700" fill="#F86825">Missing from this loop: any check that the extracted values are correct</text>
+                            <text x="330" y="208" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Ground truth is consulted only in the gold standard built by eight graduate students</text>
+
+                            <text x="330" y="242" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Diagram of arXiv:2608.13384 §IV-B, §VI-A and §VI-B | Pebblous original</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ A schema that clears the two proxy metrics is applied to the whole corpus | Pebblous original diagram</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What deserves attention is what those two metrics actually measure. The extraction success rate asks whether a value was filled in. Filtering efficiency asks whether documents divide evenly. Neither asks whether the value is right. Comparison against ground truth appears only in the experimental evaluation, where the authors had GPT-4o draft candidate attributes and then had eight graduate students verify and correct every attribute-value pair to produce a gold standard. That is an asset built to score performance, not a mechanism the running system consults.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So if five documents yield well-populated values and a clean split, a field that is extracting the wrong thing still passes. The schema that passes is applied to the entire corpus, and every subsequent query draws its answers from it. Errors in an auto-generated schema are written into the index and quietly reused.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The authors acknowledge the gap. The paper sketches three feedback loops: an internal automatic verification loop, an error-case analysis loop, and an external feedback loop. It then states that this work only establishes the technical skeleton supporting that integration, that only the first loop is implemented, and that the other two are provided as standardized interfaces. How to use those external signals is left as future work. To the question of where anyone learns that a schema is wrong, the system's current answer is that this has not been settled yet.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="query-engine" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Only the survivors reach the LLM, and the values come back</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Once the index stands, a query compiles into a SQL-like execution plan. Conditions expressible over indexed fields are filtered first, with no model call involved. Conditions absent from the index are handled by an operator called EXTRACT, which attaches tools in ascending order of cost. Whatever a regular expression can settle goes to a regular expression, what it cannot goes to the small model Mistral-7B, and only what remains after that goes to GPT-4o.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The example plan the paper walks through end to end looks for baseball players born before 1985 who are still active. The plan first keeps only baseball player documents using a table-level field, then applies a less-than-1985 condition on the birth year field. Up to here everything is a comparison over the index and the model is never called. Whether a player is still active is not in the index, so it falls to EXTRACT at the end, by which point only a handful of documents remain and GPT-4o has correspondingly little to read. The condition vector search could not enforce becomes one line in a WHERE clause.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A query over the legal corpus that hunts for provisions conflicting with superior law shows the ordering well. A pre-extracted conflict-type field narrows 1,600 documents to 120, a lightweight model extracting environmental keywords narrows that to 35, and GPT-4o only has to pull the conflict explanations out of those 35. On that query class F1 is 0.79, against 0.61 for QUEST with its LLM calls restricted. Let QUEST use them freely and accuracy rises, but the token count passes 200K.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 236" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing 1600 legal documents narrowed to 120 by index filters and to 35 by a lightweight model before GPT-4o is called" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="24" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">The expensive tool is called last</text>
+
+                            <rect x="30" y="60" width="180" height="58" rx="8" fill="rgba(100,116,139,0.08)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="120" y="84" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="15" font-weight="700" fill="var(--text-secondary)">1,600 docs</text>
+                            <text x="120" y="104" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">entire legal corpus</text>
+
+                            <line x1="212" y1="89" x2="240" y2="89" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="238,85 250,89 238,93" fill="var(--text-muted)"/>
+                            <text x="231" y="132" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" font-weight="700" fill="var(--text-secondary)">Index filter</text>
+                            <text x="231" y="146" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">0 model calls</text>
+
+                            <rect x="252" y="66" width="140" height="46" rx="8" fill="rgba(100,116,139,0.06)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="322" y="86" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="14" font-weight="700" fill="var(--text-secondary)">120 docs</text>
+                            <text x="322" y="103" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">possible conflicts</text>
+
+                            <line x1="394" y1="89" x2="422" y2="89" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="420,85 432,89 420,93" fill="var(--text-muted)"/>
+                            <text x="413" y="132" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" font-weight="700" fill="var(--text-secondary)">Small model</text>
+                            <text x="413" y="146" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Mistral-7B</text>
+
+                            <rect x="434" y="70" width="112" height="38" rx="8" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="490" y="86" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="13" font-weight="700" fill="#F86825">35 docs</text>
+                            <text x="490" y="101" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">environment-related</text>
+
+                            <line x1="548" y1="89" x2="574" y2="89" stroke="#F86825" stroke-width="1.5"/>
+                            <polygon points="572,85 584,89 572,93" fill="#F86825"/>
+                            <rect x="586" y="70" width="50" height="38" rx="8" fill="rgba(248,104,37,0.14)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="611" y="94" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">GPT-4o</text>
+
+                            <rect x="30" y="164" width="606" height="40" rx="8" fill="rgba(248,104,37,0.05)" stroke="#F86825" stroke-width="1.5" stroke-dasharray="5,4"/>
+                            <text x="333" y="189" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">Values from EXTRACT flow back into the index, and a field called more than 10 times is promoted</text>
+
+                            <text x="330" y="224" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Diagram of the LCR case in arXiv:2608.13384 §V-B, §V-D and §VI-F | Pebblous original</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ When the index trims candidates first, the most expensive model reads far less | Pebblous original diagram</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The executor has a few more tricks. The order in which conditions are checked is decided per document, and the moment one fails the rest are skipped and the document is dropped. Joins first collect the values satisfying a condition on one side and rewrite them into an IN filter, cutting calls on the other side. Each query carries a ceiling on how many LLM calls it may issue, so a plan that goes wrong cannot run up an unbounded bill. On queries spanning three tables the plan is laid out as a directed acyclic graph that extracts only the attributes each step needs, and this is exactly where it parts ways with QUEST and its fixed left-deep join order.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Values produced by EXTRACT are not thrown away. They are first stored as virtual fields in an extension area, and once a field has been referenced more than ten times it is promoted to a formal schema field and fed back to SchemaLoop. In the authors' framing, it moves extraction cost out of a per-query charge and into a one-time charge levied when the value is first needed. Note that the promotion criterion is again not whether the value is right but how often it was called. The mechanism rests on the assumption that a frequently used field is a good field.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The payoff shows up in repeated querying. Running five consecutive batches of 100 queries, the number of extractions that trigger an LLM call fell from 48 to 13 in economical mode and from 72 to 15 in performance mode. Summed across the five batches that comes to 128 and 177 calls respectively, against roughly 300 expected with no reuse at all. The more the same questions recur, the lower the marginal cost.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="numbers" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The numbers from three datasets and their conditions</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The three corpora tested differ in character: 1,600 legal provisions averaging more than 6,000 tokens each, 219 Wikipedia pages spanning ten domains, and 1,050 templated web pages. Each dataset got 500 queries, stratified from simple filters up to three-way joins and multi-step reasoning. An answer counts as correct only when every attribute value in the tuple matches exactly.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b themeable-border">
+                                    <th class="text-left py-3 px-4 font-semibold">Method</th>
+                                    <th class="text-left py-3 px-4 font-semibold">Legal (LCR)</th>
+                                    <th class="text-left py-3 px-4 font-semibold">Wikipedia</th>
+                                    <th class="text-left py-3 px-4 font-semibold">Web pages</th>
+                                    <th class="text-left py-3 px-4 font-semibold" style="color: #F86825;">Avg F1</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">VectorDB + RAG</td>
+                                    <td class="py-3 px-4">0.34</td>
+                                    <td class="py-3 px-4">0.41</td>
+                                    <td class="py-3 px-4">0.62</td>
+                                    <td class="py-3 px-4">0.46</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">GraphRAG</td>
+                                    <td class="py-3 px-4">0.48</td>
+                                    <td class="py-3 px-4">0.59</td>
+                                    <td class="py-3 px-4">0.71</td>
+                                    <td class="py-3 px-4">0.60</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">ZenDB</td>
+                                    <td class="py-3 px-4">0.55</td>
+                                    <td class="py-3 px-4">0.79</td>
+                                    <td class="py-3 px-4">0.84</td>
+                                    <td class="py-3 px-4">0.67</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">Palimpsest</td>
+                                    <td class="py-3 px-4">0.49</td>
+                                    <td class="py-3 px-4">0.81</td>
+                                    <td class="py-3 px-4">0.88</td>
+                                    <td class="py-3 px-4">0.70</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">Lotus</td>
+                                    <td class="py-3 px-4">0.46</td>
+                                    <td class="py-3 px-4">0.89</td>
+                                    <td class="py-3 px-4">0.95</td>
+                                    <td class="py-3 px-4">0.73</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">GPT-4o direct querying</td>
+                                    <td class="py-3 px-4">0.61</td>
+                                    <td class="py-3 px-4">0.74</td>
+                                    <td class="py-3 px-4">0.82</td>
+                                    <td class="py-3 px-4">0.73</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">QUEST</td>
+                                    <td class="py-3 px-4">0.71</td>
+                                    <td class="py-3 px-4">0.87</td>
+                                    <td class="py-3 px-4">0.94</td>
+                                    <td class="py-3 px-4">0.80</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">AnnoIndex (economical mode)</td>
+                                    <td class="py-3 px-4">0.74</td>
+                                    <td class="py-3 px-4">0.88</td>
+                                    <td class="py-3 px-4">0.95</td>
+                                    <td class="py-3 px-4">0.83</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">AnnoIndex (performance mode)</td>
+                                    <td class="py-3 px-4">0.81</td>
+                                    <td class="py-3 px-4">0.91</td>
+                                    <td class="py-3 px-4">0.96</td>
+                                    <td class="py-3 px-4">0.87</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">Compiled by Pebblous from Table I of arXiv:2608.13384. ClosedIE (0.26) is omitted because it was measured on Wikipedia only. Economical mode attaches the cheapest extractor first; performance mode sends every extraction to GPT-4o as an upper bound.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The widest gap in the table sits in the legal column. A vector database with RAG stays at 0.34 while AnnoIndex in performance mode reaches 0.81. On a corpus where a single document runs past 6,000 tokens and the conditions are buried inside the provisions, the difference between fetching topically similar documents and extracting values into columns beforehand is on full display. Isolating three-way join queries, AnnoIndex scores 0.86 and QUEST 0.74, while feeding whole documents to GPT-4o collapses to 0.35. That complex-query evaluation was run on a separate set: 30 two-way joins, 20 three-way joins and progressive reasoning queries, and 25 legal conflict analyses.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The way the baseline ranking flips between datasets is another clue for reading the table. Lotus, which feeds whole documents to the model, hits 0.95 on web pages and falls to 0.46 on legal provisions. Push long, dense provisions in all at once and the model gets buried in them. Web pages repeat the same template, so values sit in nearly fixed positions and the top three methods all clear 0.94. To see the difference between methods, then, look at the legal column.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Stripping components out one at a time tells two more things. Swap in a schema a domain expert wrote by hand after reading 20 documents and Wikipedia F1 drops from 0.87 to 0.72 while tokens climb from 26.8K to 51.8K, because manual schemas miss important attributes or carry useless ones. Remove the verification step instead and accuracy holds steady while tokens rise to 38.7K, because the redundant fields left in an unpruned schema trigger extractions nobody needed. Automatic induction and its verification are attached to both accuracy and cost.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The third variant says something different. Keep the schema and remove only the structured query engine, replacing it with pure vector retrieval, and F1 falls to 0.64. Tokens in that variant come to 32.5K, not far off performance mode. Even with an index full of pre-extracted values, accuracy collapses without something above it to apply filters, join tables, and execute in order, and the loss is not a side effect of saving tokens. A schema-first design is not complete with the index alone. It holds only when paired with an executor that can read it.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        It is worth seeing how the token figures were computed. Tokens per query, as the paper defines them, sum offline indexing tokens and online query tokens and divide by the number of queries. Each dataset carries 500 queries and the build costs the equivalent of one or two of them, so the more queries there are the closer this figure slides to the online marginal cost. Economical mode, attaching the cheapest extractor first, runs at 15.7K tokens per query for F1 0.83. Put the other way around, the arithmetic does not hold for a corpus you only query a handful of times.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Some conditions belong next to the numbers. All three datasets were chosen by the authors and the gold standard was built by the authors. The top schema layer was defined by people in advance, so this is not the score of an index assembled fully automatically. Above all, there is still no mechanism for surfacing the fact that a schema is wrong. Build an index wrong once and every query above it tilts the same way. Set against the expensive approach of extracting per query, which at least judges anew each time, what this design relocates is not only cost but also how long an error survives.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So rather than reading this paper as a tool to bolt onto a pipeline today, it is more useful as a prompt for teams working with document assets to check three things.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-2 mb-6 ml-6">
+                        <li>What share of the questions you ask your documents re-extracts the same fields every time? Recurring fields are candidates to move out of the query and into an index.</li>
+                        <li>Can you say who decided each of those fields? Where boundaries set by people and fields filled by a model are mixed together, it is worth recording where human decisions stop.</li>
+                        <li>Is there any channel that would tell you an auto-generated schema is wrong? A check that only asks whether extraction happened will pass values that are wrong.</li>
+                    </ul>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note</strong>: What Pebblous keeps running into in data quality work is not missing values but missing reasons for the values that were kept. This paper pulls that decision forward to the moment the index is built. The arithmetic behind preparing before the question arrives is clear enough. What is still thin is the procedure for confirming that the decision made early was the right one, and right now it stops at five documents. In any design that prepares data ahead of time, the work that remains sits on the verification side.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Earlier pieces along the same axis include <a href="/blog/databricks-genie-one-governed-data/en/" style="color:#F86825;">Databricks Genie</a> on moving document evidence into governed data, <a href="/blog/rosetta-column-semantics-from-values/en/" style="color:#F86825;">Rosetta</a> on recovering column meaning from values alone, and <a href="/blog/ai-ready-data-conditions/en/" style="color:#F86825;">the conditions for AI-Ready Data</a>. The full paper is available at <a href="https://arxiv.org/abs/2608.13384" target="_blank" rel="noopener" style="color:#F86825;">arXiv:2608.13384</a>.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260816"></script>
+
+    <script>
+        PebblousPage.init({
+            mainTitle: "AnnoIndex Extracts Document Values Before the Question Arrives",
+            subtitle: "A schema-first index from HKUST Guangzhou reports 0.87 average F1 by inducing structure from the corpus itself",
+            pageTitle: "AnnoIndex: Schema-First Document Index at 0.87 F1 | Pebblous",
+            category: "tech",
+            publishDate: "2026-08-16",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/annoindex-schema-first-document-index/en/",
+            tags: ["annotation index", "AnnoIndex", "SchemaLoop", "schema induction", "unstructured data", "RAG", "AI-Ready Data", "arXiv"],
+            faqs: [
+                {
+                    question: "How is AnnoIndex different from conventional RAG?",
+                    answer: "The timing of the work differs. Vector-based RAG waits for a question, then fetches similar documents and hands them to an LLM. AnnoIndex induces a schema from the corpus before any question arrives, extracts the values, and stores them as a tabular annotation index. A condition such as a birth year earlier than 1985 is then a numeric comparison over that index, with no LLM call required."
+                },
+                {
+                    question: "Why is vector similarity weak at conditional retrieval?",
+                    answer: "Vector search measures topical closeness, not whether a condition holds. Documents that are merely on topic with the wrong value come back, while documents that satisfy the condition without making it prominent drop out. What is lost at that stage is never recovered, and the cost of re-checking the retrieved documents with an LLM grows in proportion to how many were retrieved."
+                },
+                {
+                    question: "How does SchemaLoop build a schema?",
+                    answer: "It mirrors the three layers of a relational database. The dataset layer splits the corpus into logical databases, the table layer groups documents into entity types, and the document layer decides the fine-grained fields to extract from each document. In the experimental setup the dataset layer was predefined by people, while GPT-4o was called once per document group to draft the table and document layers."
+                },
+                {
+                    question: "How is an auto-generated schema judged to be good enough?",
+                    answer: "Five documents are drawn at random from the group, Mistral-7B extracts values, and two metrics score the result. The extraction success rate, the share of attribute-document pairs filled in non-empty, has a threshold of 0.6, and filtering efficiency, which measures how evenly documents divide, has a threshold of 0.3. If either falls short, fields are merged, split, or redefined, for up to five rounds."
+                },
+                {
+                    question: "Does that verification include an accuracy check?",
+                    answer: "It does not. The two metrics ask whether values were filled in and whether documents divide evenly, never whether the values are correct. Ground truth comparison happens only in the gold standard the authors built for evaluation, combining GPT-4o drafts with manual verification by eight graduate students. As a result, a field extracting the wrong thing can pass on five documents and then be applied to the whole corpus."
+                },
+                {
+                    question: "Where would a person find out that the schema is wrong?",
+                    answer: "The paper sketches three feedback loops but implements only the internal automatic verification loop. The error-case analysis loop and the external human feedback loop are provided as standardized interfaces, and the authors state directly that how to use those signals is future work. For now there is no channel inside the system other than a person separately checking against ground truth."
+                },
+                {
+                    question: "How much does building the index in advance cost?",
+                    answer: "On a corpus of 1,600 documents, the paper reports that the complete schema induction and index construction cost the equivalent of one or two online queries. Even after amortizing that one-time cost over 500 queries, tokens per query come to 18.3K in performance mode and 15.7K in economical mode, roughly one eleventh of feeding whole documents to GPT-4o."
+                },
+                {
+                    question: "Does cost keep falling when the same questions repeat?",
+                    answer: "It does. Values pulled by EXTRACT are stored in the index as virtual fields, and a field referenced more than ten times is promoted to a formal schema field. Across five batches of 100 queries, the number of extractions triggering an LLM call fell from 48 to 13 in economical mode and from 72 to 15 in performance mode. The promotion criterion, though, is call frequency rather than accuracy."
+                },
+                {
+                    question: "Is this ready for production use?",
+                    answer: "It is still research. The three datasets and the gold standard were all prepared by the authors, and the top schema layer was predefined by people. That said, three questions carry over to any pipeline in use today: whether recurring queries re-extract the same fields every time, who decided those fields, and whether any channel exists to report that an auto-generated schema is wrong."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
