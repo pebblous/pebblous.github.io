@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주석 인덱스 AnnoIndex — 문서 스키마 자동 유도로 질의 토큰 11분의 1 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="비정형 문서에 질문할 때마다 LLM을 부르면 비용이 질의 수에 비례합니다. 홍콩과기대 광저우캠퍼스가 공개한 AnnoIndex는 코퍼스에서 스키마를 먼저 유도해 값을 미리 뽑아 두는 방식으로 평균 F1 0.87과 질의당 18.3K 토큰을 기록했습니다.">
+    <meta name="keywords" content="주석 인덱스, AnnoIndex, SchemaLoop, 스키마 유도, 비정형 문서 구조화, RAG 한계, 벡터 유사도, GraphRAG, AI-Ready Data, LLM 토큰 절감, arXiv">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="질문을 받기 전에 문서에서 값을 뽑아 두는 주석 인덱스">
+    <meta property="og:description" content="비정형 문서에 질문할 때마다 LLM을 부르면 비용이 질의 수에 비례합니다. AnnoIndex는 코퍼스에서 스키마를 먼저 유도해 값을 미리 뽑아 두는 방식으로 평균 F1 0.87을 기록했습니다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="질문을 받기 전에 문서에서 값을 뽑아 두는 주석 인덱스">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-08-16">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="질문을 받기 전에 문서에서 값을 뽑아 두는 주석 인덱스">
+    <meta name="twitter:description" content="스키마가 쓸 만한지 판정하는 데 쓰인 문서는 무작위 다섯 건이었습니다. 그 루프 안에 정답 대조는 없습니다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/annoindex-schema-first-document-index/ko/image/index.png">
+    <meta name="twitter:image:alt" content="코퍼스에서 세 층의 주석 스키마를 유도해 값을 미리 추출해 두는 AnnoIndex 구조 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260816"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260816">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260816">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260816">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#vector-limits" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 벡터 검색은 1985년 이전이라는 조건을 지키지 못한다</a></li>
+                    <li><a href="#schemaloop" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 코퍼스에서 스키마를 세 층으로 먼저 세운다</a></li>
+                    <li><a href="#verification" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 스키마가 쓸 만한지는 문서 다섯 건으로 판정한다</a></li>
+                    <li><a href="#query-engine" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 남은 문서만 LLM에 넘기고 뽑은 값은 인덱스로 되돌린다</a></li>
+                    <li><a href="#numbers" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 세 데이터셋에서 나온 수치와 그 조건</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            문서 더미에 질문하는 시스템은 대개 검색 문제로 풀립니다. 질문이 들어오면 비슷한 문서를 찾아 오고, 찾아 온 문서를 LLM에 넣어 답을 만듭니다. 2026년 8월 13일 arXiv에 올라온 AnnoIndex는 이 순서를 뒤집습니다. 질문을 받기 전에 코퍼스 전체에서 어떤 필드를 뽑을지 정하고 값을 미리 채워 인덱스로 만들어 둡니다. 홍콩과기대 광저우캠퍼스의 Teng Lin, Yuyu Luo, Nan Tang이 만들었습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            법률 조문과 위키백과 문서, 웹 페이지 세 종류로 실험한 결과 평균 F1은 0.87입니다. 가장 강한 비교 대상이던 QUEST가 0.80, 문서를 통째로 GPT-4o에 넣는 방식이 0.73이었습니다. 인덱스를 만드는 비용까지 질의에 나눠 얹고도 질의당 토큰이 18.3K로, 문서를 통째로 넣는 방식의 11분의 1입니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            다만 자동으로 만든 스키마가 쓸 만한지 판정하는 절차는 무작위 문서 다섯 건과 두 개의 대리 지표뿐입니다. 뽑힌 값이 실제로 맞는지 확인하는 단계는 그 루프 안에 없습니다. 사람의 피드백을 받는 통로도 저자들이 밝힌 대로 아직 인터페이스만 있는 상태입니다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-3">
+                        앞의 세 숫자는 질문이 오기 전에 값을 뽑아 둔 대가로 얻은 것이고, 마지막 숫자는 그 스키마가 맞는지 확인하는 데 실제로 쓰인 표본의 크기입니다.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2608.13384" target="_blank" rel="noopener" style="color:#F86825;">arXiv:2608.13384</a> 표 1, §VI-B·VI-D</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.87</p>
+                            <p class="text-sm themeable-text-secondary mt-1">세 데이터셋 평균 F1</p>
+                            <p class="text-xs themeable-muted mt-1">같은 조건에서 QUEST 0.80, GPT-4o 직접 질의 0.73입니다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">18.3K</p>
+                            <p class="text-sm themeable-text-secondary mt-1">질의당 LLM 토큰</p>
+                            <p class="text-xs themeable-muted mt-1">인덱스 구축 비용을 500개 질의에 나눠 얹은 값이며 GPT-4o 직접 질의의 11분의 1입니다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">48 → 13</p>
+                            <p class="text-sm themeable-text-secondary mt-1">배치를 거듭하며 줄어든 추출 호출</p>
+                            <p class="text-xs themeable-muted mt-1">질의 100개짜리 배치 다섯 번을 돌리는 동안의 경제 모드 수치로 73% 감소입니다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">5건</p>
+                            <p class="text-sm themeable-text-secondary mt-1">스키마 하나를 검증할 때 여는 문서</p>
+                            <p class="text-xs themeable-muted mt-1">무작위 다섯 건에서 추출 성공률과 필터링 효율만 재고 정답 대조는 하지 않습니다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="vector-limits" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">벡터 검색은 1985년 이전이라는 조건을 지키지 못한다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 드는 예시 질문은 평범합니다. NBA에서 우승을 다섯 번 넘게 한 팀의 현역 선수들은 평균 몇 살인가. 사람에게는 한 문장이지만 시스템에는 조건 필터와 집계와 문서 사이의 조인이 한꺼번에 걸린 요구입니다. 저자들은 이런 질문에서 기존 방식이 두 지점에서 무너진다고 정리합니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        첫 번째는 문서를 찾는 단계입니다. 문서와 질문을 벡터로 바꿔 가까운 것부터 K개를 돌려주는 방식은 주제가 가까운지를 재지, 조건을 만족하는지를 재지 않습니다. 출생 연도가 1985년보다 앞선다는 조건을 걸어도 주제만 비슷하고 연도는 어긋난 문서가 딸려 오고, 조건에는 맞지만 그 사실이 문서에서 두드러지지 않은 문서는 빠집니다. 이때 빠진 문서는 뒤 단계에서 되살아나지 않습니다. 그래서 실제 시스템은 가져온 문서를 다시 LLM에 넣어 조건을 하나씩 확인하고, 비용은 가져온 문서 수에 비례해 늘어납니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 번째는 계산하는 단계입니다. 평균과 비교와 조인은 값이 열로 정리돼 있어야 성립하는 연산입니다. 벡터 검색이 돌려주는 것은 순서도 스키마도 없는 텍스트 조각 묶음이라 이런 연산을 걸 자리가 없습니다. 지식 그래프는 엔티티와 관계를 미리 뽑아 두지만 경로를 따라가는 탐색기에 가까워서, 걸러 낸 집합에 평균을 내거나 간선이 없는 두 집합을 잇는 작업은 결국 부분 그래프를 통째로 LLM에 넘겨야 합니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 실패를 관통하는 문제로 논문이 지목하는 것은 정확도가 아니라 비용의 구조입니다. 두 방식 모두 속성을 뽑는 비용을 질의 실행에서 떼어 내지 못합니다. 같은 코퍼스에 열 번 물으면 열 번 다시 뽑고, 백 번 물으면 백 번 다시 뽑습니다. 비용이 질의 수에 비례하는 한 대규모 분석 작업에는 올려 두기 어렵다는 것이 이 논문의 출발점입니다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="schemaloop" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">코퍼스에서 스키마를 세 층으로 먼저 세운다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AnnoIndex의 답은 일을 앞으로 당기는 것입니다. 질문을 받고 문서를 뒤지는 대신, 질문이 오기 전에 코퍼스를 훑어 어떤 필드를 뽑아 둘지 정하고 값을 채워 넣습니다. 이렇게 만들어진 표를 논문은 주석 인덱스라고 부릅니다. 출생 연도가 1985년보다 앞선다는 조건은 이 인덱스 위에서 숫자 비교 한 번으로 끝나고, LLM은 한 번도 불리지 않습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 스키마를 만드는 모듈이 SchemaLoop입니다. 구조는 관계형 데이터베이스를 그대로 본떴습니다. 데이터셋 층이 코퍼스를 논리적인 데이터베이스로 나누고, 테이블 층이 문서를 엔티티 유형으로 묶고, 문서 층이 문서마다 뽑을 세부 필드를 정합니다. 위층이 아래층의 검색 범위를 먼저 잘라 내도록 설계돼 있어서, 문서 층의 필터가 걸릴 무렵이면 후보는 이미 크게 줄어 있습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        누가 스키마를 정하는지는 층마다 다릅니다. 데이터셋 층은 사람이 미리 정의합니다. 테이블 층과 문서 층은 GPT-4o가 그룹당 한 번씩 불려 후보를 만듭니다. 코퍼스의 최상위 경계만 사람이 긋고 그 안의 세부 필드는 모델이 채우는 분업입니다. 완전 자동도 아니고 완전 수동도 아니라는 점이 이 시스템의 성격을 규정합니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="데이터셋 층은 사람이 정의하고 테이블 층과 문서 층은 GPT-4o가 생성하는 세 층 주석 스키마 구조 도식" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="24" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">주석 스키마의 세 층과 그것을 정하는 주체</text>
+
+                            <text x="150" y="46" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="var(--text-muted)">스키마 층</text>
+                            <text x="404" y="46" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="var(--text-muted)">누가 정하는가</text>
+                            <text x="576" y="46" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="var(--text-muted)">DB 대응</text>
+
+                            <rect x="30" y="56" width="240" height="48" rx="8" fill="rgba(100,116,139,0.08)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="150" y="76" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">데이터셋 층</text>
+                            <text x="150" y="94" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">코퍼스를 논리적 DB로 분할</text>
+                            <rect x="316" y="62" width="176" height="36" rx="8" fill="rgba(100,116,139,0.06)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="404" y="85" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="var(--text-secondary)">사람이 사전 정의</text>
+                            <text x="576" y="85" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" fill="var(--text-muted)">데이터베이스</text>
+
+                            <rect x="30" y="114" width="240" height="48" rx="8" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="150" y="134" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="#F86825">테이블 층</text>
+                            <text x="150" y="152" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">문서를 엔티티 유형으로 묶음</text>
+                            <rect x="316" y="120" width="176" height="36" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="404" y="143" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">GPT-4o가 생성</text>
+                            <text x="576" y="143" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" fill="var(--text-muted)">테이블</text>
+
+                            <rect x="30" y="172" width="240" height="48" rx="8" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="150" y="192" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="#F86825">문서 층</text>
+                            <text x="150" y="210" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">문서마다 뽑을 세부 필드</text>
+                            <rect x="316" y="178" width="176" height="36" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="404" y="201" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">GPT-4o가 생성</text>
+                            <text x="576" y="201" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" fill="var(--text-muted)">컬럼</text>
+
+                            <line x1="150" y1="104" x2="150" y2="112" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <line x1="150" y1="162" x2="150" y2="170" stroke="var(--text-muted)" stroke-width="1.5"/>
+
+                            <text x="330" y="240" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">arXiv:2608.13384 §IV-A와 §VI-B를 도식화 | 페블러스 원본 도식</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ 최상위 경계만 사람이 긋고 그 안의 필드는 모델이 채운다 | 페블러스 원본 도식</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        값을 뽑고 나면 표현을 고르는 작업이 이어집니다. 날짜는 ISO 8601 같은 한 가지 형식으로 통일하고, 숫자는 단위와 소수 표기를 맞추고, 범주형 문자열은 공백과 표기를 정리합니다. 후보 스키마 사이에 뜻이 같은 필드가 섞여 나오면 동의어 대조와 임베딩 유사도로 묶어 하나만 남깁니다. 데이터 팀이 손으로 하던 정규화와 중복 제거가 인덱스를 만드는 과정 안으로 들어와 있는 셈입니다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="verification" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">스키마가 쓸 만한지는 문서 다섯 건으로 판정한다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        자동으로 만든 스키마를 그대로 쓰지는 않습니다. SchemaLoop은 후보가 나올 때마다 검증 단계를 거칩니다. 문서 그룹에서 무작위로 다섯 건을 골라 Mistral-7B로 모든 필드의 값을 뽑아 본 뒤, 두 지표로 채점합니다. 하나는 추출 성공률로, 뽑으려던 값 가운데 비어 있지 않게 채워진 비율입니다. 다른 하나는 필터링 효율로, 이 스키마로 문서를 나눴을 때 한 칸에 얼마나 쏠리는지를 뒤집은 값입니다. 임계값은 각각 0.6과 0.3입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        둘 중 하나라도 임계값에 못 미치면 실패한 지점을 모델에 되돌려 주고 필드를 합치거나 쪼개거나 다시 정의하게 합니다. 반복은 최대 다섯 라운드이며, 문서 층은 보통 서너 번 안에 수렴한다고 저자들은 적었습니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="후보 스키마를 무작위 문서 다섯 건으로 추출해 추출 성공률과 필터링 효율만 확인하고 정답 대조는 하지 않는 검증 루프 도식" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="24" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">스키마 검증 루프가 재는 것과 재지 않는 것</text>
+
+                            <rect x="24" y="52" width="128" height="52" rx="8" fill="rgba(100,116,139,0.08)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="88" y="74" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">후보 스키마</text>
+                            <text x="88" y="92" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">GPT-4o 생성</text>
+
+                            <line x1="154" y1="78" x2="180" y2="78" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="178,74 190,78 178,82" fill="var(--text-muted)"/>
+
+                            <rect x="192" y="52" width="140" height="52" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="262" y="74" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="#F86825">무작위 문서 5건</text>
+                            <text x="262" y="92" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Mistral-7B로 값 추출</text>
+
+                            <line x1="334" y1="78" x2="360" y2="78" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="358,74 370,78 358,82" fill="var(--text-muted)"/>
+
+                            <rect x="372" y="44" width="150" height="34" rx="8" fill="rgba(100,116,139,0.06)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="447" y="65" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" fill="var(--text-secondary)">추출 성공률 ≥ 0.6</text>
+                            <rect x="372" y="86" width="150" height="34" rx="8" fill="rgba(100,116,139,0.06)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="447" y="107" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" fill="var(--text-secondary)">필터링 효율 ≥ 0.3</text>
+
+                            <line x1="524" y1="82" x2="552" y2="82" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="550,78 562,82 550,86" fill="var(--text-muted)"/>
+                            <rect x="564" y="62" width="72" height="40" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="600" y="87" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">채택</text>
+
+                            <path d="M447 120 L447 148 L262 148 L262 108" fill="none" stroke="var(--text-muted)" stroke-width="1.3" stroke-dasharray="4,4"/>
+                            <polygon points="258,110 262,100 266,110" fill="var(--text-muted)"/>
+                            <text x="356" y="142" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">미달이면 병합·분할·재정의 후 재시도 (최대 5라운드)</text>
+
+                            <rect x="24" y="170" width="612" height="46" rx="8" fill="rgba(248,104,37,0.05)" stroke="#F86825" stroke-width="1.5" stroke-dasharray="5,4"/>
+                            <text x="330" y="190" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" font-weight="700" fill="#F86825">이 루프 안에 없는 것: 뽑힌 값이 정답과 맞는지 확인하는 단계</text>
+                            <text x="330" y="208" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">정답 대조는 대학원생 8명이 만든 실험용 gold standard에서만 이뤄집니다</text>
+
+                            <text x="330" y="242" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">arXiv:2608.13384 §IV-B·VI-A·VI-B를 도식화 | 페블러스 원본 도식</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ 두 대리 지표를 통과한 스키마는 그대로 코퍼스 전체에 적용된다 | 페블러스 원본 도식</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 눈여겨볼 것은 두 지표가 무엇을 재는가입니다. 추출 성공률은 값이 채워졌는지를 재고, 필터링 효율은 문서가 고르게 나뉘는지를 잽니다. 값이 실제로 맞는지는 어느 쪽도 재지 않습니다. 정답과 맞춰 보는 작업은 논문의 실험 평가에서만 등장합니다. 저자들은 GPT-4o로 후보 속성을 뽑은 뒤 대학원생 여덟 명이 값을 일일이 검수해 gold standard를 만들었는데, 그것은 성능을 채점하기 위한 별도 자산이지 시스템이 돌아가며 참조하는 장치가 아닙니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그러니 다섯 건에서 값이 잘 채워지고 문서가 고르게 갈라지기만 하면, 그 필드가 엉뚱한 값을 뽑고 있어도 검증은 통과로 끝납니다. 통과한 스키마는 코퍼스 전체에 적용되고, 그 위에서 이후의 모든 질의가 답을 얻습니다. 자동 생성 스키마의 오류는 인덱스에 그대로 새겨진 채 조용히 재사용됩니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            저자들도 이 자리를 비워 둔 것을 인정합니다. 논문은 세 개의 피드백 루프를 구상한다고 밝힙니다. 내부 자동 검증 루프, 오류 사례 분석 루프, 외부 피드백 루프입니다. 그리고 이 논문은 그 통합을 받쳐 줄 기술적 골격만 세웠으며 실제로 구현한 것은 첫 번째뿐이고 나머지 둘은 표준 인터페이스만 제공했다고 적습니다. 외부 신호를 어떻게 활용할지는 앞으로의 과제로 남겼습니다. 스키마가 틀렸을 때 어디서 알게 되는가라는 질문에 대해 이 시스템이 지금 내놓는 답은, 아직 정해지지 않았다는 것입니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="query-engine" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">남은 문서만 LLM에 넘기고 뽑은 값은 인덱스로 되돌린다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        인덱스가 서면 질의는 SQL을 닮은 실행 계획으로 컴파일됩니다. 인덱스에 있는 필드로 걸 수 있는 조건은 먼저 걸러 냅니다. 이 단계에는 모델 호출이 없습니다. 인덱스에 없는 조건은 EXTRACT라는 연산자로 처리하는데, 값싼 도구부터 순서대로 붙입니다. 정규식으로 되는 것은 정규식으로, 안 되면 경량 모델인 Mistral-7B로, 그래도 남으면 GPT-4o로 넘어갑니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        법률 코퍼스에서 상위법과 충돌하는 조문을 찾는 질의가 이 순서를 잘 보여 줍니다. 미리 뽑아 둔 충돌 유형 필드로 1,600건이 120건으로 줄고, 경량 모델이 환경 관련 키워드를 뽑아 35건으로 좁힌 뒤, GPT-4o는 그 35건에서 충돌 설명을 뽑는 일만 맡습니다. 같은 질의에서 F1은 0.79로, 조건을 걸어 둔 QUEST의 0.61보다 높습니다. QUEST가 LLM 호출을 풀면 정확도는 올라가지만 토큰이 20만 개를 넘어갑니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 236" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="법률 코퍼스 1600건이 인덱스 필터로 120건, 경량 모델로 35건까지 줄어든 뒤에야 GPT-4o가 호출되는 비용 오름차순 실행 도식" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="24" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">비싼 도구는 마지막에 부른다</text>
+
+                            <rect x="30" y="60" width="180" height="58" rx="8" fill="rgba(100,116,139,0.08)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="120" y="84" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="15" font-weight="700" fill="var(--text-secondary)">1,600건</text>
+                            <text x="120" y="104" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">법률 조문 코퍼스 전체</text>
+
+                            <line x1="212" y1="89" x2="240" y2="89" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="238,85 250,89 238,93" fill="var(--text-muted)"/>
+                            <text x="231" y="132" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" font-weight="700" fill="var(--text-secondary)">인덱스 필터</text>
+                            <text x="231" y="146" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">모델 호출 0회</text>
+
+                            <rect x="252" y="66" width="140" height="46" rx="8" fill="rgba(100,116,139,0.06)" stroke="var(--text-secondary)" stroke-width="1.5"/>
+                            <text x="322" y="86" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="14" font-weight="700" fill="var(--text-secondary)">120건</text>
+                            <text x="322" y="103" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">충돌 가능 조문</text>
+
+                            <line x1="394" y1="89" x2="422" y2="89" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <polygon points="420,85 432,89 420,93" fill="var(--text-muted)"/>
+                            <text x="413" y="132" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" font-weight="700" fill="var(--text-secondary)">경량 모델</text>
+                            <text x="413" y="146" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Mistral-7B</text>
+
+                            <rect x="434" y="70" width="112" height="38" rx="8" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="490" y="86" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="13" font-weight="700" fill="#F86825">35건</text>
+                            <text x="490" y="101" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">환경 관련 조문</text>
+
+                            <line x1="548" y1="89" x2="574" y2="89" stroke="#F86825" stroke-width="1.5"/>
+                            <polygon points="572,85 584,89 572,93" fill="#F86825"/>
+                            <rect x="586" y="70" width="50" height="38" rx="8" fill="rgba(248,104,37,0.14)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="611" y="94" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">GPT-4o</text>
+
+                            <rect x="30" y="164" width="606" height="40" rx="8" fill="rgba(248,104,37,0.05)" stroke="#F86825" stroke-width="1.5" stroke-dasharray="5,4"/>
+                            <text x="333" y="189" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">EXTRACT로 뽑은 값은 인덱스에 되돌아가고, 10회 넘게 불린 필드는 정식 스키마로 승격됩니다</text>
+
+                            <text x="330" y="224" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">arXiv:2608.13384 §V-B·V-D·VI-F의 LCR 사례를 도식화 | 페블러스 원본 도식</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ 인덱스가 후보를 먼저 잘라 내면 가장 비싼 모델이 볼 문서가 줄어든다 | 페블러스 원본 도식</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        EXTRACT가 뽑아낸 값은 버려지지 않고 인덱스로 되돌아갑니다. 처음에는 확장 영역의 가상 필드로 저장되고, 같은 필드가 열 번 넘게 불리면 정식 스키마 필드로 승격돼 SchemaLoop 쪽으로 다시 넘어갑니다. 승격 기준 역시 값이 맞는지가 아니라 몇 번 불렸는지입니다. 자주 쓰이는 필드가 좋은 필드라는 가정 위에 서 있는 장치입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        효과는 반복 질의에서 드러납니다. 질의 100개짜리 배치를 다섯 번 연달아 돌리자 LLM 호출을 부르는 추출 횟수가 경제 모드에서 48회에서 13회로, 성능 모드에서 72회에서 15회로 줄었습니다. 다섯 배치를 합치면 각각 128회와 177회로, 재사용이 없을 때 예상되는 300회 안팎과 비교됩니다. 같은 질문이 반복될수록 한계비용이 내려가는 구조입니다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="numbers" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">세 데이터셋에서 나온 수치와 그 조건</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실험 대상은 성격이 다른 세 코퍼스입니다. 문서당 6,000토큰이 넘는 법률 조문 1,600건, 열 개 분야에 걸친 위키백과 문서 219건, 템플릿이 있는 웹 페이지 1,050건입니다. 데이터셋마다 500개 질의를 만들고 단순 조건 검색부터 3중 조인과 다단계 추론까지 난이도를 나눠 배치했습니다. 답이 맞았는지는 튜플의 모든 속성 값이 정확히 일치할 때만 정답으로 셉니다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b themeable-border">
+                                    <th class="text-left py-3 px-4 font-semibold">방법</th>
+                                    <th class="text-left py-3 px-4 font-semibold">법률 조문</th>
+                                    <th class="text-left py-3 px-4 font-semibold">위키백과</th>
+                                    <th class="text-left py-3 px-4 font-semibold">웹 페이지</th>
+                                    <th class="text-left py-3 px-4 font-semibold" style="color: #F86825;">평균 F1</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">벡터DB + RAG</td>
+                                    <td class="py-3 px-4">0.34</td>
+                                    <td class="py-3 px-4">0.41</td>
+                                    <td class="py-3 px-4">0.62</td>
+                                    <td class="py-3 px-4">0.46</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">GraphRAG</td>
+                                    <td class="py-3 px-4">0.48</td>
+                                    <td class="py-3 px-4">0.59</td>
+                                    <td class="py-3 px-4">0.71</td>
+                                    <td class="py-3 px-4">0.60</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">ZenDB</td>
+                                    <td class="py-3 px-4">0.55</td>
+                                    <td class="py-3 px-4">0.79</td>
+                                    <td class="py-3 px-4">0.84</td>
+                                    <td class="py-3 px-4">0.67</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">Palimpsest</td>
+                                    <td class="py-3 px-4">0.49</td>
+                                    <td class="py-3 px-4">0.81</td>
+                                    <td class="py-3 px-4">0.88</td>
+                                    <td class="py-3 px-4">0.70</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">Lotus</td>
+                                    <td class="py-3 px-4">0.46</td>
+                                    <td class="py-3 px-4">0.89</td>
+                                    <td class="py-3 px-4">0.95</td>
+                                    <td class="py-3 px-4">0.73</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">GPT-4o 직접 질의</td>
+                                    <td class="py-3 px-4">0.61</td>
+                                    <td class="py-3 px-4">0.74</td>
+                                    <td class="py-3 px-4">0.82</td>
+                                    <td class="py-3 px-4">0.73</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">QUEST</td>
+                                    <td class="py-3 px-4">0.71</td>
+                                    <td class="py-3 px-4">0.87</td>
+                                    <td class="py-3 px-4">0.94</td>
+                                    <td class="py-3 px-4">0.80</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">AnnoIndex (경제 모드)</td>
+                                    <td class="py-3 px-4">0.74</td>
+                                    <td class="py-3 px-4">0.88</td>
+                                    <td class="py-3 px-4">0.95</td>
+                                    <td class="py-3 px-4">0.83</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4" style="font-weight: 600;">AnnoIndex (성능 모드)</td>
+                                    <td class="py-3 px-4">0.81</td>
+                                    <td class="py-3 px-4">0.91</td>
+                                    <td class="py-3 px-4">0.96</td>
+                                    <td class="py-3 px-4">0.87</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">정리: 페블러스. arXiv:2608.13384 표 1에서 옮겼습니다. 위키백과에서만 측정된 ClosedIE(0.26)는 뺐습니다. 경제 모드는 값싼 추출기부터 붙이는 구성이고 성능 모드는 모든 추출을 GPT-4o에 맡긴 상한선 구성입니다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표에서 가장 크게 벌어지는 칸은 법률 조문입니다. 벡터DB와 RAG를 붙인 구성이 0.34에 머무는 동안 AnnoIndex의 성능 모드는 0.81을 냅니다. 문서 하나가 6,000토큰을 넘어가고 조건이 조문 안쪽에 묻혀 있는 코퍼스에서, 주제가 비슷한 문서를 찾아 오는 방식과 값을 미리 뽑아 열로 세워 두는 방식의 차이가 그대로 드러납니다. 3중 조인 질의만 따로 보면 AnnoIndex가 0.86, QUEST가 0.74이고, 문서를 통째로 GPT-4o에 넣는 방식은 0.35로 사실상 답을 내지 못했습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        구성 요소를 하나씩 떼어 본 실험도 두 가지를 알려 줍니다. 사람이 손으로 정의한 스키마로 바꾸면 위키백과 F1이 0.87에서 0.72로 내려가고 토큰은 26.8K에서 51.8K로 늡니다. 사람이 만든 스키마가 중요한 속성을 빠뜨리거나 쓸모없는 속성을 넣기 때문입니다. 반대로 검증 단계를 빼면 정확도는 그대로인데 토큰만 38.7K로 늘어납니다. 걸러지지 않은 스키마에 남은 중복 필드가 불필요한 추출을 부릅니다. 자동 유도와 그 검증이 정확도와 비용 양쪽에 붙어 있다는 뜻입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        수치를 읽을 때 함께 붙여 둘 조건도 있습니다. 세 데이터셋은 모두 저자들이 고른 것이고 gold standard도 저자들이 만들었습니다. 스키마의 최상위 층은 사람이 미리 정의했으니, 완전 자동으로 세운 인덱스의 성적은 아닙니다. 무엇보다 스키마가 틀렸을 때 그 사실이 어디서 드러나는지에 대한 장치가 아직 없습니다. 인덱스는 한 번 잘못 서면 그 위의 모든 질의가 같은 방향으로 틀립니다. 질의마다 다시 뽑는 방식이 비싼 대신 매번 새로 판단한다는 점을 생각하면, 이 설계가 옮겨 놓은 것은 비용만이 아니라 오류의 지속 시간이기도 합니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 이 논문을 지금 파이프라인에 붙일 도구로 읽기보다, 문서 자산을 다루는 팀이 다음 세 가지를 점검하는 계기로 읽는 편이 실용적입니다.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-2 mb-6 ml-6">
+                        <li>지금 문서에 묻는 질문 가운데 몇 퍼센트가 매번 같은 필드를 다시 뽑고 있습니까. 반복되는 필드는 질의가 아니라 인덱스로 옮길 후보입니다.</li>
+                        <li>그 필드를 누가 정했는지 답할 수 있습니까. 사람이 정한 경계와 모델이 채운 필드가 섞여 있다면 어디까지가 사람의 결정인지 기록해 둘 필요가 있습니다.</li>
+                        <li>자동으로 만든 스키마가 틀렸다는 사실을 알려 줄 통로가 있습니까. 추출이 됐는지만 보는 점검은 값이 틀린 경우를 통과시킵니다.</li>
+                    </ul>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note</strong>: 페블러스가 데이터 품질 현장에서 반복해서 만나는 장면은 값이 없는 상태가 아니라, 어떤 값을 남길지 정한 근거가 사라진 상태입니다. 이 논문은 그 결정을 인덱스를 세우는 시점으로 앞당겼습니다. 질문을 받기 전에 준비해 두는 쪽이 싸다는 계산은 분명한데, 그렇게 앞당긴 결정이 맞는지 확인하는 절차는 문서 다섯 건에 머물러 있습니다. 데이터를 미리 준비해 두는 설계에서 남는 일은 결국 준비된 것이 맞는지 검증하는 쪽에 있습니다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 축의 이전 글로는 문서 근거를 거버넌스 데이터로 옮기는 흐름을 다룬 <a href="/blog/databricks-genie-one-governed-data/ko/" style="color:#F86825;">데이터브릭스 지니</a>, 값만 보고 열의 의미를 복원하는 <a href="/blog/rosetta-column-semantics-from-values/ko/" style="color:#F86825;">로제타</a>, 그리고 준비도의 조건을 정리한 <a href="/blog/ai-ready-data-conditions/ko/" style="color:#F86825;">AI-Ready Data의 조건</a>이 있습니다. 논문 원문은 <a href="https://arxiv.org/abs/2608.13384" target="_blank" rel="noopener" style="color:#F86825;">arXiv:2608.13384</a>에서 전문을 볼 수 있습니다.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260816"></script>
+
+    <script>
+        PebblousPage.init({
+            mainTitle: "질문을 받기 전에 문서에서 값을 뽑아 두는 주석 인덱스",
+            subtitle: "홍콩과기대 광저우캠퍼스가 공개한 AnnoIndex가 코퍼스에서 스키마를 먼저 세워 평균 F1 0.87을 냈다",
+            pageTitle: "주석 인덱스 AnnoIndex — 문서 스키마 자동 유도로 질의 토큰 11분의 1 | 페블러스",
+            category: "tech",
+            publishDate: "2026-08-16",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/annoindex-schema-first-document-index/ko/",
+            tags: ["주석 인덱스", "AnnoIndex", "SchemaLoop", "스키마 유도", "비정형 데이터", "RAG", "AI-Ready Data", "arXiv"],
+            faqs: [
+                {
+                    question: "AnnoIndex는 기존 RAG와 무엇이 다른가요?",
+                    answer: "일하는 시점이 다릅니다. 벡터 검색 기반 RAG는 질문이 들어온 뒤 비슷한 문서를 찾아 LLM에 넘깁니다. AnnoIndex는 질문을 받기 전에 코퍼스에서 스키마를 유도하고 값을 미리 뽑아 표 형태의 주석 인덱스로 만들어 둡니다. 출생 연도가 1985년보다 앞선다는 조건은 이 인덱스 위에서 숫자 비교로 처리되므로 LLM 호출이 필요 없습니다."
+                },
+                {
+                    question: "벡터 유사도가 조건 검색에 약한 이유는 무엇인가요?",
+                    answer: "벡터 검색은 주제가 가까운지를 재는 장치이지 조건을 만족하는지를 재는 장치가 아니기 때문입니다. 조건을 걸어도 주제만 비슷하고 값은 어긋난 문서가 딸려 오고, 조건에는 맞지만 그 사실이 문서에서 두드러지지 않은 문서는 빠집니다. 이 단계에서 빠진 문서는 이후에 복구되지 않고, 가져온 문서를 다시 LLM으로 확인하는 비용은 문서 수에 비례해 늘어납니다."
+                },
+                {
+                    question: "SchemaLoop은 스키마를 어떻게 만드나요?",
+                    answer: "관계형 데이터베이스의 세 층을 본떠 만듭니다. 데이터셋 층이 코퍼스를 논리적 데이터베이스로 나누고, 테이블 층이 문서를 엔티티 유형으로 묶고, 문서 층이 문서마다 뽑을 세부 필드를 정합니다. 실험 구성에서 데이터셋 층은 사람이 미리 정의했고, 테이블 층과 문서 층은 GPT-4o가 그룹당 한 번씩 불려 후보를 생성했습니다."
+                },
+                {
+                    question: "자동으로 만든 스키마가 쓸 만한지는 어떻게 판정하나요?",
+                    answer: "문서 그룹에서 무작위로 다섯 건을 골라 Mistral-7B로 값을 뽑아 본 뒤 두 지표로 채점합니다. 값이 비어 있지 않게 채워진 비율인 추출 성공률은 임계값 0.6, 문서가 얼마나 고르게 나뉘는지를 보는 필터링 효율은 임계값 0.3입니다. 하나라도 못 미치면 필드를 합치거나 쪼개거나 다시 정의해 최대 다섯 라운드까지 반복합니다."
+                },
+                {
+                    question: "그 검증에 정확도 확인이 포함되나요?",
+                    answer: "포함되지 않습니다. 두 지표는 값이 채워졌는지와 문서가 고르게 갈라지는지를 잴 뿐 값이 맞는지는 재지 않습니다. 정답 대조는 저자들이 성능을 평가하려고 GPT-4o 초안에 대학원생 여덟 명의 검수를 더해 만든 gold standard에서만 이뤄집니다. 그래서 다섯 건에서 값이 잘 채워지기만 하면 엉뚱한 필드도 통과해 코퍼스 전체에 적용될 수 있습니다."
+                },
+                {
+                    question: "스키마가 틀렸을 때 사람은 어디서 알게 되나요?",
+                    answer: "논문은 세 개의 피드백 루프를 구상하지만 구현된 것은 내부 자동 검증 루프뿐입니다. 오류 사례 분석 루프와 사람의 외부 피드백 루프는 표준 인터페이스만 제공했고, 그 신호를 어떻게 쓸지는 앞으로의 과제로 남겼다고 저자들이 직접 밝혔습니다. 현재로서는 사람이 별도로 정답을 대조하는 것 말고 시스템 안에 마련된 통로가 없습니다."
+                },
+                {
+                    question: "인덱스를 미리 만드는 비용은 얼마나 드나요?",
+                    answer: "문서 1,600건 규모의 코퍼스에서 스키마 유도와 인덱스 구축을 합친 비용이 온라인 질의 한두 번 분량이라고 논문은 보고합니다. 이 일회성 비용을 500개 질의에 나눠 얹어도 질의당 토큰은 성능 모드 18.3K, 경제 모드 15.7K로, 문서를 통째로 GPT-4o에 넣는 방식의 11분의 1 수준입니다."
+                },
+                {
+                    question: "같은 질문이 반복되면 비용이 더 내려가나요?",
+                    answer: "내려갑니다. EXTRACT로 뽑은 값은 인덱스에 가상 필드로 저장되고, 같은 필드가 열 번 넘게 불리면 정식 스키마 필드로 승격됩니다. 질의 100개짜리 배치를 다섯 번 돌리는 동안 LLM 호출을 부르는 추출 횟수가 경제 모드에서 48회에서 13회로, 성능 모드에서 72회에서 15회로 줄었습니다. 다만 승격 기준은 값의 정확도가 아니라 호출 횟수입니다."
+                },
+                {
+                    question: "실무에 바로 적용할 수 있나요?",
+                    answer: "아직 연구 단계입니다. 세 데이터셋과 gold standard 모두 저자들이 준비한 것이고, 스키마의 최상위 층은 사람이 미리 정의한 조건에서 나온 성적입니다. 다만 반복되는 질의가 매번 같은 필드를 다시 뽑고 있지는 않은지, 그 필드를 누가 정했는지, 자동 생성 스키마가 틀렸다는 사실을 알려 줄 통로가 있는지는 지금 쓰는 파이프라인에서도 점검할 수 있습니다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
