@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>Repairing AI-Written Korean: A Teardown and a Field Test | Pebblous</title>
+    <meta name="description" content="Korean is 0.84% of the web corpus. We dissect the open-source layer built to strip leftover English habits from AI Korean, then run it on real text.">
+    <meta name="keywords" content="AI Korean prose, humanizer, translationese, LLM Korean, AI writing tells, KatFishNet, ACL 2025, Common Crawl language share, AI watermarking, data quality, open source skill, style gate">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/korean-ai-humanizer-teardown-2026-08/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/korean-ai-humanizer-teardown-2026-08/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/korean-ai-humanizer-teardown-2026-08/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/korean-ai-humanizer-teardown-2026-08/ko/">
+
+    <!-- OG image title override (short title used only on the cover image) -->
+    <meta name="og-image-title" content="Why AI-Written Korean Reads Wrong">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="A Better Model Will Not Fix AI-Written Korean">
+    <meta property="og:description" content="Korean is 0.84% of the web corpus, so English habits survive into Korean output. We take apart an open-source repair layer and run it on our own published work and on a human manuscript from 2020.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/korean-ai-humanizer-teardown-2026-08/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/korean-ai-humanizer-teardown-2026-08/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="A Better Model Will Not Fix AI-Written Korean">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="A Better Model Will Not Fix AI-Written Korean">
+    <meta name="twitter:description" content="Korean is 0.84% of the web corpus. We dissect an open-source layer that strips leftover English habits from AI Korean, and log what the safety gates caught.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/korean-ai-humanizer-teardown-2026-08/en/image/index.png">
+    <meta name="twitter:image:alt" content="Teardown of a Korean AI prose repair layer">
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="A Better Model Will Not Fix AI-Written Korean">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/08/20">
+    <meta name="citation_online_date" content="2026/08/20">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (fixed order: theme-variables -> tailwind-build -> common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260820">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260820">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260820">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.92rem;
+        }
+        .comparison-table th {
+            background: var(--bg-secondary, #f1f5f9);
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 2px solid var(--border-color, #e2e8f0);
+        }
+        .comparison-table td {
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            vertical-align: top;
+        }
+        .comparison-table tbody tr:hover {
+            background: rgba(248, 104, 37, 0.04);
+        }
+        .quote-box {
+            border-left: 4px solid #F86825;
+            background: var(--bg-secondary, #f8fafc);
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.85;
+        }
+        .gate-log {
+            background: var(--bg-secondary, #f8fafc);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1.1rem 1.25rem;
+            margin: 1.5rem 0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.82rem;
+            line-height: 1.9;
+            overflow-x: auto;
+            white-space: pre;
+            color: var(--text-secondary, #475569);
+        }
+        .figure-caption {
+            font-size: 0.82rem;
+            color: var(--text-muted, #64748b);
+            margin-top: 0.6rem;
+            line-height: 1.6;
+        }
+    </style>
+
+    <!-- Structured Data: Article/FAQPage are injected by PebblousPage.init() config (avoids duplicates) -->
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Korean is 0.84% of the web</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Two jobs get conflated</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. The code makes the call</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Two teams, same rejection</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. We ran it ourselves</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. A group truth is not a person</a></li>
+                    <li><a href="#section-7" class="block pl-4 themeable-toc-link transition-colors duration-200">7. Why Pebblous covers this</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            When AI-written Korean reads wrong, taste is not the reason. Korean accounts for <strong>0.84%</strong> of the web corpus that feeds pretraining; English accounts for 40.6%. A model trained on a mix that lopsided still passes through English-leaning internal representations when it answers in Korean, and English punctuation habits ride along into the Korean sentence. Swap the model and the residue stays, because the data mix has not changed. That is why a repair layer bolted on after the model, working only on its output, is a coherent answer rather than a hack.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            This report takes apart one open-source implementation of that layer at the design level, then runs it on our own published articles and on a canonical manuscript written by a human. The safety machinery works. A deliberately aggressive rewrite was halted at a <strong>60.1%</strong> character-change rate, and the same verdict caught an altered direct quotation and twelve numbers that had gone missing. You can watch a design decision pay off: the verdict is not left to a human eye or to the model's own opinion of its work.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The more important result came from the same experiment. A manuscript written by a person in 2020 drew the tool's highest risk grade, and deleting five commas flipped it. Apply a statistic that holds at the population level to one person's writing and that person's voice starts reading as a machine artifact. Any organization about to build and operate style rules should look at that failure first.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.84%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Korean share of the web corpus</p>
+                            <p class="text-xs themeable-muted mt-1">English 40.6% — a 48× gap</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">4.8×</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Excess commas after connectives</p>
+                            <p class="text-xs themeable-muted mt-1">LLM 19.83% vs human 4.10%</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">5 commas</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Flip a human text's risk grade</p>
+                            <p class="text-xs themeable-muted mt-1">A 0.5% edit takes high (6) to low (2)</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">60.1%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Hard stop on over-editing</p>
+                            <p class="text-xs themeable-muted mt-1">Caught an altered quote and 12 lost numbers</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Korean Is 0.84 Percent of the Web</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Read enough Korean written by a generative model and something snags, even when every fact is right. Looking for the cause in the individual model gets you nowhere. The cause is in what the model was raised on.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>Korean does not even reach one percent</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Common Crawl scrapes the open web wholesale and publishes the language breakdown. It has also been the single largest source in the pretraining data of most large language models. In the most recent crawl, CC-MAIN-2026-30, English is 40.58% and Korean is <strong>0.843%</strong> — a factor of 48. The more telling gap is not the one against English but the one against Korean's neighbors. Japanese sits at 5.32%, <strong>6.3 times</strong> Korean's share. Whatever is holding Korean down, "it isn't English" does not explain it.
+                    </p>
+
+                    <div style="background:var(--card-bg,#ffffff);border:1px solid var(--border-color,#e2e8f0);border-radius:0.75rem;padding:1.5rem 1.25rem;margin:1.5rem 0;">
+                        <svg viewBox="0 0 640 250" width="100%" role="img" aria-label="Bar chart of language shares in Common Crawl CC-MAIN-2026-30. English 40.58%, Russian 6.82%, German 5.99%, Japanese 5.32%, Chinese 4.43%, Korean 0.84%.">
+                            <g font-size="13" font-family="inherit">
+                                <text x="0" y="16" fill="var(--text-secondary,#475569)">English</text>
+                                <rect x="80" y="4" width="520" height="18" rx="3" fill="#F86825"></rect>
+                                <text x="608" y="18" fill="var(--text-secondary,#475569)">40.58%</text>
+
+                                <text x="0" y="54" fill="var(--text-secondary,#475569)">Russian</text>
+                                <rect x="80" y="42" width="87" height="18" rx="3" fill="#808080"></rect>
+                                <text x="175" y="56" fill="var(--text-muted,#64748b)">6.82%</text>
+
+                                <text x="0" y="92" fill="var(--text-secondary,#475569)">German</text>
+                                <rect x="80" y="80" width="77" height="18" rx="3" fill="#808080"></rect>
+                                <text x="165" y="94" fill="var(--text-muted,#64748b)">5.99%</text>
+
+                                <text x="0" y="130" fill="var(--text-secondary,#475569)">Japanese</text>
+                                <rect x="80" y="118" width="68" height="18" rx="3" fill="#585858"></rect>
+                                <text x="156" y="132" fill="var(--text-muted,#64748b)">5.32%</text>
+
+                                <text x="0" y="168" fill="var(--text-secondary,#475569)">Chinese</text>
+                                <rect x="80" y="156" width="57" height="18" rx="3" fill="#808080"></rect>
+                                <text x="145" y="170" fill="var(--text-muted,#64748b)">4.43%</text>
+
+                                <text x="0" y="206" fill="var(--text-secondary,#475569)" font-weight="700">Korean</text>
+                                <rect x="80" y="194" width="11" height="18" rx="3" fill="#F86825"></rect>
+                                <text x="99" y="208" fill="#F86825" font-weight="700">0.84%</text>
+
+                                <text x="0" y="240" fill="var(--text-muted,#64748b)" font-size="11">Source: Common Crawl Language Statistics, CC-MAIN-2026-30 (CLD2, one primary language per page)</text>
+                            </g>
+                        </svg>
+                    </div>
+                    <p class="figure-caption mb-6">Figure 1. Language shares in the web corpus. Korean is one forty-eighth of English and one sixth of Japanese.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One line has to be held when citing this number. Common Crawl is a raw web crawl, not the training mix of any particular commercial model, and those mixes are not published. The direction, though, can be stated conservatively. Studies of open pretraining datasets report mixes that tilt further toward English than the web distribution does, not less. Read <strong>0.84% as an upper bound rather than a lower one</strong>.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.2</span>The middle layers lean English</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Skewed data produces skewed internal representations. <a href="https://aclanthology.org/2024.acl-long.820/" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:text-orange-400">Do Llamas Work in English?</a>, presented by Wendler and colleagues at ACL 2024, used the logit lens to read the intermediate layers and found that even on non-English prompts, the semantically correct token decodes with higher probability in its English form than in the input language's form partway through the stack. Only in the final layers does the representation move into the input language's region.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The scope of that observation deserves precision. The subject is the Llama-2 family, and the tasks are three single-token completions whose answer is fully determined by the prompt: translation, repetition, and cloze. Free-form generation was not measured. The authors themselves avoid saying the model "translates through English" and instead describe an <strong>English-leaning concept space</strong>. The claim is not that a translation pipeline sits inside the model, but that the preferences of the dominant training language are soaked into the representation space.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.3</span>English comma habits ride along</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That is a story about representation space. A 2025 paper measured what it leaves on the surface of an actual Korean sentence. <a href="https://aclanthology.org/2025.acl-long.1030/" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:text-orange-400">KatFishNet</a> (ACL 2025 Main), from a Seoul National University group, built the first benchmark for detecting LLM-generated Korean and used three feature families: spacing patterns, part-of-speech n-gram diversity, and comma usage. The comma feature is where humans and models separate most sharply.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Appendix G.1 gives the numbers. In argumentative essays, a comma follows a connective ending <strong>4.10%</strong> of the time for human writers and <strong>19.83%</strong> of the time for LLMs — 4.8 times as often. Poetry runs 4.68% against 15.57%, paper abstracts 13.27% against 28.01%. The size of the gap moves by genre; the direction does not.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Genre</th><th>Human writing</th><th>LLM output</th><th>Ratio</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Argumentative essay</td><td>4.10%</td><td><strong>19.83%</strong></td><td><strong>4.8×</strong></td></tr>
+                            <tr><td>Poetry</td><td>4.68%</td><td>15.57%</td><td>3.3×</td></tr>
+                            <tr><td>Paper abstract</td><td>13.27%</td><td>28.01%</td><td>2.1×</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="figure-caption mb-6">Table 1. Comma rate immediately after a connective ending (KatFishNet, ACL 2025, Appendix G.1)</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What matters is that the paper also names the cause, and names English while doing it. Korean convention and English convention part ways precisely at the comma after a conjunctive adverb such as 그리고 (and) or 그러나 (but), and that is the junction where the authors place the blame.
+                    </p>
+
+                    <div class="quote-box">
+                        <p class="themeable-text" style="margin:0;">
+                            "The Korean orthography guidelines state that it is natural <strong>not</strong> to use a comma after conjunctive adverbs such as 그리고, 그러나, 그런데, and 그러므로… <strong>Unlike English, which often requires a comma in such cases</strong>, Korean does not… The tendency of LLMs to insert unnecessary commas after these modifiers suggests <strong>an influence of English punctuation norms</strong> on their output… Prior research highlights how multilingual models exhibit preferences shaped by dominant training languages (Wendler et al. 2024). Given that LLMs are trained on multilingual data with English-dominated corpora, they may <strong>internalize English punctuation conventions</strong>, where commas frequently appear before conjunctions."
+                        </p>
+                        <p class="figure-caption" style="margin-top:0.75rem;">Verbatim excerpt, KatFishNet Appendix G.1</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That completes a chain running from corpus composition all the way down to a single comma in a sentence. The weight of the chain comes from its authorship: this is the account given by peer-reviewed authors, not an inference of ours.
+                    </p>
+
+                    <div style="background:var(--card-bg,#ffffff);border:1px solid var(--border-color,#e2e8f0);border-radius:0.75rem;padding:1.5rem 1.25rem;margin:1.5rem 0;">
+                        <svg viewBox="0 0 660 210" width="100%" role="img" aria-label="Causal chain diagram. English-skewed corpus with Korean at 0.84% leads to internalized dominant-language preferences, then transferred English punctuation norms, then a 4.8 times excess of commas after connective endings.">
+                            <g font-family="inherit">
+                                <rect x="4" y="30" width="150" height="76" rx="8" fill="none" stroke="#F86825" stroke-width="2"></rect>
+                                <text x="79" y="54" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#475569)">English-skewed corpus</text>
+                                <text x="79" y="76" text-anchor="middle" font-size="12" fill="var(--text-muted,#64748b)">Korean 0.84%</text>
+                                <text x="79" y="94" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">Common Crawl</text>
+
+                                <path d="M158 68 L184 68" stroke="#808080" stroke-width="2"></path>
+                                <path d="M184 68 l-8 -4 v8 z" fill="#808080"></path>
+
+                                <rect x="188" y="30" width="150" height="76" rx="8" fill="none" stroke="#808080" stroke-width="2"></rect>
+                                <text x="263" y="54" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#475569)">Dominant-language</text>
+                                <text x="263" y="72" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#475569)">preference baked in</text>
+                                <text x="263" y="94" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">Wendler et al. 2024</text>
+
+                                <path d="M342 68 L368 68" stroke="#808080" stroke-width="2"></path>
+                                <path d="M368 68 l-8 -4 v8 z" fill="#808080"></path>
+
+                                <rect x="372" y="30" width="150" height="76" rx="8" fill="none" stroke="#808080" stroke-width="2"></rect>
+                                <text x="447" y="54" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#475569)">English punctuation</text>
+                                <text x="447" y="72" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#475569)">norms transferred</text>
+                                <text x="447" y="94" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">KatFishNet G.1</text>
+
+                                <path d="M526 68 L552 68" stroke="#F86825" stroke-width="2"></path>
+                                <path d="M552 68 l-8 -4 v8 z" fill="#F86825"></path>
+
+                                <rect x="506" y="120" width="150" height="76" rx="8" fill="#F86825"></rect>
+                                <text x="581" y="144" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">Commas after connectives</text>
+                                <text x="581" y="168" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">4.8× excess</text>
+                                <text x="581" y="186" text-anchor="middle" font-size="11" fill="#ffffff">19.83% vs 4.10%</text>
+                                <path d="M556 68 L581 68 L581 116" stroke="#F86825" stroke-width="2" fill="none"></path>
+                                <path d="M581 120 l-4 -8 h8 z" fill="#F86825"></path>
+                            </g>
+                        </svg>
+                    </div>
+                    <p class="figure-caption mb-6">Figure 2. The chain from corpus composition down to a single comma. The evidence behind each box, in order: Common Crawl statistics, Wendler et al. (2024), KatFishNet Appendix G.1, and the measurements in that same appendix.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The appendix holds one more observation worth carrying over. Humans concentrate their commas on a few specific part-of-speech junctions; models spread them evenly across many. <strong>"AI does not choose where to put commas"</strong> describes the finding better than "AI uses too many commas."
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.4</span>English needs this too, at a different layer</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So does English prose need the same treatment? Translation studies answered that already. <a href="https://aclanthology.org/W19-6627/" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:text-orange-400">Post-editese: an Exacerbated Translationese</a>, Toral's best-paper work at MT Summit 2019, compared post-edited machine translation against translation done from scratch across three datasets, five translation directions, and rule-based, statistical, and neural systems alike. Post-edited text had lower lexical variety and lower lexical density, and its sentence lengths hugged the source more closely. Simpler, more normalized, more interference from the original.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That is what English speakers are pointing at when they say something reads like AI. Not translationese — flattening and lexical poverty. Different layer, different tool. Section 2 shows, with receipts, that porting a list of English patterns to Korean leaves half of it swinging at nothing.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Nor is this only a story about English and Korean. In the same crawl, Japanese is 5.32% and Chinese 4.43%. Both are small next to English, and both are five or six times larger than Korean. If the chain above holds, these languages carry the same kind of residue in different amounts. What shape it takes, though, is only knowable by measuring in that language. KatFishNet did that work for Korean; where no such measurement exists, even the question of what to fix stays open.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Toral's finding carries one more warning that runs through this whole report. <strong>Text corrected by human hands still bore the fingerprint of the original.</strong> If that is true, nothing guarantees that a layer in which a model corrects a model's output leaves no fingerprint of its own. Section 6 comes back to this.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Removing the AI Tell Means Two Different Jobs</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One is fooling a detector. The other is turning the text into something a reader can read. The names blur together, but the goals, the success metrics, and the business models all diverge.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Axis</th><th>Camp 1: detector evasion</th><th>Camp 2: quality repair</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Representatives</td><td>Undetectable AI, StealthGPT, HIX Bypass, Humbot</td><td>blader/humanizer, im-not-ai, Korean derivative skills</td></tr>
+                            <tr><td>Goal</td><td>Slip past GPTZero and Turnitin</td><td>Make the text readable</td></tr>
+                            <tr><td>Success metric</td><td>Bypass rate (%)</td><td>Style metrics improved, meaning preserved</td></tr>
+                            <tr><td>Business model</td><td>Mostly paid SaaS, closed source</td><td>MIT open source</td></tr>
+                            <tr><td>Verifiability</td><td>Self-reported bypass rates, not reproducible</td><td>Code, rules, and baselines published</td></tr>
+                            <tr><td>Who it answers to</td><td>The referee (the detector)</td><td>The reader</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="figure-caption mb-6">Table 2. The two camps compared (public information as of 2026-08-20)</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Pebblous works on the second one. Our objection to the first is not only ethical: its goal does not hold up. In May 2026 we published a report on the <a href="../../ai-text-detector-limits/en/" class="text-orange-500 hover:text-orange-400">mathematical limits of AI text detectors</a>. Because individual students write from different distributions, false positives have a theoretical floor, and pinning the false-positive rate at 1% drops detection power to 6%. If the referee cannot be trusted, there is no reason to pay for a service that fools it.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>Two lineages grew from different roots</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        From the outside the Korean side looks like a single tool, but dig through GitHub and it is not. By size, the English-origin one is far larger. <a href="https://github.com/blader/humanizer" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:text-orange-400">blader/humanizer</a> has <strong>36,676 stars</strong>, eight times the leading Korean tool, and shipped on 18 January 2026, three months earlier. Its evidence base is the Wikipedia community's "Signs of AI writing" page, and it carries roughly 33 patterns.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The other lineage started in Korean. <a href="https://github.com/epoko77-ai/im-not-ai" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:text-orange-400">epoko77-ai/im-not-ai</a>, released on 24 April, is built on the typology of translationese developed in Korean translation studies, and as of our check on 20 August 2026 it had 4,556 stars and 489 forks. The next Korean-only tool by size has 7 stars. "Monopoly" is the wrong word; <strong>a concentration of roughly 650 to 1</strong> is the right one.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Repository</th><th>Stars</th><th>Root</th><th>Character</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>blader/humanizer</td><td>36,676</td><td>English origin</td><td>33 patterns from Wikipedia:Signs of AI writing</td></tr>
+                            <tr><td>epoko77-ai/im-not-ai</td><td>4,556</td><td>Korean native</td><td>10 categories, 71 patterns from translation-studies typology</td></tr>
+                            <tr><td>dotoricode/korean-humanizer</td><td>7</td><td>Independent</td><td>12 domain categories applied by priority</td></tr>
+                            <tr><td>IsaacEryn/humanizer-ko</td><td>3</td><td>blader fork</td><td>Swaps 4 English-only patterns for Korean ones, extending to 35</td></tr>
+                            <tr><td>mary-jeon/mary-language</td><td>0</td><td>Independent</td><td>Own gate that hard-fails with exit code 2 when a footnote is lost</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="figure-caption mb-6">Table 3. The Korean prose-repair landscape (queried directly through the GitHub API, 2026-08-20)</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The best account of why the two lineages split comes from someone who tried to fork the English tool into Korean. IsaacEryn put it this way in the fork's README.
+                    </p>
+
+                    <div class="quote-box">
+                        <p class="themeable-text" style="margin:0;">
+                            "Many of the original humanizer's 33 patterns are <strong>English-only</strong>. Title Case, hyphenated compounds, copula avoidance — none of these exist in Korean, while Korean AI output has tells of its own."
+                        </p>
+                        <p class="figure-caption" style="margin-top:0.75rem;">IsaacEryn/humanizer-ko README, published 2026-08-13 (translated from Korean by Pebblous)</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A practitioner porting code rediscovered exactly what Section 1 described. The English tell lives in capitalization and hyphenated compounds; the Korean tell lives in commas, sentence endings, and translationese connectives. When the layer differs, translating the rule list buys you nothing.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A second fork hit the same wall. choconyam's version added a separate Korean-only checklist on the grounds that the original was built around English prose, and that its rules about dashes, quotations, and subjects make Korean read worse when applied as written. Two people who do not know each other, porting the same repository into Korean, stopped at the same spot. So there is no reason to read this landscape as a purely Korean event. Skills that strip the AI tell grew across the agent ecosystem through the first half of 2026, and the Korean tools are that current's Korean branch. The current gets imported; the rules do not.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>Pebblous solves the same problem at publish time</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Pebblous works the same problem from a different position. Our blog's publishing pipeline includes a review step called <code>ko-prose-humanizer</code>, and every piece of Korean prose we publish — this report included — passes through it. It scores eleven style signals and demands correction when a threshold is crossed, which makes it less a tool that rewrites text than <strong>a gate that decides whether text ships</strong>. In this report our own tool appears only as a comparison point, because the purpose here is to hold someone else's ruler against our writing.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Code Makes the Call</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Hand style repair to a model and two things tend to collapse. The model becomes the judge of how much it changed, and facts get rewritten along with the prose. This tool's design pulls both decisions out of the model. In one line: <strong>the verdict comes from code, not from the model.</strong>
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>Every pattern carries a severity</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The rules are organized as 71 numbered patterns across ten categories, A through J, with one currently on hold. Each pattern carries a severity. S1 is a decisive tell that counts on a single occurrence and is always removed; S2 triggers at three or more; S3 is touched only when it overlaps with another signal. Results are graded too: A and B pass, C goes back for a second pass, D goes to a human.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Input is scored quantitatively first, and that score picks the execution path — one model call if the text is light, two if it is ordinary, three or more if it is heavy. Route selection is precomputed rather than decided inside a prompt, which tells you most of what you need to know about the design.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>Four axes catch over-editing</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There are four hard rules: meaning is invariant (numbers, proper nouns, and direct quotations preserved 100%), edits are evidence-based (surgery only where a pattern was detected), genre is preserved, and over-editing is forbidden (character-change rate warns at 30%, hard-stops at 50%). Three of the four exist as inspection scripts rather than declarations. <code>verify_gates.py</code> takes the text before and after, judges it on four axes, and leaves an exit code.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Axis</th><th>What it looks at</th><th>On failure</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>P0</strong> Character-change rate</td><td>What share of the original was altered</td><td>Warn at 30%, hard stop at 50% or above (exit code 2)</td></tr>
+                            <tr><td><strong>P1</strong> Target achieved</td><td>Whether the targeted metric's z-score came back into range</td><td>Warns on undershoot or overcorrection (z &lt; −1.5)</td></tr>
+                            <tr><td><strong>P2</strong> Wipeout check</td><td>Whether five or more negation antitheses dropped to zero</td><td>FAIL — reads as a pattern bulldozed out of existence</td></tr>
+                            <tr><td><strong>P3</strong> Golden</td><td>Injected numbers, altered direct quotes, abrupt register shifts</td><td>FAIL — a quotation that no longer matches the original is caught</td></tr>
+                            <tr><td><strong>P4</strong> Sentence touch rate</td><td>What share of sentences were touched, and whether numbers vanished</td><td>Reporting only (does not block)</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="figure-caption mb-6">Table 4. The four-axis gate (from the repository's <code>scripts/verify_gates.py</code>)</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        P2 is the interesting one. Removing every instance of a bad pattern sounds like a win; this gate reads it the other way. If not one of the original antitheses survives, that is not correction but style deletion. A tool built to fix writing has defined its own excess as a failure mode.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What must not be touched is enumerated too: numbers, units, and dates; proper nouns, product names, and model names; direct quotations inside double quotes; statutory text; and academic terms of art. And in several places the documentation repeats that the tool is not for evading detectors and guarantees nothing about the integrity of an academic submission or a piece of journalism. A watermark-removal feature was <strong>deliberately left out</strong>, with the reasoning recorded: there is no detector available, so the effect of removal cannot be measured, and unmeasurable removal is just blind word-shuffling.
+                    </p>
+
+                    <div style="background:var(--card-bg,#ffffff);border:1px solid var(--border-color,#e2e8f0);border-radius:0.75rem;padding:1.5rem 1.25rem;margin:1.5rem 0;">
+                        <svg viewBox="0 0 660 360" width="100%" role="img" aria-label="Rewrite pipeline diagram. Input text goes through quantitative scoring, execution-path selection, and rewriting, then the four-axis gate check (P0 character-change rate, P1 target achieved, P2 wipeout check, P3 golden) either passes with grade A or B, or branches to a second pass, human review, or a hard abort.">
+                            <g font-family="inherit">
+                                <rect x="4" y="20" width="140" height="76" rx="8" fill="none" stroke="#808080" stroke-width="2"></rect>
+                                <text x="74" y="52" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-secondary,#475569)">Input text</text>
+                                <text x="74" y="72" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">text to be rewritten</text>
+
+                                <path d="M148 58 L164 58" stroke="#808080" stroke-width="2"></path>
+                                <path d="M164 58 l-8 -4 v8 z" fill="#808080"></path>
+
+                                <rect x="168" y="20" width="150" height="76" rx="8" fill="none" stroke="#808080" stroke-width="2"></rect>
+                                <text x="243" y="46" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-secondary,#475569)">Quantitative score</text>
+                                <text x="243" y="64" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">precomputed</text>
+                                <text x="243" y="80" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">(before any model call)</text>
+
+                                <path d="M322 58 L338 58" stroke="#808080" stroke-width="2"></path>
+                                <path d="M338 58 l-8 -4 v8 z" fill="#808080"></path>
+
+                                <rect x="342" y="20" width="160" height="76" rx="8" fill="none" stroke="#808080" stroke-width="2"></rect>
+                                <text x="422" y="46" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-secondary,#475569)">Route selection</text>
+                                <text x="422" y="64" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">1–3+ model calls</text>
+                                <text x="422" y="80" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">branches by severity</text>
+
+                                <path d="M506 58 L522 58" stroke="#808080" stroke-width="2"></path>
+                                <path d="M522 58 l-8 -4 v8 z" fill="#808080"></path>
+
+                                <rect x="526" y="20" width="130" height="76" rx="8" fill="none" stroke="#808080" stroke-width="2"></rect>
+                                <text x="591" y="52" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-secondary,#475569)">Rewrite pass</text>
+                                <text x="591" y="72" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">A–J, 71 patterns</text>
+
+                                <path d="M591 96 L591 130 L330 130 L330 146" stroke="#F86825" stroke-width="2" fill="none"></path>
+                                <path d="M330 150 l-4 -8 h8 z" fill="#F86825"></path>
+
+                                <rect x="210" y="150" width="240" height="90" rx="8" fill="none" stroke="#F86825" stroke-width="2.5"></rect>
+                                <text x="330" y="176" text-anchor="middle" font-size="14" font-weight="700" fill="#F86825">Four-axis gate check</text>
+                                <text x="330" y="196" text-anchor="middle" font-size="11" fill="var(--text-secondary,#475569)">P0 char-rate · P1 target</text>
+                                <text x="330" y="212" text-anchor="middle" font-size="11" fill="var(--text-secondary,#475569)">P2 wipeout · P3 golden</text>
+                                <text x="330" y="230" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">verify_gates.py</text>
+
+                                <path d="M240 240 L130 240 L130 266" stroke="#808080" stroke-width="2" fill="none"></path>
+                                <path d="M130 270 l-4 -8 h8 z" fill="#808080"></path>
+
+                                <path d="M420 240 L546 240 L546 266" stroke="#F86825" stroke-width="2" fill="none"></path>
+                                <path d="M546 270 l-4 -8 h8 z" fill="#F86825"></path>
+
+                                <rect x="60" y="270" width="140" height="76" rx="8" fill="none" stroke="#808080" stroke-width="2"></rect>
+                                <text x="130" y="302" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-secondary,#475569)">Pass</text>
+                                <text x="130" y="322" text-anchor="middle" font-size="11" fill="var(--text-muted,#64748b)">grade A · B</text>
+
+                                <rect x="436" y="270" width="220" height="76" rx="8" fill="#F86825"></rect>
+                                <text x="546" y="292" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">Blocked</text>
+                                <text x="546" y="311" text-anchor="middle" font-size="11" fill="#ffffff">2nd pass (C) · human review (D)</text>
+                                <text x="546" y="328" text-anchor="middle" font-size="11" fill="#ffffff">hard abort</text>
+                            </g>
+                        </svg>
+                    </div>
+                    <p class="figure-caption mb-6">Figure 3. The rewrite pipeline and the four-axis gate. Both route selection and the pass/fail verdict are decided by code on this flow, not inside a prompt.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>What counts as evidence that it became a standard</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Star counts prove a tool spread; they do not prove it became a standard. The verifiable evidence sits elsewhere. Four projects that do not know each other adopted the same taxonomy and said where it came from.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Derivative project</th><th>What it took</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Squirbie/im-not-ai-codex (★60)</td><td>Codex plugin port. Carries the rulebook, taxonomy, and playbooks over from v2.0.0 and states its version policy</td></tr>
+                            <tr><td>ptec07/humanize-korean</td><td>Port for Hermes Agent. Includes the S1/S2 rulebook and the v2.0 update notes</td></tr>
+                            <tr><td>nathankim0/humanize-korean</td><td><strong>Independently reimplements the 30% warning and 50% rejection.</strong> Credits the source in its license notice</td></tr>
+                            <tr><td>cloudvelvet/academic-humanize-korean</td><td>Adapts the meaning-preservation principle for academic manuscripts. Credits the origin project in LICENSE and NOTICE</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="figure-caption mb-6">Table 5. Derivative projects that adopted the taxonomy with attribution (READMEs read directly, 2026-08-20)</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The third row is the striking one. What another team copied was not the pattern list but <strong>the numbers 30 and 50</strong>. People hold their own opinions about what counts as an AI tell, yet nobody argued with "measure how much you changed in code, and block it when it goes over." The design idea travels ahead of the pattern list.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>A note on citing the numbers.</strong> Repository metrics were pulled straight from the GitHub API (checked 2026-08-20: 4,556 stars, 489 forks, 49 merged PRs, latest release v2.3.2). The maintainer's figure of "33 outside contributors," on the other hand, diverges sharply from the API count of 10, and the claimed "13,990th in the world" has no official ranking API behind it. Approximating with a <code>stars:&gt;4555</code> search query lands at roughly 13,721st and the top 0.0435%, so the percentile nearly matches. Absolute rank and contributor count are best read as <strong>the maintainer's own tally</strong>.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Two Teams Threw Out the Same Folklore</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The usual way a style rule fails is not that the rule is wrong but that the rule has no evidence under it. "This phrasing reads like AI" typically starts as a hunch and hardens through repetition. This project checked its hunches against its own corpus and discarded the rules that did not survive.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>Sixty AI texts against sixty human ones</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The design is simple. Sixty pieces of Korean prose generated by three models from the same twenty prompts, with no style guidance, set against sixty pieces of Korean prose confirmed to have been published before 1 January 2022. The second set predates ChatGPT's release, so AI contamination is impossible in principle; it spans forty outlets, and publication dates were double-checked against the Wayback Machine. The test statistic is the log-likelihood ratio G².
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Among the confirmed signals, the widest gap belongs to the negation antithesis. The "not A but B" construction appears 5.8 times per thousand characters in AI prose against 0.6 in human writing, a factor of <strong>9.2</strong>.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Pattern</th><th>AI (per 1,000 chars)</th><th>Human (per 1,000 chars)</th><th>Ratio</th><th>G²</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Negation antithesis ("not A but B")</td><td>5.8</td><td>0.6</td><td><strong>9.2×</strong></td><td>41.7</td></tr>
+                            <tr><td>Comma overuse</td><td>49.1</td><td>33.4</td><td>1.5×</td><td>25.5</td></tr>
+                            <tr><td>Share of sentences containing commas</td><td>394.8</td><td>285.5</td><td>1.4×</td><td>13.3</td></tr>
+                            <tr><td>Skew toward the "-han-da" ending</td><td>95.0</td><td>52.2</td><td>1.8×</td><td>9.5</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="figure-caption mb-6">Table 6. Signals confirmed against the project's own contrast corpus (repository <code>references/empirical-validation.md</code>, 2026-07)</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There were findings in the other direction too — things AI prose <strong>lacks</strong>. Sentences longer than 100 characters appear 91.3 times per thousand sentences in human writing but only 8.1 times in AI output (G²=60.9), and direct quotation inside double quotes runs 8.7 against 0.0 (G²=96.4). Parentheses split 10.6 to 1.2. Of these the tool adopted only the missing long sentence as something to prescribe, leaving the rest as observations. The moment it invents a quotation that was never there, the meaning-invariance rule is broken. Separating what may be fixed from what may only be watched is a judgment call the project made explicitly.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>Two rules the project threw out</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The real value of checking shows up in the rules that failed, not the ones that passed. Two were rejected.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>The rule that always broke up "-reul tonghae" ("through/via").</strong> Choi Hee-kyung's 2016 comparison found 84.4 occurrences in non-translated Korean against 42.1 in translated text — native writers use it twice as often. With no basis for treating it as a marker of translationese, only the check against overuse remained.</li>
+                        <li class="themeable-text leading-relaxed"><strong>The rule that converted the "-geosida" ending to plain declarative form.</strong> Careful measurement gave 20.4 for AI against 43.0 for humans, again twice as often for people (G²=6.2). The first measurement had counted the two-syllable ending "-ida" and swept in other forms with it, and the author corrected that measurement error in the documentation.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The project also demoted its own citations. The marketing copy leans on the fact that Korean translation studies' eight canonical types of translationese come with academic references attached, but the internal documentation is far stricter about what those references are worth.
+                    </p>
+
+                    <div class="quote-box">
+                        <p class="themeable-text" style="margin:0;">
+                            "Kim Jeong-woo (2007), which the taxonomy cited, is a typological and prescriptive paper, not a quantitative one. It reports no frequency or discriminative statistics for individual features. It is valid only as <strong>typological grounding</strong>; citing it as <strong>empirical evidence is over-attribution</strong>. […] There is effectively no study of Korean translationese that reports statistical significance."
+                        </p>
+                        <p class="figure-caption" style="margin-top:0.75rem;">Repository <code>references/empirical-validation.md</code> (translated from Korean by Pebblous)</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Projects whose internal documents are stricter than their marketing are not common. The most accurate compliment you can pay this tool is about that posture, not about the number of patterns.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>We landed in the same place</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The same rejection happened on our side. Pebblous's style reference, <code>docs/ai-tone-detection.md</code>, treated the "-geosida" ending as an AI marker until the 1 August 2026 revision removed it. Recounting across every article we have published and against canonical human-written text showed people using it nearly twice as often. Different corpora, two teams unaware of each other, the same conclusion.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        We went one step further in another place. Our <code>docs/ko-style-standard.md</code> declined to build the standard around the classic translationese correction table, because double passives occur 0.03 times per 10,000 characters in our writing and "e isseoseo" ("in respect of") zero times — a layer we had already cleared. Adopt somebody else's list wholesale and you end up fixing the problems on the list instead of the problems in your text.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Both records point at the same lesson. <strong>A style rule without evidence becomes a source of contamination in its own right.</strong> When a rule is wrong, the damage spreads quietly to every document it governs, and without arithmetic nobody notices. That applies directly to the work of writing labeling guidelines and quality criteria.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">We Ran It Ourselves</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Reading a design is not the same as running it. We downloaded the eight verification scripts into a scratch directory and pointed them at three kinds of text. They run on the standard library alone, so there was nothing to install. The two scripts take different genre arguments, so we standardized on <code>essay</code>, the one key present in both baselines.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>The scope of this demo.</strong> What we reproduced is the post-hoc gate that inspects a rewrite. The rewriting engine itself, which applies the 71 patterns, is prompt logic that depends on model calls, and we did not reproduce it here. These numbers cannot be used to judge the tool's overall performance. They are a record of whether the safety machinery actually fires, and of where its verdicts go wrong.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        We picked three targets: one of our own articles, a fresh piece of AI prose generated with no guidance, and a manuscript we know a person wrote. The last one turns out to matter most.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Text</th><th>Source</th><th>Character</th><th>Length</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>(a) Pebblous published article</td><td>Two body paragraphs from our report on multi-agent industrial data operations</td><td>Already flagged for dash overuse by our own review</td><td>707 chars</td></tr>
+                            <tr><td>(b) Freshly generated AI prose</td><td>The same topic, regenerated with no guidance</td><td>Control sample of typical LLM output</td><td>477 chars</td></tr>
+                            <tr><td>(c) Canonical human manuscript</td><td>A paragraph on artificial intelligence from a 2020 Daejeon Biennale essay</td><td>Pre-ChatGPT, first-person, human-authored</td><td>510 chars</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="figure-caption mb-6">Table 7. The three texts under test</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>Turning the blade on our own writing</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In (a) we touched only the four places where a dash restates what the sentence already said. Numbers, proper nouns, and quotations were left alone. The character-change rate came to <strong>3.8%</strong>, nowhere near the warning line, and risk dropped from medium (4) to low (2). Our own review's dash count went from five to zero. Two tools reading the same signal and pushing in the same direction.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Here is what the edits look like. The original 「TradingAgents 패턴을 산업 데이터 운영 — 제조, 물류, 헬스케어, 에너지 — 으로 옮기면 어디가 무너지는가」 ("Port the TradingAgents pattern to industrial data operations — manufacturing, logistics, healthcare, energy — and where does it break?") traded its dashes for parentheses and became 「산업 데이터 운영(제조, 물류, 헬스케어, 에너지)으로 옮기면」. Where a dash had been used to tack a list onto a claim — 「이미 도메인 간 수렴했다 — 역할 분화 + 중앙 오케스트레이션 + 도구 호출 + 검증 레이어」 ("it has already converged across domains — role separation + central orchestration + tool calls + a verification layer") — the fix stood up a second sentence: 「이미 도메인 간 수렴했다. 역할 분화, 중앙 오케스트레이션, 도구 호출, 검증 레이어가 그렇다」. No word was swapped for a fancier one; the work the dash had been carrying was handed back to a sentence.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The number to watch is the sentence touch rate. Characters moved by 3.8%, yet five of eleven sentences changed structurally. A low change rate does not mean the original survived intact.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>An honest edit crosses the warning line</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In (b) we stripped out translationese connectives such as 「왜냐하면 ~ 때문이다」 ("the reason is that… because"), 「다시 말해」 ("in other words"), and 「~것을 의미한다」 ("this means that"), along with nominal restatements and the throat-clearing 「따라서」 ("therefore") and 「결론적으로」 ("in conclusion"). We were not trying to cut deep. The character-change rate came back at <strong>30.7%</strong>, over the warning line, with all eight sentences touched.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        These are the sentences that went. The pair 「왜냐하면 산업 현장의 데이터는 금융 데이터와 달리 정답이 명확하지 않기 때문이다. 다시 말해, 시장가라는 즉각적인 검증 수단이 존재하지 않는다는 것이다」 ("The reason is that, unlike financial data, data on the factory floor has no clear right answer. In other words, no immediate means of verification such as a market price exists") became 「산업 현장의 데이터는 금융 데이터와 다르다. 시장가처럼 정답을 즉시 확인할 방법이 없다」 ("Data on the factory floor is not like financial data. There is no way to check the right answer instantly, the way a market price does"). Same meaning, shorter, and almost none of the original word units survive into the revision. That is how the character-change rate climbs.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The arithmetic makes a point that is easy to miss: clearing out textbook slop requires rebuilding the sentence frame. It also signals that a 30% threshold is not generous. Any organization adopting this should be ready to tune the value to its own genre.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.3</span>Human writing draws the highest risk grade</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In (c) we changed not a single word. We deleted five commas sitting after connective endings, in constructions like 「하지만,」 ("but,") and 「~하고,」 ("and,"). Character-change rate: 0.5%. The verdict flipped completely across that edit.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Looking at which commas they were tells you what kind of verdict this is. 「불에 구운 고기 맛이 기가 막히다는 것을 처음 알게 되었고, 너나 할 것 없이 불의 화려한 매력에 빠져서」 ("they discovered for the first time how extraordinary fire-roasted meat tasted, and every last one of them fell for the spectacle of flame"), 「불을 꺼뜨리기도 하고, 불에 데기도 한다」 ("sometimes they let the fire die, and sometimes they get burned"). Those beats after a connective ending are the writer's breathing. The tool read that breathing as a model's habit.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Measure</th><th>Before the edit</th><th>After deleting 5 commas</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Risk grade</td><td><strong>high (6/6)</strong></td><td><strong>low (2)</strong></td></tr>
+                            <tr><td>z-score, commas after connectives</td><td>+10.07</td><td>−0.52</td></tr>
+                            <tr><td>P1 target-achieved verdict</td><td>—</td><td>"achieved" (the gate approves this edit)</td></tr>
+                            <tr><td>Pebblous in-house review</td><td>Clean on every check</td><td>Clean on every check</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="figure-caption mb-6">Table 8. Verdict reversal on a human-authored manuscript from 2020</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A manuscript written by a person two years before ChatGPT existed drew the highest risk grade. One metric caused it. Five of the six connective-ending boundaries in the excerpt carried a comma, and that 83.3% produced a z-score of +10.07 against the essay-genre baseline. This is the same axis as the 4.8× signal from Section 1. It is also a clean picture of how a statistic that is true of a population fails in front of one person's writing.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To rule out an accident of a short excerpt, we ran two complete documents through unedited. The direction held.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Document</th><th>Length</th><th>Risk</th><th>Interference index</th><th>Negation antitheses</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Pebblous published report (AI-written)</td><td>7,146 chars</td><td>medium (4)</td><td>0.460</td><td>6</td></tr>
+                            <tr><td>2020 essay (human-authored)</td><td>14,315 chars</td><td><strong>high (6)</strong></td><td>1.073</td><td>0</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="figure-caption mb-6">Table 9. Cross-check across full-length documents</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A human-written essay scored riskier than a report we generated with AI. A second cause compounded the first. Low lexical variety adds a point to the risk score, but a personal essay circling one subject and reusing the same words is not doing what a model repeating a phrase is doing. The formula cannot tell them apart.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For the record, our published report turned up six negation antitheses. The tool's wipeout check triggers at five. Holding someone else's ruler to our own writing turned up exactly what it should have.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.4</span>Over-editing really does get stopped</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Last, we tested the safety machinery. We deliberately rewrote text (a) from top to bottom and fed it to the gate. We tried to keep the facts, but sentence structure, word order, and phrasing all changed. Three axes fired at once.
+                    </p>
+
+                    <div class="gate-log">[P0 char rate]    60.1% [full text] — ABORT — hard stop. Rewrite must not be adopted (warn 30% / stop 50%)
+[P1 target]       N/A — structural diagnosis (no lexical S1 anchor)
+[P2 wipeout]      C-8 antithesis 0 → 0 — skipped (fewer than 5 in the original)
+[P3 golden]       FAIL — 1 finding:
+    FAIL [quote_altered] direct quotation 「정답이 사후에 명확해지는…」 does not appear verbatim in the rewrite (quote-invariance rule)
+[P4 touch rate]   100.0% (11/11 sentences) — reporting only
+[P4 numbers lost] observed: ['1', '100', '1000', '12', '2', '2024', '3', '4', '5', '5.5', '60', '88']
+gate: ABORT — hard stop. Rewrite must not be adopted
+exit code: 2</div>
+                    <p class="figure-caption mb-6">Figure 4. Output of <code>verify_gates.py</code> (2026-08-20). The run is verbatim; the tool's Korean labels are rendered in English, and the flagged quotation is left in the original.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The hard stop fired at a 60.1% character-change rate, P3 caught a direct quotation that had been paraphrased, and twelve numbers showed up missing in the observation log. Most of them disappeared because a notation like "1/1000" was smoothed into ordinary language such as "only slightly." The notation did not change; information was lost.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Those three lines are the physical evidence for the design philosophy described in Section 3. A human reviewer would probably have missed both the slightly altered quotation and the twelve vanished numbers. The code did not.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.5</span>The two gates go blind in different places</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        We put the same texts through our own publishing gate and lined up the verdicts. Where they disagree is more informative than where they overlap.
+                    </p>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr><th>Signal</th><th>im-not-ai</th><th>Pebblous publishing gate</th><th>Outcome</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Dash used for appositive restatement</td><td>No dedicated axis</td><td>Direct target, threshold of 20 per 10,000 chars</td><td>Partial match</td></tr>
+                            <tr><td>Comma after a connective ending</td><td>Core axis, can drive a high verdict on its own</td><td>Not checked at all</td><td><strong>Mismatch — false positive on human writing</strong></td></tr>
+                            <tr><td>Translationese connectives, nominal restatement</td><td>Contributes indirectly to the risk score</td><td>Catches only some of it</td><td>Partial match</td></tr>
+                            <tr><td>Altered direct quotation</td><td>Blocked in code</td><td>No check</td><td>im-not-ai stronger</td></tr>
+                            <tr><td>Excessive editing</td><td>Character rate and touch rate both observed</td><td>Nothing</td><td>im-not-ai stronger</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="figure-caption mb-6">Table 10. The two gates' verdicts side by side</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The summary runs like this. The tool under examination is strong at statistical risk scoring and at edit safety, and its statistical axes cannot absorb variation between individual authors, so it misjudges human writing. Our gate catches surface patterns well but has no risk classification at all, so a good deal of translationese prose sails straight through. These are not two competing tools but <strong>two layers that go blind in different places</strong>.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What Holds for a Group Does Not Hold for a Person</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The third experiment in Section 5 deserves a name. The rule was not wrong. The inference from the rule to the individual was wrong. Commas after connective endings are a real signal, confirmed by a peer-reviewed paper, and the tool reproduced the same direction in its own corpus. Yet the moment that statistic was used to judge one person's manuscript, the conclusion inverted.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The figure below puts the whole argument on one page. Human writing averages 4.10%, model output 19.83%. The two distributions clearly separate. The problem is the individual who sits outside them. The 2020 manuscript lands at 83.3% — far to the right of even the model average.
+                    </p>
+
+                    <div style="background:var(--card-bg,#ffffff);border:1px solid var(--border-color,#e2e8f0);border-radius:0.75rem;padding:1.5rem 1.25rem;margin:1.5rem 0;">
+                        <svg viewBox="0 0 660 260" width="100%" role="img" aria-label="Conceptual distribution of comma rates after connective endings. Human writing centers on 4.10 percent and LLM output on 19.83 percent, while a human-authored manuscript from 2020 sits at 83.3 percent, far to the right of both distributions.">
+                            <g font-family="inherit">
+                                <line x1="40" y1="190" x2="640" y2="190" stroke="var(--border-color,#e2e8f0)" stroke-width="1.5"></line>
+                                <text x="40" y="212" font-size="11" fill="var(--text-muted,#64748b)">0%</text>
+                                <text x="320" y="212" font-size="11" fill="var(--text-muted,#64748b)" text-anchor="middle">Share of connective-ending boundaries carrying a comma</text>
+                                <text x="640" y="212" font-size="11" fill="var(--text-muted,#64748b)" text-anchor="end">100%</text>
+
+                                <path d="M46 190 Q64 96 82 190" fill="rgba(128,128,128,0.18)" stroke="#585858" stroke-width="2"></path>
+                                <text x="64" y="86" font-size="12" font-weight="700" fill="var(--text-secondary,#475569)" text-anchor="middle">Human</text>
+                                <text x="64" y="70" font-size="11" fill="var(--text-muted,#64748b)" text-anchor="middle">4.10%</text>
+
+                                <path d="M128 190 Q171 76 214 190" fill="rgba(248,104,37,0.14)" stroke="#F86825" stroke-width="2"></path>
+                                <text x="171" y="66" font-size="12" font-weight="700" fill="#F86825" text-anchor="middle">LLM</text>
+                                <text x="171" y="50" font-size="11" fill="var(--text-muted,#64748b)" text-anchor="middle">19.83%</text>
+
+                                <line x1="526" y1="190" x2="526" y2="104" stroke="#F86825" stroke-width="2" stroke-dasharray="5 4"></line>
+                                <circle cx="526" cy="104" r="7" fill="#F86825"></circle>
+                                <text x="526" y="88" font-size="12" font-weight="700" fill="var(--text-secondary,#475569)" text-anchor="middle">Human-written manuscript, 2020</text>
+                                <text x="526" y="70" font-size="12" font-weight="700" fill="#F86825" text-anchor="middle">83.3% (z = +10.07)</text>
+
+                                <text x="320" y="242" font-size="11" fill="var(--text-muted,#64748b)" text-anchor="middle">The group averages separate. An individual can sit outside both.</text>
+                            </g>
+                        </svg>
+                    </div>
+                    <p class="figure-caption mb-6">Figure 5. Group distributions and where an individual lands. The two averages are KatFishNet's measurements for the essay genre; the point on the right is the 2020 human-authored manuscript from Section 5.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>Six places this tool misses</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The observations that came up one at a time earlier add up to six.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        <strong>One: inferring from group statistics to an individual.</strong> Exactly as above. The stronger a person's style, the less accurate the risk verdict.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        <strong>Two: what the baseline actually is.</strong> This limit is unusual in that the tool wrote it down itself.
+                    </p>
+
+                    <div class="quote-box">
+                        <p class="themeable-text" style="margin:0;">
+                            "The human corpus is edited professional prose. […] On a 15-piece subset of personal blogs, the gap narrowed sharply. <strong>Read it as a contrast with 'published good writing,' not with 'humans in general.'</strong>"
+                        </p>
+                        <p class="figure-caption" style="margin-top:0.75rem;">Repository <code>references/empirical-validation.md</code>, "Known limitations" (translated from Korean by Pebblous)</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Our experiment caught the author's documented limit in the act of happening. An essay with a strong personal voice was outside this baseline's range from the start.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        <strong>Three: the gap between academic evidence and the rule list.</strong> The features KatFishNet validated are spacing, part-of-speech distribution, and commas — the layer of orthography and morphology. The 71 patterns live at the layer of vocabulary, syntax, and rhetoric. A paper backing the comma axis does not carry the rest of the rules with it.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        <strong>Four: the repair layer's own fingerprint.</strong> The question deferred at the end of Section 1. If post-edited text keeps the original's fingerprint, something is left behind when a model corrects a model. The sentence touch rate reaching 100% in our experiment shows the shape of that risk. It is hard to say you preserved the original voice in a text where not one sentence went untouched.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        <strong>Five: locating the watermarking concern precisely.</strong> When Anthropic announced text watermarking on 11 August 2026, a concern surfaced that quality distortion would be larger in low-resource languages. Follow the mechanism and the concern does not follow automatically. SynthID-Text runs a tournament among candidates drawn from the model's own distribution and picks a winner, so the output distribution is preserved in expectation, and what degrades in low-entropy stretches is detectability, not quality. A language with less training data may even show higher entropy, because the model is less certain. What is true is that <strong>nobody has measured what actually happens in Korean.</strong> Taking a baseline before retroactive application is methodologically correct regardless of whether the hypothesis holds. The tool's author chose a baseline snapshot over watermark removal, and even noted in the documentation that the snapshot's pre-application labels are an estimate.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <strong>Six: self-reported figures.</strong> As noted in Section 3, the outside-contributor count and the global rank do not reproduce through public APIs. This has nothing to do with the tool's quality, but anyone citing the numbers should mark which source they came from.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Our own tooling had the same disease.</strong> The first time Pebblous ran its style checker across all 426 published articles, the false-positive rate came in at <strong>45%</strong>. Quotations accounted for much of it: we were measuring other people's words against our own style rules. Quotation masking went in on 2 August 2026. Writing that someone else's tool misjudges human writing while hiding our own false-positive rate would make this report indefensible.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>Flip the limits and you get the roadmap</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Most of the six above can be turned around. Here is what comes out when they are.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>Author-adaptive baselines.</strong> Feed the system a few of an author's earlier manuscripts to fix a personal baseline, then measure deviation from that baseline instead of a global z-score. This one change removes most of the false positives from Section 5.</li>
+                        <li class="themeable-text leading-relaxed"><strong>Separate baselines by genre.</strong> There are five genre keys today, but no key for reports, which is why we had to run ours as essays. Technical reports and personal essays do not share sentence habits.</li>
+                        <li class="themeable-text leading-relaxed"><strong>A topic-matched corpus.</strong> Pair human writing and model output on the same topic, in the same outlet, at the same length, and topic effects stop mixing with style effects.</li>
+                        <li class="themeable-text leading-relaxed"><strong>A human evaluation loop.</strong> Metrics improving and reading better are two different claims. Even a small blind preference study would surface the repair layer's own fingerprint.</li>
+                        <li class="themeable-text leading-relaxed"><strong>Independent re-measurement around watermarking.</strong> The procedure for taking a baseline snapshot is already public, so other organizations can measure the same way and compare. If this is a problem only Korean speakers have, the people producing Korean text are the ones who should measure it.</li>
+                        <li class="themeable-text leading-relaxed"><strong>Upstream intervention.</strong> A layer that fixes output treats symptoms. The cause lies in the language composition of the training data and the proportion of translated text inside it. Simply recording, as metadata, whether a Korean training text is a translation and what language it came from would make the next generation far easier to diagnose.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The six do not weigh the same. Adding a genre key or fitting per-author baselines is the kind of thing a single maintainer could ship in the next release. A human evaluation loop and a topic-matched corpus are beyond what one repository can carry, and upstream intervention belongs to people in an entirely different seat. Drawing that line in advance — what a repair layer can reasonably be asked to do — beats demanding everything from one tool and being disappointed.
+                    </p>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Is Writing This</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The subject of this report is the work Pebblous has been doing, held up to a mirror. We define AI-Ready Data as "data refined to the point where a model can use it directly for training and inference," and we have spent our time diagnosing the defects in datasets with DataClinic. This time we took the opposite end: the output that has already been made.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.1</span>Data defects and prose sit at two ends of one chain</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If Korean is 0.84% of the training data and much of that share is translated text, then English habits survive in the output. The 4.8× comma gap KatFishNet measured is our thesis — that data composition determines output quality — observed at the surface layer of prose style. Upstream diagnosis and downstream repair are the same causality worked from either side. Joining those ends in a single piece is the first purpose of this report.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.2</span>Rules are data, and data gets checked</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The most practical lesson comes in two layers. The first is evidence. The tool under examination rejected two of its own rules against its own corpus and demoted a citation it had been leaning on. Pebblous revised a reference document for the same reason. The second is the layer of application. Judging an individual by a group statistic produces false positives, and the 45% false-positive rate on our script's first full run is the proof.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Neither point is confined to prose style. Labeling guidelines, quality criteria, and evaluation metrics are all rules that decide what counts as a defect. When such a rule rests on folklore or is applied at the wrong layer, <strong>the rule itself injects fresh contamination into the dataset.</strong> A quality standard nobody has checked is not a quality tool; it is a contaminant.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.3</span>Five things to check before adopting</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Any organization producing AI content in Korean at volume runs into the same question soon enough: what should a style repair layer be required to guarantee? This report yields five procurement and governance items.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">Is the preservation of numbers, proper nouns, and direct quotations <strong>verified in code</strong> rather than by a human read-through?</li>
+                        <li class="themeable-text leading-relaxed">Is over-editing bounded by <strong>explicit thresholds</strong> such as 30% and 50%, and can those thresholds be tuned to your genre?</li>
+                        <li class="themeable-text leading-relaxed">Is the basis for each verdict public and reproducible? In particular, is <strong>the nature of the baseline corpus</strong> documented?</li>
+                        <li class="themeable-text leading-relaxed">Does it avoid false positives on your organization's own voice? <strong>Run it on your canonical manuscripts first.</strong> This is the item this report recommends most strongly.</li>
+                        <li class="themeable-text leading-relaxed">Is the goal quality improvement rather than detector evasion, and does the documentation say so?</li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.4</span>We chose comparison over self-congratulation</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Pebblous is not this tool's competitor. We work the same problem at a different layer. We already review style through a publishing gate and have published the criteria, and our style standard lists this external tool as the largest Korean-language reference of its kind. This article is the first public record of holding our criteria up against that reference.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The method was comparison rather than self-congratulation. We held someone else's ruler to our own writing, and wrote down the places where that ruler goes wrong on human text. We wrote down our own false-positive rate alongside it. In a conversation about prose quality, the position Pebblous wants is not the one that writes well but the one that measures.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.5</span>Three questions still open</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Three questions this report could not answer.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">What is the Korean-to-English training mix in Korean-built models? Published technical reports do not say. That number is what would let anyone test "a better model will not fix it" against domestic models as well.</li>
+                        <li class="themeable-text leading-relaxed">How much do author-adaptive baselines actually reduce false positives? Our archive of published articles is large enough to build per-author baselines, so this is a measurement we can run next.</li>
+                        <li class="themeable-text leading-relaxed">Do Korean style metrics shift once watermarking is applied retroactively? The baseline procedure is public, so the more organizations that re-measure independently the same way, the firmer the answer.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If the awkwardness comes from the data, the fix will come from the data in the end. A layer that repairs output is a stopgap until then, and what this round confirmed is that even a stopgap needs its arithmetic checked and its safety catch installed.
+                    </p>
+                </section>
+
+                <!-- FAQ (rendered from config.faqs — keep this section empty) -->
+                <section id="faq" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Frequently Asked Questions</h2>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">References</h2>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Wendler, C., Veselovsky, V., Monea, G., West, R. (2024). "Do Llamas Work in English? On the Latent Language of Multilingual Transformers." <strong>ACL 2024</strong>, 15366–15394. <a href="https://arxiv.org/abs/2402.10588" target="_blank" rel="noopener noreferrer">arXiv:2402.10588</a></span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Park, S., Kim, S., Kim, D.-K., Han, Y.-S. (2025). "KatFishNet: Detecting LLM-Generated Korean Text through Linguistic Feature Analysis." <strong>ACL 2025 Main</strong>. <a href="https://aclanthology.org/2025.acl-long.1030/" target="_blank" rel="noopener noreferrer">ACL Anthology</a> · arXiv:2503.00032</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Toral, A. (2019). "Post-editese: an Exacerbated Translationese." <strong>MT Summit XVII</strong>, 273–281 (Best Paper). <a href="https://aclanthology.org/W19-6627/" target="_blank" rel="noopener noreferrer">ACL W19-6627</a></span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Dathathri, S. et al. (2024). "Scalable watermarking for identifying large language model outputs." <strong>Nature</strong> 634. doi:10.1038/s41586-024-08025-4</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Wu, Z. et al. (2024). "The Semantic Hub Hypothesis: Language Models Share Semantic Representations Across Languages and Modalities." arXiv:2411.04986</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Kim, Jeong-woo (2007). A typology of translationese. <strong>The Journal of Translation Studies</strong> 8(1): 61–82. [in Korean]</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Lee, Young-ok (2001). English-to-Korean translation of transitive constructions with inanimate subjects. <strong>The Journal of Translation Studies</strong> 2(1): 53–76. [in Korean]</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Kim, Do-hoon (2009). A study of translationese arising in English-to-Korean translation. <strong>Interpreting and Translation Studies</strong> 11(2): 3–19. [in Korean]</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Park, Ok-soo (2017). Typological features of Korean-to-English machine translation output. <strong>Dong-A Humanities</strong> 41: 155–183. [in Korean]</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Policy, statistics, repositories</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">10.</span><span class="ref-body">Common Crawl. <a href="https://commoncrawl.github.io/cc-crawl-statistics/plots/languages.html" target="_blank" rel="noopener noreferrer">Language Statistics</a>, CC-MAIN-2026-30 (accessed 2026-08-20).</span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">Anthropic (2026-08-11). "Claude text watermarking." Implemented with SynthID-Text; no detection API published.</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">EU AI Act, Article 50 transparency obligations (in force 2026-08-02).</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body"><a href="https://github.com/epoko77-ai/im-not-ai" target="_blank" rel="noopener noreferrer">epoko77-ai/im-not-ai</a> — MIT. README, <code>references/empirical-validation.md</code>, <code>references/scholarship.md</code>, <code>scripts/verify_gates.py</code>, <code>docs/watermark-baseline-runbook.md</code> (accessed 2026-08-20, v2.3.2).</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body"><a href="https://github.com/blader/humanizer" target="_blank" rel="noopener noreferrer">blader/humanizer</a> — MIT, based on Wikipedia:Signs of AI writing (accessed 2026-08-20).</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Related Pebblous documents</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">15.</span><span class="ref-body">Pebblous (2026-05-25). <a href="../../ai-text-detector-limits/en/">The Mathematical Limits of Detecting AI-Written Text</a>.</span></li>
+                        <li><span class="ref-num">16.</span><span class="ref-body">Pebblous internal documents <code>docs/ai-tone-detection.md</code> (revised 2026-08-01), <code>docs/ko-style-standard.md</code>, <code>tools/check-ko-prose.py</code> v4.1 (2026-08-02).</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260820"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "operator",
+                "at": "2026-08-20T05:34:15.470Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-20T05:41:30.705Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-20T06:32:29.186Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1787204055470-dgxvcn",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-20T07:34:38.201Z"
+            },
+            mainTitle: "A Better Model Will Not Fix AI-Written Korean",
+            subtitle: "Taking apart a 4,556-star open-source prose repair layer, then running it on our own published work",
+            pageTitle: "Repairing AI-Written Korean: A Teardown and a Field Test | Pebblous",
+            category: "tech",
+            publishDate: "2026-08-20",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/korean-ai-humanizer-teardown-2026-08/en/",
+            tags: ["AI Korean prose", "humanizer", "translationese", "LLM Korean", "AI watermarking", "data quality", "open source skill", "style gate", "KatFishNet"],
+            faqs: [
+                { question: "Why does AI-written Korean read awkwardly?", answer: "Korean is 0.84% of the web corpus used in pretraining, against 40.6% for English (Common Crawl CC-MAIN-2026-30). A model trained on data that lopsided still passes through English-leaning internal representations when it answers in Korean, and English punctuation habits ride along. KatFishNet at ACL 2025 reported that a comma follows a connective ending 4.10% of the time in human essays and 19.83% of the time in LLM essays, a factor of 4.8." },
+                { question: "Does switching to a Korean-built model remove the translationese?", answer: "The cause is in the data mix, so changing models does not remove it automatically. That said, the Korean-to-English training mix of Korean-built models is not public, which makes a precise comparison with foreign models impossible today. This report could not settle that question either." },
+                { question: "Does English writing need humanizing too?", answer: "It does, but at a different layer. What bothers English readers is not translationese but simplification, normalization, and lexical poverty. Toral (2019) showed across several language pairs that post-edited machine translation is simpler and more normalized than translation done from scratch, and named the effect post-editese. The fact that the English-origin tool is eight times the size of the Korean one is itself a measure of the demand." },
+                { question: "How is a humanizer different from an AI detector bypass tool?", answer: "The goal and the success metric differ. Bypass tools claim performance as the rate at which they fool a detector; quality-repair tools claim it as style metrics improved with meaning preserved. On top of that, detectors are structurally hard to trust, which was the conclusion of the report Pebblous published in May 2026. The referee you would be fooling is not reliable in the first place." },
+                { question: "Can fixing the prose change the facts or the numbers?", answer: "A well-built tool blocks that in code. In our experiment an attempt to paraphrase a direct quotation inside double quotes was caught automatically, and twelve numbers that had gone missing showed up in the observation log. If you are evaluating adoption, check first whether the preservation of numbers, proper nouns, and direct quotations is verified by code rather than by eye." },
+                { question: "How do you stop it from editing so much that the original voice disappears?", answer: "By making a change-rate threshold decisive. The tool examined here warns at a 30% character-change rate and hard-stops at 50%, and an attempt that reached 60.1% was genuinely halted in our run. The threshold is tight, though: an honest edit that only removed translationese connectives came to 30.7% and crossed the warning line." },
+                { question: "Can human writing be misjudged as AI-written?", answer: "Yes, and that is this report's central finding. A manuscript written by a person in 2020 drew the highest risk grade (6/6), and deleting five commas after connective endings dropped it to the lowest (2). The tool's own documentation states that its human baseline is a contrast with published good writing rather than with humans in general. Run it on your own canonical manuscripts before adopting it." },
+                { question: "Does AI watermarking degrade Korean quality?", answer: "Nobody has measured it. SynthID-Text picks a winner among candidates drawn from the model's own distribution, so it is designed to preserve the output distribution in expectation, and what weakens in low-entropy stretches is detectability rather than quality. Since nothing has been verified for Korean specifically, taking a baseline before retroactive application is methodologically sound on its own terms." },
+                { question: "Is the tool free to use?", answer: "It is MIT licensed, so commercial use, modification, and redistribution are all permitted, subject to including the copyright notice and a copy of the license. Several derivative projects do exactly that through NOTICE or THIRD_PARTY_NOTICES files." }
+            ]
+        });
+    </script>
+
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260820" defer></script>
+</body>
+</html>
