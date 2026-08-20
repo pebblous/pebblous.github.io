@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>조산 예측 AI 데이터 누수 — 환자 단위 교차검증에서 AUROC 0.493 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="EMBC 2026에 실릴 벤치마크가 산모 300명의 자궁 근전도 기록을 환자 단위로 다시 나눠 조산 예측을 재평가하자 AUROC는 0.493에 그쳤습니다. 문헌에 보고돼 온 0.80에서 0.97은 같은 산모의 기록 조각이 훈련과 검증에 함께 들어간 결과일 수 있습니다.">
+    <meta name="keywords" content="데이터 누수, 교차검증, 환자 단위 분할, group k-fold, 벤치마크 신뢰성, AUROC, 조산 예측, EHG, 자궁 근전도, 컨포멀 예측, 데이터 품질, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/preterm-birth-leakage-proof-benchmark/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/preterm-birth-leakage-proof-benchmark/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/preterm-birth-leakage-proof-benchmark/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/preterm-birth-leakage-proof-benchmark/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="같은 산모의 기록을 갈라 담아 부풀린 조산 예측 성능">
+    <meta property="og:description" content="EMBC 2026에 실릴 벤치마크가 산모 300명의 자궁 근전도 기록을 환자 단위로 다시 나눠 조산 예측을 재평가하자 AUROC는 0.493에 그쳤습니다. 문헌에 보고돼 온 0.80에서 0.97은 같은 산모의 기록 조각이 훈련과 검증에 함께 들어간 결과일 수 있습니다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/preterm-birth-leakage-proof-benchmark/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/preterm-birth-leakage-proof-benchmark/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="같은 산모의 기록을 갈라 담아 부풀린 조산 예측 성능">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-08-21">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="같은 산모의 기록을 갈라 담아 부풀린 조산 예측 성능">
+    <meta name="twitter:description" content="산모 300명의 자궁 근전도 기록을 환자 단위로 다시 나누자 조산 예측 AUROC는 0.493이었습니다. 성능은 데이터가 아니라 데이터를 자른 방식에서 나왔습니다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/preterm-birth-leakage-proof-benchmark/ko/image/index.png">
+    <meta name="twitter:image:alt" content="구간 단위 분할과 환자 단위 분할을 비교한 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260821"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260821">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260821">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260821">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="같은 산모의 기록을 갈라 담아 부풀린 조산 예측 성능">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/08/21">
+    <meta name="citation_online_date" content="2026/08/21">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#two-answers" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 같은 데이터에서 갈린 두 결론</a></li>
+                    <li><a href="#segment-split" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 30분 기록을 조각내면 생기는 일</a></li>
+                    <li><a href="#robustness" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 특징을 바꿔 봐도 움직이지 않았다</a></li>
+                    <li><a href="#triage" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 확신할 때만 답하게 했더니</a></li>
+                    <li><a href="#beyond-medicine" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 벤치마크가 스스로를 속이는 자리</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            자궁 근전도로 조산을 미리 알아내려는 연구는 20년 가까이 이어져 왔고, 발표된 모델들은 AUROC 0.80에서 0.97에 이르는 성적을 보고했습니다. 오리건주립대와 라고스의 병원에서 일하는 두 저자가 같은 공개 데이터셋을 놓고 훈련과 검증을 나누는 방식만 엄격하게 바꿔 다시 계산했습니다. 결과는 0.493이었습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            바뀐 것은 나누는 단위 하나입니다. 30분짜리 기록을 여러 조각으로 쪼갠 뒤 조각 단위로 훈련과 검증을 나누면 같은 산모의 조각이 양쪽에 함께 들어갑니다. 산모 한 명을 통째로 한쪽에만 두자 판별력이 남지 않았습니다. 특징 조합을 바꾸고 일부를 버려 봐도 0.478에서 0.504 사이를 벗어나지 않았습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            다만 이 결과가 조산 예측의 사망 선고는 아닙니다. 저자들이 함께 붙인 컨포멀 유보 장치는 네 건 중 세 건에서 판단을 미루고, 미루지 않은 나머지에서는 유병률의 4.9배에 해당하는 정확도를 냈습니다. 이 글은 그 숫자들이 어디서 왔는지, 그리고 같은 실수가 왜 의료 바깥에서도 반복되는지를 봅니다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        네 숫자를 함께 읽어야 이 연구의 결론이 보입니다. 앞의 둘은 판별력이 없다는 것, 그리고 그것이 특징을 잘못 고른 탓은 아니라는 것을 말합니다. 뒤의 둘은 그런 모델에도 쓸 만한 구석이 어디 남아 있는지를 가리킵니다.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: Adetunji &amp; Oyewusi, <a href="https://arxiv.org/abs/2608.17712" target="_blank" rel="noopener" style="color:#F86825;">arXiv:2608.17712</a> (2026-08-18, EMBC 2026 게재 확정)</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.493</p>
+                            <p class="text-sm themeable-text-secondary mt-1">환자 단위로 다시 잰 AUROC</p>
+                            <p class="text-xs themeable-muted mt-1">95% 신뢰구간 0.467에서 0.520으로, 동전 던지기와 구분되지 않습니다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.478~0.504</p>
+                            <p class="text-sm themeable-text-secondary mt-1">특징을 바꿔도 벗어나지 않은 범위</p>
+                            <p class="text-xs themeable-muted mt-1">92개 특징을 필터별로 갈라 보고 10%와 30%씩 무작위로 버려 봐도 결과는 같았습니다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">72.7%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">모델이 판단을 유보한 비율</p>
+                            <p class="text-xs themeable-muted mt-1">두 답을 모두 담은 예측 집합을 내고 임상 판단으로 넘긴 몫입니다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.624</p>
+                            <p class="text-sm themeable-text-secondary mt-1">유보하지 않은 27.3%의 정확도</p>
+                            <p class="text-xs themeable-muted mt-1">유병률 0.127의 4.9배로, 좁은 확신 구간에는 신호가 남아 있었습니다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="two-answers" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">같은 데이터에서 갈린 두 결론</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        조산은 임신 37주를 채우지 못한 출산을 말합니다. 세계적으로 신생아의 10.6% 안팎이 여기 해당하고, 연간 1,484만 명 규모입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 비율 뒤에는 구체적인 결과가 따라옵니다. 호흡곤란증후군, 뇌실내출혈, 괴사성 장염, 패혈증, 뇌성마비가 신생아와 5세 미만 아동 사망의 상당 부분을 차지하고, 살아남은 아이에게도 신경인지와 심장대사 쪽 위험이 오래 남습니다. 부담의 80% 이상은 남아시아와 사하라 이남 아프리카에 몰려 있습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래도 미리 알아낼 수만 있다면 손쓸 방법이 있는 문제입니다. 값싸고 몸에 부담이 없는 선별 수단을 오래 찾아 온 이유이고, 부담이 몰린 지역일수록 그 필요가 큽니다. 자궁 근전도가 후보 중 하나입니다. 산모의 배에 전극을 붙여 자궁 근육의 전기 활동을 30분쯤 기록하는 검사입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2008년 이후 이 신호로 조산을 예측하려는 연구가 이어졌고, 발표된 AUROC는 0.80을 넘어 0.97에 이르렀습니다. AUROC는 조산할 산모와 만삭까지 갈 산모를 무작위로 한 명씩 뽑았을 때 모델이 조산 쪽에 더 높은 위험 점수를 매길 확률입니다. 0.5는 동전 던지기고, 0.97이면 거의 틀리지 않는다는 뜻입니다. 숫자만 보면 임상 도입을 논의할 단계로 보입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        오리건주립대 보건대학 생물통계·역학과의 Sunday A. Adetunji와 라고스 Alifort Hospital의 Rhoda O. Oyewusi가 8월 18일 arXiv에 올린 논문은 같은 공개 데이터셋 위에서 0.493을 보고합니다. 95% 신뢰구간은 0.467에서 0.520입니다. 정밀도-재현율 곡선 아래 면적은 0.122로, 조산이 실제로 일어나는 비율인 0.127과 사실상 같았습니다. 다시 말해 이 모델은 아무 정보도 주지 않았습니다. 논문은 EMBC 2026 게재가 확정된 상태입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터를 바꾼 게 아닙니다. 모델을 나쁘게 만든 것도 아닙니다. 바꾼 것은 훈련용과 검증용을 가르는 선을 어디에 긋느냐 하나였습니다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="segment-split" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">30분 기록을 조각내면 생기는 일</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 분야가 공통으로 쓰는 데이터는 슬로베니아 류블랴나 대학병원에서 모은 TPEHGDB입니다. 산모 300명의 기록이 들어 있고, 그중 조산은 38건으로 12.7%입니다. 300명 중 38명. 기계학습 기준으로는 매우 작은 표본입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 표준 전처리는 30분짜리 기록 하나를 여러 개의 창으로 쪼갭니다. 300개였던 표본이 수천 개로 늘어난 것처럼 보입니다. 문제는 그다음입니다. 훈련과 검증을 창 단위로 나누면 같은 산모에게서 나온 창들이 양쪽에 흩어져 들어갑니다. 모델은 검증할 산모의 신호를 훈련 중에 이미 본 셈입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이때 모델이 배우는 것은 조산으로 이어지는 자궁의 생리가 아니라 이 산모의 신호가 어떻게 생겼는지입니다. 검증 점수는 높게 나옵니다. 처음 보는 산모 앞에서는 그 점수가 재현되지 않습니다. 저자들이 논문 제목에 넣은 leakage-proof는 이 통로를 막았다는 뜻입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이것은 취향의 문제가 아닙니다. 예측 모형의 비뚤림 위험을 재는 표준 도구 PROBAST는 피험자 독립성을 지키지 못한 분석을 고위험으로 분류합니다. 상관된 관측이 검증 분할에 걸쳐 있으면 진단 성능이 크게 부풀 수 있다는 것은 Tougui 연구진이 2021년에, 검증 절차 바깥에서 모델을 고르면 오차 추정이 치우친다는 것은 Varma와 Simon이 2006년에 이미 보였습니다. 이 논문은 그 원칙을 산과 전기생리 영역으로 옮겨 온 것입니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 372" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="구간 단위 분할과 환자 단위 분할을 비교한 도식. 구간 단위로 나누면 같은 산모에게서 나온 조각이 훈련과 검증 양쪽에 함께 들어가고, 환자 단위로 나누면 한 산모의 조각이 모두 한쪽에만 들어간다" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="26" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">같은 산모의 조각이 양쪽에 들어가면 모델은 산모를 외운다</text>
+
+                            <text x="172" y="52" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" font-weight="700" fill="var(--text-secondary)">구간 단위로 나눌 때</text>
+                            <text x="488" y="52" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" font-weight="700" fill="#F86825">환자 단위로 나눌 때</text>
+
+                            <!-- left: training box -->
+                            <text x="44" y="76" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">훈련</text>
+                            <rect x="36" y="82" width="272" height="76" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <rect x="98" y="98" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="124" y="98" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="150" y="98" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="176" y="98" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="202" y="98" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="228" y="98" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="98" y="124" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="124" y="124" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="150" y="124" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <rect x="176" y="124" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <rect x="202" y="124" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <rect x="228" y="124" width="18" height="14" rx="2" fill="#BDBDBD"/>
+
+                            <!-- left: validation box -->
+                            <text x="44" y="182" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">검증</text>
+                            <rect x="36" y="188" width="272" height="46" rx="6" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <rect x="98" y="204" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="124" y="204" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="150" y="204" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="176" y="204" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="202" y="204" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <rect x="228" y="204" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <text x="172" y="252" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-secondary)">세 산모가 모두 양쪽에 걸쳐 있다</text>
+
+                            <!-- right: training box -->
+                            <text x="360" y="76" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">훈련</text>
+                            <rect x="352" y="82" width="272" height="76" rx="6" fill="none" stroke="#F86825" stroke-width="1"/>
+                            <rect x="414" y="98" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="440" y="98" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="466" y="98" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="492" y="98" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="518" y="98" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="544" y="98" width="18" height="14" rx="2" fill="#F86825"/>
+                            <rect x="414" y="124" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="440" y="124" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="466" y="124" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="492" y="124" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="518" y="124" width="18" height="14" rx="2" fill="#808080"/>
+                            <rect x="544" y="124" width="18" height="14" rx="2" fill="#808080"/>
+
+                            <!-- right: validation box -->
+                            <text x="360" y="182" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">검증</text>
+                            <rect x="352" y="188" width="272" height="46" rx="6" fill="none" stroke="#F86825" stroke-width="1"/>
+                            <rect x="414" y="204" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <rect x="440" y="204" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <rect x="466" y="204" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <rect x="492" y="204" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <rect x="518" y="204" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <rect x="544" y="204" width="18" height="14" rx="2" fill="#BDBDBD"/>
+                            <text x="488" y="252" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" font-weight="700" fill="#F86825">한 산모의 조각은 한쪽에만 있다</text>
+
+                            <!-- legend -->
+                            <rect x="222" y="272" width="14" height="11" rx="2" fill="#F86825"/>
+                            <text x="242" y="282" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-secondary)">산모 A</text>
+                            <rect x="298" y="272" width="14" height="11" rx="2" fill="#808080"/>
+                            <text x="318" y="282" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-secondary)">산모 B</text>
+                            <rect x="374" y="272" width="14" height="11" rx="2" fill="#BDBDBD"/>
+                            <text x="394" y="282" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-secondary)">산모 C</text>
+
+                            <!-- callout -->
+                            <rect x="24" y="300" width="612" height="52" rx="8" fill="rgba(248,104,37,0.05)" stroke="#F86825" stroke-width="1.2" stroke-dasharray="5,4"/>
+                            <text x="330" y="320" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">재표집의 단위는 성능이 일반화되기를 바라는 단위와 같아야 한다</text>
+                            <text x="330" y="338" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">신호 구간의 독립은 환자의 독립과 같은 말이 아니다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ arXiv:2608.17712가 정의한 세 가지 평가 방식 중 구간 단위 분할과 환자 단위 분할의 차이를 도식화 | 페블러스 원본 도식</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들이 이 사례에서 끌어낸 원칙은 한 문장입니다. 재표집의 단위는 성능이 일반화되기를 바라는 단위와 같아야 한다. 새 산모에게 쓸 모델이라면 산모 단위로 나눠야 하고, 신호 구간이 서로 독립이라는 사실은 환자가 서로 독립이라는 뜻이 아닙니다. 논문은 이 구분을 절차의 문제가 아니라 추론의 문제라고 못 박습니다. 조각을 더 잘게 내는 것은 표본을 늘리는 게 아니라 표본이 늘어난 것처럼 보이게 만드는 일입니다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="robustness" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">특징을 바꿔 봐도 움직이지 않았다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        누수를 막는 일은 데이터를 두 덩이로 가르는 데서 끝나지 않습니다. 저자들은 기록 식별자를 유일한 묶음 변수로 두고, 바깥 폴드의 훈련 기록 안에서 다시 세 개의 겹치지 않는 부분집합을 만들었습니다. 하나는 모델을 적합시키고, 하나는 확률을 보정하고, 나머지 하나가 예측 집합의 문턱값을 정합니다. 결측값 대치와 스케일링도 그 폴드의 훈련 파티션에서만 추정했습니다. 검증 대상이 된 기록은 어느 단계에도 노출되지 않았습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델은 화려하지 않습니다. 92개의 공학적 특징에 엘라스틱넷 로지스틱 회귀를 얹었습니다. 특징은 세 개의 대역통과 필터와 세 개의 채널에서 뽑은 진폭, 중앙주파수, 최고주파수, 표본엔트로피, 그리고 필터 사이의 차분입니다. 이 조합에서 나온 AUROC가 0.493, 브라이어 점수가 0.115였습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        특징 공간을 들여다봐도 사정은 같았습니다. 92차원을 2차원으로 눌러 그린 주성분 그림에서 만삭 기록과 조산 기록은 크게 겹쳤고, 모델이 내놓은 위험 점수의 분포도 두 집단이 서로 포개졌습니다. 그런데 계수는 흔들리지 않았습니다. 0.3에서 4.0헤르츠 대역의 최고주파수 최솟값은 폴드의 98%에서, 필터 사이의 진폭 차분은 100%에서 0이 아닌 계수로 살아남았습니다. 같은 특징이 반복해서 선택된다는 것과 그 특징이 처음 보는 산모를 갈라낸다는 것은 다른 이야기입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        성능이 없는 이유가 특징을 잘못 골라서일 가능성은 따로 확인했습니다. 필터별로 하나씩만 써 보면 0.483에서 0.500 사이가 나왔고, 92개 중 10%와 30%를 무작위로 버려 봐도 0.478에서 0.504 사이였습니다. 어느 조합도 판별력을 만들어 내지 못했습니다. 임신주수로 갈라 보면 26주 이전이 0.514, 이후가 0.469로 방향성이 있었지만, 저자들은 분포 이동을 정식으로 검정한 게 아니므로 가설을 세우는 근거 정도로만 읽으라고 선을 그었습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 방향성은 그 자체로 설계 논점을 하나 건드립니다. 자궁의 전기 활동은 임신이 진행되는 동안 변합니다. 그렇다면 임신주수는 모델에 넣는 배경 변수 하나가 아니라 신호를 언제 얻었느냐를 정하는 축이 됩니다. 저자들은 임신 시기를 모델의 이전 가능성을 가르는 명시적 차원으로 다뤄야 한다고 적었습니다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>이 결과를 과장하지 않으려면</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 조심할 대목이 있습니다. 0.80에서 0.97이라는 숫자는 이 논문이 같은 파이프라인으로 재현해 본 값이 아니라 문헌에 보고된 값입니다. 논문은 구간 단위 교차검증을 세 평가 방식 중 첫 번째로 정의해 두었지만, 주된 추론은 환자 단위 방식과 임신주수 층화 방식에 근거한다고 밝힙니다. 그리고 기록 단위로 묶어 평가한 선행 연구 중에도 딥러닝 모델로 0.74에서 0.78을 보고한 사례가 있습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들은 그 차이가 신호 표현, 모델 종류, 전처리, 분할 방식 어디에서든 올 수 있으므로 동일 조건에서 다시 비교해야 풀린다고 적었습니다. 제대로 나누면 무조건 0.5로 무너진다는 이야기가 아니라는 뜻입니다. 한계도 스스로 밝힙니다. 이 결과는 단일 기관에서 모은 300건과 사전 계산된 특징 한 세트에 대한 것이고, 원파형을 직접 다루거나 다른 산과 지표를 함께 쓰는 모델에까지 확대할 수 없습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        수치의 불확실성을 다룬 방식도 밝혀 두었습니다. 신뢰구간은 기록 단위로 1,000번 다시 뽑아 얻은 백분위수이고, 조산 사례가 38건뿐이라 표본 변동은 그래도 큽니다. 저자들은 이 점을 한계로 명시했습니다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="triage" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">확신할 때만 답하게 했더니</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        판별력이 없다는 결과에서 이야기가 끝났다면 이 논문은 반증 한 편으로 남았을 겁니다. 저자들은 여기에 하나를 더 붙였습니다. 이분법으로 답을 강요하는 대신 모델이 답을 미룰 수 있게 하는 장치입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        컨포멀 예측은 하나의 라벨 대신 라벨의 집합을 내놓습니다. 조산이라고 답하거나, 만삭이라고 답하거나, 둘 다 담은 집합을 내놓고 임상 판단으로 넘깁니다. 정답을 놓칠 확률을 0.10까지만 허용하겠다고 정하면, 실제 결과가 예측 집합 안에 들어갈 확률이 0.90 이상이 되도록 문턱값이 잡힙니다. 이 연구에서 실제 커버리지는 0.897로 목표에 거의 맞았습니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 344" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="컨포멀 유보 결과를 나타낸 도식. 전체의 72.7퍼센트에서 판단을 유보하고 27.3퍼센트에서 단일 예측을 냈으며, 단일 예측의 정확도 0.624는 유병률 0.127의 4.9배다" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="26" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">네 건 중 세 건에서 모델은 답을 미뤘다</text>
+
+                            <!-- stacked bar -->
+                            <rect x="60" y="58" width="393" height="40" rx="4" fill="var(--text-muted)" opacity="0.4"/>
+                            <rect x="453" y="58" width="147" height="40" rx="4" fill="#F86825"/>
+                            <text x="256" y="83" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="var(--text-secondary)">유보 72.7%</text>
+                            <text x="526" y="83" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" font-weight="700" fill="#ffffff">단일 예측 27.3%</text>
+                            <text x="256" y="116" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">두 답을 모두 담아 임상 판단으로 넘긴 몫</text>
+                            <text x="526" y="116" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">하나의 답을 낸 몫</text>
+
+                            <!-- comparison bars -->
+                            <text x="330" y="140" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="var(--text-primary)">단일 예측을 낸 27.3% 안에서의 정확도</text>
+                            <line x1="120" y1="256" x2="560" y2="256" stroke="var(--text-muted)" stroke-width="1"/>
+
+                            <rect x="180" y="238" width="90" height="18" rx="3" fill="var(--text-muted)" opacity="0.45"/>
+                            <text x="225" y="230" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="12" font-weight="700" fill="var(--text-secondary)">0.127</text>
+                            <text x="225" y="274" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-secondary)">조산 유병률</text>
+
+                            <rect x="390" y="166" width="90" height="90" rx="3" fill="#F86825"/>
+                            <text x="435" y="158" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="12" font-weight="700" fill="#F86825">0.624</text>
+                            <text x="435" y="274" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" font-weight="700" fill="var(--text-primary)">단일 예측 정확도</text>
+
+                            <!-- callout -->
+                            <rect x="24" y="290" width="612" height="46" rx="8" fill="rgba(248,104,37,0.05)" stroke="#F86825" stroke-width="1.2" stroke-dasharray="5,4"/>
+                            <text x="330" y="309" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10" font-weight="700" fill="#F86825">전체 AUROC 0.493, 그러나 확신한 27.3% 안에서는 유병률의 4.9배</text>
+                            <text x="330" y="326" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">정답을 놓칠 확률을 0.10까지 허용, 실제 커버리지 0.897 (목표 0.90)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ arXiv:2608.17712 표 IV의 컨포멀 유보 지표를 재구성 | 페블러스 원본 도식</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델은 전체의 72.7%에서 두 답을 모두 담은 집합을 냈습니다. 답을 모른다고 말한 셈입니다. 하나의 답을 낸 27.3%에서는 정확도가 0.624였습니다. 조산이 실제로 일어나는 비율 0.127의 4.9배입니다. 전체로 보면 판별력이 없는 모델이, 스스로 확신한 좁은 구간 안에서는 쓸 만한 신호를 남기고 있었다는 뜻입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들은 이 지표들을 따로 읽으면 안 된다고 강조합니다. 커버리지는 정답이 집합 안에 들어갔는지만 말할 뿐, 그 집합이 얼마나 두루뭉술한지는 말하지 않습니다. 아무 답도 배제하지 않으면 커버리지는 언제나 만점입니다. 그래서 커버리지와 유보 비율과 단일 예측 정확도를 함께 보고해야 합니다. 임상에서 불확실성은 감춰야 할 흠이 아니라 표시해야 할 정보라는 게 이 장치의 전제입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        남는 질문은 현장 쪽입니다. 네 건 중 세 건을 임상 판단으로 넘긴다면 그 판단을 누가 얼마나 감당하는지가 곧바로 문제가 됩니다. 저자들도 여기서 멈춥니다. 시간이 지나도 보정이 유지되는지, 의뢰 빈도와 진료 흐름이 감당할 만한지, 그래서 산모와 신생아의 결과가 실제로 나아지는지는 전향적 다기관 연구로 확인할 일이라고 적었습니다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="beyond-medicine" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">벤치마크가 스스로를 속이는 자리</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 개체에서 나온 관측을 무작위로 갈라 담는 실수는 산과 신호에만 있는 게 아닙니다. 프린스턴의 Sayash Kapoor와 Arvind Narayanan은 기계학습을 도입한 연구 분야들을 훑어 17개 분야, 329편의 논문에서 데이터 누수로 인한 재현 실패를 찾아냈습니다. 두 사람은 누수를 여덟 가지 유형으로 나눴는데, 여기에는 교과서에 실린 초보적 오류부터 아직 답이 없는 연구 문제까지 섞여 있습니다. 내전 발발 예측 분야를 직접 재현해 보니, 복잡한 기계학습 모델이 수십 년 된 로지스틱 회귀보다 낫다고 주장한 논문은 하나도 재현되지 않았습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        산업 설비에서도 같은 모양이 나옵니다. 브라질 산타카타리나 연방대 연구진은 진동 신호로 베어링 고장을 진단하는 모델들을 다시 평가했습니다. 흔히 쓰는 구간 단위 분할과 운전조건 단위 분할이 허위 상관을 만들어 성능을 부풀린다는 것을 보이고, 훈련과 시험에 같은 물리 부품이 겹치지 않게 하는 베어링 단위 분할을 대안으로 제시했습니다. CWRU, 파더보른, 오타와, 하노이 네 개의 표준 데이터셋에서 확인한 결과입니다. 데이터의 다양성이 일반화에 미치는 영향도 함께 봤는데, 훈련에 쓰인 베어링이 몇 개나 서로 다른 것이었는지가 성능의 견고함을 가르는 결정적 변수였습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세포 영상도 마찬가지입니다. 백혈병 진단에 널리 쓰이는 C-NMC 2019 데이터셋은 거의 완벽에 가까운 성적이 보고돼 온 벤치마크인데, 이미지 단위로 무작위 분할하면 같은 환자의 세포가 훈련과 시험 양쪽에 나타납니다. 피험자를 겹치지 않게 가른 재평가에서 가장 좋은 모델의 AUROC는 0.913이었고, 보수적인 조건에서 비교했을 때 무작위 분할은 AUROC를 0.04가량 부풀렸습니다. 부풀림의 크기는 도메인마다 다르지만 방향은 언제나 같습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 결함의 성질을 눈여겨볼 만합니다. 값이 틀린 게 아닙니다. 결측도 없고 이상치도 없고 라벨도 정확할 수 있습니다. 파일을 아무리 들여다봐도 문제가 보이지 않습니다. 틀린 것은 그 값들을 어디에서 갈랐는가입니다. 데이터 품질을 값의 무결성으로만 정의하는 점검 체계는 이 결함을 구조적으로 보지 못합니다. 그래서 벤치마크를 설계할 때 던져야 할 질문은 세 가지입니다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6" style="list-style:none;margin-left:0;">
+                        <li class="flex items-start gap-3">
+                            <span style="color:#F86825;" class="mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>이 데이터에 반복 측정이 있는가</strong>. 같은 환자, 같은 설비, 같은 작업자, 같은 문서에서 여러 행이 나왔다면 그 행들은 서로 독립이 아닙니다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span style="color:#F86825;" class="mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>성능이 일반화되기를 바라는 단위는 무엇인가</strong>. 처음 보는 환자에게 쓸 모델과 처음 보는 공장에 쓸 모델은 나누는 선이 다릅니다. 분할은 그 단위에서 이뤄져야 합니다.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span style="color:#F86825;" class="mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>전처리와 보정과 문턱값까지 훈련 쪽에만 갇혀 있는가</strong>. 스케일링 파라미터 하나를 전체 데이터에서 추정해도 검증 데이터의 정보가 새어 들어옵니다.</span>
+                        </li>
+                    </ul>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note</strong>: 페블러스가 데이터 자산을 볼 때 쓰는 렌즈에도 같은 빈틈이 있습니다. 결측률과 중복과 라벨 일관성은 값을 보는 지표라 파일 안에서 잴 수 있지만, 훈련과 검증을 어디서 갈랐는지는 파일 밖의 정보입니다. 데이터셋을 넘겨받을 때 그 안에 몇 개의 개체가 들어 있고 한 개체가 몇 행을 차지하는지가 기록돼 있지 않다면, 받는 쪽은 나눌 선을 그을 근거를 갖지 못한 채 시작하게 됩니다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        원 논문은 <a href="https://arxiv.org/abs/2608.17712" target="_blank" rel="noopener" style="color:#F86825;">arXiv:2608.17712</a>에서 볼 수 있고, 재현 자료는 저자들이 <a href="https://github.com/drsunday-ade/leakage-proof-benchmark-for-preterm" target="_blank" rel="noopener" style="color:#F86825;">GitHub</a>에 공개해 두었습니다.
+                    </p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">1차 소스</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Adetunji, S. A. &amp; Oyewusi, R. O. (2026). "<a href="https://arxiv.org/abs/2608.17712" target="_blank" rel="noopener">A Leakage-Proof Benchmark and Conformal Selective Triage for Electrohysterogram-Based Preterm Birth Prediction</a>." arXiv preprint (EMBC 2026 게재 확정).</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Fele-Žorž, G., Kavšek, G., Novak-Antolič, Ž. &amp; Jager, F. (2008). "A Comparison of Various Linear and Non-Linear Signal Processing Techniques to Separate Uterine EMG Records of Term and Pre-Term Delivery Groups." <em>Medical &amp; Biological Engineering &amp; Computing</em>, 46(9), 911-922. — TPEHGDB 원 데이터셋, <a href="https://physionet.org/content/tpehgdb/" target="_blank" rel="noopener">PhysioNet</a>.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">방법론 근거</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">3.</span><span class="ref-body">Wolff, R. F., Moons, K. G. M., Riley, R. D. et al. (2019). "<a href="https://www.acpjournals.org/doi/10.7326/M18-1376" target="_blank" rel="noopener">PROBAST: A Tool to Assess the Risk of Bias and Applicability of Prediction Model Studies</a>." <em>Annals of Internal Medicine</em>, 170, 51-58.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Tougui, I., Jilbab, A. &amp; El Mhamdi, J. (2021). "<a href="https://e-hir.org/journal/view.php?doi=10.4258%2Fhir.2021.27.3.189" target="_blank" rel="noopener">Impact of the Choice of Cross-Validation Techniques on the Results of Machine Learning-Based Diagnostic Applications</a>." <em>Healthcare Informatics Research</em>, 27(3), 189-199.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Varma, S. &amp; Simon, R. (2006). "<a href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-7-91" target="_blank" rel="noopener">Bias in Error Estimation When Using Cross-Validation for Model Selection</a>." <em>BMC Bioinformatics</em>, 7, 91.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">교차 도메인 사례</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">6.</span><span class="ref-body">Kapoor, S. &amp; Narayanan, A. (2023). "<a href="https://arxiv.org/abs/2207.07048" target="_blank" rel="noopener">Leakage and the Reproducibility Crisis in Machine-Learning-Based Science</a>." <em>Patterns</em>, 4(9), 100804.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Vieira, J. P., Bauler, V. A., Rosa, R. K. &amp; Silva, D. (2025). "<a href="https://arxiv.org/abs/2509.22267" target="_blank" rel="noopener">Towards a More Realistic Evaluation of Machine Learning Models for Bearing Fault Diagnosis</a>." arXiv preprint.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Albzour, N. (2026). "<a href="https://arxiv.org/abs/2606.24944" target="_blank" rel="noopener">A Leakage-Aware Comparative Benchmark of Machine Learning, Deep Learning, and Transformer Models for Reliable Leukemia Detection</a>." arXiv preprint.</span></li>
+                    </ul>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260821"></script>
+    <script src="/scripts/citation-download.js?v=20260821" defer></script>
+
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-20T19:08:54.356Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-20T19:25:37.242Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1787252934356-k4cvzu",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-20T20:16:51.021Z"
+            },
+            mainTitle: "같은 산모의 기록을 갈라 담아 부풀린 조산 예측 성능",
+            subtitle: "환자 단위로 다시 나눈 EMBC 2026 벤치마크의 조산 예측 AUROC는 0.493이었다",
+            pageTitle: "조산 예측 AI 데이터 누수 — 환자 단위 교차검증에서 AUROC 0.493 | 페블러스",
+            category: "tech",
+            publishDate: "2026-08-21",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/preterm-birth-leakage-proof-benchmark/ko/",
+            tags: ["데이터 누수", "교차검증", "벤치마크", "AUROC", "데이터 품질", "조산 예측", "컨포멀 예측", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "이 연구는 무엇을 다시 측정했나요?",
+                    answer: "오리건주립대의 Sunday A. Adetunji와 라고스 Alifort Hospital의 Rhoda O. Oyewusi가 공개 데이터셋 TPEHGDB의 산모 300명 기록으로 자궁 근전도 기반 조산 예측을 재평가했습니다. 산모 한 명의 기록을 통째로 한쪽 폴드에만 두는 환자 단위 분할에서 AUROC는 0.493, 95% 신뢰구간은 0.467에서 0.520이었습니다. 논문은 arXiv:2608.17712로 공개됐고 EMBC 2026 게재가 확정됐습니다."
+                },
+                {
+                    question: "AUROC 0.493이 왜 문제가 되나요?",
+                    answer: "AUROC 0.5는 동전 던지기와 같은 수준입니다. 0.493은 그보다도 낮으므로 판별력이 없다는 뜻입니다. 정밀도-재현율 곡선 아래 면적도 0.122로 조산 유병률 0.127과 사실상 같았고, 브라이어 점수는 0.115였습니다. 세 지표가 모두 같은 방향을 가리킵니다."
+                },
+                {
+                    question: "구간 단위 분할은 구체적으로 어떤 문제를 일으키나요?",
+                    answer: "자궁 근전도는 30분쯤 되는 기록 하나를 여러 개의 창으로 쪼갠 뒤 특징을 뽑는 것이 표준입니다. 이 창들을 서로 독립적인 표본처럼 취급해 훈련과 검증을 나누면 같은 산모의 창이 양쪽에 함께 들어갑니다. 모델은 조산으로 이어지는 생리가 아니라 특정 산모의 신호 모양을 외우게 되고, 검증 점수는 새 산모 앞에서 재현되지 않습니다."
+                },
+                {
+                    question: "저자들이 제시한 원칙은 무엇인가요?",
+                    answer: "재표집의 단위는 성능이 일반화되기를 바라는 단위와 같아야 한다는 것입니다. 새 환자에게 쓸 모델이라면 환자 단위로 나눠야 합니다. 논문은 이 구분이 절차의 문제가 아니라 추론의 문제라고 밝히며, 신호 구간의 독립은 환자의 독립과 같은 말이 아니라고 적었습니다."
+                },
+                {
+                    question: "성능이 낮게 나온 것이 특징을 잘못 골랐기 때문일 가능성은 없나요?",
+                    answer: "저자들이 따로 확인했습니다. 92개 특징을 대역통과 필터별로 하나씩만 써 보면 AUROC가 0.483에서 0.500 사이였고, 전체의 10%와 30%를 무작위로 버려 봐도 0.478에서 0.504 사이였습니다. 어떤 조합도 판별력을 만들어 내지 못했습니다."
+                },
+                {
+                    question: "분할 방식만 고치면 기존 성능이 모두 무너진다는 뜻인가요?",
+                    answer: "그렇게 읽으면 과장입니다. 문헌에 보고된 0.80에서 0.97은 이 논문이 같은 파이프라인으로 재현해 본 값이 아닙니다. 기록 단위로 묶어 평가한 선행 연구 중에도 딥러닝 모델로 0.74에서 0.78을 보고한 사례가 있고, 저자들은 그 차이가 신호 표현이나 모델 종류, 전처리, 분할 방식에서 올 수 있으므로 동일 조건에서 다시 비교해야 풀린다고 밝혔습니다."
+                },
+                {
+                    question: "컨포멀 선택적 유보란 무엇인가요?",
+                    answer: "하나의 라벨을 강제로 고르는 대신 라벨의 집합을 내놓는 방식입니다. 조산이라고 답하거나, 만삭이라고 답하거나, 둘 다 담은 집합을 내놓고 임상 판단으로 넘깁니다. 정답을 놓칠 확률을 0.10까지 허용했을 때, 실제 결과가 예측 집합 안에 들어간 비율은 0.897로 목표치 0.90에 근접했습니다."
+                },
+                {
+                    question: "판별력이 없는 모델에서 정확도 0.624는 어떻게 나왔나요?",
+                    answer: "모델은 전체의 72.7%에서 두 답을 모두 담은 집합을 내고 판단을 미뤘습니다. 하나의 답을 낸 나머지 27.3%에서만 정확도가 0.624였고, 이는 조산 유병률 0.127의 4.9배입니다. 인구 전체에서는 판별력이 없어도 모델이 스스로 확신한 좁은 구간에는 신호가 남아 있었다는 뜻입니다. 저자들은 커버리지와 유보 비율과 단일 예측 정확도를 반드시 함께 읽어야 한다고 강조합니다."
+                },
+                {
+                    question: "이 문제는 의료 데이터에만 해당하나요?",
+                    answer: "아닙니다. Kapoor와 Narayanan은 17개 분야 329편의 논문에서 데이터 누수로 인한 재현 실패를 찾아 여덟 가지 유형으로 분류했습니다. 베어링 고장 진단에서는 구간 단위와 운전조건 단위 분할이 성능을 부풀려 베어링 단위 분할이 대안으로 제시됐고, 백혈병 세포 영상에서는 피험자를 겹치지 않게 가르자 무작위 분할이 AUROC를 0.04가량 부풀린 것으로 나타났습니다."
+                },
+                {
+                    question: "실무에서 이 결함을 어떻게 찾아내나요?",
+                    answer: "세 가지를 확인하면 됩니다. 같은 환자나 설비, 작업자, 문서에서 여러 행이 나온 반복 측정이 있는지. 성능이 일반화되기를 바라는 단위가 무엇이고 분할이 그 단위에서 이뤄졌는지. 그리고 전처리와 확률 보정과 문턱값 추정까지 전부 훈련 쪽 데이터 안에 갇혀 있는지입니다. 값의 결측이나 이상치를 보는 점검으로는 이 결함이 드러나지 않습니다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
