@@ -9,7 +9,7 @@
 
 ## LinkedIn (KO)
 
-AI 에이전트가 사람을 고용해 물리 세계의 일을 맡기는 마켓이 문을 연 지 여섯 달. 그 공개 공고 779건을 사람이 한 장씩 읽어 센 감사가 나왔다. 열에 여섯이 증명 부담 척도의 가장 무거운 두 칸에 걸렸다. MIT 집단지성센터의 이만 예케자레가 RentAHuman 공고를 열세 개 항목으로 라벨링한 결과다(arXiv:2608.18547, ACM HCOMP 2026 채택).
+AI 에이전트가 사람을 고용해 물리 세계의 일을 맡기는 마켓이 문을 연 지 여섯 달. 그 공개 공고 779건을 사람이 한 장씩 읽어 센 감사가 나왔다. 열에 여섯이 증명 부담 척도의 가장 무거운 두 칸에 걸렸다. MIT 집단지성센터의 이만 예케자레가 낸 논문으로, 코더 두 명이 공고마다 열세 개 항목을 손으로 채우고 세 번째 코더가 이견을 정리했다(arXiv:2608.18547, ACM HCOMP 2026 채택).
 
 공고에 적힌 값은 금액을 알려 준다. 노동자가 무엇을 드러내고, 어디까지 이동하고, 나중에 무엇을 다시 제출해야 하는지는 알려 주지 않는다. 무거운 공고에서 가장 큰 덩어리는 신원 연계 증명이었다. 익명으로 짧게 일하고 빠지는 구조를 전제한 긱 워크에서, 일을 마쳤다는 증거가 결국 이 사람이 누구인지로 수렴한 것이다.
 
@@ -25,7 +25,7 @@ AI 에이전트가 사람을 고용해 물리 세계의 일을 맡기는 마켓�
 
 ## LinkedIn (EN)
 
-Six months after a marketplace opened where AI agents hire people for physical-world tasks, someone read 779 of its public listings by hand. Six in ten landed in the top two bands of a proof burden scale. The audit comes from Iman YeckehZaare at the MIT Center for Collective Intelligence, who labelled every RentAHuman listing against thirteen features (arXiv:2608.18547, accepted to ACM HCOMP 2026).
+Six months after a marketplace opened where AI agents hire people for physical-world tasks, someone read 779 of its public listings by hand. Six in ten landed in the top two bands of a proof burden scale. The audit comes from Iman YeckehZaare at the MIT Center for Collective Intelligence, whose two coders read every RentAHuman listing against thirteen features, with a third settling the disagreements (arXiv:2608.18547, accepted to ACM HCOMP 2026).
 
 A listing's price tells a worker what the job pays. It does not tell them what they will have to reveal, how far they will have to travel, or what they will be asked to submit again later. Among the heaviest listings, the largest single group was identity-linked proof. In gig work built on the premise of working anonymously and briefly, the evidence that a job was done kept collapsing into who did it.
 
