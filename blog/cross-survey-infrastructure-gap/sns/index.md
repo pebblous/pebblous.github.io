@@ -10,7 +10,7 @@
 
 ## LinkedIn (KO)
 
-관측은 더 이상 병목이 아니다. 8월 18일 arXiv에 올라온 천문학자 27명의 공동 성명서는 이 문장으로 문제를 정의합니다.
+관측은 더 이상 병목이 아니다. 8월 18일 arXiv에 올라온 연구자 27명의 커뮤니티 성명서는 이 문장으로 문제를 정의합니다.
 
 베라 루빈 천문대는 2026년 6월 10년짜리 관측을 시작했습니다. 로먼 우주망원경은 발사를 앞두고 있고, 유클리드는 이미 수천 평방도의 이미지를 보내오고 있습니다.
 
@@ -30,7 +30,7 @@
 
 ## LinkedIn (EN)
 
-The observations are no longer the bottleneck. That is how 27 astronomers, in a community perspective posted to arXiv on August 18, define the problem they are raising.
+The observations are no longer the bottleneck. That is how 27 researchers, in a community perspective posted to arXiv on August 18, define the problem they are raising.
 
 The Vera C. Rubin Observatory began its ten-year survey in June 2026, the Nancy Grace Roman Space Telescope is awaiting launch, and Euclid is already returning imaging over thousands of square degrees. By 2027 the three will be covering much of the same sky at once, backed by combined US and European public investment exceeding $6 billion. Processing that data at the pixel level together, and calibrating each survey against the others, falls inside no mission's or agency's mandate. No funded programme exists, the authors write, to do this on real data.
 
@@ -84,7 +84,7 @@ https://blog.pebblous.ai/blog/cross-survey-infrastructure-gap/en/
 
 세 이미지를 픽셀 단위에서 함께 처리할 자리만 비어 있습니다. 논문은 망원경은 지어졌고 그 사이의 계층이 지어지지 않은 채로 남았다고 씁니다. 필요하다는 데 이견이 없고 누구의 임무에도 적혀 있지 않은, '빈 계층'입니다.
 
-전문가가 부족해서 생긴 공백이 아니라는 대목이 오래 남았습니다. DES와 KiDS는 두 팀이 모두 참여한 결합 분석을 해내고도 균일한 시스템 오차 보정은 스코프 밖으로 두었습니다. 전문성이 없어서가 아니라, 그 일이 애초에 어느 협업의 할 일로도 정해져 있지 않았기 때문입니다.
+전문가가 부족해서 생긴 공백이 아니라는 대목이 오래 남았습니다. DES와 KiDS는 두 팀이 모두 참여한 결합 분석을 해내고도 균일한 시스템 오차 보정은 스코프 밖으로 두었습니다. 할 줄 몰라서가 아니었습니다. 그 일이 어느 협업의 할 일로도 쓰여 있지 않았습니다.
 
 "최고 전문가를 한 방에 모아 놓으면, 방 밖의 일은 누가 합니까?"
 
