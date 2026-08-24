@@ -97,7 +97,7 @@ I kept coming back to those two numbers last week, reading that Google's A2A had
 
 The standard for how an agent reaches its tools and the standard for how agents hand work to one another now live under one roof. Years of argument about how to connect things have largely quieted down. A2A leaves identity to ordinary web methods like OAuth, and tells the server to return 401 when the credentials don't hold. The specification walks that far.
 
-403 is a different matter. The caller is who they claim to be, and now somebody has to decide whether that is enough. Forbes put it in two short sentences: a shared foundation settles who stewards the specifications, and it does not standardize enterprise authorization policy. I have started thinking of that gap as "the 403 seat." It is where the standard arrives and stops, leaving each organization to write the sentence itself.
+403 is a different matter. The caller is who they claim to be, and now somebody has to decide whether that is enough. Forbes was blunt about it: the move clarifies hosting rather than control, and it does not standardize enterprise authorization policies. I have started thinking of that gap as "the 403 seat." It is where the standard arrives and stops, leaving each organization to write the sentence itself.
 
 "When an agent built by some other company knocks on your door in a perfectly standard way, how far do you open it?"
 
