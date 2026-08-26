@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="&copy; 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>Inference-Time Steering and the AI Attribution Gap | Pebblous</title>
+    <meta name="og-image-title" content="The Deployment Layer That Edits Answers Before the Token Is Picked">
+    <meta name="description" content="AI audits check training data and weights, not the deployment layer editing token probabilities afterward. This report tests that gap against evidence and law.">
+    <meta name="keywords" content="AI governance, inference policy, inference-time steering, probability placement, data provenance, AI audit, watermarking, SynthID, EU AI Act, Korea AI Framework Act, AI advertising, LLM deployment, logits, logprobs">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/inference-time-steering-attribution-gap/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/inference-time-steering-attribution-gap/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/inference-time-steering-attribution-gap/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/inference-time-steering-attribution-gap/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="The Deployment Layer That Edits Answers Before the Token Is Picked">
+    <meta property="og:description" content="Watermarking already ships a probability intervention in production. An arXiv paper formalizes what the same layer means for advertising, political framing, and audit.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/inference-time-steering-attribution-gap/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/inference-time-steering-attribution-gap/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="The deployment layer that edits answers before the token is picked, inference policy diagram">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_official">
+    <meta name="twitter:creator" content="@pebblous_official">
+    <meta name="twitter:title" content="The Deployment Layer That Edits Answers Before the Token Is Picked">
+    <meta name="twitter:description" content="The weights never change and the answer still shifts. A paper argues that place should become an audit target.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/inference-time-steering-attribution-gap/en/image/index.png">
+    <meta name="twitter:image:alt" content="The deployment layer that edits answers before the token is picked">
+
+    <!-- Google Scholar citation meta -->
+    <meta name="citation_title" content="The Deployment Layer That Edits Answers Before the Token Is Picked">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/08/27">
+    <meta name="citation_online_date" content="2026/08/27">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (fixed order: theme-variables → tailwind-build → common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260827">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260827">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260827">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* Stat cards */
+        .stat-card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.75rem 0 0.5rem;
+        }
+        @media (max-width: 640px) {
+            .stat-card-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .stat-card {
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color, #e2e8f0);
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #F86825;
+            line-height: 1.2;
+        }
+        .stat-card .stat-label { font-size: 0.85rem; margin-top: 0.4rem; }
+        /* Comparison table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+        .comparison-table th {
+            background: var(--bg-secondary, #f1f5f9);
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 2px solid var(--border-color, #e2e8f0);
+        }
+        .comparison-table td {
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            vertical-align: top;
+        }
+        .comparison-table tbody tr:hover { background: rgba(248, 104, 37, 0.04); }
+        .comparison-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .comparison-table th.num { text-align: right; }
+        /* Quote box */
+        .quote-box {
+            border-left: 4px solid #F86825;
+            background: var(--bg-secondary, #f8fafc);
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+            font-size: 0.95rem;
+            line-height: 1.85;
+        }
+        .quote-box .quote-source {
+            display: inline-block;
+            background: #F86825;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.18rem 0.65rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.6rem;
+        }
+        /* Figure caption */
+        .figure-caption {
+            font-size: 0.85rem;
+            margin-top: 0.6rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. The Last Step Before an Answer Exists</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The Weights Hold Still, the Answer Moves</a></li>
+                    <li><a href="#three-layers" class="block pl-4 themeable-toc-link transition-colors duration-200">What Is Measured, and What Is Still Assumed</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Probability Placement, a Hypothetical Ad</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Where the Law Does Not Yet Reach</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. So What Exactly Gets Audited</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. Why Pebblous Cares</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            When we say we are auditing an AI, there are really only two places we look. What it was trained on, and what bias its weights hold. But the sentence a user reads on screen passes both of those and then takes one more step. It is the moment after the model has scored every candidate word and just before one word is actually drawn. A conceptual paper posted to arXiv on August 25, 2026 by a consultant in Brazil gives that place a name. The model is not the deployed system. Between the two sits a layer the author calls inference policy, and no audit standard in use today takes that layer as its object.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            That the layer works is already settled. Google's text watermarking leaves training alone and changes only the sampling procedure, nudging token probabilities on their way out, and it ships in Gemini. In the production measurements Google reported in Nature, that intervention cost 0.57 percent more latency per token, and across roughly 20 million live responses the gap in user satisfaction stayed inside the noise. The bigger the model gets, the smaller that relative cost becomes. What happens when a score table built for some other purpose is laid on the same layer has never been observed by anyone. What the paper does settle, in a single table, is that such an intervention spends no context, leaves no fingerprint in the prompt, and deposits nothing inspectable in the conversation log.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Three large-scale experiments published in Science in December 2025 add weight to that. Researchers put 19 models in front of 76,977 participants and had them argue 707 political issues. The largest lever on how persuasive a conversational AI turned out to be was neither scaling the model nor personalizing to the user. Prompting changes alone, which touch no weights, raised persuasiveness by as much as 27 percent. What the model is matters less to the outcome than how the deployment wraps it. The same study fact-checked the 466,769 claims that came out of those runs, and the methods that raised persuasiveness systematically lowered factual accuracy. Yet a search through the major providers' documentation surfaces not one disclosure of whether sampling distributions are modified, or to what end. So a bias observed from outside cannot be assigned to the weights or to the deployment layer. The question an audit has to ask is not what the model learned but <strong>under which inference policy this answer was sampled</strong>.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6">
+                        Four numbers hold this report up. The first two say how cheap this layer's intervention is and how hard it lands. The second two say how wide the window is for checking it from outside.
+                    </p>
+
+                    <div class="stat-card-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">+0.57%</div>
+                            <p class="stat-label themeable-muted">Added latency per token from a<br>sampling-layer intervention, measured in production</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">Up to +27%</div>
+                            <p class="stat-label themeable-muted">Gain in persuasiveness from<br>prompting alone, with no change to weights</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">Top 20</div>
+                            <p class="stat-label themeable-muted">Candidate tokens an API will show<br>(vocabularies run to six figures)</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">100 billion</div>
+                            <p class="stat-label themeable-muted">Images and videos watermarked<br>with SynthID to date</p>
+                        </div>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6">
+                        This report starts from that one paper and then does what the paper did not. The author ran no experiment and named no company. So the pages that follow hold his frame up against what has actually been measured, what has actually happened, and how far the law currently reaches. Where a blank turns up, it stays a blank.
+                    </p>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Last Step Before an Answer Exists</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Draw the way a language model produces a sentence and you usually get this. A prompt goes in, the model computes, the next word comes out. One thing is missing from that drawing. The model does not choose words. What the model does is score every word in the vocabulary, and drawing one word out of that score sheet is a separate step that comes after. Those scores are called logits, which is simply the name for the score the model assigns each candidate word.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Between scoring and drawing there is a gap. What the paper formalizes is the layer that sits down in that gap. The author calls it an inference policy. What it does is plain. It lays an externally built score table on top of the model's own scores, adds the two together, and draws the next word from the result. How hard it presses is adjustable. Press hard and a word that ranked third becomes first; press lightly and nothing at all happens in most sentences. Depending on what fills the external table, this layer can be a safety filter, a style regulator, or a provenance marker.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In the diagram below, the grey span is the range an AI audit actually inspects today. The orange span is the place this report is about.
+                    </p>
+
+                    <div class="mb-4">
+                        <svg viewBox="0 0 660 260" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff);" role="img" aria-label="Diagram of the generation pipeline from prompt to output. Audits reach training data and weights, while the inference policy and sampling stages after the logits have no audit standard.">
+                            <text x="330" y="30" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary, #171719)">The path an answer takes, and how far audits reach</text>
+
+                            <!-- Pipeline boxes -->
+                            <rect x="24" y="70" width="92" height="44" rx="8" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="70" y="97" text-anchor="middle" font-size="13" fill="var(--text-secondary, #585858)">Prompt</text>
+
+                            <rect x="140" y="70" width="92" height="44" rx="8" fill="none" stroke="#808080" stroke-width="1.5"/>
+                            <text x="186" y="97" text-anchor="middle" font-size="13" fill="var(--text-secondary, #585858)">Model</text>
+
+                            <rect x="256" y="70" width="92" height="44" rx="8" fill="none" stroke="#808080" stroke-width="1.5"/>
+                            <text x="302" y="97" text-anchor="middle" font-size="13" fill="var(--text-secondary, #585858)">Logits</text>
+
+                            <rect x="372" y="66" width="104" height="52" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="2"/>
+                            <text x="424" y="88" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825">Inference policy</text>
+                            <text x="424" y="106" text-anchor="middle" font-size="11" fill="#F86825">adds an external table</text>
+
+                            <rect x="500" y="70" width="80" height="44" rx="8" fill="rgba(248,104,37,0.10)" stroke="#F86825" stroke-width="2"/>
+                            <text x="540" y="97" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825">Sampling</text>
+
+                            <rect x="604" y="70" width="32" height="44" rx="8" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="620" y="97" text-anchor="middle" font-size="12" fill="var(--text-secondary, #585858)">Out</text>
+
+                            <!-- Arrows -->
+                            <g stroke="#808080" stroke-width="1.5" fill="none">
+                                <path d="M116 92 L136 92"/><path d="M232 92 L252 92"/><path d="M348 92 L368 92"/><path d="M476 92 L496 92"/><path d="M580 92 L600 92"/>
+                            </g>
+                            <g fill="#808080">
+                                <polygon points="136,92 129,88 129,96"/><polygon points="252,92 245,88 245,96"/><polygon points="368,92 361,88 361,96"/><polygon points="496,92 489,88 489,96"/><polygon points="600,92 593,88 593,96"/>
+                            </g>
+
+                            <!-- Audit-reach bars -->
+                            <rect x="140" y="150" width="208" height="26" rx="6" fill="#BDBDBD" opacity="0.35"/>
+                            <text x="244" y="168" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary, #585858)">What audits reach today</text>
+                            <text x="244" y="192" text-anchor="middle" font-size="11" fill="var(--text-muted, #808080)">training data · weights · model card</text>
+
+                            <rect x="372" y="150" width="208" height="26" rx="6" fill="#F86825" opacity="0.18"/>
+                            <text x="476" y="168" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">No audit standard exists</text>
+                            <text x="476" y="192" text-anchor="middle" font-size="11" fill="var(--text-muted, #808080)">inference policy · sampler settings</text>
+
+                            <line x1="24" y1="216" x2="636" y2="216" stroke="#BDBDBD" stroke-width="1" stroke-dasharray="4 4"/>
+                            <text x="330" y="238" text-anchor="middle" font-size="12" fill="var(--text-muted, #808080)">No amount of inspecting the model file reveals an intervention on the right</text>
+                        </svg>
+                        <p class="figure-caption themeable-muted">The inference policy sits between the scores the model assigns and the word actually drawn. A diagram of the formalization in section 3.1 of the paper.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>Watermarking already works in that seat</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Proof that this layer is not imaginary is not far away. Google's text watermarking, SynthID-Text, operates in exactly this seat. It leaves training alone, leaves the model weights alone, and changes only the sampling procedure. Using an approach called Tournament sampling, it pairs candidate words against each other and plants a statistical signature in the sentence as it goes. The Nature paper states that the technique is applied in Gemini and Gemini Advanced.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/img-01-google.svg"
+                             alt="Google logo. SynthID-Text watermarking operates in Gemini's sampling layer, deployed in production at a 0.57% latency cost"
+                             class="max-w-[280px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ SynthID-Text touches neither training nor weights, only the sampling procedure, and it ships in Gemini | Source: <a href="https://commons.wikimedia.org/wiki/File:Google_2015_logo.svg" target="_blank" rel="noopener" class="underline">Wikimedia Commons</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The same paper priced the intervention. A Gemma 7B model served on four tensor processing units generates a token in 15.527 milliseconds, and turning on 30-layer Tournament sampling makes that 15.615 milliseconds. An increase of 0.57 percent. Two other schemes came in at 0.26 and 0.28 percent. What follows is the more striking part. The computational complexity of watermarking stays constant as the model grows, so the relative cost falls by orders of magnitude for larger models. Quality was measured by splitting roughly 20 million live responses between watermarked and unwatermarked models. The thumbs-up rate differed by 0.01 percent and the thumbs-down rate by 0.02 percent. Both differences were statistically insignificant and well within the 95 percent confidence intervals. Users did not notice.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            One rule is needed before going further. <strong>Watermarking is not an accusation; it is architectural evidence.</strong> Section 3.3 of the paper states that its reason for raising watermarking is architectural rather than accusatory, and it says outright that this does not imply providers are covertly steering political discourse. What watermarking proves is exactly one thing. Deliberately perturbing token probabilities for an external objective, while holding output quality and coherence, is feasible at commercial scale. The objective here happens to be provenance, that objective is public, and both the method and its cost were published in a journal.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Pebblous has covered shifts in this layer before. There was <a href="/blog/google-visible-watermark-toggle-credentio/en/" class="text-orange-500 hover:underline">Google's change to its visible watermark setting</a>, which moved a mark people could see down into the file, and a <a href="/blog/watermark-ecosystem-monitoring/en/" class="text-orange-500 hover:underline">proposal to use watermarks as an ecosystem monitoring instrument</a>. Both of those were about the mark. This report is about the machinery that produces the mark.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.2</span>Nudging probabilities has been around since 2019</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The technique of pushing probabilities did not arrive with watermarking. The wish to change output behaviour without retraining has been around since retraining large models became too expensive to contemplate, and the methods that answered it form a lineage. Each entry in the table below records only properties confirmed directly in the original abstract.
+                    </p>
+
+                    <div class="overflow-x-auto">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Method</th>
+                                    <th>Point of intervention</th>
+                                    <th>Property confirmed in the original abstract</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="num">2019</td><td>PPLM</td><td>Pretrained model plus attribute classifier</td><td>Controls attributes with no retraining and no architectural change. Avoiding retraining cost was the design motive from the start</td></tr>
+                                <tr><td class="num">2021</td><td><strong>FUDGE</strong></td><td><strong>Output logits only</strong></td><td>The abstract states that it "only requires access to the output logits" of the model, and uses that output to adjust the original probabilities</td></tr>
+                                <tr><td class="num">2021</td><td>DExperts</td><td>Decoding-time ensemble</td><td>Pairs an expert with an anti-expert model to perform detoxification and sentiment control at decoding time</td></tr>
+                                <tr><td class="num">2023</td><td>Inference-Time Intervention (ITI)</td><td>Activations</td><td>Shifts attention head directions and raises a truthfulness score from 32.5% to 65.1%. The authors state a tradeoff between truthfulness and helpfulness</td></tr>
+                                <tr><td class="num">2023</td><td>Activation steering</td><td>Residual stream</td><td>Builds a steering vector from the activation difference between a prompt pair and adds it during the forward pass</td></tr>
+                                <tr><td class="num">2023</td><td>Watermark</td><td><strong>Logits, just before sampling</strong></td><td>The abstract says it "softly promot[es] the use of green tokens during sampling" and that the effect on text quality is negligible</td></tr>
+                                <tr><td class="num">2024</td><td><strong>SynthID-Text</strong></td><td><strong>Sampling layer only</strong></td><td>Deployed in production. Latency +0.57%, satisfaction gap within 0.02% across a live A/B of roughly 20 million responses</td></tr>
+                                <tr><td class="num">2026</td><td>SWAI</td><td>Logit space, inside the top K</td><td>Uses a precomputed token score table to lift the logits of top candidates. No training, no activation access, no auxiliary model</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If only one row of that table can be kept, it is FUDGE. The condition its abstract states is that the method "only requires access to the output logits" of the model. That condition means two things, and the second is the crux of this report. First, whoever built the model can obviously do it, since they hold their own logits. Second, <strong>a third party who did not build the model can do it too</strong>, because logits are all that is needed. Organizations building services on top of a commercial API, gateway operators, and resellers all qualify. So the deployment stack this paper describes is not one model provider but every layer standing between the model and the user.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One person connects the start of that lineage to the present. The first author of PPLM in 2019 and the first author of SynthID-Text in 2024 are the same researcher, Sumanth Dathathri. The person who first popularized the idea of freezing weights and pushing only probabilities was, five years later, at the front of the team that shipped the same class of intervention at Google's production scale. This is not evidence of intent. It is evidence of how fast the technique matured. Five years is what it took for a lab idea to become a deployment mechanism running at a scale of billions.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Weights Hold Still, the Answer Moves</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Suppose an auditor observes that a chatbot describes policy A more favourably than policy B. The next question is naturally why, and the usual answer is that the training data leaned that way, or the alignment process did. The <strong>Inference Attribution Problem</strong> the paper formalizes points at the conditions under which that answer does not hold. There are nine places in the deployment stack where such a bias can be born, and from the outside all nine produce effects that cannot be told apart.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-2 mb-6 ml-6">
+                        <li>Pretraining data distribution</li>
+                        <li>Supervised fine-tuning</li>
+                        <li>Reinforcement learning based alignment</li>
+                        <li>Hidden system prompts and prepended guardrails</li>
+                        <li>Retrieval augmentation indexes</li>
+                        <li>Safety policy classifiers</li>
+                        <li>Inference-time logit processors</li>
+                        <li>Dynamic user profiling</li>
+                        <li>Steering driven by commercial sponsorship</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The first three live inside the weights and the remaining six live outside them. To anyone looking only at outputs, all nine look identical. That is where the paper's conclusion comes from. <strong>An observed behavioural bias does not imply a bias in the model weights.</strong> The qualifying clause must not be dropped, though. The original text pins it down twice, with "under constrained observational conditions" and "through unprivileged black-box access." The claim is not that nobody can know, but that an external auditor without privileges cannot tell the difference. The distinction matters because the paper's prescription is precisely to institutionalize that privilege.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>Why this layer in particular</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The nine places are not equally dangerous. A single table in the paper sorts out the difference, and it is the most quotable artifact in the paper, so it is reproduced here as published. Read the last two columns first. Does it leave a trace, and can it be caught from outside.
+                    </p>
+
+                    <div class="overflow-x-auto">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Intervention layer</th>
+                                    <th>Weight modification</th>
+                                    <th>Context token cost</th>
+                                    <th>Prompt leakage risk</th>
+                                    <th>Black-box detectability</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Alignment training (RLHF, DPO)</td><td>Yes</td><td>None</td><td>None</td><td>Very low</td></tr>
+                                <tr><td>Hidden system prompt</td><td>No</td><td>High</td><td>High (extractable)</td><td>Moderate</td></tr>
+                                <tr><td>Retrieval augmentation injection</td><td>No</td><td>High</td><td>Moderate</td><td>Moderate</td></tr>
+                                <tr><td><strong>Logit policy</strong></td><td><strong>No</strong></td><td><strong>0</strong></td><td><strong>None</strong></td><td><strong>Requires distributional auditing</strong></td></tr>
+                            </tbody>
+                        </table>
+                        <p class="figure-caption themeable-muted">Table 1 of the paper, comparing behavioural steering techniques across the deployment stack.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What sets the last row apart from the others collapses into one sentence, the statement at the end of section 5.2. Unlike prompt injection or retrieval-based intervention, inference-time logit manipulation uses no part of the context window and leaves neither a prompt artifact nor an inspectable trace in the conversation log. Each of the first three rows leaves something behind. Alignment training stays in the weights, a system prompt stays in the context, retrieval augmentation stays in the citation list. Only the logit policy stays nowhere.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One concept has to be kept separate. A context token cost of zero means <strong>it does not consume the context window</strong>, not that the computation is free. In constrained decoding, an adjacent layer, precompiling the grammar drops the per-token overhead to microseconds, but when the constraint has to be built on the fly the compilation cost dominates everything. An intervention is not always free. What the 0.57 percent from the previous section prices is the steady-state case, where a prepared score table is laid on top.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>What actually happened: Grok, May 2025</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Everything so far is formalism. There is one point where the formalism touches the world. At about 3:15 a.m. on May 14, 2025, an unauthorized modification was made to the prompt of the Grok bot that replies on X. The result showed immediately. Ask about a streaming service or about baseball, and political commentary about South Africa attached itself to entirely unrelated queries, over and over. In its official statement, xAI said the change directed Grok to provide a specific response on a political topic and violated its internal policies and core values.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/img-02-xai.svg"
+                             alt="xAI logo. The party behind the May 2025 incident in which Grok's system prompt was modified without authorization, attaching political commentary to unrelated queries"
+                             class="max-w-[280px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Weights stayed untouched. One deployment-layer setting changed, and output behavior shifted immediately | Source: <a href="https://commons.wikimedia.org/wiki/File:XAI_Logo.svg" target="_blank" rel="noopener" class="underline">Wikimedia Commons</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        No weights changed in that incident. One setting in the deployment layer changed, and the output behaviour changed with it. The paper's proposition that the model is not the deployed system stops being speculative at that point. The remedy arrived in the shape of deployment-layer transparency too. xAI announced it would publish Grok's system prompts on GitHub from then on, so that the public could review and give feedback on every prompt change.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Where that promise stands today can be checked. The repository was created on May 15, 2025, the day after the incident, and holds twelve prompt files. The last update time, queried through the GitHub API, is November 17, 2025. That is roughly nine months without an update as of this writing. The repository also carries an open complaint that detailed prompts Grok had previously shared itself are missing from it.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Drop the incident into the table above and the narrative closes on its own. The comparison below is that substitution.
+                    </p>
+
+                    <div class="overflow-x-auto">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>What actually happened (Grok, May 2025)</th>
+                                    <th>What the paper describes (logit policy)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Intervention layer</td><td>Hidden system prompt</td><td>Logit processor</td></tr>
+                                <tr><td>Weight modification</td><td>None</td><td>None</td></tr>
+                                <tr><td>Context token cost</td><td>High</td><td><strong>0</strong></td></tr>
+                                <tr><td>Prompt leakage risk</td><td><strong>High, which is how it was caught</strong></td><td><strong>None</strong></td></tr>
+                                <tr><td>Black-box detection</td><td>The same answer kept surfacing on unrelated queries and users noticed</td><td>Requires distributional auditing</td></tr>
+                                <tr><td>Outcome</td><td>Publicly confirmed within two days, official statement, repository opened</td><td>Not applicable</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Grok surfaced in two days not because an audit system worked. It surfaced because the intervention happened at a <strong>coarse layer</strong>. A prompt consumes context, it leaks, and it makes the same sentence repeat. Had the same thing happened at the layer this paper points to, there would have been no repeated sentence, no prompt to leak, and no context artifact. <strong>Every deployment-layer incident we know about is an incident that happened at a layer where getting caught was possible.</strong>
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One step further than that and the argument collapses. So there is no sentence in this report claiming that something is happening at the logit layer right now. The claim ends exactly here. Absence of an observational record is not evidence of absence.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.3</span>Behaviour shifting behind a fixed name was already documented in 2023</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The observation that the model and the deployed system differ predates Grok. A 2023 paper from Stanford and Berkeley researchers compared the March and June versions of GPT-3.5 and GPT-4, served under the same names, across seven tasks: math problems, sensitive and dangerous questions, opinion surveys, multi-hop knowledge-intensive questions, code generation, US Medical License tests, and visual reasoning. Two phrases in the abstract are decisive. When and how these models are updated over time is <strong>opaque</strong>, and the performance and behaviour of both models <strong>can vary greatly over time</strong>.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That study gives this report two things, and the second matters more. First, users and auditors can barely learn that behaviour has changed at all without a provider notice. Second, <strong>that study could not identify what had changed either</strong>. Whether the weights changed, the system prompt changed, or the sampler settings changed was indistinguishable from outside. That is the Inference Attribution Problem in the flesh. The <a href="/report/silent-model-updates-disclosure-gap/en/" class="text-orange-500 hover:underline">disclosure gap around silent model updates</a> that Pebblous covered earlier works the same stretch of ground from another angle.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Section 5.1 of the paper names this situation the model neutrality fallacy. When a researcher evaluating frozen weights and a researcher evaluating a production deployment report different results, the two results are not in contradiction. They measured different things. The paper's sentence is short. <strong>Static benchmarks conducted via public APIs measure the deployed system at a specific time and location, not the underlying foundation model.</strong> Most of the model leaderboards and bias measurements in circulation today are produced under exactly those conditions. Those numbers are not wrong, but what they measured usually goes unstated.
+                    </p>
+                </section>
+
+                <!-- Three-tier fact separation (between sections 2 and 3) -->
+                <section id="three-layers" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">What Is Measured, and What Is Still Assumed</h2>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Advertising and regulation come up from the next section onward. Before that, this report sorts the facts it handles into three layers, because the same materials would write a conspiracy theory if that separation broke down. Each layer calls for a different strength of claim, and this report holds to those strengths.
+                    </p>
+
+                    <div class="overflow-x-auto">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Layer</th>
+                                    <th>Content</th>
+                                    <th>Strength of claim in this report</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Measured and deployed</strong></td>
+                                    <td>An intervention that changes token probabilities by touching only the sampling layer is running in production. It costs 0.57 percent per token and users do not notice. Output logits alone are enough for a third party to steer, and a parameter that adds bias to logits already exists in a public API. There is also a public incident in which output behaviour changed through a deployment setting with no weight change</td>
+                                    <td>Stated flatly</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Formalized but never observed</strong></td>
+                                    <td>Probability placement, a primitive the author labels hypothetical three separate times. The three scenarios in section 4 of the paper are threat models, not incident reports. The probability figures in the paper are illustrative, not measurements</td>
+                                    <td>Written in the conditional</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Nobody knows</strong></td>
+                                    <td>Whether semantic framing can be steered while quality holds, whether black-box observation can detect it, whether commercially or politically motivated logit steering is actually happening, and whether consumer chat and API outputs differ</td>
+                                    <td>Left blank</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Here is the single most important sentence in this report. <strong>Everything that has been measured sits at an adjacent layer.</strong> Watermarking, prompts, autocomplete, stylistic attribute control. The thing the paper actually describes, undisclosed logit steering for commercial or political ends, has never been measured and never been observed. What this report does is not accuse. It is to show <strong>that if such a thing did happen, nobody would know</strong>.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is one more distinction. The paper explicitly separates inference-time steering from censorship. Censorship operates on <strong>availability</strong>, deciding whether an answer exists at all. Inference steering operates on <strong>the distribution of interpretation</strong>. The system answers nearly every question, and the content of those answers is mostly not wrong. What changes is what gets said first and what gets held back, and which words do the naming. The classic 1993 definition of framing in communication research landed on the same spot. Framing does not manipulate facts; it manipulates what becomes salient. Which is why an answer with nothing factually wrong in it can still be an audit problem.
+                    </p>
+
+                    <div class="mb-4">
+                        <svg viewBox="0 0 660 260" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff);" role="img" aria-label="Diagram contrasting censorship with inference steering. Censorship operates on whether an answer exists, while inference steering operates on the distribution of interpretation inside the answer.">
+                            <text x="330" y="30" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary, #171719)">Censorship acts on availability, steering on interpretation</text>
+
+                            <!-- Left: censorship -->
+                            <text x="165" y="62" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-secondary, #585858)">Censorship</text>
+                            <rect x="40" y="76" width="250" height="132" rx="10" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="72" y="106" font-size="12" fill="var(--text-secondary, #585858)">Query A</text>
+                            <rect x="140" y="92" width="120" height="22" rx="4" fill="#808080" opacity="0.3"/>
+                            <text x="200" y="107" text-anchor="middle" font-size="11" fill="var(--text-secondary, #585858)">Answer given</text>
+                            <text x="72" y="146" font-size="12" fill="var(--text-secondary, #585858)">Query B</text>
+                            <rect x="140" y="132" width="120" height="22" rx="4" fill="none" stroke="#808080" stroke-width="1.2" stroke-dasharray="4 3"/>
+                            <text x="200" y="147" text-anchor="middle" font-size="11" fill="var(--text-muted, #808080)">No answer</text>
+                            <text x="165" y="188" text-anchor="middle" font-size="11" fill="var(--text-muted, #808080)">Present or absent. Visible from outside</text>
+
+                            <!-- Right: inference steering -->
+                            <text x="495" y="62" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825">Inference steering</text>
+                            <rect x="370" y="76" width="250" height="132" rx="10" fill="rgba(248,104,37,0.06)" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="402" y="106" font-size="12" fill="var(--text-secondary, #585858)">Query A</text>
+                            <rect x="470" y="92" width="120" height="22" rx="4" fill="#F86825" opacity="0.55"/>
+                            <text x="530" y="107" text-anchor="middle" font-size="11" fill="#ffffff">Answer given</text>
+                            <text x="402" y="146" font-size="12" fill="var(--text-secondary, #585858)">Query B</text>
+                            <rect x="470" y="132" width="120" height="22" rx="4" fill="#F86825" opacity="0.55"/>
+                            <text x="530" y="147" text-anchor="middle" font-size="11" fill="#ffffff">Answer given</text>
+                            <text x="495" y="188" text-anchor="middle" font-size="11" fill="var(--text-muted, #808080)">Both answered. What comes first differs</text>
+
+                            <line x1="40" y1="224" x2="620" y2="224" stroke="#BDBDBD" stroke-width="1" stroke-dasharray="4 4"/>
+                            <text x="330" y="246" text-anchor="middle" font-size="12" fill="var(--text-muted, #808080)">Why an answer with nothing factually wrong in it can still be audited</text>
+                        </svg>
+                        <p class="figure-caption themeable-muted">A diagram of the distinction drawn in section 4.1 of the paper. Because steering never blocks an answer, counting blocked answers will never find it.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That stays abstract, so here is the paper's own example. Two sentences that can be written about the same event.
+                    </p>
+
+                    <div class="quote-box">
+                        <span class="quote-source">Frame A</span>
+                        <p class="themeable-text">"The government introduced safeguards intended to protect consumers from harmful practices."</p>
+                    </div>
+                    <div class="quote-box">
+                        <span class="quote-source">Frame B</span>
+                        <p class="themeable-text">"The government introduced restrictions that expand regulatory control over private activity."</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Both statements are compatible with the same underlying event, and neither invents a fact. Yet the judgment a reader leaves with diverges. The environmental regulation example the paper gives has the same structure. One semantic region holds protection, safeguards, accountability, responsibility, prevention. Another holds restriction, burden, intervention, bureaucracy, compliance cost. Both vocabularies describe legitimate dimensions of the policy. An intervention does not need to prohibit either one. It merely makes one semantic subspace marginally more probable during sampling.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What actually moves when that happens is set out by the paper in eight items. It reads equally well as a list of what an auditor would have to count.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-2 mb-6 ml-6">
+                        <li>Which facts appear first</li>
+                        <li>Which consequences receive detailed explanation</li>
+                        <li>Which descriptive adjectives and verbs are chosen</li>
+                        <li>Which analogies are generated</li>
+                        <li>Which counterarguments receive prominence</li>
+                        <li>Whether uncertainty is emphasized or minimized</li>
+                        <li>Whether an actor's intentions receive charitable or skeptical interpretations</li>
+                        <li>Whether a policy is characterized primarily through benefits or compliance costs</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Nowhere among those eight is there a lie. Because the output remains factually defensible, the paper says that detecting inference framing is a different and potentially more difficult challenge than conventional misinformation detection. Tools that look for false sentences filter out nothing here.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On that frame the paper builds three deployment scenarios: a state compelling providers under its jurisdiction to embed an inference policy, framing strength varied by user profile, and commercial sponsorship entering as probability. All three are threat models, not incident reports. The third gets a whole section of its own next. The second already has its materials on the table.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The external score table described earlier has a slot for user attributes. Fill that slot and the pressure applied can differ from person to person. The paper's example runs like this. A politically skeptical user receives restrained framing, an undecided voter receives persuasive framing, and a supporter receives reinforcement. Two people asking the exact same political question receive answers that are factually consistent with each other yet systematically differently framed. This is where the paper separates the practice from mass propaganda. Mass propaganda is a single public message that journalists can scrutinize, while personalized inference steering produces bespoke conversational rhetoric for each citizen. <strong>There is no original to take apart.</strong>
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Evidence attaches to this scenario in the opposite direction, though. In the Science experiments cited earlier, personalization had smaller effects than prompting changes. The premise that personalization is the strongest lever of persuasion is not yet supported by measurement. What can be said here is only that the structure holds.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Probability Placement, a Hypothetical Ad</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <strong>The probability placement discussed in this section is a hypothetical concept.</strong> No company has ever said it does this, and the author makes no such claim. The paper labels it a hypothetical commercial primitive three separate times. The reason to take it up anyway is that it shows exactly where the advertising formats being sold today diverge from it.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <strong>Probability placement</strong> is defined as sponsored influence implemented not through explicit product copy but through systematic shifts in probability mass. In the paper's own phrasing it is the probabilistic version of product placement. If product placement is a character on screen drinking a particular brand of soda, probability placement is a brand name moving slightly up the candidate list. There is no advertisement in the sentence. The advertisement lives in the probability a word gets drawn.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To explain the concept, the paper offers a numeric example. Three brands sit on the candidate list with probabilities of 0.30, 0.28, and 0.25, and after the score table is applied they become 0.36, 0.26, and 0.22. The diagram below is that example. <strong>These are numbers the author invented to explain a concept, not values anyone measured</strong>, and that fact is marked both inside the figure and in the caption.
+                    </p>
+
+                    <div class="mb-4">
+                        <svg viewBox="0 0 660 300" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff);" role="img" aria-label="Conceptual diagram of probability placement. A hypothetical example in which three brands move from candidate probabilities of 0.30, 0.28, and 0.25 before the intervention to 0.36, 0.26, and 0.22 after it.">
+                            <text x="330" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text-primary, #171719)">What probability placement does (the paper's hypothetical figures)</text>
+                            <text x="330" y="48" text-anchor="middle" font-size="11" fill="#F86825">Not measurements. Numbers the author invented to explain the concept</text>
+
+                            <!-- Before -->
+                            <text x="170" y="78" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-secondary, #585858)">Before</text>
+                            <text x="52" y="112" font-size="12" fill="var(--text-secondary, #585858)">Brand A</text>
+                            <rect x="120" y="98" width="150" height="18" rx="3" fill="#808080" opacity="0.55"/>
+                            <text x="282" y="112" font-size="12" fill="var(--text-secondary, #585858)">0.30</text>
+                            <text x="52" y="146" font-size="12" fill="var(--text-secondary, #585858)">Brand B</text>
+                            <rect x="120" y="132" width="140" height="18" rx="3" fill="#808080" opacity="0.55"/>
+                            <text x="282" y="146" font-size="12" fill="var(--text-secondary, #585858)">0.28</text>
+                            <text x="52" y="180" font-size="12" fill="var(--text-secondary, #585858)">Brand C</text>
+                            <rect x="120" y="166" width="125" height="18" rx="3" fill="#808080" opacity="0.55"/>
+                            <text x="282" y="180" font-size="12" fill="var(--text-secondary, #585858)">0.25</text>
+
+                            <!-- Arrow -->
+                            <path d="M320 140 L352 140" stroke="#F86825" stroke-width="2" fill="none"/>
+                            <polygon points="356,140 347,135 347,145" fill="#F86825"/>
+                            <text x="338" y="126" text-anchor="middle" font-size="10" fill="#F86825">table</text>
+
+                            <!-- After -->
+                            <text x="510" y="78" text-anchor="middle" font-size="13" font-weight="700" fill="#F86825">After</text>
+                            <text x="382" y="112" font-size="12" fill="var(--text-secondary, #585858)">Brand A</text>
+                            <rect x="450" y="98" width="180" height="18" rx="3" fill="#F86825" opacity="0.75"/>
+                            <text x="636" y="112" text-anchor="end" font-size="12" font-weight="700" fill="#F86825">0.36</text>
+                            <text x="382" y="146" font-size="12" fill="var(--text-secondary, #585858)">Brand B</text>
+                            <rect x="450" y="132" width="130" height="18" rx="3" fill="#BDBDBD"/>
+                            <text x="600" y="146" font-size="12" fill="var(--text-secondary, #585858)">0.26</text>
+                            <text x="382" y="180" font-size="12" fill="var(--text-secondary, #585858)">Brand C</text>
+                            <rect x="450" y="166" width="110" height="18" rx="3" fill="#BDBDBD"/>
+                            <text x="580" y="180" font-size="12" fill="var(--text-secondary, #585858)">0.22</text>
+
+                            <line x1="40" y1="214" x2="620" y2="214" stroke="#BDBDBD" stroke-width="1" stroke-dasharray="4 4"/>
+                            <text x="330" y="238" text-anchor="middle" font-size="12" fill="var(--text-muted, #808080)">No ad copy anywhere in the answer. Every sentence reads naturally, and each one differs slightly</text>
+                            <text x="330" y="262" text-anchor="middle" font-size="12" fill="var(--text-muted, #808080)">One conversation shows nothing. The tilt appears only across tens of thousands of them</text>
+                            <text x="330" y="286" text-anchor="middle" font-size="11" font-weight="600" fill="#F86825">⚠ These figures are the paper's illustrative hypothetical. They are not observed values</text>
+                        </svg>
+                        <p class="figure-caption themeable-muted">A diagram of the hypothetical figures the paper uses to explain probability placement. Not any company's real distribution, and not a measurement.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Bar heights are only half of probability placement. Beyond selection probability, the paper attaches descriptors. A sponsored brand gets paired with words like reliable, integrated, premium, secure, industry-standard, while competitor brands get associated with cheaper, alternative, customizable, complex, legacy. What matters is that the second set contains no insults. Nothing there is false and nothing there is disparagement, yet the impression left after reading tilts one way. This is the framing from the previous section, attached to a brand name. So what probability placement moves is not only which name gets drawn but <strong>which words get drawn alongside it</strong>.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>Conversational AI collapses a boundary search kept for over twenty years</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The contrast drawn in section 4.4 of the paper is the frame for this section. Search advertising has maintained a visual boundary for more than twenty years. Sponsored results and organic results are separated on screen, and the user knows which one they are looking at. Conversational AI collapses that boundary into a single synthesized answer. The user converses under an assumption of <strong>synthesized agency</strong>, believing the AI weighed the alternatives and picked the best one. The recommendation that actually emerged was produced jointly by the model, the prompt, the safety policy, the commercial policy, and the sampler.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        How far that collapse has actually gone, format by format, is set out below. The table is ordered by how weak the boundary has become. Higher rows keep the advertisement outside the answer; lower rows bring it inside.
+                    </p>
+
+                    <div class="overflow-x-auto">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Provider</th>
+                                    <th>Format</th>
+                                    <th>Relation to the answer</th>
+                                    <th>Label</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Perplexity</td><td>Sponsored questions and sponsored videos</td><td>Related-questions area. Outside the answer</td><td>Yes (withdrawn entirely in February 2026)</td></tr>
+                                <tr><td>OpenAI ChatGPT</td><td>Separate block below the response</td><td>Outside the answer, visually separated</td><td>Yes</td></tr>
+                                <tr><td>Microsoft Copilot</td><td>Ad block below the response</td><td>Outside the answer, though Copilot explains in its own voice why that ad is there</td><td>Yes</td></tr>
+                                <tr><td>Amazon Rufus</td><td>Sponsored product prompts</td><td><strong>Inserted inside the answer as a conversational response.</strong> Advertisers are auto-enrolled and cannot write the copy themselves</td><td>Yes</td></tr>
+                                <tr><td>Google AI Mode</td><td>Conversational discovery</td><td><strong>Placed directly inside the AI-generated answer.</strong> Gemini generates the creative live at query time and attaches its own written explanation beside it</td><td>Yes</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="figure-caption themeable-muted">Formats disclosed as of August 2026, confirmed mostly through provider announcements and press coverage. Only the structural facts are recorded here: where the ad attaches, and whether it carries a label.</p>
+                    </div>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The boundary really is collapsing. It is not collapsing the way the paper drew it. The axis giving way is <strong>placement and generation</strong>. Advertising has moved from outside the answer, to below the answer, to a seat where the assistant narrates it, to a seat where it is generated live inside the answer. Ads increasingly talk like answers. The axis that has not given way is <strong>probability</strong>. All five formats carry labels, all five exist as separate assets, and none of them says it adjusts the token probabilities of the organic answer. OpenAI has stated the opposite, that ads do not influence ChatGPT's answers. <strong>Probability placement remains hypothetical.</strong>
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>The incentive is growing, and one provider turned it down</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The size of the economic pressure can be checked. WPP Media's June 2026 forecast puts the generative search advertising market at $5.1 billion in 2026 and more than $100 billion by 2030, a twentyfold rise in four years. Dragging that curve straight into this report's argument would overstate it, though. In the same period, eMarketer's US analysis projected that more than 80 percent of AI advertising in 2026 would run as traditional search ads placed <strong>next to</strong> AI answers rather than <strong>inside</strong> chatbot conversations. Pure chatbot ad revenue comes in under $1 billion for 2026.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One provider went the other way. Perplexity introduced sponsored questions in November 2024, stopped taking new advertisers in October 2025, and in February 2026 abolished advertising entirely to pivot toward subscriptions. Its stated reason overlaps precisely with this report's subject: even labeled advertising risks eroding the trust an answer engine depends on. Anthropic has likewise said it intends to keep Claude ad-free.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/img-03-perplexity.svg"
+                             alt="Perplexity logo. Withdrew advertising entirely in February 2026 on the grounds that even labeled ads risk eroding the trust an answer engine depends on"
+                             class="max-w-[320px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ From sponsored questions (Nov 2024) to no new advertisers (Oct 2025) to full withdrawal (Feb 2026) | Source: <a href="https://commons.wikimedia.org/wiki/File:Perplexity_AI_logo.svg" target="_blank" rel="noopener" class="underline">Wikimedia Commons</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This case should not be read by the industry as a conclusion that things are safe. Most of the revenue still sits beside the answer, and one provider's judgment is not the market's. What is confirmed is only that the tension exists. The incentive is growing, and one provider turned it down.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>Mediation is growing while trust stays low</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For probability placement to matter, answers have to mediate real choices. That mediation is growing. In the usage analysis OpenAI produced with National Bureau of Economic Research researchers, the share of information-seeking use rose from 14 percent in July 2024 to 24 percent in July 2025. That category is defined as looking up factual information about people, current events, products, and recipes, and the paper itself calls it a close substitute for web search. Over the same period, writing use fell from 36 percent to 24 percent. Information seeking is the only major category that grew while pushing writing aside. The reach is large too. Google said the Gemini app passed one billion monthly users in August 2026.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Listing only the scale of that mediation tilts the picture, though. A Gartner survey from May 2026 found that consumers will hand an AI the searching and the shortlisting but <strong>want to keep the final purchase decision</strong>. That is counter-evidence against the premise the probability placement threat model quietly assumes, namely that a user follows what an AI recommends. Trust figures point the same way. In the Reuters Institute's 2026 survey, trust in AI chatbot answers stood at 20 percent, below both news overall at 37 percent and search engine answers at 32 percent.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Low trust does not mean low influence, however. In the same survey, the share of respondents who clicked through from a chatbot answer to the original source was 4 percent overall, against 19 percent for search and 17 percent for social. In a KPMG and University of Melbourne survey of more than 48,000 people across 47 countries, 66 percent said they use AI output without verifying its accuracy. That gap, not trusting it and not checking it either, is the social condition under which an inference-time intervention could pass unaudited.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One study tested directly that influence runs separately from trust. In two preregistered experiments published in Science Advances in March 2026, 2,582 participants wrote about important societal issues while receiving biased autocomplete suggestions. The attitudes they expressed in a posttask survey converged toward the position those suggestions pointed at. A majority of participants were unaware of the suggestions' bias and of their influence. The effect was stronger in the interactive form than when the same content was presented as static text, and warning participants before or after exposure did not mitigate the attitude shift. That experiment measured autocomplete, though, not logit steering in a conversational answer. The discipline this report keeps, that measurements come from adjacent layers, applies here as well.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Where the Law Does Not Yet Reach</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The claim in this section is a gap, not a violation. The point is not that some provider is breaking the law right now, but that no provision yet addresses an intervention at this layer.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>Article 5 of the EU AI Act was not designed to catch this shape</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Article 5(1)(a) prohibits systems that deploy subliminal or purposefully manipulative techniques to materially distort behaviour and cause significant harm. Read the sentence alone and the intervention discussed here looks caught by it. The paper concludes the opposite. It states that subtle inference steering does <strong>not automatically fall</strong> under the Article 5 prohibitions, and adds that legal analysis here requires caution.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The Commission's guidelines on prohibited practices, issued on February 4, 2025, support that reading. They run past a hundred pages and carry no binding force, but their structure is what matters. They break each prohibition into cumulative requirements and state that the prohibition applies only when <strong>all of them are met</strong>. If the effect of any individual interaction is close to zero, the material distortion and significant harm requirements fail. The guidelines also judged that using AI for personalized advertising is not inherently manipulative, so long as it does not subvert autonomy or exploit vulnerability, and that this must be assessed case by case.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The problem the paper raises sits exactly below that threshold. The effect of any single answer is too small to measure, and yet those small effects can accumulate at the population level. The prohibitions as written were built around a situation where significant harm arises from one interaction. The AI Act's own compliance timeline was covered in a <a href="/report/eu-ai-act-august-2026-deadline-reality/en/" class="text-orange-500 hover:underline">separate Pebblous report</a>.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>The DSA depends on which drawer it gets filed in</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper asks whether the transparency principles applied to recommender systems should extend to inference-time scoring. The real situation is stuck one step earlier than that. In October 2025, OpenAI self-reported EU monthly users of ChatGPT's search feature at 120.4 million on a six-month average, well past the Digital Services Act's 45 million threshold. What it should be designated as, though, has not been settled. Should the search feature be carved out and treated as a very large online search engine, or should the whole service be treated as a very large online platform?
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That fork is decisive for a reason. <strong>Article 27, which governs recommender system transparency, is an obligation on online platforms and not on search engines.</strong> Designated only as a search engine, the service never picks up Article 27 at all. Article 27 requires setting out, in plain language, the main parameters of a recommender system, the reasons for their relative importance, and any options the user has to change them. The provision closest to this report's subject can vanish on a single classification.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is a definitional difficulty too. The DSA was designed before chatbots. Whether a service that synthesizes an answer instead of returning links falls inside the definition of an online search engine is open, and while the definition of a recommender system is drawn broadly enough to cover automated systems determining the relative order or prominence of information, whether <strong>a single generated answer</strong> determines order or prominence has no answer yet. Sources disagree on the timing of designation, so this report records it only as unsettled. The regulatory gap, then, does not take the form of an ambiguous provision. It takes the form of an entire set of provisions disappearing depending on which drawer the service goes into.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>The US has started demanding documentation of how answers get generated</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On September 11, 2025, the Federal Trade Commission issued 6(b) orders to seven companies: Alphabet, Character Technologies, Instagram, Meta, OpenAI, Snap, and xAI. Two of the demanded items bear directly on this report. How user interactions are monetized, and <strong>how the chatbots process inputs and generate responses</strong>. That counts as a regulator demanding documentation of the answer generation process itself. The focus of the inquiry is minors' safety rather than commercial steering, though, and 6(b) is a study authority unconnected to litigation or investigation.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The FTC's July 2026 policy statement on accuracy suppression <a href="/blog/ftc-ai-accuracy-deception/en/" class="text-orange-500 hover:underline">has already been covered</a> by Pebblous. The difference between the two pieces fits in one sentence. <strong>That one dealt with disclosure duties and the lineage of training and tuning data; this one deals with the layer that disclosure does not reach.</strong>
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.4</span>Korea has already mandated one kind of inference-time intervention</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Korea's Framework Act on the Development of Artificial Intelligence and Establishment of a Foundation for Trust, together with its enforcement decree, took effect on January 22, 2026. Passed by the National Assembly in December 2024 and promulgated in January 2025, it is Korea's first comprehensive AI legislation, and Korea is the first country in the world to bring a comprehensive AI statute fully into force. The EU is phasing its own in.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The provision that engages this report is Article 31, on securing transparency. It requires three things of businesses providing generative AI or high-impact AI services. First, notify users in advance that the service is generative AI based. Second, mark outputs as generated by AI. That marking splits into visible methods such as captions, logos, or watermarks, and invisible methods such as metadata or a <strong>digital watermark</strong>. Third, mark virtual audio or video that is hard to distinguish from reality so it is clearly recognizable as such. Violations draw a corrective order along with an administrative fine of up to KRW 30 million, roughly $21,000.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Korea was the first country to bring a comprehensive AI statute fully into force, and one of the core instruments of its transparency duty is the digital watermark. But watermarking is the very inference-time intervention this report is about. It is the one that leaves training alone and changes only the sampling procedure. <strong>Korean law has mandated one kind of inference-time intervention.</strong> An intervention whose purpose is provenance is compelled by statute, while an intervention operating at the same layer by the same mechanism for a different purpose gets no mention at all. What the law asks for is the fact that AI made this output. What the paper asks for is under which inference policy this answer was sampled. <strong>They are one layer apart.</strong>
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is one piece of primary evidence that Korean companies touch this layer. In its May 2026 announcement, Google named <strong>Kakao</strong>, alongside OpenAI and ElevenLabs, as a company applying SynthID technology to its own content. How common it is for Korean firms to lay their own logit processors or rerankers on top of a commercial API, and whether such interventions are recorded in contracts or audit documents, is not covered by any domestic statistic that could be found. The surveys run by the Ministry of Science and ICT and by the National Information Society Agency carry no such question. The gap is recorded rather than filled with an estimate.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One last contrast, then. Article 10 of the EU AI Act requires evidence of representativeness and quality for the <strong>training data</strong> of high-risk systems. Pebblous has a <a href="/report/eu-ai-act-article10-labeling-audit-evidence/en/" class="text-orange-500 hover:underline">report reading that provision through labeling audit evidence</a>. The contrast shows where regulation's gaze still rests. Auditing still looks at everything up to the point the model is built.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">So What Exactly Gets Audited</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Closing on a warning would leave this report half done. The paper leaves three prescriptions, and all three can be held against today's conditions: what has to be measured, whether it can be measured, and what to demand when it cannot.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>What has to be measured is the distributional difference</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The primitive quantity for an audit is the <strong>distributional difference</strong>, meaning the gap between the probability distribution actually served and the distribution the model would have produced on its own. This is not about whether one word changed. It is about the tilt in how often certain words end up being drawn. Whether that quantity can be defined is the whole of auditability. If it can, the rest is a matter of sample size and statistics. If it cannot, the rest of the discussion does not hold.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>But can it be computed today</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Computing it requires receiving, from outside, the probability the model assigned each word. The official specs of the three major providers were pulled and compared directly. The result is not uniform.
+                    </p>
+
+                    <div class="overflow-x-auto">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Provider</th>
+                                    <th>Log probabilities</th>
+                                    <th>Top candidates</th>
+                                    <th>Logit bias parameter</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>OpenAI</td><td>Available</td><td>Up to top 20</td><td>Available (−100 to 100)</td></tr>
+                                <tr><td>Google Gemini</td><td>Available</td><td>Top N</td><td>None</td></tr>
+                                <tr><td>Anthropic Claude</td><td><strong>None</strong></td><td><strong>None</strong></td><td><strong>None</strong></td></tr>
+                            </tbody>
+                        </table>
+                        <p class="figure-caption themeable-muted">As of August 2026. Compiled by parsing OpenAI's official OpenAPI spec, Google's python-genai type definitions, and the request parameter definitions in Anthropic's Python SDK directly.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Three limits come out of that table. First, <strong>the top 20 is not a distribution</strong>. The OpenAI spec states that tokens outside the top 20 are filled in with a value of −9999. Vocabularies run to six figures. The head is visible and the tail is flattened. Computing a distributional difference over the full vocabulary is not possible with today's public APIs. Second, one provider offers no window at all, which means the same audit design cannot be applied uniformly across the three. No reason has been published.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The third limit is the heaviest. <strong>The auditable surface and the socially consequential surface are two different surfaces.</strong> Log probabilities are an API-only feature. The consumer interfaces where people actually read answers, the ChatGPT and Gemini apps, Claude on the web, expose nothing. That is the side where the billion monthly users from the previous section are. This explains why the first of the five comparison axes the paper proposes to auditors in section 6.4 is, of all things, API versus consumer chat interface. Measuring the distribution through the API carries no guarantee that the result holds for the chat interface.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The right-hand column of the table needs a precise line drawn around it. OpenAI's logit bias parameter is described in the spec as a bias that "is added to the logits generated by the model prior to sampling." That means the intervention the paper set up as a formalism already exists as a documented product feature. <strong>This must not be read as OpenAI doing any steering.</strong> What has been confirmed is only that the primitive for that intervention is offered as a public parameter, and the party using that parameter is the developer calling the API.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.3</span>The intervention axes are exposed and the resulting distribution is hidden</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One unexpected asymmetry turned up during the research. Three of the five axes the paper asks auditors to compare in section 6.4 already exist as API request parameters. Anthropic's Messages API parameter list includes a field designating the geography where inference is processed, a field attributing a request to a specific user profile, and a service tier field choosing between priority and standard capacity.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The line is just as clear here. <strong>There is no evidence that these parameters change the output distribution.</strong> What has been confirmed is only that the deployment layer already treats geography, user identity, and service tier as first-class request parameters. So the axes the paper points auditors toward are not hypotheses; they are switches already fitted to the product. What is missing is not the switch but <strong>a window showing how the distribution changes when the switch is turned</strong>. The intervention axes are exposed and the resulting distribution is hidden. That asymmetry is what auditability actually looks like right now.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.4</span>The attestation already existed, and it is being deprecated</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's second prescription is an attestation. Bind the model version hash, the inference policy hash, and the sampler configuration together, sign them, and emit them with the response. An auditor then checks whether the observed distribution matches the declared reference distribution. It is a structure that permits verification without publishing weights, and in the paper's phrasing the question changes. From which model generated this, to under which inference policy this model was permitted to speak.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Compare that with what the industry actually built and the difference comes into focus. OpenAI's response object carries a field called the system fingerprint. The spec says this fingerprint represents the <strong>backend configuration</strong> the model runs with, and that using it together with the seed parameter lets you tell when backend changes have been made that might affect determinism. It is the existing field closest in purpose to the attestation the paper asks for.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Three differences. The field is not signed, it does not decompose into what changed, and its purpose is reproducibility debugging rather than audit. And in the current chat completions schema it is <strong>marked as deprecated</strong>. The only standard field that let an outsider notice a change in deployment configuration is on its way out.
+                    </p>
+
+                    <figure class="my-8">
+                        <img src="./image/img-04-openai.svg"
+                             alt="OpenAI logo. system_fingerprint, the only standard field that let an outsider notice a deployment configuration change, is marked as deprecated"
+                             class="max-w-[280px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
+                             loading="lazy"
+                             onerror="this.parentElement.style.display='none'">
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ The existing field closest in purpose to the attestation the paper asks for is on its way out | Source: <a href="https://commons.wikimedia.org/wiki/File:OpenAI_Logo.svg" target="_blank" rel="noopener" class="underline">Wikimedia Commons</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        No reason for the deprecation has been published. There is no basis for reading it as an attempt to evade auditing, so no such reading is offered. What has been confirmed stops at the marking in the spec. What partial disclosure actually conceals is something Pebblous examined once before in a <a href="/report/microsoft-mai-provenance-gap/en/" class="text-orange-500 hover:underline">separate case</a>.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.5</span>Five comparison axes anyone can run today</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's third prescription can be executed immediately. Ask the same question many times while changing only the conditions, and watch whether the tilt of the answers changes. The paper proposes five axes.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-2 mb-6 ml-6">
+                        <li>Asking through the API versus asking through the consumer chat interface</li>
+                        <li>Asking from different geographies</li>
+                        <li>Asking anonymously versus asking while logged in</li>
+                        <li>Different subscription tiers or client platforms</li>
+                        <li>Comparing competing brands against each other, and opposing political propositions against each other</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This design has no prerequisites. It runs without log probabilities and without provider cooperation. That makes these five axes the most practical output this report can extract. What must not be misread is the nature of the result they produce.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.6</span>Black-box access cannot produce a guarantee, in principle</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A 2024 FAccT paper with twenty authors settled this question. In general, it is impossible to make guarantees about black-box systems using a finite number of queries without additional assumptions. Black-box methods can show the existence of failures by finding inputs that elicit them, but they cannot produce <strong>evidence of absence</strong>. Running the five axes above and finding a difference is a finding. Failing to find a difference yields no conclusion that no intervention exists.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The same paper divides access into four tiers: black-box, grey-box, white-box, and <strong>outside-the-box</strong>. That last tier covers methodology, code, documentation, findings from internal evaluations, and <strong>deployment details</strong>. The attestation and declared reference distribution the paper asks for amount to institutionalizing that tier. So the paper's demand is not to observe harder. It is to raise the access tier.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This is where the thread left hanging earlier gets tied off. The Inference Attribution Problem is not a claim that nobody can know. It is precisely the opposite. <strong>Grant the privilege and it can be known; withhold it and it cannot be known in principle.</strong> Which makes this a problem of institutional design rather than a limit of the technology.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.7</span>Two unanswered questions stay unanswered</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper poses two questions and answers neither. First, whether inference-time probability manipulation can significantly shift semantic framing while preserving factual accuracy and response quality. Second, whether such an intervention can be reliably detected through black-box observation alone. Partial answers can be found in other literature, but neither closes its question.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On the first question, the closest measurement is a 2026 study of logit-level intervention. On a task controlling reading level with Llama 3.1 8B, control accuracy rose from 37.11 percent using prompting alone to 84.53 percent with logit intervention. Under the same conditions, the perplexity measure of how natural the sentences read actually improved, from 11.99 to 8.88. The intuition that pushing hard wrecks the prose did not hold there. On a politeness control task, however, the same measure worsened from 18.58 to 25.92. Either way these are single cells for one model and one dataset, not averages.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is a ceiling on how hard the push can go. When the authors varied steering strength alone, the result traced an inverted U. Accuracy peaks at a strength of 1.5 and falls off gently on both sides. Too weak and it loses to the pull of the original context; too strong and the bias begins to dominate the original logits within the candidate set, pushing the sampler toward statistically characteristic but contextually less plausible tokens. That over-steering erodes local fluency and long-range coherence, which in turn blurs the target characteristic from the judge's perspective and drags accuracy down with it. The authors describe it as a clear trade-off between steering strength and generation quality. Read the other way, it also says this. <strong>An intervention that must not be noticed has to stay under that ceiling.</strong>
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The ethics section of that same paper runs head-on into this report's argument. The authors write that the characteristics that motivate their method also constitute its principal ethical risk. Because the intervention adds a positive bias to tokens that statistically characterize the designated target class, the mechanism is <strong>directionally symmetric</strong>. A score table built for a safety-oriented target helps mitigate harm, and by exactly the same principle a score table built for a harmful target reinforces that characteristic. The evidence is in their own experiments. In a flipped ablation that steered with an opposing class's score table, control did not merely weaken; the direction of control reversed. The authors add that the lightweight nature of the method, which requires no training, no auxiliary model, and only access to output logits, lowers the barrier to misuse. The people who built the steering technique wrote that down first.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is an easy place to slip here. What that study controlled were <strong>stylistic attributes</strong> such as reading level, politeness, and toxicity. What the paper's first question asks about is the <strong>semantic framing</strong> of contested propositions, and that has never been measured. The accurate statement is this. For stylistic attributes, it has been measured that logit intervention can raise control substantially while holding or improving fluency scores. For semantic framing, nobody has measured anything yet. The authors drew that boundary themselves, listing broader model families, <strong>non-lexical attributes</strong>, and human evaluation beyond judge-based metrics as future work. Semantic framing sits on the non-lexical side.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The first question demands two things be preserved: response quality and factual accuracy. On the second of those, a measurement already points the other way. The Science experiments cited earlier fact-checked the 466,769 claims the runs produced, and the methods that raised persuasiveness systematically decreased factual accuracy. That result did not come from the logit layer. It does mean an observation exists, at an adjacent layer, that persuasiveness and accuracy do not travel together, which leaves the paper's first question that much more open.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The second question is emptier still. Watermarks are known to be detectable even in short spans, but that holds when the detector knows what was planted. Searching without knowing what was planted is a different problem, and no power calculation for that case has been published. Blur the distinction and you arrive at the false conclusion that because watermarks can be caught, steering can be caught too.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.8</span>Six lines of deployment-layer disclosure</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Before the items, the size of the demand has to be clear. The inference policy transparency the paper proposes is not a demand to disclose everything. Four things are excluded from the start: technical decoding quality such as temperature and top-p, safety and toxicity filtering, user-prompted steering, and provenance watermarking. What a provider would disclose is whether sampling distributions are systematically modified for objectives beyond those four. The narrowness matters. Nobody is being asked to hand over weights or trade secrets. The ask is a yes or no on whether a purpose other than those four is in play.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Translating everything confirmed so far into a form usable in procurement and audit yields six items. These are not the paper's prescriptions copied over. They are rewritten against the actual conditions established in sections 5.2 through 5.4. This table is the working output of this report.
+                    </p>
+
+                    <div class="overflow-x-auto">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Disclosure item</th>
+                                    <th>Why it is needed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>An <strong>inventory of interventions and their purposes</strong> applied at the sampling layer</td><td>The minimum unit for stating whether any purpose exists beyond watermarking, safety filtering, quality decoding, and user-prompted steering</td></tr>
+                                <tr><td>The <strong>activation date and change history</strong> of each intervention</td><td>What Grok demonstrated. When something changed comes before what changed</td></tr>
+                                <tr><td>The <strong>declared reference distribution class</strong></td><td>Without a control to check observation against declaration, there is no audit</td></tr>
+                                <tr><td>Which <strong>request parameters affect the distribution</strong></td><td>Whether geography, user profile, and service tier change the result. The switches are already on the product</td></tr>
+                                <tr><td><strong>Log probability access</strong> and its scope</td><td>The only channel for computing a distributional difference. The top 20 is not enough</td></tr>
+                                <tr><td>A <strong>signed attestation</strong> covering all of the above</td><td>The structure that makes verification possible without publishing weights</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The last two of the six can go into procurement requirements today. Writing log probability access into the contract, and receiving deployment configuration change histories in signed form. The first four cannot be secured until providers offer them, but writing them down as demands is itself enough to show which standard is currently missing.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Cares</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A company whose work is attaching quality judgments to data and recording those judgments as documents should explain why it is holding on to a preprint with no experiments and no citations yet. Four reasons.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>The procedure this paper asks for is something we already know how to build</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What Pebblous does is attach to data the answer to where this value came from and what it looks good against. What this paper asks for has the same shape. The object is a served probability distribution instead of data. Define the difference between the served distribution and the model's own, declare a reference class, and check whether observation matches declaration. That is the structure of a data quality report, transposed. Only the object changed; the skeleton of the procedure is familiar.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>Data provenance is necessary but not sufficient</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Most of what we have written over the past few months pointed one way, toward the proposition that data quality carries through into model behaviour. The origins of training data, turning labeling clicks into evidence, <a href="/blog/token-level-provenance-unlearning/en/" class="text-orange-500 hover:underline">token-level unlearning</a>. All of it is the lineage of how a model gets built. This paper attaches a caveat to that proposition. Even with the link from training data to model fully established, <strong>the stretch from model to user remains</strong>. It is a stretch with no lineage instrument on it at all. Data provenance is a necessary condition and not a sufficient one. Saying that caveat out loud, from the side that sells provenance, is what this report is for.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>Anyone building on a commercial API already operates this layer</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The property of FUDGE from section 1.2 returns here. That steering is possible with output logits alone means an organization that did not build the model can be an operator of this layer. Any organization building a service by laying its own prompts, rerankers, and filters over a commercial API is already running a deployment layer with its own hands. The trouble is that such interventions usually survive only in code review records, and never reach audit documents, contracts, or customer notices.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Two working items come out of that. First, <strong>build an inventory of deployment-layer interventions</strong>: what was added, for what purpose, and since when. Second, <strong>put log probability access into procurement requirements</strong>. Auditing requires seeing the distribution, and that right does not materialize later if it was not secured at contract time. Both can be started today. As section 4.4 noted, no statistic exists on how common such interventions are in Korea. The gap itself says something about the current state.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.4</span>The question that comes after a labeling duty</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Korea was the first country to bring an output labeling duty fully into force. The question that label answers is whether AI made this. The question left over is under which inference policy this answer was sampled. The distance between those two questions is the one layer this report has been about. Arguing to widen the audit object from training data to the deployment pipeline is something only the side setting audit standards can say, not the side selling provenance.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper puts it more sharply. Its abstract closes on one line. Who controls the probability distribution between the model and the user? In the conclusion that question stretches out: under which inference policy was this output sampled, and who governs the probability distribution between what the model would have generated and what the citizen is allowed to observe? The name the author gives that conclusion is inference sovereignty. It proposes moving the problem from how to align a model to who holds that distribution.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper saves one contrast for last. Historically, persuasive intermediaries were publicly identifiable. Newspapers had publishers, television advertisements had sponsors, and search engines presented inspectable ranking lists. Conversational AI introduces a private, interactive, and dynamic intermediary. Combine it with undisclosed inference steering, the paper writes, and it creates a compounding systemic risk: personalization plus authority plus scale plus opacity. Three of those four have already arrived. The remaining one is what this report has been about.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This report should not read as an accusation. It does not say someone is planting advertisements in probabilities right now, and it does not say there are signs of it. It says the intervention is technically feasible, cheap, and traceless, and that no document exists by which an outsider could tell whether it is there or not. Leaving blanks blank was this report's method. Once the items are named, the rest is working practice.
+                    </p>
+                </section>
+
+                <!-- FAQ (rendered from config.faqs; keep the section empty) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">📚</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+                    <!-- Download Citation -->
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Camargo, A. (2026). <strong>The Invisible Editorial Layer: Formalizing Undisclosed Inference-Time Steering, Probability Placement, and the Attribution Problem in Deployed Language Models.</strong> arXiv:2608.24662v1 [cs.AI], 2026-08-25. CC BY 4.0. Single author, Bluecore Consulting (Brazil). The source of the three concepts this report treats. Contains no experiments and no measurements. <a href="https://arxiv.org/abs/2608.24662" target="_blank" rel="noopener">arXiv</a></span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Dathathri, S., See, A., Ghaisas, S., Huang, P.-S., McAdam, R., Welbl, J. et al. (2024). <strong>Scalable watermarking for identifying large language model outputs.</strong> Nature 634, 818–823. DOI 10.1038/s41586-024-08025-4. Source for the +0.57% latency figure, the live A/B across roughly 20 million responses, and the Gemini deployment. <a href="https://doi.org/10.1038/s41586-024-08025-4" target="_blank" rel="noopener">Nature</a></span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Hackenburg, K., Tappin, B. M., Hewitt, L., Saunders, E., Black, S., Lin, H., Fist, C., Margetts, H., Rand, D. G. &amp; Summerfield, C. (2025). <strong>The levers of political persuasion with conversational artificial intelligence.</strong> Science 390(6777), eaea3884. DOI 10.1126/science.aea3884. Three large-scale experiments, N = 76,977 participants, 19 LLMs, 707 political issues, 466,769 claims fact-checked. Prompting alone boosted persuasiveness by as much as 27% (post-training by 51%), and the methods that raised persuasiveness systematically decreased factual accuracy. <a href="https://doi.org/10.1126/science.aea3884" target="_blank" rel="noopener">Science</a></span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Williams-Ceci, S., Jakesch, M., Bhat, A., Kadoma, K., Zalmanson, L. &amp; Naaman, M. (2026). <strong>Biased AI writing assistants shift users' attitudes on societal issues.</strong> Science Advances 12(11), eadw5578. DOI 10.1126/sciadv.adw5578. N = 2,582. Attitudes shifted without participants recognizing the bias, and warnings did not prevent it. <a href="https://doi.org/10.1126/sciadv.adw5578" target="_blank" rel="noopener">Science Advances</a></span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Casper, S., Ezell, C., Siegmann, C., Kolt, N. et al. (2024). <strong>Black-Box Access is Insufficient for Rigorous AI Audits.</strong> FAccT '24, 2254–2272. DOI 10.1145/3630106.3659037. Source for the four access tiers and for the impossibility of black-box guarantees. <a href="https://arxiv.org/abs/2401.14446" target="_blank" rel="noopener">arXiv</a></span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Yang, K. &amp; Klein, D. (2021). <strong>FUDGE: Controlled Text Generation With Future Discriminators.</strong> NAACL 2021. arXiv:2104.05218. Source for the condition that output logits alone suffice for steering. <a href="https://arxiv.org/abs/2104.05218" target="_blank" rel="noopener">arXiv</a></span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Dathathri, S., Madotto, A., Lan, J., Hung, J., Frank, E., Molino, P., Yosinski, J. &amp; Liu, R. (2020). <strong>Plug and Play Language Models: A Simple Approach to Controlled Text Generation.</strong> ICLR 2020. arXiv:1912.02164. The last author is Rosanne Liu, which differs from the attribution in reference [8] of the source paper. <a href="https://arxiv.org/abs/1912.02164" target="_blank" rel="noopener">arXiv</a></span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Kirchenbauer, J., Geiping, J., Wen, Y., Katz, J., Miers, I. &amp; Goldstein, T. (2023). <strong>A Watermark for Large Language Models.</strong> ICML 2023. arXiv:2301.10226. Softly promotes the use of green tokens during sampling with negligible impact on text quality. <a href="https://arxiv.org/abs/2301.10226" target="_blank" rel="noopener">arXiv</a></span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Liu, A., Sap, M., Lu, X., Swayamdipta, S., Bhagavatula, C., Smith, N. A. &amp; Choi, Y. (2021). DExperts: Decoding-Time Controlled Text Generation with Experts and Anti-Experts. ACL 2021. arXiv:2105.03023. / Li, K., Patel, O., Viégas, F., Pfister, H. &amp; Wattenberg, M. (2023). Inference-Time Intervention. NeurIPS 2023. arXiv:2306.03341. / Turner, A. M. et al. Steering Language Models With Activation Engineering. arXiv:2308.10248.</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">An, H., Park, S., Jin, H. &amp; Han, Y.-S. (2026). <strong>Steering Language Models Before They Speak: Logit-Level Interventions.</strong> arXiv:2601.10960v2 (2026-05-28). Yonsei University. The figures cited here are from v2; v1 has no perplexity column. Llama3.1 8B, OSE (reading level): prompting accuracy 37.11% and perplexity 11.99, versus SWAI 84.53% and 8.88. WikiPol (politeness): 56.70% and 18.58, versus 77.20% and 25.92. Steering bias δ traces an inverted U peaking at 1.5. The ethics section states the directional symmetry and the lowered barrier to misuse, and lists non-lexical attributes and human evaluation as future work. <a href="https://arxiv.org/abs/2601.10960" target="_blank" rel="noopener">arXiv</a></span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">Chen, L., Zaharia, M. &amp; Zou, J. (2023). <strong>How is ChatGPT's behavior changing over time?</strong> arXiv:2307.09009. Behaviour varies greatly behind an unchanged API name, and when and how updates happen is opaque. <a href="https://arxiv.org/abs/2307.09009" target="_blank" rel="noopener">arXiv</a></span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">Entman, R. M. (1993). <strong>Framing: Toward Clarification of a Fractured Paradigm.</strong> Journal of Communication 43(4), 51–58. DOI 10.1111/j.1460-2466.1993.tb01304.x. Framing manipulates salience rather than facts. / Kröger, P. &amp; Barkett, E. (2025). Don't Change My View: Ideological Bias Auditing in Large Language Models. arXiv:2509.12652.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">Chatterji, A., Cunningham, T., Deming, D., Hitzig, Z., Ong, C., Shan, C. &amp; Wadman, K. (2025). <strong>How People Use ChatGPT.</strong> NBER Working Paper 34255. Information-seeking share 14% (July 2024) rising to 24% (July 2025). <a href="https://www.nber.org/papers/w34255" target="_blank" rel="noopener">NBER</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Policy, statistics, and official announcements</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">14.</span><span class="ref-body">European Commission (2025-02-04). <strong>Guidelines on prohibited artificial intelligence practices.</strong> Breaks each prohibition into cumulative requirements and judges that using AI for personalized advertising is not inherently manipulative. Non-binding.</span></li>
+                        <li><span class="ref-num">15.</span><span class="ref-body">Korea, <strong>Framework Act on the Development of Artificial Intelligence and Establishment of a Foundation for Trust</strong> and its Enforcement Decree, in force 2026-01-22. <strong>Article 31, transparency obligations</strong> (advance notice, output labeling, enhanced deepfake labeling). Violations draw a corrective order and an administrative fine of up to KRW 30 million (about $21,000). <a href="https://www.law.go.kr/" target="_blank" rel="noopener">Korean Law Information Center</a></span></li>
+                        <li><span class="ref-num">16.</span><span class="ref-body">FTC (2025-09-11). <strong>6(b) Orders to Providers of Consumer-Facing AI Companion Products.</strong> Seven companies. The demanded items include how interactions are monetized and how the chatbots generate responses.</span></li>
+                        <li><span class="ref-num">17.</span><span class="ref-body">Google (2026-05-19). <strong>Identifying AI-generated media online.</strong> Official blog. More than 100 billion images and videos watermarked with SynthID, plus 60,000 years of audio. Names OpenAI, Kakao, and ElevenLabs as partners. <a href="https://blog.google/innovation-and-ai/products/identifying-ai-generated-media-online/" target="_blank" rel="noopener">Google Blog</a></span></li>
+                        <li><span class="ref-num">18.</span><span class="ref-body">xAI (2025-05). Official statement on the unauthorized Grok prompt modification, plus the public system prompt repository. Repository created 2025-05-15, last updated 2025-11-17 (confirmed via GitHub API). <a href="https://github.com/xai-org/grok-prompts" target="_blank" rel="noopener">xai-org/grok-prompts</a></span></li>
+                        <li><span class="ref-num">19.</span><span class="ref-body">OpenAI. <strong>openai-openapi</strong> official spec (<code>logprobs</code>, <code>top_logprobs</code> capped at 20, <code>logit_bias</code>, and <code>system_fingerprint</code> marked deprecated). / Anthropic. <strong>anthropic-sdk-python</strong> message creation parameters (<code>inference_geo</code>, <code>user_profile_id</code>, <code>service_tier</code>, with no log probability parameter). / Google. <strong>python-genai</strong> type definitions (<code>response_logprobs</code>, <code>logprobs</code>).</span></li>
+                        <li><span class="ref-num">20.</span><span class="ref-body">WPP Media (2026-06-16). <strong>This Year Next Year</strong> summer forecast. Generative search advertising from $5.1 billion (2026) to more than $100 billion (2030). / eMarketer (2026-06-04). US AI Advertising Forecast 2026. More than 80% of AI advertising in 2026 sits beside AI content rather than inside chatbot conversations.</span></li>
+                        <li><span class="ref-num">21.</span><span class="ref-body">Reuters Institute (2026-06-16). <strong>Digital News Report 2026.</strong> About 100,000 respondents across 48 countries. Trust in AI chatbot answers 20%, click-through to original sources 4%. / KPMG × University of Melbourne (2025). Trust, attitudes and use of AI: A global study 2025. More than 48,000 people across 47 countries. 66% use AI output without verification.</span></li>
+                        <li><span class="ref-num">22.</span><span class="ref-body">Gartner (2026-05-27). Survey finding that consumers want AI shopping help but not AI purchase decisions. <a href="https://www.gartner.com/en/newsroom/press-releases/2026-05-27-gartner-survey-finds-consumers-want-ai-shopping-help-but-not-ai-purchase-decisions" target="_blank" rel="noopener">Gartner</a> / Google (2026-08-11). Gemini app passes one billion monthly users.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Pebblous adjacent (cross-links)</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">23.</span><span class="ref-body">Pebblous, on the FTC policy statement treating undisclosed output adjustment as consumer deception. <a href="/blog/ftc-ai-accuracy-deception/en/">blog/ftc-ai-accuracy-deception</a></span></li>
+                        <li><span class="ref-num">24.</span><span class="ref-body">Pebblous, on models that change without a version number and the disclosure gap that follows. <a href="/report/silent-model-updates-disclosure-gap/en/">report/silent-model-updates-disclosure-gap</a></span></li>
+                        <li><span class="ref-num">25.</span><span class="ref-body">Pebblous, on the limits of partial disclosure that names the tool and hides the source. <a href="/report/microsoft-mai-provenance-gap/en/">report/microsoft-mai-provenance-gap</a></span></li>
+                        <li><span class="ref-num">26.</span><span class="ref-body">Pebblous, on the labeling audit evidence required by Article 10 of the AI Act. <a href="/report/eu-ai-act-article10-labeling-audit-evidence/en/">report/eu-ai-act-article10-labeling-audit-evidence</a> / on the AI Act compliance timeline. <a href="/report/eu-ai-act-august-2026-deadline-reality/en/">report/eu-ai-act-august-2026-deadline-reality</a></span></li>
+                        <li><span class="ref-num">27.</span><span class="ref-body">Pebblous, on token-level provenance and unlearning. <a href="/blog/token-level-provenance-unlearning/en/">blog/token-level-provenance-unlearning</a> / on watermark ecosystem monitoring. <a href="/blog/watermark-ecosystem-monitoring/en/">blog/watermark-ecosystem-monitoring</a> / on the visible watermark setting change. <a href="/blog/google-visible-watermark-toggle-credentio/en/">blog/google-visible-watermark-toggle-credentio</a></span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260827"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-26T21:00:21.544Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-26T21:04:26.605Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-26T22:11:37.861Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1787778021544-txgleu",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-26T23:44:13.210Z"
+            },
+            mainTitle: "The Deployment Layer That Edits Answers Before the Token Is Picked",
+            subtitle: "Watermarking already ships this intervention in production, and an arXiv paper formalizes what happens when its purpose is undisclosed",
+            pageTitle: "Inference-Time Steering and the AI Attribution Gap | Pebblous",
+            category: "tech",
+            publishDate: "2026-08-27",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/inference-time-steering-attribution-gap/en/",
+            tags: ["AI governance", "inference policy", "data provenance", "AI audit", "watermarking", "EU AI Act", "AI advertising", "LLM deployment"],
+            faqs: [
+                { question: "What exactly is inference-time steering, and how does it differ from fine-tuning?", answer: "Fine-tuning changes the weights. Inference-time steering leaves the weights alone, adds an external score table on top of the scores the model assigned each word, and draws the next word from the result. The intervention exists only at the sampling layer, so no amount of inspecting the model file will reveal it." },
+                { question: "Does this paper claim that some company actually does this?", answer: "No. The author explicitly labels probability placement a hypothetical primitive, and the paper contains no experiments and no measurements. It is a conceptual paper posted to arXiv on August 25, 2026 by a consultant in Brazil, and peer review status is not established. Its contribution is formalizing what follows when existing techniques are used for undisclosed objectives." },
+                { question: "Watermarking changes probabilities too, so is watermarking the problem?", answer: "No. The paper states that its reason for raising watermarking is architectural rather than accusatory. Watermarking proves exactly one thing: that changing token probabilities for an external objective, while holding output quality, is feasible at commercial scale. Its objective is provenance, and Korea's AI Framework Act in fact mandates that kind of labeling." },
+                { question: "How does probability placement differ from the AI advertising sold today?", answer: "Every format sold today is a labeled, separate asset. Advertising has moved from a separate block below the response, through ad blocks the assistant narrates, to creative generated live inside the answer, but none of them says it adjusts the token probabilities of the organic answer. The boundary is weakening on placement and generation, and not yet on probability." },
+                { question: "Can an external auditor detect this kind of intervention?", answer: "It requires measuring the difference between the served distribution and the model's own, which requires log probability access. OpenAI and Google Gemini return log probabilities for top candidates and Anthropic does not. The top 20 is only the head of a vocabulary running to six figures, so a full distributional difference cannot be computed with today's public APIs. That window is also API-only, and absent from the consumer chat interfaces where people actually read answers." },
+                { question: "Doesn't Article 5 of the EU AI Act prohibit this?", answer: "The paper concludes it may not be caught by Article 5. The Commission's guidelines break the prohibitions into cumulative requirements that must all be met, and judge that using AI for personalized advertising is not inherently manipulative. If the effect of any individual interaction is near zero, the material distortion and significant harm thresholds are not crossed. The claim here is a gap, not a violation." },
+                { question: "Is there any way for a user to notice that an answer has been steered?", answer: "Effectively none. In two preregistered experiments with 2,582 participants, people wrote while receiving biased AI suggestions and their surveyed attitudes shifted in that direction, yet most were unaware of the bias and of its influence. The effect was stronger in the interactive form than as static text, and generic warnings did not prevent it. That experiment measured autocomplete, though, not logit steering in a conversational answer." },
+                { question: "Is an organization with data provenance safe from this problem?", answer: "No. Even with the origins of training data fully established, the stretch from model to user remains. Any organization building a service by laying prompts, rerankers, and filters over a commercial API is already running a deployment layer with its own hands, and those interventions usually survive only in code review records. Data provenance is a necessary condition and not a sufficient one." }
+            ]
+        });
+    </script>
+    <script src="/scripts/citation-download.js?v=20260827" defer></script>
+</body>
+</html>
