@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating 100-Year Rainfall Maps Without Extreme Data | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="MIT trained a downscaling model on six months of rainfall maps holding almost no extremes, then recovered the 25-year tail from an assumed distribution.">
+    <meta name="keywords" content="extreme event prediction AI, generative model extreme rainfall, eta-learning, Extreme Event Aware Learning, once-in-a-century storm, rare event dataset, long-tail data strategy, extreme value theory machine learning, statistical downscaling, optimal transport, MIT precipitation, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/eta-learning-extremes-without-extreme-data/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/eta-learning-extremes-without-extreme-data/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/eta-learning-extremes-without-extreme-data/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/eta-learning-extremes-without-extreme-data/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="A Generative Model That Draws Rainfall It Has Never Seen">
+    <meta property="og:description" content="MIT trained a downscaling model on six months of rainfall maps holding almost no extremes, then recovered the 25-year tail from an assumed distribution.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/eta-learning-extremes-without-extreme-data/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/eta-learning-extremes-without-extreme-data/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="A Generative Model That Draws Rainfall It Has Never Seen">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-08-29">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="A Generative Model That Draws Rainfall It Has Never Seen">
+    <meta name="twitter:description" content="Six months of map pairs with almost no extremes brought back the tail of a 25-year record. η-learning puts the distribution of extremes into the loss.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/eta-learning-extremes-without-extreme-data/en/image/index.png">
+    <meta name="twitter:image:alt" content="Diagram of how a reference distribution constrains the region where training data are absent so that a model can generate unprecedented rainfall maps">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="A Generative Model That Draws Rainfall It Has Never Seen">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/08/29">
+    <meta name="citation_online_date" content="2026/08/29">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260829"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260829">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260829">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260829">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#no-extremes-no-answer" class="block pl-4 themeable-toc-link transition-colors duration-200">1. A once-in-a-century storm cannot be answered with 25 years of records</a></li>
+                    <li><a href="#statistical-regularization" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The distribution of extremes goes into the training loss as a constraint</a></li>
+                    <li><a href="#six-months-recovers-tail" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Six months of maps brought back the tail of a 25-year record</a></li>
+                    <li><a href="#assumed-tail-becomes-output" class="block pl-4 themeable-toc-link transition-colors duration-200">4. The tail you assume becomes the extremes you generate</a></li>
+                    <li><a href="#empty-longtail-everywhere" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Empty long tails are not only a weather problem</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            A city preparing for a once-in-a-century storm first has to know what that storm looks like. Yet most methods for estimating regional risk assume such a disaster already sits in the record. Learning an event that has never happened requires that event to be in the data, which is a circle. A paper by Kai Chang and Themistoklis Sapsis of MIT's Department of Mechanical Engineering, published in Nature Communications on August 20, argues that unprecedented extreme scenarios can be generated with that assumption removed.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The method is called Extreme Event Aware learning, and the authors shorten it to η-learning. The idea is to add one term to the loss function. The correspondence between low-resolution and high-resolution maps is learned by ordinary supervised training, while the distribution of the extremes the model produces is held during training against a reference distribution fixed in advance. In the continental United States precipitation experiment, the only data used to learn that map-to-map correspondence were the pairs from the first six months of a 25-year record, a stretch that holds almost none of the heaviest rainfall. The distribution of extremes pushed forward by the model still landed on the tail of the 25-year truth. A model trained the ordinary way on the same data missed that tail entirely.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The method does not make the requirement disappear, though. What used to demand labeled extreme events now demands an assumption about the shape of the tail. The authors include a sensitivity analysis that deliberately perturbs that assumption, and they write that misspecifying the tail makes the generated extremes wrong by the same amount. This article looks at what that trade is, and at what has to hold before the idea transfers to other datasets whose long tails are empty.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key figures</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: Chang &amp; Sapsis, <a href="https://www.nature.com/articles/s41467-026-76811-x" target="_blank" rel="noopener" style="color:#F86825;">Nature Communications</a> (2026-08-20) and <a href="https://arxiv.org/abs/2510.19161" target="_blank" rel="noopener" style="color:#F86825;">arXiv:2510.19161</a> v2</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.5 years</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Span used to learn the mapping</p>
+                            <p class="text-xs themeable-muted mt-1">Only the first six months of paired maps out of the 25-year record went into learning the spatial correspondence between low and high resolution. That stretch holds few or no examples of the heaviest rainfall</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">9,044 pairs</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Total precipitation map pairs</p>
+                            <p class="text-xs themeable-muted mt-1">ERA5-Land hourly precipitation over the continental United States from 1999 to 2023, pooled into daily maps. The point statistics of the extremes were computed from all 25 years</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">+8.13%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">What the tail cost</p>
+                            <p class="text-xs themeable-muted mt-1">Full-grid RMSE rose from 2.878 to 3.112. SSIM, which measures spatial structure, fell only 0.30%, from 0.947 to 0.944</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">+20.55%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">When the tail is misspecified</p>
+                            <p class="text-xs themeable-muted mt-1">Shifting the reference distribution's tail toward the heavier side raised RMSE from 2.926 to 3.527. The assumed distribution becomes the magnitude of the generated extremes</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="no-extremes-no-answer" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A once-in-a-century storm cannot be answered with 25 years of records</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Whether a city's seawall will hold against a blockbuster storm, whether a regional power grid will survive record heat, whether one town's fire-fighting resources can contain a major wildfire. Answering any of these means first knowing how the event would unfold. How far the wildfire spreads, how much of a region the storm covers, how many days the heat wave lasts. The question planners, policymakers, and insurers actually ask comes from the same place. What does a once-every-100-year storm look like for New York City?
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The trouble lies in what the simulations that answer it feed on. To learn the conditions that lead to a once-in-a-century event, you have to train on data containing such events. Chang summarized the premise of existing methods in an interview with MIT News. "These methods assume there are very disastrous events that we have seen in the dataset, and they build a method to either estimate the risk of those events, or they try to predict exactly the events that have happened." Then he added his own question. "We are trying to see: What do unprecedented extreme events look like that are riskier than everything that has happened before and yet are still plausible?"
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A diagram showing that existing methods need a once-in-a-century event to already be in the data before they can estimate its risk, while extreme events are by definition absent from the record, forming a closed loop that eta-learning bypasses by requiring the shape of a distribution instead of a labeled example" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="26" text-anchor="middle" font-family="'Outfit',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">The loop existing methods are stuck in</text>
+
+                            <rect x="30" y="50" width="270" height="76" rx="8" fill="none" stroke="var(--text-secondary)" stroke-width="1.3"/>
+                            <text x="165" y="78" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="var(--text-primary)">To estimate once-in-a-century risk</text>
+                            <text x="165" y="98" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="var(--text-secondary)">the event must already be in the data</text>
+
+                            <rect x="360" y="50" width="270" height="76" rx="8" fill="none" stroke="var(--text-secondary)" stroke-width="1.3"/>
+                            <text x="495" y="78" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="var(--text-primary)">But extreme events are</text>
+                            <text x="495" y="98" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="var(--text-secondary)">outliers by definition, absent from the record</text>
+
+                            <line x1="300" y1="88" x2="356" y2="88" stroke="var(--text-muted)" stroke-width="1.4"/>
+                            <polygon points="360,88 350,83 350,93" fill="var(--text-muted)"/>
+
+                            <path d="M 495 126 C 495 190, 165 190, 165 126" fill="none" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4,3"/>
+                            <polygon points="165,126 158,134 172,134" fill="var(--text-muted)"/>
+                            <text x="330" y="200" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="var(--text-muted)">so it cannot be learned, closing the loop</text>
+
+                            <line x1="330" y1="210" x2="330" y2="240" stroke="#F86825" stroke-width="1.4"/>
+                            <polygon points="330,246 325,236 335,236" fill="#F86825"/>
+
+                            <rect x="120" y="256" width="420" height="44" rx="6" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1.2"/>
+                            <text x="330" y="274" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#F86825">η-learning's way around it</text>
+                            <text x="330" y="290" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#F86825">requires the shape of the answer's distribution, not a labeled example</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ A conceptual diagram of the circular problem existing methods face, and how η-learning routes around it | Original Pebblous diagram</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The record holds no such events. Extreme events are outliers by definition, scattered sparsely through the history of observation. Other approaches in this field run into the same wall. Active learning, which chooses where to sample next, needs at least a few extremes in the initial sample before it can steer exploration that way. With none at all it wanders at random. Methods built on large deviation theory presuppose governing equations and require solving a high-dimensional optimization. For problems whose only training material is past observation, such as the correction operator of a climate model, even that premise fails.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper nails this difficulty down as a theorem rather than an intuition. The authors define a data-consistent estimator as one whose error in the data-free extreme region grows relatively larger the better it fits the data-rich region. The mean squared error minimizers in wide use today fall inside that class. They then show that once the number of training samples drops below a threshold, a nonzero lower bound on the 1-Wasserstein distance between the true distribution and the one pushed forward by the model exists with high probability. What governs that bound is precisely the error in the extreme region. Performing poorly where there are no data is not a gap that more diligent training can close.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Sapsis sums the situation up in MIT News. "We want to predict maps of these worst-case scenarios," he says. "There is no method that does this efficiently to predict events that happen rarely." So the question the authors posed points elsewhere. In regimes where extreme data are scarce or entirely absent, is there a systematic way to look past the dataset and generate meaningful extremes?
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="statistical-regularization" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The distribution of extremes goes into the training loss as a constraint</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The structure of η-learning is simple. The existing supervised loss stays as it is, and one term is added. The added term is the 1-Wasserstein distance between the distribution of a scalar value computed from the model's output and a reference distribution fixed in advance. A single coefficient balances the two terms. Where data exist, the first term holds the model to the observations. In the tail where data are absent, the second term shapes the values the model puts out.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That balancing coefficient is the sort of thing that becomes a worry in practice right away, since getting it wrong lets one term swallow the other. The authors include an experiment that varies this coefficient alone, from 10⁻⁴ to 10, across five orders of magnitude with every other setting fixed. The observable distribution pushed forward by the model held steady over the whole range. The authors credit the staged training procedure for that.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The scalar value used here is what the authors call an observable indicative of extremeness. In the precipitation experiment the chosen observable is the spatial maximum of a single map, the one value at the wettest point of one high-resolution precipitation field. However many maps the model generates, the only thing under constraint is the one-dimensional distribution formed by their maxima.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing that where data exist the supervised loss is computed from pairs of low- and high-resolution maps, while in the data-free tail the 1-Wasserstein distance is computed between the distribution of spatial maxima of the generated maps and a reference distribution fixed in advance, with the sum of the two terms used as the training loss" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="26" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">One extra term in the loss</text>
+
+                            <rect x="34" y="46" width="272" height="120" rx="8" fill="none" stroke="var(--text-secondary)" stroke-width="1.3"/>
+                            <text x="170" y="68" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" font-weight="700" fill="var(--text-primary)">Where data exist</text>
+                            <text x="170" y="92" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-secondary)">Pairs of low- and high-resolution maps</text>
+                            <text x="170" y="110" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-secondary)">Observed in the first six months only</text>
+                            <rect x="66" y="124" width="208" height="28" rx="5" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="170" y="142" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" font-weight="700" fill="var(--text-primary)">The usual supervised error</text>
+
+                            <rect x="354" y="46" width="272" height="120" rx="8" fill="none" stroke="#F86825" stroke-width="1.3"/>
+                            <text x="490" y="68" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" font-weight="700" fill="#F86825">The tail where data are absent</text>
+                            <text x="490" y="92" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-secondary)">Observable: the spatial maximum of one map</text>
+                            <text x="490" y="110" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-secondary)">Reference law from theory or assumption</text>
+                            <rect x="372" y="124" width="236" height="28" rx="5" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1"/>
+                            <text x="490" y="142" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9" font-weight="700" fill="#F86825">1-Wasserstein distance to the maxima</text>
+
+                            <line x1="170" y1="166" x2="170" y2="204" stroke="var(--text-muted)" stroke-width="1.4"/>
+                            <polygon points="170,210 165,200 175,200" fill="var(--text-muted)"/>
+                            <line x1="490" y1="166" x2="490" y2="204" stroke="#F86825" stroke-width="1.4"/>
+                            <polygon points="490,210 485,200 495,200" fill="#F86825"/>
+                            <line x1="170" y1="210" x2="490" y2="210" stroke="var(--text-muted)" stroke-width="0.9" stroke-dasharray="3,3"/>
+
+                            <rect x="130" y="220" width="400" height="34" rx="6" fill="rgba(248,104,37,0.08)" stroke="#F86825" stroke-width="1.2"/>
+                            <text x="330" y="242" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" font-weight="700" fill="#F86825">Loss = supervised error + coefficient × Wasserstein term</text>
+
+                            <text x="330" y="278" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-muted)">The reference law does not come from the training data. It comes from theory, unlabeled data, or an explicit assumption</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ Conceptual diagram of the η-learning objective. The original formulation appears as Eqs. (11) and (12) in arXiv:2510.19161 v2 | Original diagram by Pebblous</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So where does the reference distribution come from? This question is the method's soft spot, and the authors take it up first in their discussion. There is more than one answer. α-stable distributions have long been used for earthquake magnitudes and rainfall, and max-stable distributions are widely applied to maximum sea levels and financial risk. Theoretical devices that tell you the shape of a distribution also exist, among them asymptotic analysis for weakly nonlinear systems, white noise approximations for systems under stochastic excitation, and the Gibbs hypothesis. Where no such theory is available, a reference distribution can be estimated by unsupervised learning from data that carried no labels and therefore could not be used for supervised training. Failing even that, one assumes a form such as a generalized extreme value distribution and examines what realizations are consistent with both that assumption and the observed data.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The choice of the 1-Wasserstein distance as the yardstick has reasoning behind it. The commonly used KL divergence weights a mismatch in the tail by the probability density at that point, and in the rare-event region that density is small by definition. Two distributions can diverge sharply in the tail and barely register in the objective. Comparing log densities directly is more sensitive to the tail, but it requires accurate density estimation and turns numerically unstable when either density approaches zero, which is exactly the situation early in training when the model assigns almost no probability mass to the extreme region. The 1-Wasserstein distance stays finite even when the two tails barely overlap, and in one dimension it equals the integral of the difference between quantile functions, so it can be estimated straight from samples. That representation also allows the numerical approximation to be concentrated toward the tail.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Instead of demanding correct examples, it demands the shape the correct answers must follow. Nothing is created out of nothing. What changes is the kind of requirement. Which is why the method now stands or falls on where that shape comes from and how well it can be defended.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="six-months-recovers-tail" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Six months of maps brought back the tail of a 25-year record</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper works through five problems in all. Two synthetic examples that make the mechanics visible, and three applications built on real precipitation downscaling. All five were deliberately constructed so that the extreme events of interest are entirely absent from the dataset.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The demonstration ran on the statistical downscaling task, where data scarcity is structural. Low-resolution simulation data cover long spans but cannot hold the fine structure that produces extremes, while high-resolution observations are detailed but short in time. Downscaling means raising the resolution of the low-resolution data so that the observable statistics, in the tail especially, match the truth.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The authors used 25 years of ERA5-Land hourly total precipitation from 1999 to 2023 over the continental United States. Pooled into daily fields, this gave 9,044 paired low- and high-resolution maps. The point statistics of the extremes, meaning how often the maximum rainfall across a map reaches a given level, were computed from the full 25-year record. Training the spatial correspondence between low- and high-resolution maps, by contrast, used only the pairs from the first six months of the record. That six-month stretch contains few or no examples of the most extreme rainfall.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The result shows up when the two distributions are overlaid. The distribution of maxima pushed forward by the map trained on mean squared error missed the true distribution completely, unable to push the distribution into the right-hand region the training data never reached. The η-map, given probability density information only above the quantile value of 150, landed on the tail of the true distribution. Correcting the tail also improved the bulk of the distribution relative to the mean squared error map.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Conceptual diagram comparing four probability density curves for the daily maximum rainfall of a single map. The 25-year truth curve extends into the right tail, while the six-month training data and the mean squared error map curves stop partway. The eta map curve follows the truth curve to the end of the tail. The reference distribution was supplied only to the right of quantile 150" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="26" text-anchor="middle" font-family="'Outfit','Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">One curve stops, the other keeps going</text>
+
+                            <!-- axes -->
+                            <line x1="88" y1="258" x2="624" y2="258" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="88" y1="56" x2="88" y2="258" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="356" y="278" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-muted)">Daily maximum rainfall across one map</text>
+                            <text x="80" y="60" text-anchor="end" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">Density</text>
+
+                            <!-- threshold -->
+                            <line x1="368" y1="56" x2="368" y2="258" stroke="var(--text-secondary)" stroke-width="1.1" stroke-dasharray="5,4"/>
+                            <text x="374" y="72" text-anchor="start" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-secondary)">Reference law supplied above quantile 150</text>
+
+                            <!-- truth -->
+                            <polyline points="92,72 160,96 230,124 300,152 370,176 440,197 510,216 610,238" fill="none" stroke="var(--text-primary)" stroke-width="2"/>
+                            <!-- eta map -->
+                            <polyline points="92,80 160,103 230,130 300,157 370,181 440,201 510,219 610,242" fill="none" stroke="#F86825" stroke-width="2.2" stroke-dasharray="7,4"/>
+                            <!-- mse map -->
+                            <polyline points="92,76 160,99 230,128 300,159 344,190 372,252" fill="none" stroke="var(--text-secondary)" stroke-width="1.8" stroke-dasharray="3,3"/>
+                            <!-- 0.5 year training data -->
+                            <polyline points="92,86 160,110 230,140 296,172 330,206 348,252" fill="none" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="1,5"/>
+
+                            <text x="392" y="248" text-anchor="start" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-muted)">No training data to the right of this line</text>
+
+                            <!-- legend -->
+                            <line x1="96" y1="298" x2="126" y2="298" stroke="var(--text-primary)" stroke-width="2"/>
+                            <text x="132" y="301" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-secondary)">25-year truth</text>
+                            <line x1="216" y1="298" x2="246" y2="298" stroke="#F86825" stroke-width="2.2" stroke-dasharray="7,4"/>
+                            <text x="252" y="301" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-secondary)">η-map</text>
+                            <line x1="316" y1="298" x2="346" y2="298" stroke="var(--text-secondary)" stroke-width="1.8" stroke-dasharray="3,3"/>
+                            <text x="352" y="301" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-secondary)">MSE map</text>
+                            <line x1="466" y1="298" x2="496" y2="298" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="1,5"/>
+                            <text x="502" y="301" font-family="'Pretendard',sans-serif" font-size="9" fill="var(--text-secondary)">6-month training data</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ A conceptual rendering of the relationships in Figure 4 of arXiv:2510.19161 v2. The curves show shape, not exact coordinates | Original diagram by Pebblous</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The improvement carried over to statistics that were never enforced during training. On the conditional mean, which measures the average magnitude above a threshold, the η-mapped samples stayed consistently closer to the truth than the mean squared error samples across thresholds from 154 to 214. Not every metric improved, though. On weighted coverage, the fraction of total field magnitude contributed by entries above a threshold, the mean squared error map came closer to the truth at lower thresholds. What training constrained was the spatial maximum, not the share carried by exceedances. Raise the threshold far enough and the relation flips. The mean squared error distribution collapses toward a point mass and stops representing extremes at all, while the η-mapped distribution remains a usable proxy for the true distribution even there.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The price paid across the full grid is tabulated as well. Over all 9,044 pairs, RMSE rose 8.13% from 2.878 to 3.112, and SSIM, a measure of spatial-structure similarity, fell 0.30% from 0.947 to 0.944. On the tail subsets split off at the upper quantiles of the reference distribution, the RMSE increase ran between 9.21% and 10.30%, and the SSIM decrease stayed within 0.48%. On the other side, the bulk subsets defined below the 0.7, 0.8, and 0.9 quantiles of the reference distribution, the RMSE increase ran between 6.20% and 6.92% and the SSIM decrease stayed within 0.27%. The cost, in other words, shows up more strongly in tail scenes. The authors summarize it: emphasizing the scalar observable induces a modest cost in point-wise intensity, larger in scenes with high maxima, without severely degrading local spatial structure.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What the method cannot do sits inside the same picture. The generated extreme precipitation maps are consistent in the statistics of magnitude but misaligned in spatial location. Cases where the η-map produced an extreme on a day whose truth held no extreme at all appear in the paper's own figures. The authors explain this as a probabilistic property rather than a failure, since distribution matching does not specify when or where an extreme appears. Whatever dynamical structure survives in the generated maps was inherited from the supervised side, not from the Wasserstein term. Each low-resolution field supplies a coarse representation of the physical state, and the pairs from the first six months serve as the labels for spatial correspondence.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        MIT News frames the capability as a question a user might ask. If the most extreme rainfall measurement ever recorded in New York City is 200 millimeters, what kind of storm would produce an even more extreme measurement, of 300 millimeters? Such an event has never been recorded and could still be plausible. Prompt the trained algorithm with a once-in-a-century storm and it returns maps carrying the size, area of coverage, and rainfall intensity of storms likely to occur at that frequency. Chang puts it this way. "Someone can say, 'I'm interested in building things to withstand the risk of an event that happens every 100 years,'" he says. "What we can do then is produce thousands of possible realizations that will happen with this sort of rare frequency."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A second experiment on the same precipitation data asks a different question. Rather than using η-learning as the downscaling model itself, can it be attached behind a generative model already in operation as a device that corrects that model's statistics? The generative model used was Flow Matching, though the arrangement is not tied to any particular generative architecture. A familiar difficulty sits in the background. Generative models demand large amounts of training data, and high-resolution data are precisely what is always in short supply.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Both comparison points fail. The Flow Matching model trained on 25 years of low-resolution data had data enough, but the low-resolution data themselves cannot hold the fine structure that produces extremes, so it misses the tail. The Flow Matching model trained on six months of high-resolution data has the right resolution but too little data, so it misses the tail as well. The detour the authors took was to super-resolve, through the η-map, the fresh 25-year samples generated by the low-resolution model. An η-map trained on six months alone pulled the distribution of those samples, the tail in particular, close to the truth. The authors add that the resulting tail sitting slightly above the truth comes from the uncertainty of drawing 25 years of fresh samples out of the low-resolution model, not from evidence that the η-map over-regularized.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The check attached to that experiment also shows how far more data alone can get you. To confirm that the high-resolution model's weakness really came from a shortage of data, the authors trained separate Flow Matching models with high-resolution training data extended to 2.5 years, 10 years, and 25 years. As the data grew, the bulk of the distribution moved toward the truth and the tail grew heavier. Only at the full 25 years did the tail decay rate line up with the truth and with the distribution pushed forward by the η-map. The authors do not present these models as competitors. Since the η-map used only six months, they write, the comparison exists to explain the behavior of the real competitor, the six-month high-resolution model.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="assumed-tail-becomes-output" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The tail you assume becomes the extremes you generate</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The third precipitation experiment keeps the first downscaling setup intact and changes only the reference distribution. In place of the true distribution it supplies a generalized extreme value distribution with a deliberately heavier tail. The tail is opened toward something worse than anything in the record, and the experiment asks what a high-resolution precipitation field consistent with both the observations and that assumption would look like. The resulting distribution shifted toward the assumption and carried a heavier tail than the truth. The point of the experiment is that scenarios can be built from tail information alone, from beyond the observational record.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The authors immediately apply the brakes to this result. The experiment validates neither the assumed reference distribution nor the amplified rainfall values produced under it. The distributional regularization is designed to enforce the supplied tail statistics, so misspecifying the tail makes the learned map generate extreme magnitudes wrong by that much. The effect is quantified in a sensitivity analysis. Perturbing the supplied tail quantiles through a single parameter, toward the heavier side, raised full-grid RMSE 20.55% from 2.926 to 3.527. Over the same range SSIM stayed between 0.941 and 0.947, meaning the discrepancy came from magnitude rather than spatial form.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The figures from this experiment therefore have to be read as scenarios conditional on an assumption. They show how the learned downscaling map responds when an assumed heavy tail is imposed, and nothing more. They are not evidence that those amplified extremes will occur, nor that their magnitudes have been physically validated. The authors state the condition plainly. Such conditional scenarios are useful for risk assessment and decision-making only when the reference tail is treated as an explicit modeling hypothesis and accompanied by appropriate sensitivity analysis.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The discussion section addresses a more fundamental limitation head-on. Matching the distribution of a prescribed observable does not identify the dynamical mechanism that produces extreme events. The Wasserstein term constrains observable statistics only, and by itself determines neither temporal evolution nor spatial organization nor physical consistency in the broad sense. When distinct mechanisms or state configurations induce the same observable law, the present objective cannot tell them apart. The same holds at the level of individual events. A prescribed observable law does not determine the precise location, occurrence time, or full spatial structure of an unobserved extreme.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The size of that wobble is measured in a synthetic example. In a problem mapping two-dimensional input to a one-dimensional value, training 20 η-estimators separately under the same configuration with only the initialization changed gave maximizer locations whose ensemble spatial standard deviation was 3.992, against a true maximizer whose 2-norm is 2.86. The spread of the inferred peaks was wider than the distance from the origin to the true peak. Two things held across all 20 nonetheless: predictions stayed accurate in the data-rich region, and the induced output densities stayed consistent with the reference distribution. The authors read this as follows: enforcing the tail statistics of an observable generates candidate extremes without necessarily identifying the physical structure behind them.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A scatter diagram showing that 20 independently trained eta-estimators produced maximizer locations with a spatial standard deviation of 3.992, which is larger than the 2-norm distance of 2.86 from the origin to the true maximizer" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="26" text-anchor="middle" font-family="'Outfit',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">Same statistics, different location</text>
+
+                            <circle cx="230" cy="240" r="4" fill="var(--text-primary)"/>
+                            <text x="230" y="262" text-anchor="middle" font-family="sans-serif" font-size="9" fill="var(--text-secondary)">origin</text>
+
+                            <line x1="230" y1="240" x2="330" y2="160" stroke="var(--text-secondary)" stroke-width="1.4"/>
+                            <circle cx="330" cy="160" r="5" fill="none" stroke="var(--text-primary)" stroke-width="2"/>
+                            <text x="345" y="152" text-anchor="start" font-family="sans-serif" font-size="9.5" font-weight="700" fill="var(--text-primary)">true maximizer</text>
+                            <text x="345" y="168" text-anchor="start" font-family="sans-serif" font-size="9" fill="var(--text-secondary)">2-norm from origin: 2.86</text>
+
+                            <circle cx="330" cy="160" r="115" fill="rgba(248,104,37,0.06)" stroke="#F86825" stroke-width="1.3" stroke-dasharray="5,4"/>
+                            <text x="330" y="292" text-anchor="middle" font-family="sans-serif" font-size="9.5" font-weight="700" fill="#F86825">spread (std) of 20 estimators: 3.992</text>
+
+                            <circle cx="300" cy="110" r="3.4" fill="#F86825"/>
+                            <circle cx="390" cy="130" r="3.4" fill="#F86825"/>
+                            <circle cx="410" cy="190" r="3.4" fill="#F86825"/>
+                            <circle cx="370" cy="240" r="3.4" fill="#F86825"/>
+                            <circle cx="300" cy="255" r="3.4" fill="#F86825"/>
+                            <circle cx="250" cy="220" r="3.4" fill="#F86825"/>
+                            <circle cx="240" cy="160" r="3.4" fill="#F86825"/>
+                            <circle cx="280" cy="130" r="3.4" fill="#F86825"/>
+                            <circle cx="350" cy="100" r="3.4" fill="#F86825"/>
+                            <circle cx="420" cy="150" r="3.4" fill="#F86825"/>
+                            <circle cx="400" cy="220" r="3.4" fill="#F86825"/>
+                            <circle cx="340" cy="255" r="3.4" fill="#F86825"/>
+                            <circle cx="270" cy="245" r="3.4" fill="#F86825"/>
+                            <circle cx="235" cy="200" r="3.4" fill="#F86825"/>
+                            <circle cx="260" cy="105" r="3.4" fill="#F86825"/>
+                            <circle cx="330" cy="85" r="3.4" fill="#F86825"/>
+                            <circle cx="435" cy="180" r="3.4" fill="#F86825"/>
+                            <circle cx="365" cy="155" r="3.4" fill="#F86825"/>
+                            <circle cx="310" cy="190" r="3.4" fill="#F86825"/>
+                            <circle cx="290" cy="180" r="3.4" fill="#F86825"/>
+
+                            <text x="330" y="320" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="var(--text-muted)">the spread exceeds the distance to the true peak: right statistics, wrong location</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ A conceptual rendering of 20 independently trained η-estimators in the 2D synthetic example. Positions are illustrative, not exact coordinates | Original Pebblous diagram</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The theory carries the same warning. The authors write that convergence in the observable distribution does not by itself imply point-wise reliability, and they insist the learned map be read as producing distributionally calibrated candidate extremes rather than as recovering their true location, time, or mechanism. Point-wise reliability requires additional identifying information, such as richer observables, spatial or temporal references, or structural and physical constraints imposed during training.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The authors treat this uncertainty as a resource to use rather than a defect to remove. Several independently trained η-maps generate diverse yet statistically consistent candidate extreme events. Organizing those candidates by physically meaningful attributes such as event location, occurrence time, or spatial pattern lets you pick representative scenarios and aim the next round of data acquisition at them, testing or rejecting the corresponding hypotheses with targeted high-fidelity simulations or experiments and progressively reducing uncertainty in the region where data are absent.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            η-learning was not proposed as a replacement for data collection. It was proposed as a way to decide where to collect. The candidate extremes that independently trained maps disagree about become the list that decides where the next observation or simulation should go.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="empty-longtail-everywhere" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Empty long tails are not only a weather problem</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The authors name two examples outside weather: robotic navigation and financial markets. Chang described the market case this way. "Financial market crashes are extreme events that are a complicated combination of things, involving many different sectors," he says. "What is the interaction that leads to a market crash? That is something that this method could explore." The paper's discussion lists application candidates a little more broadly: agent-based decision-making, synthetic financial data generation, safety-critical control, and climate extreme modeling. Within weather, it notes the method could extend to other extreme events such as floods and wildfires as long as the relevant point statistics and spatial data are available.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The context Sapsis added in MIT News explains why that extension is urgent. "Extreme events have become a strategic concern, not just an environmental one — we've optimized global systems for efficiency, and the price of that efficiency is that there's very little slack left anywhere. A single extreme event propagates through supply chains, energy markets, and food systems in weeks." And he closes on this. "Being able to put a probability on an event that hasn't happened yet is now a question of national and economic resilience."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        From here on, this is a story the paper does not tell. Corner cases in autonomous driving, equipment anomaly detection, credit collapse, and problems like them share the same shape in that their long tails are empty. That does not mean the paper covered these cases, and it certainly does not mean the experiments were reproduced in these domains. The only names the source material offered were robotic navigation and financial markets.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What decides whether the idea can move to your own dataset, then, is not the domain name but two questions. First, can you define a single scalar observable that stands for severity? In precipitation, the maximum of one map played that role. Second, can you defend the tail distribution of that observable from outside the data? Weather, earthquakes, and sea levels have two layers of grounding, decades of records and extreme value theory. That second condition is far harder in practice. For equipment anomalies or corner cases you may well answer the first question, and still find it difficult to argue without data what shape the tail should take.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 660 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A table applying the two conditions for transferring this method to another domain (whether a scalar observable can be defined, and whether its tail distribution can be defended from outside the data) to weather, to robotic navigation and financial markets, and to autonomous driving and equipment anomalies" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg)">
+                            <text x="330" y="24" text-anchor="middle" font-family="'Outfit',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">Two conditions that decide transferability</text>
+
+                            <line x1="20" y1="42" x2="640" y2="42" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="230" y="60" text-anchor="middle" font-family="sans-serif" font-size="9.5" font-weight="700" fill="var(--text-secondary)">Q1. Can a scalar observable be defined?</text>
+                            <text x="480" y="60" text-anchor="middle" font-family="sans-serif" font-size="9.5" font-weight="700" fill="var(--text-secondary)">Q2. Can the tail be defended outside the data?</text>
+                            <line x1="20" y1="72" x2="640" y2="72" stroke="var(--text-muted)" stroke-width="1"/>
+
+                            <text x="30" y="98" text-anchor="start" font-family="sans-serif" font-size="10" font-weight="700" fill="var(--text-primary)">Weather · earthquakes · sea levels</text>
+                            <text x="30" y="112" text-anchor="start" font-family="sans-serif" font-size="8.5" fill="var(--text-muted)">the paper's own testbed</text>
+                            <text x="230" y="105" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#F86825">✓</text>
+                            <text x="480" y="105" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#F86825">✓</text>
+                            <text x="480" y="120" text-anchor="middle" font-family="sans-serif" font-size="8.5" fill="var(--text-muted)">decades of records + extreme value theory</text>
+                            <line x1="20" y1="134" x2="640" y2="134" stroke="var(--text-muted)" stroke-width="0.6" stroke-dasharray="2,3"/>
+
+                            <text x="30" y="160" text-anchor="start" font-family="sans-serif" font-size="10" font-weight="700" fill="var(--text-primary)">Robotic navigation · financial markets</text>
+                            <text x="30" y="174" text-anchor="start" font-family="sans-serif" font-size="8.5" fill="var(--text-muted)">applications the authors named</text>
+                            <text x="230" y="167" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#F86825">✓</text>
+                            <text x="480" y="167" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="var(--text-muted)">?</text>
+                            <text x="480" y="182" text-anchor="middle" font-family="sans-serif" font-size="8.5" fill="var(--text-muted)">the paper doesn't work out the method</text>
+                            <line x1="20" y1="196" x2="640" y2="196" stroke="var(--text-muted)" stroke-width="0.6" stroke-dasharray="2,3"/>
+
+                            <text x="30" y="222" text-anchor="start" font-family="sans-serif" font-size="10" font-weight="700" fill="var(--text-primary)">Autonomous driving · equipment · credit</text>
+                            <text x="30" y="236" text-anchor="start" font-family="sans-serif" font-size="8.5" fill="var(--text-muted)">the Pebblous reader's angle, beyond the paper</text>
+                            <text x="230" y="229" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#F86825">✓</text>
+                            <text x="480" y="229" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="var(--text-muted)">?</text>
+                            <text x="480" y="244" text-anchor="middle" font-family="sans-serif" font-size="8.5" fill="var(--text-muted)">hard to argue the tail shape without data</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">▲ The two conditions applied to weather, to the paper's named applications, and to the Pebblous extension. Only the first row is something the paper actually tested | Original Pebblous diagram</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A trap hides inside the first condition too. The moment severity is reduced to a single scalar, if that scalar is built by combining several components, nothing constrains how the extreme is divided among them. The authors observed this in a synthetic example that summarized a two-dimensional state as a weighted sum of two components. Distortion in one component was partly compensated by changes in the other while the statistics of the scalar observable stayed similar, and the spatial distortion showing up in each component was more pronounced as a result. So the question is not only whether a scalar can be defined, but also what disappears when that scalar flattens several components together.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper knows this weak point and records a direction for handling it. Rather than betting everything on a single reference law, it proposes a distributionally robust formulation that considers an ambiguity set of plausible laws together with the worst case. It also states as a limitation that the present theory and algorithms were built assuming a single scalar observable. With multiple observables you have to define a severity function that reduces them to a scalar, or add per-component penalties while giving up the correlation structure among components, or move to a multivariate optimal transport distance.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Editor's Note</strong>: A question Pebblous meets often in data quality work appears in this paper wearing a different face. Gather more rare examples, or train the distribution differently? The answer this research offers is neither one nor the other but a change in the form of the requirement. Where labeled extreme examples were demanded, an explicit hypothesis about the tail distribution takes their place, and that hypothesis has to be documented alongside a sensitivity analysis. For an organization planning data acquisition, one question follows. Can you write down, today, a single scalar that represents severity in your domain and the grounds for the shape of its tail? If you cannot, collecting examples still comes first. If you can, this method can narrow down where to collect before you start collecting.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper is open access at <a href="https://www.nature.com/articles/s41467-026-76811-x" target="_blank" rel="noopener" style="color:#F86825;">Nature Communications</a>, and the preprint is available at <a href="https://arxiv.org/abs/2510.19161" target="_blank" rel="noopener" style="color:#F86825;">arXiv:2510.19161</a>. The research was supported in part by a Vannevar Bush Faculty Fellowship and the U.S. Air Force Office of Scientific Research.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic Paper</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Chang, K. &amp; Sapsis, T. P. (2026). "<a href="https://www.nature.com/articles/s41467-026-76811-x" target="_blank" rel="noopener">Extreme Event Aware (η-) Learning</a>." <em>Nature Communications</em>. DOI: 10.1038/s41467-026-76811-x</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Chang, K. &amp; Sapsis, T. P. (2025). "<a href="https://arxiv.org/abs/2510.19161" target="_blank" rel="noopener">Extreme Event Aware (η-) Learning</a>." arXiv:2510.19161 (preprint, v2)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Press Coverage</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">3.</span><span class="ref-body">MIT News (2026-08-24). "<a href="https://news.mit.edu/2026/generating-scenarios-extreme-events-without-extreme-data-0824" target="_blank" rel="noopener">Generating scenarios for extreme events, without extreme data</a>."</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">EurekAlert! (2026-08-24). "<a href="https://www.eurekalert.org/news-releases/1141263" target="_blank" rel="noopener">Generating scenarios for extreme events, without extreme data</a>." (Redistribution of MIT News release)</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260829"></script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260829" defer></script>
+
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-08-28T18:20:40.105Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-28T18:43:38.663Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1787941240105-rrybiq",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-28T19:43:01.954Z"
+            },
+            mainTitle: "A Generative Model That Draws Rainfall It Has Never Seen",
+            subtitle: "MIT's η-learning, published in Nature Communications, puts the distribution of extremes into the training loss as a constraint",
+            pageTitle: "Generating 100-Year Rainfall Maps Without Extreme Data | Pebblous",
+            category: "tech",
+            publishDate: "2026-08-29",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/eta-learning-extremes-without-extreme-data/en/",
+            tags: ["generative models", "extreme value theory", "long-tail data", "data strategy", "optimal transport", "climate AI", "downscaling", "MIT research", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "What exactly does η-learning do?",
+                    answer: "It adds one term to the existing supervised loss. The added term is the 1-Wasserstein distance between the distribution of a scalar observable computed from the model's output and a reference distribution fixed in advance. Where data exist, the first term holds the model to the observations; in the tail where data are absent, the second term shapes the values the model puts out. The authors call the method Extreme Event Aware learning and shorten it to η-learning."
+                },
+                {
+                    question: "Why can it work without extreme examples in the training data?",
+                    answer: "Because the kind of requirement changed. Instead of labeled extreme examples, it demands the distribution that an observable indicative of extremeness has to follow. Nothing is made from nothing; the demand for correct examples is replaced by a demand for the shape those answers must take. Which is why anyone using it has to be able to say, first, where that shape came from."
+                },
+                {
+                    question: "Where does the reference distribution being enforced come from?",
+                    answer: "From several places. α-stable distributions have long been used for earthquake magnitudes and rainfall, and max-stable distributions for maximum sea levels and financial risk. Theoretical devices that indicate distributional form also exist, including asymptotic analysis for weakly nonlinear systems, white noise approximations, and the Gibbs hypothesis. Without such theory, the distribution can be estimated by unsupervised learning from unlabeled data unusable for supervised training, and failing that, a form such as a generalized extreme value distribution is assumed explicitly."
+                },
+                {
+                    question: "Why the 1-Wasserstein distance rather than KL divergence?",
+                    answer: "KL divergence weights a tail mismatch by the probability density at that point, and in the rare-event region that density is small by definition, so a large disagreement in the tail barely registers in the objective. Comparing log densities directly is more tail-sensitive but diverges when the supports fail to overlap. The 1-Wasserstein distance stays finite even when the two tails barely overlap, and in one dimension it equals the integral of the difference between quantile functions, so it can be estimated straight from samples."
+                },
+                {
+                    question: "What does it actually mean that only six months of data were used?",
+                    answer: "The six months apply to the supervised part that learns the spatial correspondence between low- and high-resolution maps. The point statistics of the extremes, meaning how often the maximum rainfall across a map reaches a given level, were computed from the full 25-year record and supplied as the reference distribution. So it is not that the method never saw 25 years of information, but that it saw only six months of labeled map pairs."
+                },
+                {
+                    question: "What was lost in exchange for recovering the tail?",
+                    answer: "Point-wise intensity accuracy. Across all 9,044 pairs RMSE rose 8.13% from 2.878 to 3.112, and on the tail subsets split off at the upper quantiles of the reference distribution the increase ran between 9.21% and 10.30%. SSIM, which measures the similarity of spatial structure, fell only 0.30% from 0.947 to 0.944. The cost lands on magnitude rather than local spatial form."
+                },
+                {
+                    question: "Can the location of a generated storm map be trusted?",
+                    answer: "That part is not guaranteed. The authors state explicitly that the generated extreme precipitation fields are consistent in the statistics of magnitude but misaligned in spatial location. Cases where the η-map produced an extreme on a day whose truth held none appear in the paper's figures. Distribution matching does not specify when or where an extreme appears. Whatever spatial structure survives in the generated maps was inherited from the supervised side, not from the Wasserstein term."
+                },
+                {
+                    question: "What happens if the assumed tail distribution is wrong?",
+                    answer: "The magnitude of the generated extremes is wrong by the same amount, because the regularization term is designed to enforce the supplied tail statistics. The authors quantified the effect in a sensitivity analysis. Perturbing the supplied tail quantiles through a single parameter toward the heavier side raised full-grid RMSE 20.55% from 2.926 to 3.527, while SSIM stayed between 0.941 and 0.947."
+                },
+                {
+                    question: "Can it be attached to a generative model that produces synthetic data?",
+                    answer: "The paper includes that experiment. The authors demonstrated the η-map as a model-agnostic statistical corrector, not tied to any particular generative architecture. Super-resolving, through an η-map trained on six months, the fresh samples produced by a Flow Matching model trained on 25 years of low-resolution data pulled the tail of the resulting distribution close to the truth. A Flow Matching model trained on high-resolution data alone, by contrast, matched the tail decay rate only after its training data grew through 2.5 years and 10 years to the full 25."
+                },
+                {
+                    question: "How does this differ from existing extreme value theory?",
+                    answer: "They play different roles rather than competing. Products of extreme value theory such as the generalized extreme value distribution sit on the supply side of the reference distribution here. Extreme value theory states the tail law of a scalar observable, and η-learning generates high-dimensional fields consistent with both that law and the observed data. Stating the shape of a distribution and drawing maps that fit that shape are separated."
+                },
+                {
+                    question: "Where can it be used outside weather?",
+                    answer: "The places the authors named directly are robotic navigation and financial markets. The paper's discussion lists agent-based decision-making, synthetic financial data generation, safety-critical control, and climate extreme modeling as application candidates. Within weather it notes the method could extend to floods and wildfires as long as the relevant point statistics and spatial data are available. Autonomous driving corner cases and equipment anomaly detection are not subjects the paper addressed."
+                },
+                {
+                    question: "How do I judge whether it transfers to another domain?",
+                    answer: "It comes down to two questions. Can you define a single scalar observable that stands for severity, and can you defend the tail distribution of that observable from outside the data? In precipitation, the maximum of one map answered the first, and decades of records plus extreme value theory backed the second. The second is far harder in practice."
+                },
+                {
+                    question: "Does this method replace data collection?",
+                    answer: "The authors do not propose it that way. When several independently trained η-maps generate diverse yet statistically consistent candidate extreme events, those can be organized by event location, occurrence time, or spatial pattern so representative scenarios can be selected. Testing or rejecting those scenarios with targeted high-fidelity simulations or experiments progressively reduces uncertainty in the region where data are absent. It is closer to aiming collection than to replacing it."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
