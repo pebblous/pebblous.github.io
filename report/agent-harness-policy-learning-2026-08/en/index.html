@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <title>EvoHarness-RL: Agent Harness Policy Learning | Pebblous</title>
+    <meta name="description" content="Meta AI and UIUC's EvoHarness-RL trains an 8B agent from 47.9% to 96.9% on ALFWorld, but imitating the teacher's harness habits hurt unseen layouts.">
+    <meta name="keywords" content="AI agents, agent harness, agent memory, reinforcement learning, GRPO, small language models, AI-Ready Data, ALFWorld, EvoHarness-RL, Meta AI, UIUC, Qwen3-8B, supervised fine-tuning, generalization, data curation, Pebblous">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/agent-harness-policy-learning-2026-08/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/agent-harness-policy-learning-2026-08/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/agent-harness-policy-learning-2026-08/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/agent-harness-policy-learning-2026-08/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Learning the Teacher's Harness Habits Cost 8.2 Points in Unseen Rooms">
+    <meta property="og:description" content="An 8B model that copied a teacher's demonstrated memory habits scored lower on unseen ALFWorld layouts than the same model given only a prompt. It recovered only after reinforcement learning charged a step for every harness call.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/agent-harness-policy-learning-2026-08/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/agent-harness-policy-learning-2026-08/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="EvoHarness-RL analysis: ALFWorld success rates for an 8B agent trained to use its own harness">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Learning the Teacher's Harness Habits Cost 8.2 Points in Unseen Rooms">
+    <meta name="twitter:description" content="87 successful trajectories filtered out of 500 games taught one thing: the teacher's note-taking rhythm. In rooms the agent had never seen, that rhythm scored 8.2 points below a plain prompt.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/agent-harness-policy-learning-2026-08/en/image/index.png">
+    <meta name="twitter:image:alt" content="EvoHarness-RL analysis: ALFWorld success rates for an 8B agent trained to use its own harness">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="Learning the Teacher's Harness Habits Cost 8.2 Points in Unseen Rooms — What EvoHarness-RL Shows About Harness Policy Learning">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/08/29">
+    <meta name="citation_online_date" content="2026/08/29">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Stylesheets (fixed order) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260829">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260829">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260829">
+</head>
+<body class="themeable-bg themeable-text font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. A policy takes the place humans used to write</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The training set was 87 trajectories out of 500 games</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. The model that learned from demonstrations fell behind</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. The first habit erased was writing things down</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. The experience store shrinks instead of growing</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. How far this result can be read</a></li>
+                    <li><a href="#pebblous-reason" class="block pl-4 themeable-toc-link transition-colors duration-200">Why This Matters to Pebblous</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">EvoHarness-RL, released on 5 August 2026 by a joint team from Meta AI and the University of Illinois Urbana-Champaign, trains an agent to decide when to read and write its own external workspace instead of having a human specify that in a prompt. Three kinds of external state face the policy directly: what the agent believes about the environment, how far it has gotten, and what it learned in earlier episodes. Four actions that reach those states sit in the same action list as opening a drawer or picking up an object. The whole design starts from one decision: a call to the harness costs the agent a step.</p>
+                        <p class="themeable-text leading-relaxed mt-4">The headline number came from layouts the model had trained on. The values worth weighing come from the layouts it had never seen, and there are three of them. Given the harness through a prompt alone, the model scored 77.6%. After supervised fine-tuning on a teacher's demonstrated harness use, it scored 69.4%. After reinforcement learning that charged for every call, it reached 86.6%. Faithfully copying the teacher turned out to be a liability in an unfamiliar room. That supervised imitation memorizes while reinforcement learning generalizes already had a name by early 2025, and this paper shows the same pattern holding for a new object: the policy that governs harness use.</p>
+                        <p class="themeable-text leading-relaxed mt-4">The training data came from running 500 games with a teacher model and keeping only the 87 episodes that succeeded. The habits packed into those 87 were stripped away one by one during reinforcement learning, and the first to go were the two the teacher had demonstrated most: committing progress and writing notes. Nobody wrote a rule about what to keep and what to drop. A cost signal was introduced and the model settled it. The caveats are real, though. The only environment is ALFWorld, and on its unseen split a plain supervised baseline from another lab already sits above 94%. The authors themselves state in an appendix that this should not be read as a universal law of harness use.</p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">47.9% → 96.9%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Success rate on the seen split</p>
+                            <p class="text-xs themeable-muted mt-1">Qwen3-8B. Claude Opus 4.5 with plain ReAct scores 96.4% in the same table</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">77.6% → 69.4%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">The drop on unseen layouts after imitation</p>
+                            <p class="text-xs themeable-muted mt-1">8.2 points below the prompt-only harness. RL brings it to 86.6%</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">87</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Trajectories kept out of 500 games</p>
+                            <p class="text-xs themeable-muted mt-1">Only successful episodes, yielding 1,153 dialogue pairs</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~1 call</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Harness calls per episode after RL</p>
+                            <p class="text-xs themeable-muted mt-1">Down from the frequent calls of the SFT checkpoint, while success kept climbing</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A policy takes the place humans used to write</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">A harness is the working apparatus an agent keeps outside the model. Files that survive a session ending, a progress log the next session reads first, a note recording what worked last time. We covered the concept itself in <a href="/pebblopedia/harness/en/" class="text-orange-400 hover:text-orange-300 transition-colors">the PebbloPedia entry on harnesses</a>. Until now, when to read and when to write that apparatus has been decided by a human writing sentences.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">What that looks like in practice is visible in the one industry document this paper cites. It is Anthropic's engineering post on harnesses for long-running agents (Justin Young, 26 November 2025). The harness it describes runs like this. An initializer agent, which runs only in the first session, creates an <span class="font-semibold">init.sh</span> script, a <span class="font-semibold">claude-progress.txt</span> log, and an initial git commit, then expands the user's request into a JSON file of feature requirements. In the claude.ai clone example that file holds over 200 features, all marked as failing to start. Each coding agent works on one feature at a time, commits when done, and leaves a structured update in the progress file. A fresh session rebuilds its own picture of the work from the git history and that file.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The human experimentation goes all the way down into the details. The same post explains the choice of JSON for the progress artifact by noting that the model is less likely to inappropriately change or overwrite JSON files compared to Markdown files. The instruction that it is unacceptable to remove or edit tests is written into the prompt verbatim. The diagnosis that compaction alone is not sufficient is in the same post. Even in a state-of-the-art harness driving a frontier model, what gets written and read, and when, is ultimately specified in sentences a person wrote.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">And those sentences go stale when the model changes. The same company supplied the example four months later. Claude Sonnet 4.5 tended to wrap up work prematurely as it sensed its context limit approaching, a behavior the team called context anxiety, and they added context resets to the harness to counter it. When they ran the same harness on Claude Opus 4.5, the behavior was gone. Anthropic's own words for the resets at that point: <span class="font-semibold">they had become dead weight</span>. Every component in a harness encodes an assumption about what the model cannot do on its own, and those assumptions can go stale as models improve. That is the company's own summary.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">EvoHarness-RL has the policy learn those assumptions rather than having a human rewrite them. It sorts external state into three strands, puts them in front of the policy, and adds one action per strand to the same list the environment actions live in.</p>
+
+                    <div class="mb-2 rounded-xl border themeable-border p-4 overflow-x-auto" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 760 290" width="100%" role="img" aria-label="The three BPE states and four meta-actions. Belief is reached by track, Progress by commit, Experience by recall and note, and all four consume one episode step just like an environment action.">
+                            <text x="24" y="24" font-size="14" font-weight="600" fill="var(--text-secondary)">Three strands of external state facing the policy (BPE)</text>
+
+                            <rect x="24" y="40" width="228" height="96" rx="10" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="42" y="68" font-size="15" font-weight="700" fill="#F86825">Belief</text>
+                            <text x="42" y="90" font-size="13" fill="var(--text-secondary)">What state is the world in now</text>
+                            <text x="42" y="112" font-size="12" fill="var(--text-muted)">Tracked by a rule-based parser</text>
+
+                            <rect x="266" y="40" width="228" height="96" rx="10" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="284" y="68" font-size="15" font-weight="700" fill="#F86825">Progress</text>
+                            <text x="284" y="90" font-size="13" fill="var(--text-secondary)">How far the task has gotten</text>
+                            <text x="284" y="112" font-size="12" fill="var(--text-muted)">Up to 8 subgoals</text>
+
+                            <rect x="508" y="40" width="228" height="96" rx="10" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="526" y="68" font-size="15" font-weight="700" fill="#F86825">Experience</text>
+                            <text x="526" y="90" font-size="13" fill="var(--text-secondary)">What earlier episodes taught</text>
+                            <text x="526" y="112" font-size="12" fill="var(--text-muted)">4 categories, 80 entries each</text>
+
+                            <line x1="138" y1="136" x2="138" y2="168" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="380" y1="136" x2="380" y2="168" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="580" y1="136" x2="580" y2="168" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="672" y1="136" x2="672" y2="168" stroke="#808080" stroke-width="1.5"/>
+
+                            <rect x="74" y="168" width="128" height="52" rx="8" fill="#F86825" opacity="0.14"/>
+                            <text x="138" y="192" font-size="14" font-weight="700" text-anchor="middle" fill="#F86825">track</text>
+                            <text x="138" y="211" font-size="12" text-anchor="middle" fill="var(--text-muted)">query state</text>
+
+                            <rect x="316" y="168" width="128" height="52" rx="8" fill="#F86825" opacity="0.14"/>
+                            <text x="380" y="192" font-size="14" font-weight="700" text-anchor="middle" fill="#F86825">commit</text>
+                            <text x="380" y="211" font-size="12" text-anchor="middle" fill="var(--text-muted)">log progress</text>
+
+                            <rect x="520" y="168" width="120" height="52" rx="8" fill="#F86825" opacity="0.14"/>
+                            <text x="580" y="192" font-size="14" font-weight="700" text-anchor="middle" fill="#F86825">recall</text>
+                            <text x="580" y="211" font-size="12" text-anchor="middle" fill="var(--text-muted)">read the past</text>
+
+                            <rect x="652" y="168" width="84" height="52" rx="8" fill="#F86825" opacity="0.14"/>
+                            <text x="694" y="192" font-size="14" font-weight="700" text-anchor="middle" fill="#F86825">note</text>
+                            <text x="694" y="211" font-size="12" text-anchor="middle" fill="var(--text-muted)">write it down</text>
+
+                            <rect x="24" y="240" width="712" height="34" rx="8" fill="#808080" opacity="0.12"/>
+                            <text x="380" y="262" font-size="13" font-weight="600" text-anchor="middle" fill="var(--text-secondary)">All four consume one episode step, exactly like an environment action</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted mb-6">▲ The three BPE states and the four meta-actions | Source: reconstructed from EvoHarness-RL (arXiv:2608.05446v1) §2.2</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">That last line is where the paper's cost argument stands. If calling the harness were free, the policy would always be better off calling it. But track, commit, recall and note each consume a step exactly as opening a door does, so every call is one fewer chance to move. When to call becomes a decision traded against performance, and that makes it something to learn.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">Start with the performance. On the 140 tasks of the ALFWorld seen split, Qwen3-8B with only a prompt scored 47.9%, and after learning a harness-use policy it reached 96.9%. Claude Opus 4.5 with plain ReAct scores 96.4% in the same table. There is another tier above that, though. Opus 4.5 with the same harness supplied through a prompt goes back ahead at 98.5%. The gain from attaching a harness is in fact largest for weaker models. GPT-4.1 went from 47.9% to 70.0%, and GPT-5 from 60.7% to 85.0%.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The same table also carries rows for existing memory methods on the same backbone. ExpeL, which reflects on past episodes and reuses them, scores 49.3%. Dynamic Cheatsheet, which jots down tricks at test time and consults them, scores 52.1%. ACE, which rewrites the context itself, scores 51.4%. ReasoningBank at 55.7% and MemP at 49.7% are values quoted from other papers. None of them moves far from the 47.9% of a bare prompt. The opposite control sits in the table too: run reinforcement learning on the same model without any harness and it stops at 65.6%. Adding more memory does not reach 96.9%, and neither does training alone. The last sentence of the abstract states that contrast directly. Long-horizon agents benefit from trainable policies for constructing and coordinating with external harness workspaces, the authors write, beyond simply adding stronger tools or larger memories.</p>
+
+                    <div class="overflow-x-auto mb-2">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading">Configuration</th>
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading">Backbone</th>
+                                    <th class="text-right py-3 px-3 font-semibold themeable-heading">Avg. success rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">ReAct</td><td class="py-3 px-3">Claude Opus 4.5</td><td class="py-3 px-3 text-right">96.4%</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">+ harness (prompt-time)</td><td class="py-3 px-3">Claude Opus 4.5</td><td class="py-3 px-3 text-right font-semibold">98.5%</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">ReAct</td><td class="py-3 px-3">Qwen3-8B</td><td class="py-3 px-3 text-right">47.9%</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">(control) RL only, no harness</td><td class="py-3 px-3">Qwen3-8B</td><td class="py-3 px-3 text-right">65.6%</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">+ harness (prompt-time)</td><td class="py-3 px-3">Qwen3-8B</td><td class="py-3 px-3 text-right">56.4%</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">+ supervised fine-tuning</td><td class="py-3 px-3">Qwen3-8B</td><td class="py-3 px-3 text-right">68.6%</td></tr>
+                                <tr class="border-b-2 themeable-border font-semibold"><td class="py-3 px-3">+ cost-aware RL</td><td class="py-3 px-3">Qwen3-8B</td><td class="py-3 px-3 text-right">96.9%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-6">Source: EvoHarness-RL Table 1 (average over the 140 tasks of the ALFWorld seen split). The control row is the same backbone with GRPO but no BPE harness. Five rows of the same table are values quoted from other papers, and one of those uses a different backbone, Qwen2.5-7B. Section 6 takes that up separately.</p>
+
+                    <p class="themeable-text leading-relaxed">Traced through this blog, that lineage runs in three steps. First came <a href="/report/agent-loops-harness-over-model/en/" class="text-orange-400 hover:text-orange-300 transition-colors">the stage where humans designed the harness</a>, then <a href="/report/microsoft-skillopt-self-evolving-agents/en/" class="text-orange-400 hover:text-orange-300 transition-colors">the stage where the model rewrote a skill document</a>. This paper is the step after that. What gets rewritten is not text but the timing of access itself, and it moves into the policy weights.</p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The training set was 87 trajectories out of 500 games</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">Before a policy can be trained, it has to be able to write the four meta-actions as syntax. The researchers taught that syntax by demonstration. A teacher model played 500 ALFWorld training games with the harness attached, and only the episodes that succeeded were kept. What remained was <span class="font-semibold">87 trajectories</span>. From those they extracted 1,153 dialogue pairs asking what action comes next, used as the supervised training set, and the average episode ran 26.5 turns.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The teacher is Claude Opus. The paper does not give a version. Since that is written differently from the Claude Opus 4.5 that appears as a comparison in the tables, saying Opus 4.5 taught it would put a claim in the paper that is not there. The consolidation model that curates the experience store carries the same unversioned label.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">Eighty-seven is a small number, and smaller still against the 3,553 training task instances ALFWorld provides. Keeping only successes is a standard way to cut noise, but it also narrows what the surviving data teaches. And those 87 are not spread evenly across the six task types.</p>
+
+                    <div class="overflow-x-auto mb-2">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading">Task type</th>
+                                    <th class="text-right py-3 px-3 font-semibold themeable-heading">Successful trajectories</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">Pick two objects and place them</td><td class="py-3 px-3 text-right">28</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">Pick and place</td><td class="py-3 px-3 text-right">17</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">Clean, then place</td><td class="py-3 px-3 text-right">15</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">Heat, then place</td><td class="py-3 px-3 text-right">11</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">Examine under a lamp</td><td class="py-3 px-3 text-right">8</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">Cool, then place</td><td class="py-3 px-3 text-right">8</td></tr>
+                                <tr class="border-b-2 themeable-border font-semibold"><td class="py-3 px-3">Total</td><td class="py-3 px-3 text-right">87</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-6">Source: EvoHarness-RL Appendix C, following ALFWorld's six task types.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">What matters more is how the teacher used the harness inside those 87. Across all turns, <span class="font-semibold">405</span> were harness calls, about 18% of the total. Roughly one turn in five went to writing or recalling instead of moving through the room. And the four actions were not used evenly.</p>
+
+                    <div class="overflow-x-auto mb-2">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading">Meta-action</th>
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading">What it does</th>
+                                    <th class="text-right py-3 px-3 font-semibold themeable-heading">Teacher's calls</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3 font-semibold">commit</td><td class="py-3 px-3">Logs progress</td><td class="py-3 px-3 text-right">202</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3 font-semibold">recall</td><td class="py-3 px-3">Looks up past experience</td><td class="py-3 px-3 text-right">114</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3 font-semibold">note</td><td class="py-3 px-3">Writes down something newly learned</td><td class="py-3 px-3 text-right">55</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3 font-semibold">track</td><td class="py-3 px-3">Queries environment state</td><td class="py-3 px-3 text-right">34</td></tr>
+                                <tr class="border-b-2 themeable-border font-semibold"><td class="py-3 px-3">Total</td><td class="py-3 px-3"></td><td class="py-3 px-3 text-right">405</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-6">Source: EvoHarness-RL Appendix C, counted within the 87 successful trajectories, about 18% of all turns.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">What the teacher did most often was log progress. Recall came in at roughly half that, and notes and state queries were far rarer. This ordering is the baseline for section 4. The distribution after training only takes on meaning measured against this table.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">Supervised fine-tuning on its own did not move the success rate much: 56.4% to 68.6% on the seen split. Performance is not what the paper asks of this stage. The authors describe it as teaching the base agent the harness action space and how to construct useful external state. This is the stage where the model picks up the format of thinking and then choosing an action, and learns at the level of grammar how to invoke the four meta-actions. The problem is that habits came along with the grammar.</p>
+
+                    <div class="mb-2 rounded-xl border themeable-border p-4 overflow-x-auto" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 760 200" width="100%" role="img" aria-label="500 games are rolled out and filtered down to 87 successful trajectories, then SFT teaches the BPE grammar before cost-aware GRPO produces the deployed policy.">
+                            <text x="19" y="24" font-size="14" font-weight="600" fill="var(--text-secondary)">The two-stage training pipeline</text>
+
+                            <rect x="19" y="56" width="130" height="88" rx="10" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="84" y="86" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">500 games</text>
+                            <text x="84" y="104" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">rollout</text>
+                            <text x="84" y="124" font-size="11" text-anchor="middle" fill="var(--text-muted)">teacher model</text>
+
+                            <text x="158" y="105" font-size="18" text-anchor="middle" fill="#808080">→</text>
+
+                            <rect x="167" y="56" width="130" height="88" rx="10" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="232" y="86" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">Keep only</text>
+                            <text x="232" y="104" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">successes</text>
+                            <text x="232" y="124" font-size="11" text-anchor="middle" fill="var(--text-muted)">87 trajectories</text>
+
+                            <text x="306" y="105" font-size="18" text-anchor="middle" fill="#808080">→</text>
+
+                            <rect x="315" y="56" width="130" height="88" rx="10" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="380" y="86" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">SFT</text>
+                            <text x="380" y="104" font-size="11" text-anchor="middle" fill="var(--text-muted)">1,153 pairs</text>
+                            <text x="380" y="124" font-size="11" text-anchor="middle" fill="var(--text-muted)">learns grammar</text>
+
+                            <text x="454" y="105" font-size="18" text-anchor="middle" fill="#808080">→</text>
+
+                            <rect x="463" y="56" width="130" height="88" rx="10" fill="#F86825" opacity="0.14"/>
+                            <text x="528" y="86" font-size="13" font-weight="700" text-anchor="middle" fill="#F86825">GRPO</text>
+                            <text x="528" y="104" font-size="11" text-anchor="middle" fill="var(--text-secondary)">cost-aware</text>
+                            <text x="528" y="124" font-size="11" text-anchor="middle" fill="var(--text-muted)">reinforcement</text>
+
+                            <text x="602" y="105" font-size="18" text-anchor="middle" fill="#808080">→</text>
+
+                            <rect x="611" y="56" width="130" height="88" rx="10" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="676" y="86" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">Deployed</text>
+                            <text x="676" y="104" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">policy</text>
+                            <text x="676" y="124" font-size="11" text-anchor="middle" fill="var(--text-muted)">decides calls itself</text>
+
+                            <rect x="19" y="164" width="722" height="26" rx="6" fill="#808080" opacity="0.12"/>
+                            <text x="380" y="181" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text-secondary)">SFT teaches the grammar; GRPO teaches when to call it</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted">▲ The two-stage training pipeline | Source: EvoHarness-RL (arXiv:2608.05446v1) §2.4</p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The model that learned from demonstrations fell behind</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">ALFWorld splits evaluation in two. One split gives new tasks in room layouts used during training, 140 of them. The other gives tasks in layouts never seen before, 134 of them. The second split is what measures generalization. Every number up to this point came from the first. The table below is from the second.</p>
+
+                    <div class="overflow-x-auto mb-2">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading">Configuration</th>
+                                    <th class="text-left py-3 px-3 font-semibold themeable-heading">Who decides how the harness is used</th>
+                                    <th class="text-right py-3 px-3 font-semibold themeable-heading">Unseen-split success</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">ReAct</td><td class="py-3 px-3">No harness</td><td class="py-3 px-3 text-right">50.0%</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">Harness (prompt-time)</td><td class="py-3 px-3">A human-written prompt</td><td class="py-3 px-3 text-right font-semibold">77.6%</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 px-3">+ supervised fine-tuning</td><td class="py-3 px-3">Imitation of the teacher</td><td class="py-3 px-3 text-right font-semibold">69.4%</td></tr>
+                                <tr class="border-b-2 themeable-border font-semibold"><td class="py-3 px-3">+ cost-aware RL</td><td class="py-3 px-3">A policy that pays for calls</td><td class="py-3 px-3 text-right">86.6%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-6">Source: EvoHarness-RL Table 3 (average over the 134 tasks of the ALFWorld unseen split). All rows use the Qwen3-8B backbone.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The third row is where the direction flips. A model scoring 77.6% with the harness attached through a prompt learned, from 87 trajectories, how to use that harness well, and came out at 69.4%. It was better before the lesson than after. On the seen split the same supervised stage lifted 56.4% to 68.6%, so the direction of the effect depended on which split you looked at.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The paper's explanation is short and specific. Supervised imitation learns teacher harness-use patterns from seen trajectories without optimizing when access is worthwhile in novel environments. The teacher called the harness about 4.7 times per episode, 2.3 of those to commit. The student carries that rhythm over intact. In rooms where the rhythm fit, nothing goes wrong. Change the layout and the same rhythm becomes waste.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>This reversal is not a new discovery</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">The reversal itself was already reported in January 2025. Chu and colleagues found the same thing in a different setting, and their title is the conclusion: SFT memorizes, RL generalizes. They checked it across an arithmetic reasoning card game and real-world navigation, varying the rules and the visual conditions. Reinforcement learning trained on outcome-based rewards generalized to both kinds of variation, while supervised fine-tuning tended toward memorizing the training data and struggled out of distribution.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">What EvoHarness-RL adds is not the phenomenon but <span class="font-semibold">the object being memorized</span>. Until now this pattern has been discussed as memorizing answers. Here what got memorized was the teacher's tool-use habit, its rhythm for when to read and when to write. Raise the harness into something learnable and the same thing happens at that layer too.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>That does not mean you can drop the SFT stage</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">But 69.4% is not evidence that supervised fine-tuning was useless. The same Chu paper reported the generalization result alongside its companion claim: SFT remains essential for effective RL, because it stabilizes the model's output format so that subsequent reinforcement learning can deliver its gains. EvoHarness-RL's RL stage does not start from scratch either. It initializes from the SFT checkpoint.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">So the third row of Table 3 means that <span class="font-semibold">stopping</span> there is costly, not that the stage was unnecessary. Teaching the grammar and practicing when to speak are different jobs, and this paper taught the first through demonstration and the second through cost.</p>
+
+                    <p class="themeable-text leading-relaxed">The argument does not rest on a single paper either. On 24 June, two months earlier, another team extended ALFWorld to make the harness a tunable design variable and evaluated agents while both tasks and tool environments shifted. Only harness-aware post-training adapted robustly to out-of-distribution environments, and with a minimally engineered harness, post-training performance fell off sharply when the tool environment changed substantially. Same benchmark, independently confirmed direction.</p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The first habit erased was writing things down</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">In the second stage the researchers supplied not answers but values. Completing the task pays 10.0, and an efficiency bonus is added on top. That bonus carries one condition. <span class="font-semibold">It is granted only upon success.</span> A failed episode pays nothing no matter how frugal the agent was, which closes off the path where cutting calls becomes a goal in itself. A diversity term that discourages repeating a single kind of action is weighted heavily early in training and decays along a cosine curve, and meaningless repetition or malformed syntax each draw a fixed 0.1 penalty.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The bonus is not computed by counting harness calls. The episode cap is 70 steps, and what becomes the bonus is how much of that budget was left unused. The route by which a call acquires a price is therefore indirect. One call makes the episode one step longer, and a longer episode shaves the bonus. The authors write that this design naturally penalizes redundant harness queries.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">What the policy did under that signal was call the harness less. Right after supervised fine-tuning it called frequently, following the teacher, and as reinforcement learning progressed usage dropped quickly and stabilized <span class="font-semibold">near one call per episode</span>. Over the same period the success rate kept rising. Call frequency and success moved in opposite directions.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The rate of decline differed by action. Recall persisted longest, commit and note decayed toward zero, and track sat in between, useful for early state disambiguation and then gradually falling off. Set that ordering next to the teacher distribution from section 2 and it is inverted.</p>
+
+                    <div class="mb-2 rounded-xl border themeable-border p-4 overflow-x-auto" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 760 300" width="100%" role="img" aria-label="The teacher's most frequent action in the demonstrations was commit at 202 calls, with recall at 114. After reinforcement learning, recall is the most persistent action while commit and note decay toward zero.">
+                            <text x="24" y="24" font-size="14" font-weight="600" fill="var(--text-secondary)">Calls the teacher demonstrated (87 trajectories, 405 total)</text>
+
+                            <text x="24" y="60" font-size="13" fill="var(--text-secondary)">commit</text>
+                            <rect x="140" y="46" width="420" height="20" rx="4" fill="#F86825"/>
+                            <text x="572" y="61" font-size="13" font-weight="600" fill="var(--text-secondary)">202</text>
+
+                            <text x="24" y="92" font-size="13" fill="var(--text-secondary)">recall</text>
+                            <rect x="140" y="78" width="237" height="20" rx="4" fill="#808080"/>
+                            <text x="389" y="93" font-size="13" font-weight="600" fill="var(--text-secondary)">114</text>
+
+                            <text x="24" y="124" font-size="13" fill="var(--text-secondary)">note</text>
+                            <rect x="140" y="110" width="114" height="20" rx="4" fill="#F86825"/>
+                            <text x="266" y="125" font-size="13" font-weight="600" fill="var(--text-secondary)">55</text>
+
+                            <text x="24" y="156" font-size="13" fill="var(--text-secondary)">track</text>
+                            <rect x="140" y="142" width="71" height="20" rx="4" fill="#BDBDBD"/>
+                            <text x="223" y="157" font-size="13" font-weight="600" fill="var(--text-secondary)">34</text>
+
+                            <line x1="24" y1="186" x2="736" y2="186" stroke="#BDBDBD" stroke-width="1"/>
+
+                            <text x="24" y="212" font-size="14" font-weight="600" fill="var(--text-secondary)">What survived after RL (qualitative observation)</text>
+
+                            <rect x="24" y="228" width="168" height="52" rx="8" fill="#808080" opacity="0.18"/>
+                            <text x="108" y="250" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">recall</text>
+                            <text x="108" y="269" font-size="12" text-anchor="middle" fill="var(--text-muted)">most persistent</text>
+
+                            <rect x="204" y="228" width="168" height="52" rx="8" fill="#BDBDBD" opacity="0.35"/>
+                            <text x="288" y="250" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">track</text>
+                            <text x="288" y="269" font-size="12" text-anchor="middle" fill="var(--text-muted)">gradual decrease</text>
+
+                            <rect x="384" y="228" width="168" height="52" rx="8" fill="#F86825" opacity="0.16"/>
+                            <text x="468" y="250" font-size="13" font-weight="700" text-anchor="middle" fill="#F86825">commit</text>
+                            <text x="468" y="269" font-size="12" text-anchor="middle" fill="var(--text-muted)">decays toward zero</text>
+
+                            <rect x="564" y="228" width="172" height="52" rx="8" fill="#F86825" opacity="0.16"/>
+                            <text x="650" y="250" font-size="13" font-weight="700" text-anchor="middle" fill="#F86825">note</text>
+                            <text x="650" y="269" font-size="12" text-anchor="middle" fill="var(--text-muted)">decays toward zero</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted mb-6">▲ The demonstrated distribution and its reversal after training | Source: EvoHarness-RL Appendices A and C. The upper half shows call counts printed in the paper; the lower half restates the paper's description of the per-action decay curves, since exact post-training call counts are not given numerically.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">What the teacher demonstrated most was discarded first, and what it demonstrated at half that rate stayed to the end. Half of what those 87 trajectories taught did not earn its keep in a new environment, and no human corrected that with a rule. The cost signal did.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">There is another layer to note falling to near zero. The system prompt the policy sees at every step nails down three conditions under which a note must be written: when recalled hints were empty and the object was found, when the object was found somewhere not among the recalled hints, and when a recall about a procedure came back empty and the task was completed anyway. The prompt spells out in capitals that note is MANDATORY in those three cases. Once cost-aware training was underway, note calls all but disappeared. A required rule a human had written into a sentence collided with a step budget, and the policy sided with the budget. What status a prompt-specified harness protocol actually has is contained in that one scene.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">Fewer calls with better performance could be read as a sign that the policy collapsed, that it escaped into simply not using the harness at all. The authors rule that out using the reward curves. EvoHarness-RL achieved higher reward than standard GRPO without the harness cost throughout training. It moved toward calling less and doing better, not toward calling nothing and failing.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">The authors narrow the range of this result themselves, in an appendix. This action-level pattern is environment-dependent. ALFWorld tasks share reusable household procedures and object-search priors, which is what made the Experience component especially valuable here. In more visually grounded environments the agent may rely more on Belief to maintain scene graphs, object states, or spatial relations, and in software-engineering or workflow environments Progress may matter more for tracking subtasks, test status, dependency resolution, and unfinished branches. So EvoHarness-RL should not be interpreted as learning a fixed universal harness-action distribution. What it learns, in their words, is <span class="font-semibold">which parts of BPE are worth accessing under the cost structure and state demands of a given environment</span>.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6">That caution meshes with the Anthropic harness from section 1. That harness is built from a progress file, a feature list and a commit history, which puts overwhelming weight on the progress strand of the three. The appendix line about Progress mattering more in software environments has a working example behind it. Recall surviving is not a law of agent memory but a property of ALFWorld.</p>
+
+                    <p class="themeable-text leading-relaxed">Anthropic did its own pruning by hand. In a March 2026 post devoted to harness design, the team wrote that the first set of harness results was encouraging but also bulky, slow, and expensive, and that the logical next step was to find ways to simplify the harness without degrading its performance. That is a human deciding what to remove and confirming it by experiment. In this paper the same judgment was made by a cost function.</p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The experience store shrinks instead of growing</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">Of the three strands, experience earned its keep the most in this environment. With no training and the harness supplied only through a prompt, removing one strand at a time takes 56.4% down to 50.0% without belief and to 50.7% without progress. Removing experience is worst at 48.6%. But leaving that store to simply accumulate creates a different problem soon enough. As entries multiply, retrieval picks up noise, and stale facts compete on equal footing with fresh ones. We surveyed <a href="/report/conversational-memory-context-frameworks/en/" class="text-orange-400 hover:text-orange-300 transition-colors">the ways conversational history gets handled</a> in an earlier report, and most of them do not confront what to delete.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">EvoHarness-RL hands that judgment to a separate model. Notes the agent leaves while running an episode do not go into the store directly; they collect in a buffer. At the boundary between batches of episodes, a consolidation model reads them one at a time and rules on each in one of four ways.</p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li><span class="font-semibold">Add</span>: only when this is knowledge the store does not already hold.</li>
+                        <li><span class="font-semibold">Update</span>: when it overlaps an existing entry, revise that entry rather than adding a new one. The prompt states this as the priority.</li>
+                        <li><span class="font-semibold">Delete</span>: only when the note clearly invalidates an existing entry.</li>
+                        <li><span class="font-semibold">Skip</span>: when it only holds for that one episode.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">The store is split into four categories: general knowledge, task-specific procedures, mistakes made, and search priorities. Each category caps at 80 entries, and when it overflows the least frequently used entries are evicted first. Recall pulls the top three per category, and an entry that gets pulled has its usage count raised, improving its odds of surviving. Knowledge that is used often stays; knowledge written once and forgotten gets pushed out.</p>
+
+                    <div class="mb-2 rounded-xl border themeable-border p-4 overflow-x-auto" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 760 310" width="100%" role="img" aria-label="Notes buffered at the end of an episode are ruled on by a consolidation model as add, update, delete, or skip, and the store caps each category at 80 entries, evicting the least frequently used first.">
+                            <text x="19" y="20" font-size="14" font-weight="600" fill="var(--text-secondary)">Experience-store consolidation</text>
+
+                            <rect x="290" y="34" width="180" height="46" rx="10" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="380" y="54" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">Buffer</text>
+                            <text x="380" y="72" font-size="11" text-anchor="middle" fill="var(--text-muted)">notes accumulate at episode boundary</text>
+
+                            <line x1="380" y1="80" x2="380" y2="98" stroke="#808080" stroke-width="1.5"/>
+
+                            <rect x="250" y="98" width="260" height="50" rx="10" fill="#F86825" opacity="0.14"/>
+                            <text x="380" y="120" font-size="13" font-weight="700" text-anchor="middle" fill="#F86825">Consolidation model rules</text>
+                            <text x="380" y="138" font-size="11" text-anchor="middle" fill="var(--text-muted)">one of four verdicts per entry</text>
+
+                            <line x1="380" y1="148" x2="380" y2="164" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="101" y1="164" x2="659" y2="164" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="101" y1="164" x2="101" y2="178" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="287" y1="164" x2="287" y2="178" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="473" y1="164" x2="473" y2="178" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="659" y1="164" x2="659" y2="178" stroke="#808080" stroke-width="1.5"/>
+
+                            <rect x="15" y="178" width="172" height="52" rx="8" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="101" y="200" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">Add</text>
+                            <text x="101" y="218" font-size="10.5" text-anchor="middle" fill="var(--text-muted)">only if truly new</text>
+
+                            <rect x="201" y="178" width="172" height="52" rx="8" fill="#F86825" opacity="0.12"/>
+                            <text x="287" y="200" font-size="13" font-weight="700" text-anchor="middle" fill="#F86825">Update</text>
+                            <text x="287" y="218" font-size="10.5" text-anchor="middle" fill="var(--text-muted)">priority over adding</text>
+
+                            <rect x="387" y="178" width="172" height="52" rx="8" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="473" y="200" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">Delete</text>
+                            <text x="473" y="218" font-size="10.5" text-anchor="middle" fill="var(--text-muted)">only if it invalidates</text>
+
+                            <rect x="573" y="178" width="172" height="52" rx="8" fill="none" stroke="#BDBDBD" stroke-width="1.5"/>
+                            <text x="659" y="200" font-size="13" font-weight="700" text-anchor="middle" fill="var(--text-secondary)">Skip</text>
+                            <text x="659" y="218" font-size="10.5" text-anchor="middle" fill="var(--text-muted)">episode-only fact</text>
+
+                            <line x1="101" y1="230" x2="101" y2="244" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="287" y1="230" x2="287" y2="244" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="473" y1="230" x2="473" y2="244" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="659" y1="230" x2="659" y2="244" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="101" y1="244" x2="659" y2="244" stroke="#808080" stroke-width="1.5"/>
+                            <line x1="380" y1="244" x2="380" y2="260" stroke="#808080" stroke-width="1.5"/>
+
+                            <rect x="190" y="260" width="380" height="34" rx="8" fill="#808080" opacity="0.12"/>
+                            <text x="380" y="282" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text-secondary)">4 categories · cap of 80 each · least-used evicted first</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted mb-6">▲ Experience-store consolidation | Source: EvoHarness-RL (arXiv:2608.05446v1) §2.3, Appendix D.2</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The machinery running that store is cheap by construction. The parser tracking environment state is rule-based and never calls a model at all, and recall's retrieval runs on word overlap rather than embeddings. A new entry starts with a usage count of 1 and climbs each time it is pulled. Nothing expensive gets invoked while an episode is running; only consolidation runs, and it runs outside the episode boundary.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">That consolidation does not run on a single prompt either. One online prompt rules on notes entry by entry, and four induction prompts rebuild whole categories. And what the induction prompts read is not only successful trajectories. The prompts that extract general knowledge and task-specific procedures receive successful and failed trajectories together, and the prompt that builds the mistakes category receives only failed ones. Failures that were filtered out and discarded for the supervised set become raw material here. The initial store was itself populated from experience gathered during that same collection run, so the same 500 games were put to two different uses.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The store therefore does not grow monotonically. The trajectory the paper shows expands rapidly early, then settles into a compact but diverse state as overlapping entries are merged and rarely used ones are evicted. The authors call it a task-adaptive state substrate rather than passive append-only memory.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">How that adaptation actually plays out shows up well in one appendix case. The task was to clean a kettle and put it on the dining table. The agent registered finding the kettle as a subgoal and queried the experience store, getting back two things: a location hint saying the kettle is on a countertop, and a mistake entry saying not to search a failed location repeatedly. It searched two countertops and found no kettle. With the location hint having missed twice, the agent did not re-search the same places; it moved to a different prior, that kettles are often on stove burners. The kettle was on stove burner 3. The agent left a note right there, recording that the kettle was found on stove burner 3 while the recalled hint had said countertop. Then it cleaned the kettle at the sink, moved it to the dining table, and finished in 30 turns. The location hint was what was wrong, and what caught it was a mistake entry sitting in the same store.</p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">The authors summarize that case in one line. The harness is used as a source of <span class="font-semibold">reusable but revisable experience</span> rather than as a fixed oracle. The loop closes here: stored knowledge is treated as capable of being wrong, and the observation that it was wrong is itself stored.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6">Commercial products handling agent memory each cover a different layer. Some page context in and out, some offer an extraction-and-consolidation cycle, some manage a graph with a time axis. Even so, how to filter duplicates and when to expire entries remains something each team designs for itself, by the industry's own account. Retention controls are generally a compliance instrument rather than a quality one. By spelling out caps, eviction criteria and adjudication rules, this paper puts one answer into that gap, moving in the same direction as <a href="/report/muse-autoskill-self-evolving-skill-lifecycle/en/" class="text-orange-400 hover:text-orange-300 transition-colors">the trend of skills acquiring a lifecycle</a>.</p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">How far this result can be read</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">That is what the paper shows. Its reach is narrower than the result suggests. To start with, there is only one environment: ALFWorld. CRM migration, software development and regulatory compliance work, mentioned by the press coverage and by the authors, are offered as directions worth trying rather than demonstrated results. The stage this paper actually ran on is a text simulation of six household chores, with episodes averaging 26.5 turns.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>Half a point on a board that is nearly full</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">On the seen split, 96.9% against 96.4% is a gap of 0.5 points. That split has 140 tasks, so 0.5 points is less than a single task. The condition on this comparison is that Claude Opus 4.5 already scores 96.4% with no harness at all. And attach the same harness to Opus 4.5 through a prompt and it climbs to 98.5%. To report that an 8B model beat a frontier model, you have to show one of those two tiers and not the other. The paper's table prints both.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>The unseen split is close to saturated too</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">Being the split that measures generalization does not change the picture much. A paper from March gathered success rates for many methods on that same official split into one table. The highest value there came not from an elaborate technique but from a plain LoRA fine-tuning baseline at <span class="font-semibold">94.1%</span>. A rule-based expert sits below it at 89.6%, and the other supervised methods fall between 66.4% and 85.1%. Those authors wrote that standard LoRA fine-tuning surpasses the rule-based expert and nearly saturates the benchmark, and they titled the table with the observation that complex solutions can underperform a strong baseline.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">EvoHarness-RL's 86.6% sits below that. There are two reasons not to read this as a refutation, though. One is that the table aggregates values from different papers, which its own caption says should therefore be interpreted qualitatively, and its backbone is Qwen2.5-7B rather than this paper's Qwen3-8B. The other matters more. EvoHarness-RL never claimed a best result on the unseen split. It claims top performance on the seen split, and the comparison set is its own table. This contrast is not a rebuttal of the paper; it is a ruler for how far the number 96.9% can be stretched.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">The conclusion those authors attached to their own table is that stronger baselines should be built before elaborate engineered architectures are explored. They went a step further, judging that this official split labeled unseen is still held out within task groups and therefore remains close to the training distribution. So they partitioned the task types into easy and hard and built a separate out-of-distribution evaluation. That is the width of the generalization this split measures.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>Some numbers in the table are quoted, not measured</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">Table 1 mixes in rows this paper did not run itself. They are values transcribed from other papers. By the symbol key beneath the table there are five such rows. From the SkillOS paper come ReasoningBank at 55.7%, MemP at 49.7%, SkillOS-base at 53.1% and SkillOS at 80.2%; from the SkillRL paper comes 89.9%. That last row uses the Qwen2.5-7B backbone. Reporting the table as a ranking measured under identical conditions on the same 8B backbone gets it wrong. The names are also easy to confuse: the SkillOS cited in the table is a different paper from <a href="/report/microsoft-skillopt-self-evolving-agents/en/" class="text-orange-400 hover:text-orange-300 transition-colors">Microsoft's SkillOpt, which this blog covered in May</a>.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.4</span>The price is training, and the total is not in the paper</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">The adoption argument for this design is that you do not have to tear out your existing tools, only add an environment adapter. What you do have to do instead is train. What the paper reports is that it ran 150 epochs on a single node of 8 NVIDIA H200 GPUs, with 16 prompts and 128 trajectories per step, and an episode cap of 70 steps. Working back from those gives total rollout steps on the order of <span class="font-semibold">500,000</span>, which is not a figure printed in the paper but an estimate computed from the published hyperparameters.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">Converting that to dollars is hard. Hourly rates for an 8-way H200 node range from roughly $32 on specialist clouds to roughly $85 for large-cloud on-demand as of August 2026, and more importantly the paper does not report actual wall-clock training time. Total training cost is best left marked unverified. And training carries one more prerequisite ahead of it: a logging system capable of collecting successful trajectories. Picking 87 requires having run 500 games, adjudicated the outcomes, and stored them.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.5</span>The frontier model did not disappear, it moved</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">Reading this pipeline as a small model replacing a frontier API does not hold up either. The teacher is Claude Opus, and the consolidation model curating the experience store is Claude Opus. It dropped out of the seat where it was called every turn at runtime and took a seat generating training data and curating the store instead. On steady-state operating price the gap is real. Claude Opus 4.5 lists at $5 per million input tokens and $25 per million output tokens, while hosted Qwen3-8B runs between $0.04 and $0.455 depending on the provider. That comparison assumes you would hand the same job to either model, though, and it is not what this paper demonstrated.</p>
+
+                    <p class="themeable-text leading-relaxed">What changed is not whether you use a frontier model but where you use it. And the seat it moved into is named data generation and curation.</p>
+                </section>
+
+                <!-- Why This Matters to Pebblous -->
+                <section id="pebblous-reason" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why This Matters to Pebblous</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">Pebblous has defined AI-Ready Data as data organized so a model can use it directly. This paper's experience store is that definition relocated to runtime. A consolidation model reviews notes at every batch boundary and rules add, update, delete or skip; each category has a cap and evicts the least used first. That is the same layer of work DataClinic applies to a training corpus as deduplication, conflict resolution and retirement. What differs is the object. This is memory the agent generates while running, not a static dataset, so curation has to run continuously instead of in batches.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">For anyone working on data, the most important number in this paper is not 96.9% but <span class="font-semibold">87</span>. Only 87 successful trajectories were kept out of 500 games, and the teacher habits packed into those 87 did not help in unfamiliar rooms. They scored 8.2 points below the same model given only a prompt. Nothing was decided by adding more data. What decided it was what that data was teaching. And the badly learned habit was not corrected by a human writing a rule; the model dropped it on its own once a cost signal existed. Here the training-data bias came from what was demonstrated, not from how much, and the correction took a cost function instead of a ground-truth label.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">Teams wiring up agents in the field mostly hand-write their memory rules. Log state when this stage ends, look up past cases when an error occurs. As section 1 showed, those sentences go stale when the model changes, and as Appendix A showed, they misfire when the environment changes. One reason for each has now been documented. What this paper proposes instead leaves your existing tools and state stores where they are and exposes only three policy-facing strands, so there is an adoption path that does not require replacing the stack. What it does require is training, and training requires a logging system that can collect successful trajectories first. Which brings it back to a data problem.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">Agent memory is largely treated today as a problem of accumulation. This paper reframes it as a problem of what to keep and what to discard, and hands the adjudication to a separate model. That <a href="/report/agent-memory-provenance-deletion/en/" class="text-orange-400 hover:text-orange-300 transition-colors">memory without a name tag cannot be erased</a> was the subject of an earlier report, and the lineage of agents that teach themselves starts with <a href="/report/voyager-lifelong-agent-2023/en/" class="text-orange-400 hover:text-orange-300 transition-colors">the 2023 work this paper also cites</a>. The problem that is new sits between them. Judging accumulated memory now needs criteria.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">Building those criteria splits three ways. One is diagnosing the state of the experience store, measuring the distribution of duplication, conflict and actual usage. Two is designing the eviction and consolidation policy and verifying that the policy behaves as intended. Three is deciding by what standard successful trajectories are selected for training. The third is the problem this paper surfaced as the number 87, and all three are work already being done on training corpora.</p>
+
+                    <p class="themeable-text leading-relaxed">None of this means the paper's work and data quality work are the same job. The objects differ and the time scales differ. What is clear is that the same question is being asked of a different object. What do you keep and what do you throw away, and where does the basis for that judgment come from. This paper's answer was cost.</p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Ning, X., Fu, D., Wei, T., et al. (2026). <a href="https://arxiv.org/abs/2608.05446v1" target="_blank" rel="noopener">EvoHarness-RL: Learning Self-Evolving Runtime Harness for Long-Horizon LLM Agents</a>. arXiv:2608.05446v1. 2026-08-05. UIUC and Meta AI, 16 authors. (Primary source for this piece: Tables 1, 2 and 3 and all figures in Appendices A through D)</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Chu et al. (2025). <a href="https://arxiv.org/abs/2501.17161" target="_blank" rel="noopener">SFT Memorizes, RL Generalizes: A Comparative Study of Foundation Model Post-training</a>. arXiv:2501.17161. 2025-01-28. (The prior work that named out-of-distribution degradation under supervised fine-tuning and generalization under RL. The companion claim, that SFT stabilizes output format so RL can deliver, is in the same abstract)</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Palmeira Ferraz, T., Deffayet, R., Nikoulina, V., Déjean, H., &amp; Clinchant, S. (2026). <a href="https://arxiv.org/abs/2603.18272" target="_blank" rel="noopener">Retrieval-Augmented LLM Agents: Learning to Learn from Experience</a>. arXiv:2603.18272. 2026-03-18. (Table 1 reports a 94.1% LoRA baseline and an 89.6% rule-based expert on the official ALFWorld unseen split. The caption notes it is a cross-paper comparison to be read qualitatively, and the backbone is Qwen2.5-7B)</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">(2026). <a href="https://arxiv.org/abs/2606.25447" target="_blank" rel="noopener">The Interplay of Harness Design and Post-Training in LLM Agents</a>. arXiv:2606.25447. 2026-06-24. (Extends ALFWorld to treat the harness as a design variable and evaluates under environment shift)</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">(2026). <a href="https://arxiv.org/abs/2606.12882" target="_blank" rel="noopener">HarnessBridge</a>. arXiv:2606.12882. 2026-06-11. (Starts from the observation that existing harnesses are largely handcrafted and learns a bidirectional projection between observations and actions)</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Shridhar, M., et al. (2021). <a href="https://arxiv.org/abs/2010.03768" target="_blank" rel="noopener">ALFWorld: Aligning Text and Embodied Environments for Interactive Learning</a>. arXiv:2010.03768. ICLR 2021. (3,553 training instances, 140 seen-split tasks, 134 unseen-split tasks, six task types)</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">(2023). <a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">ReAct: Synergizing Reasoning and Acting in Language Models</a>. arXiv:2210.03629. (The baseline configuration in this paper)</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">(2023). <a href="https://arxiv.org/abs/2303.11366" target="_blank" rel="noopener">Reflexion: Language Agents with Verbal Reinforcement Learning</a>. arXiv:2303.11366. (A comparison method in Table 1)</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">(2024). <a href="https://arxiv.org/abs/2402.03300" target="_blank" rel="noopener">DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models</a>. arXiv:2402.03300. (Source of the GRPO algorithm used here)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Industry primary sources</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">10.</span><span class="ref-body">Young, J. (2025). <a href="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents" target="_blank" rel="noopener">Effective harnesses for long-running agents</a>. Anthropic Engineering Blog. 2025-11-26. (The only industry document EvoHarness-RL cites. Source for the initializer agent, progress file, feature JSON and one-feature-at-a-time structure)</span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">Rajasekaran, P. (2026). <a href="https://www.anthropic.com/engineering/harness-design-long-running-apps" target="_blank" rel="noopener">Harness design for long-running application development</a>. Anthropic Engineering. 2026-03-24. (The statement that every component in a harness encodes an assumption about what the model cannot do on its own, and that those assumptions go stale as models improve)</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">Anthropic (2026). <a href="https://www.anthropic.com/engineering/managed-agents" target="_blank" rel="noopener">Scaling Managed Agents: Decoupling the brain from the hands</a>. Anthropic Engineering. 2026-04-08. (Their own case in which context resets added for Sonnet 4.5 became dead weight on Opus 4.5)</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">Anthropic (2026). <a href="https://www.anthropic.com/news/claude-opus-4-5" target="_blank" rel="noopener">Claude Opus 4.5</a>. (List price of $5 per million input tokens and $25 per million output tokens)</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">OpenRouter and Artificial Analysis (2026). Qwen3-8B hosting prices by provider. Accessed 2026-08. ($0.04 to $0.455 per million tokens)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Press coverage</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">15.</span><span class="ref-body">Park, C. (2026). <a href="https://www.aitimes.com/news/articleView.html?idxno=214593" target="_blank" rel="noopener">Meta reaches Claude Opus 4.5-level performance with an 8B model: the EvoHarness-RL paper</a>. AI Times (Korean). 2026-08-29. (The Korean coverage this piece started from. The paper was released 2026-08-05, which differs from the coverage date)</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Earlier Pebblous reports</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">16.</span><span class="ref-body">Pebblous (2026). <a href="/report/agent-memory-provenance-deletion/en/" class="text-orange-400 hover:text-orange-300 transition-colors">Memory Without a Name Tag Can't Be Erased</a>. 2026-07-29.</span></li>
+                        <li><span class="ref-num">17.</span><span class="ref-body">Pebblous (2026). <a href="/report/conversational-memory-context-frameworks/en/" class="text-orange-400 hover:text-orange-300 transition-colors">Five Ways to Make a Chatbot Remember the Conversation</a>. 2026-07-16.</span></li>
+                        <li><span class="ref-num">18.</span><span class="ref-body">Pebblous (2026). <a href="/report/agent-loops-harness-over-model/en/" class="text-orange-400 hover:text-orange-300 transition-colors">It's the Weak Harness, Not the Weak Model, That Kills Your Agent</a>. 2026-07-01.</span></li>
+                        <li><span class="ref-num">19.</span><span class="ref-body">Pebblous (2026). <a href="/report/microsoft-skillopt-self-evolving-agents/en/" class="text-orange-400 hover:text-orange-300 transition-colors">When Skill Documents Began to Learn</a>. 2026-05-27. (Microsoft SkillOpt, arXiv:2605.23904, a different paper from the SkillOS cited in this paper's table)</span></li>
+                        <li><span class="ref-num">20.</span><span class="ref-body">Pebblous (2026). <a href="/report/muse-autoskill-self-evolving-skill-lifecycle/en/" class="text-orange-400 hover:text-orange-300 transition-colors">When Skills Begin to Remember</a>. 2026-05-27.</span></li>
+                        <li><span class="ref-num">21.</span><span class="ref-body">Pebblous (2026). <a href="/report/voyager-lifelong-agent-2023/en/" class="text-orange-400 hover:text-orange-300 transition-colors">Voyager: The Origin of Self-Learning AI</a>. 2026-05-24.</span></li>
+                        <li><span class="ref-num">22.</span><span class="ref-body">Pebblous. <a href="/pebblopedia/harness/en/" class="text-orange-400 hover:text-orange-300 transition-colors">PebbloPedia: Harness</a>. (Concept primer)</span></li>
+                    </ul>
+                </section>
+
+                <!-- FAQ (rendered from config.faqs) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <!-- Scripts -->
+    <script src="/scripts/common-utils.js?v=20260829"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "operator",
+                "at": "2026-08-29T08:20:05.789Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-29T08:26:51.192Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-08-29T09:11:10.199Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1787991605790-h78vig",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-08-29T10:13:26.303Z"
+            },
+            mainTitle: "Learning the Teacher's Harness Habits Cost 8.2 Points in Unseen Rooms",
+            subtitle: "Meta AI and UIUC's EvoHarness-RL moves the decision of when to read and write external state inside the policy, and reports that an 8B model reached 86.6% on unseen ALFWorld layouts only after reinforcement learning charged a step for every harness call",
+            pageTitle: "EvoHarness-RL: Agent Harness Policy Learning | Pebblous",
+            publishDate: "2026-08-29",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            category: "tech",
+            articlePath: "report/agent-harness-policy-learning-2026-08/en/",
+            tags: ["AI agents", "agent harness", "agent memory", "reinforcement learning", "GRPO", "small language models", "AI-Ready Data", "ALFWorld"],
+            faqs: [
+                { question: "What exactly is a harness, and how is it different from a prompt or a tool?", answer: "A harness is the working apparatus an agent keeps outside the model: files that survive a session ending, a progress log the next session reads first, a note recording what worked last time. A tool is a means of doing something to the environment; a harness is the apparatus that holds and manages the agent's own state outside itself; and a prompt is the sentence that instructs when to use that apparatus. What EvoHarness-RL changed is the last item. Instead of instructing when to use it in a sentence, the policy learns it." },
+                { question: "What does each of the three BPE states hold?", answer: "Belief holds an estimate of what state the environment is in now. A rule-based parser extracts and maintains it from observations, with no separate model call. Progress holds how far the task has gotten, recording up to eight subgoals. Experience holds what earlier episodes taught, split into four categories (general knowledge, task-specific procedures, mistakes made, search priorities) with a cap of 80 entries per category." },
+                { question: "When are the four meta-actions used?", answer: "track queries environment state, commit logs progress, recall looks up past experience, and note writes down something newly learned. The key point is that all four consume one episode step, exactly as opening a door or picking up an object does. Every call is one fewer chance to actually move, so when to call becomes a decision traded against performance, and that makes it something to learn." },
+                { question: "Did an 8B model beat Claude Opus 4.5?", answer: "On one tier yes, across both tiers no. On the 140 tasks of the seen split, the fully trained Qwen3-8B scores 96.9% against 96.4% for Claude Opus 4.5 with plain ReAct. But with 140 tasks, 0.5 points is less than a single task, and Opus 4.5 with the same harness supplied through a prompt goes back ahead at 98.5%. On the unseen split, this paper's 86.6% is below the 94.1% plain LoRA baseline another paper reports." },
+                { question: "Why did supervised fine-tuning alone make performance worse in unseen environments?", answer: "The paper's explanation is that supervised imitation learns the teacher's harness-use patterns from seen trajectories without optimizing when access is worthwhile in novel environments. In rooms where the teacher's rhythm fit, nothing goes wrong, but change the layout and the same rhythm becomes waste. That supervised fine-tuning tilts toward memorization out of distribution while reinforcement learning recovers generalization was already reported in January 2025. What this paper adds is not the phenomenon but the object being memorized: not an answer, but the teacher's tool-use habit." },
+                { question: "So can the supervised stage be dropped?", answer: "No. Reinforcement learning is initialized from the SFT checkpoint, and the supervised stage is where the model learns the format of thinking and then choosing an action, plus the grammar of the four meta-actions. The same prior work stated that supervised fine-tuning must stabilize output format for subsequent reinforcement learning to deliver. The 69.4% on the unseen split means stopping at that stage is costly, not that the stage was unnecessary." },
+                { question: "How can performance rise while harness calls fall?", answer: "Because calls consume steps. Cutting unnecessary calls adds that many steps for actually moving. The reward design matches this: the efficiency bonus is granted only upon success, which closes off the path where cutting calls becomes a goal in itself. Against the suspicion that the policy simply collapsed into not using the harness, the authors point to reward curves showing EvoHarness-RL above standard GRPO without the harness cost throughout training." },
+                { question: "Doesn't the experience store grow without limit? What gets discarded?", answer: "It does not grow without limit. At the boundary between batches of episodes, a consolidation model reads the buffered notes and rules on each one: add, update, delete or skip. Overlap with an existing entry means update rather than add; deletion happens only when the note clearly invalidates an existing entry; and content that holds only for that episode is skipped. Each category caps at 80 entries and evicts the least frequently used first. The store expands rapidly early and then settles into a compact but diverse state." },
+                { question: "What would we need first to apply this to our own agents?", answer: "Start with what this paper actually demonstrated. The only environment is ALFWorld, a text simulation of six household chores, and enterprise application is a proposal rather than a result. On top of that, two things are needed. One is an adapter that leaves your internal tools and state stores where they are and exposes only three policy-facing strands: environment belief, progress, and past experience. The other is a logging system that can collect successful trajectories for training. This paper ran 500 games and selected the 87 that succeeded, and without adjudicated, stored outcomes those 87 cannot be produced." }
+            ]
+        });
+    </script>
+
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260829" defer></script>
+</body>
+</html>
