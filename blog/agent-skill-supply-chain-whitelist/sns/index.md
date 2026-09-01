@@ -20,7 +20,7 @@
 
 ▶ 전문: https://blog.pebblous.ai/blog/agent-skill-supply-chain-whitelist/ko/
 
-#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘 #AI에이전트 #AI거버넌스 #데이터거버넌스 #AIRSecurity #MCP #AIBOM
+#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘 #AI에이전트 #AIRSecurity #MCP #AIBOM
 
 ---
 
@@ -36,7 +36,7 @@ The caveat is that these numbers come from a vendor selling the fix, which desig
 
 ▶ Read: https://blog.pebblous.ai/blog/agent-skill-supply-chain-whitelist/en/
 
-#Pebblous #DataClinic #DataQuality #DataJournalism #AIAgent #AIGovernance #DataGovernance #AIRSecurity #MCP #AIBOM
+#Pebblous #DataClinic #DataQuality #DataJournalism #AIAgent #AIRSecurity #MCP #AIBOM
 
 ---
 
@@ -48,7 +48,7 @@ The caveat is that these numbers come from a vendor selling the fix, which desig
 
 https://blog.pebblous.ai/blog/agent-skill-supply-chain-whitelist/ko/
 
-#페블러스 #데이터품질 #AIRSecurity #MCP #AI에이전트
+#페블러스 #데이터품질 #AIRSecurity #MCP
 
 ---
 
@@ -60,7 +60,7 @@ A clearance with no expiry date is a snapshot.
 
 https://blog.pebblous.ai/blog/agent-skill-supply-chain-whitelist/en/
 
-#Pebblous #DataQuality #AIRSecurity #MCP #AIAgent
+#Pebblous #DataQuality #AIRSecurity #MCP
 
 ---
 
@@ -94,7 +94,7 @@ https://blog.pebblous.ai/blog/agent-skill-supply-chain-whitelist/en/
 
 ▶ https://blog.pebblous.ai/blog/agent-skill-supply-chain-whitelist/ko/
 
-#페블러스 #데이터품질 #AI에이전트보안 #AIRSecurity #MCP #데이터계보
+#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘
 
 ---
 
@@ -128,4 +128,4 @@ My own list is still empty.
 
 ▶ https://blog.pebblous.ai/blog/agent-skill-supply-chain-whitelist/en/
 
-#Pebblous #DataQuality #AIAgentSecurity #AIRSecurity #MCP #DataLineage
+#Pebblous #DataClinic #DataQuality #DataJournalism
