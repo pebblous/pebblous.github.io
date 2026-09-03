@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>드론 편대 협동 인지 대역폭, 임무 인지형 공유로 10분의 1까지 줄인 실험 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="텍사스텍 연구진이 UAV3D 벤치마크에서 공개된 DiscoNet 체크포인트를 재학습 없이 돌려, 표적을 좇는 임무 구역 안에서는 전체 공유 바이트의 5~10%로도 정확도 손실이 잡히지 않는다고 보고했습니다. 다만 예산이 바뀌면 이기는 공유 정책이 뒤집혀 최대 7.7 AP가 갈립니다.">
+    <meta name="keywords" content="드론 편대, 협동 인지, 맥락 평면, 데이터 평면, 대역폭 최적화, UAV3D, DiscoNet, ROS 2, 멀티 로봇 시스템, 피지컬 AI, 에이전트 파이프라인">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/drone-fleet-context-plane/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/drone-fleet-context-plane/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/drone-fleet-context-plane/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/drone-fleet-context-plane/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="드론 편대 통신, 임무 구역만 보면 10분의 1로 충분했다">
+    <meta property="og:description" content="텍사스텍 연구진이 UAV3D 벤치마크에서 공개된 DiscoNet 체크포인트를 재학습 없이 돌려, 표적을 좇는 임무 구역 안에서는 전체 공유 바이트의 5~10%로도 정확도 손실이 잡히지 않는다고 보고했습니다. 다만 예산이 바뀌면 이기는 공유 정책이 뒤집혀 최대 7.7 AP가 갈립니다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/drone-fleet-context-plane/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/drone-fleet-context-plane/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="드론 편대의 데이터 평면 옆에 맥락 평면을 따로 두고 1KB 디스크립터로 공유 정책을 고르는 구조">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-09-03">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="드론 편대 통신, 임무 구역만 보면 10분의 1로 충분했다">
+    <meta name="twitter:description" content="원본을 다 보내는 대신 지금 무엇이 필요한지 담은 1KB 요약 한 겹을 먼저 띄우면, 무거운 전송의 90%가 지워집니다. 드론 편대 협동 인지 실험 이야기입니다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/drone-fleet-context-plane/ko/image/index.png">
+    <meta name="twitter:image:alt" content="드론 편대의 데이터 평면 옆에 맥락 평면을 따로 두고 1KB 디스크립터로 공유 정책을 고르는 구조">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260903"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260903">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260903">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260903">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#cost-of-sharing" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 함께 보면 정확도는 두 배, 값은 프레임당 13.1MB</a></li>
+                    <li><a href="#eval-knobs" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 재학습 없이 공유 스케줄만 돌려 쟀다</a></li>
+                    <li><a href="#mission-region" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 임무 구역 안에서는 10분의 1로 충분했다</a></li>
+                    <li><a href="#budget-flip" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 예산이 바뀌면 이기던 정책이 진다</a></li>
+                    <li><a href="#context-plane" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 데이터 평면 옆에 맥락 평면을 놓는다</a></li>
+                    <li><a href="#data-reading" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 데이터 쪽에서 읽으면</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            드론 다섯 대가 서로 본 것을 나누면 한 대만 볼 때보다 탐지 정확도가 두 배로 올라갑니다. 값은 프레임마다 13.1메가바이트입니다. 편대 하나가 한 장면을 처리할 때마다 그만큼이 무선 링크를 지나가야 한다는 뜻이고, 이건 드론이 실제로 쓰는 링크가 감당하는 양을 한참 넘습니다. 9월 1일 arXiv에 올라온 텍사스텍 연구진의 논문은 이 교환량을 임무에 맞춰 깎으면 어디까지 견디는지를 쟀습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            공개된 DiscoNet 체크포인트를 재학습 없이 그대로 두고, 평가 시점에 공유 스케줄만 바꿔 가며 실험했습니다. 표적 하나를 좇는 임무 구역 안에서 보면 전체 공유 바이트의 5~10%만 써도 정확도 차이가 통계적으로 잡히지 않았습니다. 같은 실험이 반대편 경고도 함께 내놨습니다. 어느 공유 정책이 이기는지가 대역폭 예산에 따라 뒤집혀서, 한쪽으로 고정해 두면 최대 7.7 AP를 잃습니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            그래서 저자들이 제안한 것이 맥락 평면입니다. 무거운 인지 데이터를 나르는 데이터 평면 옆에, 1KB 이하의 상태 요약만 10Hz로 도는 얇은 평면을 하나 더 두자는 설계입니다. 이 글은 논문이 잰 것과 유보한 것을 차례로 따라간 뒤, 6절에서 데이터 파이프라인 쪽의 읽기를 덧붙입니다. 6절은 논문에 없는 이 글의 해석입니다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: Liangkai Liu, Xiaoxiao Wu, <a href="https://arxiv.org/abs/2609.00659" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Fleets Need a Context Plane: Rethinking Cooperative Perception for Autonomous Drones</a>, arXiv:2609.00659(2026-09-01)</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">5~10%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">임무 정확도가 유지된 바이트</p>
+                            <p class="text-xs themeable-muted mt-1">전체 공유는 편대 한 프레임에 13.1MB를 씁니다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">7.7 AP</p>
+                            <p class="text-sm themeable-text-secondary mt-1">정책을 고정한 대가</p>
+                            <p class="text-xs themeable-muted mt-1">넉넉한 예산에서 이기던 정책을 마른 예산까지 들고 갔을 때</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">5.9 AP</p>
+                            <p class="text-sm themeable-text-secondary mt-1">전역 정확도가 같은 두 정책의 격차</p>
+                            <p class="text-xs themeable-muted mt-1">전체 장면에서는 둘 다 0.257 AP로 구분되지 않았습니다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.01%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">맥락 평면이 쓴 대역폭 몫</p>
+                            <p class="text-xs themeable-muted mt-1">105MB/s를 조종하는 데 10.1KB/s를 썼습니다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="cost-of-sharing" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">함께 보면 정확도는 두 배, 값은 프레임당 13.1MB</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여러 대가 같은 장면을 나눠 보는 협동 인지에서, 무엇을 주고받을지는 크게 세 층위로 갈립니다. 원본 센서 데이터를 그대로 보내면 정보는 가장 많이 남지만 대역폭이 가장 많이 듭니다. 탐지 결과만 보내면 값은 싸지만 쓸 만한 정보가 버려집니다. 그 사이가 중간 융합입니다. 신경망이 만든 잠재 특징 맵을 주고받는 방식이고, 최근 시스템 대부분이 여기에 서 있습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 그 중간이 여전히 무겁다는 것입니다. 이 논문이 실험대로 삼은 UAV3D 벤치마크는 드론 다섯 대가 카메라만으로 협동 탐지를 하는 설정인데, 피어 한 대가 만드는 것은 80채널짜리 FP16 조감도 특징 맵입니다. 다섯 대가 전부 나누면 편대 한 프레임에 13.1메가바이트가 오갑니다. 얻는 것은 분명합니다. 융합 없이 한 대가 내는 정확도가 0.185 AP인데 전체 공유는 0.371 AP까지 올라갑니다. 18.5 AP의 차이이고, 신뢰구간은 16.9에서 20.3 사이입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 AP는 평균 정밀도이고, 이 글에서 몇 AP라고 쓴 값은 그 지표의 백분율 포인트 차이를 가리킵니다. 협동이 이득이라는 것 자체는 논쟁거리가 아닙니다. 논쟁은 그 이득을 사 오는 값에 있습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 지금 나와 있는 시스템 대부분은 무엇을, 누구에게, 어느 충실도와 주기로 보낼지를 배포 전에 정해 두고 비행 내내 그대로 갑니다. 이 습관은 지상 차량 통신에서 왔습니다. 차량 벤치마크의 세계에서는 그 선택이 대체로 합리적입니다. 경로가 고정돼 있고, 전원은 엔진이나 전력망에서 나오고, 시점은 거의 평면이고, 노변 인프라와 정밀 지도가 옆에서 받쳐 줍니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        하늘에서는 그 전제가 하나씩 무너집니다. 한 번의 출격 안에서 임무 단계가 바뀌고, 배터리가 줄고, 대형 기하가 여섯 자유도로 흔들리고, 각 드론이 덮는 장면이 겹쳤다 벌어졌다 합니다. 런타임에 적응하는 방법이 없지는 않지만, 저자들의 정리에 따르면 그런 방법들도 신호 하나에만 반응합니다. 여러 축이 동시에 움직이는 비행에서 한 축만 읽는 정책은 임무의 상당 구간을 틀린 결정으로 보내게 됩니다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="eval-knobs" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">재학습 없이 공유 스케줄만 돌려 쟀다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실험 설계가 이 논문에서 눈여겨볼 대목입니다. 새 모델을 학습시키지 않았습니다. 공개된 DiscoNet 체크포인트를 추론에만 쓰고, 특징을 주고받는 그 지점에 손잡이를 달아 평가 시점에 돌렸습니다. 모델 가중치가 고정된 채로 공유 결정만 달라지니, 정확도 차이를 학습 결과가 아니라 공유 정책의 몫으로 읽을 수 있습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        손잡이는 세 종류입니다. 예산 ρ는 자기 드론이 받는 특징 셀 수를 전체 공유 대비 몇 분의 몇으로 제한합니다. 피어 선택 정책은 어느 드론이 특징을 보태는지를 고릅니다. 배분 규칙은 그 예산을 피어들 사이에 어떻게 나눌지를 정하고, 균등 배분과 자세에서 계산한 시야 겹침 비례 배분 두 가지를 씁니다. 전송 바이트는 남긴 셀 수에 80채널과 2바이트를 곱해 정확히 셉니다. 그래서 모든 비교가 같은 바이트 위에서 이뤄집니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정확도는 회전 조감도 IoU 기준 AP@0.5로 재고, 대상은 UAV3D의 미니 검증 스플릿 80프레임입니다. 장면마다 한 프레임씩 뽑은 구성이라 프레임을 독립 표본으로 다루고, 대괄호로 적은 값은 그 80프레임에 대한 95% 페어드 부트스트랩 신뢰구간입니다. 구간이 0을 포함하면 유의하지 않다고 표시합니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들이 스스로 그은 선도 분명합니다. 벤치마크 하나와 공개 모델 하나로 한 실험이고, 다른 데이터셋이나 다른 융합 모델, 실제 무선 환경에서 이 수치가 그대로 유지된다고는 주장하지 않습니다. 미니 검증 스플릿을 쓴 만큼 절대 AP 값을 전체 테스트 스플릿 결과와 나란히 놓아서도 안 된다고 못 박습니다. 이 논문이 주장하는 것은 특정 숫자가 아니라, 최선의 공유 정책이 런타임 맥락에 따라 달라지며 어떤 고정 정책도 전 구간에서 최선이 아니라는 쪽입니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            공개된 협동 인지 체크포인트를 정책 공간을 재는 탐침으로 쓰고, 계측 장치가 각 정책의 통신 비용을 정확히 기록하게 하는 것. 이 측정 방식 자체가 논문이 내놓은 결과물의 하나입니다. 재학습 예산 없이도 기존 모델 위에서 공유 정책을 평가할 수 있게 됩니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="mission-region" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">임무 구역 안에서는 10분의 1로 충분했다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        먼저 전체 장면 기준입니다. 바이트를 10분의 1로 줄여 ρ를 0.1로 놓으면 전체 공유보다 2.0 AP 낮아집니다. 신뢰구간은 0.8에서 3.4 사이입니다. 5%까지 줄이면 협동으로 얻은 이득의 58%가 남습니다. 곡선이 무너지는 지점은 1%입니다. 거기서는 전체 공유 대비 24 AP가 빠집니다. 대역폭을 마지막으로 열 배 더 쓰고 얻는 것이 AP 두 점 남짓이고, 그 아래로 더 깎으면 협동 자체가 무너집니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기에 임무를 얹으면 그림이 달라집니다. 저자들은 표적 하나를 좇는 과업을 가정하고 반경 32미터의 임무 구역 안에서만 정확도를 다시 쟀습니다. ρ가 0.05에서 0.1 사이일 때 임무 구역 AP는 0.773에서 0.784 사이로 나왔습니다. 전체 공유가 같은 구역에서 낸 값은 0.763입니다. 가장 큰 차이가 2.2 AP인데 신뢰구간이 마이너스 0.5에서 플러스 5.1까지 걸쳐 0을 포함합니다. 통계적으로 구분되지 않는다는 뜻입니다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">조건</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">전체 장면</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">임무 구역(32m)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">융합 없음(드론 한 대)</td>
+                                    <td class="py-3 pr-4">0.185 AP</td>
+                                    <td class="py-3">보고 없음</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">전체 공유(13.1MB/프레임)</td>
+                                    <td class="py-3 pr-4">0.371 AP</td>
+                                    <td class="py-3">0.763 AP</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">ρ = 0.1 (바이트 10%)</td>
+                                    <td class="py-3 pr-4">전체 공유보다 2.0 AP 낮음 [0.8, 3.4]</td>
+                                    <td class="py-3">0.773~0.784 구간, 차이 유의하지 않음</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">ρ = 0.05 (바이트 5%)</td>
+                                    <td class="py-3 pr-4">협동 이득의 58% 유지</td>
+                                    <td class="py-3">0.773~0.784 구간, 차이 유의하지 않음</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">ρ = 0.01 (바이트 1%)</td>
+                                    <td class="py-3 pr-4">전체 공유보다 24 AP 낮음</td>
+                                    <td class="py-3">보고 없음</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">UAV3D 미니 검증 스플릿 80프레임, 회전 조감도 IoU 기준 AP@0.5. 대괄호는 95% 페어드 부트스트랩 신뢰구간입니다. 미니 스플릿을 쓴 실험이라 절대 AP 값을 전체 테스트 스플릿 결과와 비교해서는 안 된다고 논문이 5절 서두에 밝혀 두었습니다. 출처: arXiv:2609.00659 5-A절, 5-B절.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        조건을 분명히 해 둘 필요가 있습니다. 바이트 5~10%로 전체 공유와 같은 정확도가 나왔다는 문장은 임무 구역 안에서의 이야기입니다. 같은 예산에서 전체 장면 정확도는 여전히 2.0 AP가 빠집니다. 그러니까 이 결과는 협동 인지가 원래 공짜로 정확해진다는 말이 아니라, 지금 하는 일과 무관한 구역에 쓰이던 대역폭과 전력이 그만큼이었다는 말입니다. 임무를 모르는 전체 공유는 그 몫까지 함께 실어 나릅니다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="budget-flip" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">예산이 바뀌면 이기던 정책이 진다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다음 질문은 같은 바이트를 누구에게 쓰느냐입니다. 예산을 0.25로 고정하고 피어 선택을 바꿔 봤더니, 두 피어만 고르는 정책들 사이에는 차이가 없었습니다. 시야가 가장 많이 겹치는 두 대를 고르든, 가장 안 겹치는 두 대를 고르든, 아무 두 대나 고르든 마찬가지였습니다. 유의하게 갈린 것은 다른 축입니다. 네 피어 전부에 바이트를 퍼뜨리는 쪽이 어떤 두 피어 정책보다 4.8 AP 앞섰습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 대형에서 겹침이 피어의 가치를 예측하지 못한 데는 이유가 있습니다. 평가에 쓴 십자 대형은 드론 간격이 약 20미터이고 각 드론의 지면 발자국이 42미터라, 서로의 겹침이 고만고만합니다. 겹침 비례 배분이 균등 배분과 비슷하게 나온 것도 같은 사정입니다. 저자들은 이걸 배분이 중요하지 않다는 결론으로 읽지 말라고 덧붙입니다. 대형이 넓게 벌어져 겹침이 고르지 않게 되면 효과가 커질 것이라는 예상입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        예산을 바꿔 가며 같은 비교를 반복하자 순위가 뒤집혔습니다. 예산이 마른 0.02에서는 두 피어에 몰아주는 쪽이 네 피어에 퍼뜨리는 쪽을 7.7 AP 앞섭니다. 0.05에서는 그 우위가 1.4 AP로 줄고, 0.1에서는 부호가 바뀌어 퍼뜨리는 쪽이 4.0 AP 앞섭니다. 0.25에서는 격차가 4.8 AP로 벌어집니다. 뒤집히는 지점은 전체 공유 대역폭의 5%에서 10% 사이이고, 실제 무선 링크가 비행 중에 어렵지 않게 넘나드는 구간입니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 360" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="예산별로 이기는 피어 선택 정책이 뒤집히는 것을 보여 주는 발산형 가로 막대그림. 예산 0.02에서는 두 피어 집중이 7.7 AP 앞서고, 0.05에서는 1.4 AP로 줄며, 0.10에서는 네 피어 분산이 4.0 AP, 0.25에서는 4.8 AP 앞선다.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">같은 바이트를 써도 이기는 정책이 예산에 따라 바뀐다</text>
+                            <text x="340" y="46" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">막대 길이는 두 정책의 AP 차이. 왼쪽은 두 피어 집중, 오른쪽은 네 피어 분산이 앞선 폭</text>
+
+                            <line x1="300" y1="72" x2="300" y2="278" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+
+                            <text x="60" y="104" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">ρ = 0.02</text>
+                            <rect x="107.5" y="86" width="192.5" height="24" rx="4" fill="#F86825" fill-opacity="0.8"/>
+                            <text x="97" y="104" text-anchor="end" font-size="11" font-weight="700" fill="#F86825">7.7</text>
+
+                            <text x="60" y="149" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">ρ = 0.05</text>
+                            <rect x="265" y="131" width="35" height="24" rx="4" fill="#F86825" fill-opacity="0.8"/>
+                            <text x="255" y="149" text-anchor="end" font-size="11" font-weight="700" fill="#F86825">1.4</text>
+
+                            <text x="60" y="194" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">ρ = 0.10</text>
+                            <rect x="300" y="176" width="100" height="24" rx="4" fill="#808080" fill-opacity="0.55"/>
+                            <text x="410" y="194" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">4.0</text>
+
+                            <text x="60" y="239" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">ρ = 0.25</text>
+                            <rect x="300" y="221" width="120" height="24" rx="4" fill="#808080" fill-opacity="0.55"/>
+                            <text x="430" y="239" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">4.8</text>
+
+                            <line x1="185" y1="118" x2="185" y2="132" stroke="var(--text-muted,#6B7280)" stroke-width="1" stroke-dasharray="3,3"/>
+                            <text x="300" y="296" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">부호가 바뀌는 구간: 전체 공유 대역폭의 5%에서 10% 사이</text>
+
+                            <rect x="150" y="316" width="14" height="12" rx="3" fill="#F86825" fill-opacity="0.8"/>
+                            <text x="170" y="326" font-size="10" fill="var(--text-muted,#6B7280)">두 피어에 집중</text>
+                            <rect x="330" y="316" width="14" height="12" rx="3" fill="#808080" fill-opacity="0.55"/>
+                            <text x="350" y="326" font-size="10" fill="var(--text-muted,#6B7280)">네 피어에 분산</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: <a href="https://arxiv.org/abs/2609.00659" target="_blank" rel="noopener" class="underline">arXiv:2609.00659</a> 5-D절 보고값. 모든 비교는 같은 전송 바이트 위에서 이뤄졌습니다
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        고정의 대가는 양쪽에서 나옵니다. 넉넉한 예산에서 이기던 정책을 링크가 마를 때까지 들고 가면 7.7 AP를 잃고, 마른 예산에서 이기던 정책을 대역폭이 넉넉해진 뒤에도 붙들면 4.8 AP를 잃습니다. 어느 한쪽으로 못을 박아도 손해라는 뜻입니다. 저자들은 여기서 맥락에 따라 정책을 갈아 끼울 때의 잠재 이득을 재기 위해 오라클을 하나 만듭니다. 예산마다 평가된 고정 정책 중 최선을 골라 주는 장치입니다. 네 예산에 걸친 평균이 0.320 AP로, 가장 좋은 단일 고정 정책의 0.299 AP보다 2.1 AP 높습니다. 절반의 프레임으로 정책을 고르고 나머지 절반에서 확인했을 때도 2.0 AP가 남아, 고른 값이 선택 편향의 산물은 아니었습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 오라클이 무엇이 아닌지는 논문이 직접 밝혀 둡니다. 이미 평가해 둔 고정 정책들 사이에서만 고르는 측정 도구이고, 실시간으로 도는 온라인 정책이 아닙니다. 맥락 평면이 열어 주는 더 넓은 지시 공간에서 실제로 쓸 만한 온라인 정책을 설계하는 일은 향후 과제로 남겨 뒀습니다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>전역 정확도가 같은 두 정책이 임무 구역에서는 갈린다</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 날이 선 결과는 마지막에 나옵니다. 예산이 0.02일 때, 시야가 가장 많이 겹치는 두 피어를 고른 정책과 가장 안 겹치는 두 피어를 고른 정책이 전체 장면 기준으로 똑같이 0.257 AP를 냈습니다. 예산이라는 축 하나만 들고서는 두 정책을 구분할 방법이 없습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        임무 맥락을 더하자 동점이 깨졌습니다. 표적을 좇는 과업 기준으로 겹치는 쪽은 0.787 AP, 안 겹치는 쪽은 0.728 AP였습니다. 5.9 AP 차이이고 신뢰구간은 2.5에서 9.4 사이라 유의합니다. 예산이 0.05일 때는 두 축이 반대로 얽힙니다. 전체 장면에서는 집중형이 낫고 임무 구역 안에서는 분산형이 3.1 AP 낫습니다. 다만 이쪽은 신뢰구간이 0을 포함해, 방향은 일관되지만 지금 표본에서 유의하지는 않다고 저자들이 적어 뒀습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정리하면 예산만 읽는 정책은 예산과 임무를 함께 읽는 정책에 비해 약 6 AP를 그냥 두고 옵니다. 두 신호는 서로 다른 곳에서 오는 값이 아닙니다. 배터리, 링크 상태, 커버리지, 임무 단계가 모두 같은 1KB 요약 안에 들어갑니다. 축을 따로 읽는 게 문제였지 신호를 구하기 어려운 게 문제가 아니었다는 것이 이 논문의 논지입니다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="context-plane" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">데이터 평면 옆에 맥락 평면을 놓는다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        편대에는 이미 데이터 평면이 있습니다. 특징 맵과 탐지 결과와 트랙이 지나가는 무거운 길입니다. 없는 것은 그 교환을 다스릴 정보가 놓일 자리입니다. 배터리가 얼마 남았는지, 링크가 어떤지, 지금 어느 구역이 임무인지, 누가 무엇을 보고 있는지는 어딘가에 흩어져 있거나 모델 가중치 안에 녹아 있습니다. 이 논문의 제안은 그 자리를 명시적으로 하나 만들자는 것입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        구조는 단순합니다. 드론마다 자기 상태를 요약한 디스크립터를 1KB 이하로 10Hz에 한 번씩 편대 공용 버스에 올립니다. 각 드론의 정책 함수는 편대 전체의 디스크립터를 읽고 나가는 링크마다 지시를 하나씩 내놓습니다. 게이트가 그 지시를 데이터 평면 트래픽에 적용합니다. 정책은 페이로드를 절대 만지지 않습니다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 340" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="두 평면의 구조 도식. 위쪽 맥락 평면에서 드론 네 대가 180바이트 디스크립터를 10헤르츠로 올리면 정책 함수가 그것만 읽고 지시를 내며, 아래쪽 데이터 평면의 게이트가 특징과 탐지 트래픽에 그 지시를 적용한다.">
+                            <defs>
+                                <marker id="cpArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L6,3 L0,6 Z" fill="var(--text-muted,#6B7280)"/>
+                                </marker>
+                            </defs>
+
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">얇은 평면 하나가 무거운 평면을 조종한다</text>
+                            <text x="340" y="46" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">맥락 평면 10.1KB/s가 데이터 평면 105MB/s의 무엇을 보낼지 정합니다</text>
+
+                            <rect x="30" y="70" width="390" height="76" rx="8" fill="none" stroke="#F86825" stroke-width="1.5" stroke-dasharray="5,4"/>
+                            <text x="42" y="88" font-size="10" font-weight="700" fill="#F86825">맥락 평면 · 10.1 KB/s</text>
+                            <rect x="45" y="98" width="82" height="34" rx="5" fill="#F86825" fill-opacity="0.12"/>
+                            <text x="86" y="119" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">드론 1 · 180B</text>
+                            <rect x="135" y="98" width="82" height="34" rx="5" fill="#F86825" fill-opacity="0.12"/>
+                            <text x="176" y="119" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">드론 2 · 180B</text>
+                            <rect x="225" y="98" width="82" height="34" rx="5" fill="#F86825" fill-opacity="0.12"/>
+                            <text x="266" y="119" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">드론 3 · 180B</text>
+                            <rect x="315" y="98" width="82" height="34" rx="5" fill="#F86825" fill-opacity="0.12"/>
+                            <text x="356" y="119" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">드론 4 · 180B</text>
+
+                            <path d="M422 115 L462 115" stroke="var(--text-muted,#6B7280)" stroke-width="1.5" marker-end="url(#cpArrow)"/>
+
+                            <rect x="465" y="82" width="185" height="66" rx="8" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="557" y="106" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">정책 함수</text>
+                            <text x="557" y="124" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">파이썬 42줄, 결정당 0.10ms</text>
+                            <text x="557" y="140" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">디스크립터만 읽습니다</text>
+
+                            <path d="M557 150 L557 196" stroke="var(--text-muted,#6B7280)" stroke-width="1.5" marker-end="url(#cpArrow)"/>
+                            <text x="567" y="176" font-size="9.5" fill="var(--text-muted,#6B7280)">지시</text>
+
+                            <rect x="30" y="200" width="390" height="80" rx="8" fill="#808080" fill-opacity="0.12" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="42" y="220" font-size="10" font-weight="700" fill="var(--text-secondary,#4B5563)">데이터 평면 · 105 MB/s</text>
+                            <text x="225" y="248" text-anchor="middle" font-size="10.5" fill="var(--text-secondary,#4B5563)">조감도 특징 맵 · 탐지 결과 · 트랙</text>
+                            <text x="225" y="268" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">전체 공유 시 편대 한 프레임에 13.1MB</text>
+
+                            <path d="M422 240 L462 240" stroke="var(--text-muted,#6B7280)" stroke-width="1.5" marker-end="url(#cpArrow)"/>
+
+                            <rect x="465" y="200" width="185" height="80" rx="8" fill="none" stroke="var(--text-secondary,#4B5563)" stroke-width="1.5"/>
+                            <text x="557" y="226" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">게이트</text>
+                            <text x="557" y="246" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">누구에게, 어떤 표현으로,</text>
+                            <text x="557" y="262" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">어느 구역을, 어느 주기로</text>
+
+                            <line x1="40" y1="300" x2="640" y2="300" stroke="var(--border-color,#E5E7EB)" stroke-width="1"/>
+                            <text x="340" y="322" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">지시와 페이로드를 함께 읽는 것은 게이트 하나뿐입니다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 (그림 1 재해석) | 출처: <a href="https://arxiv.org/abs/2609.00659" target="_blank" rel="noopener" class="underline">arXiv:2609.00659</a> 3절, 5-F절. 대역폭 수치는 네 에이전트가 120초 트레이스를 재생한 프로토타입 측정값입니다
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        디스크립터에는 네 묶음이 들어갑니다. 기하는 위치와 자세와 속도, 지면 반경입니다. 플랫폼은 배터리와 CPU, GPU 여유, 그리고 피어별 실효 처리량입니다. 장면은 16 곱하기 16 격자에 셀당 2비트로 적은 커버리지입니다. 잘 봤는지, 흐리게 봤는지, 못 봤는지, 새로 발견했는지 네 가지 상태만 적습니다. 임무는 현재 단계와 책임 구역, 우선 표적 번호입니다. 다섯 대 편대 기준으로 직렬화하면 180바이트가 나옵니다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">묶음</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">담기는 것</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">크기</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">공통</td>
+                                    <td class="py-3 pr-4">타임스탬프, 에이전트 번호</td>
+                                    <td class="py-3">9B</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">기하</td>
+                                    <td class="py-3 pr-4">위치·자세·속도, 지면 반경</td>
+                                    <td class="py-3">40B + 4B</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">플랫폼</td>
+                                    <td class="py-3 pr-4">배터리·CPU·GPU 여유, 피어별 실효 처리량</td>
+                                    <td class="py-3">12B + 16B</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">장면</td>
+                                    <td class="py-3 pr-4">16×16 커버리지 격자(셀당 2비트), 새 발견 플래그</td>
+                                    <td class="py-3">64B + 1B</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">임무</td>
+                                    <td class="py-3 pr-4">임무 단계, 책임 구역, 우선 표적 번호</td>
+                                    <td class="py-3">1B + 16B + 가변</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">프로토타입이 실제로 싣는 스키마입니다. 다섯 대 편대 기준 직렬화 크기는 180바이트로, 계약이 정한 1KB 상한 안에 여유 있게 들어갑니다. 표 첫 줄의 공통 항목은 네 묶음 밖의 머리말이고, 장면 항목이 커버리지 진술이라는 점이 설계의 핵심입니다. 누가 무엇을 봤는지만 적고 특징 자체는 보내지 않습니다. 출처: arXiv:2609.00659 표 1.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 평면이 지켜야 할 규칙도 여섯 개로 못 박아 뒀습니다. 크기와 주기에 상한을 둘 것, 전달은 최선 노력으로 하되 오래된 정보를 만나면 보수적으로만 움직일 것, 맥락 평면은 인지 페이로드를 절대 나르지 않을 것, 정책은 디스크립터만 읽을 것, 정책 전환에 지연을 걸어 잦은 스위칭을 막을 것, 디스크립터를 인증할 것. 프로토타입에서는 세 주기가 지난 디스크립터를 저하로, 열 주기가 지난 것을 이탈로 표시합니다. 정보가 낡을수록 공유를 늘리는 방향으로는 결정할 수 없게 만든 장치입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정책이 내리는 결정은 여섯 가지입니다. 비싼 인지 연산을 아예 돌릴지, 누구에게 보낼지, 충실도 사다리의 어느 칸을 쓸지, 어느 공간 구역을 보낼지, 어느 주기와 마감으로 보낼지, 받는 쪽에서 어떤 가중치로 융합할지. 이 가운데 충실도 사다리는 링크 하나에서 가장 무거운 칸과 가장 가벼운 칸의 차이가 만 배 규모입니다. 원본 영상이 프레임당 5.4메가바이트, 조감도 특징 전체가 655킬로바이트, 예산 0.25에서 164킬로바이트, 0.02에서 13킬로바이트, 탐지 결과가 1킬로바이트 안팎, 트랙이 0.24킬로바이트입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기존 방법들과의 관계도 이 틀 안에서 정리됩니다. 신뢰도 맵으로 구역을 고르는 방법, 시각 특징으로 통신 상대를 고르는 방법, 고정 전체 연결 위에서 융합 가중치를 학습하는 방법, 네트워크 지연으로 낡은 특징을 보정하는 방법이 각각 이 정책 공간의 한 고정점이 됩니다. 저자들은 맥락 평면이 이것들을 대체하는 물건이 아니라고 분명히 씁니다. 공통 인터페이스 뒤에 세워 두고 런타임에 고르고 조합할 수 있게 만드는 자리입니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        값이 싸다는 것이 이 설계의 실무적 근거입니다. Jetson AGX Orin에서 ROS 2 Humble로 돌린 프로토타입에서, 네 에이전트가 180바이트를 10Hz로 올리고 초당 80건의 지시가 오가는 데 10.1킬로바이트가 들었습니다. 같은 시간에 데이터 평면이 나른 것은 105메가바이트입니다. 비율로 0.01% 남짓입니다. 정책 평가는 중앙값 0.10밀리초, 99퍼센타일 0.13밀리초로 10Hz 주기가 주는 100밀리초 마감의 1000분의 1 수준이었고, 프로토타입 전체가 코어 하나의 9%를 썼습니다. 배터리와 링크와 임무 단계를 읽는 그 정책은 ROS 의존성 없는 42줄짜리 파이썬 함수라 따로 단위 테스트가 됩니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        남은 문제도 논문이 스스로 다섯 가지로 적어 뒀습니다. 정책이 입출력 타입이 정해진 유한한 함수라 안전 속성을 기계적으로 검증할 여지가 있다는 것은 아직 제안이지 결과가 아닙니다. 커버리지에 대해 거짓말하는 드론이 동료의 시선을 특정 구역에서 떼어 놓을 수 있어, 인터페이스를 표준화하기 전에 신뢰 보정 연구가 필요합니다. 이 논문이 다룬 것은 수동적 공유뿐이고, 드론이 무엇을 볼지 스스로 재배치하는 문제는 범위 밖입니다. 기존 항공 데이터셋에 배터리와 링크와 임무 트레이스가 없어 정책을 제대로 평가할 자료 자체가 부족하다는 문제도 있습니다. 정책 품질을 지키는 가장 작은 디스크립터가 얼마인지는 얼마나 줄이면 무엇이 깨지는지를 따지는 문제로 열어 뒀습니다.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="data-reading" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">데이터 쪽에서 읽으면</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기까지가 논문입니다. 드론에서 눈을 떼고 보면 구조가 낯익습니다. 무거운 원본을 통째로 넘기는 파이프라인 옆에, 지금 무엇이 필요한지만 적은 얇은 요약 한 겹을 따로 두는 설계입니다. 그 요약을 보고 무엇을 계산하고 무엇을 보낼지 고르면 무거운 쪽의 대부분이 지워집니다. 이 논문의 실험에서는 임무 구역 정확도를 지킨 채 90% 넘게 지웠습니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여러 에이전트가 물려 도는 데이터 파이프라인에서도 같은 결정이 대체로 설계 시점에 굳습니다. 어느 단계가 어느 단계에 무엇을 넘길지, 문서 전체를 넘길지 요약을 넘길지, 어느 도구를 항상 부를지가 코드에 박혀 있고 실행 중에는 바뀌지 않습니다. 부하가 낮을 때 맞춰 둔 설정이 붐빌 때도 그대로 도는 상황은 여기서도 익숙합니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        아래 세 가지는 논문에 없습니다. 이 글이 파이프라인 쪽으로 옮겨 본 물음입니다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">지금 무엇을 넘길지 정하는 규칙이 코드 어디에 있는가. 그 규칙이 읽는 신호가 몇 개이고, 그중 몇 개가 실행 중에 실제로 갱신되는가.</li>
+                        <li class="themeable-text leading-relaxed">단계마다의 상태를 요약하는 얇은 표준 형식이 있는가. 없다면 그 정보는 지금 어디에 흩어져 있는가.</li>
+                        <li class="themeable-text leading-relaxed">전송량을 줄였을 때 나빠진 것을 전체 평균 하나로만 보고 있지 않은가. 이 논문에서 전체 장면 정확도는 2.0 AP가 빠졌지만 임무 구역 안에서는 차이가 잡히지 않았습니다. 어느 쪽을 보느냐가 결론을 바꿉니다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        마지막 항목이 이 논문에서 가장 실무적인 대목입니다. 무엇을 줄일지 정하려면 무엇을 지켜야 하는지를 먼저 정해야 합니다. 지켜야 할 것이 정해지지 않은 상태에서 전체 평균만 보면 깎을 수 있는 여지가 실제보다 작아 보입니다. 이 실험에서 그 여지는 열 배였습니다.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            페블러스가 데이터 품질을 진단할 때 자주 만나는 질문이 무엇을 남기고 무엇을 버릴지입니다. 이 논문은 그 판단을 설계 시점에 못 박는 대신 런타임에 미루는 한 가지 방법을 다른 도메인에서 보여 줍니다. 다만 옮겨 읽을 때 조건도 함께 옮겨야 합니다. 이 결과는 벤치마크 하나와 공개 모델 하나 위에서, 표적을 좇는 임무 구역을 가정하고 얻은 것입니다. 저자들은 프로토타입과 계측 하네스, 트레이스를 함께 공개해 후속 검증의 문을 열어 뒀습니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260903"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "드론 편대 통신, 임무 구역만 보면 10분의 1로 충분했다",
+            subtitle: "텍사스텍 연구진이 드론마다 1KB 맥락 디스크립터를 10Hz로 띄우고 공유 정책을 런타임에 고르자고 제안했다",
+            pageTitle: "드론 편대 협동 인지 대역폭, 임무 인지형 공유로 10분의 1까지 줄인 실험 | 페블러스",
+            category: "tech",
+            publishDate: "2026-09-03",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/drone-fleet-context-plane/ko/",
+            tags: ["피지컬 AI", "협동 인지", "드론 편대", "맥락 평면", "대역폭 최적화", "멀티 로봇 시스템", "에이전트 파이프라인", "ROS 2"],
+            faqs: [
+                {
+                    question: "맥락 평면은 새로운 통신 프로토콜인가요?",
+                    answer: "아닙니다. 저자들이 직접 밝히듯 이 논문의 기여는 새 전송 프로토콜이 아니라 표준 인터페이스입니다. 전송은 이미 있는 DDS와 ROS 2 토픽의 서비스 품질 설정을 그대로 씁니다. 디스크립터는 최선 노력 방식으로 마지막 한 건만 유지하는 토픽에 10Hz로 올리고, 지시는 신뢰 전달 토픽으로 보내되 같은 지시를 반복해도 효과가 더해지지 않게 설계했습니다. 빠져 있던 것은 전송 수단이 아니라 맥락이 놓일 자리였다는 것이 논문의 진단입니다."
+                },
+                {
+                    question: "왜 재학습 없이 평가 시점에만 개입했나요? 그 방법을 믿을 수 있나요?",
+                    answer: "모델 가중치를 고정해 두면 정확도 차이를 학습 결과가 아니라 공유 정책의 몫으로 읽을 수 있기 때문입니다. 공개된 DiscoNet 체크포인트를 추론에만 쓰고, 특징을 주고받는 지점에서 예산과 피어 선택과 배분 규칙만 바꿨습니다. 전송 바이트는 남긴 셀 수에 80채널과 2바이트를 곱해 정확히 세고, 모든 비교를 같은 바이트 위에서 했습니다. 저자들은 이 방식 자체를 재학습 예산 없이 기존 모델의 정책 공간을 재는 일반적 측정법으로도 제시합니다."
+                },
+                {
+                    question: "바이트 5~10%로 전체 공유와 같은 정확도가 나왔다는 말은 어떤 조건에서 성립하나요?",
+                    answer: "표적 하나를 좇는 과업을 가정하고 반경 32미터의 임무 구역 안에서만 정확도를 쟀을 때입니다. 그 구역에서 예산 0.05에서 0.1 사이의 AP는 0.773에서 0.784로, 전체 공유의 0.763과 통계적으로 구분되지 않았습니다. 전체 장면 기준으로는 다릅니다. 같은 예산에서 전체 공유보다 2.0 AP가 낮습니다. 이 결과를 옮길 때는 임무 구역 한정이라는 조건을 반드시 함께 옮겨야 합니다."
+                },
+                {
+                    question: "왜 가장 좋은 공유 정책 하나를 골라 고정하면 안 되나요?",
+                    answer: "이기는 정책이 예산에 따라 뒤집히기 때문입니다. 예산이 0.02일 때는 두 피어에 몰아주는 쪽이 네 피어에 퍼뜨리는 쪽을 7.7 AP 앞서고, 0.1과 0.25에서는 반대로 퍼뜨리는 쪽이 4.0 AP와 4.8 AP 앞섭니다. 뒤집히는 구간이 전체 대역폭의 5%에서 10% 사이인데, 실제 무선 링크가 비행 중에 쉽게 넘나드는 범위입니다. 어느 쪽으로 고정해도 반대편 구간에서 그만큼을 잃습니다."
+                },
+                {
+                    question: "전역 정확도가 같은 두 정책이 5.9 AP 갈렸다는 것은 무슨 뜻인가요?",
+                    answer: "예산이 0.02일 때 시야가 가장 많이 겹치는 두 피어를 고른 정책과 가장 안 겹치는 두 피어를 고른 정책이 전체 장면 기준으로 똑같이 0.257 AP를 냈습니다. 예산이라는 축 하나로는 둘을 구분할 수 없다는 뜻입니다. 임무 구역 안에서 다시 재자 0.787과 0.728로 갈렸고, 차이는 5.9 AP에 신뢰구간이 2.5에서 9.4였습니다. 예산만 읽는 정책은 예산과 임무를 함께 읽는 정책보다 약 6 AP를 놓칩니다."
+                },
+                {
+                    question: "논문이 만든 오라클은 실제로 배포할 수 있는 정책인가요?",
+                    answer: "아닙니다. 저자들이 측정 도구이지 온라인 정책이 아니라고 명시합니다. 이미 평가해 둔 고정 정책들 가운데 예산마다 최선을 사후에 골라 주는 장치이고, 맥락 평면이 열어 주는 더 넓은 지시 공간을 탐색하지 않습니다. 네 예산 평균 0.320 AP로 가장 좋은 단일 고정 정책의 0.299 AP보다 2.1 AP 높았고, 절반의 프레임으로 고르고 나머지 절반에서 확인했을 때도 2.0 AP가 남았습니다. 이 값은 맥락에 따라 정책을 갈아 끼울 때의 잠재 이득을 가리키는 참고선입니다."
+                },
+                {
+                    question: "이 연구의 한계는 무엇인가요?",
+                    answer: "벤치마크 하나와 공개 모델 하나로 한 실험입니다. 정확도 수치는 UAV3D 미니 검증 스플릿 80프레임 기준이라 절대 AP를 전체 테스트 스플릿 결과와 비교할 수 없고, 실제 무선 환경이 아니라 통제된 계측 하네스 위에서 잰 값입니다. 프로토타입 오버헤드도 네 에이전트가 120초 트레이스를 재생한 조건에서 나온 것입니다. 저자들은 다른 데이터셋과 융합 모델, 실제 무선 조건에서의 평가를 향후 과제로 남겼습니다."
+                },
+                {
+                    question: "드론이 아닌 다른 시스템에도 같은 설계를 옮길 수 있나요?",
+                    answer: "구조가 같은 문제라면 옮겨 볼 수 있습니다. 무거운 원본을 나르는 경로와 그 경로를 다스릴 결정이 분리돼 있고, 결정에 필요한 신호가 실행 중에 바뀐다면 조건이 비슷합니다. 다만 이 확장은 논문의 주장이 아니라 이 글의 읽기입니다. 논문이 다룬 것은 드론 편대의 협동 인지이고, 그 결론도 UAV3D 위에서 성립합니다."
+                },
+                {
+                    question: "실제 배포까지 남은 과제는 무엇인가요?",
+                    answer: "논문이 다섯 가지를 적어 뒀습니다. 정책의 안전 속성을 기계적으로 검증하는 일, 커버리지에 대해 거짓말하는 드론을 막을 신뢰 보정, 드론이 어디를 볼지 스스로 정하는 능동 협업, 배터리와 링크와 임무 트레이스를 갖춘 벤치마크 확보, 정책 품질을 지키는 최소 디스크립터 크기를 찾는 일입니다. 특히 보안은 인터페이스를 표준화하기 전에 풀어야 할 문제로 못 박혀 있습니다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
