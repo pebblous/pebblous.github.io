@@ -21,7 +21,7 @@
 
 실증된 범위는 좁다. 대상은 텍스트 임베딩 모델 일곱 종이고 생성형 LLM은 한 종도 없다. 문서는 영어이며, 의료기록처럼 학습 분포에서 먼 자료에서는 정확도가 크게 무너졌다. 논문 21쪽 어디에도 방어책은 없다.
 
-그런데 넉 달 뒤 후속 연구가 같은 정렬을 CPU에서 10분 안에 만들었다. 이메일이 10분 만에 복원된다는 뜻이 아니라, 공격의 첫 단계인 번역기 학습 비용이 그만큼 내려갔다는 뜻이다. 벡터 인덱스를 운영한다면 오늘 오후에 셀 수 있는 숫자가 하나 있다. 논문이 한 쌍에서 잰 임계는 5만 개였다.
+그런데 논문이 프리프린트로 공개되고 넉 달 만에, 후속 연구가 같은 정렬을 CPU에서 10분 안에 만들었다. 이메일이 10분 만에 복원된다는 뜻이 아니라, 공격의 첫 단계인 번역기 학습 비용이 그만큼 내려갔다는 뜻이다. 벡터 인덱스를 운영한다면 오늘 오후에 셀 수 있는 숫자가 하나 있다. 논문이 한 쌍에서 잰 임계는 5만 개였다.
 
 ▶ 전문: https://blog.pebblous.ai/report/embedding-translation-vector-db-exposure/ko/
 
@@ -43,7 +43,7 @@ The counterintuitive part is that switching vendors is not a defense. Models sha
 
 The demonstrated ground is narrow. Seven text embedding models, none of them generative. English documents. On clinical records, far from the training distribution, accuracy collapsed. And across twenty-one pages the paper proposes no defense whatsoever.
 
-Four months later a follow-up study produced the same alignment on a CPU in under ten minutes. That is not ten minutes to reconstructed email; it is the cost of the attack's first step, translator training, falling that far. If you run a vector index, there is a number you can count this afternoon. The threshold the paper measured on one model pair was 50,000 vectors.
+Four months after the preprint went up, a follow-up study produced the same alignment on a CPU in under ten minutes. That is not ten minutes to reconstructed email; it is the cost of the attack's first step, translator training, falling that far. If you run a vector index, there is a number you can count this afternoon. The threshold the paper measured on one model pair was 50,000 vectors.
 
 ▶ Read: https://blog.pebblous.ai/report/embedding-translation-vector-db-exposure/en/
 
