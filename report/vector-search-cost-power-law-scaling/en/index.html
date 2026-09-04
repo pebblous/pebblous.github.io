@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>HNSW Vector Search Scaling Is a Power Law | Pebblous</title>
+    <meta name="description" content="Toronto researchers fixed recall and grew eight datasets, three of them to a billion points. Query cost rose as a power of dataset size, not a logarithm.">
+    <meta name="keywords" content="vector search, vector database, HNSW, Vamana, intrinsic dimensionality, recall, approximate nearest neighbor, index design, capacity planning, AI-Ready Data, data quality">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Vector Search Cost Grew as a Power of Dataset Size">
+    <meta property="og:description" content="With recall pinned to a target and eight datasets grown as far as they would go, distance computations per query traced a power of dataset size. What decided the curve was not how many vectors had piled up.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Vector Search Cost Grew as a Power of Dataset Size">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="Vector Search Cost Grew as a Power of Dataset Size">
+    <meta name="twitter:description" content="SIFT ran straight to a billion points. A 2.32-million-vector embedding set was already sagging. Scale was not what separated them.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/en/image/index.png">
+    <meta name="twitter:image:alt" content="Vector Search Cost Grew as a Power of Dataset Size">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="Vector Search Cost Grew as a Power of Dataset Size">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/09/05">
+    <meta name="citation_online_date" content="2026/09/05">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (fixed order: theme-variables -> tailwind-build -> common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260905">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260905">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260905">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* Diagram boxes, table captions, formula lines — defined locally for this report only */
+        .fig-box {
+            background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+        }
+        .fig-caption {
+            font-size: 0.8rem;
+            color: var(--text-muted, #808080);
+            line-height: 1.7;
+            margin-top: 0.5rem;
+        }
+        .formula-line {
+            font-size: 1.05rem;
+            text-align: center;
+            letter-spacing: 0.01em;
+            margin: 0.25rem 0 0.75rem;
+        }
+        .comparison-table td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .comparison-table th.num { text-align: right; }
+        .comparison-table .hit { color: #F86825; font-weight: 700; }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. The Sentence Vector DB Capacity Plans Rest On</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Behind That Sentence Were 8-Dimensional Synthetic Vectors</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Eight Datasets Grew and the Curves Ran Straight</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. The Bend Came After the Data Filled In Its Own Distribution</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. The Recall Target Sets Next Year's Growth Curve</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. What Is Proven and What Is Still Open</a></li>
+                    <li><a href="#pebblous-perspective" class="block pl-4 themeable-toc-link transition-colors duration-200">Why This Matters to Pebblous</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Most vector database capacity plans rest on a single sentence: a graph index slows down only logarithmically as the data grows. Researchers at the University of Toronto took that sentence and measured it across scale. They grew eight datasets while holding recall to a target, and the distance computations a single query needs rose as a power of dataset size. The gentle bend that logarithmic scaling would have produced never appeared. The same shape held from a 90% recall target up to 99%, across the sixteen index configurations they benchmarked, and for hard and easy queries alike.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            This is not a story about vector databases falling over. The exponent sits between 0 and 1, so cost still grows far more slowly than linearly. What moves is not whether you can afford it but the baseline you plan against. Lean on the most generous logarithmic assumption and a hundredfold increase in data buys you a 1.3x increase in cost. Fix the recall target at 90% and work through the paper's own equation and coefficients, and most datasets land near 3x, while the hardest one passes 7x. What separates those numbers is less the count of vectors than the intrinsic dimensionality of the data. SIFT, grown all the way to a billion points, ran straight. An OpenAI embedding set of only 2.32 million was already beginning to sag.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The chain of transmission this article retraces is what makes the finding land. When the original HNSW paper spoke of logarithmic scaling, the experiment that varied dataset size used a single 8-dimensional synthetic dataset, and its authors had already noted that their largest run departed from a pure logarithm. What traveled onward into six vendor documents was the conclusion, without the qualification. That said, the new paper is itself a preprint posted three days ago, its proofs address an idealized construction, and the upper bound for HNSW, the index most teams actually run, is left open by its authors.
+                        </p>
+                    </div>
+
+                    <!-- STAT-CARD: to be re-derived from the finished body (draft candidates) -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">46.5</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Intrinsic dimensionality of a dataset whose embedding dimension is 1536</p>
+                            <p class="text-xs themeable-muted mt-1">Measured at 1M points. The dimension that makes search hard is not the embedding dimension</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.31 → 0.52</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Cost exponent when the recall target moves from 90% to 99%</p>
+                            <p class="text-xs themeable-muted mt-1">GloVe, HNSW, ef_construction 200, M 32. Our own calculation from the paper's equation and coefficients</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1.3x vs 3x</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Cost multiplier at a hundredfold increase, logarithmic assumption against the measured curve</p>
+                            <p class="text-xs themeable-muted mt-1">Our arithmetic, with the most generous logarithmic assumption as the baseline</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1 billion</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Points reached without the curve ever bending</p>
+                            <p class="text-xs themeable-muted mt-1">Two datasets, SIFT and DEEP, observed under a single Vamana configuration</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Sentence Vector DB Capacity Plans Rest On</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Any organization running retrieval-augmented generation or recommendations keeps piling up vectors. Documents accumulate, products accumulate, conversation logs accumulate, and the embeddings grow with them. Sooner or later everyone operating a vector database arrives at the same question. If the index holding ten million records today holds a hundred million next year, how much more will search cost? Almost everyone answers it from the same premise: a graph index slows down only logarithmically as the data grows.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper this article follows puts that premise on a test bench. "A Power Law in Logarithm's Clothing: On the Scalability of Graph-Based Vector Search" was posted to arXiv on 2 September 2026, and all three authors are at the University of Toronto. None of them works for a vector database vendor.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        First, pin down a term. Search cost in this article means <strong>the number of distance computations performed per query</strong>. Not response time in milliseconds, not memory, not the cloud bill. The paper states its reason plainly: measuring in wall-clock time conflates algorithmic behavior with implementation idiosyncrasies such as cache evictions, prefetching, and hardware-optimized distance computations. Distance computations dominate graph traversal and hold steadier across implementations.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>Grow the data and recall drops first</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's first experiment confirms something already known. Leave the index parameters alone and grow the data, and distance computations per query rise a little while <strong>recall falls a lot</strong>. Recall is the share of the true nearest neighbors that the search actually returns. The reason is intuitive. As the dataset grows, more points crowd near the query, beam search converges more slowly, and the true nearest neighbors face more competition for slots on the candidate list. Search quality quietly degrades.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So a practice has grown up around it. Run an exact search periodically, measure recall, raise the search candidate list size (ef<sub>search</sub>) if the number falls short of the target, measure again, and repeat until the target is met. The paper cites vendor documentation and recent research as describing this practice widely. It matters here because it becomes the experimental design. Pin recall to a target while the data grows, and what moves shifts from quality to cost. The shape of that cost curve is the paper's question.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The question comes down to this. Holding recall constant, how fast do the distance computations for a single query grow as the dataset grows? Benchmarks generally do not answer it, the paper notes, because they measure the recall-cost trade-off at one dataset size.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        How a graph index walks a query, and why the edges of deleted documents linger in the graph, is something the Pebblous blog worked through once in <a href="/blog/vector-db-deletion-retrieval-ghost-echo/en/" class="text-orange-500 hover:text-orange-400 font-semibold">a piece on deleted records reshaping vector search results</a>. The same store viewed from a security angle appears in <a href="/report/embedding-translation-vector-db-exposure/en/" class="text-orange-500 hover:text-orange-400 font-semibold">stored embeddings exposing the contents of emails</a>. This article looks only at what that store costs as it grows.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Behind That Sentence Were 8-Dimensional Synthetic Vectors</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One of the paper's opening subsections is titled "The Logarithmic Folklore," its name for the received wisdom about logarithmic scaling. As the paper sorts it out, the folklore splits in two. For exactly constructed graphs there is a claim with a proof attached. For the heuristic indexes used in practice there is a claim with no proof. What we actually run is the second kind.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So what did the paper everyone cites actually measure? Rather than repeat the new paper's summary, we opened the original HNSW paper (Malkov &amp; Yashunin, arXiv:1603.09320 v4) and checked. Two things turned out to be true.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>The only experiment that measured scaling was a single pair of panels</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In the original HNSW paper, the experiment that varies dataset size and plots a scaling curve is the pair of panels in Fig. 12(b) and (c). The data was synthetic vectors drawn from an 8-dimensional random hypercube, the task was 10-NN search, and recall was fixed at 0.95. And the paper's own wording was not a flat claim of logarithmic scaling but an upper bound: "not worse than logarithmic."
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A qualification has to go with that. It is not the case that the whole HNSW paper was validated on low-dimensional synthetic data. Sections 5.2 through 5.4 compare performance broadly on real datasets including SIFT, GIST, and GloVe. The accurate statement is narrower: <strong>among the experiments that varied dataset size to measure scaling</strong>, there was one, and it used 8-dimensional synthetic vectors.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>The authors already recorded the departure in their largest run</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Section 5.4 of that same paper is the more interesting part. A 200-million-point subset of SIFT, embedding dimension 128, the largest experiment in the paper. The authors plotted query time against dataset size and wrote this alongside it.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            "Note that the scaling deviates from the pure logarithm, possibly due to relatively high dimensionality of the dataset."
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        That sentence has been in print since 2018. It is important not to overstate it. The high dimensionality the HNSW authors invoke refers to <strong>the embedding dimension of 128</strong>, and that is not the same quantity as the intrinsic dimensionality the new paper casts as the driver of the curve. Writing that the two papers said the same thing would be wrong. What the original authors did was see a departure in their largest run and guess that dimensionality was behind it. Eight years later, this paper identifies which dimension and writes the shape of the curve as an equation.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Vamana's situation differs again. According to the new paper, the original Vamana work argued that the number of greedy search steps on an exactly constructed graph is logarithmic, but never measured search cost against dataset size.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.3</span>What traveled into industry documentation was the conclusion</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The new paper writes that the claim spread through industry documentation and surveys until it was restated as an established property. We opened those documents ourselves. All six do describe scaling as logarithmic, or as polylogarithmic, meaning a logarithm raised to some power. But <strong>they are not equally strong statements</strong>. Below is each document's own wording and the character of the claim, accessed on 5 September 2026. Only Milvus had to be read from a Wayback snapshot dated 12 May 2026, because the live page returns nothing to a bot.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Document</th>
+                                    <th>Wording in the source</th>
+                                    <th>Character of the claim</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Milvus, Index Explained</td>
+                                    <td>"enabling efficient logarithmic-time search complexity"</td>
+                                    <td>Flat statement about its own product</td>
+                                </tr>
+                                <tr>
+                                    <td>Weaviate, Vector Indexing</td>
+                                    <td>"it scales well to large datasets as queries have a logarithmic time complexity"</td>
+                                    <td>Flat statement about its own product</td>
+                                </tr>
+                                <tr>
+                                    <td>OpenSearch, k-NN Performance Tuning</td>
+                                    <td>"the complexity of search for the HNSW algorithm is logarithmic with respect to the number of vectors"</td>
+                                    <td>Flat statement about its own product</td>
+                                </tr>
+                                <tr>
+                                    <td>Elastic, Vector search &amp; kNN implementation guide</td>
+                                    <td>"The computational cost of search: logarithmic in the number of vectors, provided they are indexed through HNSW"</td>
+                                    <td>A flat statement, but the only one of the six that attaches a condition</td>
+                                </tr>
+                                <tr>
+                                    <td>Pinecone, HNSW</td>
+                                    <td>"search times are reduced to (poly/)logarithmic complexity"</td>
+                                    <td>Describes the design notion of a model family. The weakest of the six, leaving polylogarithmic open</td>
+                                </tr>
+                                <tr>
+                                    <td>Redis, How HNSW Algorithms Can Improve Search</td>
+                                    <td>"As Malkov and Yashunin write in the original paper, '…allows a logarithmic complexity scaling.'"</td>
+                                    <td>Quotes the original paper instead of asserting anything itself</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        The last row completes the picture. The Redis document quotes the original paper rather than making its own claim. A vendor cites a paper, and the scaling experiment that paper rested on used 8-dimensional synthetic vectors. The whole chain is visible inside one document. Worth noting too: the new paper's own list of these documents differs between its Section 1 and Section 2. Milvus, Weaviate, Pinecone, Redis, and OpenSearch appear in both, while Section 1 adds FAISS and Section 2 adds Elastic.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What did not travel is easier to see laid out on one page.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 720 400" width="100%" role="img" aria-label="Diagram showing how the conditions and the observed departure in the original HNSW paper drop away as the conclusion travels into vendor documentation and then into capacity plans">
+                            <rect x="10" y="10" width="700" height="104" rx="10" fill="none" stroke="var(--border-color, #e2e8f0)" stroke-width="1.5"/>
+                            <text x="28" y="38" font-size="15" font-weight="700" fill="var(--text-secondary, #475569)">Original HNSW paper (2018)</text>
+                            <text x="28" y="62" font-size="13" fill="var(--text-secondary, #475569)">Scaling experiment: 8-dimensional synthetic vectors, recall fixed at 0.95</text>
+                            <text x="28" y="82" font-size="13" fill="var(--text-secondary, #475569)">Wording: not worse than logarithmic</text>
+                            <text x="28" y="102" font-size="13" fill="#F86825" font-weight="600">Largest run, 200M points: authors note a departure from the pure logarithm</text>
+
+                            <line x1="360" y1="114" x2="360" y2="158" stroke="#F86825" stroke-width="2"/>
+                            <polygon points="360,166 354,152 366,152" fill="#F86825"/>
+                            <text x="376" y="146" font-size="13" font-weight="600" fill="var(--text-muted, #808080)">Only the conclusion traveled</text>
+
+                            <rect x="10" y="172" width="700" height="104" rx="10" fill="none" stroke="var(--border-color, #e2e8f0)" stroke-width="1.5"/>
+                            <text x="28" y="200" font-size="15" font-weight="700" fill="var(--text-secondary, #475569)">Six industry documents</text>
+                            <text x="28" y="224" font-size="13" fill="var(--text-secondary, #475569)">Four: logarithmic for their own product, no conditions attached</text>
+                            <text x="28" y="244" font-size="13" fill="var(--text-secondary, #475569)">One: a design notion, leaving polylogarithmic open</text>
+                            <text x="28" y="264" font-size="13" fill="var(--text-secondary, #475569)">One: quotes the original paper</text>
+
+                            <line x1="360" y1="276" x2="360" y2="320" stroke="#F86825" stroke-width="2"/>
+                            <polygon points="360,328 354,314 366,314" fill="#F86825"/>
+                            <text x="376" y="308" font-size="13" font-weight="600" fill="var(--text-muted, #808080)">Settles in as common knowledge</text>
+
+                            <rect x="10" y="334" width="700" height="56" rx="10" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="28" y="358" font-size="15" font-weight="700" fill="var(--text-secondary, #475569)">Our own capacity plan</text>
+                            <text x="28" y="378" font-size="13" fill="var(--text-secondary, #475569)">A hundredfold increase in data is budgeted as a slight rise in search cost</text>
+                        </svg>
+                        <p class="fig-caption">The chain of transmission. The original paper's conditions and its observed departure did not travel. The contents of each stage come from sections 5.1 and 5.4 of arXiv:1603.09320 v4, the six documents in the table above, and the Section 1 discussion in arXiv:2609.02143.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper adds one more piece. The reason the claim went so long without being tested lies in how benchmarks are run. Benchmarks generally measure the recall-cost trade-off <strong>at a single dataset size</strong>, the paper writes, rather than holding recall fixed and measuring cost across sizes. That is the paper's assertion, and we did not separately verify the protocol of each benchmark.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Eight Datasets Grew and the Curves Ran Straight</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The experimental design simply transplants the operational practice described above. Holding recall fixed means finding, at each dataset size, the <strong>smallest</strong> search candidate list that reaches the target recall, and recording the distance computations at that point. Then the data grows and the same thing happens again. Ground truth came from exact search over the full dataset.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The size of the grid is what gives the paper its weight. Eight datasets and four recall targets (90%, 95%, 97.5%, and 99%) multiplied by sixteen configurations per index. The configurations combine out-degree cap M at 16, 32, 64, and 128 with build candidate list size (ef<sub>construction</sub>) at 100, 200, 400, and 800. Two index types were used, HNSW and Vamana, with Vamana's slack parameter α left at its default of 1.2. A footnote records that testing α at 1.5 and 2 left scalability unchanged, because out-degree typically saturates at the cap M. The number of neighbors returned, k, was also varied across 1, 5, 10, and 20, and since it did not materially change the exponent the paper reports only k=10. For space, the figures show four of the sixteen configurations, with the rest described as behaving similarly.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>Under a logarithm the curves would have bent downward</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Reading the result is straightforward. Put both axes on a log scale, and a straight line means a power law. Under logarithmic scaling, each doubling of the data adds a constant number of distance computations, so the curve has to bend downward. What the paper observed is that most of the curves did not bend. It gave the shape a name, the <strong>Sublinear Power Law</strong>: distance computations per query are proportional to dataset size N raised to the power c, where c is a constant between 0 and 1.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 720 340" width="100%" role="img" aria-label="Conceptual comparison on log-log axes, where the logarithmic assumption bends downward while the measured power-law scaling traces a straight line">
+                            <line x1="80" y1="290" x2="690" y2="290" stroke="var(--text-muted, #808080)" stroke-width="1.5"/>
+                            <line x1="80" y1="290" x2="80" y2="40" stroke="var(--text-muted, #808080)" stroke-width="1.5"/>
+                            <text x="80" y="322" font-size="13" fill="var(--text-muted, #808080)">Dataset size (log scale)</text>
+                            <text x="14" y="34" font-size="13" fill="var(--text-muted, #808080)">Distance computations per query (log scale)</text>
+
+                            <path d="M 100 270 L 660 80" stroke="#F86825" stroke-width="2.5" fill="none"/>
+                            <text x="380" y="150" font-size="14" font-weight="700" fill="#F86825">Measured: a straight line</text>
+                            <text x="380" y="172" font-size="13" fill="var(--text-secondary, #475569)">Slope = the exponent c, between 0 and 1</text>
+
+                            <path d="M 100 270 Q 300 212 660 196" stroke="var(--text-secondary, #475569)" stroke-width="2.5" fill="none" stroke-dasharray="7 5"/>
+                            <text x="316" y="252" font-size="14" font-weight="700" fill="var(--text-secondary, #475569)">If scaling were logarithmic: it bends down</text>
+                            <text x="316" y="274" font-size="13" fill="var(--text-muted, #808080)">Each doubling of the data adds a constant amount</text>
+                        </svg>
+                        <p class="fig-caption">A conceptual sketch of how the two assumptions diverge on log axes. It redraws the description in Section 3.2 of arXiv:2609.02143 and does not transcribe the coordinates of the paper's Figure 3.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The same figures show what pushes the exponent up or down. A higher recall target raises it, while a larger build candidate list and a higher out-degree cap lower it. And harder datasets tend to carry larger exponents. The paper uses intrinsic dimensionality as its proxy for difficulty, and the contrast it offers is GloVe against SIFT. Measured at one million points, their intrinsic dimensionalities separate at 32.4 and 19.2, and at equal recall GloVe carried the higher exponent.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>Splitting easy queries from hard ones changed nothing</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Difficulty also varies query by query within a single dataset. The paper ranked queries by local intrinsic dimensionality (LID), split off the hardest 20% and the easiest 20%, and reran the experiment on each. On SIFT, DEEP, and GloVe, the hard group's intrinsic dimensionality exceeded the easy group's by at least 7.9, 9.6, and 11.0 points respectively. The two groups had different exponents, but <strong>both still traced straight lines</strong>. Query difficulty changes the slope of the curve without changing what kind of curve it is.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>The run that reached a billion points came under narrow conditions</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The grid experiment capped SIFT, DEEP, and SpaceV at 100 million points, to keep total runtime to roughly one week. So the paper runs one more set of experiments separately, growing those three datasets from 100,000 points up to a billion and repeating the same measurement. The conditions here are <strong>narrow</strong>. Three datasets, one algorithm in Vamana, and a single configuration at ef<sub>construction</sub> 100 and M 32. Vamana was chosen because its smaller memory footprint allowed the largest available sizes. At that scale, the index for a single configuration occupies 300 GB to 1 TB and takes several days to build.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The result: the curves for SIFT and DEEP kept running straight all the way to a billion points. Only SpaceV sloped downwards. A further condition attaches to that dataset. It contains many duplicate points, and to compare it fairly against the others the paper de-duplicates it and samples the query set exclusively from the base dataset, as a footnote records.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 720 340" width="100%" role="img" aria-label="Diagram comparing SIFT and DEEP running straight to a billion points against SpaceV's slope decreasing partway through">
+                            <line x1="90" y1="290" x2="680" y2="290" stroke="var(--text-muted, #808080)" stroke-width="1.5"/>
+                            <line x1="90" y1="290" x2="90" y2="40" stroke="var(--text-muted, #808080)" stroke-width="1.5"/>
+                            <text x="90" y="316" font-size="12" fill="var(--text-muted, #808080)">100K</text>
+                            <text x="225" y="316" font-size="12" fill="var(--text-muted, #808080)">1M</text>
+                            <text x="365" y="316" font-size="12" fill="var(--text-muted, #808080)">10M</text>
+                            <text x="505" y="316" font-size="12" fill="var(--text-muted, #808080)">100M</text>
+                            <text x="645" y="316" font-size="12" fill="var(--text-muted, #808080)">1B</text>
+                            <text x="90" y="332" font-size="12" fill="var(--text-muted, #808080)">Dataset size (log scale)</text>
+                            <text x="14" y="34" font-size="12" fill="var(--text-muted, #808080)">Distance computations per query (log scale)</text>
+
+                            <path d="M 110 265 L 660 95" stroke="#F86825" stroke-width="2.5" fill="none"/>
+                            <text x="380" y="150" font-size="14" font-weight="700" fill="#F86825">SIFT · DEEP</text>
+                            <text x="380" y="172" font-size="13" fill="var(--text-secondary, #475569)">straight to a billion points</text>
+
+                            <path d="M 110 265 L 420 168 Q 550 148 660 128" stroke="var(--text-secondary, #475569)" stroke-width="2.5" fill="none" stroke-dasharray="7 5"/>
+                            <text x="400" y="220" font-size="14" font-weight="700" fill="var(--text-secondary, #475569)">SpaceV</text>
+                            <text x="400" y="242" font-size="13" fill="var(--text-muted, #808080)">slope decreases after de-duplication</text>
+                        </svg>
+                        <p class="fig-caption">Original Pebblous diagram. Reconstructed from the description in §3.3 of arXiv:2609.02143; it does not reproduce the coordinates of the paper's Figure 6.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.4</span>What the difference in exponents looks like in a budget</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Multiply the numbers out and you can see how different a plan a single exponent produces. The table below gives the factor by which distance computations per query rise for a given growth in data, by exponent. This table is not in the paper; we computed N to the power c ourselves.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Growth in data</th>
+                                    <th class="num">c = 0.20</th>
+                                    <th class="num">c = 0.25</th>
+                                    <th class="num">c = 0.37</th>
+                                    <th class="num">c = 0.50</th>
+                                    <th class="num">Reference: log assumption</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>10x</td>
+                                    <td class="num">1.58x</td>
+                                    <td class="num">1.78x</td>
+                                    <td class="num">2.34x</td>
+                                    <td class="num">3.16x</td>
+                                    <td class="num">1.17x</td>
+                                </tr>
+                                <tr>
+                                    <td>100x</td>
+                                    <td class="num hit">2.51x</td>
+                                    <td class="num hit">3.16x</td>
+                                    <td class="num hit">5.50x</td>
+                                    <td class="num hit">10.0x</td>
+                                    <td class="num">1.33x</td>
+                                </tr>
+                                <tr>
+                                    <td>1000x</td>
+                                    <td class="num">3.98x</td>
+                                    <td class="num">5.62x</td>
+                                    <td class="num">12.9x</td>
+                                    <td class="num">31.6x</td>
+                                    <td class="num">1.50x</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">Our arithmetic. The rightmost column is a reference baseline, the multiplier you get starting from one million points and assuming distance computations grow in proportion to log N. What the paper actually targets is polylogarithmic scaling, so this column should not be read as the paper's logarithm. It serves only to show that the gap opens up even against the most generous logarithmic assumption.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Shrinking the individual vector is a story the Pebblous blog has told before, in <a href="/report/turbovec-2026/en/" class="text-orange-500 hover:text-orange-400 font-semibold">a piece on training-free vector compression</a>. The two multiply. Compression reduces the constant in this table, and this paper is about the exponent.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Bend Came After the Data Filled In Its Own Distribution</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper does not discard logarithmic scaling. It attaches a range to it. Once the data grows large enough the curve does eventually flatten, and from that point on the existing polylogarithmic claims hold. So when does the transition arrive? Here the observation runs against intuition.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>Only one dataset clearly bent</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The cost curve that clearly bent belongs to <strong>SpaceV alone</strong>. Grown to a billion points, its slope came down. For the OpenAI embeddings, the paper notes that some of the grid-experiment curves seem to drift very slightly below their fitted power laws, and then immediately withholds judgment. "Only larger dataset sizes can tell whether the drift is real." OpenAI already uses its full base dataset, so it cannot be grown further. The abstract summarizes the transition as appearing in two datasets; the body is more cautious.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Set those two side by side and the logic of scale collapses. The OpenAI embedding set, 2.32 million vectors in total, showed signs of sagging at the very end of its own size. SIFT and DEEP, grown to a billion points, ran straight to the end. Measured at one million points, intrinsic dimensionality puts OpenAI highest at 46.5 and SIFT down among the low values at 19.2. The dataset with the higher intrinsic dimensionality bent first, and the lower one never bent at all the way to a billion. The explanation the paper attaches here runs to a single line. The slowdown seen in SpaceV and OpenAI is not specific to those datasets, and the same transition would appear in the others if they could be scaled to sufficiently large sizes. But <strong>the paper does not explain</strong> why those two arrived first. We are not going to invent a reason either, so the facts sit side by side.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>Intrinsic dimensionality is not a constant of a dataset</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The theory that explains the shape of the curve runs in five steps. First, search cost is dominated by the number of points that sit in a narrow region around the query. The paper divides beam search into a shortcut phase that travels toward the query's neighborhood and an exploration phase that searches around the query for the true nearest neighbors, and in every case measured, the exploration phase accounted for at least 80% of the cost.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Second, widen that region by a radius ratio of (1+ε) and the number of points it contains grows in proportion to (1+ε) raised to the intrinsic dimensionality. That is Theorem 1. Third comes the paper's central line. Rewrite the base (1+ε) as a power of N, and the point count takes the form of N raised to the exponent (d<sub>int</sub> / log N) × log(1+ε). <strong>An exponential in log N is a power of N.</strong>
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Fourth, while the data is still sampling its distribution sparsely, intrinsic dimensionality grows alongside log N. The d<sub>int</sub> and log N in the exponent above then cancel, the exponent becomes a constant, and cost grows as a power of dataset size. Fifth, once the data samples the distribution densely, the growth of intrinsic dimensionality slows. The exponent falls toward zero, and cost grows more slowly than any power. The paper calls the first the sparse regime and the second the dense regime.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        The argument assumes the ratio (1+ε) does not drift with scale, and the paper measures that too. As the data grows, the distances from a query to its neighbors all shrink by the same proportion, so the inner and outer regions contract together and the ratio of radii holds. Plot the normalized distances of the nodes actually visited and the distributions nearly coincide across dataset sizes.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The claim that intrinsic dimensionality grows is backed by measurement. Using local intrinsic dimensionality (LID) as its proxy, the paper measured it at each dataset size. For most datasets, LID rises almost linearly against a log axis, which is to say it grows alongside log N. There are two exceptions. OpenAI still rises but with a slope that keeps shrinking, and SpaceV rises and then nearly flattens. The two datasets that parted from the others on the cost curves part from them on the LID curves as well.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 720 340" width="100%" role="img" aria-label="Diagram comparing most datasets, whose intrinsic dimensionality keeps growing alongside log N in the sparse regime, against OpenAI and SpaceV, whose slope shrinks after the transition into the dense regime">
+                            <line x1="90" y1="290" x2="680" y2="290" stroke="var(--text-muted, #808080)" stroke-width="1.5"/>
+                            <line x1="90" y1="290" x2="90" y2="40" stroke="var(--text-muted, #808080)" stroke-width="1.5"/>
+                            <text x="90" y="316" font-size="12" fill="var(--text-muted, #808080)">Dataset size (log N, log scale)</text>
+                            <text x="14" y="34" font-size="12" fill="var(--text-muted, #808080)">Local intrinsic dimensionality (LID)</text>
+
+                            <line x1="420" y1="290" x2="420" y2="60" stroke="var(--text-muted, #808080)" stroke-width="1" stroke-dasharray="3 4"/>
+                            <text x="428" y="72" font-size="12" font-weight="600" fill="var(--text-muted, #808080)">near the transition</text>
+                            <text x="170" y="304" font-size="12" fill="var(--text-secondary, #475569)">sparse regime</text>
+                            <text x="500" y="304" font-size="12" fill="var(--text-secondary, #475569)">dense regime</text>
+
+                            <path d="M 110 270 L 680 80" stroke="#F86825" stroke-width="2.5" fill="none"/>
+                            <text x="360" y="162" font-size="14" font-weight="700" fill="#F86825">Most datasets</text>
+                            <text x="360" y="184" font-size="13" fill="var(--text-secondary, #475569)">keep growing alongside log N</text>
+
+                            <path d="M 110 270 L 420 167 Q 550 145 680 130" stroke="var(--text-secondary, #475569)" stroke-width="2.5" fill="none" stroke-dasharray="7 5"/>
+                            <text x="440" y="129" font-size="14" font-weight="700" fill="var(--text-secondary, #475569)">OpenAI · SpaceV</text>
+                            <text x="440" y="151" font-size="13" fill="var(--text-muted, #808080)">slope shrinks, flattening out</text>
+                        </svg>
+                        <p class="fig-caption">Original Pebblous diagram. Reconstructed from Theorem 1 (sparse/dense regimes) in §4 of arXiv:2609.02143 and its LID measurements; it does not reproduce the paper's measured coordinates.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>The dimension that makes search hard is a different one</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Put all eight datasets in one table and it becomes obvious that the two dimensions are different quantities. The embedding dimension is the length of the vector, decided by the embedding model. The intrinsic dimensionality is the dimension of the structure those vectors actually lie on.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Dataset</th>
+                                    <th class="num">Embedding dim.</th>
+                                    <th class="num">Intrinsic dim. (at 1M points)</th>
+                                    <th>Full size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>SIFT (image)</td><td class="num">128</td><td class="num">19.2</td><td>1 billion</td></tr>
+                                <tr><td>DEEP (image)</td><td class="num">96</td><td class="num">20.7</td><td>1 billion</td></tr>
+                                <tr><td>SpaceV (text)</td><td class="num">100</td><td class="num">29.2</td><td>1 billion</td></tr>
+                                <tr><td>Wiki (text)</td><td class="num">768</td><td class="num">30.1</td><td>Not stated in the paper</td></tr>
+                                <tr><td>GloVe (text)</td><td class="num">100</td><td class="num">32.4</td><td>About 1.18 million</td></tr>
+                                <tr><td>Rand64 (synthetic)</td><td class="num">64</td><td class="num hit">40.2</td><td>Generated by the paper</td></tr>
+                                <tr><td>GIST (image)</td><td class="num">960</td><td class="num">42.5</td><td>1 million</td></tr>
+                                <tr><td>OpenAI (text)</td><td class="num">1536</td><td class="num hit">46.5</td><td>2,321,096</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">Embedding and intrinsic dimensionalities are the values in the paper's Table 2. The size column is not in the paper and was checked against the original dataset documentation. GloVe is 1,183,514 vectors in the standard ann-benchmarks distribution, a figure the paper does not state itself. Wiki-all comes in 88M, 10M, and 1M variants, and the paper does not record which one it used. Rand64 is synthetic data the paper generated itself, uniformly distributed on the unit sphere in 64 dimensions, so it has no public distribution and no count is given.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Two rows carry the point. Rand64 has an embedding dimension of 64 and an intrinsic dimensionality of 40.2, while GIST has an embedding dimension of 960 and an intrinsic dimensionality of 42.5. A longer vector does not make search harder. Rand64 does come with a caveat: drawn from a uniform distribution, it cannot be cited as an example of real data. In the paper's coefficient table this one dataset holds both extremes by itself.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            This table has to be read carefully. The intrinsic dimensionality column is <strong>a value measured at one million points</strong>, not a fixed property of the dataset. The paper's whole thesis is that the value grows with the data. And what sets the location of the transition is not the number printed here but the actual dimension of the manifold the data lies on. The paper writes that the sparse regime continues up to sizes exponential in that dimension, and connects the point to prior work holding that recovering a manifold's structure requires a sample exponential in its dimension. Plugging the numbers in this table into a power of two to compute a transition point is arithmetic the paper does not perform, and doing it produces a figure that contradicts the observation that SIFT never bent all the way to a billion points.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        Intrinsic dimensionality driving cost is not unique to search. What the Pebblous blog gathered in <a href="/report/diffusion-low-dim-distributions-jmlr/en/" class="text-orange-500 hover:text-orange-400 font-semibold">a piece on how diffusion models learn low-dimensional distributions</a> was the same quantity governing sample complexity.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Recall Target Sets Next Year's Growth Curve</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If the exponent is a constant, what sets it? The paper models the measured exponent as a sum of three factors, fitting the coefficients separately for each dataset and algorithm. The equation is this.
+                    </p>
+                    <div class="info-card">
+                        <p class="formula-line themeable-text"><strong>c = c<sub>0</sub> + α · ln(1/δ) − γ<sub>1</sub> · ln(ef<sub>construction</sub>) − γ<sub>2</sub> · ln(M)</strong></p>
+                        <p class="themeable-text leading-relaxed">
+                            δ is one minus recall, the share of misses you allow. c<sub>0</sub> is the baseline set by the geometry of the data, α is what you pay for demanding more recall, and γ<sub>1</sub> and γ<sub>2</sub> are the returns from raising the build candidate list size and the out-degree cap. The point of the equation is that those two return terms carry a minus sign.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        That recall enters the exponent logarithmically has real operational weight. Move the recall target from 90% to 99% and ln(1/δ) goes from 2.30 to 4.61, <strong>doubling</strong>, and the exponent rises accordingly. A recall target does not merely raise today's response time. It also picks the slope of next year's growth curve.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>What one step of recall does to the exponent</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The body of the paper prints no specific values of the exponent c. The fitted values appear only at the ends of the curves inside the figures. So the table below holds <strong>values we calculated</strong>, using the paper's equation and coefficient table directly. The conditions are fixed at HNSW, build candidate list 200, and out-degree cap 32.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Dataset</th>
+                                    <th class="num">Recall 90%</th>
+                                    <th class="num">Recall 95%</th>
+                                    <th class="num">Recall 99%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>SIFT</td><td class="num">0.185</td><td class="num">0.209</td><td class="num">0.265</td></tr>
+                                <tr><td>DEEP</td><td class="num">0.223</td><td class="num">0.261</td><td class="num">0.347</td></tr>
+                                <tr><td>SpaceV</td><td class="num">0.170</td><td class="num">0.217</td><td class="num">0.325</td></tr>
+                                <tr><td>Wiki</td><td class="num">0.220</td><td class="num">0.274</td><td class="num">0.402</td></tr>
+                                <tr><td>GloVe</td><td class="num hit">0.311</td><td class="num">0.373</td><td class="num hit">0.518</td></tr>
+                                <tr><td>GIST</td><td class="num">0.437</td><td class="num">0.503</td><td class="num">0.658</td></tr>
+                                <tr><td>OpenAI</td><td class="num">0.216</td><td class="num">0.271</td><td class="num">0.398</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">Values we calculated from the paper's equation and its Table 4-a coefficients. The conditions are HNSW, build candidate list 200, and out-degree cap 32; change the conditions and the values change. Rand64, being synthetic, is left out. The spread runs from 0.17 to 0.66, so no single value can stand in as the exponent of vector search.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Following the GloVe row alone tells the story. Same data, same index, same configuration, and moving only the recall target from 90% to 99% takes the exponent from 0.311 to 0.518. Run that through the multiplier table from the previous section and the cost of a hundredfold increase in data splits between 4.2x and 10.9x. That is what actually gets decided when a meeting nudges the recall target up one step.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The model has limits too. Its coefficient of determination averages 0.88. It explains 88% of the variation in the measured exponents, which means 12% goes unexplained. The separate relation linking a target recall to the search candidate list size needed to reach it is far tighter, above 0.98.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>Flatten the query curve and the build curve stands up</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The equation seems to offer an easy fix. Raise the out-degree cap and the build candidate list size, and since both terms are negative the exponent comes down. A denser graph lets beam search reach the query's neighborhood in fewer hops.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        But the paper models insertion cost the same way. Insertion also runs a beam search to find the new point's neighbors, so the same distance computations dominate. In the build-side model, the out-degree cap sits <strong>in the position that raises the exponent on N</strong>. The denser the graph, the more steeply build cost grows with dataset size. The handle that flattens the query curve is the handle that stands the build curve up.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 720 320" width="100%" role="img" aria-label="Diagram showing that raising the out-degree cap M lowers the query exponent while raising the build exponent, an inverse relationship">
+                            <line x1="90" y1="270" x2="680" y2="270" stroke="var(--text-muted, #808080)" stroke-width="1.5"/>
+                            <line x1="90" y1="270" x2="90" y2="40" stroke="var(--text-muted, #808080)" stroke-width="1.5"/>
+                            <text x="90" y="296" font-size="12" fill="var(--text-muted, #808080)">Out-degree cap M (graph density) →</text>
+                            <text x="14" y="34" font-size="12" fill="var(--text-muted, #808080)">Exponent value</text>
+
+                            <path d="M 120 100 L 660 230" stroke="#F86825" stroke-width="2.5" fill="none"/>
+                            <text x="380" y="150" font-size="14" font-weight="700" fill="#F86825">Query exponent</text>
+                            <text x="380" y="172" font-size="13" fill="var(--text-secondary, #475569)">falls as M rises</text>
+
+                            <path d="M 120 230 L 660 100" stroke="var(--text-secondary, #475569)" stroke-width="2.5" fill="none" stroke-dasharray="7 5"/>
+                            <text x="150" y="200" font-size="14" font-weight="700" fill="var(--text-secondary, #475569)">Build exponent</text>
+                            <text x="150" y="222" font-size="13" fill="var(--text-muted, #808080)">rises as M rises</text>
+                        </svg>
+                        <p class="fig-caption">Original Pebblous diagram. Reconstructed from §5's build-cost model in arXiv:2609.02143 ("the out-degree cap sits in the position that raises the exponent on N"); it does not reproduce the paper's measured coordinates.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Doubling the build candidate list size raises average insertion cost by <strong>about 1.8x</strong>. Every figure in this paragraph is one the paper prints directly. Excluding the synthetic dataset, the build-side candidate-list exponent sits between 0.80 and 0.92, running 0.07 to 0.16 above its query-side counterpart. The paper attributes insertion's greater sensitivity to candidate list size to reverse-link rewiring. When a node that would accept the new point as a neighbor has already hit its degree budget, its links have to be rearranged, and the rearrangement costs extra distance computations.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is a reason we do not print calculated absolute values for the build exponent. Put the paper's coefficients into the equation and some combinations yield a build exponent below 1, which would mean inserting N points costs less than proportionally to N, and that does not hold physically. Nor is this an artefact of extrapolating past the range the paper tested. GIST never exceeds 1 at any of the four out-degree caps that were tested (our calculation). Treating it as an artefact of the fit is the better reading, so this subsection uses only the direction.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Search cost curves eventually show up as time somebody spends waiting. That waiting is what the Pebblous blog looked at in <a href="/report/agent-cpu-bottleneck-data-pipeline-2026-08/en/" class="text-orange-500 hover:text-orange-400 font-semibold">an observation that agents wait longer for data than for the model</a>.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What Is Proven and What Is Still Open</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Everything so far has been measurement and the model that explains it. The paper attaches formal proofs on top. For practitioners, the useful move here is to separate what got proven from what is still outstanding.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>The proofs stand on an idealized construction</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What is proven is not the index as deployed. To keep the exposition clean, the paper studies an exact construction called SNG and states explicitly that it lets that index be <strong>built free of charge</strong>. It writes that the same results hold for the heuristic versions used in practice, but two conditions come attached. One is that this applies in the sparse regime. The other is that each node must be allowed to choose its neighbors from a candidate list of unbounded size, meaning an infinite build candidate list. The empirical half ran on real implementations; the theoretical half stands on these idealizations.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>The index most people run sits on the unproven side</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The abstract summarizes the work as proving both the power law and the eventual transition for exact and degree-bounded constructions. The body is more careful. A footnote to the table of per-regime costs shows the difference in temperature. For some graph-based indexes, the expressions in that table are lower bounds on cost rather than tight ones, and <strong>the table's expressions are tight only for the exactly constructed version of Vamana</strong>. The same footnote gives SNG's cost lower bound as larger than the polylogarithmic term.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            "We leave deriving a tight upper bound for SNG and HNSW as an interesting open question for future work." Which is to say the index most widely used in practice is the one sitting on the unproven side.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        The paper itself is a preprint posted on 2 September 2026, and no information about peer review or conference acceptance is available. No reproduction code or measurement logs were released with it. It carries no funding or conflict-of-interest statement. With all three authors at a university there is no reason to suspect vendor bias, but this is not yet a result that can be described as independently verified.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        And the concluding sentence should not be misread. The paper does not say logarithmic scaling is wrong. "Our experiments and theory confine this claim to scales beyond a transition point." The word is <strong>confine</strong>. Below the transition point the behavior is a power law, and most practical datasets stay in that regime through their entire size, is how the paper puts it.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>If you were rebuilding the capacity plan</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Translated into the language of a planning document, this paper yields a checklist. The items that need no new infrastructure, only the embeddings you already have, come first.
+                    </p>
+                    <ol class="themeable-text leading-relaxed space-y-3 mb-6">
+                        <li>Measure the local intrinsic dimensionality of your data <strong>across a range of dataset sizes</strong>. Measure it once and treat it as a constant and you have missed the paper's point. The method the paper used applies a maximum likelihood estimator to nearest-neighbor distances over 500 random queries and six values of k.</li>
+                        <li>Check whether that value grows alongside the logarithm of dataset size. If it is still growing, you are in the sparse regime, and cost should be expected to grow as a power.</li>
+                        <li>Set the recall target first. Without a target there is no exponent to estimate. Between 90% and 99% the term inside the exponent doubles.</li>
+                        <li>Convert next year's data volume into query cost with that exponent. The growth in data raised to the power c is the growth in cost.</li>
+                        <li>Look at the opposing effect the same parameters have on build cost. Densify the graph on the strength of the query curve alone and you pay for it on the insertion side.</li>
+                        <li>If your queries come from a different distribution than your documents, which is the common case in RAG, the paper writes that cost growth is governed by <strong>the largest intrinsic dimensionality</strong> among the intersecting manifolds. Averaging across manifolds is the wrong move; take the maximum as your basis.</li>
+                    </ol>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On measurement tooling and what it costs to run, this article offers no guidance. It stops at conveying the method the paper used.
+                    </p>
+                </section>
+
+                <!-- Section 7: Why This Matters to Pebblous -->
+                <section id="pebblous-perspective" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why This Matters to Pebblous</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Pebblous diagnoses data and issues quality reports on it. Where the cost curve of search infrastructure meets that work is clear enough. What this paper identifies as the owner of the curve is not the index but <strong>the data</strong>.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.1</span>Diagnosis widens from problems in the values to a problem in the distribution</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AI-Ready Data is about data in a form a model can consume directly. In vector search, what governs that form is less how many embeddings you have gathered than the character of the data those embeddings came from, and that is this paper's practical implication. Two collections of a million records each will follow different growth curves if their intrinsic dimensionalities differ, and they should be budgeted differently. Where earlier diagnostics looked at <strong>problems in the values</strong>, such as missingness, duplication, and label error, what gets added here is <strong>a problem in the distribution</strong>. How far has this data revealed its own distribution? That question comes into DataClinic's list of diagnostic items.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.2</span>Quality is also the structure the data lies on</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Look at quality only as correctness of values and this paper's observation stays invisible. The structure the data lies on is quality too. This paper showed by measurement that the structural property governs the growth curve of search cost. A decision to gather more data becomes a decision about which cost curve you are on, and most organizations have never measured this property of their own data. <a href="/blog/ai-ready-data-conditions/en/" class="text-orange-500 hover:text-orange-400 font-semibold">The argument that the data comes first</a> comes back this time in the language of a search infrastructure budget.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.3</span>Starting with which index to switch to gets the order wrong</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The checklist in Section 6.3 is the practical prescription as it stands. The emphasis is on the order. Start with which index to switch to and the conversation stalls at product comparison. Measuring intrinsic dimensionality across a range of sizes takes no new infrastructure, only the embeddings already in hand, and it tells you first whether you are in the sparse regime or the dense one. Then: do not copy the word logarithmic out of vendor documentation into a planning document, and know that a benchmark number was measured at one dataset size. Both are things you could do this afternoon.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.4</span>Measure the property of the data before growing the scale</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If <a href="/report/turbovec-2026/en/" class="text-orange-500 hover:text-orange-400 font-semibold">compressing vectors to cut storage cost</a> was a question about the constant, this article is a question about the exponent. Both are editions of the same question. Before asking how many embeddings to gather, ask what structure the data behind those embeddings has. Measure the property of the data first and grow the scale after: that order is where this article lands.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            This article connects to the work of Pebblous not because the paper proves our product is needed, but because the question it raises is the question we have to answer every day. The figures in the body were checked against the full text of the original papers and the original dataset documentation, and the specific values of the exponent are ones we calculated from the paper's equation and coefficients. Please read our assessment of the research and our own positioning as two separate things. Thank you for reading to the end.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ (empty section — content rendered by config.faqs) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The figures in this article come from three places. Experimental conditions and coefficients were checked directly against the full text of reference 1, and the conditions of the scaling experiment and the observed departure were confirmed in the full text of reference 2. The wording of the industry documents was taken verbatim from each document, with the access date recorded. Specific values of the exponent are printed in none of these sources, so we calculated them from the equation and coefficients in reference 1.
+                    </p>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">The backbone of this report (checked against the primary sources)</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Sajad Faghfoor Maghrebi, Navid Eslami, Niv Dayan (University of Toronto). "A Power Law in Logarithm's Clothing: On the Scalability of Graph-Based Vector Search." <a href="https://arxiv.org/abs/2609.02143" target="_blank" rel="noopener">arXiv: 2609.02143</a>, v1 submitted 2 September 2026, 17 pages and 10 figures, cs.DB. The experimental design, Tables 2, 3, and 4, Theorem 1 and Corollary 2, the cost model in Section 5, and the concluding quotation were all confirmed in this full text. No peer review information and no released code could be confirmed.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Yu. A. Malkov, D. A. Yashunin. "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs." <a href="https://arxiv.org/abs/1603.09320" target="_blank" rel="noopener">arXiv: 1603.09320</a>, v4 dated 14 August 2018, cs.DS. The conditions of the scaling experiment (Fig. 12, 8-dimensional synthetic vectors, recall fixed at 0.95) and the sentence "the scaling deviates from the pure logarithm" in Section 5.4 were confirmed in this version. The journal version was not separately checked.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Industry documents (wording verified, accessed 5 September 2026)</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">3.</span><span class="ref-body">Milvus. "Index Explained." <a href="https://milvus.io/docs/index-explained.md" target="_blank" rel="noopener">milvus.io/docs/index-explained.md</a>. The live page returns nothing to a bot, so this was confirmed from a Wayback snapshot dated 12 May 2026.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Weaviate. "Vector Indexing." <a href="https://weaviate.io/developers/weaviate/concepts/vector-index" target="_blank" rel="noopener">weaviate.io/developers/weaviate/concepts/vector-index</a>.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Pinecone. "Hierarchical Navigable Small Worlds (HNSW)." <a href="https://www.pinecone.io/learn/series/faiss/hnsw/" target="_blank" rel="noopener">pinecone.io/learn/series/faiss/hnsw</a>. The only one of the six whose notation leaves the polylogarithmic case open.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Redis. "How Hierarchical Navigable Small World (HNSW) Algorithms Can Improve Search." <a href="https://redis.io/blog/how-hnsw-algorithms-can-improve-search/" target="_blank" rel="noopener">redis.io/blog/how-hnsw-algorithms-can-improve-search</a>. Quotes reference 2 instead of asserting anything itself.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">OpenSearch. "k-NN Performance Tuning." <a href="https://docs.opensearch.org/1.0/search-plugins/knn/performance-tuning/" target="_blank" rel="noopener">docs.opensearch.org/1.0/search-plugins/knn/performance-tuning</a>.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Elastic. "Vector search and kNN implementation guide, API edition." <a href="https://www.elastic.co/search-labs/blog/vector-search-implementation-guide-api-edition" target="_blank" rel="noopener">elastic.co/search-labs/blog/vector-search-implementation-guide-api-edition</a>. The only one of the six that attaches a condition.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Datasets (sizes verified)</h3>
+                    <ul class="reference-list mb-4">
+                        <li><span class="ref-num">9.</span><span class="ref-body">SIFT1B (Jégou et al. 2011), DEEP1B (Babenko &amp; Lempitsky 2016), SpaceV1B (Microsoft 2021). That each holds one billion points is stated directly in Section 3.3 of reference 1.</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">OpenAI-ArXiv (big-ann-benchmarks distribution). 2,321,096 vectors, 1536 dimensions, 20,000 queries. These figures are printed in the bibliography entry of reference 1.</span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">GloVe-100 (standard ann-benchmarks distribution). 1,183,514 vectors, 100 dimensions, 10,000 queries, angular distance. Accessed 5 September 2026. Not a figure stated by reference 1 itself.</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">GIST1M (TEXMEX corpus, INRIA/IRISA). 1 million vectors, 960 dimensions, 1,000 queries. Accessed 5 September 2026.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">Wiki-all (RAPIDS cuVS documentation). Three variants exist at 88M, 10M, and 1M, and the bibliography entry in reference 1 describes the 88M version. Which variant the experiments used is not stated in the body.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260905"></script>
+    <script src="/scripts/citation-download.js?v=20260905" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-09-04T19:26:10.562Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-09-04T19:30:29.350Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-09-04T20:28:07.086Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1788549970562-ajcsqj",
+                "version": "0.1.0"
+              },
+              "recordedAt": "2026-09-04T21:37:14.527Z"
+            },
+            mainTitle: "Vector Search Cost Grew as a Power of Dataset Size",
+            subtitle: "University of Toronto researchers grew eight datasets, three of them to a billion points, and measured what HNSW and Vamana charge per query",
+            pageTitle: "HNSW Vector Search Scaling Is a Power Law | Pebblous",
+            category: "tech",
+            publishDate: "2026-09-05",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/vector-search-cost-power-law-scaling/en/",
+            // readTime driver only: about 7,200 English words including the FAQ ≈ 30 min at ~240 wpm.
+            // Left unset, the fallback counts raw characters and reports well over an hour.
+            wordCount: 15000,
+            tags: ["Vector Search", "Vector Database", "HNSW", "Vamana", "Intrinsic Dimensionality", "Embeddings", "Index Design", "AI-Ready Data"],
+            faqs: [
+                { question: "So does this mean vector databases cannot handle scale?", answer: "That is not the claim. The exponent sits between 0 and 1, so cost grows far more slowly than linearly. Ten times the data does not cost ten times as much. What the paper targets is not affordability but the baseline you plan against. A capacity plan built on a logarithmic premise comes out lower than the real curve, and the gap widens as scale grows." },
+                { question: "How do we tell whether our data is in the sparse regime or the dense one?", answer: "Measure local intrinsic dimensionality across a range of dataset sizes and see whether the value grows alongside the logarithm of dataset size. If it is still growing, you are in the sparse regime and cost grows as a power. A slope that starts to flatten is the signal that the dense regime is beginning. Do not measure once and treat the value as a constant, because the fact that it grows is the paper's whole point. The measurement method the paper used applies a maximum likelihood estimator over 500 random queries and six values of k." },
+                { question: "Is a lower intrinsic dimensionality better?", answer: "At equal recall the cost exponent is generally lower. The paper itself uses intrinsic dimensionality as a proxy for dataset difficulty. The ordering is not exact, though, and a lower value does not mean the transition arrives sooner. In the paper's data, SIFT, which sits among the lower values, never bent all the way to a billion points, while the OpenAI embeddings, the highest of the eight, showed signs of sagging at 2.32 million. The paper does not explain that contrast." },
+                { question: "How much do we gain by lowering the recall target?", answer: "It lowers more than today's cost. It lowers the slope of the growth curve. In the paper's model the exponent is proportional to the logarithm of the allowed miss rate, and 90% against 99% recall is a factor of two in that term. Any specific value has to be quoted with its conditions. Take the GloVe dataset on HNSW with a build candidate list of 200 and an out-degree cap of 32, and the exponent rises from 0.311 to 0.518. Those values are ones we calculated from the paper's equation and coefficients." },
+                { question: "Should we just raise the out-degree cap?", answer: "The query-side exponent comes down. The build-side exponent goes up in exchange, because in the paper's build cost model the out-degree cap sits in the position that raises the exponent on dataset size. The paper also reports that doubling the build candidate list size raises average insertion cost by about 1.8x. The query curve and the build curve have to be read together." },
+                { question: "Which is better, HNSW or Vamana?", answer: "The paper does not rank them. Both traced the same power law. On the theory side, though, the table's expressions are tight only for the exactly constructed version of Vamana, and the upper bounds for SNG and HNSW are left by the authors as an open question. The index used more widely in practice is the unproven one. And Vamana was used for the billion-point experiment not because it performs better, but because its smaller memory footprint allowed the largest available sizes." },
+                { question: "What about other index families such as IVF or quantization?", answer: "They are outside the paper's scope. What it covers is graph indexes, specifically the HNSW and Vamana families. It says nothing about the scaling curves of other families, and we are not going to guess on its behalf." },
+                { question: "Is this result proven?", answer: "Half of it. The power law in the sparse regime is proven for an idealized construction. The subject is the exact version of SNG, construction is treated as free of charge, and for the practical versions there is the further condition of an unbounded build candidate list. In the dense regime the upper bound is tight only for the exactly constructed version of Vamana, while SNG and HNSW remain open. The empirical side ran on real implementations, but the paper itself is a preprint posted on 2 September 2026, with no peer review information and no released code confirmed." },
+                { question: "Do we need to change our index right now?", answer: "There is no need. What this paper asks you to change is not the index but what you convert capacity and budget from. Keep the same index, and change only the baseline you use for how many times search cost rises when the data grows by some factor." }
+            ]
+        });
+    </script>
+</body>
+</html>
