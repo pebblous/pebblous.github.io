@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>벡터 검색 비용 스케일링 — HNSW·Vamana 거듭제곱 법칙과 내재 차원 | 페블러스</title>
+    <meta name="description" content="토론토대 연구진이 데이터셋 여덟 개를 10억 건까지 키우며 HNSW와 Vamana의 질의 비용을 쟀다. 재현율을 고정하자 질의당 거리 계산 횟수가 데이터 크기의 거듭제곱으로 자랐고, 로그 확장은 데이터가 자기 분포를 다 드러낸 뒤에야 나타났다.">
+    <meta name="keywords" content="벡터 검색, 벡터 데이터베이스, HNSW, Vamana, 내재 차원, 재현율, 근사 최근접 이웃, 인덱스 설계, AI-Ready Data, 데이터 품질">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="벡터 검색 비용은 데이터가 커질수록 거듭제곱으로 늘었다">
+    <meta property="og:description" content="재현율을 고정하고 데이터셋 여덟 개를 키우자 질의당 거리 계산 횟수가 로그가 아니라 데이터 크기의 거듭제곱으로 자랐다. 갈림길을 정한 것은 벡터의 개수가 아니라 내재 차원이었다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="벡터 검색 비용은 데이터가 커질수록 거듭제곱으로 늘었다">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="벡터 검색 비용은 데이터가 커질수록 거듭제곱으로 늘었다">
+    <meta name="twitter:description" content="10억 건까지 키운 데이터셋은 곡선이 곧게 뻗었고, 232만 건짜리 임베딩은 이미 처지기 시작했다. 갈림길을 정한 것은 규모가 아니었다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/vector-search-cost-power-law-scaling/ko/image/index.png">
+    <meta name="twitter:image:alt" content="벡터 검색 비용은 데이터가 커질수록 거듭제곱으로 늘었다">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정: theme-variables -> tailwind-build -> common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260905">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260905">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260905">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* 도식 박스·표 캡션·수식 줄 — 공통 컴포넌트가 없어 이 리포트 로컬로만 정의 */
+        .fig-box {
+            background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+        }
+        .fig-caption {
+            font-size: 0.8rem;
+            color: var(--text-muted, #808080);
+            line-height: 1.7;
+            margin-top: 0.5rem;
+        }
+        .formula-line {
+            font-size: 1.05rem;
+            text-align: center;
+            letter-spacing: 0.01em;
+            margin: 0.25rem 0 0.75rem;
+        }
+        .comparison-table td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .comparison-table th.num { text-align: right; }
+        .comparison-table .hit { color: #F86825; font-weight: 700; }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 용량 계획은 어떤 문장 위에 서 있나</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 그 문장의 출처에는 8차원 합성 벡터가 있었다</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 데이터셋 여덟 개를 키우자 곡선은 곧게 뻗었다</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 곡선이 꺾인 것은 분포를 다 드러낸 뒤였다</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 재현율 목표가 내년의 성장 곡선을 정한다</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 증명된 것과 아직 열린 것</a></li>
+                    <li><a href="#pebblous-perspective" class="block pl-4 themeable-toc-link transition-colors duration-200">페블러스 관심의 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            벡터 DB의 용량 계획은 대개 한 문장 위에 서 있다. 그래프 인덱스는 데이터가 늘어도 검색이 로그로만 느려진다는 문장이다. 토론토대학교(University of Toronto) 연구진이 이 문장을 크기를 바꿔 가며 실측했다. 데이터셋 여덟 개를 키우면서 재현율을 목표에 고정하자, 질의 한 번에 필요한 거리 계산 횟수가 데이터 크기의 거듭제곱으로 자랐다. 로그 확장이었다면 나왔어야 할 완만한 휨은 보이지 않았다. 재현율 목표 90%부터 99%까지, 벤치마크한 인덱스 설정 열여섯 가지, 어려운 질의와 쉬운 질의 모두에서 같은 곡선이 나왔다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            다만 이것은 벡터 DB가 무너진다는 이야기가 아니다. 지수가 0과 1 사이라 비용은 여전히 선형보다 훨씬 느리게 는다. 흔들리는 것은 감당 여부가 아니라 계획의 기준선이다. 가장 관대한 로그 가정에 기대면 데이터가 100배일 때 비용을 1.3배로 잡지만, 논문의 식과 계수로 계산한 곡선은 3배 안팎을 그린다. 그리고 그 차이를 가르는 것은 쌓인 벡터의 개수보다 데이터의 내재 차원이었다. 실제로 10억 건까지 키운 SIFT는 곡선이 곧게 뻗었고, 전체가 232만 건뿐인 OpenAI 임베딩은 이미 처지기 시작했다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            이 글이 되짚은 전달 사슬은 그래서 더 눈에 띈다. HNSW 원 논문이 로그를 말할 때 크기를 바꿔 가며 잰 실험은 8차원 합성 벡터 하나였고, 저자들은 자기네 최대 실험이 로그에서 벗어난다는 것을 이미 적어 두었다. 벤더 문서 여섯 곳으로 옮겨 간 것은 결론뿐이었고 그 단서는 남지 않았다. 다만 이 논문 자체도 사흘 전 공개된 프리프린트이고, 이론 증명은 이상화된 구성을 대상으로 하며, 실무에서 가장 많이 쓰는 HNSW의 상한은 저자들이 열린 문제로 남겼다.
+                        </p>
+                    </div>
+
+                    <!-- STAT-CARD: 본문 완성 후 역추출로 재확정할 것 (초안 후보) -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">46.5</p>
+                            <p class="text-sm themeable-text-secondary mt-1">임베딩 차원 1536짜리 데이터의 내재 차원</p>
+                            <p class="text-xs themeable-muted mt-1">100만 건 시점에서 잰 값. 검색을 어렵게 만드는 차원은 임베딩 차원이 아니다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.31 → 0.52</p>
+                            <p class="text-sm themeable-text-secondary mt-1">재현율을 90%에서 99%로 올렸을 때 비용 지수</p>
+                            <p class="text-xs themeable-muted mt-1">GloVe·HNSW·구축 후보 목록 200·연결 수 32. 논문의 식과 계수로 우리가 계산한 값</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1.3배 대 3배</p>
+                            <p class="text-sm themeable-text-secondary mt-1">데이터가 100배일 때 로그 가정과 실측 곡선의 비용 배수</p>
+                            <p class="text-xs themeable-muted mt-1">가장 관대한 로그 가정을 기준선으로 둔 우리 산술</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">10억 건</p>
+                            <p class="text-sm themeable-text-secondary mt-1">키워도 곡선이 꺾이지 않은 데이터셋의 규모</p>
+                            <p class="text-xs themeable-muted mt-1">SIFT·DEEP 두 개, Vamana 단일 설정에서 관찰된 결과다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">벡터 DB 용량 계획은 어떤 문장 위에 서 있나</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        RAG를 붙이거나 추천을 돌리는 조직은 벡터를 계속 쌓는다. 문서가 늘고 상품이 늘고 대화 기록이 쌓이는 만큼 임베딩도 늘어난다. 그래서 벡터 DB를 운영하는 쪽은 어느 시점엔가 같은 질문 앞에 선다. 지금 1천만 건인 인덱스가 내년에 1억 건이 되면 검색에 드는 자원은 얼마나 늘어나는가. 이 질문에 답할 때 거의 모두가 같은 전제를 쓴다. 그래프 인덱스는 데이터가 늘어도 검색이 로그로만 느려진다는 것.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 글이 다루는 논문은 그 전제를 실험대에 올린다. 「A Power Law in Logarithm's Clothing: On the Scalability of Graph-Based Vector Search」, 2026년 9월 2일 arXiv에 올라온 프리프린트이고 저자 세 명은 모두 토론토대학교 소속이다. 벡터 DB 벤더에 속한 저자는 없다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        먼저 용어 하나를 고정해야 한다. 이 글에서 말하는 검색 비용은 <strong>질의 한 번에 수행하는 거리 계산 횟수</strong>다. 응답 시간(ms)도 메모리도 클라우드 요금도 아니다. 논문이 그렇게 정한 이유는 명시돼 있다. 실제 시간으로 재면 캐시 방출, 프리페치, 하드웨어 최적화된 거리 계산 같은 구현의 특성이 알고리즘의 성질과 뒤섞이기 때문이다. 거리 계산 횟수는 그래프 순회에서 지배적인 비용이면서 구현에 덜 흔들린다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>데이터가 늘면 재현율이 먼저 떨어진다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문의 첫 실험은 이미 알려진 현상을 확인하는 것으로 시작한다. 인덱스 파라미터를 그대로 둔 채 데이터만 키우면, 질의당 거리 계산 횟수는 조금 늘고 <strong>재현율은 크게 떨어진다</strong>. 재현율(recall)은 진짜 최근접 이웃 가운데 검색이 실제로 찾아낸 비율이다. 이유는 직관적이다. 데이터가 커지면 질의 근처에 놓인 점이 많아지고, 빔 탐색(beam search)은 더 느리게 수렴하며, 진짜 최근접 이웃은 후보 목록의 자리를 두고 더 많은 경쟁을 치른다. 검색 품질이 조용히 나빠지는 것이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 실무에는 관행이 하나 생겼다. 주기적으로 정확 검색을 돌려 재현율을 재고, 목표에 못 미치면 탐색 후보 목록 크기(ef<sub>search</sub>)를 올리고, 다시 재고, 목표에 닿을 때까지 반복한다. 논문은 이 관행이 벤더 문서와 최근 연구에 폭넓게 적혀 있다고 인용하며 서술한다. 이 관행이 중요한 이유는 그것이 곧 논문의 실험 설계가 되기 때문이다. 재현율을 목표에 붙들어 놓고 데이터를 키우면 흔들리는 자리가 품질에서 비용으로 옮겨 간다. 그 비용이 어떤 곡선을 그리는가가 이 논문의 질문이다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            질문은 이렇게 정리된다. 재현율을 일정하게 유지한다고 할 때, 데이터가 자랄수록 질의 한 번의 거리 계산 횟수는 어떤 속도로 늘어나는가. 벤치마크는 대개 한 가지 크기에서 재현율과 비용의 맞바꿈을 재기 때문에 이 질문에 답하지 않는다고 논문은 적는다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        그래프 인덱스가 질의를 어떻게 걷는지, 삭제된 문서의 연결이 왜 그래프에 남는지는 페블러스 블로그가 <a href="/blog/vector-db-deletion-retrieval-ghost-echo/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">벡터 DB의 삭제와 유령 메아리를 다룬 글</a>에서 한 번 풀었다. 같은 저장소를 보안 각도로 본 글은 <a href="/report/embedding-translation-vector-db-exposure/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">임베딩 번역과 벡터 DB의 공격면</a>에 있다. 이 글은 그 저장소가 자랄 때의 비용 곡선만 본다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">그 문장의 출처에는 8차원 합성 벡터가 있었다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문은 1절의 한 소제목을 "The Logarithmic Folklore"라고 붙였다. 로그 확장이라는 통념을 가리키는 말이다. 논문의 정리에 따르면 이 통념은 두 갈래로 나뉜다. 정확하게 구성한 그래프에 대해서는 증명이 붙은 주장이 있고, 실무에서 쓰는 휴리스틱 인덱스에 대해서는 주장만 있고 증명이 없다. 우리가 실제로 돌리는 것은 후자다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그렇다면 근거로 인용되는 원 논문은 무엇을 쟀을까. 이 대목은 새 논문의 요약을 그대로 옮기는 대신 HNSW 원 논문(Malkov &amp; Yashunin, arXiv:1603.09320 v4)을 직접 열어 확인했다. 두 가지가 사실이었다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>크기를 바꿔 가며 잰 실험은 8차원 합성 벡터 하나였다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        HNSW 원 논문에서 데이터 크기를 바꿔 가며 확장 곡선을 그린 실험은 Fig. 12(b)와 (c) 한 벌이다. 대상은 8차원 무작위 초입방체에서 뽑은 합성 벡터였고, 10-NN 검색이며, 재현율을 0.95로 고정한 조건이었다. 그리고 원 논문의 표현은 로그라는 단정이 아니라 "not worse than logarithmic", 즉 로그보다 나쁘지 않다는 상한 서술이었다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 한정이 하나 필요하다. HNSW 논문 전체가 저차원 합성 데이터로만 검증된 것은 아니다. 5.2절부터 5.4절까지는 SIFT·GIST·GloVe 같은 실제 데이터셋에서 폭넓게 성능을 비교한다. <strong>크기를 바꿔 가며 확장을 잰 실험만 놓고 보면</strong> 8차원 합성 벡터 하나였다는 것이 정확한 서술이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>저자들은 최대 실험의 이탈을 이미 적어 두었다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 흥미로운 것은 같은 논문의 5.4절이다. 2억 건 규모의 SIFT 데이터셋, 임베딩 차원 128, 그 논문에서 가장 큰 실험이다. 저자들은 질의 시간의 확장 곡선을 그려 놓고 그 옆에 이렇게 적었다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            "Note that the scaling deviates from the pure logarithm, possibly due to relatively high dimensionality of the dataset." (확장이 순수한 로그에서 벗어난다는 점에 유의하라. 데이터셋의 상대적으로 높은 차원 때문일 수 있다.)
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        2018년에 이미 적혀 있던 문장이다. 다만 여기서 과장하지 않는 것이 중요하다. HNSW 저자가 말한 높은 차원은 <strong>임베딩 차원 128</strong>을 가리키는 맥락이고, 새 논문이 곡선의 주인공으로 지목한 내재 차원과 같은 양이 아니다. 두 논문이 같은 말을 했다고 쓰면 틀린다. 정확히는 이렇다. 원 논문도 최대 실험에서 이탈을 봤고 차원 탓으로 짐작했다. 그 짐작을 어떤 차원인지까지 특정하고 곡선의 모양을 수식으로 세운 것이 8년 뒤 이 논문이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Vamana 쪽 사정은 또 다르다. 새 논문에 따르면 Vamana 원 논문은 정확하게 구성한 그래프에서 탐욕 검색의 단계 수가 로그라는 논증을 폈을 뿐, 데이터 크기에 따른 검색 비용을 측정한 적이 없다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.3</span>업계 문서로 옮겨 간 것은 결론뿐이었다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        새 논문은 이 주장이 업계 문서와 서베이로 퍼져 확정된 성질처럼 재진술되고 있다고 적는다. 그 문서들을 직접 열어 확인했다. 여섯 곳 모두 실제로 로그, 또는 로그를 몇 번 곱한 크기인 다항로그로 확장을 서술하고 있었다. 다만 <strong>진술의 강도가 같지 않다</strong>. 아래는 각 문서의 원문 표현과 그 성격이며, 조회일은 2026년 9월 5일이다. Milvus만 라이브 페이지가 봇 차단으로 열리지 않아 2026년 5월 12일 웨이백 스냅숏을 썼다.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>문서</th>
+                                    <th>원문 표현</th>
+                                    <th>진술의 성격</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Milvus, Index Explained</td>
+                                    <td>"enabling efficient logarithmic-time search complexity"</td>
+                                    <td>자기 제품에 대한 단정</td>
+                                </tr>
+                                <tr>
+                                    <td>Weaviate, Vector Indexing</td>
+                                    <td>"it scales well to large datasets as queries have a logarithmic time complexity"</td>
+                                    <td>자기 제품에 대한 단정</td>
+                                </tr>
+                                <tr>
+                                    <td>OpenSearch, k-NN Performance Tuning</td>
+                                    <td>"the complexity of search for the HNSW algorithm is logarithmic with respect to the number of vectors"</td>
+                                    <td>자기 제품에 대한 단정</td>
+                                </tr>
+                                <tr>
+                                    <td>Elastic, Vector search &amp; kNN implementation guide</td>
+                                    <td>"The computational cost of search: logarithmic in the number of vectors, provided they are indexed through HNSW"</td>
+                                    <td>단정이되 여섯 중 유일하게 조건절을 붙인다</td>
+                                </tr>
+                                <tr>
+                                    <td>Pinecone, HNSW</td>
+                                    <td>"search times are reduced to (poly/)logarithmic complexity"</td>
+                                    <td>모델 계열의 설계 관념 서술. 다항로그 가능성을 열어 둔 가장 약한 진술</td>
+                                </tr>
+                                <tr>
+                                    <td>Redis, How HNSW Algorithms Can Improve Search</td>
+                                    <td>"As Malkov and Yashunin write in the original paper, '…allows a logarithmic complexity scaling.'"</td>
+                                    <td>자기 주장 대신 원 논문을 인용한다</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        마지막 줄이 이 섹션의 그림을 완성한다. Redis 문서는 자기가 주장하는 대신 원 논문을 따옴표로 인용한다. 벤더가 논문을 인용하고, 그 논문이 근거로 삼은 확장 실험이 8차원 합성 벡터였다는 사슬이 한 문서 안에서 그대로 보인다. 참고로 새 논문이 이 문서들을 나열한 목록은 1절과 2절이 서로 다르다. Milvus·Weaviate·Pinecone·Redis·OpenSearch가 공통이고, 여기에 1절은 FAISS를, 2절은 Elastic을 더한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        옮겨 가지 않은 것이 무엇인지를 한 장으로 정리하면 아래와 같다.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 720 400" width="100%" role="img" aria-label="HNSW 원 논문의 확장 실험 조건과 이탈 관찰이 벤더 문서로 옮겨 갈 때 결론만 남고 단서가 빠지는 과정을 나타낸 도식">
+                            <rect x="10" y="10" width="700" height="104" rx="10" fill="none" stroke="var(--border-color, #e2e8f0)" stroke-width="1.5"/>
+                            <text x="28" y="38" font-size="15" font-weight="700" fill="var(--text-secondary, #475569)">HNSW 원 논문 (2018)</text>
+                            <text x="28" y="62" font-size="13" fill="var(--text-secondary, #475569)">크기를 바꿔 가며 잰 실험: 8차원 합성 벡터, 재현율 0.95 고정</text>
+                            <text x="28" y="82" font-size="13" fill="var(--text-secondary, #475569)">표현: 로그보다 나쁘지 않다 (not worse than logarithmic)</text>
+                            <text x="28" y="102" font-size="13" fill="#F86825" font-weight="600">최대 실험 2억 건: 순수한 로그에서 벗어난다고 저자들이 직접 적음</text>
+
+                            <line x1="360" y1="114" x2="360" y2="158" stroke="#F86825" stroke-width="2"/>
+                            <polygon points="360,166 354,152 366,152" fill="#F86825"/>
+                            <text x="376" y="146" font-size="13" font-weight="600" fill="var(--text-muted, #808080)">옮겨진 것은 결론뿐</text>
+
+                            <rect x="10" y="172" width="700" height="104" rx="10" fill="none" stroke="var(--border-color, #e2e8f0)" stroke-width="1.5"/>
+                            <text x="28" y="200" font-size="15" font-weight="700" fill="var(--text-secondary, #475569)">업계 문서 여섯 곳</text>
+                            <text x="28" y="224" font-size="13" fill="var(--text-secondary, #475569)">네 곳: 자기 제품에 대해 조건 없이 로그라고 적는다</text>
+                            <text x="28" y="244" font-size="13" fill="var(--text-secondary, #475569)">한 곳: 설계 관념으로 다항로그 가능성을 열어 둔다</text>
+                            <text x="28" y="264" font-size="13" fill="var(--text-secondary, #475569)">한 곳: 원 논문을 따옴표로 인용한다</text>
+
+                            <line x1="360" y1="276" x2="360" y2="320" stroke="#F86825" stroke-width="2"/>
+                            <polygon points="360,328 354,314 366,314" fill="#F86825"/>
+                            <text x="376" y="308" font-size="13" font-weight="600" fill="var(--text-muted, #808080)">검증 없이 굳어진 상식</text>
+
+                            <rect x="10" y="334" width="700" height="56" rx="10" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="28" y="358" font-size="15" font-weight="700" fill="var(--text-secondary, #475569)">우리 조직의 용량 계획</text>
+                            <text x="28" y="378" font-size="13" fill="var(--text-secondary, #475569)">데이터가 100배가 돼도 검색 비용은 조금만 는다고 잡는다</text>
+                        </svg>
+                        <p class="fig-caption">전달 사슬. 원 논문의 조건과 이탈 관찰은 옮겨지지 않았다. 각 단계의 내용은 arXiv:1603.09320 v4의 5.1·5.4절, 위 표의 여섯 문서, 그리고 arXiv:2609.02143의 1절 서술에서 가져왔다.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문은 여기에 한 가지를 더한다. 이 주장이 오래 검증되지 않은 이유가 벤치마크의 관행에 있다는 것이다. 벤치마크는 대개 재현율과 비용의 맞바꿈을 <strong>한 가지 데이터 크기에서</strong> 재고, 재현율을 고정한 채 크기별 비용을 재지 않는다고 논문은 적는다. 이 대목은 논문의 주장이며, 각 벤치마크의 실제 프로토콜을 우리가 따로 확인하지는 않았다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">데이터셋 여덟 개를 키우자 곡선은 곧게 뻗었다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실험 설계는 앞서 말한 실무 관행을 그대로 옮겨 놓은 것이다. 재현율을 고정한다는 것은 각 크기마다 목표 재현율에 닿는 <strong>가장 작은</strong> 탐색 후보 목록 크기를 찾아 그때의 거리 계산 횟수를 기록한다는 뜻이다. 그런 다음 데이터를 키우고 다시 같은 일을 한다. 정답은 데이터 전체를 훑는 정확 검색으로 만들었다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        격자의 크기가 이 논문의 무게다. 데이터셋 여덟 개, 재현율 목표 네 단계(90%·95%·97.5%·99%), 인덱스 설정 열여섯 가지가 곱해진다. 설정은 노드당 연결 수(M)를 16·32·64·128로, 구축 후보 목록 크기(ef<sub>construction</sub>)를 100·200·400·800으로 조합한 것이다. 인덱스는 HNSW와 Vamana 두 종류. 몇 개를 찾을지(k)도 1·5·10·20으로 바꿔 보았는데 지수가 의미 있게 달라지지 않아 k=10만 보고한다고 논문은 적는다. 지면 사정으로 그림에는 열여섯 설정 중 네 개만 실렸고, 나머지는 비슷하게 움직였다는 서술만 있다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>로그였다면 휘어야 할 곡선이 곧게 뻗었다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결과를 읽는 방법은 단순하다. 가로축과 세로축을 모두 로그로 그렸을 때 곡선이 직선이면 거듭제곱이다. 로그 확장이었다면 데이터가 두 배가 될 때마다 거리 계산이 일정한 양만 더해지므로 곡선은 아래로 휘어야 한다. 논문의 관찰은 대부분의 곡선이 휘지 않고 곧게 뻗었다는 것이다. 논문은 이 곡선에 <strong>선형보다 느린 거듭제곱 법칙(Sublinear Power Law)</strong>이라는 이름을 붙였다. 질의당 거리 계산 횟수가 데이터 크기 N의 c제곱에 비례하고, 이때 c는 0과 1 사이의 상수다.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 720 340" width="100%" role="img" aria-label="가로세로 모두 로그 축인 그래프에서 로그 확장 가정은 아래로 휘는 곡선을, 실측된 거듭제곱 확장은 곧은 직선을 그린다는 것을 비교한 개념도">
+                            <line x1="80" y1="290" x2="690" y2="290" stroke="var(--text-muted, #808080)" stroke-width="1.5"/>
+                            <line x1="80" y1="290" x2="80" y2="40" stroke="var(--text-muted, #808080)" stroke-width="1.5"/>
+                            <text x="80" y="322" font-size="13" fill="var(--text-muted, #808080)">데이터 크기 (로그 축)</text>
+                            <text x="14" y="34" font-size="13" fill="var(--text-muted, #808080)">질의당 거리 계산 횟수 (로그 축)</text>
+
+                            <path d="M 100 270 L 660 80" stroke="#F86825" stroke-width="2.5" fill="none"/>
+                            <text x="400" y="150" font-size="14" font-weight="700" fill="#F86825">실측: 직선</text>
+                            <text x="400" y="172" font-size="13" fill="var(--text-secondary, #475569)">기울기가 곧 지수 c, 0과 1 사이</text>
+
+                            <path d="M 100 270 Q 300 212 660 196" stroke="var(--text-secondary, #475569)" stroke-width="2.5" fill="none" stroke-dasharray="7 5"/>
+                            <text x="330" y="252" font-size="14" font-weight="700" fill="var(--text-secondary, #475569)">로그 확장이었다면: 아래로 휜다</text>
+                            <text x="330" y="274" font-size="13" fill="var(--text-muted, #808080)">데이터가 두 배가 될 때마다 일정한 양만 더해진다</text>
+                        </svg>
+                        <p class="fig-caption">두 가정이 로그 축 위에서 어떻게 갈리는지를 나타낸 개념도다. arXiv:2609.02143의 3.2절 서술을 다시 그린 것이며, 논문 Figure 3의 좌표를 옮긴 것이 아니다.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지수를 밀어 올리거나 끌어내리는 요인도 같은 그림에서 읽힌다. 재현율 목표가 높을수록 지수가 오르고, 구축 후보 목록 크기와 노드당 연결 수가 클수록 지수가 내려간다. 그리고 데이터셋이 어려울수록 지수가 커지는 경향이 있다. 논문은 어려움의 대리 지표로 내재 차원을 쓰는데, 예로 든 대비가 GloVe와 SIFT다. 100만 건 시점에서 잰 내재 차원이 32.4와 19.2로 갈리고, 같은 재현율에서 GloVe 쪽 지수가 더 높았다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>쉬운 질의와 어려운 질의로 갈라도 마찬가지였다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 데이터셋 안에서도 질의마다 난이도가 다르다. 논문은 질의를 국소 내재 차원(LID) 기준으로 줄 세운 뒤 상위 20%와 하위 20%를 갈라 실험을 다시 돌렸다. SIFT·DEEP·GloVe에서 어려운 쪽 무리의 내재 차원은 쉬운 쪽보다 각각 7.9·9.6·11.0 포인트 이상 높았다. 두 무리의 지수는 서로 달랐지만, <strong>양쪽 다 직선이었다</strong>. 질의 난이도는 곡선의 기울기를 바꿀 뿐 곡선의 종류까지 바꾸지는 못했다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>10억 건까지 키운 실험</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        격자 실험은 SIFT·DEEP·SpaceV에 대해 1억 건에서 상한을 두었다. 총 실험 시간을 1주일 안팎으로 묶기 위해서였다. 그래서 논문은 따로 한 벌의 실험을 더 돌린다. 세 데이터셋을 10만 건에서 10억 건까지 키우며 같은 측정을 반복한 것이다. 이 실험의 조건은 <strong>좁다</strong>. 데이터셋 세 개, 알고리즘은 Vamana 하나, 설정도 구축 후보 목록 100·연결 수 32 한 가지뿐이다. Vamana를 고른 이유는 HNSW보다 메모리를 적게 써서 가장 큰 규모까지 갈 수 있어서였다. 이 규모에서는 설정 하나짜리 인덱스가 300GB에서 1TB를 차지하고 구축에 며칠이 걸린다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결과는 이렇다. SIFT와 DEEP의 곡선은 10억 건까지 계속 곧게 뻗었다. SpaceV만 곡선의 기울기가 내려갔다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.4</span>지수의 차이가 예산에서 어떻게 보이나</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지수 하나가 계획에서 얼마나 다른 숫자를 만드는지는 곱해 보면 드러난다. 아래 표는 데이터가 몇 배로 늘 때 질의당 거리 계산 횟수가 몇 배가 되는지를 지수별로 적은 것이다. 논문에 없는 표이며, 우리가 N의 c제곱을 직접 계산해 만들었다.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>데이터 증가</th>
+                                    <th class="num">c = 0.20</th>
+                                    <th class="num">c = 0.25</th>
+                                    <th class="num">c = 0.37</th>
+                                    <th class="num">c = 0.50</th>
+                                    <th class="num">참고: 로그 가정</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>10배</td>
+                                    <td class="num">1.58배</td>
+                                    <td class="num">1.78배</td>
+                                    <td class="num">2.34배</td>
+                                    <td class="num">3.16배</td>
+                                    <td class="num">1.17배</td>
+                                </tr>
+                                <tr>
+                                    <td>100배</td>
+                                    <td class="num hit">2.51배</td>
+                                    <td class="num hit">3.16배</td>
+                                    <td class="num hit">5.50배</td>
+                                    <td class="num hit">10.0배</td>
+                                    <td class="num">1.33배</td>
+                                </tr>
+                                <tr>
+                                    <td>1000배</td>
+                                    <td class="num">3.98배</td>
+                                    <td class="num">5.62배</td>
+                                    <td class="num">12.9배</td>
+                                    <td class="num">31.6배</td>
+                                    <td class="num">1.50배</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">우리 산술이다. 맨 오른쪽 열은 비교 기준선으로 둔 값이며, 100만 건에서 출발해 거리 계산이 log N에 비례한다고 가정했을 때의 배수다. 논문이 겨냥하는 대상은 정확히는 다항로그이므로 이 열을 논문이 말하는 로그라고 읽으면 안 된다. 가장 관대한 로그 가정에서도 이만큼 벌어진다는 정도로만 쓸 수 있다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        벡터 하나의 크기를 줄이는 이야기는 페블러스 블로그가 <a href="/report/turbovec-2026/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">학습 없는 벡터 압축을 다룬 글</a>에서 한 적이 있다. 두 이야기는 곱해진다. 압축은 이 표의 상수를 줄이고, 이 논문은 지수를 말한다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">곡선이 꺾인 것은 데이터가 자기 분포를 다 드러낸 뒤였다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문은 로그 확장을 폐기하지 않는다. 적용 구간을 붙인다. 데이터가 충분히 커지면 곡선은 결국 완만해지고, 그때부터는 기존의 다항로그 주장이 맞다는 것이 논문의 결론이다. 그렇다면 그 전환은 언제 오는가. 여기서 직관과 어긋나는 관찰이 나온다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>확실히 꺾인 것은 데이터셋 하나였다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비용 곡선이 분명하게 꺾인 것은 <strong>SpaceV 하나</strong>다. 10억 건까지 키우자 기울기가 내려갔다. OpenAI 임베딩에 대해서는 격자 실험의 일부 곡선이 적합된 거듭제곱보다 아주 약간 아래로 처지는 것처럼 보인다고 논문이 적는데, 곧바로 판정을 유보한다. "Only larger dataset sizes can tell whether the drift is real." 더 큰 규모라야 그 처짐이 진짜인지 알 수 있다는 뜻이고, OpenAI는 이미 기본 데이터셋 전체를 쓰고 있어 더 키울 수가 없다. 초록은 전환이 두 데이터셋에서 나타났다고 요약하지만 본문이 더 조심스럽다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 이 둘을 나란히 놓으면 규모의 논리가 무너진다. 전체가 232만 건뿐인 OpenAI 임베딩은 자기 크기의 끝에서 처지는 조짐을 보였고, 10억 건까지 키운 SIFT와 DEEP은 끝까지 곧게 뻗었다. 100만 건 시점에서 잰 내재 차원은 OpenAI가 46.5로 가장 높고 SIFT가 19.2로 낮은 축에 든다. 내재 차원이 더 높은 쪽이 먼저 꺾이고 더 낮은 쪽이 10억 건까지 안 꺾인 것이다. <strong>논문은 이 대비를 따로 설명하지 않는다.</strong> 우리도 이유를 지어내지 않고 사실만 나란히 둔다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>내재 차원은 데이터셋의 상수가 아니다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        곡선의 모양을 설명하는 이론은 다섯 걸음으로 이어진다. 첫째, 검색 비용은 질의 주변의 좁은 영역에 놓인 점의 개수가 지배한다. 논문은 빔 탐색을 질의 근처까지 다가가는 지름길 단계와 질의 주변을 뒤져 진짜 최근접 이웃을 찾는 이웃 탐색 단계로 나누는데, 측정한 모든 경우에서 이웃 탐색 단계가 비용의 80% 이상을 차지했다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        둘째, 그 영역을 반지름 비율로 (1+ε)배 넓히면 안에 들어오는 점의 개수는 (1+ε)를 내재 차원만큼 거듭제곱한 값에 비례한다. 정리 1이다. 셋째가 이 논문의 핵심 한 줄이다. 밑에 해당하는 (1+ε)를 N의 거듭제곱 꼴로 고쳐 쓰면, 점의 개수는 N의 지수 (d<sub>int</sub> / log N) × log(1+ε) 제곱에 비례하는 형태가 된다. <strong>log N에 대한 지수는 곧 N에 대한 거듭제곱이다.</strong>
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            넷째, 데이터가 자기 분포를 성기게만 표집하는 동안에는 내재 차원이 log N과 나란히 자란다. 그러면 위 지수에서 d<sub>int</sub>와 log N이 상쇄되어 지수가 상수가 되고, 비용은 데이터 크기의 거듭제곱으로 자란다. 다섯째, 데이터가 분포를 조밀하게 표집하고 나면 내재 차원의 증가가 둔해진다. 지수는 0을 향해 내려가고, 비용의 증가는 어떤 거듭제곱보다도 느려진다. 논문은 앞을 성긴 구간, 뒤를 조밀 구간이라 부른다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        (1+ε)라는 비율이 규모에 따라 흔들리지 않는다는 것이 이 논증의 전제인데, 논문은 그것도 따로 잰다. 데이터가 커지면 질의에서 이웃까지의 거리가 전부 같은 비율로 줄어들어 안쪽과 바깥쪽 영역이 함께 수축하므로 반지름의 비는 유지된다. 실제로 방문한 노드들의 정규화 거리 분포를 그려 보면 데이터 크기를 바꿔도 거의 겹친다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그리고 내재 차원이 자란다는 대목은 실측으로 뒷받침된다. 논문은 국소 내재 차원(LID)을 대리 지표로 삼아 데이터 크기별로 쟀다. 대부분의 데이터셋에서 LID는 로그 축에 대해 거의 직선으로 올라간다. 즉 log N과 나란히 자란다. 예외가 둘인데, OpenAI는 여전히 오르되 기울기가 점점 줄고, SpaceV는 오르다가 거의 평평해진다. 비용 곡선에서 갈라진 그 두 데이터셋이 LID 곡선에서도 갈라진다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>검색을 어렵게 만드는 차원은 따로 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터셋 여덟 개를 한 표에 놓으면 두 차원이 서로 다른 양이라는 것이 한눈에 보인다. 임베딩 차원은 임베딩 모델이 정하는 벡터의 길이이고, 내재 차원은 그 벡터들이 실제로 놓인 구조의 차원이다.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>데이터셋</th>
+                                    <th class="num">임베딩 차원</th>
+                                    <th class="num">내재 차원 (100만 건 시점)</th>
+                                    <th>전체 크기</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>SIFT (이미지)</td><td class="num">128</td><td class="num">19.2</td><td>10억 건</td></tr>
+                                <tr><td>DEEP (이미지)</td><td class="num">96</td><td class="num">20.7</td><td>10억 건</td></tr>
+                                <tr><td>SpaceV (텍스트)</td><td class="num">100</td><td class="num">29.2</td><td>10억 건</td></tr>
+                                <tr><td>Wiki (텍스트)</td><td class="num">768</td><td class="num">30.1</td><td>논문이 명시하지 않음</td></tr>
+                                <tr><td>GloVe (텍스트)</td><td class="num">100</td><td class="num">32.4</td><td>약 118만 건</td></tr>
+                                <tr><td>Rand64 (합성)</td><td class="num">64</td><td class="num hit">40.2</td><td>논문이 직접 생성</td></tr>
+                                <tr><td>GIST (이미지)</td><td class="num">960</td><td class="num">42.5</td><td>100만 건</td></tr>
+                                <tr><td>OpenAI (텍스트)</td><td class="num">1536</td><td class="num hit">46.5</td><td>232만 1,096건</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">임베딩 차원과 내재 차원은 논문 Table 2의 값이다. 크기 열은 논문에 없어 원 데이터셋 문서에서 확인했다. GloVe는 ann-benchmarks 표준 배포본 기준 1,183,514건이고 논문이 직접 밝힌 값이 아니다. Wiki-all은 88M·10M·1M 세 변형이 있는데 논문이 어느 것을 썼는지 적지 않았다. Rand64는 이 논문이 64차원 단위구 위 균등분포에서 직접 생성한 합성 데이터라 공개 배포본이 없고 개수도 논문에 적혀 있지 않다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표에서 두 줄만 보면 된다. Rand64는 임베딩 차원이 64인데 내재 차원이 40.2이고, GIST는 임베딩 차원이 960인데 42.5다. 벡터가 길다고 검색이 어려워지는 것이 아니다. 다만 Rand64는 균등분포에서 뽑은 합성 데이터라 실제 데이터의 사례로 인용할 수 없다. 논문의 계수 표에서도 이 데이터셋 혼자 양 끝값을 차지한다.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            이 표를 읽을 때 조심할 것이 하나 있다. 내재 차원 열은 <strong>100만 건 시점에서 잰 값</strong>이지 데이터셋의 고정된 성질이 아니다. 논문의 요지 자체가 그 값이 데이터와 함께 자란다는 것이다. 그리고 전환점의 위치를 정하는 것은 여기 적힌 값이 아니라 데이터가 놓인 매니폴드의 실제 차원이다. 논문은 그 차원에 지수적인 규모까지는 성긴 구간이 이어진다고 적고, 매니폴드의 구조를 알아내려면 그 차원에 지수적인 표본이 필요하다는 선행 연구와 이 대목을 연결한다. 표의 숫자를 2의 지수에 넣어 전환점을 계산하는 산술은 논문이 하지 않는 계산이고, 그렇게 계산하면 SIFT가 10억 건까지 안 꺾였다는 관찰과 정면으로 어긋난다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        내재 차원이 비용을 지배하는 현상은 검색만의 일이 아니다. 페블러스 블로그가 <a href="/report/diffusion-low-dim-distributions-jmlr/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">디퓨전 모델이 저차원 분포를 학습하는 방식을 다룬 글</a>에서 정리한 것도 같은 양이 표본 복잡도를 지배한다는 이야기였다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">재현율 목표가 내년의 성장 곡선을 정한다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지수가 상수라면 그 상수는 무엇이 정하는가. 논문은 측정된 지수를 세 가지 요인의 합으로 모형화한다. 데이터셋과 알고리즘마다 계수를 따로 적합했고, 식은 이렇다.
+                    </p>
+                    <div class="info-card">
+                        <p class="formula-line themeable-text"><strong>c = c<sub>0</sub> + α · ln(1/δ) − γ<sub>1</sub> · ln(ef<sub>construction</sub>) − γ<sub>2</sub> · ln(M)</strong></p>
+                        <p class="themeable-text leading-relaxed">
+                            δ는 1에서 재현율을 뺀 값, 즉 허용하는 누락의 몫이다. c<sub>0</sub>는 데이터의 기하가 정하는 기준선이고, α는 재현율을 더 요구할 때 치르는 값이며, γ<sub>1</sub>과 γ<sub>2</sub>는 구축 후보 목록 크기와 노드당 연결 수를 올렸을 때 돌아오는 이득이다. 두 이득 항의 부호가 음수라는 것이 이 식의 요점이다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        재현율이 지수 안에 로그로 들어간다는 사실이 실무에 주는 함의가 크다. 재현율 목표를 90%에서 99%로 올리면 ln(1/δ)가 2.30에서 4.61로 <strong>두 배</strong>가 되고, 그만큼 지수가 오른다. 재현율 목표는 오늘의 응답 시간을 올리는 데서 그치지 않고 내년의 성장 곡선 기울기까지 고른다는 뜻이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>재현율 한 단계가 지수를 얼마나 올리나</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문 본문에는 지수 c의 구체적인 값이 인쇄돼 있지 않다. 적합된 값은 그림 속 곡선 끝에만 적혀 있다. 그래서 아래 표는 논문의 식과 계수 표를 그대로 써서 <strong>우리가 계산한 값</strong>이다. 조건은 HNSW, 구축 후보 목록 크기 200, 노드당 연결 수 32로 고정했다.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>데이터셋</th>
+                                    <th class="num">재현율 90%</th>
+                                    <th class="num">재현율 95%</th>
+                                    <th class="num">재현율 99%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>SIFT</td><td class="num">0.185</td><td class="num">0.209</td><td class="num">0.265</td></tr>
+                                <tr><td>DEEP</td><td class="num">0.223</td><td class="num">0.261</td><td class="num">0.347</td></tr>
+                                <tr><td>SpaceV</td><td class="num">0.170</td><td class="num">0.217</td><td class="num">0.325</td></tr>
+                                <tr><td>Wiki</td><td class="num">0.220</td><td class="num">0.274</td><td class="num">0.402</td></tr>
+                                <tr><td>GloVe</td><td class="num hit">0.311</td><td class="num">0.373</td><td class="num hit">0.518</td></tr>
+                                <tr><td>GIST</td><td class="num">0.437</td><td class="num">0.503</td><td class="num">0.658</td></tr>
+                                <tr><td>OpenAI</td><td class="num">0.216</td><td class="num">0.271</td><td class="num">0.398</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">논문의 식과 Table 4-a 계수로 우리가 계산한 값이다. 조건은 HNSW·구축 후보 목록 200·연결 수 32이며, 조건이 바뀌면 값도 바뀐다. 합성 데이터인 Rand64는 뺐다. 값의 폭이 0.17에서 0.66까지 벌어지므로 한 값을 벡터 검색의 지수라고 대표 삼을 수 없다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        GloVe 한 줄만 따라 읽어도 이야기가 된다. 같은 데이터, 같은 인덱스, 같은 설정에서 재현율 목표만 90%에서 99%로 올리면 지수가 0.311에서 0.518로 오른다. 앞 섹션의 배수 표와 같은 방식으로 계산하면, 데이터가 100배가 될 때의 비용 배수가 4.2배에서 10.9배로 갈린다. 회의실에서 재현율 목표를 한 단계 올릴 때 실제로 결정되는 것은 이쪽이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모형의 한계도 같이 적어 둘 만하다. 이 지수 모형의 결정계수는 평균 0.88이다. 측정된 지수의 변동 가운데 88%를 설명한다는 말이고, 뒤집으면 12%는 설명하지 못한다. 한편 목표 재현율에 닿으려면 탐색 후보 목록을 얼마나 키워야 하는지를 잇는 별도의 관계식은 결정계수가 0.98을 넘어 훨씬 단단하다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>질의 곡선을 눕히면 구축 곡선이 선다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        식을 보면 손쉬운 해법이 하나 보인다. 노드당 연결 수와 구축 후보 목록 크기를 올리면 두 항이 음수이므로 지수가 내려간다. 그래프를 촘촘하게 만들면 빔 탐색이 더 적은 도약으로 질의의 이웃에 닿기 때문이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 논문은 삽입 비용도 같은 방식으로 모형화한다. 삽입 역시 빔 탐색을 돌려 새 점의 이웃을 찾는 일이라 같은 거리 계산이 지배한다. 구축 쪽 모형에서 노드당 연결 수는 <strong>N의 지수를 올리는 자리</strong>에 들어간다. 그래프를 촘촘히 할수록 구축 비용이 데이터 크기에 대해 더 가파르게 자란다는 뜻이다. 질의 곡선을 눕히는 손잡이가 구축 곡선을 세우는 손잡이이기도 하다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 직접 적은 수치는 이렇다. 구축 후보 목록 크기를 두 배로 하면 평균 삽입 비용이 <strong>약 1.8배</strong>가 된다. 구축 쪽 후보 목록 지수는 합성 데이터를 빼면 0.80에서 0.92 사이인데, 이는 질의 쪽 후보 목록 지수보다 0.07에서 0.16 높은 값이다. 삽입이 후보 목록 크기에 더 민감한 이유로 논문은 역방향 링크 재배선을 든다. 새 점을 이웃으로 받아 줄 노드가 이미 연결 수 상한에 닿아 있으면 연결을 다시 짜야 하고, 그 과정에서 추가 거리 계산이 생긴다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        구축 지수의 절대값을 우리가 계산해 인쇄하지 않는 이유도 밝혀 둔다. 논문의 계수를 연구된 구간 밖으로 외삽하면 구축 지수가 1보다 작게 나오는 조합이 생기는데, N개를 넣는 비용이 N보다 느리게 자란다는 뜻이라 물리적으로 성립하지 않는다. 적합의 인공물이다. 그래서 이 절에서는 방향만 쓴다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        검색 비용의 곡선은 결국 사람이 기다리는 시간으로 나타난다. 페블러스 블로그가 <a href="/report/agent-cpu-bottleneck-data-pipeline-2026-08/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">에이전트가 모델보다 데이터를 더 오래 기다린다는 관찰을 다룬 글</a>에서 본 것이 그 자리다.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">증명된 것과 아직 열린 것</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지금까지가 실측과 그 실측을 설명하는 모형이었다. 논문은 여기에 형식 증명을 붙인다. 이 부분에서 무엇이 증명됐고 무엇이 남았는지를 구분해 두는 편이 실무에 더 쓸모 있다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>증명은 이상화된 구성 위에 선다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        증명의 대상은 실제로 배포되는 인덱스 그대로가 아니다. 논문은 서술을 간명하게 하려고 SNG라는 정확한 구성을 대상으로 삼고, 그 인덱스를 <strong>구축하는 비용은 공짜로 친다</strong>고 명시한다. 실무에서 쓰는 휴리스틱 버전에 대해서도 같은 결론이 선다고 적지만, 조건이 붙는다. 각 노드의 이웃을 고를 때 후보 목록의 크기에 제한이 없어야 한다는 것, 즉 구축 후보 목록이 무한한 경우다. 실증 부분은 실제 구현으로 돌린 결과이지만 이론 부분은 이런 이상화 위에 서 있다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>가장 많이 쓰는 인덱스가 미증명 쪽에 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        초록은 정확한 구성과 차수 제한 구성 양쪽에 대해 거듭제곱과 결국의 전환을 증명했다고 요약한다. 본문은 더 조심스럽다. 구간별 비용을 정리한 표의 각주가 그 온도차를 그대로 보여 준다. 표의 식들은 일부 그래프 인덱스에 대해서는 상한이 아니라 하한이며 딱 맞지 않을 수 있고, <strong>표의 식이 딱 맞는 것은 정확하게 구성한 Vamana뿐</strong>이라고 적혀 있다. SNG의 비용 하한은 다항로그 항보다 크다는 예도 각주에 있다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            "We leave deriving a tight upper bound for SNG and HNSW as an interesting open question for future work." (SNG와 HNSW에 대해 딱 맞는 상한을 유도하는 일은 흥미로운 열린 문제로 남겨 둔다.) 실무에서 가장 많이 쓰는 인덱스가 정작 미증명 쪽에 있다는 뜻이다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        논문의 위치도 함께 적어 둘 필요가 있다. 2026년 9월 2일에 올라온 프리프린트이고, 동료심사나 학회 게재에 관한 정보는 확인되지 않는다. 재현용 코드나 측정 로그도 함께 공개되지 않았다. 자금 출처와 이해상충에 관한 진술도 논문에 없다. 저자 세 명이 모두 대학 소속이라 벤더 편향을 걱정할 자리는 아니지만, 독립적으로 검증된 결과라고 쓸 수 있는 단계도 아니다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그리고 결론 문장을 오독하지 않는 것이 중요하다. 논문은 로그 확장이 틀렸다고 말하지 않는다. "Our experiments and theory confine this claim to scales beyond a transition point." 그 주장을 전환점 너머의 규모로 <strong>가둔다</strong>는 표현이다. 전환점 아래에서는 거듭제곱이고, 대부분의 실무 데이터셋은 자기 전체 크기까지 그 구간에 머문다는 것이 논문의 요약이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>용량 계획을 다시 세운다면</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문을 계획서의 언어로 옮기면 점검 목록 한 벌이 나온다. 새 인프라 없이 지금 가진 임베딩만으로 시작할 수 있는 항목부터 놓았다.
+                    </p>
+                    <ol class="themeable-text leading-relaxed space-y-3 mb-6">
+                        <li>우리 데이터의 국소 내재 차원을 <strong>크기를 바꿔 가며</strong> 잰다. 한 번 재고 상수로 쓰면 이 논문의 요지를 놓친다. 논문이 쓴 방법은 무작위 질의 500개와 여섯 가지 k 값에 대해 최근접 이웃 거리의 최대우도 추정량을 적용하는 것이었다.</li>
+                        <li>그 값이 데이터 크기의 로그와 나란히 자라는지 본다. 자라고 있으면 아직 성긴 구간이고, 비용은 거듭제곱으로 늘어난다고 봐야 한다.</li>
+                        <li>재현율 목표를 먼저 정한다. 목표가 정해져야 지수를 가늠할 수 있다. 90%와 99%는 지수 안의 항이 두 배 차이다.</li>
+                        <li>그 지수로 내년 데이터 규모의 질의 비용을 환산한다. 데이터 배수의 c제곱이 곧 비용 배수다.</li>
+                        <li>같은 파라미터가 구축 비용에 주는 반대 방향의 효과를 함께 본다. 질의 곡선만 보고 그래프를 촘촘히 하면 삽입 쪽에서 대가를 치른다.</li>
+                        <li>질의가 문서와 다른 분포에서 온다면, RAG에서 흔한 경우인데, 논문은 겹치는 매니폴드 가운데 <strong>가장 높은 내재 차원</strong>이 비용 증가를 지배한다고 적는다. 여러 매니폴드의 평균으로 뭉개면 안 되고 그중 최댓값을 기준으로 잡아야 한다.</li>
+                    </ol>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        측정 도구와 그 비용까지는 이 글이 안내하지 않는다. 논문이 쓴 방법을 옮기는 데서 멈춘다.
+                    </p>
+                </section>
+
+                <!-- Section 7: 페블러스 관심의 이유 -->
+                <section id="pebblous-perspective" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스 관심의 이유</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스는 데이터를 진단하고 품질 성적서를 발급하는 일을 한다. 검색 인프라의 비용 곡선이 우리 일과 닿는 지점은 하나다. 이 논문이 지목한 곡선의 주인이 인덱스가 아니라 <strong>데이터</strong>라는 것.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.1</span>진단 항목에 분포의 문제가 들어갈 자리</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AI-Ready Data는 모델이 바로 먹을 수 있는 형태의 데이터를 다룬다. 벡터 검색에서 그 형태를 좌우하는 것이 임베딩을 몇 개 모았느냐보다 그 임베딩이 놓인 데이터의 성질이라는 것이 이 논문의 실질적 함의다. 같은 100만 건이라도 내재 차원이 다르면 성장 곡선이 다르고, 예산도 다르게 잡혀야 한다. 기존 진단이 결측과 중복과 라벨 오류처럼 <strong>값의 문제</strong>를 봤다면, 여기서 늘어나는 것은 <strong>분포의 문제</strong>다. 이 데이터가 자기 분포를 얼마나 드러냈는가라는 질문이 DataClinic의 진단 항목에 들어갈 자리가 여기다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.2</span>품질은 그 데이터가 놓인 구조이기도 하다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        품질을 값의 정확성만으로 보면 이 논문의 관찰이 보이지 않는다. 데이터가 어떤 구조 위에 놓였는가도 품질이다. 이 논문은 그 구조적 성질이 검색 비용의 성장 곡선을 지배한다는 것을 실측으로 보였다. 데이터를 더 모으는 결정이 곧 비용 곡선을 고르는 결정이 되는데, 대부분의 조직은 자기 데이터의 이 성질을 재 본 적이 없다. <a href="/blog/ai-ready-data-conditions/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">모델이 아니라 데이터가 먼저라는 이야기</a>가 이번에는 검색 인프라 예산의 언어로 돌아온다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.3</span>고객과 파트너에게 전할 것</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        6.3절의 점검 목록이 그대로 실무 처방이다. 강조점은 순서에 있다. 인덱스를 바꾸는 일부터 검토하면 대화가 제품 비교에서 멈춘다. 크기를 바꿔 가며 내재 차원을 재는 일은 새 인프라 없이 기존 임베딩만으로 할 수 있고, 그 결과가 성긴 구간인지 조밀 구간인지를 먼저 알려 준다. 그리고 벤더 문서의 로그라는 단어를 계획서에 그대로 옮겨 적지 않는 것, 벤치마크 수치가 한 가지 크기에서 잰 값이라는 것을 아는 것. 두 가지는 오늘 오후에 할 수 있는 일이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.4</span>규모를 늘리기 전에 성질을 재는 절차</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <a href="/report/turbovec-2026/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">벡터를 압축해 저장 비용을 줄인 이야기</a>가 상수의 문제였다면, 이번 글은 지수의 문제다. 둘 다 같은 질문의 두 판형이다. 임베딩을 얼마나 모을지가 아니라, 그 임베딩이 놓인 데이터가 어떤 구조인지를 먼저 묻는 것. 규모를 늘리기 전에 데이터의 성질을 재는 절차가 필요하다는 것이 이 글이 도착하는 자리다.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            이 글이 페블러스의 일과 연결되는 것은 논문이 우리 제품의 필요성을 증명해서가 아니라, 논문이 던진 질문이 우리가 매일 답해야 하는 질문과 같아서다. 본문의 수치는 원 논문 전문과 원 데이터셋 문서에서 대조한 값이고, 지수의 구체적 값은 논문의 식과 계수로 우리가 계산한 값이다. 연구의 가치 판단과 자사 포지셔닝은 나눠서 읽어 주시기 바란다. 긴 글 읽어 주셔서 감사하다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ (empty section — content rendered by config.faqs) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        본문의 수치는 세 갈래다. 실험 조건과 계수는 1번 논문의 전문에서 직접 대조해 옮겼고, 확장 실험의 조건과 이탈 관찰은 2번 논문의 전문에서 확인했다. 업계 문서의 표현은 각 문서를 직접 열어 축자로 옮겼으며 조회일을 함께 적었다. 지수의 구체적 값은 어느 문헌에도 인쇄돼 있지 않아 1번 논문의 식과 계수로 우리가 계산했다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">이 보고서의 뼈대 (1차 원문 대조)</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Sajad Faghfoor Maghrebi, Navid Eslami, Niv Dayan (University of Toronto). "A Power Law in Logarithm's Clothing: On the Scalability of Graph-Based Vector Search." <a href="https://arxiv.org/abs/2609.02143" target="_blank" rel="noopener">arXiv: 2609.02143</a>, v1 2026년 9월 2일 제출, 17쪽 10그림, cs.DB. 본문의 실험 설계, Table 2·3·4, 정리 1과 따름정리 2, 5절의 비용 모형, 6절 결론 인용은 이 전문에서 확인했다. 동료심사 정보와 공개 코드는 확인되지 않는다.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Yu. A. Malkov, D. A. Yashunin. "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs." <a href="https://arxiv.org/abs/1603.09320" target="_blank" rel="noopener">arXiv: 1603.09320</a>, v4 2018년 8월 14일, cs.DS. 확장 실험의 조건(Fig. 12, 8차원 합성 벡터, 재현율 0.95 고정)과 5.4절의 "the scaling deviates from the pure logarithm" 문장을 이 판본에서 확인했다. 저널 게재본은 별도로 확인하지 않았다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">업계 문서 (축자 확인, 2026년 9월 5일 조회)</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">3.</span><span class="ref-body">Milvus. "Index Explained." <a href="https://milvus.io/docs/index-explained.md" target="_blank" rel="noopener">milvus.io/docs/index-explained.md</a>. 라이브 페이지가 봇 차단으로 열리지 않아 2026년 5월 12일 웨이백 스냅숏에서 확인했다.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Weaviate. "Vector Indexing." <a href="https://weaviate.io/developers/weaviate/concepts/vector-index" target="_blank" rel="noopener">weaviate.io/developers/weaviate/concepts/vector-index</a>.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Pinecone. "Hierarchical Navigable Small Worlds (HNSW)." <a href="https://www.pinecone.io/learn/series/faiss/hnsw/" target="_blank" rel="noopener">pinecone.io/learn/series/faiss/hnsw</a>. 여섯 문서 가운데 유일하게 다항로그 가능성을 표기에 열어 둔다.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Redis. "How HNSW Algorithms Can Improve Search." <a href="https://redis.io/blog/how-hnsw-algorithms-can-improve-search/" target="_blank" rel="noopener">redis.io/blog/how-hnsw-algorithms-can-improve-search</a>. 자기 주장 대신 2번 논문을 따옴표로 인용한다.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">OpenSearch. "k-NN Performance Tuning." <a href="https://docs.opensearch.org/1.0/search-plugins/knn/performance-tuning/" target="_blank" rel="noopener">docs.opensearch.org/1.0/search-plugins/knn/performance-tuning</a>.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Elastic. "Vector search and kNN implementation guide, API edition." <a href="https://www.elastic.co/search-labs/blog/vector-search-implementation-guide-api-edition" target="_blank" rel="noopener">elastic.co/search-labs/blog/vector-search-implementation-guide-api-edition</a>. 여섯 문서 가운데 유일하게 조건절을 단다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">데이터셋 (크기 확인)</h3>
+                    <ul class="reference-list mb-4">
+                        <li><span class="ref-num">9.</span><span class="ref-body">SIFT1B (Jégou et al. 2011), DEEP1B (Babenko &amp; Lempitsky 2016), SpaceV1B (Microsoft 2021). 각 10억 건이라는 사실은 1번 논문 3.3절이 직접 적는다.</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">OpenAI-ArXiv (big-ann-benchmarks 배포본). 2,321,096건, 1536차원, 질의 2만 건. 1번 논문의 참고문헌 항목에 수치가 인쇄돼 있다.</span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">GloVe-100 (ann-benchmarks 표준 배포본). 1,183,514건, 100차원, 질의 1만 건, 각도 거리. 2026년 9월 5일 조회. 1번 논문이 직접 밝힌 값이 아니다.</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">GIST1M (TEXMEX corpus, INRIA/IRISA). 100만 건, 960차원, 질의 1,000건. 2026년 9월 5일 조회.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">Wiki-all (RAPIDS cuVS 문서). 88M·10M·1M 세 변형이 있고 1번 논문의 참고문헌 항목은 88M 버전을 설명한다. 실험에 쓴 변형이 무엇인지는 본문에 명시돼 있지 않다.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260905"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "벡터 검색 비용은 데이터가 커질수록 거듭제곱으로 늘었다",
+            subtitle: "토론토대 연구진이 데이터셋 여덟 개를 10억 건까지 키우며 잰 HNSW·Vamana 질의 비용",
+            pageTitle: "벡터 검색 비용 스케일링 — HNSW·Vamana 거듭제곱 법칙과 내재 차원 | 페블러스",
+            category: "tech",
+            publishDate: "2026-09-05",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/vector-search-cost-power-law-scaling/ko/",
+            tags: ["벡터 검색", "벡터 DB", "HNSW", "내재 차원", "임베딩", "인덱스 설계", "AI-Ready Data", "데이터 품질"],
+            faqs: [
+                { question: "그럼 벡터 DB가 규모를 감당하지 못한다는 뜻인가요?", answer: "그런 뜻은 아닙니다. 지수가 0과 1 사이여서 비용은 선형보다 훨씬 느리게 늡니다. 데이터가 10배가 되어도 비용이 10배가 되지는 않습니다. 논문이 겨냥하는 것은 감당 여부가 아니라 계획의 기준선입니다. 로그를 전제로 잡은 용량 계획은 실제 곡선보다 적게 잡히고, 그 차이가 규모가 커질수록 벌어집니다." },
+                { question: "우리 데이터가 성긴 구간인지 조밀 구간인지 어떻게 아나요?", answer: "데이터 크기를 바꿔 가며 국소 내재 차원을 재고, 그 값이 데이터 크기의 로그와 나란히 자라는지 보면 됩니다. 자라고 있으면 아직 성긴 구간이고 비용은 거듭제곱으로 늘어납니다. 기울기가 완만해지기 시작하면 조밀 구간에 접어드는 신호입니다. 한 번 재고 상수로 쓰면 안 됩니다. 그 값이 자란다는 것이 이 논문의 요지이기 때문입니다. 논문이 쓴 측정 방법은 무작위 질의 500개와 여섯 가지 k 값에 최대우도 추정량을 적용하는 것이었습니다." },
+                { question: "내재 차원이 낮으면 좋은 건가요?", answer: "같은 재현율에서 비용 지수가 대체로 낮습니다. 논문도 내재 차원을 데이터셋 어려움의 대리 지표로 씁니다. 다만 순서가 정확히 일치하지는 않고, 낮다고 전환점이 빨리 오는 것도 아닙니다. 논문의 데이터에서 내재 차원이 낮은 축에 속한 SIFT는 10억 건까지 곡선이 꺾이지 않았고, 가장 높은 OpenAI 임베딩은 232만 건에서 처지는 조짐을 보였습니다. 논문은 이 대비를 따로 설명하지 않습니다." },
+                { question: "재현율 목표를 낮추면 얼마나 이득인가요?", answer: "오늘의 비용만 내려가는 것이 아니라 성장 곡선의 기울기 자체가 내려갑니다. 논문의 모형에서 지수는 허용 누락의 로그에 비례하는데, 재현율 90%와 99%는 이 항이 두 배 차이입니다. 구체적인 값을 쓸 때는 조건을 함께 밝혀야 합니다. GloVe 데이터셋을 HNSW로, 구축 후보 목록 200과 연결 수 32로 두면 지수가 0.311에서 0.518로 오릅니다. 이 값은 논문의 식과 계수로 저희가 계산한 것입니다." },
+                { question: "노드당 연결 수를 올리면 되나요?", answer: "질의 쪽 지수는 내려갑니다. 대신 구축 쪽 지수가 올라갑니다. 논문의 구축 비용 모형에서 연결 수는 데이터 크기의 지수를 올리는 자리에 들어가기 때문입니다. 구축 후보 목록 크기를 두 배로 하면 평균 삽입 비용이 약 1.8배가 된다는 수치도 논문에 있습니다. 질의 곡선과 구축 곡선을 같이 놓고 봐야 합니다." },
+                { question: "HNSW와 Vamana 중 무엇이 나은가요?", answer: "이 논문은 우열을 가리지 않습니다. 둘 다 같은 거듭제곱 곡선을 보였습니다. 다만 이론 쪽에서는 정확하게 구성한 Vamana만 표의 식이 딱 맞고, SNG와 HNSW의 상한은 저자들이 열린 문제로 남겼습니다. 실무에서 더 많이 쓰이는 쪽이 미증명 상태라는 뜻입니다. 그리고 10억 건 실험에 Vamana가 쓰인 이유는 성능이 앞서서가 아니었습니다. 메모리를 덜 써서 더 큰 규모까지 갈 수 있었기 때문입니다." },
+                { question: "IVF나 양자화 같은 다른 인덱스 계열은 어떤가요?", answer: "이 논문의 범위 밖입니다. 논문이 다룬 것은 그래프 인덱스, 그중에서도 HNSW와 Vamana 계열입니다. 다른 계열의 확장 곡선에 대해서는 아무 말도 하지 않습니다. 저희도 대신 추측하지 않습니다." },
+                { question: "이 결과는 증명된 것인가요?", answer: "절반입니다. 성긴 구간의 거듭제곱은 이상화된 구성에서 증명됐습니다. 정확한 SNG를 대상으로 하고, 구축 비용을 공짜로 치며, 실무 버전에 대해서는 구축 후보 목록이 무한하다는 조건이 붙습니다. 조밀 구간의 상한은 정확하게 구성한 Vamana에만 딱 맞고 SNG와 HNSW는 열린 문제입니다. 실험 쪽은 실제 구현으로 돌린 결과이지만, 논문 자체가 2026년 9월 2일에 올라온 프리프린트이며 동료심사 정보와 공개 코드는 확인되지 않습니다." },
+                { question: "지금 우리 인덱스를 바꿔야 하나요?", answer: "그럴 필요는 없습니다. 이 논문이 바꾸라고 말하는 것은 인덱스가 아니라 용량과 예산을 무엇으로 환산하는가입니다. 같은 인덱스를 그대로 쓰면서, 데이터가 몇 배로 늘 때 검색 비용을 몇 배로 잡을지의 기준선만 바꾸는 이야기입니다." }
+            ]
+        });
+    </script>
+</body>
+</html>
