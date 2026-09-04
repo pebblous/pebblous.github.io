@@ -16,13 +16,13 @@
 
 같은 카메라에서 나온 출력은 하나의 출처 그룹으로 묶어 좌표별 최솟값만 남기고, 서로 다른 그룹의 몫만 더합니다. 그룹 안에 복제본을 아무리 넣어도 최솟값은 커지지 않습니다. 같은 출력을 낱개로 세는 방식에서는 같은 조작으로 이벤트 창 하나의 증거 예산이 최대 280단위까지 부풀었습니다.
 
-다만 이 방법은 무엇이 같은 출처인지를 스스로 찾아내지 않습니다. 분할은 외부에서 주어지고, 구조적 보장은 주어진 관계 위에서만 성립한다고 저자들이 못박았습니다. 여섯 과제 중 수건 개기에서는 준비된 열 개 에피소드를 두 체크포인트 모두 하나도 승인하지 못했습니다.
+다만 이 방법은 무엇이 같은 출처인지를 스스로 찾아내지 않습니다. 분할은 외부에서 주어지고, 구조적 보장은 주어진 관계 위에서만 성립한다고 저자들이 못박았습니다. 여섯 과제 중 호텔 수건 과제에서는 준비된 열 개 에피소드를 두 체크포인트 모두 하나도 승인하지 못했습니다.
 
 데이터 파이프라인도 같은 셈법 위에 있습니다. 여러 크롤러가 같은 원본을 다시 수집하고, 재시도 로그가 별도 이벤트로 쌓이는 구간이 그렇습니다. 합의가 늘어난 것과 증거가 늘어난 것은 다른 일이고, 둘을 구별하려면 출처 기록이 남아 있어야 합니다.
 
 ▶ 전문: https://blog.pebblous.ai/blog/provenance-evidence-counting-fusion/ko/
 
-#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘 #데이터프로버넌스 #센서융합 #PhysicalAI #PACT #McGill #arXiv
+#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘 #데이터프로버넌스 #센서융합 #PhysicalAI #PACT
 
 ---
 
@@ -34,13 +34,13 @@ The result comes from PACT, a paper posted to arXiv on August 31 by researchers 
 
 Outputs from one camera form a single provenance group. Only the coordinate-wise minimum survives inside the group, and evidence is added only across groups, so duplicates buy nothing. Counting the same outputs one at a time, the evidence budget of a single event window inflated by as much as 280 units.
 
-The method does not discover which outputs share a source. The partition is supplied from outside, and the authors state plainly that the structural guarantees hold only over the relationship they were handed. On towel folding, one of the six tasks, neither checkpoint admitted a single one of the ten reference-ready episodes.
+The method does not discover which outputs share a source. The partition is supplied from outside, and the authors state plainly that the structural guarantees hold only over the relationship they were handed. On Hotel Towel, one of the six tasks, neither checkpoint admitted a single one of the ten reference-ready episodes.
 
 Data pipelines run on the same arithmetic when several crawlers re-fetch one original or retried calls pile up as separate log events. Agreement going up and evidence going up are two different things, and telling them apart requires that the record of origin survived.
 
 ▶ Read: https://blog.pebblous.ai/blog/provenance-evidence-counting-fusion/en/
 
-#Pebblous #DataClinic #DataQuality #DataJournalism #DataProvenance #SensorFusion #PhysicalAI #PACT #McGill #arXiv
+#Pebblous #DataClinic #DataQuality #DataJournalism #DataProvenance #SensorFusion #PhysicalAI #PACT
 
 ---
 
@@ -88,13 +88,13 @@ https://blog.pebblous.ai/blog/provenance-evidence-counting-fusion/en/
 
 여러 크롤러가 같은 원본을 다시 긁어 옵니다. 재시도로 얻은 로그가 별도 이벤트로 쌓입니다. 여러 모델의 라벨이 다수결로 합쳐집니다. 이 논문의 말로 옮기면, 이 파이프라인들에는 '출처 분할'이 선언되어 있지 않습니다. 값이 맞는지를 묻는 점검과 따로 셀 수 있는지를 묻는 점검은 서로 다른 일이고, 뒤쪽은 원본 기록이 남아 있어야만 가능합니다. 페블러스가 데이터 품질을 진단하는 자리에서 자주 마주치는 빈자리이기도 합니다.
 
-논문은 자기 한계를 먼저 적어 둡니다. 무엇이 같은 출처인지는 사람이 지정해 주어야 하고, 그 지정이 실제로 맞는지는 이 방법이 증명하지 않습니다. 여섯 과제 중 수건 개기에서는 준비된 열 개 에피소드를 하나도 승인하지 못했습니다.
+논문은 자기 한계를 먼저 적어 둡니다. 무엇이 같은 출처인지는 사람이 지정해 주어야 하고, 그 지정이 실제로 맞는지는 이 방법이 증명하지 않습니다. 여섯 과제 중 호텔 수건 과제에서는 준비된 열 개 에피소드를 하나도 승인하지 못했습니다.
 
 합의가 늘어난 것과 증거가 늘어난 것은 다른 일입니다. 둘을 구별할 수 있는지는 결국 우리가 무엇을 기록해 두었는가에 달려 있는 것 같습니다.
 
 ▸ https://blog.pebblous.ai/blog/provenance-evidence-counting-fusion/ko/
 
-#페블러스 #DataClinic #데이터품질 #데이터프로버넌스 #센서융합 #PACT #McGill
+#페블러스 #데이터클리닉 #데이터품질 #데이터저널리즘
 
 ---
 
@@ -118,10 +118,10 @@ The question that stayed with me afterward was a plain one.
 
 Several crawlers re-fetch the same original. Logs obtained by retry pile up as separate events. Labels from several models get merged by majority vote. In this paper's language, none of those pipelines has a provenance partition declared. Checking whether a value is correct and checking whether it can be counted separately are two different jobs, and the second one is only possible if the record of origin survived. That gap is one we run into often when we look at data quality at Pebblous.
 
-The paper writes its own limits down first. Which outputs share a source has to be declared by a person, and the method does not prove that the declaration is right. On towel folding, one of the six tasks, not one of the ten reference-ready episodes was admitted.
+The paper writes its own limits down first. Which outputs share a source has to be declared by a person, and the method does not prove that the declaration is right. On Hotel Towel, one of the six tasks, not one of the ten reference-ready episodes was admitted.
 
 Agreement going up and evidence going up are two different things. Whether we can tell them apart seems to come down to what we bothered to write down.
 
 ▸ https://blog.pebblous.ai/blog/provenance-evidence-counting-fusion/en/
 
-#Pebblous #DataClinic #DataQuality #DataProvenance #SensorFusion #PACT #McGill
+#Pebblous #DataClinic #DataQuality #DataJournalism
