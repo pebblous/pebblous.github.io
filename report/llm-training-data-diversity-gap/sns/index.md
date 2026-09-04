@@ -40,7 +40,7 @@ The preprint went up on arXiv on September 2, from two researchers at the Chines
 
 The measurement works because it needs no bank of human answers per prompt. Subtract the input entropy from the joint entropy over the paired samples, and what remains is the variation in the continuations that the prefix does not explain.
 
-Because that quantity lives in embedding space, the authors added an audit anyone can count. Running a fixed list of country names over OLMo's output reproduced the same ranking the kernel metric gave. Greedy decoding sent four in ten of its country mentions to two names. In training paragraphs drawn from the same prefixes, those two names took barely one in ten.
+Because that quantity lives in embedding space, the authors added an audit anyone can count. Running a fixed list of country names over OLMo's output reproduced the same ranking the kernel metric gave. Greedy decoding sent four in ten of its country mentions to two names. In training paragraphs drawn from the same prefixes, those two names took just over one in ten.
 
 The size of the gap swings with the setup. The quotable 35.4% is the single worst cell among all the conditions tested. Longer prefixes or stochastic decoding pull it into single digits, and measuring fewer samples shrinks it further. That the direction held everywhere and that the magnitude was always large are two different claims.
 
