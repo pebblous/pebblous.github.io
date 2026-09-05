@@ -62,6 +62,20 @@
 | `BLOG_SERVICE_CORS_ORIGIN` | ❌ | CORS Origin 화이트리스트. 기본 `*`(공개 시 좁힐 것). |
 | `BLOG_SERVICE_WEBHOOK_SECRET` | ❌ | 설정 시 `/webhooks/*` 활성(`X-Webhook-Secret` 검증). 미설정 시 webhook 503(무인증 오픈 금지). Bearer와 별개. |
 
+### 예약 발굴·자동 작성 (in-process 스케줄러)
+엔진 안의 타이머가 매일 정해진 시각(로컬 시각 = 스튜디오 KST)에 discover run 을 띄우고, 그 run 의 후보를 순서대로 작성한다. 로직은 `src/core/discovery-schedule.ts`, 착수·발화 장부는 `<콘텐츠 클론>/_workspace/.discovery-ledger.json`.
+
+| 변수 | 필수 | 기본 | 설명 |
+|---|---|---|---|
+| `BLOG_DISCOVER_AT` | ❌ | (미설정=off) | 매일 발굴 시각. `"2"` 또는 `"5:30"`. 기동 시 오늘 예정 시각이 지났고 오늘 `completed`·`running` 인 discover 가 없으며 예정+12시간 이내면 1회 만회 발화(로그 `catch-up`). 만회 판정은 중단 run 자동 재개(`recoverInterruptedRuns`)가 **끝난 뒤** 한다 — 재개 전에 판정하면 오늘 새벽 discover 가 아직 `interrupted` 라 두 번 돈다. 12시간 창은 기동 시각으로 잰다(재개가 오래 걸려도 창을 놓치지 않음). |
+| `BLOG_DISCOVER_RETRIES` | ❌ | `2` | discover 실패 시 재시도 횟수. 끝내 실패면 **그날 자동 작성 생략** — 전날 후보를 재사용하지 않는다(2026-08-18 사고). 로그·장부(`fires[]`)·run 이 생긴 시도 중 가장 최근 것의 audit 에 남는다. 모든 시도가 run 생성 전에 예외(`spawn ENOENT` 형)면 남길 run 이 없어 **audit 는 장부 `fires[]`·로그에만** 남는다. **실패일 비용 상한**: discover 는 opus·900초 상한이고 단계 내부가 이미 1회 재시도하므로 기본값에서 최악은 opus 호출 6회(3시도×2)·약 1시간 5분 지연(02:00 발화가 03:05 이후) 뒤 그날 작성 생략. 12시간 창 안에 재기동이 되풀이되면 catch-up 마다 다시 3시도. 비용을 줄이려면 `1` 로. |
+| `BLOG_DISCOVER_RETRY_MIN` | ❌ | `30` | 재시도 간격(분). |
+| `BLOG_DISCOVER_AUTOWRITE` | ❌ | (off) | `1`이면 이번 발화가 만든 discover run 의 후보를 topPick 부터 순차 작성. 같은 `(discoverRunId, n)` 은 장부로 한 번만 착수(출처 URL 로는 판정하지 않음). |
+| `BLOG_DISCOVER_AUTOWRITE_MAX` | ❌ | (전체) | 하루 작성 편수 상한. |
+| `BLOG_DISCOVER_AUTOPUBLISH` | ❌ | (off) | `1`이면 발간 게이트 없이 PR 생성 + CI 통과 시 자동 머지. 미설정이면 발간 직전 게이트에서 사람 승인 대기. |
+
+장부 `fires[]` 의 `autoWrite` 값: `started:N/M`(작성 착수) · `off`(AUTOWRITE 미설정) · `skipped:no-candidates` · `skipped:discover-failed` · `skipped:load`(발화 시점에 동시 running ≥ 3 이라 그날 발굴을 띄우지 않음). 어느 경로로 끝나든 한 줄 남는다 — 로그만 남고 장부에 없는 '조용한 건너뜀'은 없다. 클론 동기화·제목 센서스 같은 발화 후처리는 옛 코드처럼 `started:` 인 날만 돈다.
+
 ### 기타
 | 변수 | 필수 | 설명 |
 |---|---|---|
@@ -76,7 +90,7 @@
 
 | Method · Path | 용도 | 인증 |
 |---|---|---|
-| `GET /healthz` | liveness probe (`{ok,repo}`) | **면제** |
+| `GET /healthz` | liveness probe (`{ok,repo,build,drift}` — `build`: 빌드 스탬프 sha·shortSha·branch·dirty·builtAt·distHash…, `drift`: 진본 main 대조 결과 status ok/behind/dirty/unknown + reason — behind 는 engine-changed/not-in-main(미머지 가지 배포)/uncountable 로 갈린다) | **면제** |
 | `GET /admin` | 운영 콘솔 HTML shell | 면제(데이터 호출은 페이지 JS가 토큰으로) |
 | `GET /articles`, `/articles/{meta,toc,exec-summary,seo}` | INSPECT(콘텐츠 조회) | Bearer |
 | `POST /pipelines` | 파이프라인 시작(게이트/완료까지 blocking) | Bearer |
@@ -127,7 +141,7 @@
 - [ ] run 이력 유지 필요 시 볼륨 마운트(`BLOG_CONTENT_REPO_BASE`)
 
 **사후**
-- [ ] `GET /healthz` → `{ok:true}`
+- [ ] `GET /healthz` → `{ok:true, build:{sha:…}, drift:{status:…}}` (`build.sha` 가 null 이면 스탬프 없는 빌드 — `npm run build` 가 scripts/build-info.mjs 를 돌렸는지 확인)
 - [ ] Bearer로 `GET /pipelines` 200 / 무토큰 401 확인
 - [ ] 테스트 파이프라인 1회(`POST /pipelines`) → SSE(`/stream`)로 phase 흐름 확인 → cancel
 

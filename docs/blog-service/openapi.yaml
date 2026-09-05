@@ -50,6 +50,8 @@ servers:
     description: Production (planned)
 
 tags:
+  - name: health
+    description: Liveness, build stamp, drift (인증 면제)
   - name: pipelines
     description: Content pipeline execution and lifecycle
   - name: artifacts
@@ -63,6 +65,61 @@ security:
   - apiKey: []
 
 paths:
+
+  # ── Health ──────────────────────────────────────────────────────────────────
+  /healthz:
+    get:
+      tags: [health]
+      summary: Liveness probe + build stamp + drift
+      description: |
+        인증 면제. `build` 는 `npm run build` 때 `scripts/build-info.mjs` 가 찍은 `dist/build-info.json`
+        (스탬프 없는 빌드면 모든 필드 null). `drift` 는 엔진이 기동 5분 뒤·24시간마다 진본 main 과 대조한 결과.
+      operationId: healthz
+      security: []
+      responses:
+        '200':
+          description: Engine alive
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, repo, build, drift]
+                properties:
+                  ok: { type: boolean }
+                  repo: { type: [string, 'null'], description: Resolved content repo path }
+                  build:
+                    type: object
+                    properties:
+                      sha: { type: [string, 'null'] }
+                      shortSha: { type: [string, 'null'] }
+                      branch: { type: [string, 'null'] }
+                      dirty: { type: [boolean, 'null'], description: 엔진 패키지 범위 미커밋 변경 여부(untracked 포함) }
+                      dirtyFiles: { type: [integer, 'null'] }
+                      dirtyScope: { type: [string, 'null'], description: "dirty 판정 범위 — 항상 package(엔진 패키지 디렉토리 기준). 스탬프 없으면 null" }
+                      builtAt: { type: [string, 'null'], format: date-time }
+                      version: { type: [string, 'null'] }
+                      node: { type: [string, 'null'] }
+                      typescript: { type: [string, 'null'] }
+                      distHash: { type: [string, 'null'], description: 정렬된 dist/**/*.js 의 (경로+내용) sha256 }
+                      distFiles: { type: [integer, 'null'] }
+                  drift:
+                    type: object
+                    properties:
+                      checkedAt: { type: [string, 'null'], format: date-time }
+                      mainSha: { type: [string, 'null'] }
+                      engineCommitsBehind: { type: [integer, 'null'], description: 서빙 sha 이후 main 에서 엔진 패키지를 건드린 커밋 수 }
+                      dirty: { type: [boolean, 'null'] }
+                      status: { type: string, enum: [ok, behind, dirty, unknown] }
+                      reason:
+                        type: string
+                        enum: [same, engine-unchanged, engine-changed, not-in-main, uncountable, dirty, no-stamp, main-sha-unavailable, not-checked]
+                        description: "status 의 근거. behind 는 셋으로 갈린다 — engine-changed(재배포 필요) · not-in-main(서빙 sha 가 main 계보에 없음, 미머지 가지 배포) · uncountable(진본 클론 없음 등으로 커밋 수 계산 불가, 보수적 판정)"
+                      detail: { type: string }
+              example:
+                ok: true
+                repo: /Users/me/blog-engine-data/pebblous.github.io
+                build: { sha: 1d726c8e158ecad24d95e804592cb24ad6a95661, shortSha: 1d726c8, branch: main, dirty: false, dirtyFiles: 0, dirtyScope: package, builtAt: '2026-09-05T06:00:00.000Z', version: 0.1.0, node: v26.0.0, typescript: 5.9.3, distHash: 3e9d726cd0c50c05ed546b7f7bc0610990b721a52ccdcd6131e4b16e74e621bb, distFiles: 22 }
+                drift: { checkedAt: '2026-09-05T06:05:00.000Z', mainSha: 1d726c8e158ecad24d95e804592cb24ad6a95661, engineCommitsBehind: 0, dirty: false, status: ok, reason: same, detail: '서빙 1d726c8 == 진본 main' }
 
   # ── Pipelines ───────────────────────────────────────────────────────────────
   /pipelines:
