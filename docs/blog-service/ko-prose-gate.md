@@ -49,6 +49,30 @@ blog · report · dc-story 파이프라인 공통. 휴머나이저 **바로 다�
 
 `lexical-tells.json` 은 상류 `diagnosis-rules.md` 의 S1(1회로 확신) 항목 중 정규식으로 잡히는 것(A-1·A-3·A-7·A-8·C-8)과, 상류 라우터가 세던 S2 구문 티(D-8 분열문·D-10 이유다·D-11 시간지평·D-12 반론 슬롯·D-14 은유 가족·A-20 피동 진행·F-7 범용 정책동사)를 같은 정규식으로 담는다. S2 를 넣은 이유: 289편에서 가장 자주 잡힌 티가 이 묶음(분열문 35%·은유 가족 26%·피동 진행 21% 문서)이라, S1 만 세면 계량이 눈을 감는다. "한 문단 3회+ 밀집" 시그니처(A-1)는 문단 안 적중만 센다. D-14(은유 가족)에서 **'청사진' 은 뺐다** — 페블러스 정본 용어(책 『청사진을 수확으로』, 데이터 청사진)라 티가 아니며, 두면 되먹임·겨냥 재실행 프롬프트가 이 낱말을 지우라고 지시하게 된다(289편에서 9회, D-14 전체 163회 중).
 
+### 2-1. 종결체(`register`) — 통계 지표가 아니라 규칙 항목
+
+2026-09-05 결정: **블로그·리포트·스토리 본문 종결은 언제나 해라체(~다). 합쇼체·해요체 금지, 직접 인용문 안만 예외**
+(정본 [`docs/ko-style-standard.md`](../ko-style-standard.md) §4-1). 계량기가 `<main>` 본문에서 **`<blockquote>` 를 통째로 지운 사본**(`strip_blockquotes`, HTML 단계)을 따로 만들어 따옴표(" " ' ') 안을 지운 뒤 문장마다 종결을 하나로 분류해 센다 — `tools/check-ko-prose.py` 의 `extract_main_for_register` 와 같은 자다. 통계 지표·`char_count` 는 기준선 추출기(`extract_main_text`) 그대로라 임계와 어긋나지 않는다. 평문 입력(`--html` 없음)과 기준선 `01_input.txt` 에는 blockquote 경계가 남아 있지 않으므로 그 경로에서는 인용 안 문장도 세어진다(아래 기준선 수치가 그렇다 — 사본 HTML 로 다시 세어도 `register_off` 138편은 같았다).
+
+| 필드 | 뜻 |
+|---|---|
+| `register.hapsyo` | 합쇼체 문장 수 — `(?<!아)니다[.!?]` ("아니다" 는 해라체) |
+| `register.haeyo` | 해요체 문장 수 — `(해요\|예요\|에요\|죠\|네요\|거예요)[.!?]` |
+| `register.haera` | 해라체 문장 수 — `(?<!(?<!아)니)다[.!?]` (합쇼체가 아닌 "-다" 전부) |
+| `register.non_haera_ratio` | (합쇼체+해요체)/(셋의 합), 소수 4자리. 종결이 하나도 없으면 0 |
+| `examples.register` | 합쇼체·해요체 문장 예 ≤3 — 겨냥 재실행 프롬프트용 |
+
+판정: `thresholds.register = {canon: "haera", max_non_haera_ratio: 0.10}` 이 있을 때 `non_haera_ratio > 0.10` 이면
+`verdict.register_off = true`, `flags` 에 `register_off`, 그리고 **장르 무관 단독 exceed** 다. 합성 규칙("2개 이상 p95")과
+별개로 두는 이유: 이것은 분포에서 벗어난 정도가 아니라 규칙 위반이라, p90/p95 로 재는 대상이 아니다. `verdict.stat_status`
+에 종결체를 뺀 통계 판정을 따로 남긴다 — `status=exceed` 인데 `stat_status=ok` 면 종결체만으로 걸린 것이다.
+
+`register` 블록은 분포에서 도출하지 않는다(손으로 정한 규칙). `derive-prose-thresholds.py` 는 기존 config 의 `register`
+블록 중 결정값(`canon`·`max_non_haera_ratio`·`decided`·`why`)을 보존하고 설명문(`measure`·`rule`)은 코드의 기본값으로 새로 쓰며(자가 바뀌면 설명도 따라간다), `expected_rates` 의 ok/warn/exceed 는 `stat_status` 로 세며 종결체 이탈은
+`register_off_n`·`register_off_rate` 로 따로 적는다. 기준선 289편에 되돌려 적용한 수치: **블로그 131/208 (63.0%)·리포트
+5/79 (6.3%)·스토리 2/2·전체 138/289 (47.8%)** 가 `register_off` 다 — 이것을 exceed 에 합치면 "exceed ≤ 15%" 검사가 뜻을 잃으므로 분리했다.
+세는 자의 틀린 판례(`[^습입]다.` 등)는 정본 문서 §4-1 에 있다.
+
 `lexical_tell_count` 는 명세대로 **절대 건수**다. 8월 중순 이후 글 길이가 두 배가 됐으므로 길이에 끌려갈 수 있다(장르별 p95 블로그 4·리포트 8.1 이 일부 흡수). audit 기간에 `tells_exceed` 가 `long` 플래그와 같이 뜨는지 본다 — 겹치면 1천 자당으로 바꾸고 이 절과 임계를 같이 고친다(§7 3번).
 
 ### 왜 쉼표 계열·risk_band 등을 판정에서 빼는가
@@ -73,6 +97,7 @@ python3 scripts/derive-prose-thresholds.py --runs <slop-measure/runs> --selected
 
 - `warn` = 어느 한 지표가 장르 p90 초과.
 - `exceed` = 지표 **2개 이상**이 장르 p95 초과, 또는 `lexical_tell_count` ≥ 장르 p95.
+- **`exceed` (단독)** = `register.non_haera_ratio` > 0.10 — 종결체 이탈(§2-1). 장르 무관, `flags: ['register_off']`.
 - 그 외 `ok`.
 
 지표별 p90 을 따로 두고 하나라도 넘으면 걸리게 하면 289편의 70.6% 가 걸린다 — 그래서 합성 규칙이다. p95 가 0 인 지표(`by_passive`·`double_passive`)는 1건이라도 있으면 초과로 센다(둘 다 1회로 확신하는 티).
@@ -89,17 +114,20 @@ python3 scripts/derive-prose-thresholds.py --runs <slop-measure/runs> --selected
 
 '청사진' 을 어휘 사전에서 뺀 뒤 재도출(같은 날): 바뀐 셀은 리포트 `lexical_tell_count` p90 6.2→6.0·p95 9.2→8.1 뿐이고, 리포트 warn 1편이 ok 로 옮겨 갔다(exceed 는 변화 없음). 위 표는 재도출 값이다.
 
+종결체 규칙(§2-1)을 넣고 같은 날 다시 도출: 장르별 p50/p90/p95·char_count 셀은 **한 값도 바뀌지 않았고** 위 표(ok/warn/exceed)도 그대로다
+(종결체는 `stat_status` 밖에서 센다). 추가된 것은 `register` 블록과 `expected_rates.*.register_off_n/rate` 뿐이다.
+
 ## 4. 모드 (`BLOG_PROSE_GATE`)
 
 | 값 | 동작 |
 |---|---|
 | `off` | 계량 생략. `status: skipped` 로 기록. |
 | `audit` (기본) | 계량·판정을 기록만 한다. exceed 면 `prNote` 를 남긴다. |
-| `enforce` | exceed 면 `ko-prose-humanizer` 를 **겨냥 재실행 1회**(opus, 초과 지표 이름·수치·해당 문장 예 3개를 프롬프트에 주입, 20분 타임아웃) 후 재계량. 두 결과를 `attempts[0]`·`attempts[1]` 로 기록. 그래도 exceed 면 `status: exceeded`. 재실행 뒤 **재계량이 실패**하면 1차 결과를 `attempts[1]` 로 복사하지 않는다('두 번째가 첫 번째와 같다' 는 거짓 자료가 된다) — `attempts` 는 1개만 남고 `rerun.remeasureError`·`target.error` 에 사유를 적으며, 효과를 확인하지 못했으므로 `exceeded` 로 둔다. |
+| `enforce` | exceed 면 `ko-prose-humanizer` 를 **겨냥 재실행 1회**(opus, 초과 지표 이름·수치·해당 문장 예 3개를 프롬프트에 주입, 20분 타임아웃) 후 재계량. `register_off` 면 프롬프트에 비해라체 비율·합쇼체/해요체/해라체 문장 수·위반 문장 예와 함께 **"종결체를 해라체(~다)로 통일한다(직접 인용문 안은 제외)"** 지시가 들어간다(따옴표 안·`<blockquote>` 안은 그대로 두라고 명시 — 계량기도 그 안은 세지 않는다). 규칙 2의 "-다 연쇄는 종결을 섞어" 는 **해라체 안에서**(-는가·-자·-ㄴ다) 섞으라고 적어 해라체 통일 지시와 충돌하지 않게 했다(`da_streak` 은 '니다' 도 -다 로 세므로 해라체 전환이 이 지표를 올리지 않는다). 두 결과를 `attempts[0]`·`attempts[1]` 로 기록. 그래도 exceed 면 `status: exceeded`. 재실행 뒤 **재계량이 실패**하면 1차 결과를 `attempts[1]` 로 복사하지 않는다('두 번째가 첫 번째와 같다' 는 거짓 자료가 된다) — `attempts` 는 1개만 남고 `rerun.remeasureError`·`target.error` 에 사유를 적으며, 효과를 확인하지 못했으므로 `exceeded` 로 둔다. |
 
 어느 모드에서도 **발행을 막지 않는다.** 결정론 단계 안에서 `paused_at_gate` 를 세워도 프레임워크가 무시하고 다음 단계로 가므로 사람 대기는 쓰지 않는다(무인 야간 배치).
 
-**초과가 사람 눈에 닿는 길 = PR 본문.** exceed/exceeded 면 `state.quality.prose.prNote`('문체 게이트 초과 (ko-prose-gate exceeded, 겨냥 재실행 후에도): 대구 2.4>1.99, …') 가 채워지고, `pipelines.ts` 가 두 곳에서 읽는다:
+**초과가 사람 눈에 닿는 길 = PR 본문.** exceed/exceeded 면 `state.quality.prose.prNote`('문체 게이트 초과 (ko-prose-gate exceeded, 겨냥 재실행 후에도): 대구 2.4>1.99, 종결체 이탈 비해라체 0.63>0.1, …') 가 채워지고, `pipelines.ts` 가 두 곳에서 읽는다:
 
 1. `publish-prep` 프롬프트 — 스킬에게 `gh pr create --body` 첫 단락에 이 한 줄을 글자 그대로 넣으라고 지시한다.
 2. `ensurePullRequest` — 엔진이 PR 을 직접 만들 때는 본문에 붙이고, 스킬이 만든 PR 이 있을 때는 본문에 '문체 게이트 초과' 가 없으면 `gh pr comment` 로 보완한다(실패해도 발행은 계속, audit `prose-gate` 에 남김).
@@ -118,8 +146,9 @@ python3 scripts/derive-prose-thresholds.py --runs <slop-measure/runs> --selected
 
 ## 6. 집계와 조회
 
-- `GET /quality?days=7` → `{days, tz, from, to, n, n_total, unavailable, warn_rate, exceed_rate, median_per_1k, median_lexical_tell_count, top_exceeded_metrics[3], long_share, by_genre, rerun}`. `exceed_rate` 는 exceed+exceeded, 분모는 계량된 글(unavailable·skipped 제외).
-- admin KPI '슬롭 지수(7일)': 큰 숫자 = exceed 비율, 아래 줄 = warn 비율·편수·최다 초과 지표.
+- `GET /quality?days=7` → `{days, tz, from, to, n, n_total, unavailable, warn_rate, exceed_rate, stat_exceed_rate, median_per_1k, median_lexical_tell_count, top_exceeded_metrics[3], long_share, register_off_rate, by_genre, rerun}`. `exceed_rate` 는 exceed+exceeded, 분모는 계량된 글(unavailable·skipped 제외). **`exceed_rate` 는 종결체 단독 exceed(`register_off`)를 포함하므로 임계 JSON `expected_rates.exceed_rate`(종결체를 뺀 통계 판정, 목표 ≤ 15%)와 같은 눈금이 아니다** — 기준선 블로그 63% 가 `register_off` 라 admin 큰 숫자가 그만큼 올라간다. 통계 눈금은 `stat_exceed_rate`(마지막 계량의 `stat_status === 'exceed'` 비율, 옛 기록은 `status` 로 대신) 로 따로 낸다. `register_off_rate` 는 1차 계량에서 `register_off` 가 뜬 글의 비율(같은 분모) — 종결체는 `top_exceeded_metrics`(p90/p95 지표 표)에 섞지 않는다.
+- admin KPI '슬롭 지수(7일)': 큰 숫자 = exceed 비율(종결체 포함), 아래 줄 = warn 비율·**통계 exceed 비율(`stat_exceed_rate`)**·편수·종결체 이탈 비율·최다 초과 지표. 툴팁 한 줄에 두 눈금의 차이와 종결체 뜻을 적었다.
+- 되먹임(§5)에도 종결체 이탈이 있으면 "최근 n편 중 k편이 이탈 — 본문 종결은 해라체(~다)로 쓴다" 한 줄이 붙는다.
 - **날짜는 한국 시간(`tz: Asia/Seoul`)** — 기록 폴더 `YYYY-MM-DD` 와 `days` 창 모두. 02:00 KST 야간 배치가 UTC 로는 전날 폴더에 들어가 admin '7일' 라벨과 어긋나던 것을 통일했다. 쓰기와 읽기가 같은 `dayOf` 를 쓴다.
 - admin 감사 타임라인의 `KIND_LABEL` 에는 `prose-gate` 가 없어 원문 kind 가 그대로 뜬다(허용 범위 밖 — 후속 묶음).
 

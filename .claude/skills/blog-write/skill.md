@@ -244,6 +244,9 @@ PebblousPage.init({
   <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>서브섹션 제목</h3>
   ```
 - 영어 아티클: publisher = "Pebblous Data Communication Team", "Reading time: ~Nmin"
+- **종결체 (2026-09-05 확정)**: 본문 종결은 **해라체(~다)**. 합쇼체(~습니다/~입니다)·해요체 금지. 직접 인용문 안의 말투만 예외. 리드·본문·목록·캡션 모두.
+  정본 [`docs/ko-style-standard.md`](../../../docs/ko-style-standard.md) §4-1. 검사는 `python3 tools/check-ko-prose.py <ko/index.html>` 의 R1 행
+  (합쇼체+해요체 비율 10% 초과 = 위반). 발행 엔진의 ko-prose-gate 도 같은 자로 재어 넘으면 단독 exceed 로 기록한다.
 
 ## ⛔ AI 문체 예방 패턴 (2026-06-01 추가, 시리즈 5편 사후 검수 학습)
 

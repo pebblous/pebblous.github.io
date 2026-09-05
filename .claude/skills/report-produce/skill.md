@@ -35,6 +35,8 @@ Push 전 검증: `node tools/validate-articles.js` 실행 필수.
    ```
 2. **JSON-LD TechArticle**: `<head>`에 반드시 포함. 누락 시 seo-check FAIL
 3. **`<section id="faq">`**: `config.faqs`가 있으면 HTML에 빈 section 필수. 없으면 FAQ 미렌더링
+4. **종결체 (2026-09-05 확정)**: 본문 종결은 **해라체(~다)**. 합쇼체(~습니다/~입니다)·해요체 금지. 직접 인용문 안의 말투만 예외. 리드·본문·목록·캡션 모두. 정본 `docs/ko-style-standard.md` §4-1,
+   검사 `python3 tools/check-ko-prose.py` R1 행. 발행 엔진 ko-prose-gate 가 같은 자로 재어 10% 초과면 단독 exceed 로 기록한다.
 
 ## 실행 모드: 서브 에이전트 (Pipeline + 병렬 팬아웃)
 
@@ -426,6 +428,9 @@ Agent(
     1. 먼저 <head>+init+Hero+빈 섹션 골격만 Write (각 섹션 본문은 <!-- TODO --> placeholder)
     2. 그다음 각 섹션을 Edit 툴로 하나씩 실제 본문으로 교체 (한 번에 한 섹션만)
     3. 전체 HTML을 단일 응답으로 절대 뱉지 말 것 — 반드시 여러 번의 Edit로 나눠 쓴다
+
+    ⛔ 종결체 (2026-09-05 확정): 본문 종결은 해라체(~다). 합쇼체(~습니다/~입니다)·해요체 금지.
+    직접 인용문 안의 말투만 예외. 리드·본문·목록·캡션 모두 (docs/ko-style-standard.md §4-1).
 
     ⛔ 제목→Executive Summary 일관성 규칙 (title-strategy.md §7):
     - mainTitle의 핵심 주장이 Executive Summary key-insight에 산문으로 등장해야 함
