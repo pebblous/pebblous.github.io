@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터베이스 브랜치 SQL — Git4Data와 MatrixOne의 행 단위 diff·병합 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="MatrixOrigin과 퍼듀대 연구진이 테이블을 브랜치하고 행 단위로 비교·병합하는 SQL 확장을 공개했다. 100GB 테이블 복제가 0.20초에 끝났고, 에이전트 1,000기가 동시에 브랜치를 만드는 부하도 400초에 마쳤다. 벤치마크는 저자들이 자사 데이터베이스로 돌린 결과다.">
+    <meta name="keywords" content="데이터베이스 브랜치, Git4Data, MatrixOne, 데이터 버전관리, AI 에이전트, SQL 확장, DoltDB, MVCC, 데이터 거버넌스, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/database-branching-sql-for-agents/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/database-branching-sql-for-agents/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/database-branching-sql-for-agents/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/database-branching-sql-for-agents/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="테이블을 브랜치하고 행 단위로 병합하는 SQL 확장">
+    <meta property="og:description" content="MatrixOrigin과 퍼듀대 연구진이 테이블을 브랜치하고 행 단위로 비교·병합하는 SQL 확장을 공개했다. 100GB 테이블 복제가 0.20초에 끝났고, 에이전트 1,000기가 동시에 브랜치를 만드는 부하도 400초에 마쳤다. 벤치마크는 저자들이 자사 데이터베이스로 돌린 결과다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/database-branching-sql-for-agents/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/database-branching-sql-for-agents/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="원본 테이블과 복제된 브랜치가 갈라졌다가 다시 하나로 합쳐지는 스냅숏 흐름도">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-09-06">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="테이블을 브랜치하고 행 단위로 병합하는 SQL 확장">
+    <meta name="twitter:description" content="100GB 테이블을 0.20초에 복제하고, 두 갈래로 갈린 테이블을 행 단위로 비교해 합친다. 에이전트에게 쓰기 권한을 줄 때 필요한 것은 더 똑똑한 모델이 아니라 되돌릴 수 있는 상태였다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/database-branching-sql-for-agents/ko/image/index.png">
+    <meta name="twitter:image:alt" content="원본 테이블과 복제된 브랜치가 갈라졌다가 다시 하나로 합쳐지는 스냅숏 흐름도">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260906"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260906">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260906">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260906">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <!-- 이 글 고유 컴포넌트: SQL 예시 블록 -->
+    <style>
+        .sql-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.9;
+            color: var(--text-primary);
+            overflow-x: auto;
+            white-space: pre;
+        }
+        .sql-block .kw { color: var(--accent-color); font-weight: 600; }
+        .sql-block .cm { color: var(--text-muted); }
+    </style>
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#fleet" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 에이전트 다섯 기가 같은 테이블을 동시에 고칠 때</a></li>
+                    <li><a href="#gap" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 포크는 되는데 비교와 병합이 없다</a></li>
+                    <li><a href="#syntax" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 문장 넷으로 갈랐다가 되돌린다</a></li>
+                    <li><a href="#cost" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 100GB 테이블을 0.2초에 복제한다</a></li>
+                    <li><a href="#next" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 브랜치가 싸지자 드러난 다음 병목</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            MatrixOrigin 연구진 여섯 명과 퍼듀대학교의 왕젠궈가 9월 2일 arXiv에 올린 논문은 관계형 데이터베이스에 브랜치와 병합을 SQL 문장으로 넣자고 제안한다. 데이터베이스를 저장소로 놓고 테이블을 버전 객체로 놓는 설계이고, 이름은 Git4Data다. 이런 제안이 지금 나온 이유는 데이터를 고치는 쪽이 바뀌었기 때문이다. 사람 엔지니어는 스냅숏 하나를 붙들고 순서대로 고치지만, 에이전트 여럿은 같은 테이블의 후보 상태를 동시에 헤집는다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            100GB짜리 테이블을 브랜치하는 데 0.20초가 걸렸고 남은 것은 314KB짜리 메타데이터였다. 데이터를 한 줄도 복사하지 않고 스냅숏이 가리키는 오브젝트 목록만 베끼기 때문이다. 그런데 브랜치가 이렇게 싸지자 병목이 자리를 옮겼다. 저자들은 수천 개의 투기적 브랜치가 같은 컴퓨트와 입출력을 나눠 쓰는 문제, 그러니까 저장 효율이 아니라 자원 배분이 다음 숙제라고 적었다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            4절까지는 논문이 정의한 문법과 실측치를 따라간다. 5절 앞부분은 저자들이 남긴 숙제이고, 뒤이어 짚는 오픈소스 저장소의 코드 상태는 논문에 없는 내용으로 2026년 9월 6일에 직접 확인했다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: Gou 외, <a href="https://arxiv.org/abs/2609.02106" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Git4Data: Database-Native Version Control for AI Agents</a>, arXiv:2609.02106(2026) 표 1·표 4·4.2절</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.20초</p>
+                            <p class="text-sm themeable-text-secondary mt-1">100GB 테이블 복제</p>
+                            <p class="text-xs themeable-muted mt-1">같은 내용을 INSERT ... SELECT로 만들면 114.6초가 걸린다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">314KB</p>
+                            <p class="text-sm themeable-text-secondary mt-1">복제가 남기는 전부</p>
+                            <p class="text-xs themeable-muted mt-1">같은 테이블을 실제로 베끼면 저장 공간 34GB가 더 든다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">400초</p>
+                            <p class="text-sm themeable-text-secondary mt-1">에이전트 1,000기 동시 브랜치</p>
+                            <p class="text-xs themeable-muted mt-1">같은 부하에서 DoltDB는 두 시간 안에 끝내지 못했다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">18.5배</p>
+                            <p class="text-sm themeable-text-secondary mt-1">DoltDB와 벌어진 최대 차이</p>
+                            <p class="text-xs themeable-muted mt-1">데이터 정제 워크로드 기준. 저자들이 고른 비교 대상이다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="fleet" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">에이전트 다섯 기가 같은 테이블을 동시에 고칠 때</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 첫 그림으로 든 상황은 데이터 정제다. 중복된 개체와 깨진 필드가 섞인 원본 테이블이 있고, 어느 정제 전략이 맞는지 미리 알 수 없다. 그래서 에이전트는 전략 하나에 걸지 않고 원본을 세 갈래로 가른다. 한쪽은 범주 값을 규칙으로 정규화하고, 다른 쪽은 비슷한 이름을 묶어 중복을 지우고, 나머지 하나는 문맥을 읽어 의미를 바로잡는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 갈래를 다 돌리고 나면 어느 하나가 압승하지 않는다. 각 전략이 손대는 레코드의 집합이 서로 다르다. 그래서 마지막 작업은 승자를 고르는 일이 아니라 갈래마다 쓸 만한 행만 골라 하나의 상태로 되돌리는 일이 되고, 그 과정에서 무엇을 시도했고 무엇을 받아들였고 무엇을 버렸는지가 기록으로 남아야 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 요구 조건으로 적은 네 가지가 여기서 나온다. 투기적 수정 전에 데이터를 포크할 것, 행 단위 차이를 들여다볼 것, 검증된 변경만 병합할 것, 실패한 경로는 원본을 복사하지 않고 되돌릴 것. 이것들이 외부 도구가 아니라 데이터베이스가 직접 제공하는 일급 연산이어야 한다는 것이 이 글이 다루는 제안의 출발점이다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            에이전트에게 쓰기 권한을 주는 순간 필요해지는 것은 더 나은 모델이 아니라 격리된 작업 공간과 되돌릴 수 있는 상태, 그리고 남는 기록이다. 소프트웨어 엔지니어는 이 셋을 Git으로 오래전에 확보했지만 데이터 엔지니어에게는 대응물이 없었다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="gap" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">포크는 되는데 비교와 병합이 없다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터를 버전으로 다루려는 시도가 없었던 것은 아니다. 문제는 각각이 다른 자리에서 막힌다는 점이다. 논문은 다섯 갈래의 선행 작업을 훑으면서 어디까지 되고 어디서 멈추는지를 하나씩 짚는다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">기존 방식</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">막히는 자리</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top">Git, Git LFS, DVC</td>
+                                    <td class="py-3">비교와 병합이 데이터 전체를 메모리로 올린다. 대용량 파일은 포인터로만 관리해 레코드 단위 차이나 충돌 해소가 없다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top">MVCC</td>
+                                    <td class="py-3">행 버전을 선형 히스토리로 남길 뿐, 특정 버전으로 되짚어 갈 수 없다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top">스냅숏, 시점 복구(PITR)</td>
+                                    <td class="py-3">한 타임라인에서 읽기와 복원만 된다. 쓰기가 가능한 두 갈래를 동시에 쥐지 못한다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top">Snowflake·Supabase 제로카피 클론, Neon</td>
+                                    <td class="py-3">병렬 개발과 테스트는 된다. 두 브랜치의 행 단위 차이를 보고할 수도, 한쪽을 다른 쪽에 병합할 수도 없어 갈라짐이 한 방향으로만 흐른다. Neon은 포크 단위가 굵어 테이블 하나만 브랜치하지 못한다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top">Apache Iceberg, Nessie, lakeFS</td>
+                                    <td class="py-3">메타데이터만 복사해 브랜치한다는 철학은 같다. 다만 차이를 가르는 단위가 행이 아니라 오브젝트나 테이블이라, 서로 다른 행을 고친 두 브랜치도 충돌로 잡히고 해소는 한쪽 파일을 통째로 남기는 방식이 된다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top">PostgreSQL 18 reflink 복제</td>
+                                    <td class="py-3">파일시스템 복제에 맡길 수 있지만 복사가 끝날 때까지 원본에 다른 세션이 붙어 있으면 안 된다. 사실상 오프라인 작업이다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top">DoltDB</td>
+                                    <td class="py-3">MySQL 호환 데이터베이스에 Git 스타일 브랜치·비교·병합을 이미 갖췄다. 이번 논문에 가장 가까운 선행 작업이자 벤치마크 비교 대상이다</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">출처: arXiv:2609.02106 1절·5절을 표로 정리했다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표를 세로로 읽으면 진단이 하나로 모인다. 데이터베이스에 없는 것은 변경을 붙잡거나 포크하는 능력이 아니다. 그렇게 만들어진 버전들을 다루는 SQL 연산, 즉 비교와 충돌을 아는 재통합이 없다는 것이 논문의 문장이다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="syntax" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">문장 넷으로 갈랐다가 되돌린다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Git4Data가 빌려 온 어휘는 네 개다. 스냅숏이 커밋이나 태그를 맡고, 브랜치는 스냅숏에서 복제한 새 테이블이며, diff는 두 버전이 어긋나는 행을 보고하고, 병합은 받아들인 변경을 명시된 충돌 정책 아래 되돌린다. 네 연산 모두 SQL 문장이라 기존 트랜잭션과 인증, 접근 제어를 그대로 물려받는다. 사람 엔지니어와 에이전트가 같은 인터페이스를 쓴다는 뜻이기도 하다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 예제로 세운 흐름은 이렇다. 테이블 T가 스냅숏 sn1을 남기고, 거기서 갈라져 나온 TClone이 따로 발전해 sn3에 이른다. 그동안 T도 멈춰 있지 않아 sn2로 나아간다. 마지막에 두 갈래가 sn4에서 합쳐진다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 250" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="원본 테이블 T가 스냅숏 sn1에서 갈라져 복제본 TClone을 만들고, T는 sn2로 TClone은 sn3으로 각각 나아간 뒤 sn4에서 다시 합쳐지는 흐름도.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">브랜치에서 병합까지, 네 문장이 놓이는 순서</text>
+                            <text x="340" y="44" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">원본 T는 계속 쓰기를 받고, 복제본 TClone은 따로 발전한다</text>
+
+                            <line x1="70" y1="100" x2="620" y2="100" stroke="var(--text-secondary,#4B5563)" stroke-width="2"/>
+                            <text x="70" y="86" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">T</text>
+
+                            <path d="M170 100 C 200 100, 200 175, 240 175" fill="none" stroke="#F86825" stroke-width="2"/>
+                            <line x1="240" y1="175" x2="480" y2="175" stroke="#F86825" stroke-width="2"/>
+                            <path d="M480 175 C 520 175, 520 100, 545 100" fill="none" stroke="#F86825" stroke-width="2" stroke-dasharray="5 3"/>
+                            <text x="240" y="198" font-size="11" font-weight="700" fill="#F86825">TClone</text>
+
+                            <circle cx="170" cy="100" r="6" fill="var(--text-secondary,#4B5563)"/>
+                            <circle cx="360" cy="100" r="6" fill="var(--text-secondary,#4B5563)"/>
+                            <circle cx="545" cy="100" r="6" fill="var(--text-secondary,#4B5563)"/>
+                            <circle cx="360" cy="175" r="6" fill="#F86825"/>
+
+                            <text x="170" y="88" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">sn1</text>
+                            <text x="360" y="88" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">sn2</text>
+                            <text x="545" y="88" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">sn4</text>
+                            <text x="360" y="163" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">sn3</text>
+
+                            <line x1="360" y1="108" x2="360" y2="167" stroke="var(--text-muted,#6B7280)" stroke-width="1" stroke-dasharray="3 3"/>
+                            <text x="372" y="142" font-size="10" fill="var(--text-secondary,#4B5563)">DATA BRANCH DIFF</text>
+
+                            <text x="150" y="128" font-size="10" fill="var(--text-secondary,#4B5563)">CREATE SNAPSHOT</text>
+                            <text x="196" y="146" font-size="10" fill="#F86825">DATA BRANCH CREATE TABLE</text>
+                            <text x="500" y="128" font-size="10" fill="var(--text-secondary,#4B5563)">DATA BRANCH MERGE</text>
+
+                            <line x1="70" y1="222" x2="620" y2="222" stroke="var(--text-muted,#6B7280)" stroke-width="1"/>
+                            <text x="620" y="240" text-anchor="end" font-size="9" fill="var(--text-muted,#6B7280)">시간 →  출처: arXiv:2609.02106 목록 1</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 (논문 목록 1 재구성) | 출처: <a href="https://arxiv.org/abs/2609.02106" target="_blank" rel="noopener" class="underline">arXiv:2609.02106</a> 2.1절
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 가벼운 형태의 스냅숏은 아예 선언하지 않는다. 다중 버전 저장 엔진은 최근 24시간쯤의 시점 이력을 이미 들고 있어서, 지나간 상태를 타임스탬프로 바로 질의할 수 있다. 오래 남겨야 하는 상태만 이름을 붙여 승격한다.
+                    </p>
+
+                    <div class="sql-block"><span class="cm">-- 이름 없이 최근 시점을 그대로 질의한다</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> T{timestamp='2026-08-01 12:34:56'};
+
+<span class="cm">-- 오래 남길 상태에만 이름을 붙인다</span>
+<span class="kw">CREATE SNAPSHOT</span> sn1 <span class="kw">FOR TABLE</span> T;</div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이름 붙은 스냅숏은 복제의 출발점이 된다. 복제된 TClone은 T의 스키마와 데이터를 물려받지만 그 순간부터 둘은 서로에게 영향을 주지 않는다. 에이전트가 운영 상태를 건드리지 않고 투기적 변경을 시험할 수 있는 격리가 여기서 생긴다.
+                    </p>
+
+                    <div class="sql-block"><span class="cm">-- 스냅숏에서 새 테이블을 갈라낸다</span>
+<span class="kw">DATA BRANCH CREATE TABLE</span> TClone <span class="kw">FROM</span> T{snapshot='sn1'};
+
+<span class="cm">-- 두 버전이 어긋나는 행만 보고한다</span>
+<span class="kw">DATA BRANCH DIFF</span> T{snapshot='sn2'} <span class="kw">AGAINST</span> TClone{snapshot='sn3'};
+
+<span class="cm">-- 받아들인 변경을 되돌린다. 충돌 정책은 세 가지</span>
+<span class="kw">DATA BRANCH MERGE</span> TClone{snapshot='sn3'} <span class="kw">INTO</span> T
+  <span class="kw">WHEN CONFLICT</span> FAIL | SKIP | ACCEPT;</div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비교의 의미는 정렬과 무관하다. 테이블 버전을 순서 없는 행의 다중집합으로 놓고, 양쪽에서 상쇄되지 않는 행만 골라내기 때문이다. 물리적 배치가 어떻든 결과가 같다는 뜻이고, 기본키가 있으면 그 키가 버전을 가로지르는 행의 신원 노릇을 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        병합에서 원본을 통째로 덮어쓰지 않는 이유는 예제 흐름에 이미 들어 있다. TClone을 탐색하는 동안 T도 sn2로 나아갔으므로, T를 브랜치로 갈아 끼우면 그 사이의 진척이 소리 없이 사라진다. 그래서 Git4Data는 공통 조상 sn1을 스스로 찾아내 3-way 병합을 한다. 사용자가 베이스를 지목할 필요는 없고, 스냅숏과 복제의 계보를 시스템이 따라간다. 베이스를 끝내 찾지 못하면 빈 베이스로 처리하되, 두 복제본이 공유하는 오브젝트는 건너뛰므로 손으로 짠 SQL보다는 여전히 빠르다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>무엇을 진짜 충돌로 볼 것인가</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기본키가 있으면 판정이 단순하다. 베이스와 대상, 원본 세 스냅숏에서 같은 키의 행을 견주어, 두 브랜치가 각자 같은 키를 고쳤을 때만 진짜 충돌로 잡는다. 두 브랜치가 같은 새 키를 넣은 경우도 여기 들어간다. 한쪽만 건드렸거나 양쪽이 똑같이 고쳤다면 결과가 갈리지 않으므로 시스템이 알아서 정리한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기본키가 없으면 행을 이어 줄 신원이 없어 다중집합 논리로 내려간다. 넣은 행은 전체 값으로 묶고 지운 행은 저장 엔진의 물리적 행 식별자로 좇는다. 양쪽 델타에 같은 변경이 나타나되 서로 상쇄되지 않을 때만 충돌을 의심하고, 한쪽에만 있는 변경은 그냥 적용한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        설계에서 공들인 대목은 따로 있다. 컴팩션이나 가비지 컬렉션이 유효한 행을 새 오브젝트로 옮겨 적으면 값은 그대로인데 위치가 바뀐다. 이때 옮겨진 행을 변경으로 읽으면 저장소 정리가 다른 브랜치의 멀쩡한 수정을 가려 버린다. Git4Data는 값이 같으면 이동으로 인식해 허위 충돌을 만들지 않는다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="cost" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">100GB 테이블을 0.2초에 복제한다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 문법이 감당할 만한 값에 돌아가려면 저장 엔진이 세 가지를 이미 갖고 있어야 한다. 데이터를 제자리에서 고치지 않고 불변 단위로 덧붙일 것, 삭제를 표시로 남길 것, 버전 관리 연산이 트랜잭션으로 실행될 것. 논문이 강조하는 대목은 이 셋을 갖춘 엔진이라면 Git4Data가 그 위에 얹히는 얇은 해석 층으로 충분하다는 점이다. 실제로 MatrixOne 구현은 저장 계층을 고치지 않았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        MatrixOne은 테이블 데이터를 클라우드 오브젝트 스토리지에 불변 오브젝트로 쌓는다. 삭제는 키와 물리적 행 번호를 적은 툼스톤 오브젝트로 표현하고, 스냅숏은 그 오브젝트들을 가리키는 디렉터리에 지나지 않는다. 가비지 컬렉션이 스냅숏을 알아보고 참조된 오브젝트를 남기기 때문에, 브랜치와 태그를 유지하는 데 데이터 복사가 끼어들지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        복제 비용을 실제로 재면 차이가 이렇게 벌어진다. TPC-H의 lineitem 테이블을 스케일 팩터 100, 그러니까 100GB로 놓고 잰 값이다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">연산</th>
+                                    <th class="text-right py-3 pr-4 font-semibold themeable-heading">시간(초)</th>
+                                    <th class="text-right py-3 font-semibold themeable-heading">추가 저장</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">브랜치 복제 (기본키 있음)</td>
+                                    <td class="py-3 pr-4 text-right font-semibold" style="color: #F86825;">0.20</td>
+                                    <td class="py-3 text-right font-semibold" style="color: #F86825;">314KB</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">브랜치 복제 (기본키 없음)</td>
+                                    <td class="py-3 pr-4 text-right">0.17</td>
+                                    <td class="py-3 text-right">294KB</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">INSERT ... SELECT 복사 (기본키 있음)</td>
+                                    <td class="py-3 pr-4 text-right">114.6</td>
+                                    <td class="py-3 text-right">34GB</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">INSERT ... SELECT 복사 (기본키 없음)</td>
+                                    <td class="py-3 pr-4 text-right">119.3</td>
+                                    <td class="py-3 text-right">34GB</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">TPC-H lineitem, 스케일 팩터 100. 출처: arXiv:2609.02106 표 1.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비교와 병합에서도 같은 원리가 작동한다. 두 버전이 갈라진 뒤에 쓰인 오브젝트만 읽으면 된다. 무작위로 100만 행을 고친 조건에서 비교가 3.27초, 병합이 16.13초였고, 같은 일을 손으로 짠 SQL로 하면 각각 431.50초와 471.16초가 걸렸다. 기본키가 없으면 지운 행을 찾느라 조회가 더 붙어 이득이 줄어든다. 같은 조건의 비교가 60.19초, 병합이 68.75초다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        끝에서 끝까지 도는 워크로드로 옮기면 비교 상대가 DoltDB가 된다. BranchBench는 브랜치 생애주기와 브랜치 내부 SQL, 브랜치 간 비교, 가지치기를 워크로드 축으로 놓은 벤치마크다. 약 4,700만 행 위에서 에이전트 다섯 기가 20스텝씩 돌며 각자 포크하고 질의하고 병합하거나 버린다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="BranchBench 네 워크로드의 웜 실행 시간 막대 그래프. 소프트웨어 개발은 122.1초 대 1925.6초, 장애 재현은 198.9초 대 1677.3초, 데이터 정제는 58.6초 대 1084.2초, MCTS는 39.8초 대 410.2초로 Git4Data가 모두 짧다.">
+                            <text x="340" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">BranchBench 네 워크로드의 웜 실행 시간</text>
+                            <text x="340" y="42" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">스케일 팩터 100(약 4,700만 행), 에이전트 5기·20스텝</text>
+
+                            <rect x="452" y="14" width="10" height="10" fill="#F86825"/>
+                            <text x="468" y="23" font-size="10" fill="var(--text-secondary,#4B5563)">Git4Data</text>
+                            <rect x="540" y="14" width="10" height="10" fill="#808080"/>
+                            <text x="556" y="23" font-size="10" fill="var(--text-secondary,#4B5563)">DoltDB</text>
+
+                            <text x="140" y="74" text-anchor="end" font-size="11" fill="var(--text-primary,#111827)">소프트웨어 개발</text>
+                            <rect x="150" y="62" width="25.4" height="16" fill="#F86825"/>
+                            <text x="181" y="75" font-size="10" font-weight="700" fill="#F86825">122.1</text>
+                            <rect x="150" y="82" width="400" height="16" fill="#808080" fill-opacity="0.55"/>
+                            <text x="556" y="95" font-size="10" fill="var(--text-secondary,#4B5563)">1925.6</text>
+
+                            <text x="140" y="130" text-anchor="end" font-size="11" fill="var(--text-primary,#111827)">장애 재현</text>
+                            <rect x="150" y="118" width="41.3" height="16" fill="#F86825"/>
+                            <text x="197" y="131" font-size="10" font-weight="700" fill="#F86825">198.9</text>
+                            <rect x="150" y="138" width="348.4" height="16" fill="#808080" fill-opacity="0.55"/>
+                            <text x="504" y="151" font-size="10" fill="var(--text-secondary,#4B5563)">1677.3</text>
+
+                            <text x="140" y="186" text-anchor="end" font-size="11" fill="var(--text-primary,#111827)">데이터 정제</text>
+                            <rect x="150" y="174" width="12.2" height="16" fill="#F86825"/>
+                            <text x="168" y="187" font-size="10" font-weight="700" fill="#F86825">58.6</text>
+                            <rect x="150" y="194" width="225.2" height="16" fill="#808080" fill-opacity="0.55"/>
+                            <text x="381" y="207" font-size="10" fill="var(--text-secondary,#4B5563)">1084.2</text>
+
+                            <text x="140" y="242" text-anchor="end" font-size="11" fill="var(--text-primary,#111827)">MCTS 탐색</text>
+                            <rect x="150" y="230" width="8.3" height="16" fill="#F86825"/>
+                            <text x="164" y="243" font-size="10" font-weight="700" fill="#F86825">39.8</text>
+                            <rect x="150" y="250" width="85.2" height="16" fill="#808080" fill-opacity="0.55"/>
+                            <text x="241" y="263" font-size="10" fill="var(--text-secondary,#4B5563)">410.2</text>
+
+                            <text x="150" y="288" font-size="9" fill="var(--text-muted,#6B7280)">단위: 초. 웜 실행 평균값이며 배속(15.8·8.4·18.5·10.3배)도 이 값들의 비다. 출처: arXiv:2609.02106 표 4.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 (논문 표 4 재구성) | 출처: <a href="https://arxiv.org/abs/2609.02106" target="_blank" rel="noopener" class="underline">arXiv:2609.02106</a> 4.2절
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        네 워크로드에서 벌어진 차이는 8.4배에서 18.5배 사이다. DoltDB가 브랜치 연산마다 테이블 내용을 실체화해 견주는 반면 Git4Data는 변경된 델타만 읽기 때문이라는 것이 저자들의 설명이다. 그래서 실행 시간이 테이블 크기가 아니라 변경 크기를 따라간다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 성질이 가장 뚜렷하게 보이는 실험은 에이전트를 1,000기까지 늘린 시뮬레이션이다. 각 에이전트가 데이터베이스를 포크하고 브랜치 안에서 한 스텝씩 돌리는 부하인데, Git4Data는 400초에 끝냈고 DoltDB는 두 시간 안에 끝내지 못했다. 데이터를 열 배로 키워도 이 시뮬레이션은 600초로 크게 밀리지 않았다. 포크 비용이 데이터 크기가 아니라 메타데이터에 매여 있다는 뜻이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        예외도 논문에 적혀 있다. 데이터를 열 배로 키웠을 때 소프트웨어 개발과 데이터 정제는 3.2배 안쪽으로만 느려졌지만 장애 재현 워크로드는 13.5배 느려졌다. 이 워크로드의 수정이 테이블 전체를 훑고 다시 쓰는 방식이라 비용이 변경 크기가 아니라 데이터 크기를 따라가기 때문이다. 델타 기반 설계의 이점이 어디까지인지를 저자들이 스스로 그어 둔 셈이다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            수치를 읽을 때 함께 알아야 할 것이 있다. 저자 일곱 명 가운데 여섯 명이 MatrixOne을 만들어 파는 MatrixOrigin 소속이고, 나머지 한 명이 퍼듀대학교 소속이다. 자사 제품에 넣은 기능을 자사가 측정한 결과이며 비교 대상과 실험 환경도 저자들이 골랐다. 제3자 검증이 아니다. 균형을 잡아 주는 쪽은 벤치마크의 출처와 구현의 공개 여부다. BranchBench는 다른 팀이 만든 것이고, 구현은 오픈소스로 공개돼 있어 문법과 코드를 누구나 확인할 수 있다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="next" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">브랜치가 싸지자 드러난 다음 병목</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        포크가 메타데이터 연산이 되고 병합이 원자적으로 커밋되자 브랜치 생성은 더 이상 동시성을 제약하지 않게 됐다. 대신 브랜치 안에서 도는 작업들이 같은 컴퓨트와 입출력을 나눠 쓰는 문제가 전면에 올라왔다. 저자들이 스스로 적은 표현으로는 열린 문제가 저장 효율에서 자원 거버넌스로 옮겨 갔다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        남은 숙제로 논문이 꼽은 것은 네 가지다. 수천 개의 투기적 브랜치를 두고 스케줄링과 진입 제어, 브랜치별 할당량을 어떻게 정할 것인가. 지금은 충돌 해소가 행 단위여서 같은 행의 다른 컬럼을 고친 두 브랜치도 충돌로 잡히는데, 셀 단위로 내려가는 것이 자연스러운 다음 걸음이되 더 어려운 문제는 의미론 쪽에 있다. 각자로는 제약을 어기지 않는 두 변경이 합쳐지면 제약을 깨는 경우가 그렇다. 스키마가 바뀌면 비교와 병합의 전제가 무너진다는 점, 그리고 이름 붙은 스냅숏이 오브젝트를 붙들고 있어 브랜치가 쌓일수록 저장이 늘어난다는 점도 정책 없이 남아 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 열린 문제라 적은 것들이 코드에서는 어디까지 와 있는지 궁금해 저장소를 열어 봤다. MatrixOne이 실제로 갖춘 문장은 논문이 서술한 네 연산보다 많다. 파서의 구문 트리에는 테이블과 데이터베이스 단위의 브랜치 생성·삭제, 비교, 병합에 더해 논문에 나오지 않는 문장이 하나 더 있다.
+                    </p>
+
+                    <div class="sql-block"><span class="cm">-- 승인된 키의 행만 골라 넘긴다 (논문에는 없는 문장)</span>
+<span class="kw">DATA BRANCH PICK</span> src <span class="kw">INTO</span> dst
+  <span class="kw">KEYS</span> (<span class="kw">SELECT</span> id <span class="kw">FROM</span> approved)
+  <span class="kw">WHEN CONFLICT</span> SKIP;</div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Git의 cherry-pick에 해당하는 연산이고, 2026년 4월 9일에 병합됐다. 기본키 값을 리터럴로 적거나 서브쿼리로 넘겨 특정 행만 대상 테이블로 옮기며, 두 스냅숏 사이의 변경으로 범위를 좁힐 수도 있다. 충돌 정책 세 가지는 병합과 같고, 기본키가 없는 테이블은 아예 거부된다. 1절의 정제 워크플로가 말한 받아들인 델타만 골라 되돌리기에 대응하는 문장인데, 논문은 이 문장을 다루지 않으므로 둘을 잇는 것은 이 글의 해석이다. 승인 목록을 서브쿼리로 넣을 수 있다는 점은 검토 절차를 SQL 안에 두려는 팀에게 특히 실무적이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        자원 거버넌스 쪽도 움직이고 있다. 8월 29일에 병합된 변경은 스냅숏 생성과 브랜치 생성에 계정별 할당량을 걸고, 관리자가 한도를 바꾼 직후 다른 노드에서 들어온 요청이 낡은 카탈로그를 보고 통과하는 일이 없도록 순서를 강제한다. 한도가 없으면 그냥 통과시키고, 한도가 유한하면 할당량 행을 잠근 채 사용량을 세어 메타데이터 발행까지 한 트랜잭션으로 묶는다. 논문이 말한 브랜치별 할당량, 그러니까 에이전트의 진척도를 반영하는 스케줄링과는 아직 거리가 있다. 그래도 자원 통제가 운영 문서가 아니라 엔진 안으로 들어오고 있다는 신호로는 읽힌다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            에이전트 거버넌스는 흔히 정책 문서와 승인 절차의 문제로 다뤄진다. 이 논문의 결론은 그 반대편에서 온다. 저장 엔진이 이미 갖고 있던 성질을 SQL 문장으로 드러내는 것만으로 격리와 되돌리기와 감사 기록이 확보된다면, 거버넌스의 상당 부분은 스토리지 계층에서 풀리는 문제다.
+                        </p>
+                    </div>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            페블러스가 데이터 품질을 진단하면서 자주 마주치는 질문이 있다. 이 데이터가 어디서 와서 무엇을 거쳤는지 되짚을 수 있느냐는 것이다. 사람이 고칠 때는 변경 이력이 드문드문 남아도 어떻게든 복원됐지만, 고치는 쪽이 에이전트 여럿이 되면 사정이 달라진다. 무엇을 시도했고 무엇을 받아들였는지가 데이터 자체에 남지 않으면 계보를 사후에 재구성할 방법이 없다. 브랜치와 병합을 데이터베이스 안으로 들이는 일은 결국 그 기록을 남기는 자리를 옮기는 일이기도 하다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주신 데 감사드린다. 논문 전문은 <a href="https://arxiv.org/abs/2609.02106" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv:2609.02106</a>에서 볼 수 있고, 이 글의 문법과 수치는 논문 2절·3절·4절에서, 저장소의 코드 상태는 <a href="https://github.com/matrixorigin/matrixone" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">MatrixOne 저장소</a>에서 2026년 9월 6일에 직접 확인했다. 에이전트에게 데이터 쓰기 권한을 이미 열어 둔 팀이 있다면 되돌리기와 기록을 어느 계층에서 감당하고 있는지 나눠 주시면 좋겠다.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260906"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "테이블을 브랜치하고 행 단위로 병합하는 SQL 확장",
+            subtitle: "에이전트 1,000기가 동시에 데이터를 갈라 쓰도록 MatrixOne에 얹은 Git4Data 계층",
+            pageTitle: "데이터베이스 브랜치 SQL — Git4Data와 MatrixOne의 행 단위 diff·병합 | 페블러스",
+            category: "tech",
+            publishDate: "2026-09-06",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/database-branching-sql-for-agents/ko/",
+            tags: ["Git4Data", "MatrixOne", "데이터베이스 버전관리", "AI 에이전트", "SQL 확장", "데이터 거버넌스", "MVCC", "DoltDB"],
+            faqs: [
+                {
+                    question: "Git4Data는 새로 만든 데이터베이스인가?",
+                    answer: "아니다. 기존 데이터베이스 위에 얹는 버전 관리 계층이고, 브랜치·비교·병합을 SQL 문장으로 노출하는 추상화다. 저자들은 이 추상화를 MatrixOne이라는 클라우드 네이티브 관계형 데이터베이스에 구현했다. 논문의 주장은 저장 엔진이 세 가지 성질을 이미 갖췄다면 어떤 OLTP 데이터베이스에도 같은 의미론으로 얹을 수 있다는 것이다."
+                },
+                {
+                    question: "브랜치를 만들 때 데이터가 복사되지 않는다면 원본이 바뀌면 어떻게 되나?",
+                    answer: "복제본은 만들어진 순간의 스냅숏이 가리키던 오브젝트 목록을 물려받고, 그 뒤로 두 테이블은 서로에게 영향을 주지 않는다. 저장 엔진이 데이터를 제자리에서 고치지 않고 불변 오브젝트로 덧붙이기 때문에, 원본에 들어온 새 쓰기는 새 오브젝트가 되고 복제본이 보는 옛 오브젝트는 그대로 남는다. 이름 붙은 스냅숏이 참조하는 오브젝트는 가비지 컬렉션 대상에서 빠진다."
+                },
+                {
+                    question: "충돌은 어떤 기준으로 잡히나?",
+                    answer: "기본키가 있으면 베이스와 대상, 원본 세 스냅숏에서 같은 키의 행을 견주어 두 브랜치가 각자 같은 키를 고쳤을 때만 충돌로 본다. 두 브랜치가 같은 새 키를 넣은 경우도 포함된다. 한쪽만 건드렸거나 양쪽 변경이 동일하면 시스템이 자동으로 정리한다. 충돌이 나면 WHEN CONFLICT 절이 세 가지 정책 가운데 하나로 처리한다. FAIL은 병합을 중단하고, SKIP은 대상 쪽 값을, ACCEPT는 원본 쪽 값을 남긴다."
+                },
+                {
+                    question: "기본키가 없는 테이블에서도 쓸 수 있나?",
+                    answer: "쓸 수 있지만 값이 떨어진다. 행을 이어 줄 신원이 없어 전체 값과 물리적 행 식별자로 다중집합 맞춤을 하기 때문이다. 100만 행을 고친 조건에서 비교가 기본키 있을 때 3.27초인 반면 없을 때는 60.19초였다. 지운 행의 원래 값을 되찾으려 추가 조회가 붙는 것이 주된 이유다. 저장소에 들어간 행 단위 선택 연산은 아예 기본키가 없는 테이블을 거부한다."
+                },
+                {
+                    question: "lakeFS나 Nessie 같은 데이터 레이크 버전 관리와 무엇이 다른가?",
+                    answer: "메타데이터만 복사해 브랜치한다는 철학은 같다. 갈리는 지점은 차이를 가르는 단위다. 데이터 레이크 쪽은 오브젝트나 테이블, 파일을 단위로 삼아서 같은 테이블의 서로 다른 행을 고친 두 브랜치도 충돌로 잡히고, 해소는 한쪽 파일을 통째로 남기는 방식이 된다. Git4Data는 같은 규율을 OLTP 데이터베이스 안으로 들여와 기본키가 행에 신원을 부여하게 하고 레코드 단위로 재통합한다."
+                },
+                {
+                    question: "DoltDB보다 18.5배 빠르다는 수치를 그대로 믿어도 되나?",
+                    answer: "조건을 붙여 읽는 편이 낫다. 저자 일곱 명 가운데 여섯 명이 MatrixOne을 만들어 파는 MatrixOrigin 소속이고, 비교 대상과 실험 환경도 저자들이 골랐다. 18.5배는 네 워크로드 가운데 데이터 정제에서 나온 최댓값이며 나머지는 8.4배에서 15.8배 사이다. 다만 벤치마크인 BranchBench는 다른 팀이 만든 것이고 구현도 오픈소스로 공개돼 있어, 문법과 코드는 제3자가 확인할 수 있다."
+                },
+                {
+                    question: "에이전트 1,000기 실험은 무엇을 보여 주나?",
+                    answer: "포크 비용이 데이터 크기와 무관하다는 점이다. 에이전트 1,000기가 각자 데이터베이스를 포크하고 브랜치 안에서 한 스텝씩 도는 부하를 Git4Data는 400초에 끝냈고 DoltDB는 두 시간 안에 끝내지 못했다. 데이터를 열 배로 키워도 같은 실험이 600초로 크게 밀리지 않았다. 다만 저자들은 이 실험에서 남은 비용의 대부분이 브랜치 생성이 아니라 브랜치 안 작업들이 다투는 컴퓨트와 입출력이라고 적었다."
+                },
+                {
+                    question: "지금 도입하려면 무엇이 아직 없나?",
+                    answer: "저자들이 직접 꼽은 것이 네 가지다. 수천 브랜치를 상대로 한 스케줄링과 진입 제어, 같은 행의 다른 컬럼을 고쳤을 때를 가려내는 셀 단위 해소, 장기 브랜치에서의 스키마 변경, 그리고 스냅숏이 쌓일 때의 보존 정책이다. 프로덕션 에이전트 워크로드에서의 검증도 앞으로의 계획으로만 적혀 있다."
+                },
+                {
+                    question: "논문에 없는데 저장소에 있는 기능이 있나?",
+                    answer: "있다. 승인된 기본키의 행만 골라 대상 테이블로 넘기는 DATA BRANCH PICK 문장이 2026년 4월 9일에 병합됐다. Git의 cherry-pick에 해당하고, 키를 리터럴로 적거나 서브쿼리로 넘길 수 있으며 두 스냅숏 사이의 변경으로 범위를 좁힐 수 있다. 스냅숏과 브랜치 생성에 계정별 할당량을 거는 진입 제어도 8월 29일에 병합됐다. 두 가지 모두 2026년 9월 6일에 저장소에서 확인한 것이다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
