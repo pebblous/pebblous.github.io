@@ -343,7 +343,7 @@ L2 또는 L3 밀도 플롯 다음에 Pebbloscope 시각화를 배치합니다.
     <h3 class="text-lg font-bold themeable-heading mb-3">🔬 페블로스코프로 본 {클래스명} — {발견 요약}</h3>
     <div class="themeable-text leading-relaxed prose prose-sm max-w-none mb-4">
         <p>... <a href="https://pebbloscope.ai" class="text-orange-500 hover:text-orange-400 font-semibold" target="_blank" rel="noopener">페블로스코프</a>는 ...
-        <a href="https://pebbloscope.ai/snapshots/{snapshotId}" class="text-orange-500 hover:text-orange-400 font-semibold" target="_blank" rel="noopener">스냅샷</a>입니다.</p>
+        <a href="https://pebbloscope.ai/snapshots/{snapshotId}" class="text-orange-500 hover:text-orange-400 font-semibold" target="_blank" rel="noopener">스냅샷</a>이다.</p>
     </div>
     <a href="https://pebbloscope.ai/snapshots/{snapshotId}" target="_blank" rel="noopener">
         <img src="https://pebbloscope-prod-public-bucket.s3.ap-northeast-2.amazonaws.com/snapshot/{snapshotId}.png"
@@ -354,7 +354,7 @@ L2 또는 L3 밀도 플롯 다음에 Pebbloscope 시각화를 배치합니다.
     <p class="text-sm themeable-text mt-4 leading-relaxed">
         {클러스터 형성 원인 설명 — 배경 계절, 카메라 각도, 환경 조건 등}
     </p>
-    <p class="text-xs themeable-muted mt-3">▲ <a href="https://pebbloscope.ai/snapshots/{snapshotId}" class="text-orange-400 hover:text-orange-300" target="_blank" rel="noopener">페블로스코프 스냅샷에서 직접 탐색하기 →</a> 각 노드를 클릭하면 실제 이미지를 확인하고, 동료에게 코멘트를 남길 수 있습니다.</p>
+    <p class="text-xs themeable-muted mt-3">▲ <a href="https://pebbloscope.ai/snapshots/{snapshotId}" class="text-orange-400 hover:text-orange-300" target="_blank" rel="noopener">페블로스코프 스냅샷에서 직접 탐색하기 →</a> 각 노드를 클릭하면 실제 이미지를 확인하고, 동료에게 코멘트를 남길 수 있다.</p>
 </div>
 ```
 

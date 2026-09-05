@@ -15,6 +15,8 @@ agent: dc-story-writer-ko
 - `analysis.json` 데이터 해석
 - PebblousPage 컨벤션(`html-conventions.md`) 준수 HTML 작성
 - 데이터 저널리즘 스타일 (사실 기반, 수치 명시)
+- **종결체 (2026-09-05 확정)**: 본문 종결은 **해라체(~다)**. 합쇼체(~습니다/~입니다)·해요체 금지. 직접 인용문 안의 말투만 예외. 리드·본문·목록·캡션 모두.
+  정본 `docs/ko-style-standard.md` §4-1, 검사 `python3 tools/check-ko-prose.py` R1 행. 발행 엔진 ko-prose-gate 가 같은 자로 재어 10% 초과면 단독 exceed 로 기록한다.
 - KO OG 이미지 생성
 
 ## 입력

@@ -8,10 +8,11 @@
     python3 tools/check-ko-prose.py <파일…> --light-verbs   # 경동사 정리 (요청 시)
     python3 tools/check-ko-prose.py <파일…> --json          # 기계 판독용
 
-설계 근거: docs/ko-prose-checker-v5.md
+설계 근거: docs/ko-prose-checker-v5.md · 종결체(R1): docs/ko-style-standard.md §4-1
 """
 
 import argparse
+import html
 import json
 import re
 import sys
@@ -43,6 +44,26 @@ def extract_body(path):
         return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", s)).strip()
 
     return plain(raw), mask_quotes(plain(quoteless))
+
+
+def extract_main_for_register(path):
+    """종결체 검사용 본문 — <main> 이 있으면 그 안만(리드·본문·목록·캡션), 없으면 문서 전체.
+
+    블록 닫힘을 줄바꿈으로 바꿔 두어야 마침표 없는 목록 항목·캡션이 다음 문장과 붙지 않는다.
+    인용(<blockquote>·따옴표 안)은 검출 전에 지운다 — 직접 인용문 안의 말투는 예외다.
+    """
+    raw = open(path, encoding="utf-8").read()
+    m = re.search(r"<main[^>]*>(.*?)</main>", raw, flags=re.DOTALL | re.IGNORECASE)
+    body = m.group(1) if m else raw
+    for pat in _STRIP:
+        body = re.sub(pat, " ", body, flags=re.DOTALL)
+    body = re.sub(r"<blockquote[^>]*>.*?</blockquote>", " ", body, flags=re.DOTALL)
+    body = re.sub(r"</(p|h[1-6]|li|div|section|article|tr|td|th|figcaption|dd|dt)>", "\n", body, flags=re.IGNORECASE)
+    body = re.sub(r"<br\s*/?>", "\n", body, flags=re.IGNORECASE)
+    body = re.sub(r"<[^>]+>", " ", body)
+    body = html.unescape(body).replace("\xa0", " ")
+    body = re.sub(r"[ \t]+", " ", body)
+    return mask_quotes(body), bool(m)
 
 
 def mask_quotes(text):
@@ -151,6 +172,61 @@ def check_endings(text):
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# R1 — 종결체 (2026-09-05 결정: 본문 종결은 해라체가 정본)
+#
+# 세는 자(검증됨 — 최근 60일 KO 289편 손 집계와 일치. 2026-09-05 리뷰로 '아니다' 구멍을 막았다):
+#   합쇼체 = '(?<!아)니다[.!?]'          해라체 = '(?<!(?<!아)니)다[.!?]'   (합쇼체가 아닌 '-다' 전부)
+#   해요체 = '(해요|예요|에요|죠|네요|거예요)[.!?]'
+# ⚠️ 틀린 자: '[^습입]다.' 는 "니다." 를 해라체로 세고, '(?<!습니)(?<!입니)' 는 갑니다·합니다·봅니다를 해라체로 센다.
+#   '니다[.!?]' 는 해라체 "아니다." 를 합쇼체로 센다(사본 592편에서 1,242문장).
+# 판정: 합쇼체+해요체 비율이 10% 초과면 위반. 직접 인용문(따옴표·blockquote) 안은 세지 않는다.
+# 엔진 계량기(service/blog-service-engine/vendor/im-not-ai/measure.py register_counts + strip_blockquotes)와 같은 자다 —
+# 자를 바꾸면 둘과 docs/ko-style-standard.md §4-1 표를 같이 고친다.
+# --json: `register` 키에 전부 실리고, `checks` 배열에도 같은 R1 행이 들어간다(위반 수를 checks 로 세는 소비자가
+# 텍스트 출력의 '임계 초과 N건' 과 같은 수를 얻도록). count = 합쇼체+해요체 문장 수.
+# ─────────────────────────────────────────────────────────────────────────────
+
+REGISTER_MAX_NON_HAERA = 0.10
+_RX_HAPSYO = re.compile(r"(?<!아)니다[.!?]")
+_RX_HAERA = re.compile(r"(?<!(?<!아)니)다[.!?]")
+_RX_HAEYO = re.compile(r"(?:해요|예요|에요|죠|네요|거예요)[.!?]")
+_RX_SENT = re.compile(r"[^.!?\n]*[.!?]")
+
+
+def check_register(text, example_limit=3):
+    """R1 — 문장마다 종결을 하나로 분류해 센다. 위반 문장 예를 최대 3개 돌려준다."""
+    hapsyo = haeyo = haera = 0
+    examples = []
+    for m in _RX_SENT.finditer(text):
+        sent = m.group(0).strip()
+        if not sent:
+            continue
+        tail = sent[-6:]
+        if _RX_HAPSYO.search(tail):
+            hapsyo += 1
+            kind = "hapsyo"
+        elif _RX_HAEYO.search(tail):
+            haeyo += 1
+            kind = "haeyo"
+        elif _RX_HAERA.search(tail):
+            haera += 1
+            kind = "haera"
+        else:
+            continue
+        if kind != "haera" and len(examples) < example_limit:
+            examples.append(sent[:120])
+    total = hapsyo + haeyo + haera
+    ratio = (hapsyo + haeyo) / total if total else 0.0
+    return {
+        "code": "R1", "name": "종결체(해라체 정본)", "severity": "S2",
+        "count": hapsyo + haeyo, "in_quote": 0,
+        "hapsyo": hapsyo, "haeyo": haeyo, "haera": haera, "total": total,
+        "non_haera_ratio": round(ratio, 4), "threshold": REGISTER_MAX_NON_HAERA,
+        "flagged": ratio > REGISTER_MAX_NON_HAERA, "examples": examples,
+    }
+
+
 def run_checks(text, detect):
     """빈도의 분모는 본문 전체(text), 검출은 인용을 지운 쪽(detect)에서 한다."""
     chars = len(text)
@@ -216,7 +292,7 @@ def find_light_verbs(text):
 # 출력
 # ─────────────────────────────────────────────────────────────────────────────
 
-def report(path, text, rows, endings, lv):
+def report(path, text, rows, endings, lv, register=None):
     chars = len(text)
     print(f"\n{'=' * 72}\n{path}\n본문 {chars:,}자\n{'=' * 72}")
     print(f"{'코드':<6} {'등급':<4} {'항목':<18} {'건수':>5} {'1만 자당 빈도':>14}  판정")
@@ -231,6 +307,16 @@ def report(path, text, rows, endings, lv):
         print(f"\nT2   S3   종결 다양도        최빈 '{endings['top_ending']}' "
               f"{endings['share']:.0%} ({endings['sentences']}문장)  {mark}")
         print("     분포:", ", ".join(f"{e}({n})" for e, n in endings["distribution"]))
+
+    if register:
+        r = register
+        mark = "⚠️  위반" if r["flagged"] else "   정상"
+        print(f"\nR1   S2   종결체(해라체 정본)  합쇼체 {r['hapsyo']} · 해요체 {r['haeyo']} · 해라체 {r['haera']} "
+              f"— 비해라체 {r['non_haera_ratio']:.0%} ({r['total']}문장, 상한 {r['threshold']:.0%})  {mark}")
+        if r["flagged"]:
+            for s in r["examples"]:
+                print(f"     예: {s}")
+        rows = rows + [r]
 
     flagged = [r for r in rows if r["flagged"]]
     s2 = [r for r in flagged if r["severity"] == "S2"]
@@ -264,11 +350,15 @@ def main():
         # 종결 분포·경동사도 인용을 뺀 쪽에서 본다 — 남의 말은 우리 문체가 아니다
         endings = check_endings(detect)
         lv = find_light_verbs(detect) if args.light_verbs else None
+        # R1 종결체는 <main> 본문(인용 제외)에서 센다
+        main_text, had_main = extract_main_for_register(path)
+        register = check_register(main_text)
+        register["had_main"] = had_main
         if args.json:
-            out.append({"path": path, "chars": len(text), "checks": rows,
-                        "endings": endings, "light_verbs": lv})
+            out.append({"path": path, "chars": len(text), "checks": rows + [register],
+                        "endings": endings, "register": register, "light_verbs": lv})
         else:
-            report(path, text, rows, endings, lv)
+            report(path, text, rows, endings, lv, register)
 
     if args.json:
         print(json.dumps(out, ensure_ascii=False, indent=2))
