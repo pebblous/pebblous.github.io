@@ -219,3 +219,19 @@ ln -sfn ~/.local/share/claude/versions/2.1.225 ~/.local/bin/claude && claude --v
 
 - 조사 산출물: `scratchpad/q2-agent/README.md` (30일 모델·단계·비용 실측)
 - `docs/blog-service/hosting.md` — 배포·환경변수 전반
+
+
+## 런 단위 글쓰기 모델 선택 — `writingModel` (2026-09-05)
+
+블로그 품질의 기준선은 **Opus 5**(일일 배치와 동일)다. 사람이 발행 요청에서 명시적으로 고를 때만 글쓰기 단계를 **Fable 5.1**로 올린다.
+
+| 어디서 | 값 | 효과 |
+|---|---|---|
+| 콘솔 발행 요청 → '글쓰기 모델' 메뉴 | 기본 / Fable 5.1 | `POST /pipelines` body `writingModel: "fable"` |
+| HTTP `POST /pipelines` | `writingModel: 'opus' \| 'fable'` | 400 if other |
+| MCP `blog_run_pipeline` | `writingModel` | 동일 |
+
+- 적용 범위: `WRITING_PHASES`(write-ko·reinforce·write-en·polish-ko·polish-en·ko-prose-humanizer·synthesis·planning·sns-write 등)만. research·image-reinforce·bibliography·seo·publish-prep 같은 기계 단계는 그대로 Sonnet 5.
+- 우선순위: **런의 명시 선택 > `BLOG_MODEL_PHASE_<이름>` > 역할 env > 고정 id.** 메뉴의 선택은 그 런에 대한 사람의 명시적 의도라 운영자의 전역 env 보다 앞선다. Fable id 는 `BLOG_MODEL_FABLE`(기본 `claude-fable-5-1`)로 바꿀 수 있다.
+- 증적: `state.writingModel`, 각 단계의 실제 모델은 `state.phases[i].model`.
+- 비용: Fable 5.1 은 Opus 5 보다 비싸다(2026-09-05 스모크: 한 줄 응답 $0.084). 일일 배치 기본 경로에는 쓰지 않는다. 채택 판단은 A/B(같은 주제 2편, im-not-ai 계량 + 사람 판독)로.
