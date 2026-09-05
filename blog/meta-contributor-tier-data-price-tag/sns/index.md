@@ -30,7 +30,7 @@ Meta now sells one model at two prices. Let it train on your prompts and the mod
 
 The model is Muse Spark 1.3, published on September 2. The discount lands only where tokens change hands. Web search calls cost the same under either rate, which says plainly enough what the price cut is buying. Why agent transcripts in particular is not hard to guess. Mario Zechner, who built the open source harness Pi, attributed last year's jump in coding agent capability to Claude Code storing every session by default and feeding them into reinforcement learning. What grew the models was working sessions, not more web documents.
 
-Training data was never free of charge. Arvind Narayanan of Princeton has pointed out that large companies stay on token-billed enterprise plans even though consumer subscriptions run 10x to 20x cheaper, and that the main difference between the two is data retention and governance. Those companies were already paying for their data. The price simply never appeared as a line item. What changed this week is not the existence of the price but its visibility.
+Training data was never free of charge. Arvind Narayanan of Princeton has pointed out that large companies stay on token-billed enterprise plans even though consumer subscriptions run 10x to 20x cheaper, and that the main difference between the two is data retention and governance. Those companies were already paying for their data. The price simply never appeared as a line item. What changed is not the existence of the price but its visibility.
 
 Which means the number worth using is the gap, not the discount rate. Assume 500 million input and 100 million output tokens a month and the two rates differ by $980. A single buyer set that figure unilaterally and it never looks at what the data contains, so it is less a market price than a floor to argue from. The wall Pebblous meets most often in diagnostic work is the absence of any yardstick for what a data improvement is worth. This price list does not supply one, but it does give organizations something to measure against.
 
@@ -74,7 +74,7 @@ AI 도구 설정에서 "내 데이터를 모델 개선에 쓰지 않음" 체크�
 
 새 모델 Muse Spark 1.3에는 요금이 두 줄로 걸려 있습니다. 위쪽 줄을 고르면 프롬프트가 내 것으로 남고, 아래쪽 줄을 고르면 그것이 메타의 다음 모델 안으로 들어갑니다. 출력 100만 토큰 기준으로 4.25달러와 0.20달러. 모델도 컨텍스트 창도 같으니 그 사이의 거리는 성능이 아니라 데이터가 만든 것입니다.
 
-'값이 붙은 체크박스'라고 부를 만한 물건이 처음 생겼습니다.
+'값이 붙은 체크박스'라고 부를 만한 물건입니다. 저는 이런 것을 본 적이 없었습니다. 두 줄짜리 요금표 자체는 8월 21일 1.2 컨트리뷰터에서 시작해 이번 모델로 이어진 것이고, 값도 그때와 한 자리도 다르지 않습니다.
 
 그렇다고 어제까지 학습 데이터가 공짜였던 것은 아닙니다. 프린스턴대의 아빈드 나라야난은 대기업들이 훨씬 싼 소비자 구독제를 두고도 비싼 엔터프라이즈 요금제에 남아 있다는 사실을 지적합니다. 두 요금제의 주된 차이는 데이터가 어떻게 보관되는지입니다. 값은 진작 치러지고 있었고, 다만 청구서 어디에도 그 항목이 없었습니다.
 
@@ -108,9 +108,9 @@ Meta has now put a number on it.
 
 Its new model, Muse Spark 1.3, is listed at two rates. Choose the upper line and your prompts stay yours. Choose the lower one and they go into whatever Meta trains next. A million output tokens costs $4.25 or $0.20. Same model, same context window, so the distance between those two lines was made by data rather than by performance.
 
-Call it a priced checkbox. I had not seen one before.
+Call it a priced checkbox. I had not seen one before. The two-line listing itself started on August 21 with Muse Spark 1.2 Contributor and carried into this model, at figures that have not moved by a digit.
 
-That does not mean training data was free until this week. Arvind Narayanan of Princeton points out that large companies stay on expensive enterprise plans while far cheaper consumer subscriptions sit right there, and that what separates the two is mostly how the data is retained. The price was being paid all along. It just never appeared on the invoice as its own line.
+That does not mean training data was free before that second line appeared. Arvind Narayanan of Princeton points out that large companies stay on expensive enterprise plans while far cheaper consumer subscriptions sit right there, and that what separates the two is mostly how the data is retained. The price was being paid all along. It just never appeared on the invoice as its own line.
 
 What changed is not that a price exists. What changed is that someone wrote it down.
 
