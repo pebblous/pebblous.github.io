@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신호 과대평가와 다중검정 편향 — 최적 위치 탐색이 만드는 두 결과 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="신호의 위치나 모양을 모른 채 가장 잘 맞는 자리를 고르면 진짜 신호의 세기는 D/2Q만큼 부풀고, 신호가 없을 때 물리는 시행 계수는 임계값의 D제곱으로 자란다. INFN의 토마소 도리고가 두 값을 로그미분 하나로 이었고, 신호가 약해지면 탐색 범위가 편향을 두 배로 키운다는 것도 모의실험으로 보였다.">
+    <meta name="keywords" content="탐욕적 봉우리 편향, look-elsewhere 효과, 다중검정, 시행 계수, 정합필터, 신호 과대평가, 이상치 탐지 임계값, 데이터 품질, AI-Ready Data, 통계적 유의성">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/greedy-bump-bias-look-elsewhere/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/greedy-bump-bias-look-elsewhere/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/greedy-bump-bias-look-elsewhere/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/greedy-bump-bias-look-elsewhere/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="찾을 자리를 데이터에 맞춰 고르면 신호는 늘 조금 크다">
+    <meta property="og:description" content="신호의 위치나 모양을 모른 채 가장 잘 맞는 자리를 고르면 진짜 신호의 세기는 D/2Q만큼 부풀고, 신호가 없을 때 물리는 시행 계수는 임계값의 D제곱으로 자란다. INFN의 토마소 도리고가 두 값을 로그미분 하나로 이었다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/greedy-bump-bias-look-elsewhere/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/greedy-bump-bias-look-elsewhere/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="배경 잡음 위에서 가장 잘 맞는 자리로 옮겨 간 신호 템플릿과 그만큼 올라간 봉우리 높이">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-09-07">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="찾을 자리를 데이터에 맞춰 고르면 신호는 늘 조금 크다">
+    <meta name="twitter:description" content="위치를 데이터에 맞춰 고를 자유도가 D개면 신호 세기는 D/2Q만큼 부푼다. 같은 D가 배경만 있을 때의 시행 계수에도 그대로 들어간다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/greedy-bump-bias-look-elsewhere/ko/image/index.png">
+    <meta name="twitter:image:alt" content="배경 잡음 위에서 가장 잘 맞는 자리로 옮겨 간 신호 템플릿과 그만큼 올라간 봉우리 높이">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260907"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260907">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260907">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260907">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#greedy" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 맞출 자리를 고르면 봉우리가 올라간다</a></li>
+                    <li><a href="#same-d" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 같은 자유도가 헛것을 볼 확률도 정한다</a></li>
+                    <li><a href="#competition" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 신호가 약해지면 탐색 범위가 끼어든다</a></li>
+                    <li><a href="#practice" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 대시보드도 같은 값을 치른다</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            데이터에서 봉우리를 찾을 때 그 봉우리가 어디에 있는지 미리 모르면, 위치까지 데이터에 맞춰 고르게 된다. 고르는 순간 두 가지가 함께 일어난다. 진짜 신호가 있으면 그 세기가 실제보다 크게 잡히고, 신호가 없으면 배경 요동 하나가 신호처럼 보인다. 이탈리아 국립핵물리연구소(INFN)의 토마소 도리고가 9월 3일 arXiv에 올린 논문은 이 둘을 가우시안 정합필터 모형 위에 나란히 놓고, 같은 국소 기하가 양쪽을 만든다는 것을 보인다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            셈의 축은 자유도 하나다. 위치나 폭처럼 데이터에 맞춰 고르는 좌표가 D개일 때, 잰 신호 세기는 평균적으로 D/(2Q)만큼 위로 밀린다. Q는 위치를 고정했을 때의 신호대잡음비이므로, 신호가 약할수록 이 편향이 커진다. 신호가 아예 없을 때도 같은 D가 나온다. 국소 유의도를 전역 유의도로 깎을 때 물리는 시행 계수가 임계값 u의 D제곱에 비례해 자란다. 논문의 결론은 두 값이 로그미분 한 번으로 정확히 이어진다는 것이고, 저자 자신은 두 문제가 같은 현상이 아니라 같은 기하가 만드는 서로 보완적인 두 극한이라고 결론에 적었다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            3절까지는 논문이 실제로 잰 것과 유보한 것을 따라간다. 4절에서 대시보드와 임계값 조정으로 옮기는 대목은 논문에 없는 이 글의 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: Dorigo, <a href="https://arxiv.org/abs/2609.03581" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">The Greedy Bump Bias: Local Profiling Geometry and the Look-Elsewhere Effect</a>, arXiv:2609.03581(2026) 3·8·9절 · <a href="https://arxiv.org/abs/1606.03833" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">ATLAS(2016)</a> 초록</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">D/(2Q)</p>
+                            <p class="text-sm themeable-text-secondary mt-1">진짜 신호가 부푸는 양</p>
+                            <p class="text-xs themeable-muted mt-1">데이터에 맞춰 고르는 좌표 하나당 1/(2Q). 신호가 약할수록 커진다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">3.9σ → 2.1σ</p>
+                            <p class="text-sm themeable-text-secondary mt-1">2015년 ATLAS의 750 GeV 초과</p>
+                            <p class="text-xs themeable-muted mt-1">다른 질량에서도 봤을 가능성을 셈에 넣자 유의도가 이만큼 내려앉았다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.53 → 1.05</p>
+                            <p class="text-sm themeable-text-secondary mt-1">국소 편향에서 전역 편향으로</p>
+                            <p class="text-xs themeable-muted mt-1">신호가 약한 Q=1에서, 탐색 반범위를 14σ까지 넓혔을 때의 값</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">Q ≈ 5~6</p>
+                            <p class="text-sm themeable-text-secondary mt-1">탐색 범위가 무의미해지는 경계</p>
+                            <p class="text-xs themeable-muted mt-1">신호가 이보다 세면 얼마나 넓게 뒤졌든 편향이 같아진다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="greedy" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">맞출 자리를 고르면 봉우리가 올라간다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        입자물리에서 새 입자를 찾는 일은 질량 분포 어딘가에 솟은 봉우리를 찾는 일이다. 문제는 그 봉우리가 어느 질량에 있는지 아무도 모른다는 것이다. 그래서 관례적으로 신호의 세기와 위치를 함께 자유롭게 두고, 우도가 가장 커지는 조합을 고른다. 폭 같은 모양 변수도 대개 같이 넘긴다. 논문이 프로파일링이라 부르는 이 조작이 이 글의 주인공이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        직관은 단순하다. 신호 모형이 옳더라도 위치와 세기는 같은 잡음 데이터에서 함께 추정된다. 위치를 자유롭게 두면 맞춰지는 템플릿이 그날의 잡음 실현을 따라 움직인다. 양의 요동 쪽으로 다가가거나 음의 요동에서 물러난다. 움직임 자체에는 선호하는 방향이 없지만, 어느 쪽으로 옮길지는 적합도가 좋아지는 쪽으로 정해진다. 그래서 최적화된 봉우리 높이의 변화는 평균이 양수다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문은 잰 세기를 두 조각으로 가른다. 하나는 진짜 위치에 템플릿을 고정했을 때의 보통 요동이고, 이 조각의 평균은 0이다. 다른 하나는 템플릿을 다양체 위에서 움직여 얻은 이득이다. 편향은 전부 두 번째 조각에서 나온다. 위치를 고정하고 재면 이 편향은 아예 생기지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 이야기의 출발점은 20년 전이다. 2003년 CDF 실험 내부 연구에서 저자는 가우시안 신호의 위치를 자유롭게 두었을 때 맞춰진 수율이 위로 편향된다는 것을 관찰했고, 신호대잡음비가 커질수록 그 크기가 줄어든다는 것도 보았다. 2009년 블로그 글에서 이 현상에 탐욕적 봉우리 편향(greedy bump bias)이라는 이름을 붙였다. 당시 연구는 효과를 수치로 확인했을 뿐 그 기제를 해석적으로 설명하지는 않았다고 논문은 적는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>모의실험이 확인한 두 극한</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        고르는 좌표가 D개일 때 프로파일링으로 얻는 우도 이득은 자유도 D의 카이제곱 분포로 가고, 그 평균은 D다. 잰 세기의 편향은 D/(2Q)다. 저자는 ROOT 모의실험으로 이 두 예측을 확인했다. 위치 하나만 자유로운 1차원 모형은 신호 세기마다 20만 번, 위치와 폭을 함께 푸는 2차원 모형은 100만 번씩 돌렸다. 편향에 Q를 곱한 값이 D=1에서 1/2로, D=2에서 1로 수렴한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        수렴 속도까지 맞는다. 2차원 모형에서 유한한 Q 때문에 남는 첫 보정항을 모의실험 값에 맞춰 뽑으면 2.263 ± 0.159가 나오는데, 해석적으로 계산한 값은 9/4, 곧 2.25다. 폭 좌표의 편향과 우도 이득의 보정항도 각각 예측값 1과 4.5에 맞았다. 다만 위치가 얼마나 정확히 잡히는지를 재는 양들은 수렴이 느려서, 접근할 수 있는 Q 범위에서는 더 높은 차수 항이 여전히 무겁게 남는다고 저자는 밝혀 두었다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="same-d" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">같은 자유도가 헛것을 볼 확률도 정한다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        신호가 아예 없을 때로 넘어가 보자. 배경만 있어도 어딘가에는 가장 높은 요동이 있고, 그 자리를 골라 재면 제법 그럴듯한 봉우리가 나온다. 입자물리는 이 문제를 look-elsewhere 효과라고 부른다. 이 질량에서 본 초과를 평가할 때 다른 질량에서도 비슷한 요동이 나올 수 있었다는 사실을 셈에 넣어야 한다는 뜻이다. 국소 유의도를 전역 유의도로 낮추는 보정이 여기서 나온다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 보정이 실제로 얼마나 큰지는 2015년 말에 널리 알려졌다. ATLAS와 CMS가 광자 두 개의 불변질량 분포에서 750 GeV 부근의 초과를 보고했다. ATLAS는 스핀 0을 가정한 탐색에서 국소 유의도 3.9σ를, CMS는 3.4σ를 보고했다. 두 실험이 같은 논문에 함께 적어 둔 전역 유의도는 2.1σ와 1.6σ다. 이론 해석 논문이 잇따랐지만 2016년 데이터에서 그 봉우리는 사라졌다. 이 사례는 도리고의 논문에 나오지 않으며, 보정의 크기 감각을 주려고 이 글이 가져온 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그로스와 비텔스가 2010년에 준 실용적 근사에 따르면, 탐색 차원이 하나일 때 시행 계수는 국소 유의도에 대략 비례해 자란다. D차원에서 같은 구조는 임계값 u의 D제곱 꼴이 된다. 앞에 붙는 상수에는 탐색 영역의 크기와 기하가 들어간다. 곧 시행 계수는 두 몫으로 갈린다. 상수는 사실상 몇 개의 독립된 구역을 뒤졌느냐를 담고, u의 D제곱은 그 구역 하나하나 안에서 위치와 모양을 이어서 최적화해 얻은 몫을 담는다. 전역 다중도와 국소 최적화를 가르는 이 구분은 이미 그로스와 비텔스의 해석에 들어 있다고 논문은 밝힌다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 같은 정수 D가 서로 다른 세 자리에 나타난다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">나타나는 자리</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">꼴</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">뜻</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">배경만 있을 때의 시행 계수</td>
+                                    <td class="py-3 pr-4">TF<sub>0</sub>(u) ∝ u<sup>D</sup></td>
+                                    <td class="py-3">임계값을 높일수록 국소 유의도에 물릴 배수가 D제곱으로 는다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">프로파일링 우도 이득</td>
+                                    <td class="py-3 pr-4">E[Δq] → D</td>
+                                    <td class="py-3">위치와 모양을 고르는 것만으로 얻는 평균 이득</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">잰 신호 세기의 편향</td>
+                                    <td class="py-3 pr-4">2Q · E[Q̂ − Q] → D</td>
+                                    <td class="py-3">진짜 신호가 위로 부푸는 양</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">Q는 위치를 고정했을 때의 신호대잡음비, Q̂는 위치까지 골라 잰 값, Δq는 프로파일링으로 얻은 우도비 이득이다. 출처: arXiv:2609.03581 식 (9).</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문의 첫 기여는 여기서 나온다. 시행 계수에 로그를 씌우고 임계값으로 미분하면 앞에 붙은 상수가 사라진다. 탐색 영역이 얼마나 넓었는지가 지워지고 국소 최적화 몫만 남는다. 그 값을 u = Q에서 평가하면 정확히 잰 세기의 편향이 된다. 곧 시행 계수가 임계값을 따라 자라는 상대 속도의 절반이 진짜 신호가 부푸는 양이다.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-6 mb-6 text-center">
+                        <p class="text-lg themeable-heading font-semibold" style="letter-spacing:0.01em;">E<sub>Q</sub>[Q̂ − Q] = ½ · d(log TF<sub>0</sub>(u))/du &nbsp;|&nbsp; u = Q</p>
+                        <p class="text-xs themeable-muted mt-3">논문이 상자로 표시한 결과(식 158). 오른쪽은 임계값에 따라 시행 계수가 자라는 속도, 왼쪽은 진짜 신호가 부푸는 양이다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        차원이 같다는 우연이 아니냐고 물을 수 있다. 논문이 준 답은 두 값이 같은 행렬에서 나온다는 것이다. 진짜 신호가 있으면 정합필터 봉우리는 Q에 비례해 접선 방향으로 좁아진다. 배경만 있을 때 높이 u짜리 드문 봉우리에 조건을 걸면 같은 방향들에서 같은 곡률이 나온다. 다만 신호 쪽 계산에는 곡률의 역행렬이 대각합으로 들어가고, 배경 쪽 계산에는 곡률이 행렬식으로 들어간다. 들어가는 방식은 다르고 재료가 되는 계량은 하나다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            저자는 새것이 무엇인지 직접 그어 두었다. 최적화가 만드는 양의 편향도, 자유도 D의 카이제곱 우도 이득도, D/(2Q)라는 계수도, u의 D제곱이라는 시행 계수 꼴도 각각으로는 새롭지 않다고 적는다. 지그문트와 워슬리가 1995년에 이미 양쪽 계산을 한 논문 안에 담았고, 천문 쪽에서는 같은 편향이 최적화 편향이라는 이름으로 다뤄졌다. 남극점망원경의 은하단 분석은 위치 두 개와 각크기 하나를 최적화한 뒤 3/(2Q)에 해당하는 보정을 경험적으로 넣었다. 새것은 두 가지다. 하나는 전역 시행 계수를 미분해 얻은 항등식이고, 다른 하나는 다음 절에서 볼 포아송 극한 너머의 취급이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="competition" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">신호가 약해지면 탐색 범위가 끼어든다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        앞 절의 셈은 신호가 충분히 셀 때의 것이다. 여기서 Q를 0으로 보내 배경만 있는 경우를 얻을 수는 없다. 신호가 사라지면 그 주위로 전개할 참된 위치 자체가 없어지기 때문이다. 논문은 이 자리를 원뿔의 꼭짓점이라 부른다. 대신 다른 변수를 잡는다. 봉우리들 사이의 경쟁이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        1차원 모형에서 신호를 넣은 자리에서 출발해 언덕을 따라 올라가면 신호에 딸린 극대점 하나가 나온다. 탐색 구간 안의 나머지 극대점 가운데 가장 높은 것을 따로 세운다. 전역 최댓값은 정확히 이 둘 중 큰 쪽이다. 그러면 전역 편향은 신호에 딸린 국소 편향과 먼 봉우리가 이겨서 생기는 몫의 합으로 정확히 갈린다. 이 분해에는 극대점들이 독립이라는 가정도, 포아송 과정이라는 가정도 들어가지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        갈라 놓고 나면 탐색 범위가 어디서 작동하는지가 보인다. 신호가 약한 Q=1에서 신호에 딸린 국소 편향은 0.527이다. 탐색 반범위를 6σ, 10σ, 14σ로 넓히면 전역 편향은 0.777, 0.939, 1.053으로 오른다. 국소 편향은 그대로인데 먼 봉우리가 이기는 몫만 늘어난 결과다. 먼 봉우리가 신호를 눌러 이길 확률도 같은 순서로 0.354, 0.498, 0.582다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 350" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="신호가 약한 Q=1에서 신호에 딸린 국소 편향은 0.527이고, 탐색 반범위를 6σ, 10σ, 14σ로 넓히면 전역 편향이 0.777, 0.939, 1.053으로 오른다는 것을 보여 주는 막대그림. 먼 봉우리가 이길 확률은 각각 0.354, 0.498, 0.582다.">
+                            <text x="340" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">신호가 약할 때(Q=1) 탐색 범위가 만드는 편향</text>
+                            <text x="340" y="48" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">1차원 가우시안 위치 모형, 잰 세기에서 참값을 뺀 평균. 반범위는 뒤진 구간의 절반 길이</text>
+
+                            <line x1="60" y1="272" x2="640" y2="272" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+
+                            <rect x="110" y="182" width="70" height="90" rx="3" fill="#808080" fill-opacity="0.35"/>
+                            <text x="145" y="174" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary,#4B5563)">0.527</text>
+                            <text x="145" y="292" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text-secondary,#4B5563)">국소 편향</text>
+                            <text x="145" y="310" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">신호에 딸린 봉우리만</text>
+
+                            <rect x="250" y="139" width="70" height="133" rx="3" fill="#F86825" fill-opacity="0.8"/>
+                            <text x="285" y="131" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">0.777</text>
+                            <text x="285" y="292" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text-secondary,#4B5563)">전역 · 반범위 6σ</text>
+                            <text x="285" y="310" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">먼 봉우리가 이길 확률 0.354</text>
+
+                            <rect x="390" y="111" width="70" height="161" rx="3" fill="#F86825" fill-opacity="0.8"/>
+                            <text x="425" y="103" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">0.939</text>
+                            <text x="425" y="292" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text-secondary,#4B5563)">전역 · 반범위 10σ</text>
+                            <text x="425" y="310" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">먼 봉우리가 이길 확률 0.498</text>
+
+                            <rect x="530" y="92" width="70" height="180" rx="3" fill="#F86825" fill-opacity="0.8"/>
+                            <text x="565" y="84" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">1.053</text>
+                            <text x="565" y="292" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text-secondary,#4B5563)">전역 · 반범위 14σ</text>
+                            <text x="565" y="310" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">먼 봉우리가 이길 확률 0.582</text>
+
+                            <text x="60" y="338" font-size="9" fill="var(--text-muted,#6B7280)">신호가 세지면 먼 봉우리가 이기는 일이 드물어져, Q가 5에서 6쯤 되면 네 값이 사실상 같아진다.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 (논문 9.1절 수치 재구성) | 출처: <a href="https://arxiv.org/abs/2609.03581" target="_blank" rel="noopener" class="underline">arXiv:2609.03581</a> 9.1절
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        신호가 세지면 이 몫은 지수적으로 드물어진다. Q가 5에서 6쯤에 이르면 전역 편향과 국소 편향이 모의실험의 눈금으로는 구별되지 않는다. 얼마나 넓게 뒤졌는지가 강한 신호의 편향에는 앞자리에서 영향을 주지 않는다는 뜻이고, 반대로 약한 신호에서는 탐색 부피가 곧바로 값에 들어온다는 뜻이다. 논문이 세 층위를 갈라 두는 이유가 여기 있다. 자유도 D는 보편적인 국소 효과를 정하고, 다양체의 곡률은 그다음 차수의 모형별 보정을 정하고, 탐색 부피와 경계와 극대점들 사이의 상관은 경쟁이 시작될 때 들어온다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        임계값이 무한히 높지 않은 구간에서는 배경 극대점들을 포아송 과정으로 놓는 근사도 흔들린다. 논문은 그 어긋남을 계승 누적률로 정리한다. 반범위 10σ에서 임계값 1.0일 때 경쟁 봉우리가 하나도 없을 확률을 50만 회 모의실험으로 재면 0.25336인데, 포아송 근사는 0.26827을 준다. 둘째 누적률까지 넣으면 0.25223, 셋째까지 넣으면 0.25349로 모의값과 사실상 겹친다. 다만 둘째 누적률의 부호가 임계값에 따라 뒤집혀서, 이 상관을 반발이라 부르기보다 비포아송 상관이라 부르는 편이 정확하다고 저자는 적었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        경계와 표시 규약을 걷어낸 깨끗한 내부 극대점 과정에서는 이야기가 더 단정해진다. 두 점 칵-라이스 계산은 아주 가까이 붙은 두 극대점이 나타날 밀도가 거리의 네제곱으로 억눌린다는 결과를 준다. 마당이 매끄러우면 가까운 두 봉우리는 높이가 거의 같아야 하고 양쪽 기울기가 모두 0이어야 하며 그 사이에서 방향을 틀어야 해서, 허용되는 배치가 급격히 줄어든다는 것이 이유다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="practice" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">대시보드도 같은 값을 치른다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기까지가 논문이다. 저자가 그은 선도 함께 옮겨 둔다. 계산은 전부 가우시안 잡음 모형 위에서 이뤄졌고, 그것은 기하를 깨끗하게 드러내려는 선택이었다. 실제 공명 탐색은 대개 포아송 우도나 확장 우도를 쓴다. 접선 공간 결과와 국소 편향과 유한 임계값 보정 가운데 어느 것이 그 조건에서 살아남는지를 밝히는 일이 중요한 다음 단계라고 저자는 결론에 썼다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        선은 하나 더 있다. 전역 편향을 두 조각으로 가르는 분해 자체는 일반적이지만, 두 조각을 독립으로 놓는 것은 근사다. 신호가 셀 때 드물게 일어나는 역전에서는 이긴 경쟁자가 신호 근처에 몰린다는 잔여 의존이 남아 있고, 그것을 정량화하려면 더 나아간 계산이 필요하다고 저자는 적었다. 사의에는 해석적 유도와 수치 연구, 문헌 조사와 원고 준비에 오픈AI의 ChatGPT(GPT-5.6 Sol)를 썼고 과학적 방향과 해석과 최종 책임은 저자에게 있다고 적혀 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문 밖으로 나가 보면, 이 구조는 물리학의 사정이 아니다. 데이터에서 무언가를 찾아내는 절차가 위치나 모양을 미리 정하지 않았다면 전부 같은 값을 치른다. 대시보드를 훑다가 가장 눈에 띄는 구간을 잘라 보고하는 일이 그렇다. 구간의 시작과 끝을 데이터를 보고 정했으므로 자유도가 최소 둘이다. 임계값을 옮겨 가며 이상치가 가장 잘 잡히는 지점을 고르는 일도 그렇다. A/B 테스트를 돌린 뒤 여러 지표 가운데 가장 잘 나온 것을 사후에 고르는 일도 그렇다. 셋 다 신호의 자리를 데이터에 맞춰 고르는 절차이고, 그렇게 고른 발견은 고르지 않았을 때보다 크다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 대응은 논문에 없고 이 글의 해석이다. 다만 세 물음은 같은 순서로 짚어 볼 만하다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">이 발견에서 우리가 데이터를 보고 정한 것이 몇 개인가. 구간의 경계, 임계값, 지표, 집단, 기간을 세면 그것이 곧 자유도다.</li>
+                        <li class="themeable-text leading-relaxed">그 자유도를 보고서에 적어 두었는가. 논문의 셈에서 앞에 붙은 상수가 지워지는 것은 미분할 때뿐이고, 읽는 사람에게는 얼마나 넓게 뒤졌는지가 그대로 필요하다.</li>
+                        <li class="themeable-text leading-relaxed">신호가 약한 쪽인가 센 쪽인가. 약할수록 편향이 크고 탐색 범위까지 값에 들어온다. 눈에 겨우 띄는 이상 신호일수록 더 의심해야 한다는 뜻이다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        탐색의 자유도를 세지 않으면 발견은 언제나 조금씩 크다. 얼마나 큰지는 셀 수 있고, 이 논문은 그 값이 어디서 오는지를 한 줄로 적어 두었다.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            페블러스가 데이터 품질을 진단하면서 자주 만나는 장면이 있다. 지표 하나가 유난히 튀는 구간을 찾아내 그것을 근거로 다음 결정을 내리는 자리다. 그 구간을 누가 어떤 기준으로 골랐는지가 기록에 없으면, 같은 데이터를 다시 열어도 그 발견이 얼마나 큰지 되짚을 방법이 없다. 무엇을 찾았는지만큼 어떻게 찾았는지를 남겨 두는 일이 결국 데이터의 값을 정한다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주신 데 감사드린다. 원문은 <a href="https://arxiv.org/abs/2609.03581" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv:2609.03581</a>에서 볼 수 있고, 이 글의 수치는 논문 3·8·9·10절에서, 750 GeV 유의도는 <a href="https://arxiv.org/abs/1606.03833" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">ATLAS</a>와 <a href="https://arxiv.org/abs/1606.04093" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">CMS</a>의 2016년 논문 초록에서 직접 확인했다. 탐색 자유도를 보고서에 적어 두는 방식을 이미 갖춘 팀이 있다면 어떤 항목을 남기는지 나눠 주시면 좋겠다.
+                    </p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">핵심 논문</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Dorigo, T. (2026). "<a href="https://arxiv.org/abs/2609.03581" target="_blank" rel="noopener">The Greedy Bump Bias: Local Profiling Geometry and the Look-Elsewhere Effect</a>." arXiv:2609.03581.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">선행 연구</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">Siegmund, D. O., Worsley, K. J. (1995). "Testing for a Signal with Unknown Location and Scale in a Stationary Gaussian Random Field." <span class="font-semibold">The Annals of Statistics</span> 23(2), 608–639. <a href="https://doi.org/10.1214/aos/1176324539" target="_blank" rel="noopener">doi.org/10.1214/aos/1176324539</a> — 2.2절, 양쪽 계산이 이미 한 논문에 들어 있던 선행 사례.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Gross, E., Vitells, O. (2010). "Trial Factors for the Look Elsewhere Effect in High Energy Physics." <span class="font-semibold">The European Physical Journal C</span> 70, 525–530. <a href="https://doi.org/10.1140/epjc/s10052-010-1470-8" target="_blank" rel="noopener">doi.org/10.1140/epjc/s10052-010-1470-8</a> — 2절, 시행 계수의 고임계 근사와 전역 다중도·국소 최적화 구분.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Vitells, O., Gross, E. (2011). "Estimating the Significance of a Signal in a Multi-Dimensional Search." <span class="font-semibold">Astroparticle Physics</span> 35, 230–234. <a href="https://doi.org/10.1016/j.astropartphys.2011.08.005" target="_blank" rel="noopener">doi.org/10.1016/j.astropartphys.2011.08.005</a> — 2절, 다차원 탐색으로의 확장.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Zubeldia, Í., Rotti, A., Chluba, J., Battye, R. (2021). "Understanding Matched Filters for Precision Cosmology." <span class="font-semibold">MNRAS</span> 507(4), 4852–4863. <a href="https://doi.org/10.1093/mnras/stab2461" target="_blank" rel="noopener">doi.org/10.1093/mnras/stab2461</a> — 2절, 같은 편향을 최적화 편향이라는 이름으로 체계화한 천문 쪽 연구.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Davies, R. B. (1987). "Hypothesis Testing When a Nuisance Parameter Is Present Only Under the Alternative." <span class="font-semibold">Biometrika</span> 74(1), 33–43. <a href="https://doi.org/10.1093/biomet/74.1.33" target="_blank" rel="noopener">doi.org/10.1093/biomet/74.1.33</a> — 2절, 문제를 처음 정식화한 통계 문헌.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Dorigo, T. (2009). "<a href="https://www.science20.com/quantum_diaries_survivor/bump_hunting_ii_greedy_bump_bias" target="_blank" rel="noopener">Bump Hunting II: The Greedy Bump Bias</a>." Science 2.0 블로그, 2009년 4월 25일 — 1절, 이름이 처음 붙은 자리.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">실험 보고</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">8.</span><span class="ref-body">ATLAS Collaboration (2016). "Search for Resonances in Diphoton Events at √s = 13 TeV with the ATLAS Detector." <span class="font-semibold">JHEP</span> 2016(9), 001. <a href="https://arxiv.org/abs/1606.03833" target="_blank" rel="noopener">arXiv:1606.03833</a> — 2절, 국소 3.9σ와 전역 2.1σ의 출처.</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">CMS Collaboration (2016). "Search for Resonant Production of High-Mass Photon Pairs in Proton-Proton Collisions at √s = 8 and 13 TeV." <a href="https://arxiv.org/abs/1606.04093" target="_blank" rel="noopener">arXiv:1606.04093</a> — 2절, 국소 3.4σ와 전역 1.6σ의 출처.</span></li>
+                    </ul>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260907"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "찾을 자리를 데이터에 맞춰 고르면 신호는 늘 조금 크다",
+            subtitle: "탐욕적 봉우리 편향과 look-elsewhere 효과를 하나의 국소 기하로 묶은 INFN 물리학자의 논문",
+            pageTitle: "신호 과대평가와 다중검정 편향 — 최적 위치 탐색이 만드는 두 결과 | 페블러스",
+            category: "tech",
+            publishDate: "2026-09-07",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/greedy-bump-bias-look-elsewhere/ko/",
+            tags: ["통계", "다중검정", "look-elsewhere 효과", "정합필터", "신호 탐지", "이상치 탐지", "데이터 품질", "입자물리"],
+            faqs: [
+                {
+                    question: "탐욕적 봉우리 편향이 정확히 무엇인가?",
+                    answer: "신호의 위치나 모양을 미리 모른 채 데이터에 가장 잘 맞는 값을 골라 맞추면, 그렇게 잰 신호 세기가 참값보다 평균적으로 크게 나오는 현상이다. 맞춰지는 템플릿이 그날의 잡음 실현을 따라 움직이는데, 옮길 방향을 적합도가 좋아지는 쪽으로 고르기 때문에 봉우리 높이의 변화가 평균적으로 양수가 된다. 저자가 2003년 CDF 실험 내부 연구에서 관찰하고 2009년 블로그 글에서 이 이름을 붙였다."
+                },
+                {
+                    question: "위치를 고정해서 재면 이 편향이 없나?",
+                    answer: "없다. 논문은 잰 세기를 두 조각으로 가른다. 참된 위치에 템플릿을 고정했을 때의 보통 요동은 평균이 0이고, 템플릿을 움직여 얻은 이득이 편향의 전부다. 위치를 고정하면 두 번째 조각이 아예 생기지 않는다. 물론 위치를 미리 알아야 고정할 수 있다는 것이 원래의 문제다."
+                },
+                {
+                    question: "D와 Q는 무엇을 가리키나?",
+                    answer: "D는 데이터에 맞춰 고르는 좌표의 개수다. 위치 하나만 자유로우면 1이고 위치와 폭을 함께 풀면 2다. Q는 위치를 고정했을 때의 신호대잡음비다. 편향 D/(2Q)는 고르는 좌표가 많을수록 커지고 신호가 셀수록 작아진다."
+                },
+                {
+                    question: "look-elsewhere 효과와는 어떻게 다른가?",
+                    answer: "탐욕적 봉우리 편향은 진짜 신호가 있을 때 그 세기를 과대평가하는 추정 쪽 문제이고, look-elsewhere 효과는 신호가 없을 때 배경 요동을 신호로 오인할 확률이 커지는 검정 쪽 문제다. 논문은 두 현상이 같은 템플릿 계량에서 나온다는 것을 보인다. 다만 결론에서 저자는 둘이 같은 현상은 아니고 같은 프로파일링·확률장 기하의 서로 보완적인 극한이라고 적었다."
+                },
+                {
+                    question: "이 논문이 새로 보인 것은 무엇인가?",
+                    answer: "저자가 직접 범위를 그어 두었다. 최적화가 만드는 양의 편향도, 자유도 D의 카이제곱 우도 이득도, D/(2Q)라는 계수도, 시행 계수가 임계값의 D제곱으로 자란다는 것도 각각으로는 새롭지 않다고 밝힌다. 새것은 두 가지다. 하나는 전역 시행 계수에 로그를 씌워 미분하면 진짜 신호의 편향이 나온다는 항등식이고, 다른 하나는 포아송 극한을 벗어난 유한 임계값 영역의 취급이다."
+                },
+                {
+                    question: "750 GeV 사례는 논문에 나오나?",
+                    answer: "나오지 않는다. 논문은 힉스나 LHC를 한 번도 언급하지 않는 방법론 연구다. 2015년 ATLAS의 국소 3.9σ가 전역 2.1σ로, CMS의 국소 3.4σ가 전역 1.6σ로 내려간 것은 두 실험이 2016년 논문 초록에 적어 둔 값이고, 보정의 크기 감각을 주려고 이 글이 가져온 사례다."
+                },
+                {
+                    question: "신호가 약할 때 탐색 범위가 왜 중요한가?",
+                    answer: "신호가 약하면 신호에 딸린 봉우리를 다른 자리의 우연한 봉우리가 눌러 이기는 일이 잦아지기 때문이다. 1차원 모형에서 신호대잡음비가 1일 때 국소 편향은 0.527인데, 탐색 반범위를 6σ, 10σ, 14σ로 넓히면 전역 편향은 0.777, 0.939, 1.053으로 오른다. 신호대잡음비가 5에서 6쯤 되면 이 몫이 드물어져 전역 편향과 국소 편향이 모의실험 눈금으로 구별되지 않는다."
+                },
+                {
+                    question: "배경 봉우리들끼리는 서로 밀어내나?",
+                    answer: "단순히 그렇게 부르기는 어렵다. 경계와 표시 규약을 걷어낸 깨끗한 내부 극대점 과정에서는 가까이 붙은 두 극대점의 밀도가 거리의 네제곱으로 억눌린다. 마당이 매끄러우면 가까운 두 봉우리는 높이가 거의 같고 양쪽 기울기가 0이어야 해서 허용되는 배치가 급격히 줄기 때문이다. 다만 유한한 탐색 구간에서 실제로 세는 과정에서는 둘째 계승 누적률의 부호가 임계값에 따라 뒤집혀서, 저자는 반발이라는 말 대신 비포아송 상관이라 부르는 편이 정확하다고 적었다."
+                },
+                {
+                    question: "이 결과를 실제 실험 분석에 그대로 쓸 수 있나?",
+                    answer: "아직 아니다. 계산은 전부 가우시안 잡음 모형 위에서 이뤄졌고, 실제 공명 탐색은 대개 포아송 우도나 확장 우도를 쓴다. 접선 공간 결과와 국소 편향과 유한 임계값 보정 가운데 어느 것이 그 조건에서 살아남는지를 밝히는 일이 중요한 다음 단계라고 저자가 결론에 적었다."
+                },
+                {
+                    question: "대시보드나 A/B 테스트에도 같은 이야기가 적용되나?",
+                    answer: "구조는 같다. 구간의 경계를 데이터를 보고 정하거나, 임계값을 옮겨 가며 이상치가 가장 잘 잡히는 지점을 고르거나, 여러 지표 가운데 가장 잘 나온 것을 사후에 고르는 일은 모두 신호의 자리를 데이터에 맞춰 고르는 절차다. 다만 이 대응은 논문의 주장이 아니라 이 글의 해석이며, 논문의 수식은 가우시안 정합필터 모형 안에서만 유도되었다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
