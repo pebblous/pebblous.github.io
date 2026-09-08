@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLM 벤치마크 정답 상한 — 모델 없이 계산한 결정구조 렌더 실험 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="렌더한 결정구조 2,160개에서 카메라를 역산해 이미지가 지지하는 정답의 상한을 모델 없이 계산했다. 상한은 1.0000이었고, 정확한 기하를 글로 넣어 줘도 시각언어 모델 14종 가운데 13종은 상한까지의 격차를 절반도 메우지 못했다.">
+    <meta name="keywords" content="VLM 벤치마크, 정답 상한, render ceiling, 멀티모달 평가, 시각언어 모델, AI 평가 방법론, 지각과 추론 분리, 결정구조, 데이터 품질, AI-Ready Data, arXiv">
+
+    <meta name="citation_title" content="모델 없이 계산한 결정구조 벤치마크의 정답 상한">
+    <meta name="citation_author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="citation_publication_date" content="2026/09/09">
+    <meta name="citation_online_date" content="2026/09/09">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/render-ceiling-vlm-benchmark/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/render-ceiling-vlm-benchmark/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/render-ceiling-vlm-benchmark/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/render-ceiling-vlm-benchmark/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="모델 없이 계산한 결정구조 벤치마크의 정답 상한">
+    <meta property="og:description" content="렌더한 결정구조 2,160개에서 카메라를 역산해 이미지가 지지하는 정답의 상한을 모델 없이 계산했다. 상한은 1.0000이었고, 정확한 기하를 글로 넣어 줘도 시각언어 모델 14종 가운데 13종은 상한까지의 격차를 절반도 메우지 못했다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/render-ceiling-vlm-benchmark/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/render-ceiling-vlm-benchmark/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="다섯 대의 고정 카메라로 그린 결정구조 렌더에서 카메라를 역산해 정답의 상한을 구하는 구조">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-09-09">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="모델 없이 계산한 결정구조 벤치마크의 정답 상한">
+    <meta name="twitter:description" content="카메라를 역산해 이미지가 지지하는 정답을 먼저 구해 두자 상한은 1.0000이 됐다. 기하를 글로 넣어 줘도 시각언어 모델 13종은 격차의 절반을 못 메웠고, 언어 없는 시각 모델은 같은 이미지를 0.8952로 읽었다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/render-ceiling-vlm-benchmark/ko/image/index.png">
+    <meta name="twitter:image:alt" content="다섯 대의 고정 카메라로 그린 결정구조 렌더에서 카메라를 역산해 정답의 상한을 구하는 구조">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260909"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260909">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260909">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260909">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#same-wrong-answer" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 같은 오답, 갈리지 않는 원인</a></li>
+                    <li><a href="#inverting-cameras" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 카메라를 거꾸로 풀면 정답이 나온다</a></li>
+                    <li><a href="#residual" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 기하를 글로 떠먹여도 남는 몫</a></li>
+                    <li><a href="#pixels-readable" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 언어를 쓰지 않는 모델이 픽셀을 더 잘 읽었다</a></li>
+                    <li><a href="#fabrication" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 지어낸 좌표가 추론 실패로 기록된다</a></li>
+                    <li><a href="#our-benchmarks" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 우리 평가 데이터에는 상한이 적혀 있는가</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이미지를 잘못 읽어서 틀린 모델과 제대로 읽고 잘못 따져서 틀린 모델은 똑같은 오답을 낸다. 고칠 자리는 서로 다르다. 앞의 것은 입력과 렌더 규약에서 고치고 뒤의 것은 모델에서 고친다. 그런데 지금까지 이 둘을 가르던 방법은 하나같이 판정 기준 자리에 또 다른 모델을 세웠고, 그러면 귀속이 그 모델의 오차를 그대로 물려받는다. 9월 1일 arXiv에 올라온 논문은 판정 기준에서 모델을 아예 빼는 쪽을 택했다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            결정구조를 다섯 대의 고정 카메라로 그린 뒤 그 카메라를 역으로 풀면 이미지가 지지하는 정답이 그대로 되돌아온다. 이 절차가 틀릴 수 있는 경로는 서로 다른 원자의 투영이 우연히 겹치는 경우 하나뿐이고, 저자들은 그 경우의 집합이 렌더한 결정구조 2,160개 전체에서 비어 있음을 확인했다. 상한이 1.0000이니 모델이 거기 못 미친 만큼은 전부 모델 몫이 된다. 그 잣대를 들이대자 정확한 좌표와 셀 정보를 글로 넣어 줘도 시각언어 모델 14종 가운데 13종은 격차의 절반을 못 메웠고, 언어를 전혀 쓰지 않는 시각 모델은 같은 이미지를 0.8952로 읽어 14종을 모두 앞섰다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            5절까지는 논문이 실제로 잰 것과 유보한 것을 따라간다. 6절에서 평가 데이터셋 설계로 옮기는 대목은 논문에 없는 이 글의 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: Polat 외, <a href="https://arxiv.org/abs/2609.00663" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Separating perception from reasoning in vision–language models</a> arXiv:2609.00663v1(2026-09-01) 결과 및 방법</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1.0000</p>
+                            <p class="text-sm themeable-text-secondary mt-1">모델 없이 인증한 정답 상한</p>
+                            <p class="text-xs themeable-muted mt-1">평가 210개와 확장 1,950개 구조 전체에서 오라클이 정답을 되찾았고 실패 경로인 가짜 교점은 한 건도 없었다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">14종 중 13종</p>
+                            <p class="text-sm themeable-text-secondary mt-1">기하를 글로 줘도 격차 절반을 못 메운 모델</p>
+                            <p class="text-xs themeable-muted mt-1">지각 몫 비율의 중앙값은 0.2901이고 예외는 Grok 4.5 하나다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.8952 대 0.7333</p>
+                            <p class="text-sm themeable-text-secondary mt-1">시각 전용 모델과 최고 시각언어 모델의 픽셀 정확도</p>
+                            <p class="text-xs themeable-muted mt-1">ResNet-50은 224픽셀로 훈련하고도 768픽셀 렌더를 본 14종을 모두 앞섰다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">중앙값 0</p>
+                            <p class="text-sm themeable-text-secondary mt-1">추출 단계에 세운 강한 모델의 좌표 재현율</p>
+                            <p class="text-xs themeable-muted mt-1">206개 중 105개는 허용오차 안에 든 원자가 하나도 없는데 형식이 온전한 원자는 중앙값 48개를 냈다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="same-wrong-answer" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">같은 오답, 갈리지 않는 원인</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        시각언어 모델(vision–language model)은 이미 그림과 스펙트럼과 렌더를 읽는 자리로 들어와 있고, 소재 설계 파이프라인의 부품으로도 쓰인다. 이 분야의 대표 멀티모달 벤치마크는 모델이 화학·소재 이미지의 기본 지각은 잘 처리하면서 공간 추론과 여러 단계 추론에서 무너진다고 보고했다. 결정구조는 그중에서도 날이 선 사례다. 결정구조는 대부분의 독자에게 그림으로 도착하고, 그 그림을 읽을 줄 아는 모델은 표로 정리된 적 없는 한 세기치 결정학을 물려받게 된다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 모델이 틀렸을 때 어디서 틀렸는지 가릴 방법이다. 이미지를 모델이 쓴 설명으로 갈아 끼우고 다시 채점하는 방법, 시각 정보를 정답 텍스트로 직렬화해 넣는 방법, 최선의 경우만 모으는 앙상블, 라벨에 맞춘 셀렉터가 지금까지 쓰이던 갈래다. 논문이 지적하는 공통점은 하나다. 모델의 부족분을 재는 기준 자체에 두 번째 모델이 들어 있다. 그러면 귀속은 그 모델의 오차를 물려받고, 겉보기 여유분은 평가 장치를 바꿀 때마다 함께 움직인다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        자연 사진에는 이 문제를 우회할 길이 아예 없다. 사진 한 장에서 장면의 기하를 되찾는 일은 불량조건 문제이고, 같은 사진으로 투영되는 3차원 장면이 무한히 많기 때문에 실제 리더는 빠진 제약 대신 학습된 사전분포를 쓴다. 렌더로 그린 과학 도해는 사정이 다르다. 결정구조 렌더는 좌표를 정확히 아는 구조를 실험자가 고른 카메라로 직교투영한 결과다. 그 카메라를 되돌리고 시점 간 대응을 다시 풀면 어느 단계에도 모델을 넣지 않고 이미지가 지지하는 정답에 닿는다. 논문은 그렇게 얻은 값을 정답 상한(render ceiling)이라 부른다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="inverting-cameras" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">카메라를 거꾸로 풀면 정답이 나온다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        구조는 Materials Project에서 관용 단위격자 형식으로 뽑았다. 조성으로 정답을 맞히는 지름길을 막으려고 13개 원소를 평가 전용으로 떼어 두는 조성 배제 분할을 걸었고, 공개된 구조 1,820개는 훈련 1,610개와 평가 210개로 갈린다. 정답 라벨은 spglib이 고정 허용오차에서 돌려주는 결정계 일곱 가지다. 허용오차를 훑어 공간군이 흔들리는 구조는 격리했고, 훈련·평가와 겹치지 않는 층화 표본에서 이 라벨은 원 데이터베이스의 공간군과 220건 전부 일치했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        렌더 규약은 단순하다. 관용 단위격자를 2×2×2로 쌓고 다섯 대의 직교 카메라로 768픽셀에 그린다. 세 대는 주축, 두 대는 사각이다. 그림은 음영도 결합선도 없이 깊이 순으로 정렬한 평면 원만 찍고 격자 모서리는 점선으로 남긴다. 카메라마다 투영 행렬이 실험자에게 이미 알려진 값이라는 점이 이 설계의 전부다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        오라클은 그 값을 되돌린다. 정답 원자 위치를 카메라마다 투영해 두고, 시점 사이의 대응을 일부러 버린 다음, 같은 원소끼리 광선을 교차시켜 위치를 다시 세우고, 남은 모든 시점에서 그 점이 실제로 보이는지 확인한다. 살아남은 점들을 합쳐 라벨을 만든 그 알고리즘에 다시 넣으면 답이 나온다. 전 과정이 결정론적이고 어디에도 학습된 부품이 없다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정리가 말하는 것은 이 절차의 실패 경로가 하나뿐이라는 사실이다. 서로 다른 두 원자의 투영이 우연히 겹쳐 만들어 낸 가짜 교점이 모든 시점의 검사를 통과해 버리는 경우다. 그리고 가짜 교점은 구조와 카메라만으로 결정되므로 표본마다 전부 세어 볼 수 있다. 정리의 가정인 같은 원소 원자 사이의 최소 간격은 평가 210개에서 1.0951 Å, 확장 1,950개에서 0.7501 Å이었고, 요구되는 0.02 Å을 크게 웃돈다. 인증 설정에서 오라클은 두 표본 모두 정답을 냈고, 재구성 오차는 3.9×10⁻¹⁵ Å이었으며, 빠뜨린 원자도 받아들인 가짜 교점도 없었다. 상한 1.0000은 그렇게 나온 값이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 잣대가 이미지를 재는 것인지 완벽하다고 가정하는 것인지는 카메라를 빼 보면 갈린다. 카메라 부분집합에도 같은 전수 조사를 돌리자 가짜 교점이 실제로 나타났고 상한도 1 밑으로 내려갔다. 인증 허용오차에서 평균 상한은 카메라 두 대일 때 0.9214, 세 대일 때 0.9967이다. 가짜 교점 발생률은 네 대에서 정확히 0이 되고, 다섯 번째 카메라는 이미 빈 집합을 더 비우는 대신 재구성 정확도를 보탠다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="카메라 대수별 가짜 교점 발생률을 나타낸 막대 그림. 카메라 두 대에서는 14.5퍼센트, 세 대에서는 1.9퍼센트에서 가짜 교점이 생겼고, 네 대와 다섯 대에서는 0.0퍼센트다. 인증 허용오차에서 평균 상한은 두 대 0.9214, 세 대 0.9967이다.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">카메라를 빼면 가짜 교점이 생기고 상한이 내려간다</text>
+                            <text x="340" y="45" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">카메라 부분집합별 가짜 교점 발생률, 평가 표본 구조 210개 기준</text>
+
+                            <line x1="150" y1="70" x2="150" y2="250" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <line x1="150" y1="250" x2="620" y2="250" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="142" y="254" text-anchor="end" font-size="9.5" fill="var(--text-muted,#6B7280)">0%</text>
+                            <text x="142" y="204" text-anchor="end" font-size="9.5" fill="var(--text-muted,#6B7280)">5%</text>
+                            <text x="142" y="154" text-anchor="end" font-size="9.5" fill="var(--text-muted,#6B7280)">10%</text>
+                            <text x="142" y="104" text-anchor="end" font-size="9.5" fill="var(--text-muted,#6B7280)">15%</text>
+
+                            <rect x="178" y="105" width="64" height="145" rx="2" fill="#F86825"/>
+                            <text x="210" y="97" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">14.5%</text>
+
+                            <rect x="288" y="231" width="64" height="19" rx="2" fill="#808080"/>
+                            <text x="320" y="223" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">1.9%</text>
+
+                            <rect x="398" y="247" width="64" height="3" fill="#BDBDBD"/>
+                            <text x="430" y="240" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">0.0%</text>
+
+                            <rect x="508" y="247" width="64" height="3" fill="#BDBDBD"/>
+                            <text x="540" y="240" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">0.0%</text>
+
+                            <text x="210" y="268" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">카메라 2대</text>
+                            <text x="320" y="268" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">3대</text>
+                            <text x="430" y="268" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">4대</text>
+                            <text x="540" y="268" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">5대(공개 규약)</text>
+
+                            <text x="20" y="288" font-size="9.5" fill="var(--text-muted,#6B7280)">인증 허용오차에서 평균 상한은 2대 0.9214, 3대 0.9967이고, 5대 규약에서 1.0000이다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: Polat 외(2026), <a href="https://arxiv.org/abs/2609.00663" target="_blank" rel="noopener" class="underline">arXiv:2609.00663v1</a> 결과 2.1절 및 그림 2
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        상한이 무너지는 자리는 이미지가 아니라 추출 단계다. 점을 합칠 때 쓰는 허용오차를 늘리며 같은 오라클을 다시 읽으면 1.0000에서 시작해 다섯 배에서 0.9810, 공개 파이프라인이 쓰던 열다섯 배에서 0.9524로 내려간다. 여기서 잃는 구조들도 원자 수는 모두 맞히고 가장 가까운 동종 원자 쌍이 허용오차의 열한 배 넘게 떨어져 있어, 서로 다른 원자를 뭉갠 결과가 아니라 대칭 알고리즘 쪽 라벨 허용오차 문제다. 이미지에서 정답을 식별할 수 있느냐는 물음과 실제 파이프라인이 그것을 뽑아내느냐는 물음이 여기서 갈린다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 기하가 벤치마크를 만드는 쪽에 규칙 하나를 준다. 정확한 추출을 가정하면 고정 배치와 사각 변형 배치와 타일 배치가 모두 210개를 다 맞히므로, 이 계열 안에서 카메라 선택은 과제의 일부를 감추지 않는다. 갈리는 것은 조건수다. 고정 카메라의 조건수는 2.7321, 사각으로 틀어 놓은 배치는 8.4258이고, 중심점에 잡음을 주입하자 고정 배치가 2.1배의 잡음을 견뎠다. 뷰를 더 붙이는 것이 아니라 카메라 방향을 서로 떼어 놓는 것이 강건성을 산다. 다만 저자들이 미리 적어 둔 예측 세 가지 가운데 타일 배치를 포함한 세 갈래 순서와 절대 잡음 예산은 빗나갔고, 관측된 내성 비율은 예측보다 작았다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="residual" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">기하를 글로 떠먹여도 남는 몫</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        상한이 정해지면 모델의 부족분을 뺄셈으로 가를 수 있다. 사다리는 세 칸이다. 픽셀 렌더만 보고 답하는 칸, 정확한 분수 좌표와 원소와 셀 파라미터를 글로 받아 답하는 칸, 그리고 오라클의 상한이다. 두 번째 칸에서 첫 번째 칸을 빼면 지각을 대신 해 줬을 때 회수되는 몫이고, 상한에서 두 번째 칸을 빼면 지각을 대신 해 줘도 남는 몫이다. 상한에 모델이 없으므로 이 뺄셈은 고정된 값에 대한 뺄셈이지 다른 모델의 출력에 대한 뺄셈이 아니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기하를 글로 넣어 주자 14종이 전부 올랐다. 그런데 아무도 상한에 닿지 못했고 최고가 0.8524였다. 전체 부족분 가운데 지각이 차지하는 비율은 중앙값 0.2901이었고, 14종 중 13종에서 지각 뒤 남은 몫이 지각 몫보다 컸다. 예외는 Grok 4.5 하나다. 공개 허용오차의 상한으로 다시 읽어도 12종이 같은 결론이라, 이 판정은 허용오차 곡선의 어느 점을 잡든 유지된다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 340" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="두 모델의 부족분을 지각 몫과 지각 뒤 남은 몫으로 가른 막대 그림. Gemini 3.6 Flash는 픽셀 정확도 0.7333에서 기하를 글로 받아 0.8524로 올라 지각 몫이 11.90점이고 남은 몫이 14.76점이다. GPT-4.1 mini는 0.3667에서 0.4143으로 올라 지각 몫이 4.76점이고 남은 몫이 58.57점이다. 상한은 두 모델 모두 100점이다.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">지각을 대신 해 줘도 남는 쪽이 더 크다</text>
+                            <text x="340" y="45" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">상한까지의 부족분을 지각 몫과 남은 몫으로 가른 결과, 평가 구조 210개, 백분율</text>
+
+                            <line x1="610" y1="70" x2="610" y2="250" stroke="var(--text-muted,#9CA3AF)" stroke-width="1" stroke-dasharray="4 3"/>
+                            <text x="606" y="64" text-anchor="end" font-size="9" fill="var(--text-muted,#6B7280)">정답 상한 100</text>
+
+                            <text x="142" y="112" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">Gemini 3.6 Flash</text>
+                            <text x="142" y="127" text-anchor="end" font-size="9.5" fill="var(--text-muted,#6B7280)">픽셀 0.7333</text>
+                            <rect x="487.3" y="100" width="54.8" height="34" fill="#808080"/>
+                            <rect x="542.1" y="100" width="67.9" height="34" fill="#F86825"/>
+                            <text x="514.7" y="94" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary,#4B5563)">11.90점</text>
+                            <text x="576" y="94" text-anchor="middle" font-size="10" font-weight="700" fill="#F86825">14.76점</text>
+
+                            <text x="142" y="182" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">GPT-4.1 mini</text>
+                            <text x="142" y="197" text-anchor="end" font-size="9.5" fill="var(--text-muted,#6B7280)">픽셀 0.3667</text>
+                            <rect x="318.7" y="170" width="21.9" height="34" fill="#808080"/>
+                            <rect x="340.6" y="170" width="269.4" height="34" fill="#F86825"/>
+                            <text x="329.6" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary,#4B5563)">4.76점</text>
+                            <text x="475" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#F86825">58.57점</text>
+
+                            <line x1="150" y1="250" x2="620" y2="250" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="150" y="264" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">0</text>
+                            <text x="265" y="264" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">25</text>
+                            <text x="380" y="264" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">50</text>
+                            <text x="495" y="264" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">75</text>
+                            <text x="610" y="264" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">100</text>
+                            <text x="380" y="282" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text-secondary,#4B5563)">결정계 정확도(백분율)</text>
+
+                            <rect x="20" y="298" width="12" height="12" rx="2" fill="#808080"/>
+                            <text x="38" y="308" font-size="9.5" fill="var(--text-muted,#6B7280)">기하를 글로 줘서 메운 몫</text>
+                            <rect x="200" y="298" width="12" height="12" rx="2" fill="#F86825"/>
+                            <text x="218" y="308" font-size="9.5" fill="var(--text-muted,#6B7280)">그래도 남은 몫</text>
+
+                            <text x="20" y="328" font-size="9.5" fill="var(--text-muted,#6B7280)">14종의 지각 몫 비율 중앙값은 0.2901이고, 남은 몫이 더 큰 모델이 13종이다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: Polat 외(2026), <a href="https://arxiv.org/abs/2609.00663" target="_blank" rel="noopener" class="underline">arXiv:2609.00663v1</a> 그림 1(b) 및 결과 2.2절
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        사다리 양 끝의 두 모델이 이 갈래를 눈에 보이게 만든다. 픽셀에서 가장 잘 읽은 Gemini 3.6 Flash는 0.7333에서 0.8524로 올라 지각 몫 11.90점을 회수했지만 14.76점을 남겼고, 비율로는 0.4464다. 가장 낮은 GPT-4.1 mini는 0.3667에서 0.4143으로 4.76점만 회수하고 58.57점을 남겼으며, 비율로는 0.0752다. 두 값은 5.9배 차이가 난다. 강한 모델일수록 지각 몫이 클 것이라는 자연스러운 강화는 지지되지 않았다. 비율과 픽셀 정확도는 순위상관으로 무관했고, 비율이 아니라 상승폭 자체를 보면 방향이 오히려 반대여서, 기하를 줬을 때의 상승폭과 픽셀 정확도의 상관이 −0.6439였다. 픽셀을 가장 잘 읽는 모델일수록 정확한 기하를 줘도 얻는 게 적다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기하를 글로 준 조건의 상승이 텍스트 형식 덕이 아니라는 것은 별도 통제로 확인됐다. 이미지를 빼고 화학식만 같은 프롬프트에 넣자 채점된 모델이 전부 우연 수준으로 주저앉았다. 평균이 0.1487이고 일곱 갈래 우연 수준이 0.1429다. 13종 중 10종에서 짝지은 차이가 유의했고, 유의하지 않은 셋은 이미지를 줘도 우연 수준이던 가장 약한 모델들이다. 렌더에서 정보를 뺐다는 설명도 배제된다. 정보가 되는 가림을 오라클 입력에서 제거해도 대칭 판정은 그대로였고, 확장 표본의 네 시점 조건에서 원자 수 일치만 210개 중 204개에서 194개로 움직여 개입 자체는 재구성기에 닿았다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            남은 몫을 곧바로 추론 실패라고 읽으면 논문이 그은 선을 넘는다. 저자들은 이 값이 대칭 추론의 측정치가 아니라 상한이라고 못 박고, 긴 목록 처리 같은 것이 섞여 있을 수 있다고 적으며 원자 수와의 관계를 따로 검사했다. 논의 절의 정리도 방향이 같다. 지각이 멀티모달 소재 과제의 병목이라는 읽기는 과제의 성질이 아니라 특정 모델들에 관한 진술이고, 정확한 기하가 가장 적게 보태는 상위권에서는 그 관계가 뒤집힌다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="pixels-readable" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">언어를 쓰지 않는 모델이 픽셀을 더 잘 읽었다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        부족분이 크다는 사실만으로는 이미지가 애초에 읽을 수 없는 것이었다는 설명을 배제하지 못한다. 그래서 저자들은 언어 부품이 하나도 없는 일반 비전 모델을 같은 렌더에 세웠다. ResNet-50과 ViT-small을 ImageNet 가중치에서 출발해 공개된 훈련용 구조 1,610개의 렌더로만 파인튜닝했고, 다른 정보는 주지 않았다. 증강은 일절 걸지 않았다. 회전이나 반전이나 종횡비 왜곡은 지금 맞히려는 라벨 자체를 뒤집을 수 있기 때문이다. 다섯 시점의 로짓을 평균해 답을 낸다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        ResNet-50이 210개 중 188개를 맞혀 0.8952를 냈다. 상한과의 거리는 0.1048이고, 픽셀에서 가장 잘 읽은 시각언어 모델의 0.7333보다 높다. ViT-small도 0.8333으로 14종을 모두 앞섰다. 조건은 오히려 불리했다. 두 네트워크는 768픽셀 렌더를 224픽셀로 줄여 훈련하고 평가했으니, 시각언어 모델이 본 해상도보다 낮은 자리에서 읽은 셈이다. 소비자용 그래픽카드 한 장에서 학습에 걸린 시간은 각각 153초와 152초였다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="같은 렌더에서 결정계 정확도를 비교한 가로 막대 그림. ResNet-50이 0.8952, ViT-small이 0.8333, 픽셀에서 가장 잘 읽은 시각언어 모델이 0.7333, 형태 없는 기준선이 0.5286, 일곱 갈래 다수 클래스가 0.1429이며 정답 상한은 1.0000이다.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">언어 없는 시각 모델이 상한에 가장 가까이 갔다</text>
+                            <text x="340" y="45" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">같은 렌더에서 잰 결정계 정확도, 평가 구조 210개</text>
+
+                            <line x1="610" y1="68" x2="610" y2="262" stroke="var(--text-muted,#9CA3AF)" stroke-width="1" stroke-dasharray="4 3"/>
+                            <text x="606" y="62" text-anchor="end" font-size="9" fill="var(--text-muted,#6B7280)">정답 상한 1.0000</text>
+
+                            <text x="142" y="94" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">ResNet-50</text>
+                            <rect x="150" y="78" width="411.8" height="24" rx="2" fill="#F86825"/>
+                            <text x="568" y="95" font-size="10" font-weight="700" fill="#F86825">0.8952</text>
+
+                            <text x="142" y="132" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">ViT-small</text>
+                            <rect x="150" y="116" width="383.3" height="24" rx="2" fill="#808080"/>
+                            <text x="540" y="133" font-size="10" font-weight="700" fill="var(--text-secondary,#4B5563)">0.8333</text>
+
+                            <text x="142" y="170" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">최고 시각언어 모델</text>
+                            <rect x="150" y="154" width="337.3" height="24" rx="2" fill="#808080"/>
+                            <text x="494" y="171" font-size="10" font-weight="700" fill="var(--text-secondary,#4B5563)">0.7333</text>
+
+                            <text x="142" y="208" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">형태 없는 기준선</text>
+                            <rect x="150" y="192" width="243.2" height="24" rx="2" fill="#BDBDBD"/>
+                            <text x="400" y="209" font-size="10" font-weight="700" fill="var(--text-secondary,#4B5563)">0.5286</text>
+
+                            <text x="142" y="246" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">일곱 갈래 다수 클래스</text>
+                            <rect x="150" y="230" width="65.7" height="24" rx="2" fill="#BDBDBD"/>
+                            <text x="222" y="247" font-size="10" font-weight="700" fill="var(--text-secondary,#4B5563)">0.1429</text>
+
+                            <line x1="150" y1="262" x2="620" y2="262" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="150" y="276" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">0</text>
+                            <text x="265" y="276" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">0.25</text>
+                            <text x="380" y="276" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">0.50</text>
+                            <text x="495" y="276" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">0.75</text>
+                            <text x="610" y="276" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">1.00</text>
+
+                            <text x="20" y="292" font-size="9.5" fill="var(--text-muted,#6B7280)">ResNet-50과 ViT-small은 224픽셀로 훈련·평가했고, 시각언어 모델은 768픽셀 렌더를 봤다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: Polat 외(2026), <a href="https://arxiv.org/abs/2609.00663" target="_blank" rel="noopener" class="underline">arXiv:2609.00663v1</a> 결과 2.3절, 표 1과 표 2
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결론은 좁고 단단하다. 결정학 특화 편향도 언어도 없는 모델이 시각언어 모델들이 읽지 않고 남겨 둔 정보의 대부분을 그냥 읽어 낸다. 그러니 앞 절에서 잰 부족분은 이미지에서 원리적으로 못 읽을 정보 때문에 생긴 것이 아니다. 다만 이 시각 모델도 만능은 아니다. 따로 뽑은 확장 표본에서는 같은 체크포인트가 0.7524로 0.1428 떨어졌고, 원본 표본에서 낸 오류 22건 가운데 7건이 육방정과 삼방정을 맞바꾼 것으로 단일 최대 혼동쌍이었다. 이 쌍은 셀 지표만으로는 갈리지 않는 축퇴라 특정 모델의 약점이라기보다 과제의 결에 가깝다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델 쪽 성적표를 어디에 견주느냐도 이 잣대가 있어야 정해진다. 원자 수와 밀도와 셀 부피만 보는 형태 없는 기준선이 0.5286인데, 채점된 시각언어 모델 실행 17건 가운데 13건이 그 밑에 있고 이를 넘긴 넷은 모두 최신 세대다. 저자들은 이 0.5286이 공개 표본이 뽑힌 방식의 이상치라는 점도 함께 적어 둔다. 같은 규칙으로 만든 1,933개에서는 같은 기준선이 0.2054였고, 세 가지 방식으로 446번 다시 표집해도 0.52를 넘긴 적이 없었다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="fabrication" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">지어낸 좌표가 추론 실패로 기록된다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 잣대를 파이프라인 중간에 대 보면 리더보드가 못 보는 실패가 하나 드러난다. 저자들은 강한 모델을 추출 단계에 세워 대칭 질문은 숨긴 채 원소와 위치만 뽑게 했고, 그 텍스트를 약한 모델에 넘겨 답하게 했다. 최종 정확도는 다수 계층의 기준 비율과 정확히 같았다. 끝점만 채점하는 파이프라인이라면 여기서 아무것도 측정하지 못한 채 숫자 하나를 얻는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정보가 있는 쪽은 중간 산출물이다. 뽑혀 나온 좌표를 정답과 대조하자 재현율의 중앙값이 0.0000이었다. 206개 구조 중 105개는 허용오차 안에 든 원자가 단 하나도 없었다. 그러면서도 형식이 온전한 원자를 구조당 중앙값 48개씩 내놓았다. 같은 과제에서 연결 성분을 세는 단순 블롭 검출기는 0.400을 기록한다. 형식은 완벽하고 내용은 비어 있는 좌표 목록이 나온 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논의 절이 이 대목에 가장 넓은 파급을 매긴다. 소재 설계의 에이전트 워크플로는 정확히 이런 중간 산출물로 조립된다. 그림에서 읽어 낸 구조가 물성 예측기나 합성 계획기로 넘어가고, 검사를 한다 해도 학습된 검증기가 하는데 그 검증기는 지어낸 중간 산출물과 틀린 중간 산출물을 가르지 못한다. 순방향 사상을 아는 단계라면 모델이 들어 있지 않은 기준으로 중간 산출물을 직접 채점할 수 있고, 그것이 지금 이 파이프라인들에 없는 감사 원시연산이라고 논문은 적는다.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="our-benchmarks" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">우리 평가 데이터에는 상한이 적혀 있는가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        6절에서 평가 데이터셋 쪽으로 옮기는 부분은 논문이 시험한 내용이 아니라 그 결과를 데이터 품질의 언어로 겹쳐 본 이 글의 해석이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        먼저 이 도구가 어디까지 가는지부터 봐야 한다. 논문은 세 가지 조건으로 범위를 묶는다. 순방향 렌더가 알려져 있고 뒤집을 수 있어야 하며, 한 도메인의 한 과제에서 보였을 뿐이다. 오라클은 정확한 중심점에서 답하므로 기하가 무엇을 결정하는지를 말할 뿐 어떤 리더가 그것을 실제로 뽑아낼 수 있다고 말하지 않는다. 인증도 표본마다 하나의 허용오차에서 이뤄지고, 따로 뽑은 표본에서는 인증 설정에서도 구조 하나를 잃는다. 저자들이 전이 가능하다고 꼽는 목록은 렌더한 분자 배좌, 그리고 계산된 수치로 그린 밴드 구조와 상태밀도와 상평형도다. 카메라를 모르는 자연 사진은 그 목록에 없다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 범위 안에서 남는 발상은 데이터를 만드는 쪽에 곧바로 닿는다. 우리는 평가 데이터셋을 만들 때 정답만 적고 정답의 상한은 적지 않는다. 그래서 점수가 낮게 나오면 회의에서 말이 갈린다. 모델이 부족한 것인지, 이미지가 애초에 그 정보를 담고 있지 않은 것인지, 라벨이 흔들린 것인지 가릴 근거가 데이터 안에 없기 때문이다. 이 논문이 한 일은 그 근거를 데이터셋 안에 미리 계산해 넣은 것이다. 상한이 1.0000이라 부족분이 전부 모델 몫이 됐고, 카메라를 빼자 상한이 실제로 내려가 이 자가 이미지를 재고 있다는 것도 같이 보였다. 그림이 던지는 질문과 라벨이 답하는 질문이 같은지, 어느 시점에서 우리 파이프라인의 읽기가 모델보다 먼저 걸리는지를 발행 전에 알 수 있다는 뜻이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        렌더나 합성 데이터로 평가 세트를 만드는 팀이라면 지금 확인해 볼 만한 것이 세 가지다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">생성 규약을 되돌려 정답을 다시 구할 수 있는가. 되돌릴 수 있다면 그 값이 곧 이 데이터가 지지하는 정답의 상한이고, 모델 점수는 그 값에 견줘 읽어야 한다.</li>
+                        <li class="themeable-text leading-relaxed">상한이 1보다 낮아지는 조건을 찾아 두었는가. 카메라를 두 대로 줄이면 14.5퍼센트에서 가짜 교점이 생겼듯, 어떤 설정에서 데이터가 답을 감추는지는 세어 볼 수 있는 성질이다.</li>
+                        <li class="themeable-text leading-relaxed">파이프라인의 중간 산출물을 정답과 대조하고 있는가. 끝점만 채점하면 형식이 온전한 채로 지어낸 중간 산출물이 추론 실패로 기록된다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        벤치마크 점수가 무엇을 재고 있는지 되짚는 문제는 <a href="/blog/protein-ligand-ai-benchmark-illusion/ko/" class="text-orange-500 hover:text-orange-400 underline">결합 여부는 98퍼센트 맞히면서 결합 부위는 못 짚던 신약 예측 사례</a>에서도 같은 모양으로 나왔다. 데이터를 갖추는 문제 전체는 <a href="/blog/ai-ready-data-conditions/ko/" class="text-orange-500 hover:text-orange-400 underline">AI-Ready Data의 조건</a>에서 이어 볼 수 있다.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            페블러스가 데이터 품질을 진단할 때 자주 만나는 물음이 이 점수가 무엇에 붙은 점수냐는 것이다. 이 논문은 정답 옆에 정답의 상한을 같이 계산해 두면 그 물음에 데이터로 답할 수 있다는 사례를 좁은 조건에서 정밀하게 보여 준다. 조건이 좁다는 점도 그대로 남는다. 순방향 규약을 되돌릴 수 있는 데이터에만 통하고, 그 밖에서는 여전히 다른 방법이 필요하다. 우리도 이 글에서 답을 내놓지 않는다. 평가 세트를 설계할 때 정답 옆에 무엇을 더 계산해 둘지 정하는 자리에서 참고할 만한 자료다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주신 데 감사드린다. 원문은 <a href="https://arxiv.org/abs/2609.00663" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv:2609.00663</a>에서 전문을 볼 수 있고, 코드와 데이터는 <a href="https://github.com/KurbanIntelligenceLab/render-ceiling" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">KurbanIntelligenceLab/render-ceiling</a>에 공개돼 있다. 이 글의 수치는 본문과 방법 절에서 직접 확인했다. 평가 세트에 상한을 함께 계산해 두는 방식을 이미 쓰고 있는 팀이 있다면 어떤 형태로 남기는지 나눠 주시면 좋겠다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>(주)페블러스 데이터 커뮤니케이션팀</strong><br>
+                        <span class="themeable-muted text-sm">2026년 9월 9일</span>
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260909"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "모델 없이 계산한 결정구조 벤치마크의 정답 상한",
+            subtitle: "렌더한 결정구조 2,160개에서 상한을 인증하자 시각언어 모델 14종의 실패가 어디서 났는지 갈렸다",
+            pageTitle: "VLM 벤치마크 정답 상한 — 모델 없이 계산한 결정구조 렌더 실험 | 페블러스",
+            category: "tech",
+            publishDate: "2026-09-09",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/render-ceiling-vlm-benchmark/ko/",
+            tags: ["VLM 벤치마크", "정답 상한", "멀티모달 평가", "AI 평가 방법론", "결정구조", "AI-Ready Data", "데이터 품질", "arXiv"],
+            faqs: [
+                {
+                    question: "정답 상한(render ceiling)이 정확히 무엇인가?",
+                    answer: "렌더로 만든 벤치마크에서 이미지가 지지하는 정답을 모델 없이 되찾아 얻은 정확도다. 렌더 규약이 카메라를 고정해 두었으므로 그 카메라를 역으로 풀고 시점 사이의 대응을 다시 맞추면 원자 위치가 복원되고, 라벨을 만든 대칭 알고리즘에 그대로 넣어 답을 얻는다. 이 절차에는 학습된 부품이 하나도 없어서, 모델이 이 값에 못 미친 만큼은 전부 모델 몫으로 귀속된다."
+                },
+                {
+                    question: "기존 벤치마크는 왜 지각 실패와 추론 실패를 못 갈랐나?",
+                    answer: "가르는 방법이 없어서가 아니라 방법마다 판정 기준에 두 번째 모델이 들어가 있기 때문이다. 이미지를 모델이 쓴 설명으로 갈아 끼우거나, 정답 텍스트로 직렬화하거나, 최선의 경우만 모으는 앙상블을 쓰거나, 라벨에 맞춘 셀렉터를 세우는 방식이 모두 그렇다. 그러면 귀속이 그 모델의 오차를 물려받고 겉보기 여유분이 평가 장치에 따라 움직인다. 이 논문의 핵심은 기준에서 모델을 빼 뺄셈을 고정된 값에 대한 뺄셈으로 만든 것이다."
+                },
+                {
+                    question: "상한이 1.0000이라는 것은 무엇으로 확인했나?",
+                    answer: "이 절차가 틀릴 수 있는 경로가 하나뿐임을 정리로 보이고, 그 경우를 표본마다 전부 세어 확인했다. 실패 경로는 서로 다른 원자의 투영이 우연히 겹쳐 만든 가짜 교점이 모든 시점의 검사를 통과하는 경우인데, 공개된 다섯 대 카메라 규약에서 이 집합이 결정구조 2,160개 전체에서 비어 있었다. 인증 설정에서 오라클은 평가 210개와 확장 1,950개 구조의 정답을 모두 냈고 재구성 오차는 3.9×10⁻¹⁵ Å이었다."
+                },
+                {
+                    question: "이 방법을 아무 이미지에나 쓸 수 있나?",
+                    answer: "쓸 수 없다. 순방향 렌더가 알려져 있고 뒤집을 수 있는 데이터에만 통한다. 논문도 자연 사진에는 더 나은 기준이 없다고 명시한다. 사진 한 장에서 장면의 기하를 되찾는 일은 불량조건 문제라 같은 사진으로 투영되는 3차원 장면이 무한히 많고, 실제 리더는 그 빈자리에 학습된 사전분포를 넣기 때문이다. 저자들이 전이 대상으로 꼽는 것은 렌더한 분자 배좌와 계산된 수치로 그린 밴드 구조·상태밀도·상평형도다."
+                },
+                {
+                    question: "정확한 좌표를 글로 줬는데도 못 맞혔다는 것은 추론이 병목이라는 뜻인가?",
+                    answer: "그렇게 단정하면 논문이 그은 선을 넘는다. 상한에서 기하를 준 조건의 정확도를 뺀 값은 대칭 추론의 측정치가 아니라 상한이라고 저자들이 못 박는다. 긴 목록 처리 같은 것이 섞여 있을 수 있어 원자 수와의 관계도 따로 검사했다. 다만 이 값이 지각 몫보다 큰 모델이 14종 중 13종이라는 사실은 분명하고, 논문은 여기에 지각이 병목이라는 읽기가 과제의 성질이 아니라 특정 모델들에 관한 진술이며 상위권에서는 뒤집힌다는 정리를 덧붙인다."
+                },
+                {
+                    question: "14종 가운데 예외는 없었나?",
+                    answer: "하나 있다. Grok 4.5만 지각 몫이 지각 뒤 남은 몫보다 컸다. 공개 허용오차의 상한으로 다시 읽으면 같은 결론이 12종이라 예외가 둘로 늘지만, 어느 쪽 기준에서도 다수는 남은 몫이 더 크다. 그래서 이 결과를 옮길 때 열넷 전부라고 쓰면 사실과 어긋난다."
+                },
+                {
+                    question: "언어를 쓰지 않는 시각 모델이 왜 시각언어 모델보다 잘 맞혔나?",
+                    answer: "논문은 원인을 규명하지 않고 사실을 확인하는 데 이 실험을 쓴다. ImageNet에서 출발한 ResNet-50을 공개된 훈련용 구조 1,610개의 렌더로만 파인튜닝해 0.8952를 냈고, 이는 픽셀에서 가장 잘 읽은 시각언어 모델의 0.7333보다 높다. 두 네트워크는 768픽셀 렌더를 224픽셀로 줄여 훈련하고 평가했으니 조건도 불리했다. 이 결과가 배제하는 것은 하나다. 이미지가 원리적으로 못 읽을 정보를 담고 있어서 격차가 생겼다는 설명이다."
+                },
+                {
+                    question: "상한이 100퍼센트라면 어떤 파이프라인이든 그 정보를 다 뽑아낼 수 있다는 뜻인가?",
+                    answer: "아니다. 오라클은 모든 시점에서 모든 원자의 중심점이 이상적으로 보인다고 가정하므로, 이 값은 기하가 무엇을 결정하는지를 말할 뿐 어떤 리더가 그것을 실제로 뽑아낸다는 뜻이 아니다. 점을 합칠 때 쓰는 허용오차를 늘리면 같은 오라클도 1.0000에서 0.9810으로, 공개 파이프라인이 쓰던 값에서 0.9524로 내려간다. 강한 모델을 추출 단계에 세웠을 때 재현율의 중앙값이 0이었던 결과가 같은 이야기의 다른 면이다."
+                },
+                {
+                    question: "리더보드가 못 보는 실패라는 것은 어떤 경우인가?",
+                    answer: "추출 단계에 세운 강한 모델이 형식은 온전하고 내용은 비어 있는 좌표 목록을 내놓는 경우다. 206개 구조 중 105개는 허용오차 안에 든 원자가 하나도 없었는데도 구조당 중앙값 48개의 원자를 냈고, 같은 과제에서 단순 블롭 검출기는 0.400을 기록했다. 최종 정확도는 다수 계층의 기준 비율과 같아 끝점만 채점하면 아무것도 측정하지 못한다. 모델 없는 기준이 있어야 지어낸 중간 산출물과 틀린 중간 산출물이 갈린다."
+                },
+                {
+                    question: "벤치마크를 만드는 쪽에 바로 쓸 규칙이 있나?",
+                    answer: "카메라 배치에 관한 규칙이 하나 나왔다. 정확한 추출을 가정하면 이 계열의 배치가 모두 210개를 다 맞히므로 갈리는 것은 조건수다. 고정 배치의 조건수는 2.7321, 사각으로 틀어 놓은 배치는 8.4258이었고, 중심점에 잡음을 주입하자 고정 배치가 2.1배의 잡음을 견뎠다. 뷰를 더 붙이는 것보다 카메라 방향을 서로 떼어 놓는 것이 강건성을 산다. 다만 타일 배치를 포함한 세 갈래 순서 예측과 절대 잡음 예산 예측은 빗나갔다."
+                },
+                {
+                    question: "이 논문의 근거는 어느 정도 신뢰 수준인가?",
+                    answer: "2026년 9월 1일 arXiv에 올라온 프리프린트이고 동료평가 전이다. 저자는 네 명이며 특정 연구비를 받지 않았고 이해충돌은 없다고 밝혔다. 데이터와 기록과 공개 산출물은 CC BY 4.0, 코드는 MIT 라이선스로 저장소에 공개돼 있고 데이터셋 메타데이터는 Croissant 형식으로 제공된다. 대규모 언어모델을 원고 교정과 코드 작성에 보조로 썼으며 모든 수치와 그림과 인용은 저자들이 원 기록에 대조해 확인했다고 적어 두었다."
+                },
+                {
+                    question: "페블러스가 이 논문을 보는 이유는 무엇인가?",
+                    answer: "평가 데이터셋에 정답만 적고 정답의 상한은 적지 않는 관행 때문이다. 상한이 없으면 점수가 낮게 나왔을 때 모델이 부족한 것인지 데이터가 모호한 것인지 가릴 근거가 데이터 안에 없다. 이 논문은 생성 규약을 되돌릴 수 있는 데이터에 한해 그 근거를 미리 계산해 넣을 수 있음을 보였다. 다만 6절에서 이를 평가 데이터셋 설계 쪽으로 옮긴 대목은 논문의 주장이 아니라 이 글의 해석이다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
