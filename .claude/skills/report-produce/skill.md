@@ -421,7 +421,7 @@ Agent(
 
     HTML 템플릿: report/korea-ai-fund-report-2026-03/ko/index.html
     체크리스트: docs/blog-html-checklist.md
-    제목 전략: docs/title-strategy.md (§0 보도기사·매거진 정본, §7 제목→Exec Summary 일관성)
+    제목 문체 정본: docs/ko-style-standard.md §4-2 (주어 먼저·결론 그대로·20~35자, 2026-09-11) · 슬롯 규격: docs/title-strategy.md (§7 제목→Exec Summary 일관성)
     CLAUDE.md: <repo-root>/CLAUDE.md
 
     ⛔⛔ 작성 방식 — 통짜 출력 금지, 골격→섹션별 Edit (API stall 방지, skill §4-A·4-B):
