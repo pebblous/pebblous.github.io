@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>Real-SWE 벤치마크 — 사내 코드에서 코딩 AI 점수가 내려가는 이유 | 페블러스</title>
+    <meta name="description" content="기업에서 라이선스해 온 비공개 프로덕션 코드로 코딩 에이전트를 쟀더니 여덟 모델의 평균 해결률이 26.9%였다. 실패의 대부분은 코드를 못 짜서가 아니라 남의 시스템을 못 읽어서 났다. 다만 이 결과표를 모델 순위표로 읽으면 안 되는 이유도 함께 본다.">
+    <meta name="keywords" content="코딩 에이전트, AI 벤치마크, Real-SWE, 데이터 라이선싱, 평가 데이터, 벤치마크 오염, 하네스, SWE-bench Pro, AI-Ready Data, 데이터 품질">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/real-swe-private-code-benchmark-2026-09/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/real-swe-private-code-benchmark-2026-09/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/real-swe-private-code-benchmark-2026-09/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/real-swe-private-code-benchmark-2026-09/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="우리 회사 코드에서도 AI가 그 점수를 낼까?">
+    <meta property="og:description" content="기업에서 라이선스한 비공개 코드로 만든 벤치마크에서 여덟 모델의 평균 해결률은 26.9%였다. 그리고 그 시험지는 남의 회사 코드를 사 와서 만든 것이다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/real-swe-private-code-benchmark-2026-09/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/real-swe-private-code-benchmark-2026-09/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="우리 회사 코드에서도 AI가 그 점수를 낼까?">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="우리 회사 코드에서도 AI가 그 점수를 낼까?">
+    <meta name="twitter:description" content="비공개 프로덕션 코드로 잰 코딩 에이전트의 평균 해결률은 26.9%였다. 실패의 대부분은 코드 생성이 아니라 남의 시스템 독해에서 났다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/real-swe-private-code-benchmark-2026-09/ko/image/index.png">
+    <meta name="twitter:image:alt" content="우리 회사 코드에서도 AI가 그 점수를 낼까?">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정: theme-variables -> tailwind-build -> common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260915">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260915">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260915">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* 도식 박스·캡션·표 숫자 정렬 — 공통 컴포넌트가 없어 이 리포트 로컬로만 정의 */
+        .fig-box {
+            background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+        }
+        .fig-caption {
+            font-size: 0.8rem;
+            color: var(--text-muted, #808080);
+            line-height: 1.7;
+            margin-top: 0.5rem;
+        }
+        .comparison-table td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .comparison-table th.num { text-align: right; }
+        .comparison-table .hit { color: #F86825; font-weight: 700; }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 처음 보는 회사 코드 앞에서</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 못 짜서가 아니라 못 읽어서 진다</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 이 표는 순위표가 아니다</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 그래도 사내 코드에서 내려간다</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 시험지를 사 오는 사업</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 비공개로 지킨 값, 비공개라서 못 하는 검증</a></li>
+                    <li><a href="#section-7" class="block pl-4 themeable-toc-link transition-colors duration-200">7. 우리 코드로는 무엇을 재야 하나</a></li>
+                    <li><a href="#pebblous-perspective" class="block pl-4 themeable-toc-link transition-colors duration-200">페블러스 관심의 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 글은 남의 오픈소스가 아니라 회사 안의 코드에서 잰 코딩 에이전트 점수를 본다. 어느 신생 평가 회사가 실제 기업들에서 프로덕션 코드베이스를 라이선스해 와 과제를 만들고, 여덟 개 모델을 각자의 도구 환경에 얹어 돌렸다. 가장 잘한 조합도 열 번에 네 번을 넘기지 못했고, 여덟 조합을 모두 합한 평균 해결률은 26.9%였다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            실패를 뜯어 보면 성격이 분명하다. 코드를 잘못 고쳐 기존 동작을 깨뜨리거나 엉뚱한 파일을 건드린 경우는 스무 번에 한 번꼴이었다. 나머지는 지시가 요구한 동작을 빠뜨리거나, 맞는 변경을 옆 시스템에 잘못 이어 붙이거나, 작업 공간에서 확인하지 않은 추측 위에 얹은 실패였다. 다만 이 결과표를 모델 순위표로 읽으면 안 된다. 과제가 열 개뿐이라 상위 네 모델의 신뢰구간이 서로 겹치고, 모델마다 다른 실행 환경을 써서 모델의 실력과 도구의 실력이 분리되지 않는다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            한편 이 시험지를 만든 회사는 기업 코드에 값을 매겨 사들이는 페이지를 따로 운영한다. 평가의 경쟁력이 알고리즘이 아니라 데이터를 구해 오는 경로에 있다는 뜻이다. 그래서 도입을 검토하는 쪽에 남는 물음은 하나다. 지금 보고 있는 그 점수는 어디서 난 점수인가.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">26.9%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">640회 롤아웃 전체 평균 해결률</p>
+                            <p class="text-xs themeable-muted mt-1">여덟 조합 가운데 가장 높은 쪽도 38.8%에 그쳤다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">94.9%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">남의 시스템을 못 읽어 난 실패의 비중</p>
+                            <p class="text-xs themeable-muted mt-1">실패 468건 기준. 회귀와 엉뚱한 파일은 합쳐 5.1%였다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">10개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">순위표 여덟 줄 전체가 얹힌 과제 수</p>
+                            <p class="text-xs themeable-muted mt-1">그중 한 과제는 여덟 모델 64회 시도에서 한 번도 안 풀렸다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">$2.50 ↔ $6.96</p>
+                            <p class="text-sm themeable-text-secondary mt-1">롤아웃 한 번에 드는 추정 비용</p>
+                            <p class="text-xs themeable-muted mt-1">3위 조합이 1위보다 2.8배 싸다. 비싼 쪽이 늘 낫지는 않았다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">처음 보는 회사 코드 앞에서</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2026년 9월, Specific Labs라는 신생 평가 회사가 Real-SWE라는 벤치마크를 공개했다. 과제를 만든 방식이 기존 코딩 벤치마크와 다르다. 깃허브의 공개 저장소에서 이슈를 긁어 온 것이 아니라, <strong>과제마다 서로 다른 회사에서 비공개 프로덕션 코드베이스를 라이선스해 왔다</strong>. 페이지의 표현은 이렇다. "각 과제는 우리가 실제 회사로부터 라이선스한 비공개 프로덕션 코드베이스에서 나온다. 그 회사 엔지니어들이 실제로 붙들고 있던 문제이고, 이미 존재하는 제품에 따라오는 모든 맥락과 복잡함을 함께 안고 있다."
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        코드를 내준 회사가 몇 곳인지는 밝히지 않았다. 대신 어떤 종류의 제품인지만 적는다. 사용자 20만 명이 넘고 앱스토어 100위권에 오른 행사 초대 서비스, 은행 거래내역 10만 건 이상을 처리하는 소비자 핀테크, 복잡한 업무 흐름을 받치는 기업용 AI 세일즈 플랫폼이다. 과제 환경도 코드 저장소 하나로 끝나지 않는다. 과제별로 필요한 서비스만 열어 주는데, 그 목록에 AWS 에뮬레이터, 도커, 쿠버네티스, 깃허브, 세 종류의 데이터베이스, 슬랙, 인터콤, 구글 드라이브가 섞여 있다. 사내 엔지니어가 월요일 아침에 마주하는 화면에 가깝다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>640회를 돌려서 나온 표</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        규모는 과제 10개, 모델 8개, 과제당 8회다. 곱하면 롤아웃 640회가 된다. 롤아웃은 에이전트에게 과제 하나를 처음부터 끝까지 풀게 하는 시도 한 번을 말한다. 점수는 해결률(resolution rate)이고, 페이지의 정의로는 "pass@1과 같으며 과제당 여덟 번의 독립 실행을 평균한 값"이다. 채점은 사람이 하지 않는다. 모든 과제가 Harbor 형식으로 포장돼 있고 채점 시점에 검증기가 주입되는데, 그 검증기는 <strong>원래 그 코드베이스에 있던 테스트에서 따오거나 그 테스트를 그대로 쓴다</strong>. 회사가 자기 코드를 지키려고 이미 짜 둔 테스트가 그대로 시험 감독이 되는 셈이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 가지 더 눈여겨볼 설계가 있다. 모델마다 <strong>그 모델을 만든 회사의 도구를 하네스로 썼다</strong>. 하네스는 모델을 감싸고 파일 읽기와 명령 실행, 문맥 관리, 검증을 붙여 주는 실행 환경을 말한다. 제작사는 그 이유를 페이지에 적어 두었다. "기업 엔지니어가 실무에서 일하는 방식을 반영하기 위해 네이티브 하네스를 쓰며, 모델을 따로 떼어 재는 대신 <strong>모델과 하네스의 조합</strong>을 평가한다." 이 한 문장이 뒤에 나올 3절 전체의 전제가 된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결과표는 여덟 줄이다. 1위는 Claude Code 위에 얹은 Fable 5.1로 38.8%, 최하위는 Codex CLI 위의 GPT-5.6 Sol로 16.2%다. 롤아웃당 추정 비용도 함께 실려 있어 나란히 옮긴다.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>순위</th>
+                                    <th>모델</th>
+                                    <th>하네스</th>
+                                    <th class="num">해결률</th>
+                                    <th class="num">롤아웃당 비용</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>1</td><td>Fable 5.1</td><td>Claude Code</td><td class="num hit">38.8%</td><td class="num">$6.96</td></tr>
+                                <tr><td>2</td><td>GPT-6 Astra</td><td>Codex CLI</td><td class="num">33.8%</td><td class="num">$4.67</td></tr>
+                                <tr><td>3</td><td>Gemini 3.8 Flash</td><td>Gemini CLI</td><td class="num">31.2%</td><td class="num">$2.50</td></tr>
+                                <tr><td>4</td><td>GLM 5.3</td><td>Claude Code</td><td class="num">28.8%</td><td class="num">$5.12</td></tr>
+                                <tr><td>공동 5</td><td>Grok 4.6</td><td>Grok Build</td><td class="num">23.8%</td><td class="num">$3.44</td></tr>
+                                <tr><td>공동 5</td><td>Muse Spark 1.3</td><td>Muse Code</td><td class="num">23.8%</td><td class="num">$2.74</td></tr>
+                                <tr><td>7</td><td>Kimi K3</td><td>Kimi Code</td><td class="num">18.8%</td><td class="num">$3.90</td></tr>
+                                <tr><td>8</td><td>GPT-5.6 Sol</td><td>Codex CLI</td><td class="num hit">16.2%</td><td class="num">$2.65</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        여덟 값을 평균하면 26.9%다. 이 수는 페이지에 인쇄돼 있지 않지만 간단한 검산으로 확인된다. 막대 값이 모두 1.25%의 배수라는 것은 모델당 80회 롤아웃을 뜻하고, 과제별 통과 수를 모두 더하면 640회 가운데 172회가 나온다. 172를 640으로 나누면 26.875%로, 여덟 값의 산술평균과 일치한다. 평균적으로 보면 <strong>네 번 가운데 세 번은 실패했다</strong>는 뜻이다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.2</span>몇 주짜리 일을 한 번에 시켰다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        38.8%라는 수를 "코딩 에이전트는 아직 실무에 못 쓴다"로 옮기고 싶어진다. 그런데 과제의 난이도를 알고 나면 그 번역이 성립하지 않는다. 공동창업자 janaksunil은 해커뉴스 토론에 직접 나와 낮은 성공률의 이유를 밝혔다. 같은 스레드에서 그는 자기 회사가 와이콤비네이터 2025년 가을 배치라고도 적었다. "성공률이 낮은 이유는 <strong>실제 엔지니어들이 몇 주씩 붙들고 있던 야심 찬 과제</strong>를 모델에게 줬기 때문이다." 벤치마크 페이지에는 없고 댓글에만 있는 말인데, 점수를 해석하는 데 결정적인 정보다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        말로만 들어서는 그 난이도가 잡히지 않는다. 그래서 실물을 하나 본다. 아래는 해결률 3.1%에 그친 세금 과제의 지시문 일부다. 64번 시도해 두 번 통과했다.
+                    </p>
+                    <blockquote class="themeable-text leading-relaxed mb-6" style="border-left: 4px solid var(--border-color, #e2e8f0); padding-left: 1.25rem; margin-left: 0;">
+                        월요일에 청구가 다시 열리는데 이 서비스가 발행하는 모든 인보이스에 세금이 붙지 않고 나가고 있습니다. 플랫폼의 사업자마다 세금을 처리하는 방식이 다릅니다. 직접 세율을 관리하는 곳도 있고, 우리 세무 당국 연동으로 구매자의 목적지 기준 과세를 원하는 곳도 있고, 아예 징수하지 않는 곳도 있습니다. 그리고 우리가 면세 확인서를 들고 있는 고객은 그 사업자의 설정이 무엇이든 과세되지 않아야 합니다. (…) 당국이 거부한 주소는 인보이스를 멈추지 않은 채로 보고되어야 합니다. (…) 인보이스가 정산되면 그 인보이스 번호로 매출이 당국에 다시 신고되어 신고서가 대사되어야 합니다. 유럽 당사자 간 인보이스에는 양측의 부가세 등록번호가 표시됩니다.
+                    </blockquote>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        조건절이 예닐곱 개 겹쳐 있고, 어느 하나만 빠뜨려도 검증기를 통과하지 못한다. 그러면서 "세율 테이블은 어느 파일에 있다"는 식의 안내는 한 줄도 없다. 그 정보는 코드베이스 안에서 직접 찾아야 한다. 그러니 이 시험에서 지는 방식은 코드를 못 짜는 것이 아니다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">못 짜서가 아니라 못 읽어서 진다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        640회 가운데 468회가 실패했다. 제작사는 그 실패를 제출된 결과물의 겉모습만 보고 다섯 갈래로 갈랐고, 여덟 모델 전부에 같은 분류를 적용했다. 분류 체계를 자기들이 새로 만든 것은 아니다. 페이지는 "DeepSWE를 따랐다"고 밝힌다. 아래 표의 정의는 제작사가 페이지에 적은 문장이다.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>실패 유형</th>
+                                    <th>제작사의 정의</th>
+                                    <th class="num">건수</th>
+                                    <th class="num">468건 중</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>요구사항 누락</td><td>지시가 요구한 동작을 빠뜨린다</td><td class="num">190</td><td class="num hit">40.6%</td></tr>
+                                <tr><td>통합 오류</td><td>발상은 맞는데 주변 시스템에 잘못 이어 붙인다</td><td class="num">136</td><td class="num">29.1%</td></tr>
+                                <tr><td>미검증 가정</td><td>작업 공간에서 확인하는 대신 시스템에 대한 추측 위에 쌓아 올린다</td><td class="num">118</td><td class="num">25.2%</td></tr>
+                                <tr><td>회귀</td><td>변경하면서 기존 동작을 깨뜨린다</td><td class="num">18</td><td class="num">3.8%</td></tr>
+                                <tr><td>엉뚱한 파일</td><td>일회성 스크립트처럼, 돌아가는 애플리케이션이 부르지도 않는 자리에 변경을 넣는다</td><td class="num">6</td><td class="num">1.3%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        위의 셋과 아래의 둘을 나누는 선이 이 표에서 가장 중요하다. 회귀와 엉뚱한 파일은 코드를 다루는 솜씨에 가까운 실수이고, 둘을 합쳐 <strong>5.1%</strong>다. 나머지 <strong>94.9%</strong>는 성격이 다르다. 요구사항을 빠뜨린 것은 지시를 끝까지 읽어 내지 못한 것이고, 통합 오류는 옆 시스템이 무엇을 기대하는지 몰랐던 것이고, 미검증 가정은 코드베이스에 들어가 확인했으면 알 수 있었을 것을 확인하지 않은 것이다. 셋 다 <strong>남이 만들어 놓은 시스템을 읽어 내는 일</strong>에 걸려 있다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            모델이 코드를 못 짜서 진 것이 아니다. 그 코드가 놓일 자리를 파악하지 못해서 졌다. 같은 말을 도입 검토의 언어로 바꾸면 이렇게 된다. 더 큰 모델로 바꾸는 것보다, 에이전트에게 맥락을 공급하는 쪽이 점수를 더 크게 움직일 자리에 있다.
+                        </p>
+                    </div>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>모델마다 지는 방식이 다르다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전체 비율보다 흥미로운 것은 모델별 분해다. 제작사는 각 모델의 실패 건수를 분모로 놓고 유형별 비율을 따로 인쇄했는데, 모양이 서로 꽤 다르다. Grok 4.6은 실패 61건 중 41건이 요구사항 누락이다. 67.2%가 한 유형에 몰려 있다. 반대로 Gemini 3.8 Flash는 실패 55건 중 27건이 통합 오류로 49.1%이고, 요구사항 누락은 29.1%에 그친다. 최하위인 GPT-5.6 Sol은 미검증 가정 비율이 43.3%로 여덟 모델 중 가장 높다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 분해가 실사용자의 체감과 맞은 장면이 해커뉴스에 남아 있다. didgeoridoo라는 이용자는 "Sol이 주로 '미검증 가정'에서 실패하고 '통합 오류'는 드물게 낸다는 것은 내 경험과 맞는다"고 쓰면서, 그 모델은 아주 구체적으로 지시하고 가드레일을 촘촘히 주었을 때만 강하다고 덧붙였다. 표를 보면 Sol의 통합 오류 비율은 16.4%로 여덟 모델 중 두 번째로 낮다. 평가 수치와 현장 감각이 같은 방향을 가리킨 드문 사례다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실무에 옮기면 이렇게 된다. 같은 "코딩 잘하는 모델"이라도 우리 조직에서 부족한 것이 명세인지 시스템 문서인지에 따라 어느 모델이 덜 무너지는지가 갈린다. 평균 점수 한 줄로는 그 판단이 서지 않는다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>오래 붙들고 있어도 나아지지 않았다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        "시간을 더 주면 풀지 않을까"라는 기대에 대한 답도 표에 있다. 10분 미만으로 끝난 롤아웃은 98건이고 그중 70건이 실패해 실패율 71.4%다. 10분 이상 걸린 롤아웃은 542건이고 398건이 실패해 73.4%다. 차이가 거의 없다. 다만 분모를 반드시 함께 봐야 한다. 짧은 쪽은 전체의 15%밖에 안 되고, 일찍 끝난 롤아웃 중에는 애초에 쉬운 과제였던 경우도 섞여 있다. 안전한 문장은 이 정도다. 더 오래 붙들고 있는다고 실패율이 내려가지는 않았다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.3</span>지시가 부실해서 어려운 것이 아니다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        어려움의 정체를 제작사 스스로 측정해 둔 대목이 있다. 지시문 길이의 중앙값은 1,742자로, FrontierCode 2,056자와 DeepSWE 1,975자보다 짧고 Terminal-Bench 3의 1,584자보다는 길다. 페이지의 표현으로는 "약간 덜 명세된(slightly underspecified) 정도이며 DeepSWE나 Terminal Bench와 비슷한 수준"이다. 그런데 <strong>참조 정답이 실제로 고친 파일 수의 중앙값은 11개</strong>다. 같은 비교 대상의 6개보다 두 배 가까이 많다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지시는 남들과 비슷한 길이인데 손대야 할 곳은 두 배다. 어려움은 지시가 빈약해서 생긴 것이 아니라 <strong>닿아야 할 범위가 넓어서</strong> 생긴다. 이 한 줄이 앞의 실패 분해와 맞물린다. 열한 군데를 고쳐야 하는 변경에서 요구사항 하나를 빠뜨리거나 옆 시스템과의 약속 하나를 어기지 않기란 어렵다. 다만 이 길이 비교에는 단서가 하나 붙는다. 제작사는 각주에서 이 비교에 쓴 표본이 "Real-SWE의 저장소 기반 표본 과제 여덟 개"라고 밝힌다. 리더보드와 분석에 쓰인 과제 열 개와 표본 수가 다르다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">이 표는 순위표가 아니다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기까지가 이 벤치마크가 잰 것이다. 이제 그 결과표를 어떻게 읽어야 하는지를 본다. 결론부터 적으면, <strong>여덟 줄의 서열은 이 데이터가 지탱하지 못한다.</strong> 이건 제작사를 비판하는 말이 아니다. 제작사는 그렇게 읽으라고 한 적이 없고, 오히려 반대로 적어 두었다. 문제는 이런 표가 인용될 때 거의 언제나 "1위 모델은 무엇" 한 줄로 압축된다는 데 있다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>구간을 그려 놓고 숫자는 안 적었다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결과표 아래 캡션에는 "95% 신뢰구간이 표시돼 있다"고 적혀 있다. 실제로 각 막대 옆에 가느다란 수염이 그려져 있다. 그런데 그 구간의 <strong>숫자는 어디에도 인쇄돼 있지 않다</strong>. 그래서 페이지의 원본 HTML에서 수염 요소의 좌표를 꺼내 막대와 같은 좌표계로 환산했다. 여덟 개 모두 점추정치와 막대 위치가 0.05%포인트 안에서 일치하므로, 아래 구간은 제작사가 그려 놓고 적지 않은 값을 그대로 읽은 것이다.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 720 368" width="100%" role="img" aria-label="Real-SWE 리더보드 여덟 줄의 해결률과 95% 신뢰구간을 가로로 그린 도표. Fable 5.1은 38.8%에 구간 32.1에서 45.4, GPT-6 Astra는 33.8%에 27.1에서 40.4, Gemini 3.8 Flash는 31.2%에 24.8에서 37.7, GLM 5.3은 28.8%에 19.0에서 38.5, Grok 4.6은 23.8%에 16.8에서 30.7, Muse Spark 1.3은 23.8%에 17.8에서 29.7, Kimi K3는 18.8%에 11.5에서 26.0, GPT-5.6 Sol은 16.2%에 11.3에서 21.2다. 1위부터 4위까지의 구간이 서로 넓게 겹치고, 전체 평균 26.9% 선은 1위부터 4위까지의 구간을 모두 지난다.">
+                            <text x="10" y="22" font-size="14" font-weight="700" fill="var(--text-secondary, #475569)">해결률과 95% 신뢰구간 — 위에서 네 줄은 구간이 서로 겹친다</text>
+                            <text x="10" y="42" font-size="11" fill="var(--text-muted, #808080)">가로축: 해결률(%). 점은 점추정치, 가로선은 95% 신뢰구간.</text>
+
+                            <line x1="422.9" y1="58" x2="422.9" y2="318" stroke="#BDBDBD" stroke-width="1" stroke-dasharray="4 4"/>
+                            <text x="426" y="70" font-size="11" fill="var(--text-muted, #808080)">전체 평균 26.9%</text>
+
+                            <text x="10" y="94" font-size="12" fill="var(--text-secondary, #475569)">Fable 5.1</text>
+                            <text x="162" y="94" font-size="12" text-anchor="end" font-weight="700" fill="#F86825">38.8%</text>
+                            <line x1="471.7" y1="90" x2="596.8" y2="90" stroke="#808080" stroke-width="2"/>
+                            <line x1="471.7" y1="84" x2="471.7" y2="96" stroke="#808080" stroke-width="2"/>
+                            <line x1="596.8" y1="84" x2="596.8" y2="96" stroke="#808080" stroke-width="2"/>
+                            <circle cx="534.7" cy="90" r="5" fill="#F86825"/>
+                            <text x="606" y="94" font-size="11" fill="var(--text-muted, #808080)">32.1 – 45.4</text>
+
+                            <text x="10" y="128" font-size="12" fill="var(--text-secondary, #475569)">GPT-6 Astra</text>
+                            <text x="162" y="128" font-size="12" text-anchor="end" fill="var(--text-secondary, #475569)">33.8%</text>
+                            <line x1="424.7" y1="124" x2="549.8" y2="124" stroke="#808080" stroke-width="2"/>
+                            <line x1="424.7" y1="118" x2="424.7" y2="130" stroke="#808080" stroke-width="2"/>
+                            <line x1="549.8" y1="118" x2="549.8" y2="130" stroke="#808080" stroke-width="2"/>
+                            <circle cx="487.7" cy="124" r="5" fill="#F86825"/>
+                            <text x="559" y="128" font-size="11" fill="var(--text-muted, #808080)">27.1 – 40.4</text>
+
+                            <text x="10" y="162" font-size="12" fill="var(--text-secondary, #475569)">Gemini 3.8 Flash</text>
+                            <text x="162" y="162" font-size="12" text-anchor="end" fill="var(--text-secondary, #475569)">31.2%</text>
+                            <line x1="403.1" y1="158" x2="524.4" y2="158" stroke="#808080" stroke-width="2"/>
+                            <line x1="403.1" y1="152" x2="403.1" y2="164" stroke="#808080" stroke-width="2"/>
+                            <line x1="524.4" y1="152" x2="524.4" y2="164" stroke="#808080" stroke-width="2"/>
+                            <circle cx="463.3" cy="158" r="5" fill="#F86825"/>
+                            <text x="534" y="162" font-size="11" fill="var(--text-muted, #808080)">24.8 – 37.7</text>
+
+                            <text x="10" y="196" font-size="12" fill="var(--text-secondary, #475569)">GLM 5.3</text>
+                            <text x="162" y="196" font-size="12" text-anchor="end" fill="var(--text-secondary, #475569)">28.8%</text>
+                            <line x1="348.6" y1="192" x2="531.9" y2="192" stroke="#808080" stroke-width="2"/>
+                            <line x1="348.6" y1="186" x2="348.6" y2="198" stroke="#808080" stroke-width="2"/>
+                            <line x1="531.9" y1="186" x2="531.9" y2="198" stroke="#808080" stroke-width="2"/>
+                            <circle cx="440.7" cy="192" r="5" fill="#F86825"/>
+                            <text x="541" y="196" font-size="11" fill="var(--text-muted, #808080)">19.0 – 38.5</text>
+
+                            <text x="10" y="230" font-size="12" fill="var(--text-secondary, #475569)">Grok 4.6</text>
+                            <text x="162" y="230" font-size="12" text-anchor="end" fill="var(--text-secondary, #475569)">23.8%</text>
+                            <line x1="327.9" y1="226" x2="458.6" y2="226" stroke="#808080" stroke-width="2"/>
+                            <line x1="327.9" y1="220" x2="327.9" y2="232" stroke="#808080" stroke-width="2"/>
+                            <line x1="458.6" y1="220" x2="458.6" y2="232" stroke="#808080" stroke-width="2"/>
+                            <circle cx="393.7" cy="226" r="5" fill="#F86825"/>
+                            <text x="468" y="230" font-size="11" fill="var(--text-muted, #808080)">16.8 – 30.7</text>
+
+                            <text x="10" y="264" font-size="12" fill="var(--text-secondary, #475569)">Muse Spark 1.3</text>
+                            <text x="162" y="264" font-size="12" text-anchor="end" fill="var(--text-secondary, #475569)">23.8%</text>
+                            <line x1="337.3" y1="260" x2="449.2" y2="260" stroke="#808080" stroke-width="2"/>
+                            <line x1="337.3" y1="254" x2="337.3" y2="266" stroke="#808080" stroke-width="2"/>
+                            <line x1="449.2" y1="254" x2="449.2" y2="266" stroke="#808080" stroke-width="2"/>
+                            <circle cx="393.7" cy="260" r="5" fill="#F86825"/>
+                            <text x="459" y="264" font-size="11" fill="var(--text-muted, #808080)">17.8 – 29.7</text>
+
+                            <text x="10" y="298" font-size="12" fill="var(--text-secondary, #475569)">Kimi K3</text>
+                            <text x="162" y="298" font-size="12" text-anchor="end" fill="var(--text-secondary, #475569)">18.8%</text>
+                            <line x1="278.1" y1="294" x2="414.4" y2="294" stroke="#808080" stroke-width="2"/>
+                            <line x1="278.1" y1="288" x2="278.1" y2="300" stroke="#808080" stroke-width="2"/>
+                            <line x1="414.4" y1="288" x2="414.4" y2="300" stroke="#808080" stroke-width="2"/>
+                            <circle cx="346.7" cy="294" r="5" fill="#F86825"/>
+                            <text x="424" y="298" font-size="11" fill="var(--text-muted, #808080)">11.5 – 26.0</text>
+
+                            <text x="10" y="332" font-size="12" fill="var(--text-secondary, #475569)">GPT-5.6 Sol</text>
+                            <text x="162" y="332" font-size="12" text-anchor="end" fill="var(--text-secondary, #475569)">16.2%</text>
+                            <line x1="276.2" y1="328" x2="369.3" y2="328" stroke="#808080" stroke-width="2"/>
+                            <line x1="276.2" y1="322" x2="276.2" y2="334" stroke="#808080" stroke-width="2"/>
+                            <line x1="369.3" y1="322" x2="369.3" y2="334" stroke="#808080" stroke-width="2"/>
+                            <circle cx="322.3" cy="328" r="5" fill="#F86825"/>
+                            <text x="379" y="332" font-size="11" fill="var(--text-muted, #808080)">11.3 – 21.2</text>
+
+                            <line x1="170" y1="346" x2="660" y2="346" stroke="var(--border-color, #e2e8f0)" stroke-width="1"/>
+                            <text x="170" y="362" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">0</text>
+                            <text x="264" y="362" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">10</text>
+                            <text x="358" y="362" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">20</text>
+                            <text x="452" y="362" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">30</text>
+                            <text x="546" y="362" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">40</text>
+                            <text x="640" y="362" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">50</text>
+                        </svg>
+                        <p class="fig-caption">출처: Specific Labs, "Introducing Real-SWE"(2026년 9월)의 리더보드. 점추정치는 페이지에 인쇄된 값이고, 구간 값은 같은 페이지 신뢰구간 요소의 좌표에서 환산했다. 캡션이 "95% 신뢰구간이 표시돼 있다"고 밝히므로 이 수염이 95% 구간이라는 것은 추정이 아니다.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        구간을 그려 놓고 보면 표의 모양이 달라진다. 1위 Fable의 구간(32.1~45.4)은 2위 Astra(27.1~40.4)와 넓게 겹치고, <strong>4위 GLM(19.0~38.5)과도 여전히 겹친다</strong>. 공동 5위 두 모델과 7위 Kimi도 서로 겹친다. 이 데이터가 통계적으로 갈라 내는 것은 대체로 "상위권 대 최하위" 정도이고, 1위부터 4위까지의 서열은 표본 하나가 바뀌면 흔들린다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>과제 열 개가 순위를 들고 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        구간이 이렇게 넓은 이유는 단순하다. 순위표 여덟 줄 전체가 <strong>과제 열 개</strong> 위에 얹혀 있기 때문이다. 제작사는 이 분석 절을 "우리 벤치마크에서 뽑은 작은 표본"이라고 부르지만, 과제별 통과 수를 모두 더하면 리더보드 값과 정확히 맞는다. 즉 공개된 순위표가 이 열 개에서 나왔다. 과제별 결과는 이렇다.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>과제</th>
+                                    <th class="num">64회 중 통과</th>
+                                    <th class="num">해결률</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>다중 리전 일괄 변경</td><td class="num">43</td><td class="num">67.2%</td></tr>
+                                <tr><td>API 키와 환경 분리</td><td class="num">42</td><td class="num">65.6%</td></tr>
+                                <tr><td>초과 사용분 청구 항목</td><td class="num">32</td><td class="num">50.0%</td></tr>
+                                <tr><td>고객 식별자 이전</td><td class="num">26</td><td class="num">40.6%</td></tr>
+                                <tr><td>청구 주기 이전</td><td class="num">9</td><td class="num">14.1%</td></tr>
+                                <tr><td>API 토큰 사용량 계량</td><td class="num">8</td><td class="num">12.5%</td></tr>
+                                <tr><td>S3 저장소 사용량 측정</td><td class="num">7</td><td class="num">10.9%</td></tr>
+                                <tr><td>선형화 가능 스캔</td><td class="num">3</td><td class="num">4.7%</td></tr>
+                                <tr><td>세금 관할 처리</td><td class="num">2</td><td class="num">3.1%</td></tr>
+                                <tr><td>분석 스트림 리듀서</td><td class="num hit">0</td><td class="num hit">0.0%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        페이지 스스로 붙인 소제목이 "열 개 중 여섯 개가 해결률 15% 미만"이고 "모든 과제를 푸는 모델은 없다"이다. 맨 아래 한 과제는 <strong>여덟 모델이 64번 시도해 한 번도 통과하지 못했다</strong>. 그 과제 하나를 빼면 여덟 모델의 점수가 모두 올라가고 간격도 달라진다. 앞 절의 신뢰구간이 왜 그렇게 넓은지를 이 표가 눈으로 보여 준다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 인상적인 것은 모델과 과제가 맞물리는 방식이다. 종합 공동 5위인 Grok 4.6은 "고객 식별자 이전" 과제에서 <strong>혼자 8전 8승</strong>을 했다. 같은 과제에서 1위 Fable은 3회, 2위 Astra는 1회 통과에 그쳤다. 반대로 Kimi K3는 전체에서 두 번째로 쉬운 과제를 <strong>여덟 번 모두 실패</strong>했는데, 다른 모델들은 같은 과제를 네 번에서 여덟 번까지 통과했다. "어느 모델이 더 낫다"보다 "어느 과제에서 어느 모델이 되느냐"가 크다는 뜻이다. 우리 조직의 일이 저 열 개 중 어느 쪽을 닮았는지를 모른 채 순위만 가져오면, 가져온 것은 정보가 아니라 착시다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>각 줄은 모델이 아니라 모델과 도구의 조합이다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        1절에서 본 대로 Real-SWE의 각 줄은 모델 이름과 하네스 이름을 함께 달고 있다. 이것이 왜 결정적인지는 올해 5월 arXiv에 올라온 논문 한 편이 정면으로 다룬다. 제목이 그대로 주장이다. "하네스를 밝히지 않고 LLM 에이전트를 비교하지 말라." 먼저 성격을 정확히 적어 둔다. 초록 첫 문장이 "이 입장 논문은(This position paper argues)"으로 시작하는 <strong>입장 논문</strong>이고, 다만 4절에 통제된 요인실험이 붙어 있다. 실험 논문으로 소개하면 과장이 된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 공개 리더보드에서 뽑아 온 대비가 선명하다. 어느 코딩 리더보드에서 표준화된 스캐폴드 하나로 통일해 재면 <strong>선두 프런티어 모델 여섯이 4.9%포인트 안에 다 들어온다</strong>(41.0%~45.9%). 그런데 모델 하나를 고정해 두고 하네스만 바꾸면 같은 모델이 45.9%에서 55.4%로 움직여 <strong>9.5%포인트</strong>가 벌어진다. 논문의 표현으로 "모델 안에서 하네스를 바꿔 생기는 폭이, 하네스 안에서 모델을 바꿔 생기는 폭을 대략 두 배 넘어선다." 검색용 서브에이전트 하나를 더 붙였더니 두 모델의 순위가 뒤집힌 사례도 함께 든다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 직접 돌린 통제 실험은 더 담백하다. 코딩 리더보드에서 서로 바싹 붙어 있던 모델 셋을 골라, 하네스를 최소·개선·완전 세 구성으로 놓고 SWE-bench Verified에서 난이도를 층화해 뽑은 100과제를 풀렸다. 셀마다 두 번씩 돌린 작은 실험이라는 점은 감안해야 한다. 그래도 방향은 분명했다. 하네스가 만든 분산이 모델이 만든 분산의 <strong>7.8배</strong>였고, 모델쌍과 하네스쌍을 교차한 아홉 번의 비교 가운데 <strong>여섯 번에서 순위가 뒤집혔다</strong>. 최소 구성에서 1등이던 모델이 완전 구성에서는 1등이 아니었다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 기준을 Real-SWE에 대면 1위 38.8%와 최하위 16.2% 사이의 22.6%포인트 안에 모델의 효과와 도구의 효과가 섞여 있고, 이 데이터만으로는 둘이 분리되지 않는다. 공정하게 덧붙이면, 제작사는 이 사실을 숨기지 않고 "모델을 따로 떼어 재는 대신 모델과 하네스의 조합을 평가한다"고 페이지에 적었다. 비판의 대상은 제작사가 아니라, 이 표를 모델 순위표로 옮겨 적는 읽기 쪽이다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        하네스가 바깥에서 감사되지 않는다는 점도 같은 토론에서 드러났다. 한 이용자는 "요즘 Gemini CLI 같은 건 없다"며 벤치마크가 폐기된 도구를 썼다고 지적했다. 확인해 보면 그 지적은 정확하지 않다. 구글의 공식 공지는 2026년 5월 19일에 전환을 알렸고, 개인 요금제 사용자에 대한 요청 처리 중단일은 6월 18일이며, <strong>Gemini Code Assist 스탠더드·엔터프라이즈 라이선스 조직과 유료 API 키 사용자는 접근이 그대로 유지된다</strong>고 같은 문서에 적혀 있다. 그러니 "폐기된 하네스를 썼다"고 쓰면 사실이 아니다. 정작 남는 문제는 다른 쪽이다. 어느 판본을, 어떤 설정으로 돌렸는지 바깥에서는 확인할 방법이 없다. 모든 모델을 '높음' 추론 강도로 돌렸다는 사실조차 벤치마크 페이지가 아니라 공동창업자의 댓글에 적혀 있다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.4</span>비싼 쪽이 잘한 것도 아니다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        1절의 표에 비용 열을 나란히 둔 이유가 여기 있다. 제작사가 붙인 소제목부터 "비용이 높다고 해결률이 높아지지는 않는다"이다. 1위 Fable 5.1은 롤아웃당 $6.96이고 3위 Gemini 3.8 Flash는 $2.50이다. <strong>2.8배를 더 쓰고 7.6%포인트를 더 푼다</strong>. 더 뚜렷한 장면은 4위다. GLM 5.3은 $5.12에 28.8%인데, 그보다 싼 Gemini 3.8 Flash가 31.2%를 낸다. 더 비싸면서 더 못한 조합이 표 안에 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        토큰도 같은 방향이다. 롤아웃당 평균 출력 토큰이 GPT-6 Astra는 2만 4천인데 33.8%를 내고, GLM 5.3은 11만 7천을 쓰고 28.8%에 그친다. 다섯 배 가까이 태우고 더 낮은 점수를 받았다. 도입 검토에 가장 직접적인 장면은 Grok 4.6이 남겼다. 이 모델은 자기가 한 번도 풀지 못한 두 과제에 26만과 31만 토큰을 썼는데, 자기가 잘 푼 과제들에서는 3천에서 2만 토큰이면 끝냈다. <strong>못 푸는 문제에서 가장 많이 태운다</strong>는 것이 사내 비용 리스크의 구체적인 모양이다. 다만 Grok 4.6과 Kimi K3는 사용량 집계가 불완전해 실제 비용이 더 높을 수 있다고 페이지가 밝히고 있어, 두 모델의 비용은 하한선으로 읽어야 한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래도 점수 한 줄이 못 담는 것은 남는다. 해커뉴스에서 한 이용자는 "이 표는 Fable이 Astra보다 낫다고 말하지만, 실제로는 Astra가 다섯 배쯤 빠르고 대화하기도 훨씬 덜 성가시다"고 적었다. 다른 이용자가 곧바로 "속도와 성가심은 재지 않는다고 페이지에 적혀 있다"고 답했는데, 정확히는 절반만 맞다. Real-SWE는 롤아웃당 비용과 벽시계 시간을 잰다. 재지 않는 것은 대화의 질과 사람이 얼마나 자주 끼어들어야 하는가다. 공동창업자는 그 지적에 "장기 과제에서도 속도가 중요하겠느냐"고 되물었고, 상대는 "결과를 일주일 뒤에 받고 싶은가, 하루 뒤에 받고 싶은가"라고 답했다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">그래도 사내 코드에서 내려간다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        앞 절의 경계를 지키면 이런 질문이 남는다. "공개 저장소에서 잘하던 에이전트가 사내 코드에서 무너진다"는 문장은 그러면 근거가 있는가. <strong>Real-SWE 혼자로는 그 문장을 세우지 못한다.</strong> 같은 모델을 공개 코드에서 잰 짝이 이 벤치마크 안에 없기 때문이다. 그리고 다른 벤치마크의 70%대 점수를 끌어와 38.8% 옆에 놓는 것은 더 나쁘다. 과제의 정의도, 채점 방식도, 하네스도 다른 두 수를 자릿수가 극적이라는 이유로 붙여 놓는 일이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        대신 쓸 수 있는 근거가 따로 있다. Scale AI의 SWE-bench Pro는 <strong>같은 벤치마크 안에 공개 분할과 비공개 분할을 함께 두고</strong> 같은 모델을 양쪽에서 잰다. 전체 1,865과제 41저장소가 셋으로 나뉜다. 공개 731과제는 GPL 같은 강한 카피레프트 저장소에서만 뽑았고, 비공개 276과제는 <strong>스타트업 18곳의 독점 코드베이스</strong>에서 가져왔으며, 나머지 858과제는 내부 분석용으로 공개하지 않는다. 카피레프트 라이선스를 고른 이유를 운영사는 "학습 데이터 편입에 대한 법적 억지력"이라고 적는다. 오염을 라이선스로 막아 보려는 설계다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 리더보드에서 같은 이름으로 나타나는 모델을 모두 골라 맞춰 보면 일곱 쌍이 나온다. 앞의 다섯 쌍은 <strong>양쪽 모두 같은 하네스(mini-swe-agent) 표시가 붙어 있어</strong>, 3절이 요구한 조건인 "하네스를 고정하고 비교하기"를 만족한다.
+                    </p>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>모델</th>
+                                    <th class="num">공개 분할</th>
+                                    <th class="num">비공개 분할</th>
+                                    <th class="num">낙폭</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Muse Spark 1.1 *</td><td class="num">61.5 ±3.1</td><td class="num">51.5 ±5.5</td><td class="num hit">−10.0%p</td></tr>
+                                <tr><td>gpt-5.4 (xHigh) *</td><td class="num">59.1 ±3.6</td><td class="num">43.4 ±6.0</td><td class="num hit">−15.7%p</td></tr>
+                                <tr><td>Muse Spark *</td><td class="num">55.0 ±3.6</td><td class="num">44.7 ±6.1</td><td class="num hit">−10.3%p</td></tr>
+                                <tr><td>claude-opus-4-6 (thinking) *</td><td class="num">51.9 ±3.6</td><td class="num">47.1 ±6.1</td><td class="num">−4.8%p</td></tr>
+                                <tr><td>gemini-3.1-pro (thinking) *</td><td class="num">46.1 ±3.6</td><td class="num">32.2 ±5.7</td><td class="num hit">−13.9%p</td></tr>
+                                <tr><td>GPT 5.2 Codex</td><td class="num">41.0 ±3.6</td><td class="num">27.7 ±5.1</td><td class="num hit">−13.3%p</td></tr>
+                                <tr><td>GPT 5.2</td><td class="num">29.9 ±2.2</td><td class="num">23.8 ±5.1</td><td class="num">−6.1%p</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="fig-caption">2026년 9월 15일 기준 Scale SWE-bench Pro 공개·비공개 리더보드에서 같은 이름으로 나타나는 쌍을 모두 뽑았다. ± 값은 각 페이지가 함께 싣는 신뢰구간이고, 별표는 mini-swe-agent 하네스로 돌렸다는 표시다. 굵게 표시한 다섯 쌍은 양쪽 구간이 서로 겹치지 않는다.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        <strong>일곱 쌍의 방향이 예외 없이 아래쪽이다.</strong> 폭은 4.8%포인트에서 15.7%포인트까지 벌어진다. 여기서도 구간을 함께 봐야 정직하다. 일곱 쌍 가운데 다섯 쌍은 공개 쪽 구간과 비공개 쪽 구간이 겹치지 않아 우연으로 보기 어렵고, 나머지 두 쌍은 구간이 겹쳐 개별 사례만으로는 단정할 수 없다. 그러니 증거의 무게는 어느 한 쌍의 크기가 아니라 <strong>일곱 쌍이 한 방향으로 움직였다는 사실</strong>에 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        인용할 때 주의할 대목이 하나 더 있다. 두 페이지의 그림 설명에는 "Claude Opus 4.1이 22.7%에서 17.8%로, GPT-5가 23.1%에서 14.9%로 내려간다"는 오래된 문장이 그대로 붙어 있다. 비공개 쪽 값은 지금 표에도 17.75%와 14.86%로 남아 있지만, 공개 쪽 표에는 그 두 모델의 옛 행이 더 이상 없다. 캡션은 논문 시점의 스냅숏이고 표는 이후 갱신본이다. <strong>캡션은 캡션대로, 표는 표대로 인용해야 한다.</strong> 섞으면 없는 비교가 만들어진다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            정리하면 이렇다. 사내 코드에서 점수가 내려간다는 것은 Real-SWE 한 건의 인상이 아니라, 다른 기관이 같은 벤치마크 안에서 하네스를 고정한 채 여러 번 관측한 패턴이다. 다만 그 낙폭이 얼마나 클지는 회사마다 다르고, 이 표가 말해 주는 것은 방향이지 우리 조직에서의 크기가 아니다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">시험지를 사 오는 사업</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지금까지는 시험 결과를 읽었다. 이제 시험지가 어디서 왔는지를 본다. 벤치마크를 만든 회사는 같은 도메인에 페이지를 하나 더 두고 있다. 주소는 <code>/company-data</code>이고, 브라우저 탭에 뜨는 제목부터 이렇다. "당신 회사의 데이터는 10만~100만 달러의 가치가 있을 수 있습니다."
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        본문은 짧다. "Specific은 <strong>실제로 일이 어떻게 이루어지는지에 대한 값진 기록</strong>을 보유한 회사들과 협업합니다. 이 데이터는 AI 모델을 학습시키고 평가하는 데 도움이 됩니다. 회사 정보 몇 가지를 알려 주시면 비공개 적합성 검토를 해 드립니다." 그리고 폼이 이어진다. 이름, 회사 웹사이트와 일치하는 업무 이메일, 회사명, <strong>"귀사에서 접근 권한이 있고 라이선스할 수 있는 소프트웨어"</strong>, 최대 인원, 현재 인원, 업력, 전화번호, 그리고 팩스 번호까지 받는다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        주목할 것은 이 페이지에 <strong>적혀 있지 않은 것</strong>들이다. 보상이 어떻게 산정되는지, 기밀 유지는 어떤 조항으로 보장되는지, 데이터를 얼마나 보존하는지, 다른 곳에 재사용하거나 되팔 수 있는지, 나중에 물릴 수 있는지가 없다. 명시된 문장은 "정보를 보내면 개인정보처리방침에 동의하는 것이며, 이 폼으로는 어떤 파일이나 데이터셋도 업로드되지 않습니다" 한 줄뿐이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 그 개인정보처리방침을 열어 봤다. 전문이 A4 반 장이 안 되고, 내용은 <strong>전부 링크드인 광고 측정 연동에 관한 것</strong>이다. 해시된 업무 이메일과 클릭 식별자를 광고 측정용으로 링크드인과 공유한다는 설명, 해시된 이메일도 익명은 아니라는 고지, 전달 실패에 대비해 약 24시간 보관한다는 안내가 전부다. <strong>라이선스한 코드를 어떻게 다루는지에 대한 문장은 한 줄도 없다.</strong> 10만~100만 달러라는 숫자가 먼저 나오고, 그 대가로 무엇을 내주는지는 공개된 자리 어디에도 없다. 오해를 만들지 않도록 정확히 적으면, 계약서에 그 조항이 없다는 뜻이 아니라 <strong>문의 단계에서는 공개되지 않는다</strong>는 뜻이다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>같은 문장이 벤치마크의 명분이자 영업의 논리다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        벤치마크 페이지로 돌아가면 근거 없이 놓인 문장이 하나 있다. "실제 기업 안에 있는 토큰의 99%는 프런티어 모델에게 가려져 있다." 출처도, 산출 방법도 붙어 있지 않다. 그런데 이 문장이 두 가지 일을 동시에 한다. 하나는 왜 공개 저장소로 만든 벤치마크를 못 믿는지를 설명하는 것이고, 다른 하나는 <strong>왜 당신 회사 코드에 값이 붙는지</strong>를 설명하는 것이다. 평가의 명분과 매입의 영업 논리가 같은 한 문장에 얹혀 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 구조는 해커뉴스 토론에서 옹호 논리 하나를 무너뜨린다. 한 이용자는 이렇게 변호했다. "벤치마크를 내놓는 쪽이 <strong>당신에게 무언가를 팔려는 게 아니고</strong> 페이지에 오른 회사들과 이해관계가 없다면, 석 달 뒤 다음 모델이 나오면 무용지물이 되는 벤치마크보다는 낫다." 조건이 정확한데, 이 경우에는 그 조건이 충족되지 않는다. 이 회사는 팔 것이 있고, 사들일 것도 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        매입 경로 자체를 의심한 댓글도 있었다. 한 이용자는 "망했거나 문 닫은 제품의 코드베이스를 <strong>줄당 얼마</strong>로 사겠다는 광고가 사방에 널렸다"며, 버려진 중소 코드베이스나 가짜 코드베이스가 섞였을 가능성을 제기했다. 이 주장은 해커뉴스 이용자의 미확인 진술이고, 이 리포트도 그런 광고의 1차 출처를 확인하지 못했으므로 그대로 믿을 근거는 없다. 공동창업자의 답은 한 줄이었다. "모든 코드베이스와 회사를 우리가 직접 검증한다."
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 페이지가 파는 것은 코드가 아니다. "실제로 일이 어떻게 이루어지는지에 대한 기록"이다. 저장소 하나가 아니라, 그 회사가 일을 처리해 온 방식이 검증기까지 딸린 채로 넘어간다. 평가 산업에서 값이 붙기 시작한 자산의 정체가 그것이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">비공개로 지킨 값, 비공개라서 못 하는 검증</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비공개 코드로 재는 것은 지금으로선 오염을 피하는 가장 정직한 방법에 가깝다. 그런데 비공개인 순간, 그 측정을 바깥에서 검산할 방법이 사라진다. 해커뉴스에서 가장 날이 선 비판이 그 지점을 찔렀다. "요약하면 완전히 재현 불가능한 방식의 벤치마킹 아닌가. '모델 X가 훌륭했다, 다만 그 모델이 본 코드에 대해서는 어느 이름 모를 회사의 큰 코드베이스였다는 것 말고는 아무것도 말해 줄 수 없다'는 것이다. 그러니까 결국 <strong>손가락 걸고 약속하는 벤치마킹</strong> 아닌가?"
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        반론도 정직했다. "이런 것이 이력과 신뢰를 쌓아 간다면 가치가 있을 수 있다. <strong>조작하기 어렵게 만드는 대가로 투명성을 내주는 것</strong>이다." 거래의 양면이 이 두 문장에 다 들어 있다. 문제는 그 거래에서 내준 것이 얼마나 되는지다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>방법론이 페이지가 아니라 댓글에 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        벤치마크 페이지에서 평가 설정을 설명하는 절은 세 문장이다. 격리된 샌드박스에서 돌렸고, 과제는 Harbor 형식이며, 채점 시점에 검증기를 주입하는데 그 검증기는 코드베이스의 기존 테스트에서 왔다는 것. 재현에 필요한 나머지는 전부 토론 스레드에 흩어져 있다. 모든 모델을 '높음' 추론 강도로 돌렸다는 것, 코드베이스를 직접 검증했다는 것, 과제가 사람 엔지니어 기준 몇 주짜리였다는 것, 그리고 오염 방어의 핵심 주장까지 그렇다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 핵심 주장은 이것이다. "<strong>모든 코드베이스는 2023년 이전에 쓰였다. AI가 코딩을 잘하게 되기 전이다.</strong>" 방어로서 절반만 성립한다. "2023년 이전에 쓰였다"는 "학습 데이터에 없다"와 다른 명제다. 오래된 코드일수록 과거의 크롤과 포크에 걸렸을 여지는 오히려 있다. 그리고 이 문장은 벤치마크 페이지가 아니라 댓글에 있다. 인용할 때는 <strong>제작사의 주장이되 검증되지 않았다</strong>는 표시를 반드시 붙여야 한다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>비공개라고 깨끗한 것은 아니다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 스레드에서 자체 벤치마크를 운영하는 이용자가 가장 실무적인 경고를 남겼다. "더 좋고 더 큰 '비공개' 코드베이스들 중 상당수가, 적어도 코딩 에이전트 관점에서는 <strong>지금 시점에 사실상 비공개가 아니다</strong>. 벤치마크를 운영하며 얻은 교훈 하나는 <strong>매번 오염을 측정하라</strong>는 것이다."
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        오염을 재는 방법은 <a href="/blog/llm-benchmark-contamination/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">지난 6월에 한 번 정리한 적</a>이 있는데, 그가 쓰는 방식은 그중에서도 가장 단순한 축에 든다. 두 갈래이고, 사내 파일럿에 그대로 옮길 수 있다. 하나는 <strong>자료를 끊고 돌려 보는 것</strong>이다. 데이터베이스도 인터넷도 없이 같은 문제를 풀렸는데 그래도 맞힌다면, 그건 푸는 게 아니라 아는 것이다. 다른 하나는 <strong>중간 흔적을 보는 것</strong>이다. 앞 단계에서는 알 수 없었을 지식이 중간 질의에 섞여 있는지 살핀다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        반대로, 오염을 확인했다고 주장할 때 하면 안 되는 방법도 같은 스레드에 있다. 한 이용자가 챗봇에게 사내 관용구를 물어 그 회사 스타일의 코드를 받아 냈고, 어디서 배웠느냐고 묻자 모델이 "그 회사의 내부 코딩 관행에 대한 학습된 이해에서"라고 답했다고 적었다. 곧바로 반박이 붙었다. "<strong>모델에게 물어서 모델의 학습을 들여다볼 수는 없다.</strong> '그걸 어디서 알았느냐'는 질문에 모델이 지어낸 답은 현실과 거의 관계가 없다." 원 작성자도 "맞는 말"이라고 수긍했다. 오염은 느낌이 아니라 대조군으로 재는 것이다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>비공개 평가를 책임 있게 굴리는 방식은 이미 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        "비공개니까 검산이 불가능하다"는 말은 변명이 되지 못한다. 먼저 해 본 곳이 있기 때문이다. ARC Prize는 과제를 네 벌로 나눠 운영한다. 공개 학습 400, 공개 평가 400, 준비공개 평가 100, 완전 비공개 평가 100이다. 이름부터 정직하다. 준비공개 세트에 대해 그들은 이렇게 적는다. "공개되지 않았지만 <strong>상용 API에 노출되었으므로 유출 위험을 안고 있기 때문에</strong> '준비공개'라고 부른다." 노출된 세트를 완전 비공개라고 부르지 않는다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 배울 만한 것은 과적합 판정을 수치로 못 박아 둔 대목이다. "준비공개 점수와 공개 평가 점수의 절대 차이가 <strong>±10%를 넘으면 과적합으로 본다</strong>." 그러려면 두 점수를 나란히 발표해야 하고, 실제로 그 표에는 참가자별 두 점수가 함께 실려 있다. 그리고 그 기준을 자기 표에 대면 47.5%와 62.8%를 받은 항목 하나가 선 밖에 있다. 기준을 공개한다는 것은 자기 표도 그 기준에 걸리는 모습을 보여 준다는 뜻이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        자기 세트가 닳고 있다는 사실까지 보고서에 적어 두었다. "이 100개 과제는 네 번의 대회 모두에 쓰였고, 그 결과 지금까지 <strong>비공개 평가 점수가 1만 건 규모로 참가자들에게 보고되었다.</strong> 점수 하나하나가 숨긴 과제의 내용에 대해 아주 적지만 0은 아닌 정보를 빼낼 수 있으므로, 이는 상당한 과적합 위험이 된다." 비공개 세트는 쓸수록 마모된다는 것을 운영자 스스로 문서에 남긴 것이다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 목록과 대조하면 Real-SWE가 지금 갖춘 것은 "일부 과제와 모델 궤적을 나중에 공개하겠다"는 약속 하나다. 공개·비공개 점수 병기도, 수치로 못 박은 과적합 기준도, 제3자 감사도, 세트 교체 주기도 아직 없다. 그리고 과제 열 개는 이미 여덟 모델 640회로 채점됐고 과제별 결과까지 공개됐다. 이미 오염됐다는 뜻이 아니다. <strong>마모가 시작되는 구조</strong>라는 뜻이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="section-7" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">우리 코드로는 무엇을 재야 하나</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        남의 순위표를 잘 읽는 법을 아무리 익혀도, 결국 필요한 것은 자기 코드에서 잰 수다. 앞 절들에서 나온 근거만 추려 사내 파일럿의 설계로 옮긴다. 일곱 가지인데, 전부 이 글 안에서 근거를 댈 수 있는 항목만 남겼다.
+                    </p>
+                    <ol class="themeable-text leading-relaxed space-y-4 mb-6">
+                        <li><strong>하네스를 고정하고 명시한다.</strong> 같은 모델도 실행 환경에 따라 9.5%포인트까지 움직이고, 검색 도구 하나를 붙이는 것만으로 순위가 뒤집힌다. 벤더가 내민 점수를 볼 때 "어느 하네스에서, 어느 추론 강도로 난 점수인가"를 먼저 묻는다.</li>
+                        <li><strong>과제는 진짜 일에서 뽑는다.</strong> 사람 엔지니어가 며칠에서 몇 주 붙들었던 일을 골라야 의미 있는 측정이 된다. 그리고 채점은 사람 눈이 아니라 그 코드베이스에 이미 있는 테스트로 한다.</li>
+                        <li><strong>과제당 여러 번 돌리고 구간을 함께 적는다.</strong> 과제 수가 적으면 순위는 표본 하나로 뒤집힌다. 점수 옆에 신뢰구간이 없으면 그 표는 오차 막대 없는 그래프다.</li>
+                        <li><strong>실패를 유형으로 분류한다.</strong> 요구사항 누락·통합 오류·미검증 가정이 대부분으로 나온다면, 답은 더 큰 모델이 아니라 맥락 공급이다. 명세, 테스트, 인접 시스템과의 약속, 사내 관행을 글로 적어 두는 일이 점수를 더 크게 움직인다.</li>
+                        <li><strong>비용과 토큰을 같은 표에 넣는다.</strong> 최고 점수가 최고 가성비인 경우는 드물었고, 어떤 모델은 못 푸는 문제에서 가장 많이 태웠다. 예산 사고는 평균이 아니라 그 꼬리에서 난다.</li>
+                        <li><strong>오염을 매번 잰다.</strong> 자료 접근을 끊고 같은 문제를 풀려 본다. 그래도 맞히면 문제가 있는 것이다. 중간 단계 흔적에 앞 단계로는 알 수 없었을 지식이 섞였는지도 함께 본다.</li>
+                        <li><strong>내보낼 데이터라면 계약서를 먼저 읽는다.</strong> 보상 산정, 기밀, 보존 기간, 재사용과 재판매, 철회 절차를 확인한다. 문의 폼 단계에서는 그중 아무것도 공개되지 않는다.</li>
+                    </ol>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 목록을 다 돌리는 데 드는 비용이 부담스럽다면, 순서를 바꿔도 된다. 3번과 4번만 먼저 해도 대부분의 조직은 지금 보고 있는 벤더 점수보다 자기 조직에 훨씬 쓸모 있는 수를 손에 쥔다. 과제 열 개에 과제당 여덟 번이면 여든 번이고, 그 정도는 주말 하나에 돌아간다.
+                    </p>
+                </section>
+
+                <!-- 페블러스 관심의 이유 -->
+                <section id="pebblous-perspective" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">8</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스 관심의 이유</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스는 데이터를 진단하고 품질 성적서를 발급하는 일을 한다. 그래서 이 벤치마크는 남의 업종 이야기로 읽히지 않는다. 고장의 모양도, 가격이 붙는 자리도 우리가 매일 들여다보는 것과 같기 때문이다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">8.1</span>실패의 94.9%는 품질 문제로 번역된다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2절의 분해를 데이터 품질의 언어로 옮기면 이렇게 된다. 요구사항 누락은 명세가 코드 옆에 없다는 뜻이고, 통합 오류는 인접 시스템과의 약속이 문서가 아니라 사람 머리에 있다는 뜻이고, 미검증 가정은 확인할 곳이 어디인지 코드베이스가 알려 주지 않는다는 뜻이다. 모델이 코드를 못 짜는 것이 아니라 <strong>그 코드가 놓일 맥락을 확보하지 못한다</strong>. "우리 코드베이스는 아직 AI-Ready 하지 않다"는 말의 구체적인 형태가 이 세 줄이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 번역은 도입 검토의 방향을 바꾼다. 검토가 대개 "어느 모델을 살 것인가"로 시작하는데, 이 표가 가리키는 지렛대는 모델 쪽이 아니다. 명세와 테스트와 시스템 간 계약을 코드 옆에 놓는 일, 그러니까 학습 데이터에 대해 우리가 해 온 이야기를 사내 코드베이스에 그대로 적용하는 일이다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">8.2</span>평가 데이터에 먼저 가격표가 붙었다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스의 명제는 모델이 아니라 데이터가 병목이라는 것이고, DataClinic은 그 병목을 데이터 자체를 진단 가능한 상품으로 만들어 푼다. Real-SWE는 같은 논리가 <strong>평가 쪽에서 먼저 값으로 확인된 사례</strong>다. 벤치마크 한 곳이 기업 코드 한 벌에 10만~100만 달러를 부른다는 것은, 평가의 경쟁력이 알고리즘이 아니라 데이터를 구해 오는 경로에 있다는 시장의 답이다. 그리고 그 회사가 사려는 것은 코드가 아니라 "실제로 일이 어떻게 이루어지는지에 대한 기록"이다. 우리가 몇 해째 같은 대상을 다른 이름으로 불러 왔다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">8.3</span>고객에게 남는 두 갈래 판단</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        첫째는 사는 쪽의 판단이다. 도입을 검토하는 에이전트의 점수가 남의 오픈소스에서 난 것인지, 우리 회사 코드 같은 데이터에서 난 것인지를 묻는 한 줄이 그대로 체크리스트가 된다. 둘째는 파는 쪽의 판단이다. 사내 코드와 로그와 문서가 평가 자산으로 값이 매겨지기 시작했고, 내보낼지 말지를 정하려면 계약서를 읽을 눈이 필요하다. 5절의 부재 목록이 그 눈의 최소 항목이다.
+                    </p>
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">8.4</span>이 글이 우리에게도 남기는 불편한 사실</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 글의 결론은 "그러니 사내 데이터로 직접 재라"로 깔끔하게 닫히지 않는다. 사내에서 잰 점수는 바깥에서 검산되지 않는다. 6절에서 본 자기모순이 우리 쪽에도 그대로 적용된다는 뜻이다. 성적서를 발급하는 입장에서 피할 수 없는 질문이 거기 있다. 그 점수는 어떤 잣대로 쟀고, 그 잣대의 과제는 몇 개이며, 구간은 얼마이고, 고객이 그 수를 볼 수 있는가. ARC Prize가 자기 세트의 마모를 스스로 적어 둔 방식이 지금 업계에서 가장 성숙한 답으로 보인다. 감추는 대신, 무엇을 검증하지 않았는지를 적어 두는 것이다.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            본문의 수치와 축자 인용은 원문에서 직접 대조했다. 리더보드와 실패 분류, 과제별 결과, 비용과 토큰은 벤치마크 페이지의 원본 HTML에서, 신뢰구간은 같은 페이지의 도형 좌표에서 환산했다. 토론 인용은 해커뉴스 원 스레드 154개 댓글 전문에서, 공개·비공개 낙폭은 Scale 두 리더보드의 현재 값에서, 하네스 논문과 ARC Prize 보고서의 문장은 arXiv 공개본에서 확인했다. 1절부터 7절까지는 잰 것과 확인한 것을 옮긴 것이고, 이 8절은 그 위에 페블러스가 얹은 해석이다. 나눠서 읽어 주시기 바란다. 긴 글 읽어 주셔서 감사하다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ (empty section — content rendered by config.faqs) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        본문 수치는 세 갈래다. 1번부터 4번까지는 이 리포트가 원본 HTML을 받아 직접 대조했고, 신뢰구간처럼 인쇄되지 않은 값은 같은 페이지의 도형 좌표에서 환산했다는 사실을 본문에 적었다. 5번과 6번의 공개·비공개 쌍은 두 리더보드의 2026년 9월 15일 현재 값에서 직접 맞췄다. 8번과 9번은 arXiv 공개본 본문에서 인용했다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">이 리포트의 뼈대 (1차 원문 대조)</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Snagnik Das, Siddhant Paliwal, Janak Sunil (Specific Labs). "Introducing Real-SWE", 2026년 9월. <a href="https://withspecific.com/benchmarks/real-swe" target="_blank" rel="noopener">withspecific.com/benchmarks/real-swe</a> — 리더보드 여덟 줄, 과제별 10×8 결과, 실패 다섯 분류와 모델별 분해, 롤아웃 길이 교차표, 비용·토큰, 세금 과제 지시문 전문이 모두 이 페이지에서 나왔다. 신뢰구간 값은 이 페이지가 숫자로 인쇄하지 않아 도형 좌표에서 환산했다.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Specific Labs. "Company data partnerships". <a href="https://withspecific.com/company-data" target="_blank" rel="noopener">withspecific.com/company-data</a> — "$100K–$1M" 호가와 "how real work gets done" 문구, 폼이 받는 항목, 그리고 5절에 적은 부재 목록의 근거다.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Specific Labs. "Privacy". <a href="https://withspecific.com/privacy" target="_blank" rel="noopener">withspecific.com/privacy</a> — 2026년 9월 15일 확인. 전문이 링크드인 광고 측정 연동에 관한 내용이며, 라이선스한 코드의 보존·재사용·철회에 관한 조항은 확인되지 않았다.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Hacker News 스레드 49676820, 2026년 9월 12일, 272점, 댓글 154개. <a href="https://news.ycombinator.com/item?id=49676820" target="_blank" rel="noopener">news.ycombinator.com/item?id=49676820</a> — 공동창업자 janaksunil·siddbudd의 발언과 traceroute66·kadoban·cbg0·lmeyerov·didgeoridoo·strobe·IshKebab의 인용은 Algolia API로 받은 스레드 전문에서 확인했다. 웹 요청이 429를 반환하므로 전문 확보에는 API 경로를 써야 한다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">공개 대 비공개 낙폭</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">5.</span><span class="ref-body">Scale AI. "SWE-Bench Pro (Public Dataset)" 리더보드. <a href="https://labs.scale.com/leaderboard/swe_bench_pro_public" target="_blank" rel="noopener">labs.scale.com</a></span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Scale AI. "SWE-Bench Pro (Private Dataset)" 리더보드. <a href="https://labs.scale.com/leaderboard/swe_bench_pro_private" target="_blank" rel="noopener">labs.scale.com</a> — 분할 구성(전체 1,865과제·41저장소, 공개 731, 스타트업 18곳의 비공개 276, 홀드아웃 858)과 4절의 일곱 쌍이 여기서 나왔다. 두 페이지의 그림 설명에 남은 22.7%·23.1%는 옛 스냅숏이라 현재 표와 섞어 쓰지 않았다.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">SWE-Bench Pro 원 논문, arXiv:2509.16941. <a href="https://arxiv.org/abs/2509.16941" target="_blank" rel="noopener">arXiv: 2509.16941</a> — 이 리포트는 논문 본문을 따로 열지 않았고, 4절의 수치는 모두 위 두 리더보드 페이지에서 대조했다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">하네스와 비공개 평가 운영</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">8.</span><span class="ref-body">Yunbei Zhang, Janet Wang, Yingqiang Ge, Weijie Xu, Jihun Hamm, Chandan K. Reddy. "Stop Comparing LLM Agents Without Disclosing the Harness." arXiv:2605.23950v1, 2026년 5월 7일. <a href="https://arxiv.org/abs/2605.23950" target="_blank" rel="noopener">arXiv: 2605.23950</a> — 초록이 스스로 밝히듯 <strong>입장 논문</strong>이며, 4절에 통제된 요인실험이 붙어 있다. 3.3절의 4.9%포인트·9.5%포인트 대비와 하네스 분산 7.8배, 아홉 비교 중 여섯 번의 순위 뒤집힘이 여기서 나왔다. 요인실험은 모델 셋과 하네스 셋, 100과제, 셀당 두 번 실행으로 규모가 작다.</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">François Chollet, Mike Knoop, Gregory Kamradt, Bryan Landers. "ARC Prize 2024: Technical Report." arXiv:2412.04604. <a href="https://arxiv.org/abs/2412.04604" target="_blank" rel="noopener">arXiv: 2412.04604</a> — 네 벌 분할과 준비공개 세트의 정의, ±10% 과적합 기준, 비공개 점수 1만 건 규모 보고에 따르는 마모 위험 서술이 모두 이 보고서의 문장이다.</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">Dmitry Lyalin, Taylor Mullen (Google). "An important update: Transitioning Gemini CLI to Antigravity CLI", 2026년 5월 19일. <a href="https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/" target="_blank" rel="noopener">developers.googleblog.com</a> — 발표일, 개인 요금제 중단일 6월 18일, 그리고 Gemini Code Assist 스탠더드·엔터프라이즈 라이선스 조직과 유료 API 키 사용자의 접근 유지가 이 공지의 본문이다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스 블로그 인접 글</h3>
+                    <ul class="reference-list mb-4">
+                        <li><span class="ref-num">11.</span><span class="ref-body"><a href="/report/physics-benchmark-defect-floor-2026-09/ko/">AI가 물리를 못 푸는 걸까, 문제가 틀린 걸까?</a> — 공개된 시험지의 정답지와 채점기 쪽 결함을 다뤘다. 이 글이 다루는 것은 그 반대편, 시험지를 아무도 볼 수 없게 만든 경우다.</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body"><a href="/blog/swe-bench-verified-retired/ko/">OpenAI가 스스로 폐기한 코딩 벤치마크, SWE-bench Verified</a> — 공개 코딩 벤치마크의 신뢰가 왜 흔들렸는지를 다뤘다.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body"><a href="/blog/llm-benchmark-contamination/ko/">그 시험지는 이미 학습 데이터에 있었다</a> — 6.2절의 오염 측정 논의와 이어진다.</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body"><a href="/report/ai-agent-benchmark-trust/ko/">'풀지 않고도 만점' — AI 벤치마크 8개, 조작에 속수무책</a> — 조작과 실수를 구분하는 틀로 참조했다.</span></li>
+                        <li><span class="ref-num">15.</span><span class="ref-body"><a href="/blog/vals-ai-eval-as-infrastructure/ko/">실무 과제로 AI를 채점하는 회사</a> — 평가 산업의 사업 구조를 다룬 글이다.</span></li>
+                        <li><span class="ref-num">16.</span><span class="ref-body"><a href="/report/openevidence-medical-ai-data-moat/ko/">미국 의사 40%가 쓰는 의료 AI의 해자는 라이선스로 들여온 의학 논문이다</a> — 그쪽 해자는 제품이었고, 이 글의 해자는 시험지다.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260915"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "우리 회사 코드에서도 AI가 그 점수를 낼까?",
+            subtitle: "기업에서 라이선스한 비공개 코드로 만든 벤치마크 Real-SWE, 8개 모델 640회 롤아웃에서 1위가 38.8%",
+            pageTitle: "Real-SWE 벤치마크 — 사내 코드에서 코딩 AI 점수가 내려가는 이유 | 페블러스",
+            category: "business",
+            publishDate: "2026-09-15",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/real-swe-private-code-benchmark-2026-09/ko/",
+            tags: ["코딩 에이전트", "AI 벤치마크", "데이터 라이선싱", "평가 데이터", "벤치마크 오염", "하네스", "AI-Ready Data"],
+            faqs: [
+                { question: "Real-SWE는 기존 코딩 벤치마크와 무엇이 다른가?", answer: "과제를 공개 저장소에서 긁어 오지 않고, 과제마다 다른 회사에서 비공개 프로덕션 코드베이스를 라이선스해 왔다. 채점도 사람이 아니라 그 코드베이스에 이미 있던 테스트에서 따온 검증기가 한다. 인터넷에 없는 코드라 학습에 섞였을 가능성이 낮은 대신, 바깥에서 그 측정을 검산할 방법도 사라진다." },
+                { question: "1위가 38.8%면 코딩 에이전트는 실무에 못 쓰는 수준인가?", answer: "그렇게 읽으면 안 된다. 공동창업자는 성공률이 낮은 이유가 '실제 엔지니어들이 몇 주씩 붙들고 있던 야심 찬 과제'를 줬기 때문이라고 밝혔다. 짧은 단위 작업의 성공률이 아니라, 여러 서비스에 걸친 몇 주짜리 변경을 한 번에 끝내라고 시켰을 때의 성공률이다." },
+                { question: "공개 벤치마크에서 70%대를 받던 모델이 여기서 38.8%면 절반으로 떨어진 것 아닌가?", answer: "그 뺄셈은 성립하지 않는다. 과제 정의도 채점 방식도 하네스도 다른 두 벤치마크의 수이기 때문이다. 비교가 가능한 근거는 따로 있다. Scale SWE-bench Pro는 같은 벤치마크 안에 공개 분할과 비공개 분할을 두는데, 같은 이름으로 양쪽에 오른 일곱 쌍이 예외 없이 내려갔고 폭은 4.8%포인트에서 15.7%포인트였다." },
+                { question: "그러면 이 리더보드에서 1위 모델을 골라도 되나?", answer: "이 데이터로는 1위와 4위를 가를 수 없다. 과제가 열 개뿐이라 상위 네 모델의 95% 신뢰구간이 서로 겹친다. 게다가 각 줄은 모델이 아니라 모델과 하네스의 조합이고, 제작사도 그렇게 명시했다. 하네스만 바꿔도 같은 모델이 9.5%포인트까지 움직인다는 연구가 있다." },
+                { question: "가장 흔한 실패가 요구사항 누락이라는데, 프롬프트를 더 자세히 쓰면 해결되나?", answer: "부분적으로만 그렇다. 이 벤치마크의 지시문 길이는 동종 대비 중간인데 참조 정답이 고친 파일 수는 중앙값 11개로 두 배 가까이 많다. 문제는 지시의 길이가 아니라 닿아야 할 범위다. 지시문을 늘리는 것보다 명세와 테스트, 인접 시스템과의 약속을 코드 옆에 두는 쪽이 더 크게 움직인다." },
+                { question: "시간을 더 주면 나아지지 않나?", answer: "이 데이터에서는 아니었다. 10분 미만으로 끝난 롤아웃의 실패율이 71.4%, 10분 이상은 73.4%로 차이가 거의 없다. 다만 짧은 쪽 표본은 98건으로 전체의 15%뿐이고 쉬운 과제가 섞여 있으므로, '오래 끌수록 나빠진다'가 아니라 '더 오래 붙들어도 실패율이 내려가지 않았다'가 정확한 서술이다." },
+                { question: "비싼 모델을 쓰면 해결률이 올라가나?", answer: "표 안에 반례가 있다. 롤아웃당 $5.12를 쓴 조합이 28.8%인데, $2.50짜리 조합이 31.2%를 낸다. 토큰도 마찬가지여서 2만 4천 토큰으로 33.8%를 내는 모델이 있고 11만 7천 토큰을 쓰고 28.8%에 그치는 모델이 있다. 어떤 모델은 자기가 못 푸는 과제에서 가장 많이 태운다." },
+                { question: "비공개 코드로 만든 벤치마크를 어떻게 신뢰하나?", answer: "지금 상태로는 제작사를 믿는 것 외에 방법이 없고, 그 비판이 이 벤치마크를 향한 가장 날카로운 지적이다. 다만 비공개 평가를 책임 있게 운영하는 방식은 이미 있다. ARC Prize는 공개·준비공개 점수를 나란히 발표하고, 두 점수가 ±10% 넘게 벌어지면 과적합으로 본다고 기준을 못 박았으며, 자기 세트가 닳고 있다는 사실까지 보고서에 적어 두었다." },
+                { question: "비공개 코드베이스면 오염 걱정은 안 해도 되나?", answer: "아니다. 자체 벤치마크를 운영하는 실무자는 '더 좋고 더 큰 비공개 코드베이스 상당수가 지금 시점에 사실상 비공개가 아니다'라고 경고하며 매번 오염을 측정하라고 권한다. 방법은 두 갈래다. 자료 접근을 끊고 같은 문제를 풀려 봐서 그래도 맞히는지 보고, 중간 단계 흔적에 앞 단계로는 알 수 없었을 지식이 섞였는지 확인한다." },
+                { question: "우리 회사 코드로 직접 재려면 무엇부터 해야 하나?", answer: "하네스를 고정해 명시하고, 사람 엔지니어가 며칠에서 몇 주 붙들었던 일에서 과제를 뽑고, 채점은 이미 있는 테스트로 자동화한다. 그다음 과제당 여러 번 돌려 점수와 함께 구간을 적고, 실패를 요구사항 누락·통합 오류·미검증 가정 같은 유형으로 분류한다. 과제 열 개에 과제당 여덟 번이면 여든 번이라 규모 자체는 크지 않다." },
+                { question: "우리 회사 코드를 벤치마크 회사에 라이선스해 줘도 되나?", answer: "보상 산정, 기밀 유지, 보존 기간, 재사용과 재판매 권리, 철회 절차를 계약서에서 먼저 확인해야 한다. 이 회사의 문의 폼과 개인정보처리방침에서는 그중 어느 것도 확인되지 않았다. 계약서에 없다는 뜻은 아니지만, 문의 단계에서 판단할 근거는 없다는 뜻이다." }
+            ]
+        });
+    </script>
+</body>
+</html>
