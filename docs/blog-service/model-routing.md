@@ -39,7 +39,7 @@
 | research (blog) | claude-sonnet-5 | mechanical | 95.23 | 0.84 | 4.7 |
 | pre-risk | claude-sonnet-5 | mechanical | 52.83 | 0.73 | 3.9 |
 | collect · analysis-l1/l2/l3 (dc-story) | claude-sonnet-5 | mechanical | — | — | — |
-| title-gate (결정론 + §0 위반 시 자동 교정 호출) | claude-sonnet-5 (`MODEL_SONNET` 직접, 우회 호출) | — (등급 없음) | 7.34 | 0.67 | 2.7 |
+| title-gate (결정론 검사 + 위반 시 sonnet 교정 1회 + **눈감은 심판** sonnet 2회/새 ko 글 + 미달 시 재작성 1회) | claude-sonnet-5 (교정·심판, 우회 호출) · 재작성은 `resolvePhaseExecution('title-gate', MODEL_OPUS)` — WRITING_PHASES 밖이라 fable 선택 미적용, `BLOG_MODEL_PHASE_TITLE_GATE` 로 덮어씀 | — (등급 없음) | 7.34 (심판 도입 전) | 0.67 | 2.7 |
 | manuscript · revise-publish | (결정론, 모델 호출 없음) | — | — | — | — |
 
 비용·소요는 스튜디오 30일 세션 로그 집계(`q2-agent/phase_usage_30d.json`, 2026-09-05 기준, 단계 20개 합계
@@ -49,6 +49,7 @@ $5,150.17 = `cost_by_token_type_30d.json` ALL.total 과 일치). 단가는 opus-
 title-gate 는 PIPELINES 에 `deterministic` 으로 적혀 있지만 제목 규칙(§0) 위반이 남으면
 `runTitleGate`(pipelines.ts) 가 `runClaudeCode({ model: MODEL_SONNET })` 로 자동 교정을 한 번 부른다 —
 30일 11세션 $7.34. 이 호출은 `runPhaseWithRetry` 를 거치지 않으므로 아래 '우회 호출' 예외에 든다.
+2026-09-14 부터는 결정론 검사 뒤 **눈감은 심판**(`title-judge.ts`, sonnet, 새 ko 글마다 2회 — 1단계 제목만·2단계 부제·첫 두 문단, `--disallowedTools` 로 파일을 못 본다)이 붙고, 미달이면 opus 계열로 제목 재작성 1회 → 재검사·재심판. 어느 경우도 발행은 막지 않는다. `BLOG_TITLE_JUDGE=off` 로 끈다. 상세 [title-gate.md](title-gate.md).
 
 ## env 표
 

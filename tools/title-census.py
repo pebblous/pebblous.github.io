@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-title-census.py — 한글 제목 전수조사 (제목 정본 v2 — docs/ko-style-standard.md §4-2, 2026-09-11 형님 결정).
+title-census.py — 한글 제목 전수조사 (제목 정본 v3 — docs/ko-style-standard.md §4-2, 2026-09-13 형님 판정).
 
-정본 세 줄: ① 주어(무엇·누가)를 맨 앞에 ② 결론을 그대로 말한다(반전·수수께끼·비유 금지) ③ 20~35자, 평이한 낱말.
-이 도구는 그중 코드로 잴 수 있는 것만 잰다 — 길이·줄표/콜론의 허용 형태·인용+반전·대조 공식·미끼·키워드 나열·
-잘린 명사형·수수께끼 패턴·관형절 사슬. 주어-먼저·비유 여부는 LLM 교정 프롬프트(runTitleGate)가 본다.
+정본 v3: 중학생이 알아듣고 누르고 싶은 제목. 세 형태(질문형·신문 명사형·현재형 주장) 중 하나로 쓰고,
+과거형 서술 종결·제목 안 수치·낯선 고유명사/전문용어·AI 어투를 금지한다. 주어 먼저·20~35자·평이한 낱말은 유지.
+이 도구는 그중 코드로 잴 수 있는 것만 잰다 — 과거형 서술 종결(종결 음절 받침 ㅆ)·제목 안 아라비아 수치·영문 약어 4자 이상(권고)·
+길이·줄표/콜론의 허용 형태·인용+반전·대조 공식·미끼·키워드 나열·잘린 명사형·수수께끼 패턴·관형절 사슬.
+중학생 시험(이해)·클릭 시험은 title-gate 의 눈감은 심판(LLM)과 사람이 본다 — 검사기 통과 ≠ 좋은 제목.
 
 articles.json의 published=true, language=ko 전 글에 대해 제목 3슬롯을 결정론 규칙으로 채점한다:
   - mainTitle  (= articles.json title, 카드/Hero 제목) — 가장 엄격
@@ -31,24 +33,25 @@ import os
 import re
 import sys
 
-# ── 제목 정본 v2 결정론 규칙 (docs/ko-style-standard.md §4-2) ────────────────────
+# ── 제목 정본 v3 결정론 규칙 (docs/ko-style-standard.md §4-2, 2026-09-13) ──────────
 # 인용 검출 — 실제 인용(쌍)만 잡는다. 영어 아포스트로피(소유격 's·축약 n't·'re 등)는
 # 정상 문법이라 제외한다(2026-07-11 오탐: "MAI-Thinking-1's"가 따옴표로 오판돼 교정 불가 잔존).
-# 낱말 하나를 작은따옴표로 강조하는 것('유예')은 허용한다(2026-09-11 정본): 공백 없는 8자 이하.
+# 낱말 하나를 작은따옴표로 강조하는 것('유예')은 허용한다(2026-09-11 정본). 자는 8자 이하 — v3(2026-09-13) 형님 채택
+# "‘인지 바이러스’일까?"·심판 추천 "‘못 찾아서’일까?"·"'근거 몇 겹'인지" 처럼 짧은 구도 강조라, 공백 유무는 보지 않는다.
 DOUBLE_QUOTES = re.compile(r'["“”「」『』]')
 SINGLE_SPAN = re.compile(r"‘([^’]*)’|'([^']*)'")
 _EMPHASIS_MAX = 8
 def _strip_apostrophes(t: str) -> str:
     return re.sub(r"(?<=\w)'(?=(s|ll|re|ve|d|m|t|clock)\b)|(?<=s)'(?!\w)|n't|\b[OoDdLl]'(?=[A-Z])", '', t)
 def _has_quote(t: str) -> bool:
-    """큰따옴표·겹낫표는 인용. 작은따옴표는 짝지어 감싼 내용이 '낱말 하나'(공백 없이 8자 이하)면 강조로 허용,
-    그보다 길거나 공백이 있으면 인용으로 본다. 짝이 안 맞는 곧은 홑따옴표(아포스트로피 제외)도 인용 용도."""
+    """큰따옴표·겹낫표는 인용. 작은따옴표는 짝지어 감싼 내용이 짧은 낱말·구(공백 포함 8자 이하)면 강조로 허용,
+    그보다 길면 인용으로 본다. 짝이 안 맞는 곧은 홑따옴표(아포스트로피 제외)도 인용 용도."""
     if DOUBLE_QUOTES.search(t):
         return True
     t2 = _strip_apostrophes(t)
     for m in SINGLE_SPAN.finditer(t2):
         inner = m.group(1) if m.group(1) is not None else m.group(2)
-        if ' ' in inner or len(inner) > _EMPHASIS_MAX:
+        if len(inner) > _EMPHASIS_MAX:
             return True
     rest = SINGLE_SPAN.sub('', t2)
     return "'" in rest or '‘' in rest or '’' in rest
@@ -96,7 +99,7 @@ RIDDLE_OPEN = re.compile(r'^\s*(무엇을|무엇이|무엇으로|무엇인지|�
 # 서술·의문 종결(다/까/뿐)·쉼표·조사(은/는/을/를)가 있으면 문장(여운 꼬리)이고, 없으면 출처/기관/수치 꼬리다.
 # 길이 상한은 한글 20자 — 라틴·숫자·공백은 반 자로 세어 기관명("Stanford HAI AI Index 2026"·"Nature 게재 4,130만 편 분석")을 품는다.
 # 이/가/도/의는 명사 끝음절과 겹쳐(평가·차이·회의·제도) 조사로 세지 않는다. 자릿수 쉼표(4,130)는 쉼표가 아니다.
-DASH = re.compile(r'\s*[—–]\s*')
+DASH = re.compile(r'\s*[—–]\s*|\s+-\s+')   # 하이픈-마이너스 꼬리(' - ')도 꼬리로 본다(과거형 새어 나감 방지)
 _DASH_TAIL_MAX = 20
 SENTENCE_END = re.compile(r'(다|까|요|네|지)\s*[.?!]?\s*$')
 _TAIL_SENTENCE_END = re.compile(r'(?:[가-힣](?:다|까|죠|네요|지요)|뿐)\s*[.?!…]*\s*$')
@@ -166,7 +169,7 @@ def _is_keyword_list(t: str) -> bool:
 # 강한 관형형 = "~는/~던" + -ㄹ 관형형 음절(할·될·볼·갈…). 약한 관형형 = -ㄴ 음절(한·된·인·본·민…) — 이쪽은
 # 명사 끝음절(일본·개인·시민·국민·기준·통신)과 겹쳐 오탐이 잦으므로 경고(-1)에만 쓴다(2026-09-11 리뷰).
 # 조사 결합형(으로는·에는·에서는)과 라틴+는(AI는)은 관형형이 아니다. 하드(-3)는 강한 관형형이 2겹 이상이면서
-# 35자를 넘을 때만 — 정본 ②의 "관형절 두 겹 이상 금지"를 문장형 헤드라인의 장황으로 좁혀 잰다.
+# 35자를 넘을 때만 — v3 에서는 권고 감점(-1)이다(정본 v3 '세는 자' 표: 수수께끼·장황은 권고, 위반은 과거형·수치 나열 등).
 _ADNOMINAL_N = set('한된인온간난린킨낸든운진친쓴본산준센긴힌신잔찬튼둔뜬선건뛴민빈딘')
 _ADNOMINAL_L = set('할될볼갈올쓸낼릴줄알살킬찔밀')   # '일'(할 일)·'들'(사람들)은 명사와 겹쳐 뺀다
 _PARTICLE_NEUN = re.compile(r'(으로는|로는|에는|에서는|와는|과는|보다는|까지는|부터는|에게는|마다는|한테는)$')
@@ -215,41 +218,45 @@ _ADNOMINAL_WARN = 3      # 전체 사슬(강+약) 3회 이상 → 경고 -1
 _ADNOMINAL_HARD = 2      # 강한 사슬 2겹 이상 + 35자 초과 → 장황 -3
 _ADNOMINAL_LONG = 35
 
-# ── 주어 실종 훅 (2026-07-19) ────────────────────────────────────────────────
-# "제목=도메인 주어 필수"의 결정론 근사. 의미 판단은 파이프라인 Claude 게이트
-# (blog-produce Phase 3.55 / seo-check Layer 0)가 담당하고, 여기선 "숫자·단위만 있고
-# 도메인 명사가 하나도 없는" 명백한 수치 전용 제목만 잡는다(오탐 최소화, precision 우선).
-# 가상 채점(titles_scored.json 453개)으로 검증: 규칙 A는 2건만 검출(오탐 0), 규칙 B(무주어
-# 동사훅)는 오탐 2/2로 폐기. 화이트리스트는 1차 오탐(철강·토큰 등)을 근거로 보강.
-DOMAIN_WHITELIST = (
-    'AI LLM GPT 데이터 모델 블로그 로봇 에이전트 알고리즘 칩 GPU 반도체 논문 벤치마크 '
-    '데이터셋 오픈소스 스타트업 규제 거버넌스 프로토콜 아키텍처 파이프라인 프레임워크 '
-    '플랫폼 네트워크 클라우드 스테이블코인 온톨로지 철강 미세조직 라벨링 토큰 실험실 '
-    '픽셀 센서 단백질 유전자 세포 뉴런 증류 양자 예보 기상 날씨 의사 환자 코드 버그 '
-    '서버 벡터 임베딩 드론 망원경 카메라 시뮬레이션 통신 차선 자율주행'
-).split()
-_DOMAIN_SUFFIX = re.compile(r'[가-힣]{2,}(성|화|론|학|법|권|체|망|량|률|정책|산업|기업|국가)')
-def _has_domain_noun(t: str) -> bool:
-    """도메인 주어(고유명사·기술용어·기관명) 존재를 형태+소형 화이트리스트로 근사."""
-    if re.search(r'[A-Z][a-zA-Z0-9]+', t):   # 영문 고유명사/제품명
-        return True
-    if re.search(r'[一-鿿]', t):              # 한자 병기
-        return True
-    if any(k in t for k in DOMAIN_WHITELIST):
-        return True
-    if _DOMAIN_SUFFIX.search(t):              # 2글자+ 한자어 명사 접미
-        return True
-    return False
-# 숫자는 "1억 5,100만"처럼 자릿수 쉼표·단위로 이어진 것을 한 덩이로 센다. 첫 낱말이 한글 주체+주격/보조사(알리바바가·정부는)
-# 이거나 쉼표로 끝나면(펜실베이니아,) 주어가 이미 맨 앞에 있는 정본 형태라 훅 판정을 건너뛴다(2026-09-11 리뷰:
-# "알리바바가 클로드에서 1억 5,100만 건을 퍼 갔다 — 앤트로픽"이 주어 실종으로 오판됐다).
-_NUMBER_CHUNK = re.compile(r'\d[\d,.]*(?:\s*(?:억|만|천|백|조)(?:\s*\d[\d,.]*)?)*')
-_KO_SUBJECT_FIRST = re.compile(r'^\s*[가-힣A-Za-z]*[가-힣]+(가|이|은|는|,|，)(?=\s|$)')
-def _is_number_only_hook(t: str) -> bool:
-    """규칙 A: 숫자 덩이 2개 이상인데 도메인 명사가 하나도 없음 = 수치 전용 주어 실종 훅."""
-    if _KO_SUBJECT_FIRST.match(t):
+# ── v3 (2026-09-13 형님 판정): 과거형 서술 종결 · 제목 안 수치 · 영문 약어 ─────────────────
+# 과거형 서술 종결(~했다·~였다·~았다/었다) = 위반. 사건 보고문이 된다 — 라이브 10편 중 6편이 이것으로 실패했다.
+# 자: 본문 절(줄표 꼬리·콜론 이름표를 뗀 부분)의 마지막 어절이 "다"로 끝나고, 그 앞 음절의 받침이 ㅆ(종성 index 20)이면 과거형.
+# 예외: 그 음절이 있·없·겠이면 제외(있다·없다·소용이 없다 는 현재, 겠다 는 추측). 물음표 종결("~였을까?")은 질문형이라 제외.
+# 찾았다·그대로였다·잡았다·줄였다·붙었다·알 수 없었다·있었다·늘었다 = 위반 / 찾는다·없앤다·사들인다·소용이 없다·가르친다 = 통과.
+_PAST_EXCEPT = set('있없겠')
+_JONG_SS = 20
+def _body_clause(t: str) -> str:
+    """줄표 꼬리("— 출처")와 콜론 이름표("X: ")를 뗀 본문 절."""
+    parts = DASH.split(t)
+    body = parts[0] if len(parts) >= 2 else t
+    cparts = COLON.split(body)
+    if len(cparts) == 2:
+        body = cparts[1]
+    return body.strip()
+def _is_past_end(t: str) -> bool:
+    body = re.sub(r'[\s.!…]+$', '', _body_clause(t))
+    if not body or body.endswith(('?', '？')):
         return False
-    return len(_NUMBER_CHUNK.findall(t)) >= 2 and not _has_domain_noun(t)
+    if not body.endswith('다') or len(body) < 2:
+        return False
+    prev = body[-2]
+    if not ('가' <= prev <= '힣') or prev in _PAST_EXCEPT:
+        return False
+    return (ord(prev) - 0xAC00) % 28 == _JONG_SS
+# 제목 안 수치: 중학생은 수치로 기사를 못 알아본다 — 수치는 부제로. 아라비아 숫자 덩이("1억 5,100만"은 한 덩이, 단위는 덩이에 딸린다)를
+# 제목 전체(꼬리 포함)에서 센다. 1개 = 권고 감점 1, 2개 이상 = 위반. 연도("2030년")·달("9월")·"3분의 2"의 3·2 도 아라비아라 센다(정본대로).
+# 한글 수사("열에 여덟"·"두 배")는 수치가 아니다. 라틴 글자에 붙은 숫자(GPT-4·H100)는 이름의 일부라 세지 않는다.
+_NUMBER_CHUNK = re.compile(r'(?<![A-Za-z\d])(?<![A-Za-z]-)\d[\d,.]*(?:\s*(?:억|만|천|백|조)(?:\s*\d[\d,.]*)?)*')
+def _count_numbers(t: str) -> int:
+    return len(_NUMBER_CHUNK.findall(t))
+# 영문 약어 4자 이상(CRISPR·VLDB·UNECE): 아는 사람만 누른다 — 권고 감점 1(위반은 아니다). 중학생이 아는 상용 약어는 허용 목록.
+COMMON_ACRONYMS = frozenset(
+    'AI LLM SNS GPU CPU NPU TPU EU CT MRI API IT PC TV DNA RNA GPT USB LED OLED HTML HTTP NASA NATO OECD WHO IMF UN '
+    'FDA CEO CTO GDP KAIST UNESCO FIFA IOC KBS MBC SBS YTN'.split())
+_ACRONYM = re.compile(r'(?<![A-Za-z])[A-Z]{4,}(?![a-z])')
+def _unknown_acronyms(t: str):
+    return [a for a in _ACRONYM.findall(t) if a not in COMMON_ACRONYMS]
+# (옛 "주어 실종 훅"(2026-07-19: 숫자 덩이 2개+ & 도메인 명사 0)은 v3 의 "수치 나열"(숫자 덩이 2개+ = 위반)에 포함돼 걷어냈다.)
 
 
 # 길이 (정본: 20~35자 권장). 45자 초과는 위반, 36~45자·20자 미만은 권고 이탈, 12자 미만은 추상 위험.
@@ -257,9 +264,10 @@ LEN_MIN, LEN_MAX, LEN_HARD = 20, 35, 45
 
 
 def eval_maintitle(t: str):
-    """mainTitle — 헤드라인. 정본 v2(2026-09-11): 주어 먼저·결론 그대로·20~35자.
-    코드로 재는 것: 따옴표/인용+반전/대조/줄표·콜론 허용 형태/미끼/키워드 나열/잘린 명사형/수수께끼/관형절 사슬/길이.
-    서술 종결·질문형·'X: Y'·'— 출처' 꼬리는 허용이라 감점하지 않는다."""
+    """mainTitle — 헤드라인. 정본 v3(2026-09-13): 질문형·신문 명사형·현재형 주장 중 하나, 주어 먼저·20~35자.
+    코드로 재는 것: 과거형 서술 종결(위반)/제목 안 수치(1개 권고·2개+ 위반)/영문 약어 4자+(권고)/따옴표/인용+반전/대조/
+    줄표·콜론 허용 형태/미끼/키워드 나열/잘린 명사형/수수께끼/관형절 사슬/길이.
+    현재형 종결·질문형·'X: Y'·'— 출처' 꼬리·낱말 강조 작은따옴표는 허용이라 감점하지 않는다."""
     labels, ded = [], 0
     if _has_quote(t):
         labels.append('따옴표'); ded += 4
@@ -282,11 +290,18 @@ def eval_maintitle(t: str):
     if _is_keyword_list(t):
         labels.append('키워드 나열'); ded += 3
     if RIDDLE.search(t):
-        labels.append('수수께끼(~쪽은/것은 …였다)'); ded += 3
+        labels.append('수수께끼(~쪽은/것은 …였다)'); ded += 1  # v3: 권고 감점
     if RIDDLE_OPEN.search(t) and not t.rstrip().endswith('?'):
-        labels.append('수수께끼(주어 없는 무엇을 …)'); ded += 3
-    if _is_number_only_hook(t):
-        labels.append('주어 실종 훅'); ded += 3  # 수치 전용·도메인 명사 0. 사람이 웹에서 최종 확인
+        labels.append('수수께끼(주어 없는 무엇을 …)'); ded += 1  # v3: 권고 감점
+    if _is_past_end(t):
+        labels.append('과거형 종결'); ded += 3  # v3 위반 — 사건 보고문
+    nums = _count_numbers(t)
+    if nums >= 2:
+        labels.append('수치 나열'); ded += 3  # v3 위반 — 수치는 부제로
+    elif nums == 1:
+        labels.append('수치 1'); ded += 1  # v3 권고
+    for a in _unknown_acronyms(t):
+        labels.append(f'영문 약어({a})'); ded += 1  # v3 권고 — 위반은 아니다
     if BALANCED_PAIR.search(t):
         labels.append('균형 대구'); ded += 2
     if TILDE.search(t):
@@ -294,7 +309,7 @@ def eval_maintitle(t: str):
     n = len(t)
     strong, chain = _adnominal_chain(t)
     if strong >= _ADNOMINAL_HARD and n > _ADNOMINAL_LONG:
-        labels.append(f'장황(관형절 {strong}겹+{_ADNOMINAL_LONG}자 초과)'); ded += 3
+        labels.append(f'장황(관형절 {strong}겹+{_ADNOMINAL_LONG}자 초과)'); ded += 1  # v3: 권고 감점
     elif chain >= _ADNOMINAL_WARN:
         labels.append(f'관형절 사슬 {chain}회(경고)'); ded += 1
     if not re.search(r'[가-힣]', t):
@@ -388,14 +403,15 @@ def slug_of(path_rel: str) -> str:
 
 
 def reason_text(labels, score):
-    # '§0'은 콘솔·엔진이 쓰는 게이트 이름 — 정본 v2 이후에도 계약 호환을 위해 유지한다.
+    # '§0'은 콘솔·엔진이 쓰는 게이트 이름 — 제목 정본 v3 (2026-09-13 ko-style-standard §4-2) 이후에도 계약 호환을 위해 유지한다.
     if not labels:
         return '§0 통과'
     return '§0 위반: ' + ' · '.join(labels)
 
 
-# 게이트 판정 임계: 슬롯 점수 ≤ GATE_FAIL_MAX 면 하드 위반(따옴표/인용+반전/대조/줄표·콜론 형태/미끼/
-# 키워드 나열/수수께끼/장황/45자 초과 등 1개 이상). 소프트 감점(길이 권고·관형절 경고)만 있으면 8~9점이라 통과한다.
+# 게이트 판정 임계: 슬롯 점수 ≤ GATE_FAIL_MAX 면 하드 위반(과거형 종결/수치 나열/따옴표/인용+반전/대조/줄표·콜론 형태/미끼/
+# 키워드 나열/45자 초과 등 1개 이상). 소프트 감점(수치 1·영문 약어·길이 권고·관형절 경고·수수께끼·장황)만 있으면 8~9점이라 통과한다.
+# subtitle 은 v3 에서 "정확한 헤드라인 자리"라 수치·기관명·과거형 종결을 허용한다(eval_subtitle 에 v3 감점 없음). pageTitle 도 검색 변형이라 수치 허용.
 GATE_FAIL_MAX = 7
 
 
@@ -426,7 +442,7 @@ def check_html(html_file: str) -> dict:
 
 
 def main():
-    ap = argparse.ArgumentParser(description='한글 제목 전수조사 — 제목 정본 v2(ko-style-standard §4-2) 채점')
+    ap = argparse.ArgumentParser(description='한글 제목 전수조사 — 제목 정본 v3(2026-09-13 ko-style-standard §4-2) 채점')
     ap.add_argument('--repo', default='.', help='콘텐츠 클론 루트 (articles.json 위치)')
     ap.add_argument('--output', help='출력 경로 (기본: <repo>/_workspace/title-review/titles_scored.json)')
     ap.add_argument('--dry-run', action='store_true', help='파일 쓰지 않고 통계만')
@@ -475,7 +491,7 @@ def main():
             'pt_score': pt_score,
             'pt_labels': pt_labels,
             'pt_reason': reason_text(pt_labels, pt_score) if cfg['pageTitle'] else '',
-            'standard': '제목 정본 v2 (2026-09-11 ko-style-standard §4-2)',
+            'standard': '제목 정본 v3 (2026-09-13 ko-style-standard §4-2)',
         })
         dist[mt_score] = dist.get(mt_score, 0) + 1
 

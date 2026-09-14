@@ -421,7 +421,7 @@ Agent(
 
     HTML 템플릿: report/korea-ai-fund-report-2026-03/ko/index.html
     체크리스트: docs/blog-html-checklist.md
-    제목 문체 정본: docs/ko-style-standard.md §4-2 (주어 먼저·결론 그대로·20~35자, 2026-09-11) · 슬롯 규격: docs/title-strategy.md (§7 제목→Exec Summary 일관성)
+    제목 정본 = docs/ko-style-standard.md §4-2 v3 (2026-09-13 형님 판정) — 먼저 Read · 슬롯 규격: docs/title-strategy.md (§7 제목→Exec Summary 일관성)
     CLAUDE.md: <repo-root>/CLAUDE.md
 
     ⛔⛔ 작성 방식 — 통짜 출력 금지, 골격→섹션별 Edit (API stall 방지, skill §4-A·4-B):
@@ -431,6 +431,16 @@ Agent(
 
     ⛔ 종결체 (2026-09-05 확정): 본문 종결은 해라체(~다). 합쇼체(~습니다/~입니다)·해요체 금지.
     직접 인용문 안의 말투만 예외. 리드·본문·목록·캡션 모두 (docs/ko-style-standard.md §4-1).
+
+    ⛔ mainTitle 작성 절차 (§4-2 v3 — 본문을 다 쓴 뒤):
+    ① "중학생에게 이 글을 한 문장으로"를 먼저 적는다
+    ② 그 문장에서 세 형태로 후보 3개 — 질문형("불량을 한 번도 안 보고, 불량을 잡을 수 있을까?") ·
+       신문 명사형("SNS 유해 글 단속, 열에 여덟은 딱지 없이 통과") · 현재형 주장("지난 실험 기록이 교과서보다 AI를 더 잘 가르친다")
+    ③ 두 시험을 스스로 통과하는 것을 고른다 — 중학생 시험(제목만 읽고 "이 기사는 ~에 관한 것"이 한 줄로 나오는가) ·
+       클릭 시험(눌러 보고 싶은가 — 궁금증·놀라움·'내 일 같음' 중 하나)
+    ④ 기관·수치·방법·출처는 subtitle(40~70자, 신문체, 명사 종결 허용)로 내린다
+    금지: 과거형 서술 종결(~했다·~였다·~았다/었다) · 제목 안 수치 · 낯선 고유명사·전문용어(회사명·모델명·업계 용어) ·
+    AI 어투(사물 주어 + "~가 붙었다"). 20~35자, 주어 먼저. 검사기(tools/title-census.py) 통과 ≠ 좋은 제목.
 
     ⛔ 제목→Executive Summary 일관성 규칙 (title-strategy.md §7):
     - mainTitle의 핵심 주장이 Executive Summary key-insight에 산문으로 등장해야 함

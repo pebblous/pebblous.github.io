@@ -24,6 +24,7 @@ DataClinic이 자기 능력을 API로 노출했듯, 본 블로그 레포의 콘�
 | [hosting.md](hosting.md) | 배포·운영 명세 — 이미지·환경변수·HTTP 표면·인그레스·시그널·스케일링·체크리스트 |
 | [model-routing.md](model-routing.md) | 모델 라우팅 — 단계별 고정 모델 id·effort 등급·과부하 백오프·env 표·CLI 업데이트 절차·A/B 설계 |
 | [ko-prose-gate.md](ko-prose-gate.md) | 한국어 본문 코드 계량 게이트 — 지표 정의·임계 도출·모드·되먹임·롤아웃·벤더 라이선스 |
+| [title-gate.md](title-gate.md) | 제목 게이트 — 결정론 검사기(v3)·눈감은 심판(sonnet 2회)·재작성 1회·비차단·env·audit 형식 |
 
 ## 관련 자료
 
