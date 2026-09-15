@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParaRecover: Agents Score Under 70 on Error Recovery | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="ParaRecover sorts AI agent errors in parallel tool calls into 14 types across 10,626 cases. The best model finishes 94.78% of tasks but scores 55.18 on replanning.">
+    <meta name="keywords" content="ParaRecover, AI agent errors, LLM agent benchmark, parallel tool calls, error taxonomy, replanning, agent failure logs, process-level evaluation, SDE rubric, data quality, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/pararecover-agent-error-benchmark/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/pararecover-agent-error-benchmark/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/pararecover-agent-error-benchmark/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/pararecover-agent-error-benchmark/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="AI Agents Can Find Their Own Mistakes but Not Fix Them">
+    <meta property="og:description" content="A new benchmark sorts the errors agents make during parallel tool calls into 14 types across 10,626 cases. Most tasks still finish, yet the process behind them scores near half.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/pararecover-agent-error-benchmark/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/pararecover-agent-error-benchmark/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Diagram of where task completion rates and process scores diverge">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-09-15">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI Agents Can Find Their Own Mistakes but Not Fix Them">
+    <meta name="twitter:description" content="A completion rate alone cannot repair an agent. Here is what 10,626 labeled failures showed once someone scored the process.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/pararecover-agent-error-benchmark/en/image/index.png">
+    <meta name="twitter:image:alt" content="Diagram of where task completion rates and process scores diverge">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260915"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260915">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260915">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260915">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#completion" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Finishing Is Not the Same as Doing It Well</a></li>
+                    <li><a href="#taxonomy" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Failure, Sorted into Fourteen Boxes</a></li>
+                    <li><a href="#rubric" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Three Yardsticks for the Space Between Success and Failure</a></li>
+                    <li><a href="#scoreboard" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Every Model Is Weakest on the Same Axis</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Why Pebblous Is Watching This Benchmark</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            When an AI agent calls several tools at once and something goes wrong in the middle, how well does it catch the error and repair its own plan? A new benchmark measures that ability on its own. It is called ParaRecover, it comes from a team at Dalian University of Technology in China, it went up on arXiv on 11 September, and it has been accepted to the main conference of EMNLP 2026. This article looks at what the benchmark newly measures, and at why building that yardstick is a question of data design.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            One number sums up the problem. Claude Opus 4.6 posts the highest average of any model tested and completes 94.78% of the tasks it is given. On those same runs, the score for how precisely it rewrote its plan is 55.18. The agent nearly always arrives, and along the way it piles up redundant calls and trial-and-error loops. One caveat sits underneath all of it: the benchmark runs in a controlled simulation rather than against live APIs.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Sections 1 through 4 follow what the paper reports. Section 5 moves the findings toward data practice, and that reading belongs to this article rather than to the paper.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key figures</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: <a href="https://arxiv.org/abs/2609.12345" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">ParaRecover (arXiv:2609.12345, 11 Sep 2026)</a></p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">10,626</p>
+                            <p class="text-sm themeable-text-secondary mt-1">labeled error cases</p>
+                            <p class="text-xs themeable-muted mt-1">Part harvested from real execution logs, part built by injecting errors into clean trajectories. Split across two difficulty levels</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">69.23</p>
+                            <p class="text-sm themeable-text-secondary mt-1">top model's average score</p>
+                            <p class="text-xs themeable-muted mt-1">LEVEL-1 average out of 100. Claude Opus 4.6 leads and every other row sits below it</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">55.18</p>
+                            <p class="text-sm themeable-text-secondary mt-1">same model's replanning score</p>
+                            <p class="text-xs themeable-muted mt-1">It scores 78.94 on diagnosing the error. Rewriting the plan is where it stops</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">10.25% → 5.90%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">unexecutable plans</p>
+                            <p class="text-xs themeable-muted mt-1">Qwen3-8B after preference training on the error labels. The same run moved completion from 91.84% to 94.30%</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="completion" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Finishing Is Not the Same as Doing It Well</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Agent evaluation mostly comes down to one question. Did the agent get the answer, and did it reach the end? Right answer, 1. Wrong answer, 0. The appeal is obvious: nobody has to make a judgment call, and the result collapses into a single number. That number also says nothing whatsoever about what the agent did on its way to the answer.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's introduction puts the gap in one sentence.
+                    </p>
+
+                    <blockquote class="border-l-4 pl-5 py-2 mb-6 themeable-text-secondary" style="border-color: #F86825;">
+                        “However, successful task completion does not necessarily imply reliable agent behavior. An agent may still complete the task through redundant calls, repeated trial and error, or incorrect recovery strategies, leading to high cost in real systems.”
+                    </blockquote>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Redundant calls, repeated trial and error, and botched recovery strategies all still finish the task. They finish it, and a real system pays for it. Tokens go out, external APIs get hit more often, the clock runs longer. A completion metric records none of that cost.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Other groups have tried to look at process. In the comparison table the paper assembles, ToolSandbox and TRAJECT-Bench already cover structured trajectories and parallel calls, and BFCL covers parallel calls too. Those benchmarks stop at whether a tool call succeeded and whether its format held. A separate line of reward-model benchmarks asks which of two whole trajectories is better, but that exercise ranks trajectories that mostly went right. No one had handed an agent a broken trajectory and started the clock there. In the table, exactly one row is ticked for tracing an error back to its source and for deciding to replan, and that row is ParaRecover.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Benchmark</th>
+                                    <th class="text-center py-3 pr-3 font-semibold themeable-heading">Structured<br>trajectories</th>
+                                    <th class="text-center py-3 pr-3 font-semibold themeable-heading">Parallel<br>calls</th>
+                                    <th class="text-center py-3 pr-3 font-semibold themeable-heading">Error-state<br>evaluation</th>
+                                    <th class="text-center py-3 pr-3 font-semibold themeable-heading">Reflective<br>localization</th>
+                                    <th class="text-center py-3 pr-3 font-semibold themeable-heading">Replanning<br>decision</th>
+                                    <th class="text-center py-3 font-semibold themeable-heading">Process<br>metrics</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 whitespace-nowrap">API-Bank</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✓</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 text-center">△</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 whitespace-nowrap">Tool-Bench</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">△</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 text-center">△</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 whitespace-nowrap">BFCL</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✓</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 text-center">△</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 whitespace-nowrap">ToolSandbox</td>
+                                    <td class="py-3 pr-3 text-center">✓</td>
+                                    <td class="py-3 pr-3 text-center">✓</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 text-center">✓</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 whitespace-nowrap">TRAJECT-Bench</td>
+                                    <td class="py-3 pr-3 text-center">✓</td>
+                                    <td class="py-3 pr-3 text-center">✓</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 pr-3 text-center">✗</td>
+                                    <td class="py-3 text-center">✓</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 whitespace-nowrap font-semibold" style="color:#F86825;">ParaRecover</td>
+                                    <td class="py-3 pr-3 text-center font-semibold" style="color:#F86825;">✓</td>
+                                    <td class="py-3 pr-3 text-center font-semibold" style="color:#F86825;">✓</td>
+                                    <td class="py-3 pr-3 text-center font-semibold" style="color:#F86825;">✓</td>
+                                    <td class="py-3 pr-3 text-center font-semibold" style="color:#F86825;">✓</td>
+                                    <td class="py-3 pr-3 text-center font-semibold" style="color:#F86825;">✓</td>
+                                    <td class="py-3 text-center font-semibold" style="color:#F86825;">✓</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">Reproduced from Table 1 of the paper. ✓ marks support, ✗ marks no support, △ marks partial support.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The tasks come from the BUTTON dataset, and tool execution runs in a simulation rather than against real APIs. The authors explain the choice: the target is judgment under a mid-run error state, not the reliability of an external API, so they wanted a controlled environment. That buys reproducibility and the ability to inject errors, and it gives up the latency and shifting state of a live system. The authors list this first among their limitations.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="taxonomy" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Failure, Sorted into Fourteen Boxes</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        An error taxonomy sits at the bottom of the benchmark. The agent's execution is modeled as a directed acyclic graph, where nodes are subtasks and tool calls and edges are the dependencies between them. On top of that model the authors carve out fourteen ways things can go wrong. Alongside the tool-call-level mistakes earlier work already covered, they mined large volumes of execution logs for the mistakes that only appear when work runs in parallel across several rounds.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Family</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Types</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">What goes wrong</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top whitespace-nowrap">Structure<br><span class="text-xs themeable-muted">4 types</span></td>
+                                    <td class="py-3 pr-4 align-top">Wrong dependency · Missing dependency · Wrong parallelization · Wrong serialization</td>
+                                    <td class="py-3 align-top">Node 3 should hang off node 2 but is written to hang off node 1, or node 2 takes node 1's output as input yet is scheduled to run beside it</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top whitespace-nowrap">Parameters<br><span class="text-xs themeable-muted">4 types</span></td>
+                                    <td class="py-3 pr-4 align-top">Wrong name · Invalid value · Missing required field · Wrong type</td>
+                                    <td class="py-3 align-top">Passing <code>begin-date</code> where the schema lists <code>begin_date</code>, putting "2026/02/32" in a date field, or handing the string "16" to a field that wants the integer 16</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top whitespace-nowrap">Tools<br><span class="text-xs themeable-muted">6 types</span></td>
+                                    <td class="py-3 pr-4 align-top">Empty response · Timeout · Nonexistent tool name · Wrong tool choice · Missing necessary call · Redundant call</td>
+                                    <td class="py-3 align-top">A tool returns nothing, a network problem runs out the clock, or the agent picks the wrong one of two tools that do similar things</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">Grouped by family from the error type definitions in Appendix C of the paper. The examples come from the same appendix.</p>
+                    </div>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 260" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <defs>
+                                <marker id="arrow-muted-en" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--text-muted)"/></marker>
+                                <marker id="arrow-orange-en" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#F86825"/></marker>
+                            </defs>
+                            <text x="24" y="28" font-size="12.5" font-weight="600" fill="var(--text-secondary)">Dependency-error example · redrawn from the structure row above</text>
+
+                            <!-- Left panel: correct -->
+                            <text x="170" y="52" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-muted)">Correct dependency</text>
+                            <rect x="130" y="68" width="80" height="34" rx="6" fill="#BDBDBD"/>
+                            <text x="170" y="90" text-anchor="middle" font-size="11.5" fill="#171719">Node 1</text>
+                            <rect x="130" y="140" width="80" height="34" rx="6" fill="#BDBDBD"/>
+                            <text x="170" y="162" text-anchor="middle" font-size="11.5" fill="#171719">Node 2</text>
+                            <rect x="130" y="212" width="80" height="34" rx="6" fill="#BDBDBD"/>
+                            <text x="170" y="234" text-anchor="middle" font-size="11.5" fill="#171719">Node 3</text>
+                            <line x1="170" y1="102" x2="170" y2="140" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow-muted-en)"/>
+                            <line x1="170" y1="174" x2="170" y2="212" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow-muted-en)"/>
+
+                            <!-- Right panel: error -->
+                            <text x="500" y="52" text-anchor="middle" font-size="11" font-weight="600" fill="#F86825">Observed error</text>
+                            <rect x="460" y="68" width="80" height="34" rx="6" fill="#BDBDBD"/>
+                            <text x="500" y="90" text-anchor="middle" font-size="11.5" fill="#171719">Node 1</text>
+                            <rect x="460" y="140" width="80" height="34" rx="6" fill="#BDBDBD"/>
+                            <text x="500" y="162" text-anchor="middle" font-size="11.5" fill="#171719">Node 2</text>
+                            <rect x="460" y="212" width="80" height="34" rx="6" fill="#BDBDBD"/>
+                            <text x="500" y="234" text-anchor="middle" font-size="11.5" fill="#171719">Node 3</text>
+                            <line x1="500" y1="102" x2="500" y2="140" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow-muted-en)"/>
+                            <line x1="500" y1="174" x2="500" y2="212" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arrow-muted-en)"/>
+                            <path d="M 540 85 C 610 85, 610 215, 540 229" fill="none" stroke="#F86825" stroke-width="1.5" marker-end="url(#arrow-orange-en)"/>
+                            <text x="600" y="158" text-anchor="middle" font-size="9.5" fill="#F86825">wrongly tied to node 1</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Original Pebblous diagram · the structural-error example from the table above (node 3 wrongly depending on node 1 instead of node 2), redrawn as a graph | Source: <a href="https://arxiv.org/abs/2609.12345" target="_blank" rel="noopener" class="underline">ParaRecover, Appendix C</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper also shows that these fourteen boxes were not invented at a desk. The authors took real execution logs from GPT-4o-mini, GPT-4o and GPT-5.1 and counted how the errors fell out. The most frequent were wrong parameter types, invalid values, redundant calls, and calls that needed to happen but did not. All fourteen types showed up naturally in real runs, and models with more parameters and stronger reasoning made fewer errors.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There are 10,626 cases. LEVEL-1 holds 4,033 of them, where the error is still confined to the round just before. LEVEL-2 holds 6,593, where the error slips through undetected into the next round or stacks up with fresh errors on top. Of the whole set, 2,812 cases were picked by hand out of real execution logs, about one in four, and the remaining 7,814 were made by planting one of the fourteen types into a clean trajectory.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Of the fourteen boxes, the one that filled up fastest in LEVEL-1 was wrong serialization, at 10.09% of the 4,033 cases and a clear margin ahead of second place. This is the mistake of lining up two nodes one behind the other when neither needs anything from the other. It did not happen for lack of a rule. The prompt the authors gave each model spells it out: add a dependency only when the return value of the earlier task fills an argument of the later one, and otherwise attach the task to the root node. Handed the rule in writing, the models still drew edges that nothing required.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="rubric" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Three Yardsticks for the Space Between Success and Failure</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Even with the errors sorted into types, no score comes out until there is a marking scheme. The yardstick the authors built has three axes with five items each, fifteen items in all. They call it the SDE rubric, after the initials.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>Structural Integrity (S)</strong> asks whether the plan holds up as a form. Does the reasoning match the graph, do nodes placed side by side secretly depend on each other, can the execution engine read the graph at all.</li>
+                        <li class="themeable-text leading-relaxed"><strong>Diagnostic Reasoning (D)</strong> asks how deeply the agent read the failure. Did it reach the root cause rather than the visible symptom, did it work out how far downstream the error had spread, did it guess without evidence.</li>
+                        <li class="themeable-text leading-relaxed"><strong>Evolutionary Strategy (E)</strong> asks whether the rewritten plan is any good. Did the agent change only what needed changing, did it stay on the original goal, does each new step have a reason to exist.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Thirteen of the fifteen items take one of three values: 1, 0.5, or 0. The authors cite prior work showing that finer items with fewer options raise both the accuracy and the consistency of marking. The remaining two items never meet a judge at all. Whether the execution engine can read the submitted graph is settled by a script with a pass-or-fail flag, and the last item, E5, is a formula. It divides the optimal number of rounds the reference solution needs by the number of rounds actually spent, caps the ratio at 1, and multiplies by whether the task succeeded. An agent that reaches the same answer after ten rounds instead of six loses points.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The thirteen judgment items are too many for human marking at scale, so another language model served as judge. The authors drew 400 cases per item and compared the judge against human labels: exact agreement 0.8067, mean absolute error 0.1208. Because the judge model belongs to the same family as models near the top of the leaderboard, the authors added a cross-check with a separately calibrated GPT-4o judge on five models. The LEVEL-1 ordering did not move. In LEVEL-2 the top three swapped places and first went to a DeepSeek model. The judge is still a model either way, and the authors note that bias can creep in on complex or ambiguous cases.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That same agreement sample carries something else. Item by item, the lowest human average among the thirteen belongs to Recovery Closure (E2), at 0.2350 out of 1, under half the highest-scoring item. Agents patch the point that blew up and get almost no credit for closing out the nodes, states and responses hanging beneath it. The marking prompt did instruct judges to be strict, which is worth allowing for. Even so, the overall human average of 0.4736 came in slightly below the judge's 0.4813. It is hard to lay the low scores on a harsh model judge.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="scoreboard" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Every Model Is Weakest on the Same Axis</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Sixteen models from six families ran on the same prompts: OpenAI, Anthropic, Google, Alibaba, Zhipu and DeepSeek. The authors measured DeepSeek flash separately in thinking mode, so the table carries seventeen rows. The highest average belongs to Claude Opus 4.6, with 69.23 on LEVEL-1 and 66.85 on LEVEL-2. The scale runs to 100, and not one row clears 70.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Where the points go missing is visible in the leading model's own results.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="28" font-size="12.5" font-weight="600" fill="var(--text-secondary)">Claude Opus 4.6 · LEVEL-1 (out of 100)</text>
+
+                            <!-- Pass@1 -->
+                            <text x="180" y="62" text-anchor="end" font-size="11.5" fill="var(--text-secondary)">Task completion</text>
+                            <rect x="190" y="48" width="408" height="22" rx="4" fill="#BDBDBD"/>
+                            <text x="606" y="63" font-size="11.5" font-weight="600" fill="var(--text-secondary)">94.78</text>
+
+                            <line x1="24" y1="88" x2="656" y2="88" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4 4"/>
+                            <text x="24" y="106" font-size="10.5" fill="var(--text-muted)">The top bar asks only whether the task finished. The three below score how it got there.</text>
+
+                            <!-- SI -->
+                            <text x="180" y="139" text-anchor="end" font-size="11.5" fill="var(--text-secondary)">Structural integrity</text>
+                            <rect x="190" y="125" width="316" height="22" rx="4" fill="#808080"/>
+                            <text x="514" y="140" font-size="11.5" font-weight="600" fill="var(--text-secondary)">73.56</text>
+
+                            <!-- DR -->
+                            <text x="180" y="184" text-anchor="end" font-size="11.5" fill="var(--text-secondary)">Diagnostic reasoning</text>
+                            <rect x="190" y="170" width="339" height="22" rx="4" fill="#808080"/>
+                            <text x="537" y="185" font-size="11.5" font-weight="600" fill="var(--text-secondary)">78.94</text>
+
+                            <!-- ES -->
+                            <text x="180" y="229" text-anchor="end" font-size="11.5" fill="var(--text-secondary)">Strategy revision</text>
+                            <rect x="190" y="215" width="237" height="22" rx="4" fill="#F86825"/>
+                            <text x="435" y="230" font-size="11.5" font-weight="600" fill="#F86825">55.18</text>
+
+                            <line x1="190" y1="252" x2="620" y2="252" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="190" y="270" text-anchor="middle" font-size="10" fill="var(--text-muted)">0</text>
+                            <text x="405" y="270" text-anchor="middle" font-size="10" fill="var(--text-muted)">50</text>
+                            <text x="620" y="270" text-anchor="middle" font-size="10" fill="var(--text-muted)">100</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Four numbers earned by one model on one set of tasks. Completion is a percentage and the three below are rubric scores, so the units differ. Lined up on one axis, they show which number hides what | Source: <a href="https://arxiv.org/abs/2609.12345" target="_blank" rel="noopener" class="underline">ParaRecover, Table 2</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This shape is not peculiar to the leader. Across all seventeen rows in the table, strategy revision is the lowest of the three axes. Models more or less locate where the error happened, and all of them come apart when they have to rewrite the plan precisely and efficiently. Every model also scored lower on LEVEL-2 than on LEVEL-1, which says that tracing an error back gets much harder once it has spread past a single round. That holds without exception in the averages, while axis by axis four models nudge their strategy revision score slightly higher on LEVEL-2.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One scene of points draining away appears in an appendix. Node 3 had the wrong argument type and came back empty, on a task that was not especially complicated. Rather than fixing that call and retrying it, the agent pinned the failure on an upstream task, spun up node 7, and restarted the whole workflow. A cascade of errors followed. The reference solution needs six rounds; the run took eighteen, and round efficiency (E5) fell to 0.33. The run still counts as complete. Completion asks only that the agent reach the response node inside a cap of forty rounds, so a six-round task finished in eighteen rounds earns a 1 in the table.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The gap widens on smaller models. GPT-4o mini drops from 36.17 to 30.05 in round efficiency on LEVEL-2, where errors propagate across rounds, while its completion rate barely moves, 89.32% to 88.84%. The process got worse and the outcome metric did not follow it down.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The split across error types is just as clear. Parameter mistakes, which break execution visibly, get caught reasonably well. The hard families are structure and tools, and within those the lowest diagnostic scores for both models landed on redundant calls. The paper gives the reason.
+                    </p>
+
+                    <blockquote class="border-l-4 pl-5 py-2 mb-6 themeable-text-secondary" style="border-color: #F86825;">
+                        “Unlike other errors, it typically does not cause explicit execution failures but manifest as “plausible yet ineffective” implicit errors, making them difficult to detect—a common challenge for agents.”
+                    </blockquote>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A redundant call leaves no failure signal. The call succeeds and a value comes back. It is plausible, and useless. On redundant-call tasks DeepSeek flash earned a structural score of 83.44, the best of the fourteen types, and a diagnostic score of 69.31 on those same tasks, the worst. The form of the plan is flawless, and that is why nobody catches it. The error log stays empty, so the model walks past it and so does a human reviewer. This is exactly the class of mistake that completion-only evaluation is blindest to.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Is Watching This Benchmark</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The part worth attention is not the leaderboard but the paper's final experiment. The authors kept only the trajectory pairs more than five points apart, assembled 3,187 preference pairs out of them, and trained Qwen3-8B on that set.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A prompt-only comparison ran alongside it. Attaching three worked examples to the prompt moved the average from 43.86 to 44.47. That is 0.61 points. The version trained on the error labels landed at 49.10, a gain of 5.24. The hardware was a single server with eight RTX 3090 cards, the method was LoRA, and the preference stage ran for one epoch.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        An obvious suspicion attaches to this. If the training data was built with their own rubric, of course the rubric score goes up, and that is circular. The authors raise the same worry and remeasure with metrics no judge model touches, four of them computed straight from execution logs and environment results.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">LEVEL-1</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Tool-use efficiency</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Round efficiency (E5)</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Unexecutable plans</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">Completion</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 whitespace-nowrap">Qwen3-8B, before training</td>
+                                    <td class="py-3 pr-4">20.43</td>
+                                    <td class="py-3 pr-4">36.50</td>
+                                    <td class="py-3 pr-4">10.25%</td>
+                                    <td class="py-3">91.84%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 whitespace-nowrap">Supervised fine-tuning</td>
+                                    <td class="py-3 pr-4">21.29</td>
+                                    <td class="py-3 pr-4">37.12</td>
+                                    <td class="py-3 pr-4">6.71%</td>
+                                    <td class="py-3">92.42%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 whitespace-nowrap font-semibold">Preference training on error labels</td>
+                                    <td class="py-3 pr-4 font-semibold">26.20</td>
+                                    <td class="py-3 pr-4 font-semibold">40.85</td>
+                                    <td class="py-3 pr-4 font-semibold">5.90%</td>
+                                    <td class="py-3 font-semibold">94.30%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">The LEVEL-1 block of Table 8 in the paper. Higher is better in the first three columns; lower is better for unexecutable plans. LEVEL-2 moved in the same direction.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The share of unexecutable plans fell by nearly half, and completion rose along with it. The point of the table is that the numbers rose on a yardstick no judge model holds. The columns, taken one at a time, also show which stage changed what. Unexecutable plans were already down to 6.71% after supervised fine-tuning, and the preference stage opened up a different column, tool-use efficiency, which jumps from 21.29 to 26.20. A name tag on each failure did not stop at diagnosis. It repaired the model. This is one confirmation on one model, and the labeling side took several passes of human work.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The question Pebblous has held onto for a long time is where data came from and what it passed through to become the value it is now. An agent's failure records stand in front of the same question. What produced the gain in this paper was not a bigger model and not a longer prompt. It was 10,626 lines, each one annotated with what kind of failure it was. Label design turned out to be the performance.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So a reader who takes this work as news of one more benchmark has read only half of it. Four things are worth checking against your own team's agent pipeline.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">What shape are last week's failed jobs sitting in right now? If they survive as a single cell reading "failed", you can count them but you cannot fix them.</li>
+                        <li class="themeable-text leading-relaxed">If you do split failures into types, how many boxes do you need? A taxonomy that looks only at tool names and parameters has nowhere to put the dependency mistakes that parallel execution creates.</li>
+                        <li class="themeable-text leading-relaxed">How many jobs marked successful got there through redundant calls? This mistake never reaches an error log, so it stays invisible unless someone counts it separately.</li>
+                        <li class="themeable-text leading-relaxed">Who attaches the labels? A label a person adds once becomes training data the next time around, and records nobody labels are just storage.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        Thank you for reading this far. Every figure and quotation in this article can be checked at the source, in the <a href="https://arxiv.org/abs/2609.12345" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">paper posted on arXiv</a> and the <a href="https://github.com/gbw206/ParaRecover" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">repository the authors opened</a>. We would be glad to hear how many boxes your organization uses to write down an agent's failures.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260915"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-09-15T01:40:45.212Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-09-15T02:05:12.525Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1789436445212-b8pt89",
+                "version": "0.1.0",
+                "sha": "63502f9d4b3ca8d6aee2fa8d11c906cc1e8e56a3",
+                "builtAt": "2026-09-13T12:54:31.836Z"
+              },
+              "recordedAt": "2026-09-15T03:11:35.220Z"
+            },
+            mainTitle: "AI Agents Can Find Their Own Mistakes but Not Fix Them",
+            subtitle: "ParaRecover, a benchmark of 10,626 parallel tool-call errors in 14 types, leaves all 16 models tested below 70 out of 100",
+            pageTitle: "ParaRecover: Agents Score Under 70 on Error Recovery | Pebblous",
+            category: "tech",
+            publishDate: "2026-09-15",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/pararecover-agent-error-benchmark/en/",
+            tags: ["ParaRecover", "AI agents", "LLM benchmark", "tool calling", "error taxonomy", "replanning", "data quality", "process-level evaluation", "arXiv", "EMNLP 2026"],
+            faqs: [
+                {
+                    question: "What kind of benchmark is ParaRecover?",
+                    answer: "A process-level benchmark that measures how well an agent locates a mid-run error and rewrites its plan while calling several tools in parallel across multiple rounds. It was built by Bowen Guan, Zhentao Yin and Yanming Shen at the School of Computer Science and Technology, Dalian University of Technology, and posted to arXiv on 11 September 2026 (arXiv:2609.12345). EMNLP 2026 accepted it for the main conference, and the data and code carry a CC BY 4.0 license."
+                },
+                {
+                    question: "How is it different from existing agent benchmarks?",
+                    answer: "The eye of the evaluation moved from outcome to process. Most benchmarks look at the final answer and whether the task finished. Some go further and check whether a tool call succeeded or whether its format held, but nothing directly scored the ability to start from an already broken state, name the cause, and rebuild the plan. In the comparison table the paper includes, reflective localization and replanning decision are ticked only in the ParaRecover row."
+                },
+                {
+                    question: "How do the 14 error types break down?",
+                    answer: "Into three families. The four structure types are wrong dependency, missing dependency, wrong parallelization and wrong serialization. The four parameter types are wrong name, invalid value, missing required field and wrong type. The six tool types are empty response, timeout, nonexistent tool name, wrong tool choice, missing necessary call and redundant call. The authors confirmed that all fourteen appear naturally in real execution logs, showing these are not invented labels."
+                },
+                {
+                    question: "What do S, D and E measure in the SDE rubric?",
+                    answer: "The form of the plan, the grasp of the cause, and the quality of the repair, in that order. S (Structural Integrity) asks whether the submitted plan graph holds together and whether the execution engine can read it. D (Diagnostic Reasoning) asks how deeply the agent reached the root of the failure and how far it traced the damage. E (Evolutionary Strategy) asks whether the new plan touched only what it had to, kept the original goal, and had a reason for each added step. Each axis has five items, fifteen in total, and most are marked on a scale of 1, 0.5 or 0."
+                },
+                {
+                    question: "Which model scored highest?",
+                    answer: "Claude Opus 4.6, with the best average at 69.23 on LEVEL-1 and 66.85 on LEVEL-2 out of 100. DeepSeek V4 pro followed at 68.29 and Alibaba's Qwen3.5-122B-A10B at 67.54. Even the leader never touched the 70 mark. Swapping the judge model for GPT-4o and remeasuring left the LEVEL-1 ordering unchanged."
+                },
+                {
+                    question: "If completion rates are high, where is the problem?",
+                    answer: "Completion counts arrival and not the route taken. The rule used in these experiments allowed up to forty rounds and passed any run that produced a response inside that cap. Claude Opus 4.6 recorded 94.78% completion on LEVEL-1 while scoring 55.18 on strategy revision, which measures the precision of the replanning. A wasteful route earns the same single point as an efficient one. The difference between them shows up on the real invoice as tokens, external call counts and processing time."
+                },
+                {
+                    question: "Why are redundant calls especially hard to catch?",
+                    answer: "They throw no exception and leave no error code. Even when a call is unnecessary, the execution itself ends normally and the response comes back intact. The paper describes these as 'plausible yet ineffective' implicit errors. Across the two models whose scores were broken out by error type, this was the type where diagnostic reasoning bottomed out in both."
+                },
+                {
+                    question: "Does labeling the process and training on it actually help?",
+                    answer: "The paper's final experiment says yes. The authors took 3,187 trajectory pairs more than five SDE points apart as preference data and retrained Qwen3-8B. Since a rise in their own rubric score alone would be circular, they remeasured with metrics computed straight from execution logs. On LEVEL-1 the share of unexecutable plans fell from 10.25% to 5.90% and completion went from 91.84% to 94.30%. The scope of this check is one model."
+                },
+                {
+                    question: "What are the limitations of this benchmark?",
+                    answer: "The authors list three. First, everything runs inside a simulated tool environment instead of live APIs, so the benchmark cannot capture the unpredictability, latency and dynamic state changes of a real system. Second, the abstract marking items are handed to a language model judge, which can introduce bias on complex or ambiguous cases. Third, the design models an agent run as a directed acyclic graph, leaving no way to express dynamic patterns such as loops, conditional branches or asynchronous interaction."
+                },
+                {
+                    question: "Why does this research matter to data teams?",
+                    answer: "Because the cost that produced the result sat on the labeling side. Roughly one case in four, 2,812 of the 10,626, was not generated at all: people went into the raw logs and tagged what had gone wrong in each one. The marking scheme took the same hand work, with 400 cases per rubric item scored by humans before the model judge was trusted with the rest, and even then the two matched exactly 0.8067 of the time. Only with the failures sorted that way did retraining one 8B model shift numbers that came from the execution environment rather than from a judge. Before a team reaches for a different model, there is room to look at what it is currently writing down when a job fails."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
