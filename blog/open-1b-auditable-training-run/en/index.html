@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitwise Auditable AI Training: Gensyn's Open-1B | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="Open weights and an open recipe still do not make a training run reproducible. Gensyn hashed all 80,957 steps of Open-1B so anyone can replay one on a laptop.">
+    <meta name="keywords" content="AI model reproducibility, bitwise reproducibility, auditable training, training data provenance, open source AI, deterministic training, floating-point reproducibility, Gensyn, Open-1B, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Can Your Laptop Check What an AI Was Trained On?">
+    <meta property="og:description" content="A training run with a published hash on every one of its 80,957 steps. Pick a step, recompute it on the machine you already own, and compare. The price was paid in speed.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Diagram of 80,957 training steps on one line, with three auditors each replaying a single step">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-09-17">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Can Your Laptop Check What an AI Was Trained On?">
+    <meta name="twitter:description" content="Open source models cannot be re-run to the same weights. One training run closed that gap down to the last bit, and the check runs on a MacBook.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/en/image/index.png">
+    <meta name="twitter:image:alt" content="Diagram of 80,957 training steps on one line, with three auditors each replaying a single step">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260917"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260917">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260917">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260917">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#open-vs-verifiable" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Released Is Not the Same as Verified</a></li>
+                    <li><a href="#where-it-splits" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Why One Recipe Answers Differently on Different Machines</a></li>
+                    <li><a href="#pinning-the-order" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Three Devices That Pin Down the Order</a></li>
+                    <li><a href="#one-step-each" class="block pl-4 themeable-toc-link transition-colors duration-200">4. An Audit Cut One Step at a Time</a></li>
+                    <li><a href="#audited-so-far" class="block pl-4 themeable-toc-link transition-colors duration-200">5. No Segment Has Been Confirmed Yet</a></li>
+                    <li><a href="#the-price" class="block pl-4 themeable-toc-link transition-colors duration-200">6. What Reproducibility Costs</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">7. Why Pebblous Is Watching This Work</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            An open source model ships its weights, its training data and its recipe together. Follow that recipe and the weights you get back are not the weights that were published. Floating-point addition depends on the order of the additions, so the last bit differs, and within a handful of steps the difference has compounded into a different model. A report posted to arXiv on September 15 closes that gap for one training run, down to the bit. This article looks at how the authors did it, and at what they paid.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The model is Open-1B and the team is Gensyn, a company that has been working on the verification of machine learning computation. The number to watch here is not the parameter count but the step count. All 80,957 optimizer steps carry a published state hash, so anyone can pick one of them, recompute it on a laptop, and compare the result with what was published. The bill came due in speed. Against the same recipe in optimized PyTorch, the reproducible run is roughly five times slower on six nodes, which is also why it saw one tenth of the training tokens that OLMo 2 1B saw. Still, there is a long way between publishing a run and finishing the checks. Pull the audit record on September 17 and 19 steps out of the 80,957 carry an accepted check, while not one of the 810 segments of a hundred steps has reached confirmation.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Sections 1 through 6 follow what the report, the audit tooling documentation and the public audit record say. Section 7 carries the material over to data practice, which is this article's own reading, and where the company had already written the same thing in its launch post, this article says so on the spot.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Figures</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Sources: <a href="https://arxiv.org/abs/2609.17380" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Donaghy et al., arXiv:2609.17380 (2026-09-15)</a> · <a href="https://github.com/gensyn-ai/open-transformers" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">audit harness repository</a></p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">80,957</p>
+                            <p class="text-sm themeable-text-secondary mt-1">training steps with a published hash</p>
+                            <p class="text-xs themeable-muted mt-1">Not one step skipped. Each hash carries the one before it inside, so the run reads as a single chain</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">half a day</p>
+                            <p class="text-sm themeable-text-secondary mt-1">time to check a single step</p>
+                            <p class="text-xs themeable-muted mt-1">On an M4-class Mac. The same machine needs only 29.7 seconds when the unit stops at the initial state</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">about 5x</p>
+                            <p class="text-sm themeable-text-secondary mt-1">the speed bill for reproducibility</p>
+                            <p class="text-xs themeable-muted mt-1">Against optimized PyTorch on six nodes. On a single node the gap widens to 6.8x</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">50.1</p>
+                            <p class="text-sm themeable-text-secondary mt-1">OLMES macro score</p>
+                            <p class="text-xs themeable-muted mt-1">OLMo 2 1B scores 61.5, and it saw 4 trillion training tokens against 400 billion here</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="open-vs-verifiable" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Released Is Not the Same as Verified</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The report sorts today's model releases into three tiers. Closed models reachable only through an API, open weight models that publish the final weights alone, and open source models that hand over the data and the recipe as well. Then it proposes a fourth tier, in which every operation on every data sample during training can be checked again by anyone on their own machine with bitwise certainty. The authors call that tier fully auditable.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A new tier needs two words separated first. Determinism means a computation returns the same result every time it runs on the same machine in the same environment. That is the property most deep learning frameworks offer under the name of a deterministic mode. Reproducibility asks for more. The result has to come back identical to the last bit across different hardware, a processor and a GPU included. The first can hold while the second fails, and that is exactly where open source models have been sitting.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The abstract says why the distinction bites in practice. Without the ability to produce the same result on another machine, a user cannot verify that the checkpoint they downloaded was actually produced by the declared recipe. That empty space leaves room for undisclosed data, injected biases, or backdoors. Existing techniques such as proof-of-learning or proof-of-training-data give probabilistic guarantees only, and a backdoor can be planted with a handful of poisoned examples, which slips straight through the net of sampled inspection.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The authors also draw a line around what the method delivers. An audit does not eliminate biases from the model. It does allow an auditor to be absolutely certain which biases may be present. For the first time, the authors write, there is the ability to detect backdoor injection attacks that use undisclosed data to compromise a model.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="where-it-splits" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why One Recipe Answers Differently on Different Machines</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The starting point is that the associative law you learned at school does not hold inside a computer. Floating point stores only a subset of the real numbers exactly and rounds the rest to the nearest value it can hold. Add three numbers and the rounding lands in a different place depending on whether you add the first two or the last two first, so the final bit changes. A GPU that splits a long sum across thousands of lanes and a processor that accumulates end to end are adding in different orders to begin with.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 290" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="26" font-size="12.5" font-weight="600" fill="var(--text-secondary)">Change the order of addition, and the last bit differs</text>
+                            <text x="24" y="44" font-size="10.5" fill="var(--text-muted)">Illustrative values only — not measurements from the actual training run</text>
+
+                            <text x="24" y="80" font-size="11.5" font-weight="600" fill="var(--text-secondary)">GPU · splits the sum across lanes, then combines the partials</text>
+                            <rect x="24" y="92" width="632" height="34" rx="6" fill="var(--text-muted)" opacity="0.1"/>
+                            <text x="40" y="114" font-size="11" fill="var(--text-secondary)" font-family="monospace">(1.0000001 + 2.0000002)  +  (3.0000003 + 4.0000004)</text>
+
+                            <text x="24" y="154" font-size="11.5" font-weight="600" fill="var(--text-secondary)">Processor · adds one number at a time, in sequence</text>
+                            <rect x="24" y="166" width="632" height="34" rx="6" fill="var(--text-muted)" opacity="0.1"/>
+                            <text x="40" y="188" font-size="11" fill="var(--text-secondary)" font-family="monospace">((1.0000001 + 2.0000002) + 3.0000003) + 4.0000004</text>
+
+                            <line x1="240" y1="126" x2="240" y2="220" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4 3"/>
+                            <line x1="440" y1="200" x2="440" y2="220" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+                            <rect x="150" y="222" width="180" height="46" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="240" y="240" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">what the GPU returns</text>
+                            <text x="240" y="258" text-anchor="middle" font-size="12" font-family="monospace" fill="var(--text-secondary)">10.000001<tspan fill="#F86825" font-weight="700">0</tspan></text>
+
+                            <rect x="350" y="222" width="180" height="46" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="440" y="240" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">what the processor returns</text>
+                            <text x="440" y="258" text-anchor="middle" font-size="12" font-family="monospace" fill="var(--text-secondary)">10.000001<tspan fill="#F86825" font-weight="700">1</tspan></text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Original Pebblous diagram — an illustrative example of floating-point non-associativity (not real training values). On paper the two orders reach the same sum, but the two machines hand back different final digits.
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The report collects the places where bit-for-bit equality breaks into five items, and pairs each one with the way RepOps holds it.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">What breaks bit-for-bit equality</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">How RepOps holds it</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Same-machine determinism is not cross-hardware</td>
+                                    <td class="py-3">An explicit cross-hardware equality contract</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Floating-point addition is not associative</td>
+                                    <td class="py-3">One fixed reduction order on every backend</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Fused multiply-add rounds once, a separate multiply and add rounds twice</td>
+                                    <td class="py-3">Enforcing a single convention. Fusion is disabled in the processor build, and the GPU path uses explicitly unfused multiply-and-add operations</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Subnormal numbers, the values very close to zero, are handled differently by different hardware</td>
+                                    <td class="py-3">Flush them to zero everywhere</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Random draws differ by platform and sample size even under one seed</td>
+                                    <td class="py-3">One counter-based stream, indexed by position</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">Carried over from Table 1 of the report. With even one of the five rows out of line, the model that comes out at the end is a different one.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The fourth row, subnormals, shows the character of hardware particularly well. Apple GPUs discard values very close to zero by default, while processors and NVIDIA GPUs keep them. The same value survives on one side and vanishes on the other, so the training trajectory splits. The fix is to match the least permissive backend. Subnormals get thrown away deliberately, even on hardware that would not otherwise need to. This is the general shape of every reproducibility decision, the authors write. To be reproducible across a set of machines, you adopt the behavior of the stingiest one on purpose.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The random number row also runs against intuition. With the same seed pinned, a processor, an NVIDIA GPU and an Apple GPU still draw three different sequences. Inside a single vendor the story repeats: on an NVIDIA GPU the generator spreads its work across thousands of parallel lanes, so which lane draws which number depends on how the computation was parallelized.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One place did not make it into the table. The appendix shows that even the division used to take an average was rewritten. Dividing a floating-point tensor by an integer does not travel across backends, because the processor performs a correctly rounded division while CUDA lowers the same expression to a multiply by a host-computed reciprocal. Unless the divisor is a power of two, the two disagree in the last place. So both the training side and the audit side avoid the division sign and multiply by a precomputed reciprocal instead. A small discrepancy earns no leniency here. Take the gradients reduced across nodes, add them up sequentially on one machine, and you land within a relative error of about a hundred billionth of what the cluster produced, yet the bits differ. In an audit that value gets the same verdict as a badly wrong one.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="pinning-the-order" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Three Devices That Pin Down the Order</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Nondeterminism comes from three sources: reductions inside GPU kernels, the ordering of batches spread over many machines, and collective communication within and between nodes. Each one gets a device of its own.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="26" font-size="12.5" font-weight="600" fill="var(--text-secondary)">Three sources of nondeterminism, and the device pinning each</text>
+                            <text x="24" y="44" font-size="10.5" fill="var(--text-muted)">Miss any one of the three and the trajectory splits from that step</text>
+
+                            <rect x="24" y="58" width="196" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="122" y="80" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">GPU kernel reductions</text>
+                            <text x="122" y="100" text-anchor="middle" font-size="10" fill="var(--text-muted)">3.1</text>
+                            <line x1="220" y1="86" x2="256" y2="86" stroke="var(--text-muted)" stroke-width="1.2"/>
+                            <polygon points="256,82 264,86 256,90" fill="var(--text-muted)"/>
+                            <rect x="262" y="58" width="222" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="373" y="80" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">RepOps</text>
+                            <text x="373" y="100" text-anchor="middle" font-size="10" fill="var(--text-muted)">same order on every backend</text>
+
+                            <rect x="24" y="124" width="196" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="122" y="146" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">Batch order across machines</text>
+                            <text x="122" y="166" text-anchor="middle" font-size="10" fill="var(--text-muted)">3.2</text>
+                            <line x1="220" y1="152" x2="256" y2="152" stroke="var(--text-muted)" stroke-width="1.2"/>
+                            <polygon points="256,148 264,152 256,156" fill="var(--text-muted)"/>
+                            <rect x="262" y="124" width="222" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="373" y="146" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">A canonical data stream</text>
+                            <text x="373" y="166" text-anchor="middle" font-size="10" fill="var(--text-muted)">independent of node count or rank</text>
+
+                            <rect x="24" y="190" width="196" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="122" y="204" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">Collective comm, in and</text>
+                            <text x="122" y="218" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">between nodes</text>
+                            <text x="122" y="236" text-anchor="middle" font-size="10" fill="var(--text-muted)">3.3</text>
+                            <line x1="220" y1="218" x2="256" y2="218" stroke="var(--text-muted)" stroke-width="1.2"/>
+                            <polygon points="256,214 264,218 256,222" fill="var(--text-muted)"/>
+                            <rect x="262" y="190" width="222" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="373" y="212" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">A fixed binary tree fold</text>
+                            <text x="373" y="232" text-anchor="middle" font-size="10" fill="var(--text-muted)">retraced sequentially on one machine</text>
+
+                            <line x1="484" y1="86" x2="512" y2="86" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="484" y1="152" x2="512" y2="152" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="484" y1="218" x2="512" y2="218" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="512" y1="86" x2="512" y2="218" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="512" y1="152" x2="534" y2="152" stroke="var(--text-muted)" stroke-width="1.2"/>
+                            <polygon points="534,148 542,152 534,156" fill="var(--text-muted)"/>
+
+                            <rect x="538" y="58" width="118" height="188" rx="8" fill="#F86825" opacity="0.1" stroke="#F86825" stroke-opacity="0.5" stroke-width="1"/>
+                            <text x="597" y="146" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary)">bitwise</text>
+                            <text x="597" y="164" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary)">reproducibility</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Original Pebblous diagram — structure from <a href="https://arxiv.org/abs/2609.17380" target="_blank" rel="noopener" class="underline">arXiv:2609.17380</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>Operations That Add in the Same Order Everywhere</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        RepOps is a library of operations that return the same bits on processors, NVIDIA GPUs and Apple GPUs. Everywhere a sum appears, inside matrix multiplication, inside normalization, in the loss and in the gradient reductions, it imposes a fixed order, and it gives up speed in exchange for the order the hardware would have preferred. On the random number side the character of the thing changed outright. In a counter-based generator the value at index i is the value of a pure function of the seed and a logical position. How the work was split, how many lanes ran, how large the tensor was, none of it enters.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>A Data Stream That Does Not Depend on Machine Count</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Matching operations are not enough. The step an auditor replays has to receive the tokens the cluster fed into that step, in the same order. An ordinary data loader cannot hold that condition, because the batch ordering changes when the number of workers changes. So the training data is defined as a single canonical stream. The stream is a function of the training seed, the corpus manifests and the sequence length, and it leans on neither node count nor rank. The seed of the generator that orders documents takes a SHA-256 hash of the source name, because Python's per-process hash would give a different permutation whenever the machine changed.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Parallelism arrives after the stream is settled. A different number of GPUs changes only which rank reads which window; the contents of a window and the order of the whole stay put. A machine can die mid-training and the run can be re-sharded onto a different number of devices without shaking the data order, and an auditor can rebuild that step's microbatches on a single machine.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A separate passage records what went into that stream. The report calls the training corpus the Open-1B Mix 0626 and counts 450.5 billion tokens across 332.2 million documents. Four permissively licensed sources are mixed, with token shares of 66.7% for DCLM-Baseline, 13.3% for FineWeb-Edu, 12.0% for The Stack v2 and 8.0% for Proof-Pile-2. The first two come from the web, so about 80% of the whole is web documents. Source weights were set proportional to the on-disk size of each source, so all four were consumed at the same rate, and within the 400 billion token budget each source completed 0.89 epochs. No document was seen twice. One number sits at the head of every ordering here. The global seed of the published run is 42, and the generators that pick sources, order shards and order documents all branch from it.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The authors stop short of claiming data quality as their own work. They lean on the filtering done by the upstream releases and record only three additions of their own. FineWeb-Edu was filtered to an educational score of 3 or higher, which keeps about a quarter of it; The Stack v2 was limited to permissively licensed files of 1MB or less; empty documents were dropped. They ran no deduplication of their own, and they state that near-duplicates therefore remain between DCLM-Baseline and FineWeb-Edu. Being able to count everything that went in, and being sure that what went in is clean, are two different claims. This release establishes the first one.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>Collective Communication a Single Machine Can Retrace</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The communication that combines gradients across machines rides on order as well. The widely used ring all-reduce is fast, but the order in which it combines depends on the shape of the cluster, so a single-machine replay with no topology has nothing to retrace that order from. Instead the gradients are summed in ascending shard order inside a node, and folded across nodes by a binary tree whose pairing order is fixed. The audit harness runs that same order sequentially on one machine. The repository configuration does not hide the choice. Switch the reduction mode to ordinary NCCL and throughput goes up while the run becomes impossible to replay, and the audit tool refuses such a run rather than reproducing it wrongly.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="one-step-each" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">An Audit Cut One Step at a Time</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The run used 48 H100s and spent 27.8 days actually training. In GPU time that is more than 1,300 days. No single machine can go around that again. So the authors split the verification instead. Much as open source software gets read one module at a time, many people each certify a different step, and together they cover the whole run.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A split like that needs a target to compare against at every step. Each step carries one state hash. A single blake2b digest holds the weights, the optimizer moments, that step's post-clip gradients and the per-rank batch digests together, and each step's hash folds in the hash of the step before it. The chain means that tampering with one place in the middle throws off everything after it. Open-1B recorded this hash for every step without exception, and the 810 intermediate checkpoints at 100-step intervals are public. However short the interval you pick, it has something to compare against.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="28" font-size="12.5" font-weight="600" fill="var(--text-secondary)">One continuous run, and the single steps auditors take on</text>
+
+                            <text x="350" y="76" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">810 checkpoints at 100-step intervals · one state hash per step</text>
+
+                            <!-- timeline -->
+                            <rect x="60" y="92" width="580" height="16" rx="4" fill="var(--text-muted)" opacity="0.18"/>
+                            <line x1="118" y1="88" x2="118" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="176" y1="88" x2="176" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="234" y1="88" x2="234" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="292" y1="88" x2="292" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="350" y1="88" x2="350" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="408" y1="88" x2="408" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="466" y1="88" x2="466" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="524" y1="88" x2="524" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="582" y1="88" x2="582" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+
+                            <!-- audited steps -->
+                            <rect x="148" y="88" width="5" height="24" fill="#F86825"/>
+                            <rect x="348" y="88" width="5" height="24" fill="#F86825"/>
+                            <rect x="548" y="88" width="5" height="24" fill="#F86825"/>
+
+                            <text x="60" y="132" font-size="10.5" fill="var(--text-muted)">step 0</text>
+                            <text x="640" y="132" text-anchor="end" font-size="10.5" fill="var(--text-muted)">step 80,957</text>
+
+                            <!-- connectors -->
+                            <line x1="150" y1="114" x2="150" y2="176" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4 3"/>
+                            <line x1="350" y1="114" x2="350" y2="176" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4 3"/>
+                            <line x1="550" y1="114" x2="550" y2="176" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+                            <!-- auditor boxes -->
+                            <rect x="62" y="176" width="176" height="76" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="150" y="198" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text-secondary)">Auditor A · Apple Mac</text>
+                            <text x="150" y="218" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">replays one step from</text>
+                            <text x="150" y="234" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">the preceding checkpoint</text>
+
+                            <rect x="262" y="176" width="176" height="76" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="350" y="198" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text-secondary)">Auditor B · consumer GPU</text>
+                            <text x="350" y="218" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">compares the hash it gets</text>
+                            <text x="350" y="234" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">with the published one</text>
+
+                            <rect x="462" y="176" width="176" height="76" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="550" y="198" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text-secondary)">Auditor C · CPU, no GPU</text>
+                            <text x="550" y="218" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">match or mismatch,</text>
+                            <text x="550" y="234" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">with no middle ground</text>
+
+                            <text x="24" y="272" font-size="10.5" fill="var(--text-muted)">Each auditor takes a different place in the line, and joined end to end they cover the run.</text>
+                            <text x="24" y="288" font-size="10.5" fill="var(--text-muted)">The three machines have to agree, and a disagreement is itself the finding.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Original Pebblous diagram. Structure and figures from <a href="https://arxiv.org/abs/2609.17380" target="_blank" rel="noopener" class="underline">arXiv:2609.17380</a> and the <a href="https://github.com/gensyn-ai/open-transformers/blob/main/scripts/audit_volunteer/RUNBOOK.md" target="_blank" rel="noopener" class="underline">audit volunteer runbook</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        An audit needs no account and no credential. Install two wheels, run one command, read pass or fail. Checking that the files you received match the published sha256 comes before installing anything, and the documentation is blunt about a mismatch: stop there, because verifying other bytes would tell you about some other artifact rather than about the claim. Apple silicon Macs, Linux with an NVIDIA GPU, and a processor with no GPU at all are all first class. The processor is in fact the reference the other two are compared against. Apple silicon and NVIDIA being equally valid is the claim rather than a convenience, the runbook stresses, and a verification on an NVIDIA box is worth exactly as much as one on a Mac.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Why the work of 48 cards fits in the memory of one machine is worked out in the appendix. The harness replays what each GPU in the cluster did during that step, one after another, which leaves partial sums to combine stacked up as high as the node count. The authors chose a fold that works like binary carry. The moment two partials of the same size exist they are combined and carried up a level, so the number of full-size accumulators resident at once drops from the node count to its logarithm. With eight nodes it stays at four rather than eight. The implementation spills the idle entries to disk, leaving only the two terms currently being added in RAM. The premise is that the fold's pairing order matches the cluster's, and a change in that order changes the value.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The cost varies sharply by unit. A unit that only checks the initial state finishes in 29.7 seconds on an M4 Max and wants 5.8GB of memory. A unit that replays one full training step takes something on the order of half a day on a machine of the same class. That is why an audit unit is cut to a single step rather than several, and why one volunteer takes on one step rather than a stretch. The arithmetic on those figures makes the case for splitting plain. One person on one machine, going through all 80,957 steps in sequence, would be counting in centuries.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The repository documentation narrows down what a match proves. A match establishes that the selected replay, with the pinned artifacts and inputs, produced the expected state hash on the tested backend. A unit that checked initialization only does not verify a training interval. The hash in the current version covers weights, optimizer state, gradients and the batch digest, and it does not cover the random state, the data-stream cursor or the spike state. A warning comes attached to the checkpoint directories as well: treat them as code rather than data, because the metadata index gets unpickled during loading before any of the project's own code runs. Replay only checkpoints whose provenance you trust, the documentation advises, and sandbox anything else.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="audited-so-far" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">No Segment Has Been Confirmed Yet</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A structure on paper and a verification in progress are two different things. Gensyn publishes the audit record on the web and offers a tally with it. Here is what came back on September 17, 2026. Steps with an accepted check: 19. Contributors: 10. Replay hours reported by volunteers: 67.9 in total. Nowhere among the 810 segments is there one whose hundred steps are filled without a gap. Nine segments have been claimed and are in progress, seven hold at least one provisional record, and the remaining 794 are untouched. These are the numbers of the third day after release, so a small count is not something to fault. The count does show where the threshold of an audit sits.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The slowness has a reason. An audit rides on order. A replay of one step needs the state immediately before it, and the published checkpoints sit 100 steps apart. So an auditor either starts straight from a public checkpoint or picks up an intermediate checkpoint that an earlier volunteer uploaded. A handed-over checkpoint has to have passed the loss values and file digest checks at submission, and the receiving auditor's tool re-checks the digest and the training state hash before the replay begins. The step numbers in the record show that relay plainly. Steps 100, 101 and 102 run under three different names, and steps 12100 through 12103 sit as four under one name. Confirming a single segment takes 100 steps in an unbroken line, and the furthest along today reaches four.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Which machine ran it and how long it took stay in the same record. Volunteers enter those values themselves, so conditions are uneven, yet the size of the gap between machines is unmistakable.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Machine used for the audit</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Reported replay time</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">Count</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">H100 (data center class GPU)</td>
+                                    <td class="py-3 pr-4">0.4 to 2.8 hours</td>
+                                    <td class="py-3">10</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">RTX 3090 and 4090 (consumer GPU)</td>
+                                    <td class="py-3 pr-4">0.9 to 1.5 hours</td>
+                                    <td class="py-3">5</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Apple M4 Pro, M4 Max, M5</td>
+                                    <td class="py-3 pr-4">8.0 to 19.2 hours</td>
+                                    <td class="py-3">4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">Source: <a href="https://open1b.gensyn.ai/" target="_blank" rel="noopener" class="underline">the record the audit app publishes</a>, all 19 entries as retrieved on September 17, 2026. That an audit also runs on Apple silicon, and that an audit on Apple silicon takes close to twenty hours, are both true.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The requirements the app states before anyone claims a step belong next to that table. Memory starts at 24GB, and on Apple silicon the app asks for 40GB or more. Below 40GB the replay runs in swap, which stretches the time, and two runs on swapping machines returned a hash that matched nothing, a different one each time, the app reports. So it advises running a mismatch again on a machine with more memory before reading it as a finding. On an NVIDIA card 24GB is enough, and an audit has in fact run on a 24GB RTX 4090. For free disk space the advice is to plan on 74GiB on a cold setup, and the checkpoint to upload after a match runs about 25.7GB. The time estimate shown against each step is an Apple reference figure measured on a 48GB M5, and machines that swap below 40GB are budgeted at three times that. Step 0 alone stands apart: it cannot offload the optimizer, so 48GiB of host memory is posted as a provisional threshold, and no machine has timed it yet. The claim that it runs on consumer hardware holds, but the consumer hardware in question is fairly well equipped.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is no reward. The notice attached to the record states first that the list of names is alphabetical and not a ranking, then that there is no payment, no points and no future reward. A name joins the list when the record accepts an audit, while the steps themselves stay provisional until their segment confirms. Ethereum addresses appear only for those who entered one, and five of the ten did. The one thing left is a name on the record of the first fully audited training run, which is how the company put it in its launch post as well.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="the-price" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What Reproducibility Costs</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The report spends a whole section on the cost. The hash comes first. The state hash attached to each step is fixed work per rank, so it stays between 5.77 and 5.96 seconds per step regardless of scale. With more nodes the step itself gets shorter, so the share taken by that fixed cost grows. What was 4.9% on one node becomes 9.3% on two, 16.7% on four, and 21.4% of step time on six. The strong-scaling efficiency of 71% measured with hashing on, against 86% with it off, comes from the same place. The forward and backward passes taken alone reach 99.7%, so most of what is lost sits in the hash and in the communication between nodes.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That figure should not be counted together with the cost of reproducibility. The appendix draws a line: the hash is an audit cost and not a reproducibility cost. Turn hashing off entirely and the deterministic kernels and collectives still return the same bits. The cost shows up at the intermediate steps, which then have no target to compare against. How much the order-pinned communication demands as nodes are added was measured separately. A deterministic all-reduce fixes the order at the price of sending the whole buffer on every hop, so against ordinary NCCL measured on the same subgroups it costs 1.13x at two nodes, 1.59x at four, and 3.54x at six. The jump at six nodes comes from the node count not being a power of two, which splits the fold into two blocks, rather than from bandwidth. That is why the roughly five times summary is a figure with conditions attached. Part of why the gap looks narrow at six nodes lies on the baseline side. This cluster uses a socket fabric without GPUDirect, where PyTorch's strong-scaling efficiency sinks to 66% while the reproducible arms hold 86% to 91%.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The larger cost is on the kernel side. On a single node, the GPU utilization of the bitwise reproducible bf16 kernels came to 3.3%, while the same model and the same recipe in stock PyTorch reached 40.5%. That is a 12.2x gap. int8 quantization-aware training cut it to 6.8x, and going up to six nodes narrows it to about 5x. The authors summarize the burden of reproducibility as roughly five times the cost of optimized PyTorch. The biggest room for improvement they name is the hash, which is computed on the host today, so a memory transfer between device and host cuts into every step.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That burden stays visible in the benchmark scores. Training tokens stopped at 400 billion, and OLMo 2 1B, the comparison model, saw 4 trillion. The OLMES macro score is 50.1 against 61.5, and the average over the ten tasks is 25.4 against 31.9. Open-1B leads on two of the ten, ARC Challenge and MMLU Pro. The comparison figures were measured by the authors themselves. Since the OLMo 2 report does not publish five of the ten tasks, they pinned an evaluation harness, ran it on the public OLMo 2 1B checkpoint, and recomputed the macro. In the conclusion the authors name the causes of the difference directly: reproducibility overhead, resource constraints, and a token budget ten times smaller. This is closer to losing for want of the same conditions than to losing under them.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The published run did not arrive in one go. The report carries two failures they walked through on the way to it. One was a gradient that crept upward from around 116 billion tokens. Digging in, they found that the backward flash attention implementation, quantized at int8, was producing zero gradients along the query path, and the gain parameter of the QK normalization had been growing monotonically to make up for it. The prescription was a scale factor inside the gradient kernel that does not break reproducibility, plus the removal of the gain from QK normalization. The other was the gradient norm of the first block passing 1,000 after about 2,000 steps. They swapped out candidates one by one, from the integer attention kernel to the learning rate, until the weight quantizer was confirmed as the culprit, and moved from learning the step size to recomputing it every step. The cost is about 2% of step time. Both prescriptions are in the published recipe.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The second prescription also shows reproducibility narrowing the options. The usual prescription for instability in low-precision training is stochastic rounding, which pushes a value to the lattice above or below it by chance, and the randomness in it cannot travel with bitwise reproducibility. Not unless a counter-based generator is pulled inside the optimizer as well. The step size recomputed each time is a deterministic function of the weights, so it needed no such machinery, and the other road under consideration at the time, disabling quantization, would have demanded about 70% of step time. The skipped steps point at the data side in a similar way. Two batches in the entire run had a pre-clip gradient norm above 5, at steps 1,782 and 43,737, and a protocol that skips five steps per event took out ten in total. Clipping engaged on 0.16% of steady-state steps, which the authors read as a data anomaly such as a batch with a low unique-token ratio rather than as a trace of unstable optimization. Because data order is a function of the seed, exactly which documents that batch held can be retraced from the step number alone.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That the whole run finished in seven segments because of engineering problems did not remain purely a blemish either. Each segment restarted from the most recent checkpoint, and the hashes of the overlapping steps were compared against those of the preceding segment to confirm that the restart was correct. Seven restarts means the test of rerunning the same step and seeing the same hash had already happened seven times before release.
+                    </p>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Is Watching This Work</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        From here the article leaves the report and rereads the news from the side of people who work with data. The question Pebblous has held onto for a long time is where a value came from and what it passed through to look the way it does now. When a model provider says it learned from this data, whether you can confirm that yourself is the last gate of that provenance problem. Hardly any provider today can answer yes to that question. This case puts up one existence proof that a way to answer yes could exist.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One attribution should be settled first. Gensyn wrote this question into its own launch post on the same day. The post names proving what data was trained into a model as the first of the applications that auditability opens up. Alongside the model, the post reports releasing a search tool that goes through the verifiably complete training data. Labs could use these techniques, it adds, to let consumers know what parts of their own data, their likeness or their content for instance, are being used to train a model, similar to how websites provide consumers with their data on request today. The conclusions the passages below draw for data pipelines are what this article adds, but the framing of the problem itself belongs to the company.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The lesson worth carrying over lies in the order of design. Auditability is not a property you can attach once training is over. Fixing the order of operations, turning randomness into a function of position, and prying data order loose from the number of machines all have to be nailed in before the first step runs. Moved to the data side it reads like this. To be able to dig up provenance later, the pipeline has to be built from the start in a form that can reconstruct which document went into which window. That is a different task from restoring the record by digging through logs after the fact, and starting late usually means it cannot be restored at all. The launch post nails the same point down in one line. The verification tool released today cannot be used to audit Llama or GPT.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The boundaries are worth stating clearly too. The scale is 1.6 billion parameters, the speed penalty is about five times, and exactly one model has been verified this way so far. Under the guarantee there is also a layer of trust left. The report's conclusion calls RepOps, which every operation passes through, a proprietary library, the audit wheels carry compiled kernels only, and the source tree is not public. The runbook does not conceal the point. Shipping machine code means shipping something that can be disassembled, it writes, and reading an implementation back out takes real work without being impossible; then it says the kit asks you to accept arithmetic you can re-derive rather than code you cannot look at. Whether to accept that trade is the reader's call, and that where trust remains and how much of it is written into the documents says something about the character of this release.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Why this particular company did this particular work is part of the picture as well. Gensyn builds decentralized compute networks. The launch post says the process is functionally identical to decentralized training, except that model verification rather than model creation has been shifted to those nodes. Since the training itself was finished in a centralized way, the explanation goes, it avoids the huge upfront costs and the communication problems that decentralized training carries. The same post claims the approach can be scaled to larger models today. What the report actually measured points the other way, with the cost of order-pinned communication rising as nodes are added, and the distance between the two has not yet been filled in with published figures.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Teams that train their own models, or bring in models from outside, may find these five questions worth asking.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">Can we point, document by document, at what our model learned from? If we cannot point at it, we also cannot say what did not go in.</li>
+                        <li class="themeable-text leading-relaxed">Does the same recipe give the same result when we run it again? We should be able to answer that separately for the same machine and for a different one.</li>
+                        <li class="themeable-text leading-relaxed">Is our data order tied to the machine configuration? A pipeline that produces a different model when the GPU count changes proves nothing later on.</li>
+                        <li class="themeable-text leading-relaxed">How often do we record intermediate state? With nothing recorded there is no target to compare against, and no way to narrow down which interval a problem came from.</li>
+                        <li class="themeable-text leading-relaxed">When we look at a model brought in from outside, are we distinguishing between a published result and a published process? Releasing weights and releasing the process are different promises.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        Thank you for reading this far. The figures and sentences this article cites can be read in the original by anyone, in the <a href="https://arxiv.org/abs/2609.17380" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">report on arXiv</a> and the <a href="https://github.com/gensyn-ai/open-transformers" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">audit harness repository</a>, and the <a href="https://open1b.gensyn.ai/" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">audit app</a> lets you page through the step-by-step record yourself. We would be glad to hear how your own organization confirms what a model learned from.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic Paper</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Donaghy, J. et al. (2026). "<a href="https://arxiv.org/abs/2609.17380" target="_blank" rel="noopener">OPEN-1B: A Fully Auditable Training Run</a>." arXiv:2609.17380.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Primary Documents &amp; Audit Tooling</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">Gensyn. "<a href="https://github.com/gensyn-ai/open-transformers" target="_blank" rel="noopener">gensyn-ai/open-transformers</a>." GitHub, audit harness repository.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Gensyn. "<a href="https://github.com/gensyn-ai/open-transformers/blob/main/scripts/audit_volunteer/RUNBOOK.md" target="_blank" rel="noopener">Audit Volunteer Runbook</a>." GitHub — gensyn-ai/open-transformers.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Gensyn (2026). "<a href="https://www.gensyn.ai/news/introducing-open-1b-auditable-training" target="_blank" rel="noopener">Introducing open-1b: the first model you don't have to trust</a>." Gensyn News, Sep 15, 2026.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Gensyn. "<a href="https://open1b.gensyn.ai/" target="_blank" rel="noopener">Open-1B Audit</a>." Live coverage and ledger, as retrieved Sep 17, 2026.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260917"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-09-17T05:09:04.953Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-09-17T05:35:26.176Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1789621744953-hy76ul",
+                "version": "0.1.0",
+                "sha": "b384c0bcf2492d0963b83e7feb65b146a862bac5",
+                "builtAt": "2026-09-15T04:15:32.077Z"
+              },
+              "recordedAt": "2026-09-17T07:09:51.667Z"
+            },
+            mainTitle: "Can Your Laptop Check What an AI Was Trained On?",
+            subtitle: "Gensyn's Open-1B publishes a state hash for all 80,957 training steps, and the replay runs on a MacBook, a consumer GPU or a plain CPU.",
+            pageTitle: "Bitwise Auditable AI Training: Gensyn's Open-1B | Pebblous",
+            category: "tech",
+            publishDate: "2026-09-17",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/open-1b-auditable-training-run/en/",
+            tags: ["AI model reproducibility", "auditable training", "data provenance", "open source AI", "deterministic training", "floating-point reproducibility", "Gensyn", "Open-1B", "AI-Ready Data", "data quality"],
+            faqs: [
+                {
+                    question: "What is Open-1B?",
+                    answer: "A decoder-only language model that Gensyn, a company building distributed training networks, published on September 15, 2026 along with a report on arXiv. It holds 1.6 billion parameters, or 1.61 billion of which 1.08 billion sit outside the embeddings. It has 24 layers, a hidden size of 2048 and a vocabulary of 128,256, and it was trained on 400 billion tokens over 80,957 steps using 48 H100s. The authors put forward the verifiability of the training process, not its performance. The weights, the full pretraining dataset, 810 intermediate checkpoints at 100-step intervals, the training and evaluation code, and the audit tooling were all released together."
+                },
+                {
+                    question: "How do determinism and reproducibility differ?",
+                    answer: "One is about repeating on a single machine, the other about agreeing across many. Determinism is the property that one machine, its environment untouched, gives the same answer on a second run, and that is as far as a framework's deterministic mode guarantees. Reproducibility is the property that machines of different kinds, a laptop and a data center accelerator among them, agree down to the last digit, and the report calls this bitwise reproducibility. The first can hold while the second breaks, and that gap is where open source models have been sitting."
+                },
+                {
+                    question: "Why does following the recipe exactly still give a different model?",
+                    answer: "Because floating-point addition is not associative. The values it can hold are spaced apart, so rounding happens at every operation, and which two numbers you add first moves the rounding point and splits the final digits of the result. An accelerator spreads one sum over thousands of lanes, while a processor walks it from start to finish, so their addition sequence differs from the outset. On top of that come whether a multiply and add get fused, how values near zero are handled, and random draw orders that differ by platform. The divergence grows visible within a handful of steps."
+                },
+                {
+                    question: "What has to be fixed to make results identical bit for bit?",
+                    answer: "The report names three strands. First, the reduction order inside GPU kernels: a library of operations called RepOps forces the same order on every backend, flushes subnormals to zero everywhere, and turns randomness into a function of position. Second, data order: the training data is defined as a canonical stream that is a function of the seed and the corpus manifests alone, so it leans on neither node count nor rank. Third, the communication that combines gradients across machines: the order of combining is pinned both inside and between nodes, so a single machine can retrace sequentially what the cluster did. Let any one of them slip and the two training runs part ways."
+                },
+                {
+                    question: "What does it take to run an audit?",
+                    answer: "No account and no credential. Download the manifest, two wheels and the canonical hash list from a public address, check that each file's sha256 matches the published value, and install. One command prints whether it is a match or a mismatch. For hardware, an Apple silicon Mac, a Linux box with an NVIDIA card, and a GPU-less processor all work. The CPU path is the reference, and the other two get measured against it. The initialization unit needs 8GB of memory, and every unit including step replays is recommended at 24GB."
+                },
+                {
+                    question: "How long does verifying one step take?",
+                    answer: "It depends what you verify. An initialization unit clears in 29.7 seconds on an M4 Max, peaking at 5.8GB. On a processor it takes 25.0 seconds but uses 21.9GB. A unit that retraces one whole training step is a different matter and takes roughly half a day on a Mac of that class. So a volunteer signs up for one step, not a whole stretch. The runbook states that it does not quote an NVIDIA figure, because none has been measured the way those were."
+                },
+                {
+                    question: "How much has been verified so far?",
+                    answer: "As of September 17, 2026, the audit record Gensyn publishes shows 19 steps accepted, 10 contributors, and 67.9 replay hours reported by volunteers. Not one of the 810 hundred-step segments has reached confirmation. Nine are in progress and seven hold a provisional record. The reason the pace is slow is that a replay needs the state immediately before it. Public checkpoints come at 100-step intervals, so an auditor begins at one of them or picks up an intermediate result uploaded by the person before, and closing a segment takes those 100 steps filled in succession. The machines in the record run from H100s through RTX 3090s to Apple M4 Pros, and on the same work the data center GPUs took about an hour while Apple silicon took between eight and nineteen."
+                },
+                {
+                    question: "What does a matching hash prove, and what does it not?",
+                    answer: "The scope of the proof is narrow. It is the single fact that the selected replay unit, under pinned artifacts and inputs, remade the published hash on the backend that was tested. A unit that only checked initialization says nothing about a training interval, and running compiled kernels does not reveal the implementation of those kernels. What the hash covers reaches the weights, the optimizer state, the gradients and the batch digest, while the random state, the position in the data stream and the spike state fall outside. A warning is attached to treat checkpoint directories as code rather than data, because the metadata index is unpickled first during loading."
+                },
+                {
+                    question: "What is the price of reproducibility?",
+                    answer: "The cost lands on two strands, the kernels and the audit. The reproducible bf16 path reached only 3.3% GPU utilization on one node, while stock PyTorch delivered 40.5%. That is 12.2x. Adding int8 quantization-aware training brings it to 6.8x, and scaling out to six nodes narrows it to about 5x. On the audit side the cost is the state hash computed at every step, which stays near 6 seconds regardless of scale, so the share that was 4.9% of step time on one node grows to 21.4% on six. Strong-scaling efficiency is 71% with hashing on and 86% with it off."
+                },
+                {
+                    question: "How does it perform against other open models?",
+                    answer: "It trails. In the same evaluation suite as OLMo 2 1B, the OLMES macro was 50.1 against 61.5. The ten-task average was 25.4 against 31.9, and the only two tasks where Open-1B leads are ARC Challenge and MMLU Pro. The authors state directly in their conclusion that the training tokens stood at 400 billion against 4 trillion, a factor of ten. Reproducibility overhead and resource constraints, they explain, kept the budget to that much. This was not a comparison run under the same conditions."
+                },
+                {
+                    question: "Can this approach scale to larger models?",
+                    answer: "Not known yet. The report offers a single case at 1.6 billion parameters, and the repository says only that a larger dense model is in progress. The company says in its launch post that the approach can be used on larger models today, but no measurement was published alongside that claim. The figures in the report point the other way. The cost of order-pinned communication between nodes widens from 1.13x at two nodes to 3.54x at six. The barrier is cost, not principle. Today it runs about five times more expensive than optimized PyTorch, and one audited step takes half a day on a consumer machine. As models grow, the replay cost per step grows with them, so how to cut the audit unit becomes a question again. The authors point to the state hash, computed on the host today, as the biggest thing left to fix: move that work onto the device."
+                },
+                {
+                    question: "Why does this matter to teams that work with data?",
+                    answer: "Because whether a third party can confirm a provider's claim that a model learned from this data is the last gate of data provenance. Today most answers are close to no. This case also shows that the confirmation cannot be obtained after the fact. What to pin, and in what order, has to be settled before the first step runs, and it is not a property that can be attached once training is done. Moved to a data pipeline, it amounts to building from the start in a form that can retrace which document went into which position."
+                }
+            ]
+        });
+    </script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260917" defer></script>
+</body>
+</html>

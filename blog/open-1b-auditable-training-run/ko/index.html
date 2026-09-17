@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 학습 과정 비트 단위 검증 — 젠신 Open-1B 완전 감사 가능 모델 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="가중치와 데이터와 레시피를 다 공개해도 다른 기계에서 돌리면 같은 모델이 나오지 않는다. 젠신이 학습 8만 957스텝 전부를 비트 단위로 다시 계산해 대조할 수 있게 만든 16억 파라미터 모델을 공개했다. 대신 속도는 최적화된 파이토치의 5분의 1 수준이다.">
+    <meta name="keywords" content="AI 모델 재현성, 비트 단위 재현, 학습 과정 감사, 오픈소스 AI, 데이터 프로버넌스, 데이터 계보, 결정론적 학습, 부동소수점 재현성, Gensyn, Open-1B, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="AI가 무엇으로 배웠는지, 내 컴퓨터로 확인할 수 있을까?">
+    <meta property="og:description" content="학습 8만 957스텝마다 해시를 남겨, 아무나 그중 한 스텝을 골라 노트북에서 다시 계산해 대조할 수 있게 만든 모델이 공개됐다. 값은 속도로 치렀다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="학습 8만 957스텝을 한 줄로 그리고, 감사자 셋이 각자 다른 한 스텝을 맡아 재생하는 구조를 나타낸 도식">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-09-17">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI가 무엇으로 배웠는지, 내 컴퓨터로 확인할 수 있을까?">
+    <meta name="twitter:description" content="오픈소스 모델도 레시피대로 다시 돌리면 같은 가중치가 나오지 않는다. 그 틈을 비트 하나까지 메운 학습 런이 공개됐고, 검증은 맥북에서도 돌아간다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/open-1b-auditable-training-run/ko/image/index.png">
+    <meta name="twitter:image:alt" content="학습 8만 957스텝을 한 줄로 그리고, 감사자 셋이 각자 다른 한 스텝을 맡아 재생하는 구조를 나타낸 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260917"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260917">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260917">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260917">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#open-vs-verifiable" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 공개했다는 말이 확인했다는 말은 아니다</a></li>
+                    <li><a href="#where-it-splits" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 같은 레시피가 기계마다 다른 답을 내는 이유</a></li>
+                    <li><a href="#pinning-the-order" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 순서를 못 박는 세 가지 장치</a></li>
+                    <li><a href="#one-step-each" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 한 스텝씩 나눠 맡는 검산</a></li>
+                    <li><a href="#audited-so-far" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 아직 확정된 구간은 없다</a></li>
+                    <li><a href="#the-price" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 재현성에 치른 값</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">7. 페블러스가 이 연구를 주목하는 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            오픈소스 모델은 가중치와 학습 데이터와 레시피를 함께 내놓는다. 그런데 그 레시피를 그대로 따라 돌려도 같은 가중치는 나오지 않는다. 부동소수점 덧셈이 더하는 순서에 따라 마지막 자리에서 값이 갈리고, 그 차이가 몇 스텝 만에 눈덩이처럼 불어나기 때문이다. 9월 15일 arXiv에 올라온 보고서 한 편이 그 틈을 비트 하나까지 메운 학습 런을 공개했다. 이 글은 그 방법과, 그 방법에 치른 값을 본다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            모델 이름은 Open-1B, 만든 곳은 기계학습 연산의 검증을 연구해 온 젠신(Gensyn)이다. 여기서 중요한 숫자는 파라미터가 아니라 스텝이다. 옵티마이저 스텝 8만 957번이 하나도 빠짐없이 해시로 남아 있어서, 누구든 그중 한 스텝을 골라 자기 노트북에서 다시 계산한 뒤 공개된 해시와 맞춰 볼 수 있다. 값은 속도로 치렀다. 같은 레시피를 최적화된 파이토치로 돌릴 때와 견주면 여섯 노드 기준 약 5배 느리다. 학습 토큰이 비교 대상인 OLMo 2 1B의 10분의 1에 그친 것도 그 때문이다. 다만 공개한 것과 검산이 끝난 것은 아직 거리가 멀다. 9월 17일에 감사 기록을 받아 보면 그 8만 957스텝 가운데 검산이 접수된 것은 19개이고, 100스텝 단위로 끊은 구간 810개 중 전부 검산된 곳은 아직 하나도 없다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            1절부터 6절까지는 보고서와 감사 도구 문서, 그리고 공개된 감사 기록에 적힌 것을 따라간다. 7절에서 데이터 실무 쪽으로 옮겨 적는 부분은 이 글의 해석이고, 그중 회사가 자기 발표문에 이미 적어 둔 것은 그 자리에서 따로 밝혔다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2609.17380" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Donaghy 외, arXiv:2609.17380 (2026-09-15)</a> · <a href="https://github.com/gensyn-ai/open-transformers" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">감사 하네스 저장소</a></p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">8만 957</p>
+                            <p class="text-sm themeable-text-secondary mt-1">해시가 남은 학습 스텝</p>
+                            <p class="text-xs themeable-muted mt-1">한 스텝도 건너뛰지 않았다. 각 해시가 직전 해시를 접어 넣어 사슬처럼 이어진다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">반나절</p>
+                            <p class="text-sm themeable-text-secondary mt-1">한 스텝을 검산하는 데 드는 시간</p>
+                            <p class="text-xs themeable-muted mt-1">M4급 맥 기준. 초기 상태만 맞춰 보는 단위라면 같은 기계에서 29.7초로 끝난다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">약 5배</p>
+                            <p class="text-sm themeable-text-secondary mt-1">재현성에 붙은 속도 부담</p>
+                            <p class="text-xs themeable-muted mt-1">여섯 노드에서 최적화된 파이토치 대비. 단일 노드에서는 6.8배까지 벌어진다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">50.1</p>
+                            <p class="text-sm themeable-text-secondary mt-1">OLMES 매크로 점수</p>
+                            <p class="text-xs themeable-muted mt-1">OLMo 2 1B는 61.5다. 다만 학습 토큰이 4,000억 개 대 4조 개로 열 배 차이다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="open-vs-verifiable" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">공개했다는 말이 확인했다는 말은 아니다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        보고서는 지금의 모델 공개를 세 층으로 나눈다. API로만 닿을 수 있는 폐쇄형, 최종 가중치만 여는 오픈 웨이트, 데이터와 레시피까지 함께 내놓는 오픈 소스다. 그리고 넷째 층을 제안한다. 학습 중 모든 데이터 표본에 가해진 모든 연산을 누구나 자기 기계에서 비트 단위로 다시 확인할 수 있는 상태이고, 저자들은 이것을 완전 감사 가능(fully auditable)이라 부른다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        새 층을 세우려면 낱말 둘을 먼저 갈라 놓아야 한다. 결정성은 같은 기계에서 같은 환경으로 두 번 돌렸을 때 같은 값이 나오는 성질이다. 대부분의 딥러닝 프레임워크가 결정적 모드라는 이름으로 제공하는 것이 이쪽이다. 재현성은 더 센 요구다. 프로세서와 GPU처럼 서로 다른 하드웨어에서도 마지막 비트까지 같은 값이 나와야 한다. 앞의 것이 참이어도 뒤의 것은 거짓일 수 있고, 지금까지 오픈 소스 모델들이 놓여 있던 자리가 바로 거기다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 구분이 왜 실무에 걸리는지는 초록에 적혀 있다. 다른 기계에서 같은 결과를 만들 수 없으면, 내가 내려받은 체크포인트가 정말 공개된 레시피로 만들어진 것인지 확인할 방법이 없다. 그 빈자리에 미공개 데이터와 주입된 편향, 백도어가 들어설 수 있다. 학습 증명이나 학습 데이터 증명 같은 기존 기법은 확률적 보증만 주는데, 백도어는 데이터 몇 점으로도 심을 수 있어 표본 검사의 그물을 그대로 빠져나간다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            감사가 해 주지 않는 일도 저자들은 빠뜨리지 않는다. 감사는 모델에서 편향을 없애 주지 않는다. 다만 어떤 편향이 들어 있을 수 있는지를 감사자가 확실하게 알 수 있게 해 준다. 공개되지 않은 데이터를 써서 모델을 오염시키는 백도어 주입을 탐지할 길이 처음으로 열렸다고 저자들은 본다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="where-it-splits" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">같은 레시피가 기계마다 다른 답을 내는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        출발점은 학교에서 배운 결합법칙이 컴퓨터 안에서는 참이 아니라는 사실이다. 부동소수점은 실수 가운데 일부만 정확히 담고 나머지는 가장 가까운 값으로 반올림한다. 세 수를 더할 때 앞의 둘을 먼저 더하느냐 뒤의 둘을 먼저 더하느냐에 따라 반올림이 끼어드는 자리가 달라지고, 결과의 마지막 비트가 달라진다. 긴 합을 수천 개 레인에 쪼개 더하는 GPU와 한쪽 끝에서 다른 끝까지 차례로 더하는 프로세서는 애초에 다른 순서로 더한다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 290" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="26" font-size="12.5" font-weight="600" fill="var(--text-secondary)">더하는 순서만 바꿔도 마지막 비트가 갈린다</text>
+                            <text x="24" y="44" font-size="10.5" fill="var(--text-muted)">개념을 보여주기 위한 예시 값 — 실제 학습 값은 아니다</text>
+
+                            <text x="24" y="80" font-size="11.5" font-weight="600" fill="var(--text-secondary)">GPU · 레인을 나눠 병렬로 더한 뒤 합친다</text>
+                            <rect x="24" y="92" width="632" height="34" rx="6" fill="var(--text-muted)" opacity="0.1"/>
+                            <text x="40" y="114" font-size="11" fill="var(--text-secondary)" font-family="monospace">(1.0000001 + 2.0000002)  +  (3.0000003 + 4.0000004)</text>
+
+                            <text x="24" y="154" font-size="11.5" font-weight="600" fill="var(--text-secondary)">프로세서 · 앞에서부터 한 번에 하나씩 더한다</text>
+                            <rect x="24" y="166" width="632" height="34" rx="6" fill="var(--text-muted)" opacity="0.1"/>
+                            <text x="40" y="188" font-size="11" fill="var(--text-secondary)" font-family="monospace">((1.0000001 + 2.0000002) + 3.0000003) + 4.0000004</text>
+
+                            <line x1="240" y1="126" x2="240" y2="220" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4 3"/>
+                            <line x1="440" y1="200" x2="440" y2="220" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+                            <rect x="150" y="222" width="180" height="46" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="240" y="240" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">GPU가 낸 결과</text>
+                            <text x="240" y="258" text-anchor="middle" font-size="12" font-family="monospace" fill="var(--text-secondary)">10.000001<tspan fill="#F86825" font-weight="700">0</tspan></text>
+
+                            <rect x="350" y="222" width="180" height="46" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="440" y="240" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">프로세서가 낸 결과</text>
+                            <text x="440" y="258" text-anchor="middle" font-size="12" font-family="monospace" fill="var(--text-secondary)">10.000001<tspan fill="#F86825" font-weight="700">1</tspan></text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 — 부동소수점 결합법칙 붕괴를 보여주기 위한 예시(실제 학습 값 아님). 종이 위에서는 같은 합이지만, 두 기계가 내놓는 끝자리는 서로 다르다.
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        보고서는 비트 단위 동일성을 깨는 지점을 다섯 가지로 정리하고, 각각에 RepOps가 붙드는 방법을 짝지어 둔다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">비트 단위 동일성이 깨지는 곳</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">붙드는 방법</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">같은 기계에서의 결정성은 다른 기계로 건너가지 않는다</td>
+                                    <td class="py-3">하드웨어를 가로지르는 동일성 계약을 따로 명시한다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">부동소수점 덧셈에 결합법칙이 성립하지 않는다</td>
+                                    <td class="py-3">모든 백엔드에서 축약 순서를 하나로 고정한다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">곱셈과 덧셈을 붙여 한 번에 반올림할지, 따로 두 번 반올림할지가 정해져 있지 않다</td>
+                                    <td class="py-3">규약 하나를 강제한다. 프로세서 빌드에서는 융합을 끄고, GPU에서는 융합하지 않는 연산을 명시적으로 쓴다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">0에 아주 가까운 서브노멀 값의 처리가 하드웨어마다 다르다</td>
+                                    <td class="py-3">어디서나 0으로 밀어 버린다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">같은 시드로도 플랫폼과 텐서 크기에 따라 다른 난수가 나온다</td>
+                                    <td class="py-3">위치로 색인되는 카운터 기반 난수 스트림 하나만 쓴다</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">보고서 표 1을 옮긴 것이다. 다섯 줄 가운데 하나라도 어긋나면 그 뒤로는 다른 모델이 만들어진다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        네 번째 줄인 서브노멀 항목이 하드웨어의 성격을 특히 잘 보여 준다. 0에 아주 가까운 값을 애플 GPU는 기본적으로 0으로 밀어 버리고, 프로세서와 엔비디아 GPU는 살려 둔다. 같은 값이 한쪽에서는 남고 다른 쪽에서는 사라지니 학습 궤적이 갈린다. 해법은 가장 너그럽지 않은 쪽에 맞추는 것이다. 굳이 그럴 필요가 없는 하드웨어에서도 일부러 서브노멀을 버린다. 재현성을 위한 결정은 대체로 이 모양이라고 저자들은 정리한다. 여러 기계에서 같아지려면 그중 가장 인색한 기계의 행동을 일부러 골라야 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        난수 항목도 직관과 어긋난다. 시드를 똑같이 박아도 프로세서와 엔비디아 GPU와 애플 GPU는 각자 다른 수열을 뽑는다. 한 벤더 안에서도 사정은 같아서, 엔비디아 GPU에서는 난수 생성기가 수천 개 레인에 일을 흩뿌리기 때문에 어느 레인이 몇 번째 수를 뽑느냐가 병렬화 방식에 따라 달라진다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표에 들어가지 않은 자리도 있다. 부록을 보면 평균을 내는 나눗셈까지 다시 썼다. 부동소수점 텐서를 정수로 나누는 연산은 백엔드를 건너가지 못하는데, 프로세서는 정확히 반올림한 나눗셈을 하고 쿠다는 같은 식을 호스트가 미리 구한 역수의 곱으로 낮춰 실행하기 때문이다. 나누는 수가 2의 거듭제곱이 아니면 둘은 마지막 한 자리에서 갈린다. 그래서 학습 쪽과 감사 쪽 모두 나눗셈 기호를 쓰지 않고 미리 계산해 둔 역수를 곱한다. 어긋남이 작다는 것은 참작 사유가 못 된다. 노드 사이에서 합친 그래디언트를 한 대에서 그냥 차례로 더하면 클러스터가 낸 값과 1000억분의 1 수준까지 맞는데, 비트로는 다르다. 감사에서 그 값은 아주 틀린 값과 같은 판정을 받는다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="pinning-the-order" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">순서를 못 박는 세 가지 장치</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비결정성의 출처는 크게 셋이다. GPU 커널 안의 축약, 여러 대에 흩어진 배치의 순서, 노드 안팎의 집합 통신이다. 각각에 장치가 하나씩 붙는다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="26" font-size="12.5" font-weight="600" fill="var(--text-secondary)">비결정성의 세 근원과, 각각을 붙드는 장치</text>
+                            <text x="24" y="44" font-size="10.5" fill="var(--text-muted)">셋 중 하나만 어긋나도 그 스텝부터 궤적이 갈린다</text>
+
+                            <rect x="24" y="58" width="196" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="122" y="80" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">GPU 커널 안의 축약</text>
+                            <text x="122" y="100" text-anchor="middle" font-size="10" fill="var(--text-muted)">3.1</text>
+                            <line x1="220" y1="86" x2="256" y2="86" stroke="var(--text-muted)" stroke-width="1.2"/>
+                            <polygon points="256,82 264,86 256,90" fill="var(--text-muted)"/>
+                            <rect x="262" y="58" width="222" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="373" y="80" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">RepOps</text>
+                            <text x="373" y="100" text-anchor="middle" font-size="10" fill="var(--text-muted)">모든 백엔드에서 같은 순서로 축약</text>
+
+                            <rect x="24" y="124" width="196" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="122" y="146" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">흩어진 배치의 순서</text>
+                            <text x="122" y="166" text-anchor="middle" font-size="10" fill="var(--text-muted)">3.2</text>
+                            <line x1="220" y1="152" x2="256" y2="152" stroke="var(--text-muted)" stroke-width="1.2"/>
+                            <polygon points="256,148 264,152 256,156" fill="var(--text-muted)"/>
+                            <rect x="262" y="124" width="222" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="373" y="146" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">정본 데이터 스트림</text>
+                            <text x="373" y="166" text-anchor="middle" font-size="10" fill="var(--text-muted)">노드 수·랭크에 기대지 않는다</text>
+
+                            <rect x="24" y="190" width="196" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="122" y="212" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">노드 안팎의 집합 통신</text>
+                            <text x="122" y="232" text-anchor="middle" font-size="10" fill="var(--text-muted)">3.3</text>
+                            <line x1="220" y1="218" x2="256" y2="218" stroke="var(--text-muted)" stroke-width="1.2"/>
+                            <polygon points="256,214 264,218 256,222" fill="var(--text-muted)"/>
+                            <rect x="262" y="190" width="222" height="56" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="373" y="212" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-secondary)">고정된 이진 트리 폴드</text>
+                            <text x="373" y="232" text-anchor="middle" font-size="10" fill="var(--text-muted)">한 대에서 그대로 되짚는다</text>
+
+                            <line x1="484" y1="86" x2="512" y2="86" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="484" y1="152" x2="512" y2="152" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="484" y1="218" x2="512" y2="218" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="512" y1="86" x2="512" y2="218" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="512" y1="152" x2="534" y2="152" stroke="var(--text-muted)" stroke-width="1.2"/>
+                            <polygon points="534,148 542,152 534,156" fill="var(--text-muted)"/>
+
+                            <rect x="538" y="58" width="118" height="188" rx="8" fill="#F86825" opacity="0.1" stroke="#F86825" stroke-opacity="0.5" stroke-width="1"/>
+                            <text x="597" y="146" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary)">비트 단위</text>
+                            <text x="597" y="164" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary)">재현성</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 — 구조 출처: <a href="https://arxiv.org/abs/2609.17380" target="_blank" rel="noopener" class="underline">arXiv:2609.17380</a>
+                        </figcaption>
+                    </figure>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>어디서나 같은 순서로 더하는 연산 묶음</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        RepOps는 프로세서와 엔비디아 GPU와 애플 GPU에서 같은 비트를 돌려주는 연산 묶음이다. 행렬 곱셈과 정규화, 손실과 그래디언트 축약까지 합이 들어가는 자리마다 고정된 순서를 강요하고, 하드웨어가 선호하는 순서를 포기한 만큼 속도를 내준다. 난수 쪽은 아예 성격을 바꿨다. 카운터 기반 생성기에서 i번째 값은 시드와 논리적 위치만으로 곧바로 계산되는 순수 함수의 값이다. 일을 몇 갈래로 쪼갰는지, 레인이 몇 개인지, 텐서가 얼마나 큰지와 무관하다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>기계 수에 묶이지 않는 데이터 스트림</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연산만 같아서는 부족하다. 감사자가 재생하는 스텝은 클러스터가 그 스텝에 넣은 토큰을 같은 순서로 받아야 한다. 보통의 데이터 로더는 워커 수가 바뀌면 배치 순서가 바뀌므로 이 조건을 못 지킨다. 그래서 학습 데이터를 하나의 정본 스트림으로 정의한다. 스트림은 학습 시드와 코퍼스 매니페스트와 시퀀스 길이만의 함수이고, 노드 수나 랭크에는 기대지 않는다. 문서 순서를 정하는 난수기의 시드에도 소스 이름을 SHA-256으로 해시해 넣었다. 파이썬의 프로세스마다 달라지는 해시를 쓰면 기계가 바뀔 때 순열이 달라지기 때문이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        병렬화는 스트림이 정해진 다음에 붙는다. GPU 수를 바꾸면 몇 번째 창을 어느 랭크가 읽느냐만 바뀌고, 창의 내용과 전체 순서는 그대로다. 학습 도중 장비가 죽어 다른 대수로 다시 짜도 데이터 순서가 흔들리지 않고, 감사자는 한 대에서 그 스텝의 마이크로배치를 그대로 재구성할 수 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 스트림에 무엇을 흘려 넣었는지도 숫자로 나와 있다. 보고서는 학습 코퍼스를 Open-1B Mix 0626이라 부르고 토큰 4,505억 개, 문서 3억 3,220만 개로 집계한다. 허용적 라이선스로 공개된 자료 네 갈래를 섞었고, 토큰 비중은 DCLM 베이스라인 66.7%에 FineWeb-Edu 13.3%, 더 스택 v2 12.0%, 프루프파일 2가 8.0%다. 앞의 둘이 웹에서 온 것이라 전체의 약 80%가 웹 문서다. 출처별 비중을 디스크 크기에 비례하게 잡아 네 갈래가 같은 속도로 소비됐고, 4,000억 토큰 예산 안에서 각 출처는 0.89 에포크를 돌았다. 같은 문서를 두 번 본 적은 없다는 뜻이다. 이 모든 순서의 출발점은 숫자 하나다. 공개된 런의 전역 시드는 42이고, 소스를 고르는 난수기와 샤드 순서와 문서 순서를 정하는 난수기가 모두 거기서 갈라져 나온다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다만 저자들은 데이터 품질까지 자기 몫으로 주장하지 않는다. 상류 공개본의 필터링에 기대고 자기가 더한 것은 셋뿐이다. FineWeb-Edu는 교육 점수 3 이상만 남겨 약 4분의 1을 취했고, 더 스택 v2는 1MB 이하의 허용 라이선스 파일로 제한했고, 빈 문서를 버렸다. 중복 제거는 하지 않았고, DCLM 베이스라인과 FineWeb-Edu 사이에 근중복이 남아 있다는 점도 함께 쓴다. 무엇이 들어갔는지 끝까지 셀 수 있다는 것과 들어간 것이 깨끗하다는 것은 서로 다른 주장이다. 이 공개가 세운 것은 앞쪽이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>한 대에서 되짚을 수 있는 집합 통신</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여러 대가 그래디언트를 합치는 통신도 순서를 탄다. 널리 쓰이는 링 방식의 올리듀스는 빠르지만 합치는 순서가 클러스터 모양에 딸려 있어서, 토폴로지가 없는 한 대짜리 재생에서는 그 순서를 되짚을 근거가 없다. 대신 노드 안에서는 샤드를 오름차순으로 더하고, 노드 사이에서는 짝짓는 순서를 고정한 이진 트리 방식으로 접는다. 감사 하네스는 이 순서를 그대로 한 대에서 차례대로 실행한다. 저장소 설정 문서는 이 선택을 숨기지 않는다. 축약 방식을 통상적인 NCCL로 돌리면 처리량은 오르지만 그 런은 재생할 수 없게 되며, 감사 도구는 그런 런을 잘못 재현하느니 아예 거부한다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="one-step-each" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">한 스텝씩 나눠 맡는 검산</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        학습에 쓴 장비는 H100 48장이고, 실제로 돌린 시간은 27.8일이다. GPU 시간으로 환산하면 1,300일이 넘는다. 이걸 한 대로 다시 도는 일은 가능하지 않다. 그래서 저자들이 택한 방식은 검증을 쪼개는 것이다. 오픈소스 소프트웨어에서 각자 한 모듈씩 읽어 나가듯, 여러 사람이 서로 다른 스텝을 하나씩 인증해 전 구간을 덮는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        쪼개려면 대조할 표적이 스텝마다 있어야 한다. 매 스텝에 상태 해시가 하나씩 붙는다. blake2b 다이제스트 하나가 가중치와 옵티마이저 모멘트, 그 스텝의 클리핑 뒤 그래디언트, 랭크별 배치 다이제스트를 함께 담고, 각 스텝의 해시는 직전 스텝의 해시를 접어 넣는다. 사슬처럼 이어지므로 중간 한 곳을 손대면 뒤가 전부 어긋난다. Open-1B는 이 해시를 한 스텝도 빠뜨리지 않고 남겼고, 중간 체크포인트는 100스텝 간격으로 810개가 공개돼 있다. 아무리 짧은 구간을 고르더라도 맞춰 볼 대상이 있다는 뜻이다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="28" font-size="12.5" font-weight="600" fill="var(--text-secondary)">한 줄로 이어진 학습과, 감사자가 하나씩 맡는 스텝</text>
+
+                            <text x="350" y="76" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">100스텝마다 체크포인트 810개 · 스텝마다 상태 해시 1개</text>
+
+                            <!-- timeline -->
+                            <rect x="60" y="92" width="580" height="16" rx="4" fill="var(--text-muted)" opacity="0.18"/>
+                            <line x1="118" y1="88" x2="118" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="176" y1="88" x2="176" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="234" y1="88" x2="234" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="292" y1="88" x2="292" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="350" y1="88" x2="350" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="408" y1="88" x2="408" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="466" y1="88" x2="466" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="524" y1="88" x2="524" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="582" y1="88" x2="582" y2="112" stroke="var(--text-muted)" stroke-width="1"/>
+
+                            <!-- audited steps -->
+                            <rect x="148" y="88" width="5" height="24" fill="#F86825"/>
+                            <rect x="348" y="88" width="5" height="24" fill="#F86825"/>
+                            <rect x="548" y="88" width="5" height="24" fill="#F86825"/>
+
+                            <text x="60" y="132" font-size="10.5" fill="var(--text-muted)">0스텝</text>
+                            <text x="640" y="132" text-anchor="end" font-size="10.5" fill="var(--text-muted)">8만 957스텝</text>
+
+                            <!-- connectors -->
+                            <line x1="150" y1="114" x2="150" y2="176" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4 3"/>
+                            <line x1="350" y1="114" x2="350" y2="176" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4 3"/>
+                            <line x1="550" y1="114" x2="550" y2="176" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+                            <!-- auditor boxes -->
+                            <rect x="62" y="176" width="176" height="76" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="150" y="198" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text-secondary)">감사자 A · 애플 실리콘 맥</text>
+                            <text x="150" y="218" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">직전 체크포인트에서</text>
+                            <text x="150" y="234" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">한 스텝만 다시 계산</text>
+
+                            <rect x="262" y="176" width="176" height="76" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="350" y="198" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text-secondary)">감사자 B · 소비자용 GPU</text>
+                            <text x="350" y="218" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">나온 해시를</text>
+                            <text x="350" y="234" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">공개된 해시와 대조</text>
+
+                            <rect x="462" y="176" width="176" height="76" rx="8" fill="var(--card-bg, #ffffff)" stroke="var(--text-muted)" stroke-opacity="0.4" stroke-width="1"/>
+                            <text x="550" y="198" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text-secondary)">감사자 C · GPU 없는 CPU</text>
+                            <text x="550" y="218" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">일치 아니면 불일치</text>
+                            <text x="550" y="234" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">중간은 없다</text>
+
+                            <text x="24" y="272" font-size="10.5" fill="var(--text-muted)">각자 다른 자리를 맡아 앞뒤로 이어 붙이면 전 구간이 덮인다.</text>
+                            <text x="24" y="288" font-size="10.5" fill="var(--text-muted)">세 기계의 결과는 같아야 하며, 다르면 그 어긋남 자체가 보고 대상이다.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 — 구조와 수치 출처: <a href="https://arxiv.org/abs/2609.17380" target="_blank" rel="noopener" class="underline">arXiv:2609.17380</a> 및 <a href="https://github.com/gensyn-ai/open-transformers/blob/main/scripts/audit_volunteer/RUNBOOK.md" target="_blank" rel="noopener" class="underline">감사 자원자 런북</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        감사를 시작하는 데 계정도 자격 증명도 들지 않는다. 휠 두 개를 설치하고 명령 한 줄을 돌리면 일치인지 불일치인지가 찍힌다. 받은 파일이 공개된 sha256과 맞는지는 설치 전에 직접 확인하게 되어 있고, 맞지 않으면 거기서 멈추라고 문서는 못 박는다. 다른 바이트를 검증해 봐야 그 주장에 대해서는 아무것도 말해 주지 않기 때문이다. 하드웨어는 애플 실리콘 맥과 엔비디아 GPU가 달린 리눅스, 그리고 GPU가 아예 없는 프로세서가 모두 1급이다. 오히려 프로세서가 나머지 둘을 견주는 기준 장치다. 맥에서 한 감사와 H100에서 한 감사의 값이 똑같아야 한다는 것은 편의가 아니라 주장 자체라고 런북은 강조한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        48장이 나눠 한 일이 한 대의 메모리에 들어가는 셈법은 부록에 있다. 하네스는 클러스터의 각 GPU가 그 스텝에 한 일을 차례로 다시 돌리는데, 그러면 합칠 부분합이 노드 수만큼 쌓인다. 저자들은 이진수 자리올림처럼 접는 방식을 택했다. 같은 크기의 부분합이 둘 생기는 순간 바로 합쳐 한 단 위로 올리니, 동시에 들고 있어야 하는 전체 크기 누적기가 노드 수만큼이 아니라 그 로그만큼으로 줄어든다. 여덟 노드라면 여덟 개가 아니라 넷을 넘지 않는다. 실제 구현은 쉬고 있는 항목을 디스크로 내려, 램에는 지금 더하는 두 항만 남긴다. 접는 짝짓기 순서를 클러스터와 똑같이 맞추는 것이 전제이고, 순서를 바꾸면 값도 바뀐다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비용은 단위에 따라 크게 벌어진다. 초기 상태만 맞춰 보는 단위는 M4 맥스에서 29.7초에 끝나고 메모리는 5.8GB면 된다. 실제 학습 한 스텝을 통째로 재생하는 단위는 같은 급 기계에서 반나절 정도가 걸린다. 그래서 감사 단위가 여러 스텝이 아니라 한 스텝 하나로 잘려 있고, 자원자 한 사람은 구간이 아니라 스텝 하나를 맡는다. 이 수치로 셈해 보면 왜 나눠야 하는지가 분명해진다. 8만 957스텝을 한 사람이 한 대로 이어 돌면 100년 단위의 시간이 나온다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저장소 문서는 해시가 맞았을 때 증명되는 범위를 직접 좁힌다. 일치는 고른 재생 구간이 고정된 산출물과 입력으로 예상된 상태 해시를 그 백엔드에서 만들어 냈다는 사실을 세운다. 초기화만 맞춰 본 단위는 학습 구간을 검증하지 않는다. 지금 판본의 해시는 가중치와 옵티마이저 상태와 그래디언트와 배치 다이제스트를 덮지만 난수 상태나 데이터 스트림 커서, 스파이크 상태까지 덮지는 않는다. 체크포인트 디렉터리는 데이터가 아니라 코드로 취급하라는 경고도 붙어 있다. 불러오는 과정에서 메타데이터 색인이 먼저 언피클되기 때문이다. 출처를 믿을 수 있는 체크포인트만 재생하고 나머지는 격리된 환경에서 다루라고 문서는 권한다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="audited-so-far" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">아직 확정된 구간은 없다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        구조가 그렇다는 것과 검산이 실제로 진행됐다는 것은 다른 얘기다. 젠신은 감사 기록을 웹으로 공개하고 집계도 함께 내놓는다. 2026년 9월 17일에 받아 본 값은 이렇다. 검산이 접수된 스텝이 19개, 참여자가 10명, 자원자들이 보고한 재생 시간의 합계가 67.9시간이다. 구간 810개 어디에도 100스텝이 빈틈없이 채워진 곳은 없다. 누군가 맡아 놓고 진행 중인 구간이 9개, 잠정 기록이 한 건이라도 붙은 구간이 7개이고, 나머지 794개는 아직 아무도 손대지 않았다. 공개 사흘째의 수치이니 적다고 탓할 일은 아니다. 대신 이 수치에서 감사의 문턱이 어디쯤인지가 읽힌다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더딘 데는 이유가 있다. 감사는 순서를 탄다. 어떤 스텝을 재생하려면 그 직전의 상태가 손에 있어야 하는데, 공개된 체크포인트는 100스텝 간격이다. 그래서 감사자는 공개 체크포인트에서 곧바로 시작하거나, 앞선 자원자가 올려 둔 중간 체크포인트를 이어받는다. 이어받는 쪽은 제출 때 손실값과 파일 다이제스트 검사를 통과한 것이어야 하고, 받는 사람의 도구가 다이제스트와 학습 상태 해시를 다시 확인한 뒤 재생에 들어간다. 기록에 적힌 스텝 번호에 그 릴레이가 그대로 드러난다. 100번과 101번, 102번이 서로 다른 세 사람의 이름으로 이어져 있고, 12100번부터 12103번까지 넷이 한 사람 이름으로 붙어 있다. 구간 하나가 확정되려면 100스텝이 끊기지 않고 이어져야 하는데, 지금 가장 앞선 구간이 4스텝이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        어떤 기계로 돌렸고 얼마가 걸렸는지도 같은 기록에 남는다. 자원자가 스스로 적은 값이라 조건이 고르지 않지만, 기계 사이 격차의 크기는 분명하다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">감사에 쓴 기계</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">보고된 재생 시간</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">건수</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">H100 (데이터센터급 GPU)</td>
+                                    <td class="py-3 pr-4">0.4시간에서 2.8시간</td>
+                                    <td class="py-3">10</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">RTX 3090·4090 (소비자용 GPU)</td>
+                                    <td class="py-3 pr-4">0.9시간에서 1.5시간</td>
+                                    <td class="py-3">5</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">애플 M4 프로·M4 맥스·M5</td>
+                                    <td class="py-3 pr-4">8.0시간에서 19.2시간</td>
+                                    <td class="py-3">4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3">출처: <a href="https://open1b.gensyn.ai/" target="_blank" rel="noopener" class="underline">감사 앱이 공개하는 기록</a>, 2026년 9월 17일 조회분 19건 전수. 감사가 애플 실리콘에서도 돌아간다는 말과 애플 실리콘에서는 스무 시간 가까이 걸린다는 말은 둘 다 참이다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        앱이 스텝을 맡기 전에 미리 알려 주는 요구치도 같이 놓고 봐야 한다. 메모리는 24GB부터이고 애플 실리콘에서는 40GB 이상을 요구한다. 40GB 아래로 내려가면 재생이 스와핑에 들어가 시간이 길어지고, 스와핑하는 기계에서 돌린 두 건은 아무것과도 맞지 않는 해시를 그때마다 다르게 돌려줬다고 앱은 경고한다. 불일치가 나오면 메모리가 더 큰 기계에서 다시 돌려 본 뒤에 판정하라는 당부도 함께 붙는다. 엔비디아 카드는 24GB로 충분하고, 실제로 24GB RTX 4090에서 감사가 돌았다. 여유 디스크는 처음 설치하는 기계에서 74GiB를 잡아 두라고 하고, 일치가 나온 뒤 올릴 체크포인트는 약 25.7GB다. 스텝마다 뜨는 소요 시간 추정치는 메모리 48GB M5에서 잰 애플 기준값이고, 40GB 밑에서 스와핑하는 기계는 세 배로 잡는다. 0번 스텝만 사정이 다르다. 옵티마이저를 덜어 낼 수 없어 호스트 메모리 48GiB를 잠정 요구치로 걸어 두었고, 아직 시간을 재 본 기계가 없다. 소비자용 하드웨어에서 돌아간다는 말은 맞지만, 여기서 말하는 소비자용은 꽤 잘 갖춘 기계다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        보상은 없다. 기록에 붙은 안내문은 이름 목록이 알파벳 순이고 순위가 아니라고 먼저 밝힌 다음, 지불도 포인트도 앞날의 보상도 없다고 잘라 말한다. 기록이 감사를 받아들이면 이름이 올라가지만 스텝은 그 구간이 확정될 때까지 잠정 상태로 남는다. 이더리움 주소는 적어 넣은 사람만 공개되고, 열 명 가운데 다섯 명이 적었다. 남는 것은 처음으로 완전히 감사된 학습 런의 기록에 이름이 오른다는 사실뿐이라고 회사도 발표문에 그렇게 적었다.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="the-price" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">재현성에 치른 값</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        보고서는 한 절을 통째로 비용에 쓴다. 먼저 해시다. 스텝마다 붙는 상태 해시는 일이 랭크당 고정이라 규모와 무관하게 스텝당 5.77초에서 5.96초 사이로 일정하다. 노드를 늘려 스텝 자체가 짧아질수록 이 고정비의 몫은 커진다. 1노드에서 4.9%이던 것이 2노드 9.3%, 4노드 16.7%를 거쳐 6노드에서는 스텝 시간의 21.4%가 된다. 해시를 켜고 잰 강확장 효율이 71%, 끄면 86%인 것도 여기서 나온다. 순전파와 역전파만 떼어 보면 99.7%이니, 잃은 몫은 대부분 해시와 노드 간 통신에 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+해시에 드는 이 시간을 재현성의 비용과 한 덩어리로 세지 않는 편이 낫다. 부록은 해시가 감사에 붙은 비용이지 재현성에 붙은 비용은 아니라고 선을 긋는다. 해시를 아예 끄고 돌려도 결정적 커널과 통신은 같은 비트를 내놓는다. 다만 그때는 중간 스텝에서 맞춰 볼 대상이 없다. 노드를 늘릴 때 순서를 붙든 통신이 얼마를 요구하는지도 따로 쟀다. 결정적 올리듀스는 순서를 고정하는 대신 홉마다 버퍼 전체를 보내므로, 같은 부분군에서 통상적인 NCCL로 잰 값과 견주면 2노드에서 1.13배, 4노드에서 1.59배, 6노드에서 3.54배가 든다. 6노드에서 크게 뛰는 것은 대역폭 때문이 아니라 노드 수가 2의 거듭제곱이 아니어서 접기가 두 갈래로 갈리기 때문이다. 약 5배라는 요약도 그래서 조건에 딸린 숫자다. 여섯 노드에서 격차가 좁아 보이는 데는 기준선 쪽 사정도 섞여 있다. 이 클러스터는 GPUDirect 없는 소켓 패브릭을 쓰는데, 그 위에서 파이토치의 강확장 효율은 66%로 내려앉고 재현 가능한 쪽은 86%에서 91%를 지킨다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        커널 쪽이 훨씬 비싸다. 단일 노드에서 비트 단위로 재현 가능한 bf16 커널의 GPU 활용률은 3.3%였고, 같은 모델과 같은 레시피를 스톡 파이토치로 돌린 쪽은 40.5%였다. 12.2배 차이다. int8 양자화 인식 학습이 그 격차를 6.8배로 줄였고, 여섯 노드까지 올리면 약 5배로 좁혀진다. 재현성의 부담이 최적화된 파이토치보다 약 5배 비싸다는 것이 저자들의 요약이다. 가장 큰 개선 여지로 꼽힌 것은 해시다. 지금은 호스트 쪽에서 계산하느라 장치와 호스트 사이의 메모리 전송이 매 스텝 끼어든다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 부담은 벤치마크 점수에 그대로 남는다. 학습 토큰이 4,000억 개에 그쳤고, 비교 대상인 OLMo 2 1B는 4조 개를 봤다. OLMES 매크로 점수는 50.1 대 61.5, 열 과제 평균은 25.4 대 31.9다. 열 과제 가운데 Open-1B가 앞선 것은 ARC 챌린지와 MMLU 프로 둘뿐이다. 비교 대상 쪽 점수는 저자들이 직접 재서 얻었다. OLMo 2 보고서가 열 종목 중 다섯 개를 공개하지 않아, 평가 하네스를 고정해 공개된 OLMo 2 1B 체크포인트에 그대로 돌려 매크로를 다시 냈다고 설명한다. 저자들은 결론에서 이 차이의 원인으로 재현성 오버헤드와 자원 제약, 그리고 열 배 적은 토큰 예산을 직접 든다. 같은 조건에서 진 것이 아니라 같은 조건을 살 수 없었던 쪽에 가깝다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공개된 런은 한 번에 나오지 않았다. 거기 이르기까지 밟은 실패 둘이 보고서에 함께 들어 있다. 하나는 1,160억 토큰 무렵부터 그래디언트가 슬금슬금 커진 일이다. 파고들어 보니 int8로 양자화한 플래시 어텐션 역전파가 쿼리 쪽 그래디언트를 0으로 내보내고 있었고, 그걸 메우려고 QK 정규화의 이득 파라미터가 단조롭게 커지던 중이었다. 처방은 재현성을 깨지 않는 스케일 인자를 그래디언트 커널에 넣고, QK 정규화에서 이득 자체를 들어내는 것이었다. 다른 하나는 약 2,000스텝 뒤 첫 블록의 그래디언트 노름이 1,000을 넘긴 일이다. 정수 어텐션 커널부터 학습률까지 후보를 하나씩 갈아 끼우며 지운 끝에 가중치 양자화기가 범인으로 확정됐고, 스텝 크기를 학습시키는 대신 매 스텝 다시 계산하는 쪽으로 바꿨다. 비용은 스텝 시간의 약 2%다. 두 처방 모두 공개된 레시피에 들어가 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 번째 처방에서는 재현성이 선택지를 좁혔다는 점도 읽힌다. 저정밀 학습의 불안정에 흔히 쓰는 처방은 값을 확률에 따라 위나 아래 격자로 올리는 확률적 라운딩인데, 무작위가 끼는 만큼 비트 단위 재현성과 같이 갈 수 없다. 카운터 기반 생성기를 옵티마이저 안에까지 끌어들이지 않는 한 그렇다. 스텝 크기를 매번 다시 계산하는 쪽은 가중치의 결정적 함수라 그런 장치가 필요 없었고, 당시 함께 검토한 다른 길인 양자화 해제는 스텝 시간의 약 70%를 요구했다. 건너뛴 스텝의 사정도 비슷하게 데이터 쪽을 가리킨다. 클리핑 전 그래디언트 노름이 5를 넘은 배치는 전체 런에서 두 건(1,782번과 43,737번 스텝)이고, 한 건마다 다섯 스텝을 건너뛰는 규약이 걸려 합계 10스텝이 빠졌다. 안정 구간에서 클리핑이 걸린 비율은 0.16%인데, 저자들은 이것을 최적화가 흔들린 흔적보다 고유 토큰 비율이 낮은 배치 같은 데이터 쪽 이상으로 읽는다. 데이터 순서가 시드의 함수이므로 그 배치가 정확히 어느 문서들이었는지는 스텝 번호만으로 되짚을 수 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전체 런이 엔지니어링 문제로 일곱 개 구간에 나뉘어 끝난 것도 흠으로만 남지는 않았다. 각 구간을 직전 체크포인트에서 다시 시작하면서 겹쳐 돈 스텝의 해시를 앞 구간의 것과 대조해 재시작이 옳았는지 확인했기 때문이다. 재시작이 일곱 번 있었으니 같은 스텝을 다시 돌려 같은 해시가 나오는지 보는 시험이 공개 전에 일곱 번 있었던 셈이다.
+                    </p>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 이 연구를 주목하는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서부터는 보고서를 떠나, 데이터를 다루는 쪽에서 이 소식을 다시 읽는다. 페블러스가 오래 붙들어 온 물음은 어떤 값이 어디서 와서 무엇을 거쳐 지금 모습이 됐는가다. 모델 공급자가 이 데이터로 배웠다고 말할 때 그 말을 내가 직접 확인할 수 있는가 하는 물음은 그 계보 문제의 마지막 관문에 해당한다. 오늘 그 물음에 예라고 답할 수 있는 곳은 거의 없다. 이번 사례는 예라고 답하는 길이 있을 수 있다는 존재 증명 하나를 세웠다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        귀속을 먼저 바로 해 둘 것이 있다. 이 물음을 젠신도 같은 날 자기 발표문에 적었다. 발표문은 감사 가능성이 여는 응용의 첫째로 어떤 데이터가 학습에 들어갔는지 증명하는 일을 들고, 빠진 것이 없음을 검증할 수 있는 학습 데이터 전체를 훑어보는 검색 도구를 함께 공개했다고 밝힌다. 연구소들이 이 기법을 쓰면 소비자가 자기 초상이나 자기가 쓴 글이 학습에 쓰였는지 요청해 확인하는 일도 가능하다고 적는다. 웹사이트가 요청을 받으면 보유한 개인 정보를 내주는 것과 같은 방식으로 말이다. 아래 단락들이 데이터 파이프라인으로 끌어오는 결론은 이 글이 더한 해석이지만, 문제를 이렇게 세우는 방식 자체는 회사의 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        옮겨 올 만한 교훈은 설계의 순서에 있다. 감사 가능성은 학습이 끝난 뒤에 덧붙일 수 있는 성질이 아니다. 연산 순서를 고정하고, 난수를 위치의 함수로 바꾸고, 데이터 순서를 장비 대수에서 떼어 내는 일은 모두 첫 스텝을 돌리기 전에 박아 넣어야 한다. 데이터 쪽으로 옮기면 이렇게 읽힌다. 나중에 계보를 캐낼 수 있으려면, 어떤 문서가 몇 번째 창에 들어갔는지를 재구성할 수 있는 형태로 파이프라인을 처음부터 짜 놓아야 한다. 일이 끝난 뒤 로그를 뒤져 복원하는 작업과는 성격이 다르고, 뒤늦게 시작하면 대개 복원되지 않는다. 발표문은 이 점을 한 줄로 끊는다. 오늘 공개한 검증 도구로 라마나 GPT를 감사할 수는 없다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        경계도 분명히 해 두는 편이 낫다. 규모는 16억 파라미터이고 속도 손해가 약 5배이며, 이런 방식으로 검증되는 모델은 아직 하나다. 그리고 보증의 바닥에는 신뢰가 한 겹 남아 있다. 모든 연산이 통과하는 RepOps를 보고서의 결론은 독점 라이브러리라고 부르고, 감사용 휠에는 컴파일된 커널만 들어 있으며 소스 트리는 공개돼 있지 않다. 런북은 이 점을 감추지 않는다. 기계어를 배포한다는 것은 디스어셈블할 수 있는 무언가를 배포한다는 뜻이고, 그 일에 진짜 품이 들지만 불가능하지는 않다고 적은 다음, 이 키트가 요구하는 것은 들여다볼 수 없는 코드를 믿으라는 것이 아니라 스스로 다시 유도할 수 있는 산술이라고 말한다. 그 맞바꿈을 받아들일지는 읽는 사람이 판단할 몫이지만, 신뢰가 어디에 얼마나 남아 있는지가 문서에 적혀 있다는 사실 자체가 이 공개의 성격을 보여 준다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        왜 하필 이 회사가 이 일을 했는지도 그림의 일부다. 젠신은 탈중앙 연산 네트워크를 만드는 회사다. 발표문은 이 방식이 탈중앙 학습과 기능상 같지만 모델을 만드는 일이 아니라 모델을 검증하는 일을 그 노드들로 옮긴 것이라고 적는다. 앞단 학습을 중앙에서 끝냈으니 탈중앙 학습이 지는 초기 비용과 통신 문제를 피한다는 설명이다. 같은 발표문은 이 방식을 지금도 더 큰 모델로 키울 수 있다고 말한다. 다만 보고서가 실제로 잰 결과는 순서를 붙든 통신의 부담이 노드를 늘릴수록 커진다는 것이었고, 둘 사이의 거리는 아직 공개된 수치로 채워져 있지 않다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델을 직접 학습시키거나 외부 모델을 들여와 쓰는 팀이라면 다음 다섯 가지를 확인해 볼 만하다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">우리 모델이 무엇을 보고 배웠는지 문서 단위로 지목할 수 있는가. 지목할 수 없으면 무엇이 안 들어갔는지도 말할 수 없다.</li>
+                        <li class="themeable-text leading-relaxed">같은 레시피로 다시 돌렸을 때 같은 결과가 나오는가. 같은 기계에서만 그런지, 다른 기계에서도 그런지를 갈라서 답할 수 있어야 한다.</li>
+                        <li class="themeable-text leading-relaxed">데이터 순서가 장비 구성에 묶여 있지는 않은가. GPU 대수가 바뀌면 다른 모델이 나오는 파이프라인은 나중에 아무것도 증명하지 못한다.</li>
+                        <li class="themeable-text leading-relaxed">중간 상태를 얼마나 자주 남기는가. 남긴 것이 없으면 대조할 표적도 없고, 문제가 어느 구간에서 생겼는지도 좁힐 수 없다.</li>
+                        <li class="themeable-text leading-relaxed">외부에서 들여온 모델을 볼 때, 그쪽이 공개한 것이 결과물인지 과정인지 구분하고 있는가. 가중치 공개와 과정 공개는 다른 약속이다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주셔서 감사하다. 이 글이 인용한 수치와 문장은 <a href="https://arxiv.org/abs/2609.17380" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv에 공개된 보고서</a>와 <a href="https://github.com/gensyn-ai/open-transformers" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">감사 하네스 저장소</a>에서 누구나 원문으로 확인할 수 있고, <a href="https://open1b.gensyn.ai/" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">감사 앱</a>에서는 스텝별 기록을 직접 넘겨 볼 수 있다. 여러분의 조직에서는 모델이 무엇으로 배웠는지를 어떤 방법으로 확인하고 계신지 나눠 주시면 좋겠다.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- 참고문헌 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 논문</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Donaghy, J. et al. (2026). "<a href="https://arxiv.org/abs/2609.17380" target="_blank" rel="noopener">OPEN-1B: A Fully Auditable Training Run</a>." arXiv:2609.17380.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">1차 문서·감사 도구</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">Gensyn. "<a href="https://github.com/gensyn-ai/open-transformers" target="_blank" rel="noopener">gensyn-ai/open-transformers</a>." GitHub, 감사 하네스 저장소.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Gensyn. "<a href="https://github.com/gensyn-ai/open-transformers/blob/main/scripts/audit_volunteer/RUNBOOK.md" target="_blank" rel="noopener">Audit Volunteer Runbook</a>." GitHub — gensyn-ai/open-transformers.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Gensyn (2026). "<a href="https://www.gensyn.ai/news/introducing-open-1b-auditable-training" target="_blank" rel="noopener">Introducing open-1b: the first model you don't have to trust</a>." Gensyn News, 2026-09-15.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Gensyn. "<a href="https://open1b.gensyn.ai/" target="_blank" rel="noopener">Open-1B Audit</a>." 감사 진행 현황·원장, 2026-09-17 조회분.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260917"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-09-17T05:09:04.953Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-09-17T05:35:26.176Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1789621744953-hy76ul",
+                "version": "0.1.0",
+                "sha": "b384c0bcf2492d0963b83e7feb65b146a862bac5",
+                "builtAt": "2026-09-15T04:15:32.077Z"
+              },
+              "recordedAt": "2026-09-17T07:09:51.667Z"
+            },
+            mainTitle: "AI가 무엇으로 배웠는지, 내 컴퓨터로 확인할 수 있을까?",
+            subtitle: "젠신, 학습 8만 957스텝을 매 스텝 해시로 남긴 16억 파라미터 모델 공개 — 검증은 맥북과 CPU에서도 가능",
+            pageTitle: "AI 학습 과정 비트 단위 검증 — 젠신 Open-1B 완전 감사 가능 모델 | 페블러스",
+            category: "tech",
+            publishDate: "2026-09-17",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/open-1b-auditable-training-run/ko/",
+            tags: ["AI 모델 재현성", "학습 과정 감사", "데이터 프로버넌스", "오픈소스 AI", "결정론적 학습", "부동소수점 재현성", "Gensyn", "Open-1B", "AI-Ready Data", "데이터 품질"],
+            faqs: [
+                {
+                    question: "Open-1B는 어떤 모델인가?",
+                    answer: "분산 학습 네트워크를 만드는 젠신(Gensyn)이 2026년 9월 15일 arXiv에 보고서와 함께 공개한 디코더 전용 언어 모델이다. 파라미터는 16억 개이고, 정확히는 16.1억 개 가운데 임베딩을 뺀 것이 10.8억 개다. 24개 층에 히든 크기 2048, 어휘 12만 8,256개이며 H100 48장으로 4,000억 토큰을 8만 957스텝에 걸쳐 학습했다. 저자들이 내세우는 것은 성능이 아니라 학습 과정의 검증 가능성이다. 가중치와 전체 사전학습 데이터셋, 100스텝 간격 중간 체크포인트 810개, 학습과 평가 코드, 감사 도구가 함께 공개됐다."
+                },
+                {
+                    question: "결정성과 재현성은 어떻게 다른가?",
+                    answer: "한 대에서 되풀이되느냐, 여러 대에서 일치하느냐의 차이다. 결정성은 환경을 그대로 둔 한 기계가 두 번 돌려 같은 답을 내는 성질이고, 프레임워크의 결정적 모드가 보장하는 범위도 거기까지다. 재현성은 노트북과 데이터센터 가속기처럼 종류가 다른 기계들이 끝자리까지 일치하는 성질이며, 보고서는 이쪽을 비트 단위 재현성이라 부른다. 앞을 만족해도 뒤는 깨질 수 있고, 지금껏 오픈 소스 모델이 놓여 있던 곳이 그 틈이다."
+                },
+                {
+                    question: "레시피를 그대로 따라 했는데 왜 다른 모델이 나오나?",
+                    answer: "부동소수점 덧셈에 결합법칙이 성립하지 않기 때문이다. 담을 수 있는 값이 띄엄띄엄하니 연산마다 반올림이 일어나고, 어느 둘을 먼저 더하느냐에 따라 반올림 지점이 옮겨 가 결과의 끝자리가 갈린다. 수천 갈래로 흩어 더하는 가속기와 한 줄로 이어 더하는 프로세서는 더하는 차례부터 다르다. 여기에 곱셈과 덧셈의 융합 여부, 0 언저리 값의 처리 방식, 플랫폼마다 다른 난수 순서가 겹친다. 어긋남은 몇 스텝이면 눈에 띌 만큼 커진다."
+                },
+                {
+                    question: "비트 단위로 같게 만들려면 무엇을 고정해야 하나?",
+                    answer: "보고서는 세 갈래를 든다. 첫째는 GPU 커널 안의 축약 순서로, RepOps라는 연산 묶음이 모든 백엔드에서 같은 순서를 강요하고 서브노멀은 어디서나 0으로 밀며 난수를 위치의 함수로 바꾼다. 둘째는 데이터 순서로, 학습 데이터를 시드와 코퍼스 매니페스트만의 함수인 정본 스트림으로 정의해 노드 수나 랭크에 기대지 않게 만든다. 셋째는 여러 대가 그래디언트를 합치는 통신이다. 합치는 차례를 노드 안팎 모두 못 박아, 클러스터가 한 일을 한 대가 순서대로 되짚을 수 있게 만든다. 어느 하나가 어긋나는 순간 두 학습은 갈라선다."
+                },
+                {
+                    question: "감사를 하려면 무엇이 필요한가?",
+                    answer: "계정도 자격 증명도 필요 없다. 공개된 주소에서 매니페스트와 휠 두 개, 정본 해시 목록을 내려받고 각 파일의 sha256이 공개된 값과 맞는지 확인한 뒤 설치하면 된다. 명령 한 줄을 돌리면 일치인지 불일치인지가 찍힌다. 하드웨어는 애플 실리콘 맥, 엔비디아 GPU가 달린 리눅스, GPU가 없는 프로세서가 모두 쓰인다. 기준 노릇을 하는 쪽은 오히려 프로세서다. 초기 상태 단위는 8GB 메모리면 되고, 학습 스텝 재생까지 포함한 모든 단위는 24GB를 권한다."
+                },
+                {
+                    question: "한 스텝을 검증하는 데 얼마나 걸리나?",
+                    answer: "무엇을 검증하느냐에 달렸다. 초기 상태를 맞춰 보는 단위라면 M4 맥스에서 29.7초, 최대 메모리 5.8GB로 끝난다. 프로세서에서는 25.0초이지만 메모리를 21.9GB 쓴다. 학습 스텝 하나를 통째로 되짚는 단위는 사정이 달라서 같은 급 맥에서 반나절 안팎이 든다. 그래서 자원자는 한 구간이 아니라 한 스텝에 지원한다. 런북은 엔비디아 쪽 수치를 같은 방식으로 재지 않았으므로 인용하지 않는다고 밝힌다."
+                },
+                {
+                    question: "지금까지 얼마나 검증됐나?",
+                    answer: "2026년 9월 17일 기준으로 젠신이 공개하는 감사 기록에는 접수된 스텝 19개, 참여자 10명, 자원자가 보고한 재생 시간 합계 67.9시간이 올라와 있다. 100스텝 단위로 끊은 810개 구간 가운데 확정에 이른 곳은 아직 없다. 진행 중인 것이 9개, 잠정 기록이 붙은 것이 7개다. 속도가 나지 않는 까닭은 재생에 직전 상태가 필요하다는 데 있다. 공개 체크포인트가 100스텝 간격이니 감사자는 그 지점에서 출발하거나 앞사람이 올린 중간 결과를 이어받아야 하고, 구간 하나를 닫으려면 그 100스텝이 연달아 채워져야 한다. 기록에 적힌 기계는 H100부터 RTX 3090과 애플 M4 프로까지 섞여 있고, 같은 일에 데이터센터 GPU는 한 시간 안팎, 애플 실리콘은 여덟 시간에서 열아홉 시간을 썼다."
+                },
+                {
+                    question: "해시가 맞으면 무엇이 증명되고 무엇은 증명되지 않나?",
+                    answer: "증명되는 범위는 좁다. 고른 재생 단위가 고정된 산출물과 입력 아래 시험한 백엔드에서 공개된 해시를 되만들어 냈다는 사실 하나다. 초기화만 맞춰 본 단위로는 학습 구간을 말할 수 없고, 컴파일된 커널을 돌렸다고 해서 그 커널의 구현이 드러나지도 않는다. 해시가 담는 범위도 가중치와 옵티마이저 상태, 그래디언트, 배치 다이제스트까지이며 난수 상태와 데이터 스트림 위치, 스파이크 상태는 바깥이다. 체크포인트 디렉터리를 데이터가 아니라 코드로 다루라는 경고도 붙어 있다. 불러올 때 메타데이터 색인이 먼저 언피클되기 때문이다."
+                },
+                {
+                    question: "재현성의 대가는 얼마인가?",
+                    answer: "커널과 감사, 두 갈래에서 값을 치른다. 재현 가능한 bf16 경로는 단일 노드에서 GPU 활용률 3.3%에 그쳤고, 스톡 파이토치는 40.5%를 냈다. 12.2배다. int8 양자화 인식 학습을 얹으면 6.8배로, 노드를 여섯 대까지 늘리면 약 5배로 줄어든다. 감사 쪽 비용은 스텝마다 계산하는 상태 해시인데, 규모와 무관하게 약 6초로 일정해 1노드에서 스텝 시간의 4.9%이던 몫이 6노드에서는 21.4%까지 커진다. 해시를 켠 강확장 효율이 71%, 끈 쪽이 86%다."
+                },
+                {
+                    question: "성능은 다른 오픈 모델과 견주면 어떤가?",
+                    answer: "뒤진다. OLMo 2 1B와 같은 평가 묶음에서 OLMES 매크로가 50.1, 상대는 61.5였다. 열 과제 평균으로는 25.4와 31.9이고, Open-1B가 앞선 종목은 ARC 챌린지와 MMLU 프로 두 개뿐이다. 다만 학습 토큰이 4,000억 개 대 4조 개로 열 배 차이라는 점을 저자들이 결론에서 직접 밝힌다. 재현성 오버헤드와 자원 제약 탓에 예산을 그만큼밖에 쓰지 못했다는 설명이다. 같은 조건에서 맞붙은 비교는 아니다."
+                },
+                {
+                    question: "이 방식이 더 큰 모델로 확장될 수 있나?",
+                    answer: "아직 알 수 없다. 보고서가 내놓은 것은 16억 파라미터 한 사례이고, 저장소는 더 큰 밀집 모델이 진행 중이라고만 적는다. 회사는 발표문에서 이 방식을 지금도 더 큰 모델에 쓸 수 있다고 말하지만, 그 말을 받쳐 줄 측정치는 함께 공개되지 않았다. 보고서 쪽 수치는 오히려 반대편을 가리킨다. 순서를 못 박은 노드 간 통신의 부담이 2노드 1.13배에서 6노드 3.54배로 벌어진다. 확장을 막는 것은 원리가 아니라 비용이다. 지금은 최적화된 파이토치보다 약 5배 비싸고, 감사 한 스텝에 소비자용 기계로 반나절이 든다. 모델이 커지면 스텝당 재생 비용도 함께 커지므로 감사 단위를 어떻게 자를지가 다시 문제가 된다. 저자들이 첫손에 꼽는 고칠 자리는 지금 호스트에서 계산하는 상태 해시를 장치로 옮기는 일이다."
+                },
+                {
+                    question: "데이터를 다루는 팀에는 왜 중요한가?",
+                    answer: "이 데이터로 배웠다는 공급자의 말을 제3자가 직접 확인할 수 있는가가 곧 데이터 계보의 마지막 관문이기 때문이다. 오늘 대부분의 답은 없다에 가깝다. 이번 사례는 그 확인이 사후에 얻어지지 않는다는 점도 함께 보여 준다. 무엇을 어떤 차례로 고정할지는 첫 스텝을 돌리기 전에 정해져 있어야 하고, 학습이 끝난 뒤 덧붙일 수 있는 성질이 아니다. 데이터 파이프라인으로 옮기면, 어떤 문서가 몇 번째 자리에 들어갔는지를 나중에 되짚을 수 있는 형태로 처음부터 짜 두는 일에 해당한다."
+                }
+            ]
+        });
+    </script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20260917" defer></script>
+</body>
+</html>
