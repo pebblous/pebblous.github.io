@@ -184,7 +184,7 @@
                             <rect x="24" y="92" width="632" height="34" rx="6" fill="var(--text-muted)" opacity="0.1"/>
                             <text x="40" y="114" font-size="11" fill="var(--text-secondary)" font-family="monospace">(1.0000001 + 2.0000002)  +  (3.0000003 + 4.0000004)</text>
 
-                            <text x="24" y="154" font-size="11.5" font-weight="600" fill="var(--text-secondary)">Processor · accumulates end to end, in one line</text>
+                            <text x="24" y="154" font-size="11.5" font-weight="600" fill="var(--text-secondary)">Processor · adds one number at a time, in sequence</text>
                             <rect x="24" y="166" width="632" height="34" rx="6" fill="var(--text-muted)" opacity="0.1"/>
                             <text x="40" y="188" font-size="11" fill="var(--text-secondary)" font-family="monospace">((1.0000001 + 2.0000002) + 3.0000003) + 4.0000004</text>
 
@@ -621,7 +621,7 @@
             faqs: [
                 {
                     question: "What is Open-1B?",
-                    answer: "A decoder-only language model that Gensyn, a company building distributed training networks, published on September 15, 2026 along with a report on arXiv. It holds 1.6 billion parameters, or 1.61 billion of which 1.08 billion sit outside the embeddings. It has 24 layers, a hidden size of 2048 and a vocabulary of 128,256, and it was trained on 400 billion tokens over 80,957 steps using 48 H100s. What the authors put forward is not performance but the verifiability of the training process. The weights, the full pretraining dataset, 810 intermediate checkpoints at 100-step intervals, the training and evaluation code, and the audit tooling were all released together."
+                    answer: "A decoder-only language model that Gensyn, a company building distributed training networks, published on September 15, 2026 along with a report on arXiv. It holds 1.6 billion parameters, or 1.61 billion of which 1.08 billion sit outside the embeddings. It has 24 layers, a hidden size of 2048 and a vocabulary of 128,256, and it was trained on 400 billion tokens over 80,957 steps using 48 H100s. The authors put forward the verifiability of the training process, not its performance. The weights, the full pretraining dataset, 810 intermediate checkpoints at 100-step intervals, the training and evaluation code, and the audit tooling were all released together."
                 },
                 {
                     question: "How do determinism and reproducibility differ?",
@@ -629,11 +629,11 @@
                 },
                 {
                     question: "Why does following the recipe exactly still give a different model?",
-                    answer: "Because floating-point addition is not associative. The values it can hold are spaced apart, so rounding happens at every operation, and which two numbers you add first moves the rounding point and splits the final digits of the result. An accelerator that scatters a sum across thousands of lanes and a processor that adds it in one line differ in the order of addition from the outset. On top of that come whether a multiply and add get fused, how values near zero are handled, and random draw orders that differ by platform. The divergence grows visible within a handful of steps."
+                    answer: "Because floating-point addition is not associative. The values it can hold are spaced apart, so rounding happens at every operation, and which two numbers you add first moves the rounding point and splits the final digits of the result. An accelerator spreads one sum over thousands of lanes, while a processor walks it from start to finish, so their addition sequence differs from the outset. On top of that come whether a multiply and add get fused, how values near zero are handled, and random draw orders that differ by platform. The divergence grows visible within a handful of steps."
                 },
                 {
                     question: "What has to be fixed to make results identical bit for bit?",
-                    answer: "The report names three strands. First, the reduction order inside GPU kernels: a library of operations called RepOps forces the same order on every backend, flushes subnormals to zero everywhere, and turns randomness into a function of position. Second, data order: the training data is defined as a canonical stream that is a function of the seed and the corpus manifests alone, so it leans on neither node count nor rank. Third, the communication that combines gradients across machines: the order of combining is pinned both inside and between nodes, so a single machine can retrace sequentially what the cluster did. Miss one of the three and the trajectory splits from that step."
+                    answer: "The report names three strands. First, the reduction order inside GPU kernels: a library of operations called RepOps forces the same order on every backend, flushes subnormals to zero everywhere, and turns randomness into a function of position. Second, data order: the training data is defined as a canonical stream that is a function of the seed and the corpus manifests alone, so it leans on neither node count nor rank. Third, the communication that combines gradients across machines: the order of combining is pinned both inside and between nodes, so a single machine can retrace sequentially what the cluster did. Let any one of them slip and the two training runs part ways."
                 },
                 {
                     question: "What does it take to run an audit?",
@@ -641,7 +641,7 @@
                 },
                 {
                     question: "How long does verifying one step take?",
-                    answer: "It depends what you verify. An initialization unit clears in 29.7 seconds on an M4 Max, peaking at 5.8GB. On a processor it takes 25.0 seconds but uses 21.9GB. A unit that retraces one whole training step is a different matter and takes roughly half a day on a Mac of that class. That is why one volunteer takes on a single step rather than a stretch. The runbook states that it does not quote an NVIDIA figure, because none has been measured the way those were."
+                    answer: "It depends what you verify. An initialization unit clears in 29.7 seconds on an M4 Max, peaking at 5.8GB. On a processor it takes 25.0 seconds but uses 21.9GB. A unit that retraces one whole training step is a different matter and takes roughly half a day on a Mac of that class. So a volunteer signs up for one step, not a whole stretch. The runbook states that it does not quote an NVIDIA figure, because none has been measured the way those were."
                 },
                 {
                     question: "How much has been verified so far?",
@@ -653,7 +653,7 @@
                 },
                 {
                     question: "What is the price of reproducibility?",
-                    answer: "The cost lands on two strands, the kernels and the audit. On a single node the GPU utilization of the reproducible bf16 path stopped at 3.3%, while stock PyTorch delivered 40.5%. That is 12.2x. Adding int8 quantization-aware training brings it to 6.8x, and scaling out to six nodes narrows it to about 5x. On the audit side the cost is the state hash computed at every step, which stays near 6 seconds regardless of scale, so the share that was 4.9% of step time on one node grows to 21.4% on six. Strong-scaling efficiency is 71% with hashing on and 86% with it off."
+                    answer: "The cost lands on two strands, the kernels and the audit. The reproducible bf16 path reached only 3.3% GPU utilization on one node, while stock PyTorch delivered 40.5%. That is 12.2x. Adding int8 quantization-aware training brings it to 6.8x, and scaling out to six nodes narrows it to about 5x. On the audit side the cost is the state hash computed at every step, which stays near 6 seconds regardless of scale, so the share that was 4.9% of step time on one node grows to 21.4% on six. Strong-scaling efficiency is 71% with hashing on and 86% with it off."
                 },
                 {
                     question: "How does it perform against other open models?",
@@ -661,7 +661,7 @@
                 },
                 {
                     question: "Can this approach scale to larger models?",
-                    answer: "Not known yet. What the report offers is a single case at 1.6 billion parameters, and the repository says only that a larger dense model is in progress. The company says in its launch post that the approach can be used on larger models today, but no measurement was published alongside that claim. The figures in the report point the other way. The cost of order-pinned communication between nodes widens from 1.13x at two nodes to 3.54x at six. What blocks scaling is the price rather than the principle. Today it runs about five times more expensive than optimized PyTorch, and one audited step takes half a day on a consumer machine. As models grow, the replay cost per step grows with them, so how to cut the audit unit becomes a question again. The biggest room for improvement the authors name is moving the state hash, computed on the host today, onto the device."
+                    answer: "Not known yet. The report offers a single case at 1.6 billion parameters, and the repository says only that a larger dense model is in progress. The company says in its launch post that the approach can be used on larger models today, but no measurement was published alongside that claim. The figures in the report point the other way. The cost of order-pinned communication between nodes widens from 1.13x at two nodes to 3.54x at six. The barrier is cost, not principle. Today it runs about five times more expensive than optimized PyTorch, and one audited step takes half a day on a consumer machine. As models grow, the replay cost per step grows with them, so how to cut the audit unit becomes a question again. The authors point to the state hash, computed on the host today, as the biggest thing left to fix: move that work onto the device."
                 },
                 {
                     question: "Why does this matter to teams that work with data?",
