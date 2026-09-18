@@ -259,6 +259,11 @@ def _unknown_acronyms(t: str):
 # (옛 "주어 실종 훅"(2026-07-19: 숫자 덩이 2개+ & 도메인 명사 0)은 v3 의 "수치 나열"(숫자 덩이 2개+ = 위반)에 포함돼 걷어냈다.)
 
 
+# 업계 용어 목록(2026-09-18 형님 판정 "쓰레기 같은 부제"): 제목에 있으면 위반(-3), 부제·검색 제목은 권고(-1) — 부제도 중학생 시험.
+# 읽힘 자체는 코드가 못 재고 심판(2단계 subtitle_understand)이 잰다. 이 목록은 그중 낱말 하나로 잡히는 부분만 센다.
+_JARGON = ('거버넌스', '프레임워크', '파이프라인', '레거시', '온프레미스', '온보딩', '컴플라이언스', '이니셔티브', '얼라인먼트', '오케스트레이션')
+def _jargon_hits(t: str):
+    return [w for w in _JARGON if w in t]
 # 순우리말 풀이 술어 '재다'류 = 위반(형님 2026-09-15: "'~재다'는 '~측정하다'로"). 헤드라인은 한자어 술어가 축약적이고 권위 있어 보인다.
 # 재작업·재도전·존재는·잰걸음 같은 딴 낱말은 앞뒤 한글 경계로 뺀다. 재고(在庫)·재야(在野)는 겹쳐서 목록에 넣지 않는다. 부제·검색 제목에도 같이 건다.
 _JAEDA = re.compile(r'(?<![가-힣])(?:쟀다|쟀고|쟀는데|쟀을|잰다|재다|재어|재서는|재서도|재서|재는데|재는|재도|재면|재 둔|재 본|재 보|재 놓|잰)(?![가-힣])')
@@ -278,6 +283,8 @@ def eval_maintitle(t: str):
     labels, ded = [], 0
     if _has_jaeda(t):
         labels.append('재다→측정하다'); ded += 3  # 위반 — 형님 2026-09-15, 한자어 술어
+    for w in _jargon_hits(t):
+        labels.append(f'전문용어({w})'); ded += 3  # 위반 — 중학생이 모르는 업계 용어는 제목에 못 온다
     if _has_quote(t):
         labels.append('따옴표'); ded += 4
     if SPEECH_TWIST.search(t):
@@ -339,6 +346,8 @@ def eval_subtitle(t: str):
     labels, ded = [], 0
     if _has_jaeda(t):
         labels.append('재다→측정하다'); ded += 3  # 위반 — 형님 2026-09-15, 한자어 술어
+    for w in _jargon_hits(t):
+        labels.append(f'전문용어({w})→쉬운 말'); ded += 1  # 권고 — 부제도 중학생 시험(2026-09-18)
     if _has_quote(t):
         labels.append('따옴표'); ded += 4
     if SPEECH_TWIST.search(t):
@@ -369,6 +378,8 @@ def eval_pagetitle(t: str, main_title: str = ''):
     labels, ded = [], 0
     if _has_jaeda(t):
         labels.append('재다→측정하다'); ded += 3  # 위반 — 형님 2026-09-15, 한자어 술어
+    for w in _jargon_hits(t):
+        labels.append(f'전문용어({w})→쉬운 말'); ded += 1  # 권고 — 부제도 중학생 시험(2026-09-18)
     if _has_quote(t):
         labels.append('따옴표'); ded += 4
     if CONTRAST.search(t):
