@@ -13,6 +13,8 @@
         │ 통과(또는 교정 뒤)
         ▼
 눈감은 심판(ko 만) 1단계: mainTitle 만 → {guess, understand, click, natural}
+
+> 심판 호출은 프롬프트를 **본문으로**(`inlinePrompt: true`) 넘긴다. 다른 단계처럼 `.current-prompt.md` 경로만 넘기면 Read 가 금지된 심판은 파일을 못 열고 "내용을 붙여 달라"고 되묻다 끝난다 — 2026-09-15 배포 뒤 09-18 까지 심판 12편이 전부 "1단계 JSON 파싱 불가"로 생략된 원인(2026-09-18 수리). `promptArgFor` 는 disallowedTools 에 Read 가 있으면 플래그와 무관하게 본문을 넘긴다.
                     2단계: 1단계 답 + subtitle + <main> 첫 <p> 둘 → {accurate, misleading}
         │ 임계 미달(understand<4 · click<3 · accurate<4 · misleading)
         ▼

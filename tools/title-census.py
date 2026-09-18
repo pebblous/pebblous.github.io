@@ -259,6 +259,13 @@ def _unknown_acronyms(t: str):
 # (옛 "주어 실종 훅"(2026-07-19: 숫자 덩이 2개+ & 도메인 명사 0)은 v3 의 "수치 나열"(숫자 덩이 2개+ = 위반)에 포함돼 걷어냈다.)
 
 
+# 순우리말 풀이 술어 '재다'류 = 위반(형님 2026-09-15: "'~재다'는 '~측정하다'로"). 헤드라인은 한자어 술어가 축약적이고 권위 있어 보인다.
+# 재작업·재도전·존재는·잰걸음 같은 딴 낱말은 앞뒤 한글 경계로 뺀다. 재고(在庫)·재야(在野)는 겹쳐서 목록에 넣지 않는다. 부제·검색 제목에도 같이 건다.
+_JAEDA = re.compile(r'(?<![가-힣])(?:쟀다|쟀고|쟀는데|쟀을|잰다|재다|재어|재서는|재서도|재서|재는데|재는|재도|재면|재 둔|재 본|재 보|재 놓|잰)(?![가-힣])')
+def _has_jaeda(t: str) -> bool:
+    return bool(_JAEDA.search(t))
+
+
 # 길이 (정본: 20~35자 권장). 45자 초과는 위반, 36~45자·20자 미만은 권고 이탈, 12자 미만은 추상 위험.
 LEN_MIN, LEN_MAX, LEN_HARD = 20, 35, 45
 
@@ -269,6 +276,8 @@ def eval_maintitle(t: str):
     줄표·콜론 허용 형태/미끼/키워드 나열/잘린 명사형/수수께끼/관형절 사슬/길이.
     현재형 종결·질문형·'X: Y'·'— 출처' 꼬리·낱말 강조 작은따옴표는 허용이라 감점하지 않는다."""
     labels, ded = [], 0
+    if _has_jaeda(t):
+        labels.append('재다→측정하다'); ded += 3  # 위반 — 형님 2026-09-15, 한자어 술어
     if _has_quote(t):
         labels.append('따옴표'); ded += 4
     if SPEECH_TWIST.search(t):
@@ -328,6 +337,8 @@ def eval_maintitle(t: str):
 def eval_subtitle(t: str):
     """subtitle — 리드문. 대조/따옴표/미끼 금지, 줄표는 동격 재진술 의심으로 소프트 감점."""
     labels, ded = [], 0
+    if _has_jaeda(t):
+        labels.append('재다→측정하다'); ded += 3  # 위반 — 형님 2026-09-15, 한자어 술어
     if _has_quote(t):
         labels.append('따옴표'); ded += 4
     if SPEECH_TWIST.search(t):
@@ -356,6 +367,8 @@ def eval_pagetitle(t: str, main_title: str = ''):
     main_title이 주어지면 '검색 변형인가'도 본다(§0): 브랜드 접미사만 뗀 게 mainTitle과
     완전 동일하면 키워드 보강 기회를 놓친 것 — WARN(-2, 8점으로 통과선 위에 남되 표시)."""
     labels, ded = [], 0
+    if _has_jaeda(t):
+        labels.append('재다→측정하다'); ded += 3  # 위반 — 형님 2026-09-15, 한자어 술어
     if _has_quote(t):
         labels.append('따옴표'); ded += 4
     if CONTRAST.search(t):
