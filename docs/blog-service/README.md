@@ -34,3 +34,5 @@ DataClinic이 자기 능력을 API로 노출했듯, 본 블로그 레포의 콘�
 - 이슈 #102 — DataClinic MCP 외부 에이전트 접근 방안 (closed)
 - 이슈 #88 — Wiki/블로그 브랜치 워크플로우 + Preview Deploy
 - 이슈 #122 — preview-tunnel 스킬 (closed)
+
+- [`tangible-data-intake.md`](tangible-data-intake.md) — 탠저블 데이터 접수 규격 v0.1: 실험 꾸러미(`tangible.json`·evidence·verify·rights) + 접수 스킬 `tangible-story-produce` + 검사기 `tools/tangible-intake-check.py` (2026-09-25, #234)
