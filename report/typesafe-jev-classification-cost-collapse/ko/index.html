@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>고르기만 하는 AI 모델의 값과 정확도 | 페블러스</title>
+    <meta name="description" content="문장을 만들지 않고 객관식 답과 확률만 돌려주는 분류 전용 모델이 공개됐다. 값이 수백 분의 일이라는 주장의 분모를 하나씩 갈라 보고, 정확도 67.8%가 무엇에 대한 일치율인지, 어떤 판정 업무를 옮겨도 되는지 검토한다.">
+    <meta name="keywords" content="분류 모델, 추론 비용, LLM 평가, 데이터 라벨링, 모델 보정, 합성 데이터, AI 비용 구조, 고영향 AI, AI-Ready Data">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/typesafe-jev-classification-cost-collapse/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/typesafe-jev-classification-cost-collapse/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/typesafe-jev-classification-cost-collapse/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/typesafe-jev-classification-cost-collapse/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="말은 못 하고 고르기만 하는 AI, 정말 싸게 일할까?">
+    <meta property="og:description" content="건당 값이 수백 분의 일이라는 한 문장 안에서 비교 대상이 둘로 갈린다. 값이 떨어진 자리와 그 값의 분모를 회사 자신의 평가표로 확인한다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/typesafe-jev-classification-cost-collapse/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/typesafe-jev-classification-cost-collapse/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="말은 못 하고 고르기만 하는 AI, 정말 싸게 일할까?">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="말은 못 하고 고르기만 하는 AI, 정말 싸게 일할까?">
+    <meta name="twitter:description" content="같은 사건의 값이 문서마다 다르고, 정확도 67.8%는 사람이 아니라 더 큰 모델 둘의 평균 판정과의 일치율이다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/typesafe-jev-classification-cost-collapse/ko/image/index.png">
+    <meta name="twitter:image:alt" content="말은 못 하고 고르기만 하는 AI, 정말 싸게 일할까?">
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="말은 못 하고 고르기만 하는 AI, 정말 싸게 일할까? — 분류 전용 모델의 값과 그 값의 분모">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/09/27">
+    <meta name="citation_online_date" content="2026/09/27">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정: theme-variables -> tailwind-build -> common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260927">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260927">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260927">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* 도식 박스·캡션·표 숫자 정렬 — 공통 컴포넌트가 없어 이 리포트 로컬로만 정의 */
+        .fig-box {
+            background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+        }
+        .fig-caption {
+            font-size: 0.8rem;
+            color: var(--text-muted, #808080);
+            line-height: 1.7;
+            margin-top: 0.5rem;
+        }
+        .comparison-table td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .comparison-table th.num { text-align: right; }
+        .comparison-table .hit { color: #F86825; font-weight: 700; }
+        .comparison-table .low { color: #808080; }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 문장을 만들지 않는 모델은 무엇을 돌려주는가</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 싸다는 말 한 문장에 분모가 둘</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 67.8%는 무엇에 대한 일치율인가</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 확률을 함께 준다는 약속의 조건</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 옮겨도 되는 일, 법이 막아 둔 일</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 값이 싸지면 판정은 늘어난다</a></li>
+                    <li><a href="#pebblous-perspective" class="block pl-4 themeable-toc-link transition-colors duration-200">페블러스 관심의 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 글은 2026년 9월에 나온 모델 하나의 속보를 옮기는 글이 아니다. 타입세이프라는 회사가 문장을 전혀 만들지 않는 모델을 내놓았다. 제브는 객관식 답과 등급과 예·아니오만, 그것도 확률을 붙여서 돌려준다. 건당 값은 비교 대상의 수백 분의 일이라고 했고, 열흘 남짓 지나 기업가치는 100억 달러대에서 논의됐다. 이 글이 하려는 일은 둘이다. 값이 떨어진 자리를 정확히 짚는 것, 그리고 떨어진 값이 무엇을 대가로 했는지 확인하는 것.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            회사가 홈페이지에 나란히 건 두 숫자를 회사 자신의 평가표로 되짚어 보면 이상한 일이 드러난다. 비용 배수와 지연 배수의 비교 대상이 서로 다르다. 비용 쪽은 가장 비싼 모델에, 지연 쪽은 가장 느린 모델에 각각 들어맞는다. 두 숫자가 무엇을 무엇으로 나눈 값인지는 회사가 문장으로 밝히지 않았다. 정확도 67.8%도 같은 자리에 서 있다. 그것은 사람이 매긴 정답과의 일치율이 아니라 더 큰 모델 두 대의 평균 판정과의 일치율이고, 그 정답지를 만든 두 모델은 가격표에서 가장 비싼 칸에 있다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            그래서 이 글이 남기려는 것은 제품 평가가 아니라 독자 자신의 파이프라인에 대고 물을 질문이다. 큰 모델에 맡겨 온 일 가운데 사실은 고르기였던 것은 얼마였나, 그중 옮겨도 되는 것과 옮기면 안 되는 것의 경계는 어디인가. 판정 단가가 100분의 1이 되면 판정은 줄지 않고 늘어난다. 늘어난 판정 기록의 품질은 그때부터 누가 보는가.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">67.8% vs 74.1%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">네 과제 평균 정확도, 제브와 최고 비교 모델</p>
+                            <p class="text-xs themeable-muted mt-1">같은 평가에서 6.3%p 뒤진다. 그 평가의 정답지는 사람이 아니라 더 큰 모델 두 대가 만들었다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">17.3%p</p>
+                            <p class="text-sm themeable-text-secondary mt-1">가장 크게 벌어진 과제별 격차</p>
+                            <p class="text-xs themeable-muted mt-1">인보이스 처리에서의 열세다. 반대로 고객 응대에서는 제브가 오퍼스 5보다 3.6%p 높다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">약 440분의 1</p>
+                            <p class="text-sm themeable-text-secondary mt-1">건당 값, 오퍼스 5와 견준 비</p>
+                            <p class="text-xs themeable-muted mt-1">회사 평가표에서 네 과제를 집계한 값끼리 나눈 것. 비교 대상을 바꾸면 86분의 1까지 줄어든다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">100만 토큰에 $0.042</p>
+                            <p class="text-sm themeable-text-secondary mt-1">입력 단가, 출력은 과금 대상이 없음</p>
+                            <p class="text-xs themeable-muted mt-1">정답지를 만든 두 모델의 입력가는 $10이다. 238배가 교사와 학생 사이에 놓여 있다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">문장을 만들지 않는 모델은 무엇을 돌려주는가</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        생성형 모델에게 우리가 시키는 일은 겉으로는 다 말하기처럼 보인다. 하지만 파이프라인 안에서 실제로 벌어지는 일을 들여다보면 상당수는 말하기가 아니다. 이 메일이 스팸인가, 이 티켓은 어느 팀으로 가야 하는가, 이 에이전트의 행동을 사람에게 올려야 하는가. 답이 미리 정해진 몇 개의 칸 가운데 하나를 고르는 일이고, 우리는 그 고르기를 문장 생성기에게 시켜 왔다. 2026년 9월 15일에 공개된 제브는 그 고르기만 하는 모델이다. 회사 설명에 따르면 이 모델은 문장을 쓰지 못하고, 코드를 짜지 못하며, 대화를 이어 가지 못한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        대신 돌려주는 것이 세 가지다. 객관식 답인 초이스, 등급인 스코어, 예·아니오인 노울. 세 가지 모두 답 하나에 확률이 붙어서 나온다. 회사가 내세우는 차별점도 속도나 값이 아니라 이 확률 쪽이다. 사람의 선호에 맞추는 대신 판단의 확률을 맞추도록 학습시켰다는 주장이고, 기법에 붙인 이름은 보정된 결정을 위한 강화학습, 줄여서 RLCD다. 사람이 읽을 답을 만드는 것과 프로그램이 분기할 답을 만드는 것은 다른 일이라는 것이 회사의 설계 철학이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>세 가지 답, 그리고 숫자로 붙는 확신</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        출력 원형 세 가지는 프로그램이 곧바로 분기할 수 있는 형태로 설계돼 있다. 아래 표가 각각이 무엇을 받아 무엇을 내놓는지를 정리한 것이다. 확률이 함께 나온다는 점이 이 표의 마지막 열이고, 이 리포트가 4절에서 가장 길게 다룰 대목이기도 하다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">출력 원형</th>
+                                    <th class="text-left">돌려주는 값</th>
+                                    <th class="text-left">쓰이는 자리</th>
+                                    <th class="text-left">함께 붙는 것</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><strong>초이스</strong>(Choice)</td><td>주어진 선택지 가운데 하나</td><td>티켓 분류, 라우팅, 의도 판별</td><td>선택지별 확률</td></tr>
+                                <tr><td><strong>스코어</strong>(Score)</td><td>미리 정한 등급 하나</td><td>품질 점수, 위험 등급, 우선순위</td><td>등급별 확률</td></tr>
+                                <tr><td><strong>노울</strong>(Noul)</td><td>예 또는 아니오</td><td>규칙 위반 여부, 조건 충족 여부</td><td>참일 확률</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">타입세이프가 공개한 출력 원형 세 가지. 셋 다 답의 집합이 호출하는 쪽에서 미리 정해진다. 값은 100만 토큰에 $0.042이고, 출력에는 과금 항목 자체가 없다. 회사 문서의 표기는 "FREE (too cheap to meter)"다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        출력이 무료라는 표기가 마케팅 문구처럼 읽히지만, 구조를 보면 과금할 대상이 없다는 뜻에 가깝다. 생성형 모델은 답을 한 토큰씩 차례로 만들어 낸다. 앞 토큰이 나와야 다음 토큰을 계산할 수 있어서, 답이 길어질수록 지연도 비용도 같이 늘어난다. 고르기만 하는 모델에는 그 순차 생성이 없다. 답의 후보가 이미 정해져 있으니 후보들 위에 확률을 배분하면 끝이고, 그래서 지연이 답의 길이가 아니라 입력의 길이에만 좌우된다. 다만 회사는 모델 구조와 학습 방법을 공개하지 않았다. 여기까지는 고르기 전용 설계 일반이 갖는 성질이지, 이 제품의 내부를 확인한 서술이 아니다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.2</span>선택지 밖으로 나가지 않는다는 것</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이런 설계가 주는 확실한 이득이 하나 있다. 출력 형식이 깨지지 않는다. 생성형 모델에 분류를 맡겨 본 팀이라면 답 대신 사과문이 돌아오거나, JSON을 요청했는데 설명이 앞에 붙어 오거나, 없는 카테고리 이름이 튀어나오는 상황을 겪어 봤을 것이다. 고르기 전용 모델에서는 그런 일이 원리적으로 일어나지 않는다. 고를 수 있는 것이 선택지 안에만 있기 때문이다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            여기서 두 문장을 갈라 둬야 한다. 선택지 밖을 고르지 않는다는 것은 형식의 보장이고, 옳은 선택지를 고른다는 것은 내용의 보장이다. 앞의 것이 참이어도 뒤의 것은 따라 나오지 않는다. 이 리포트가 3절과 4절에서 재는 것이 바로 뒤의 것이다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        내용 쪽 성적이 나쁘기만 한 것도 아니다. 벤더가 만들지 않은 독립 평가 하나는 400문항짜리 자체 벤치마크에서 제브의 제로샷 정확도를 95.9%로 보고했다. 같은 과제를 사람이 손으로 짠 키워드 규칙은 77.2%, 모든 라벨을 학습한 TF-IDF 로지스틱 회귀는 66.0%였다. 좁게 정의된 과제에서는 학습 데이터를 한 줄도 주지 않은 상태로 지도학습 분류기를 앞선다는 뜻이다. 다만 같은 평가가 정반대 방향의 결과도 함께 내놓았고, 그 대목은 4절에서 다룬다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.3</span>새로운 범주인가, 오래된 일의 새 포장인가</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공개 직후 가장 날카로운 반응은 성능이 아니라 범주에 관한 것이었다. 모델 평가 플랫폼 아레나의 최고경영자 아나스타시오스 안젤로풀로스가 파이낸셜타임스에 남긴 말이 대표적이다.
+                    </p>
+                    <blockquote class="themeable-card rounded-xl p-5 mb-6" style="border-left: 4px solid #F86825;">
+                        <p class="themeable-text leading-relaxed">"It's unclear to me what makes these models different from standard 'zero-shot classifiers', which are relatively well-known technology."</p>
+                        <p class="fig-caption">아나스타시오스 안젤로풀로스(아레나 최고경영자), 파이낸셜타임스 2026년 9월 25일자. 이 인용은 유료 구독 기사에서 나왔고 이 리포트는 미러를 거쳐 확인했다. 국내에서는 AI타임스가 9월 26일 같은 취지의 문제 제기를 전했다.</p>
+                    </blockquote>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        사실관계만 놓고 보면 이 지적은 틀리지 않았다. 문장을 만들지 않고 라벨만 붙이는 도구는 이미 여러 곳에 있다. 아래 표가 지금 쓸 수 있는 것들이다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">이미 있는 것</th>
+                                    <th class="text-left">제공사</th>
+                                    <th class="text-left">값과 조건</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>제로샷 분류 파이프라인(bart-large-mnli 계열)</td><td>허깅페이스</td><td>오픈소스. 직접 돌리면 연산비만 든다</td></tr>
+                                <tr><td>리랭크 4 프로 / 패스트 / v3.5</td><td>코히어</td><td>문서 수와 무관하게 검색당 $0.001~$0.0025</td></tr>
+                                <tr><td>모더레이션 API와 실드스트랄</td><td>미스트랄</td><td>모더레이션 100만 토큰에 $0.10. 실드스트랄은 규칙을 자연어 예·아니오 질문으로 표현한다</td></tr>
+                                <tr><td>라야 / 비스포크 님블 / 케브</td><td>각각 다른 스타트업과 오픈모델</td><td>제브 공개 이후 같은 자리에 들어온 경쟁 모델들. 케브는 제브 구조를 역설계하려는 시도다</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">고르기 전용 도구의 경쟁 지형. 미스트랄의 실드스트랄은 고정된 유해성 분류 체계를 다시 학습시키는 대신 규칙을 자연어 질문으로 표현하게 한다는 점에서 제브의 노울과 사상이 가깝다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        반대편 주장도 같은 사실 위에 서 있다. 여러 형태의 구조화된 답을 한 번에 내놓는 것, 여러 질문을 동시에 던져 병렬로 판정하는 것, 그리고 정확도가 아니라 확률의 보정을 목표로 학습시키는 것을 하나의 상품으로 묶은 적은 없었다는 반론이다. 해커뉴스 공개 스레드에서 가장 많은 추천을 받은 비판이 "프런티어 모델이라 부르는 것은 얻지 않은 신뢰를 빌리는 일"이었던 반면, 같은 스레드에는 "표현은 마케팅이지만 정확한 마케팅이다. 제브는 반사 신경이고, 숙고는 당신의 코드나 진짜 LLM이 맡으라는 뜻"이라는 응답도 달렸다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 리포트는 새로운 범주인가라는 물음에 대신 답하지 않는다. 같은 사실을 놓고 업계가 갈렸다는 것을 그대로 적어 두고, 판단의 기준을 5절에서 독자의 파이프라인 쪽으로 옮긴다. 값과 정확도를 먼저 정확하게 재 놓지 않으면 그 판단 자체가 성립하지 않기 때문에, 순서상 2절과 3절이 먼저다.
+                    </p>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">싸다는 말 한 문장에 분모가 둘</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 사건을 전한 문서들이 쓴 표현을 모아 보면 이렇다. 건당 86배, 171배, 400분의 1, 444.6배, 4.8배에서 238배, 580배. 전부 같은 모델을 두고 같은 주에 나온 값이다. 서로 모순되는 것은 아니다. 다만 무엇을 무엇으로 나눈 값인지가 매번 다르다. 배수의 크기를 정하는 것은 제브가 아니라 비교 대상이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 이 리포트는 값을 말하는 모든 문장에 분자와 분모를 함께 적는다. 아래 표가 지금 공개된 배수들을 그렇게 다시 적은 것이다. 같은 줄에서 무엇이 비교 대상이었는지를 보면, 숫자가 스무 배 넘게 벌어지는 이유가 모델의 성질이 아니라 비교의 설계에 있다는 것이 보인다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">배수</th>
+                                    <th class="text-left">무엇을</th>
+                                    <th class="text-left">무엇으로 나눴나</th>
+                                    <th class="text-left">누가 낸 값인가</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="num"><strong>4.8배</strong></td><td>입력 100만 토큰 단가 $0.20</td><td>제브 입력 단가 $0.042</td><td>가장 싼 소형 모델과의 비교. 출력 과금 차이는 빠져 있다</td></tr>
+                                <tr><td class="num"><strong>85.7배</strong></td><td>테라 건당 $0.06</td><td>제브 건당 $0.0007</td><td>더배치 372호가 인용한 값</td></tr>
+                                <tr><td class="num"><strong>171.4배</strong></td><td>소네트 5 건당 $0.12</td><td>제브 건당 $0.0007</td><td>같은 기사, 비교 대상만 바뀐 값</td></tr>
+                                <tr><td class="num"><strong>238배</strong></td><td>정답지를 만든 모델의 입력 단가 $10</td><td>제브 입력 단가 $0.042</td><td>회사가 직접 홈페이지에 적은 값</td></tr>
+                                <tr><td class="num hit"><strong>약 440배</strong></td><td>오퍼스 5 건당 $0.1761</td><td>제브 건당 $0.0004</td><td>회사 평가표의 네 과제 집계값을 이 리포트가 나눈 것</td></tr>
+                                <tr><td class="num"><strong>약 580배</strong></td><td>페이블 5.1로 문단 하나를 검사한 값</td><td>제브로 같은 문단을 검사한 값</td><td>독립 평가자가 문단 12개로 잰 값</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">같은 사건을 두고 공개된 배수 여섯 가지. 가장 작은 값과 가장 큰 값의 차이가 120배다. 어느 것도 계산이 틀리지 않았고, 다만 분모가 다르다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>회사 평가표를 그대로 나눠 보면</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 단단한 근거는 회사가 직접 공개한 워크플로 평가표다. 네 가지 업무를 놓고 아홉 개 모델을 돌린 뒤 건당 비용과 지연과 정확도를 한 화면에 적어 둔 자료이고, 과제별 값과 집계값이 산술로 맞물리는 것까지 확인된다. 제브의 과제별 비용 $0.0001, $0.0003, $0.0011, $0.0001을 평균하면 집계값 $0.0004가 그대로 나오고, 오퍼스 5도 같은 방식으로 맞아떨어진다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">모델</th>
+                                    <th class="num">건당 비용</th>
+                                    <th class="num">지연</th>
+                                    <th class="num">네 과제 평균 정확도</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><strong>제브</strong></td><td class="num hit">$0.0004</td><td class="num hit">0.4초</td><td class="num">67.8%</td></tr>
+                                <tr><td>GPT-5.6 테라</td><td class="num">$0.0304</td><td class="num">10.1초</td><td class="num">67.9%</td></tr>
+                                <tr><td>GPT-5.6 솔</td><td class="num">$0.0836</td><td class="num">23.3초</td><td class="num hit">74.1%</td></tr>
+                                <tr><td>클로드 소네트 5</td><td class="num">$0.1174</td><td class="num hit">78.1초</td><td class="num">67.8%</td></tr>
+                                <tr><td>클로드 오퍼스 5</td><td class="num hit">$0.1761</td><td class="num">37.8초</td><td class="num">73.1%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">회사가 공개한 워크플로 평가의 집계값. 주황색으로 표시한 칸이 각 열의 극단이다. 가장 비싼 모델과 가장 느린 모델이 서로 다르다는 점이 아래 도식의 출발점이다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>한 문장 안에서 비교 대상이 갈린다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        회사 홈페이지의 헤드라인은 두 숫자를 나란히 건다. 193.6배 빠르고 444.6배 싸다는 것이다. 그런데 이 두 숫자가 무엇과 견준 값인지는 회사 문서 어디에도 문장으로 적혀 있지 않다. 위 집계표로 되짚어 보면 비용 쪽 배수는 가장 비싼 모델에, 지연 쪽 배수는 가장 느린 모델에 각각 들어맞는다. 두 잔차가 모두 1% 안쪽이고 방향도 같아서, 표시값의 반올림으로 설명되는 범위다.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 700 300" width="100%" role="img" aria-label="헤드라인 두 숫자가 서로 다른 비교 모델을 가리키는 구조를 보여 주는 도식">
+                            <rect x="180" y="10" width="340" height="44" rx="6" fill="#171719"/>
+                            <text x="350" y="38" font-size="15" font-weight="700" fill="#ffffff" text-anchor="middle">"193.6x Faster, 444.6x Cheaper"</text>
+                            <text x="350" y="70" font-size="11.5" fill="var(--text-muted)" text-anchor="middle">회사 홈페이지 헤드라인 한 줄. 비교 대상은 적혀 있지 않다</text>
+
+                            <path d="M 300 82 L 170 120" stroke="#F86825" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+                            <path d="M 400 82 L 530 120" stroke="#F86825" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+                            <defs>
+                                <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L7,3 z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+
+                            <rect x="30" y="126" width="290" height="120" rx="8" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="50" y="152" font-size="13" font-weight="700" fill="#F86825">444.6배 싸다</text>
+                            <text x="50" y="176" font-size="12" fill="var(--text-secondary)">$0.1761 ÷ $0.0004 = 440.3배</text>
+                            <text x="50" y="198" font-size="12" fill="var(--text-secondary)">분모로 맞는 것: 클로드 오퍼스 5</text>
+                            <text x="50" y="222" font-size="11.5" fill="var(--text-muted)">네 과제에서 가장 비싼 모델</text>
+
+                            <rect x="380" y="126" width="290" height="120" rx="8" fill="none" stroke="#585858" stroke-width="1.5"/>
+                            <text x="400" y="152" font-size="13" font-weight="700" fill="var(--text-secondary)">193.6배 빠르다</text>
+                            <text x="400" y="176" font-size="12" fill="var(--text-secondary)">78.1초 ÷ 0.4초 = 195.3배</text>
+                            <text x="400" y="198" font-size="12" fill="var(--text-secondary)">분모로 맞는 것: 클로드 소네트 5</text>
+                            <text x="400" y="222" font-size="11.5" fill="var(--text-muted)">네 과제에서 가장 느린 모델</text>
+
+                            <text x="350" y="278" font-size="12" fill="var(--text-muted)" text-anchor="middle">같은 한 줄에 실린 두 숫자가 서로 다른 모델을 가리킨다</text>
+                        </svg>
+                        <p class="fig-caption">회사가 공개한 집계값으로 역산한 결과다. 회사가 두 배수의 비교 대상을 밝힌 적은 없으므로, 이 그림은 확정된 사실이 아니라 가장 잘 맞는 해석이다. 소수점까지 단정할 근거는 없다.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        회사를 몰아세우자는 이야기는 아니다. 오히려 같은 글에서 회사 스스로 이 숫자의 성격을 적어 두었다.
+                    </p>
+                    <blockquote class="themeable-card rounded-xl p-5 mb-6" style="border-left: 4px solid #F86825;">
+                        <p class="themeable-text leading-relaxed">"This is where the claims of 193.6x faster, 444.6x cheaper on our home page comes from, and we expect that these are on the higher end of real world gains."</p>
+                        <p class="fig-caption">타입세이프 공식 블로그, 2026년 9월 15일. 헤드라인 배수가 실제 이득의 상단이라는 것을 회사가 직접 적었다.</p>
+                    </blockquote>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        상단이라고 적어 둔 값이 홈페이지 첫 화면에 걸리고, 그 값이 기사로 옮겨 가면서 상단이라는 단서는 떨어져 나간다. 이 리포트가 배수마다 분모를 붙여 적는 이유가 그것이다. 값을 부풀리는 일은 대개 없는 숫자를 만들어서가 아니라 있는 숫자에서 조건을 떼어 내면서 일어난다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.3</span>같은 값이 문서마다 다르고, 어긋남이 고르지 않다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더배치 372호가 인용한 건당 비용과 회사 대시보드의 집계값을 나란히 놓으면 세 번째 문제가 나온다. 두 문서의 값이 다른데, 다른 정도가 항목마다 같지 않다. 단위가 다르거나 일괄 반올림이 있었다면 세 값이 같은 방향으로 같은 비율만큼 어긋나야 한다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">건당 비용</th>
+                                    <th class="num">더배치 372호</th>
+                                    <th class="num">회사 대시보드</th>
+                                    <th class="num">비</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>클로드 소네트 5</td><td class="num">$0.12</td><td class="num">$0.1174</td><td class="num">1.02배</td></tr>
+                                <tr><td>GPT-5.6 테라</td><td class="num">$0.06</td><td class="num">$0.0304</td><td class="num hit">1.97배</td></tr>
+                                <tr><td>제브</td><td class="num">$0.0007</td><td class="num">$0.0004</td><td class="num hit">1.75배</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">소네트만 사실상 일치하고 나머지 둘이 두 배 가까이 어긋난다. 두 문서 어디에도 이 세 값을 잇는 산식이 없다.</p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 리포트의 본문 수치는 회사 대시보드 쪽으로 통일한다. 원자료에 더 가깝고 과제별 값과 집계값이 서로 맞물리는 것이 확인되기 때문이다. 더배치의 값은 매체가 인용한 값이 달랐다는 사실로만 병기한다. 어느 쪽이 틀렸다고 판정하지 않는 이유는, 판정할 근거가 두 문서 어디에도 공개돼 있지 않기 때문이다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실무자에게 이 대목이 갖는 뜻은 분명하다. 벤더 발표든 매체 인용이든, 도입 검토서에 옮겨 적을 때는 그 값이 어느 문서의 몇 월 며칠 판본에서 왔는지를 함께 적어야 한다. 두 달 뒤 같은 표를 다시 열었을 때 숫자가 달라져 있어도, 출처와 시점이 함께 적혀 있으면 그것은 사고가 아니라 갱신이 된다.
+                    </p>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">67.8%는 무엇에 대한 일치율인가</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        속보에 가장 많이 실린 문장은 값이 아니라 정확도였다. 자체 데이터셋에서 67%를 내며 큰 모델들과 맞먹는다는 것이다. 이 문장에는 두 가지가 생략돼 있다. 하나는 그 67%가 무엇과 맞춘 값인가이고, 다른 하나는 맞먹는다고 할 때의 상대가 누구인가다. 둘 다 회사가 공개한 자료 안에 답이 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        먼저 정답지 쪽이다. 이 평가에서 무엇이 정답인지를 정한 것은 사람이 아니다. 더 큰 모델 두 대의 평균 판정이 정답 자리에 들어갔고, 회사는 그 사실과 그에 따른 편향까지 자기 글에 적어 두었다.
+                    </p>
+                    <blockquote class="themeable-card rounded-xl p-5 mb-6" style="border-left: 4px solid #F86825;">
+                        <p class="themeable-text leading-relaxed mb-3">"We use the average of GPT-6 Astra and Fable 5.1 as the reference answer, which biases answers towards OpenAI and Anthropic's models."</p>
+                        <p class="themeable-text leading-relaxed">"However, they were made by individuals on our model capabilities team, so some bias could exist."</p>
+                        <p class="fig-caption">타입세이프 공식 블로그. 앞 문장은 정답지를 만든 방식과 그것이 특정 벤더 쪽으로 답을 치우치게 한다는 인정이고, 뒤 문장은 평가 과제 자체를 자사 팀이 만들었다는 인정이다. 2절에 인용한 "실제 이득의 상단" 문장까지 포함해 세 문장이 같은 글에 있다.</p>
+                    </blockquote>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정리하면 이 평가에서 말하는 정확도는 사람이 매긴 정답과의 일치율이 아니라 더 큰 모델 두 대의 평균 판정과의 일치율이다. 그러니 67.8%라는 값은 제브가 얼마나 옳게 고르는지를 잰 값이 아니라, 제브가 그 두 모델처럼 고르는 정도를 잰 값에 가깝다. 두 모델이 함께 틀린 문항에서 제브가 옳게 골랐다면, 그 문항은 이 표에서 오답으로 적힌다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>정답을 정한 두 모델이 가격표 맨 위에 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정답지를 만든 두 모델이 어디쯤 있는 모델인지는 가격표가 알려 준다. 2026년 9월 기준 단가를 나란히 놓으면 두 모델이 최상단이고, 채점당하는 아홉 모델은 그 아래에 있다. 회사가 직접 내건 238배라는 입력가 배수의 분모가 바로 이 교사 모델 가격이다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">모델</th>
+                                    <th class="num">입력 100만 토큰</th>
+                                    <th class="num">출력 100만 토큰</th>
+                                    <th class="text-left">이 평가에서의 자리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>GPT-6 아스트라</td><td class="num hit">$10.00</td><td class="num hit">$50.00</td><td>정답지를 만든 쪽</td></tr>
+                                <tr><td>클로드 페이블 5.1</td><td class="num hit">$10.00</td><td class="num hit">$50.00</td><td>정답지를 만든 쪽</td></tr>
+                                <tr><td>GPT-5.6 솔</td><td class="num">$5.00</td><td class="num">$30.00</td><td>채점당하는 쪽. 네 과제 평균 1위</td></tr>
+                                <tr><td>클로드 오퍼스 5</td><td class="num">$5.00</td><td class="num">$25.00</td><td>채점당하는 쪽. 9월 22일 오퍼스 5.5로 교체되며 $4/$20으로 내렸다</td></tr>
+                                <tr><td>GPT-5.6 테라 / 클로드 소네트 5</td><td class="num">$2.00</td><td class="num">$12.00 / $10.00</td><td>맞먹는다고 언급된 상대</td></tr>
+                                <tr><td>GPT-5.6 루나</td><td class="num">$0.20</td><td class="num">$1.20</td><td>채점당하는 쪽. 가장 싼 비교 모델</td></tr>
+                                <tr><td><strong>제브</strong></td><td class="num hit">$0.042</td><td class="num hit">과금 없음</td><td>채점당하는 쪽</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">2026년 9월 기준 단가. 벤치마크 시점은 9월 15일이므로 오퍼스는 인하 전 가격으로 적었다. 가장 비싼 두 모델이 정답을 정하고, 그 정답에 67.8%로 맞춘 모델이 입력가로는 238배 싸다는 구도가 한 표 안에 들어온다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>맞먹는다고 할 때의 상대는 누구인가</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 번째 생략은 비교 대상이다. 네 과제 평균으로 보면 제브는 67.8%이고, 소네트 5가 정확히 같은 67.8%, 테라가 67.9%다. 맞먹는다는 서술은 총합 기준으로는 사실이다. 문제는 그 둘이 이 평가에서 프런티어 하위권이라는 점이다. 같은 표의 맨 위에는 솔 74.1%와 오퍼스 5 73.1%가 있다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">과제</th>
+                                    <th class="num">제브</th>
+                                    <th class="num">오퍼스 5</th>
+                                    <th class="num">소네트 5</th>
+                                    <th class="num">솔</th>
+                                    <th class="num">테라</th>
+                                    <th class="num">하이쿠 4.5</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>보안 사고 대응</td><td class="num">61.7</td><td class="num hit">66.2</td><td class="num">60.8</td><td class="num">62.5</td><td class="num">51.2</td><td class="num">58.8</td></tr>
+                                <tr><td>에이전트 추적 관찰</td><td class="num">71.6</td><td class="num">75.2</td><td class="num">68.0</td><td class="num hit">76.6</td><td class="num">73.0</td><td class="num">57.2</td></tr>
+                                <tr><td>인보이스 처리</td><td class="num low">61.8</td><td class="num">78.4</td><td class="num">72.9</td><td class="num hit">79.1</td><td class="num">74.7</td><td class="num">42.9</td></tr>
+                                <tr><td>고객 응대</td><td class="num">76.0</td><td class="num">72.4</td><td class="num">69.3</td><td class="num hit">78.3</td><td class="num">72.7</td><td class="num">55.4</td></tr>
+                                <tr><td><strong>네 과제 평균</strong></td><td class="num"><strong>67.8</strong></td><td class="num">73.1</td><td class="num">67.8</td><td class="num hit">74.1</td><td class="num">67.9</td><td class="num">—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">회사 평가표에서 옮긴 과제별 정확도. 단위는 %. 주황색은 각 행의 1위다. 표에는 딥시크 v4 계열과 루나를 포함해 아홉 모델이 있으나, 여기서는 본문에서 다루는 여섯만 실었다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 표를 과제 단위로 다시 보면 평균이 가리던 것이 드러난다. 격차가 과제마다 전혀 다르고, 한 과제에서는 방향이 뒤집힌다. 아래 그림이 제브와 각 과제 1위 모델을 나란히 놓은 것이다.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 700 320" width="100%" role="img" aria-label="네 과제에서 제브와 각 과제 1위 모델의 정확도를 비교한 막대그래프">
+                            <line x1="50" y1="270" x2="670" y2="270" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="50" y1="50" x2="50" y2="270" stroke="var(--text-muted)" stroke-width="1"/>
+                            <text x="30" y="274" font-size="11" fill="var(--text-muted)" text-anchor="end">0</text>
+                            <text x="30" y="164" font-size="11" fill="var(--text-muted)" text-anchor="end">50</text>
+                            <text x="30" y="54" font-size="11" fill="var(--text-muted)" text-anchor="end">100</text>
+
+                            <rect x="80" y="134.3" width="30" height="135.7" fill="#F86825"/>
+                            <rect x="114" y="124.4" width="30" height="145.6" fill="#808080"/>
+                            <text x="95" y="128" font-size="11" fill="var(--text-secondary)" text-anchor="middle">61.7</text>
+                            <text x="129" y="118" font-size="11" fill="var(--text-secondary)" text-anchor="middle">66.2</text>
+                            <text x="112" y="288" font-size="12" fill="var(--text-secondary)" text-anchor="middle">보안 사고 대응</text>
+                            <text x="112" y="305" font-size="11" fill="var(--text-muted)" text-anchor="middle">4.5%p 뒤진다</text>
+
+                            <rect x="230" y="112.5" width="30" height="157.5" fill="#F86825"/>
+                            <rect x="264" y="101.5" width="30" height="168.5" fill="#808080"/>
+                            <text x="245" y="106" font-size="11" fill="var(--text-secondary)" text-anchor="middle">71.6</text>
+                            <text x="279" y="95" font-size="11" fill="var(--text-secondary)" text-anchor="middle">76.6</text>
+                            <text x="262" y="288" font-size="12" fill="var(--text-secondary)" text-anchor="middle">에이전트 추적</text>
+                            <text x="262" y="305" font-size="11" fill="var(--text-muted)" text-anchor="middle">5.0%p 뒤진다</text>
+
+                            <rect x="380" y="134.0" width="30" height="136.0" fill="#F86825"/>
+                            <rect x="414" y="96.0" width="30" height="174.0" fill="#808080"/>
+                            <text x="395" y="128" font-size="11" fill="var(--text-secondary)" text-anchor="middle">61.8</text>
+                            <text x="429" y="90" font-size="11" fill="var(--text-secondary)" text-anchor="middle">79.1</text>
+                            <text x="412" y="288" font-size="12" fill="var(--text-secondary)" text-anchor="middle">인보이스 처리</text>
+                            <text x="412" y="305" font-size="11" fill="#F86825" text-anchor="middle">17.3%p 뒤진다</text>
+
+                            <rect x="530" y="102.8" width="30" height="167.2" fill="#F86825"/>
+                            <rect x="564" y="97.7" width="30" height="172.3" fill="#808080"/>
+                            <text x="545" y="96" font-size="11" fill="var(--text-secondary)" text-anchor="middle">76.0</text>
+                            <text x="579" y="91" font-size="11" fill="var(--text-secondary)" text-anchor="middle">78.3</text>
+                            <text x="562" y="288" font-size="12" fill="var(--text-secondary)" text-anchor="middle">고객 응대</text>
+                            <text x="562" y="305" font-size="11" fill="var(--text-muted)" text-anchor="middle">2.3%p 뒤진다</text>
+
+                            <rect x="470" y="20" width="14" height="14" fill="#F86825"/>
+                            <text x="492" y="32" font-size="12" fill="var(--text-secondary)">제브</text>
+                            <rect x="540" y="20" width="14" height="14" fill="#808080"/>
+                            <text x="562" y="32" font-size="12" fill="var(--text-secondary)">각 과제 1위 모델</text>
+                        </svg>
+                        <p class="fig-caption">과제마다 1위 모델이 다르다. 보안 사고 대응은 오퍼스 5, 나머지 셋은 솔이다. 고객 응대에서 제브 76.0%는 1위에 2.3%p 못 미치지만 오퍼스 5(72.4%)와 소네트 5(69.3%)보다는 높다. 네 과제 모두에서 졌다는 요약은 총합 순위에서는 맞고 과제 단위에서는 틀린다.</p>
+                    </div>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            2.3%p와 17.3%p를 한 줄에 놓고 보면, 이 모델을 쓸 것인가라는 물음의 단위가 잘못돼 있다는 것이 드러난다. 판단의 단위는 모델이 아니라 과제다. 어느 업무에서는 프런티어 모델보다 나은 값이 나오고, 어느 업무에서는 열에 둘 가까이가 갈린다. 5절의 판단표가 이 사실 위에 세워진다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>모델이 정답을 정하면 무엇이 흔들리나</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델에게 채점을 맡기는 설계는 이 제품이 처음 한 일이 아니고, 그 설계가 무엇을 흔드는지는 문헌에 이름이 붙어 있다. 대표 참조인 2023년 MT-Bench 연구는 강한 심판 모델이 사람들 사이의 일치도와 비슷한 수준을 낸다는 것을 보이면서, 동시에 세 가지 편향을 함께 보고했다. 후보 답의 순서에 흔들리는 위치 편향, 긴 답을 선호하는 장황함 편향, 그리고 자기 계열에서 나온 답에 후한 점수를 주는 자기선호 편향이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        자기선호 쪽은 이후 별도 연구 주제가 됐다. 2024년 이후 발표된 연구들은 심판이 자기가 쓴 답을 더 높게 평가하는 경향을 측정하면서, 그것이 정말 선호인지 아니면 그 답이 실제로 좋아서인지를 갈라내는 일 자체가 이 분야의 방법론적 난제라고 적는다. 2024년 말에 나온 종합 서베이는 권위 편향, 다수 의견 동조, 익명화 여부에 따른 판정 변화 등을 포함해 편향 목록을 더 길게 늘린다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 문헌이 이 리포트의 자리에서 뜻하는 바는 하나다. 정답지가 오픈AI와 앤스로픽 모델의 평균이라면, 그 정답지에 가까운 답을 내는 모델이 높은 점수를 받는다. 회사가 인정한 편향이 바로 이것이고, 그러니 이 표는 어느 모델이 옳은가의 순위표가 아니라 어느 모델이 그 두 모델과 비슷하게 판단하는가의 순위표로 읽어야 한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        학생이 교사를 넘을 수 있느냐는 물음도 함께 따라온다. 약한 교사가 만든 라벨로 배운 강한 학생이 교사를 앞서는 현상은 2023년 이후 약한 것에서 강한 것으로의 일반화라는 이름으로 보고돼 왔다. 다만 2026년까지 쌓인 후속 연구는 조건을 붙인다. 증류 규모를 다룬 연구는 그 초과 성능이 학습 데이터가 유한한 구간에서만 나타나고, 데이터를 충분히 늘리면 학생의 손실이 다시 올라가 결국 교사 수준에 수렴한다고 보고한다. 교사의 정책을 그대로 모방 목표로 두면 교사의 한계가 학생의 천장이 된다는 지적도 같은 방향이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 67.8%라는 값이 모델의 천장인지 정답지의 천장인지는, 회사가 공개한 자료만으로는 갈리지 않는다. 갈리게 하려면 사람이 매긴 정답으로 같은 네 과제를 다시 채점해 봐야 한다. 그 실험은 아직 공개된 적이 없다.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            확인하지 못한 것을 적어 둔다. 9월 27일에 회사 블로그를 직접 열었을 때 페이지 메타데이터가 9월 26일을 마지막 수정 시각으로 반환했다. 공개일은 여러 1차 자료가 9월 15일로 일치한다. 위에 인용한 편향 인정 문단이 최초 게시본부터 있었는지, 비판이 몰린 뒤에 추가됐는지는 확인하지 못했다. 이 리포트는 공개일을 9월 15일로 적되 이 점을 유보로 남긴다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">확률을 함께 준다는 약속의 조건</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        회사가 내세우는 주장 가운데 값보다 앞에 놓인 것이 있다. 답에 확률이 붙어 나온다는 것이다. 이 약속이 지켜지면 호출하는 쪽 코드가 짧아진다. 확신이 0.95를 넘으면 자동으로 처리하고, 그 아래면 사람 대기열로 보내면 된다. 사람 검수를 전수에서 일부로 줄이는 일이 임계값 한 줄로 끝난다는 뜻이고, 판정 업무를 옮기려는 조직에 실제로 값을 만드는 부분은 단가보다 이쪽이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 이 절이 묻는 것은 하나다. 확률을 내놓는 것과 그 확률이 맞는 것은 다른 문제인데, 이 모델의 확률은 어디까지 맞는가.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>확률이 맞는다는 말에는 이미 이름이 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        확률이 맞는다는 것을 재는 표준 지표가 보정 오차다. 확신 0.9로 답한 문항들을 모아 그중 실제로 맞은 비율을 세는 식으로 구간마다 비교한 뒤, 그 어긋남을 평균한 값이다. 0.9로 답한 문항의 90%가 맞으면 보정이 잘된 것이고, 70%만 맞으면 그 모델은 과신하고 있다. 아래 세 갈래가 확률을 쓰는 방법에 대해 이미 쌓여 있는 문헌이다.
+                    </p>
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>선택적 예측</strong>. 확신이 낮은 문항을 기권하고 나머지만 답하는 설계다. 기권을 늘리면 답한 것들의 오류율은 내려가고 처리한 비율은 줄어든다. 이 맞바꿈을 그린 곡선을 위험 대 커버리지 곡선이라 부르고, 2017년 이후 심층 신경망 쪽 표준 도구로 자리 잡았다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>사람에게 넘기기</strong>. 기권한 문항을 허공에 버리지 않고 사람이나 다른 전문가에게 보내는 설계다. 2018년과 2020년 연구가 넘길지 말지를 판정하는 함수를 분류기와 함께 학습시키는 방법을 정식화했다. 제브를 쓰는 조직이 임계값 아래를 사람에게 보내겠다고 할 때, 그 설계의 학술적 이름이 이것이다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>컨포멀 예측</strong>. 하나의 답 대신 정답이 일정 확률로 들어 있는 답의 집합을 돌려주는 방법이다. 분포에 관한 가정 없이 보장을 준다는 점이 강점이고, 대신 그 보장은 새 데이터가 학습 때와 교환 가능하다는 조건 아래에서만 성립한다.</li>
+                    </ul>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기에 작은 아이러니가 하나 있다. 1절에서 이 모델이 기존 제로샷 분류기와 무엇이 다른지 모르겠다고 말한 아레나 최고경영자가, 컨포멀 예측의 표준 입문서를 쓴 연구자다. 불확실성을 보장과 함께 다루는 방법을 정리해 온 쪽에서 나온 회의론이라는 점은 그 발언의 무게를 조금 다르게 만든다. 확률을 준다는 것만으로는 새롭지 않고, 그 확률이 언제 맞는지를 밝혀야 새로운 것이 된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        확률이 언제 깨지는지에 대해서도 이미 교과서적인 답이 있다. 2019년의 대규모 비교 연구는 입력 분포가 학습 때와 달라질수록 정확도는 떨어지는데 확신은 그만큼 떨어지지 않아 보정 오차가 크게 벌어진다는 것을 여러 방법에 걸쳐 확인했다. 이 패턴이 이번에 제브에서도 그대로 재현됐는지가 아래 세 건의 독립 평가가 답한 질문이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>벤더가 만들지 않은 평가 세 건</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공개 열흘 안에 서로 다른 세 곳이 각자의 방법으로 이 모델을 시험했고, 셋 다 자료와 코드를 공개했다. 벤더가 설계하지 않은 평가라는 점에서 3절의 자체 평가표와 성격이 다르다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">평가</th>
+                                    <th class="text-left">규모와 방법</th>
+                                    <th class="text-left">가장 날카로운 수치</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>에브리의 문체 검사</td><td>문서 37개에 질문 21개를 동시에 던져 판정 777건</td><td>0.7초 미만, 약 4분의 1센트. 심어 둔 결함 7건 중 6건 포착</td></tr>
+                                <tr><td>프라이어벤치 사전등록 평가</td><td>예측 50개를 먼저 등록한 뒤 실험 21개, 호출 5,721건, 총 $0.176</td><td>제로샷 95.9%. 다만 질문 문구가 틀리면 16.7%</td></tr>
+                                <tr><td>분포 밖 보정 연구</td><td>모델이 본 적 없는 합성 티켓 900건에 공개 벤치마크 3,721항목</td><td>합성 구간 보정 오차 0.107, 노이즈 바닥의 4.4배</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">세 평가 모두 원문 저장소와 재현 코드가 공개돼 있다. 아래 서술의 수치는 각 원문에서 옮겼다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        첫 번째 평가는 속도와 값 쪽에서 회사 주장에 가장 가까운 결과를 냈다. 평가자가 자기 글 27편과 일부러 기계처럼 쓴 대조 글 10편에 각각 21개 문체 질문을 던졌더니 777건 판정이 0.7초 안에 끝났고 값은 4분의 1센트 남짓이었다. 같은 매체의 별도 실험에서는 문단 12개에 결함 6개를 심어 두고 제브와 페이블 5.1을 나란히 돌렸다. 페이블은 7건을 모두 잡았고 제브는 6건을 잡았다. 대신 문단당 중위 처리 시간이 0.35초 대 8.83초였고 값은 580배쯤 쌌다. 평가자 본인의 결론은 조기 경보 장치로는 잘 작동하지만 프로덕션에 넣기 전에는 더 철저한 정확도 점검을 원한다는 것이었다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 번째 평가는 데이터를 모으기 전에 예측 50개를 타임스탬프와 함께 등록해 두고 시작했다. 자기 예측이 틀린 것까지 그대로 공개하겠다는 설계이고, 실제로 21건이 반증됐으며 그중 18건이 같은 방향의 오류였다는 것까지 적어 두었다. 여기서 400문항짜리 자체 벤치마크의 95.9%가 나왔다. 그리고 같은 연구가 이 리포트에서 가장 무거운 수치도 함께 냈다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            판정 기준을 적는 문구를 아예 빼면 정확도가 0.8점 떨어지는 데 그쳤다. 그런데 그 문구를 틀리게 적으면 정확도가 16.7%로 주저앉았다. 그 과제에서 아무렇게나 찍었을 때의 기대값이 25%이니, 찍는 것보다 못한 결과다. 설명을 안 주는 것보다 잘못 주는 쪽이 훨씬 위험하다는 뜻이고, 이 모델에게는 질문 문구가 곧 프로그램이라는 뜻이기도 하다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 번째 평가가 확률 쪽을 정면으로 잰 연구다. 모델이 사전에 볼 수 없었던 규칙 기반 합성 티켓 900건과 공개 벤치마크 3,721항목을 함께 돌렸다. 공개 벤치마크 구간에서 보정 오차는 0.024에서 0.032 사이로 거의 문제가 없었다. 반면 합성 티켓 구간에서는 0.107이 나왔고, 이는 같은 실험에서 측정한 노이즈 바닥 0.024의 4.4배다. 분포 안에서는 확률이 정직하고 분포 밖에서는 무너진다는 뜻이다. 2019년 연구가 그린 패턴 그대로다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>모르는 것을 모른다고 하지 못한다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 연구에서 가장 실무적인 결과는 답이 원리적으로 티켓 안에 없는 문항들을 따로 모아 본 대목이다. 조직 내부 정책을 알아야만 답할 수 있어서 모델이 어떻게 해도 알 수 없는 질문들이다. 여기서 정확도는 44.7%였고, 그런데도 모델이 붙인 평균 확신은 0.74였다. 모른다는 신호를 내는 대신 꽤 확신에 찬 오답을 냈다는 뜻이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        임계값을 아주 높게 잡으면 어떻게 되는지도 같은 연구가 쟀다. 결과를 위험 대 커버리지의 언어로 옮기면 아래와 같다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">임계값을 0.99로 둘 때</th>
+                                    <th class="text-left">측정된 값</th>
+                                    <th class="text-left">운영에서의 뜻</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>그 구간의 정확도</td><td class="hit">100%</td><td>자동 처리해도 틀리지 않았다</td></tr>
+                                <tr><td>그 구간이 덮은 트래픽</td><td>60.2%</td><td>나머지 39.8%는 여전히 사람 몫으로 남는다</td></tr>
+                                <tr><td>범위 밖 메시지 30건 중 걸러진 것</td><td class="hit">0건</td><td>가장 걸러 내고 싶은 입력이 한 건도 걸리지 않았다</td></tr>
+                                <tr><td>모델이 돌려주는 확신 필드의 보정 오차</td><td>0.18</td><td>선택지 확률 최댓값을 쓰는 것보다 오히려 나빴다</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">분포 밖 보정 연구의 합성 티켓 구간 결과. 마지막 행은 모델이 별도로 제공하는 신뢰도 값이 선택지 확률의 최댓값보다 덜 정직했다는 뜻이다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 번째 행이 이 표의 핵심이다. 높은 임계값은 아는 것을 잘 거르지만 모르는 것을 거르지는 못한다. 확신이 높은 구간이 깨끗한 이유는 그 구간에 쉬운 문항이 모여서이지, 위험한 문항이 그 구간 밖으로 밀려났기 때문이 아니다. 진짜 걸러 내야 할 범위 밖 입력 서른 건은 임계값 어느 쪽에도 걸리지 않고 통과했다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정리하면 확률을 함께 준다는 약속은 확률이 언제나 정직하다는 뜻이 아니다. 알려진 상황에서만 정직할 수 있다는 훨씬 좁은 약속이다. 이 구분이 중요한 이유는, 판정 업무를 옮기려는 조직이 가장 먼저 줄이려는 것이 사람 검수이고, 그 검수를 줄이는 근거로 삼으려는 것이 바로 이 확률이기 때문이다. 줄여도 되는 구간과 줄이면 안 되는 구간을 가르는 기준은 임계값의 높이가 아니라 입력이 학습 분포 안에 있는지 여부다. 그리고 지금 운영 중인 파이프라인에서 그것을 재고 있는 조직은 드물다.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">옮겨도 되는 일, 법이 막아 둔 일</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지금까지 잰 것을 모으면 이렇게 된다. 값은 비교 대상에 따라 다섯 배에서 수백 배까지 싸고, 정확도는 과제에 따라 2.3%p에서 17.3%p까지 뒤지며, 확률은 분포 안에서만 정직하다. 이 셋을 놓고 실무자가 실제로 답해야 하는 질문은 하나다. 지금 우리 파이프라인에 깔려 있는 판정 호출 가운데 어느 것을 옮겨도 되는가.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        값부터 보면 답이 틀어진다. 먼저 봐야 할 것은 오답 한 건이 만드는 손해의 모양이다. 아래 표가 이 리포트가 제안하는 다섯 가지 물음이고, 왼쪽 열에 답이 많이 떨어질수록 옮겨도 되는 업무다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">물음</th>
+                                    <th class="text-left">옮겨도 되는 쪽</th>
+                                    <th class="text-left">옮기면 안 되는 쪽</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>오답 한 건의 비용이 대칭인가</td><td>대칭이다. 잘못 분류해도 다음 공정에서 걸러진다</td><td>비대칭이다. 한쪽 오답이 사람에게 손해로 남는다</td></tr>
+                                <tr><td>재시도가 가능한가</td><td>가능하다. 배치를 다시 돌리거나 사후에 정정할 수 있다</td><td>불가능하다. 한 번의 판정이 곧 통보다</td></tr>
+                                <tr><td>사람에게 넘길 경로가 있는가</td><td>있다. 확신이 낮으면 대기열로 보낸다</td><td>없다. 자동 통보로 절차가 끝난다</td></tr>
+                                <tr><td>판정 근거를 남겨야 하는가</td><td>내부 기록으로 충분하다</td><td>법이 당사자에게 설명을 요구한다</td></tr>
+                                <tr><td>입력이 학습 분포 안에 있는가</td><td>정형화된 반복 업무다</td><td>드문 사례가 중요한 업무다</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">판정 업무 이관 판단표. 앞의 세 물음은 운영 설계의 문제이고, 뒤의 두 물음은 이관 자체를 막는 조건에 가깝다. 4절에서 본 것처럼 마지막 행은 모델의 확률로 자동 판별되지 않는다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        스팸 분류, 티켓 라우팅, 로그 이상 신호 선별, 문서 태깅은 대체로 왼쪽 열에 모인다. 틀려도 다음 사람이 고칠 수 있고, 같은 입력을 다시 돌릴 수 있으며, 확신이 낮은 건을 쌓아 두었다가 사람이 훑어도 된다. 반대로 대출 거절, 채용 탈락, 보험 인수 거절, 계정 영구 정지는 네 물음이 전부 오른쪽으로 떨어진다. 한 번의 판정이 곧 통보이고, 그 통보를 받은 사람이 왜 그렇게 됐는지 물을 권리를 법이 이미 주고 있다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>지금 더 엄한 쪽은 유럽이 아니라 한국이다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        국내 기사들이 이 사건을 전하면서 규제를 언급할 때는 대개 유럽 인공지능법을 든다. 그런데 2026년 9월 기준으로 두 규제의 시제를 확인해 보면 순서가 뒤집혀 있다. 유럽은 아직 오지 않았고, 한국은 이미 지나갔다.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 700 230" width="100%" role="img" aria-label="한국과 유럽의 고영향·고위험 인공지능 의무 적용 시점을 비교한 시간 띠">
+                            <line x1="60" y1="120" x2="660" y2="120" stroke="var(--text-muted)" stroke-width="1.5"/>
+                            <text x="60" y="145" font-size="11" fill="var(--text-muted)" text-anchor="middle">2026.01</text>
+                            <text x="310" y="145" font-size="11" fill="var(--text-muted)" text-anchor="middle">2027.01</text>
+                            <text x="547" y="145" font-size="11" fill="var(--text-muted)" text-anchor="middle">2028.01</text>
+
+                            <circle cx="74" cy="120" r="7" fill="#F86825"/>
+                            <line x1="74" y1="113" x2="74" y2="70" stroke="#F86825" stroke-width="1.2"/>
+                            <text x="74" y="60" font-size="12.5" font-weight="700" fill="#F86825" text-anchor="middle">2026.01.22</text>
+                            <text x="74" y="43" font-size="11.5" fill="var(--text-secondary)" text-anchor="middle">한국 인공지능기본법 시행</text>
+                            <text x="74" y="27" font-size="11" fill="var(--text-muted)" text-anchor="middle">대출 심사는 고영향</text>
+
+                            <circle cx="196" cy="120" r="5" fill="#808080"/>
+                            <line x1="196" y1="127" x2="196" y2="168" stroke="#808080" stroke-width="1.2"/>
+                            <text x="196" y="184" font-size="12" fill="var(--text-secondary)" text-anchor="middle">2026.07.27</text>
+                            <text x="196" y="200" font-size="11" fill="var(--text-muted)" text-anchor="middle">유럽 개정 규정 발효</text>
+
+                            <circle cx="310" cy="120" r="5" fill="#585858"/>
+                            <line x1="310" y1="113" x2="310" y2="85" stroke="#585858" stroke-width="1.2"/>
+                            <text x="310" y="75" font-size="12" fill="var(--text-secondary)" text-anchor="middle">2027.01.22</text>
+                            <text x="310" y="59" font-size="11" fill="var(--text-muted)" text-anchor="middle">한국 계도기간 최소 만료</text>
+
+                            <circle cx="521" cy="120" r="7" fill="#585858"/>
+                            <line x1="521" y1="127" x2="521" y2="168" stroke="#585858" stroke-width="1.2"/>
+                            <text x="521" y="184" font-size="12.5" font-weight="700" fill="var(--text-secondary)" text-anchor="middle">2027.12.02</text>
+                            <text x="521" y="200" font-size="11.5" fill="var(--text-muted)" text-anchor="middle">유럽 부속서 III 고위험 의무 적용</text>
+                            <text x="521" y="216" font-size="11" fill="var(--text-muted)" text-anchor="middle">원래 기한은 2026.08.02였다</text>
+                        </svg>
+                        <p class="fig-caption">위쪽이 한국, 아래쪽이 유럽이다. 유럽의 고위험 의무는 원래 2026년 8월 2일부터였으나, 그 기한 엿새 전에 발효한 개정 규정이 적용 시점을 2027년 12월 2일로 옮겼다.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        유럽 쪽 사정부터 적는다. 인공지능법 부속서 III은 자연인의 신용도를 평가하거나 신용점수를 산정하는 시스템을 고위험으로 분류한다. 금융사기 탐지는 예외로 빠져 있고, 법인을 대상으로 하는 기업 신용 모형도 이 조항 밖이다. 그런데 이 고위험 의무의 적용 시점이 2026년 7월에 발효한 개정 규정으로 2027년 12월 2일까지 미뤄졌다. 표준과 인증 체계가 제때 갖춰지지 않았다는 것이 연기의 이유였다. 제재 수준도 종종 잘못 인용되는데, 고위험 의무 위반에 걸리는 상한은 1,500만 유로 또는 전 세계 매출의 3% 가운데 높은 쪽이다. 3,500만 유로와 7%는 금지된 관행에 적용되는 다른 층이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한국은 반대다. 인공지능기본법이 2026년 1월 22일부터 이미 시행 중이고, 대출 심사와 채용은 고영향 인공지능으로 분류된다. 사업자는 위험관리 체계를 세워야 하고, 왜 이 사람이 거절됐는지 설명할 수 있어야 하며, 성별이나 연령이나 지역에 따른 편향 여부를 시험해야 한다. 소관 부처가 최소 1년의 계도기간을 두겠다고 밝혔지만, 여기에 오해가 하나 붙어 있다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            계도기간은 법에 적힌 유예가 아니라 행정의 운영 방침이다. 부칙에 적용을 미루는 조항이 없으므로 의무 자체는 2026년 1월 22일부터 이미 발생해 있다. 계도기간 중에 위반 상태를 방치하면 기간이 끝난 뒤 시정명령 대상이 되고, 그 시정명령을 따르지 않는 것은 별도의 과태료 사유가 된다. 유예된 것은 과태료 부과이지 의무가 아니다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기에 더 오래된 규정도 겹친다. 신용정보법 제36조의2는 자동화 평가에 대해 세 가지 권리를 이미 수년째 보장하고 있다. 자동화 평가가 이루어졌는지와 그 결과 및 주요 기준을 설명해 달라고 요구할 권리, 유리한 정보를 제출하거나 기초 정보의 정정을 요구할 권리, 그리고 다시 산출해 달라고 요구할 권리다. 시행령은 신용등급과 점수를 어떻게 표시하고 어떤 정보가 얼마나 반영됐는지를 안내하도록 구체화한다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>사람이 최종 결정을 해도 빠져나가지 못한다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 제품의 설계를 근거로 규제를 피할 수 있다고 생각하기 쉽다. 모델은 확률만 돌려주고 최종 결정은 사람이 하니 자동화된 의사결정이 아니라는 논리다. 유럽 쪽 조문은 이 논리를 닫아 두었다. 시스템이 유일한 의사결정자가 아니어도, 점수나 추천을 산출하고 사람이 그에 따라 행동한다면 여전히 고위험 분류 대상이다. 결정의 영향을 받은 사람이 인공지능이 그 결정에서 어떤 역할을 했는지 명확하고 의미 있는 설명을 받을 권리도 별도 조항으로 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        국내 쪽도 같은 방향이다. 설명 의무는 최종 결정자가 사람인지가 아니라 자동화 평가가 결과에 반영됐는지를 기준으로 붙는다. 그러니 고영향 영역에서 이 모델을 쓰겠다면 준비해야 할 것은 값이 싸다는 근거가 아니라 판정마다 무엇을 근거로 그 등급이 나왔는지를 남기는 기록이다. 그리고 지금 이 모델은 답과 확률만 돌려주고 근거 문장을 돌려주지 않는다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        업계의 초기 사용 방식도 이 선을 따라간다. 복수 매체가 같은 취지로 전한 아틀라시안 최고제품책임자 타마르 예호슈아의 평가는 이 모델이 훨씬 싸고 훨씬 빠르지만 정확도는 선두 모델에 못 미친다는 것이었고, 회사가 분류 작업에서만 시험 중이며 장문 작성에는 쓰지 않는다는 대목도 함께 실렸다. 이 인용이 처음 실린 매체는 이 리포트가 확정하지 못했다. 비싸고 느려서 아예 모델을 못 쓰던 자리에 새로 쓸 수 있게 된 것이 이득이라는 쪽에 가깝다. 값이 싸졌으니 하던 일을 옮기자는 것이 아니라, 값 때문에 못 하던 일을 시작하자는 판단이다.
+                    </p>
+                </section>
+
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">값이 싸지면 판정은 늘어난다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델 이름은 사람 이름에서 왔다. 19세기 영국 경제학자 윌리엄 스탠리 제번스다. 그가 1865년에 쓴 『석탄 문제』의 논지는 지금 들어도 낯설지 않다. 증기기관의 석탄 효율이 좋아졌으니 석탄 소비가 줄어들 것이라는 통념에 반대하면서, 효율이 좋아지면 쓸 수 있는 곳이 늘어나 총 소비는 오히려 증가한다고 주장했다. 값이 싸진 자원은 아껴 쓰이는 것이 아니라 더 많은 자리에 들어간다는 것이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        회사가 이 이름을 고른 이유도 숨기지 않았다. 창업자는 값싼 기계 지능이 훨씬 더 넓은 배치로 이어지리라는 기대를 이름에 담았다는 취지로 말했다. 판정 한 건에 1센트가 들면 하루에 만 건을 판정한다. 건당 값이 100분의 1이 되면 백만 건을 판정한다. 줄어드는 것은 건당 값이고, 늘어나는 것은 건수다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>같은 자리에 모델이 몰리기 시작했다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        효율이 좋아진 자리에 사람이 몰린다는 명제는 공급 쪽에서 먼저 확인된다. 더배치 372호는 같은 기사에서 이미 세 개의 경쟁 모델을 이름으로 부른다. 다국어 쪽에서 더 높은 정확도와 속도를 주장하는 라야, 오픈모델을 파인튜닝한 비스포크 님블, 그리고 제브의 구조를 역설계하려는 케브다. 제품 공개 열흘 만의 일이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        수요 쪽 신호도 있지만 이쪽은 읽는 법에 주의가 필요하다. 게이트웨이를 운영하는 버셀은 공개 24시간 안에 유료 팀의 13% 가까이가 이 모델을 썼고 18시간 만에 열 팀 중 하나에 도달했다고 적었다. 같은 플랫폼에서 GPT-5.6 계열의 두 배, 페이블 5.1의 여섯 배가 넘는 속도라는 비교도 함께 붙였다. 그런데 이 수치에는 분모가 없다. 전체 유료 팀이 몇 팀인지는 어디에도 공개되지 않았고, 더 중요하게는 이 모델이 그 게이트웨이에서 9월 25일까지 무료였다. 13%가 관측된 24시간 창이 무료 구간과 겹친다는 뜻이다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            그러니 이 숫자로 말할 수 있는 것은 같은 플랫폼 안에서 과거 모델 출시와 견준 상대적 확산 속도까지다. 시장 점유율이나 매출 규모의 근거로는 쓸 수 없다. 주말 사이 요청량이 세 배가 됐다는 다른 지표도 무엇과 견준 세 배인지가 적혀 있지 않아 사정이 같다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>기업가치 이야기의 시제를 맞춰 두면</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 사건이 국내에 전해질 때 가장 많이 붙은 문장은 기업가치가 한 주 만에 2억 달러에서 100억 달러대로 뛰었다는 것이다. 1차 자료를 따라가면 두 군데가 어긋난다.
+                    </p>
+                    <div class="overflow-x-auto mb-2">
+                        <table class="comparison-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">흔히 적히는 서술</th>
+                                    <th class="text-left">1차 자료로 확인되는 것</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>9월 15일에 2억 달러로 시드를 마감했다</td><td>시드 4,000만 달러는 DCVC가 이끌었고, 창업자는 그 라운드가 1년도 더 전에 2억 달러 기업가치로 마감됐다고 말했다. 9월 15일은 스텔스를 끝내고 제품을 공개한 날이다</td></tr>
+                                <tr><td>기업가치가 100억 달러대로 뛰었다</td><td>100억 달러 초과는 10억 달러 조달을 놓고 진행 중인 논의의 조건이다. 9월 27일까지 추적해도 종결 보도가 없다</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fig-caption mb-6">두 서술을 고치면 아흐레라는 기간 자체가 성립하지 않는다. 앞의 값은 1년도 더 전에 매겨졌고, 뒤의 값은 아직 매겨지지 않았다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 정정이 사소해 보일 수 있지만, 이 리포트가 2절부터 해 온 작업과 같은 종류의 일이다. 숫자는 대개 틀리지 않고, 그 숫자에 붙어 있던 조건이 옮겨 적히는 과정에서 떨어져 나간다. 상단이라는 단서가 떨어지고, 비교 대상이 떨어지고, 논의 중이라는 시제가 떨어진다. 떨어진 조건을 다시 붙이는 일이 이 리포트가 할 수 있는 가장 실용적인 기여다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>늘어나는 것은 판정이 아니라 판정 기록이다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        제번스의 논지를 이 시장으로 옮기면 한 가지가 더 따라 나온다. 판정 건수가 백 배로 늘면 판정 기록도 백 배로 쌓인다. 기록 하나하나에는 무엇을 물었는지, 어떤 선택지가 있었는지, 어떤 답이 나왔는지, 확신이 얼마였는지가 들어 있다. 이 더미는 두 가지 얼굴을 갖는다. 한쪽으로는 조직이 처음 갖게 되는 판정 이력 자산이고, 다른 쪽으로는 아무도 품질을 확인하지 않은 라벨 더미다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전수 검사가 가능해지는 것도 여기서부터다. 지금까지 데이터 품질 검사를 표본으로만 돌린 이유가 값이었다면, 건당 $0.0004는 그 제약을 걷어 낸다. 다만 4절에서 본 대로 그 판정의 정직함은 입력이 학습 분포 안에 있을 때만 유지된다. 전수 검사가 가능해진 순간 파이프라인에 들어오는 입력의 폭도 함께 넓어지므로, 값이 내려간 바로 그 사건이 분포 밖 입력의 비중을 올린다. 싸져서 늘어난 판정이 가장 덜 믿을 만한 판정이 되기 쉽다는 뜻이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 판정 단가가 100분의 1이 되는 사건의 진짜 질문은 얼마나 아꼈는가가 아니다. 늘어난 판정 기록의 품질을 누가, 무엇으로, 언제 확인하는가다. 이 질문이 페블러스가 오래 붙들어 온 자리와 정확히 겹친다.
+                    </p>
+                </section>
+
+                <section id="pebblous-perspective" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스 관심의 이유</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스가 데이터클리닉에서 하는 일의 상당 부분이 이 모델이 하는 일과 같은 모양이다. 데이터에 대고 이건 무엇인가, 몇 점짜리인가, 통과인가를 판정하는 것. 그래서 이 사건은 우리에게 경쟁사 소식이 아니라 우리가 서 있는 공정의 단가가 바뀐 사건이다. 다만 이 리포트가 2절부터 6절까지 해 온 작업이 그 단가를 곧바로 기회로 읽지 못하게 막는다. 몇 가지를 갈라 둘 필요가 있다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.1</span>표본에서 전수로 옮길 수 있게 됐다, 다만 손익은 다시 계산해야 한다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터 품질 검사를 표본으로만 돌려 온 이유가 값이었다면 그 이유는 실제로 사라진다. 건당 $0.0004는 천만 행짜리 테이블을 전부 훑어도 사천 달러이고, 지금까지 전수로 보지 못해 놓쳤던 것들이 보이기 시작하는 구간이다. 페블러스가 고객 데이터를 다룰 때 표본 추출 설계에 들이던 공이 검사 설계 쪽으로 옮겨 갈 수 있다는 뜻이기도 하다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 2절이 보여 준 것은 그 값이 정말 얼마인지가 무엇과 비교하느냐에 따라 다섯 배에서 440배까지 갈린다는 사실이다. 전수 검사로 전환할 때의 손익 계산은 벤더 헤드라인의 배수가 아니라 자기 파이프라인의 분모로 다시 해야 한다. 지금 그 판정을 어느 모델로 돌리고 있는지, 그 모델의 건당 값이 얼마인지, 그중 몇 퍼센트가 실제로 고르기였는지. 이 셋을 재지 않은 상태에서 440배는 아무 뜻도 없는 숫자다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.2</span>라벨을 누가 붙였는가가 제품 사양서 안에 두 번 들어 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 제품에서 사람이 라벨을 붙인 자리가 없다. 학습은 합성 데이터로만 했고, 평가의 정답지는 더 큰 모델 두 대의 평균이다. 회사가 숨긴 것도 아니고 자기 글에 그대로 적었다. 그러니 이 제품은 AI-Ready Data가 줄곧 물어 온 질문이 제품 사양서 안으로 들어온 사례다. 이 라벨은 누가, 어떤 기준으로 붙였는가.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그리고 그 질문에 답하지 않으면 갈리지 않는 것이 하나 남는다. 3절에서 적은 대로 67.8%라는 값이 모델의 천장인지 정답지의 천장인지는, 사람이 매긴 정답으로 같은 과제를 다시 채점해 보기 전에는 알 수 없다. 이것은 벤치마크 점수의 문제가 아니라 계보 기록의 문제다. 라벨의 출처가 기록되지 않으면 성능 논쟁 자체가 결론에 닿지 못한다. 페블러스가 <a href="/report/eu-ai-act-article10-labeling-audit-evidence/ko/">라벨링 화면의 모든 클릭이 감사 증거가 된다</a>에서 다룬 것과 같은 자리다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        합성 데이터로만 학습한 모델을 믿을 수 있느냐는 물음도 여기에 걸린다. 생성 데이터로 반복 학습하면 분포가 무너진다는 2024년의 연구가 널리 인용되지만, 실제 데이터를 버리지 않고 함께 쌓아 가면 그 붕괴가 일어나지 않는다는 반대 방향의 결과도 있다. 두 연구는 서로 다른 조건을 잰 것이고, 어느 쪽이 이 제품에 해당하는지는 학습 구성을 공개하지 않은 상태에서 판정할 수 없다. 공개되지 않은 것을 추측으로 메우지 않는 것이 이 리포트의 규칙이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.3</span>먼저 할 일은 호출을 갈라 세는 것이다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        고객 파이프라인에 깔린 모델 호출을 생성 작업과 판정 작업으로 갈라 세는 일이 당장 값이 되는 작업이 됐다. 그런데 그 비율을 재 본 조직은 거의 없고, 업계 전체를 대표하는 공개 수치도 존재하지 않는다. 라우팅 구조를 다루는 여러 사례가 쉬운 판정성 작업을 트래픽의 절반 이상으로 추정한다는 정황은 있지만, 그것은 개별 기업이 자사 트래픽을 놓고 말한 값이지 업계 통계가 아니다. 두 가지를 섞어 쓰면 안 된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그러니 지금 그 비율을 재는 조직은 남의 평균을 베끼는 것이 아니라 자기 수치를 처음 재는 축에 든다. 그리고 재고 난 다음에 볼 것은 5절의 판단표다. 판단의 단위는 모델이 아니라 과제이고, 기준은 오답 비용의 비대칭, 재시도 가능성, 사람에게 넘길 경로, 그리고 법이 설명을 요구하는지 여부다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        마지막으로 페블러스가 어디에 서는지를 적어 둔다. 판정이 싸지면 판정은 늘고, 늘어난 판정 기록은 그 자체로 새로운 데이터 자산이자 새로운 품질 부채가 된다. 여기에 규제가 얹힌다. 한국에서는 오늘 이미 대출 심사 인공지능이 고영향으로 설명 의무와 편향성 시험의 대상이다. 모델을 파는 쪽이 아니라 그 판정 기록이 믿을 만한지를 측정하고 남기는 쪽에 우리 자리가 있다. 값이 100분의 1이 된 사건은 그 자리를 줄이는 것이 아니라 백 배로 넓힌다.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            본문의 수치는 회사가 공개한 평가표와 가격 페이지, 독립 평가 세 건의 저장소, 그리고 법령 원문에서 옮겼다. 홈페이지 헤드라인 두 숫자의 비교 대상은 회사가 밝힌 적이 없으며, 2절의 역산은 확정된 사실이 아니라 공개된 값에 가장 잘 맞는 해석이다. 3절에 인용한 편향 인정 문단이 최초 게시본부터 있었는지는 확인하지 못했다. 1절부터 6절까지는 잰 것과 확인한 것을 옮긴 것이고, 이 7절은 그 위에 페블러스가 붙인 해석이다. 나눠서 읽어 주시기 바란다. 긴 글 읽어 주셔서 감사하다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ (empty section — content rendered by config.faqs) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        본문 수치의 출처를 성격별로 나눠 적는다. 1번부터 3번까지는 회사가 직접 공개한 자료이고, 값과 정확도의 모든 수치가 여기서 나왔다. 6번부터 9번까지는 벤더가 설계하지 않은 독립 평가이며 자료와 코드가 공개돼 있다. 10번부터 14번까지는 이 리포트가 직접 열어 본 법령이다. 15번 이후 학술 문헌은 이 제품을 다룬 연구가 아니라 이 제품의 주장을 검증하거나 반증할 수 있는 일반 문헌이다. 제브 자체를 다룬 논문은 존재하지 않는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">벤더 1차 자료</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">TypeSafe AI, "Introducing System One Models &amp; Jev" (Diogo Almeida, 2026년 9월 15일). <a href="https://typesafe.ai/blog/introducing-system-one-models-and-jev" target="_blank" rel="noopener">typesafe.ai</a> — 2절과 3절에 인용한 세 문장(실제 이득의 상단, 정답지 편향, 평가 과제 자체 제작)의 출처다. 출력 원형 세 가지, RLCD의 전개어, 입력 단가 $0.042와 출력 무과금 표기도 여기서 확인했다. 9월 27일 직접 접속 시 페이지 메타데이터가 9월 26일을 마지막 수정 시각으로 반환했으며, 편향 인정 문단이 최초본부터 있었는지는 확인하지 못했다.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">TypeSafe 워크플로 평가 대시보드. <a href="https://evals.typesafe.ai/" target="_blank" rel="noopener">evals.typesafe.ai</a> — 2절의 집계표와 3절의 과제별 정확도표가 여기서 나왔다. 과제별 값을 평균한 결과가 집계값과 일치하는 것을 이 리포트가 확인했다. 네 과제의 절대 건수는 이 자료에 없다.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">TypeSafe 홈페이지(가격과 헤드라인 클레임). <a href="https://typesafe.ai/" target="_blank" rel="noopener">typesafe.ai</a> — "193.6x Faster, 444.6x Cheaper"와 입력가 238배 배수가 걸려 있는 자리다. 두 배수의 비교 대상은 이 페이지에도 적혀 있지 않다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">보도</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">4.</span><span class="ref-body">The Batch, Issue 372 (2026년 9월 25일). <a href="https://www.deeplearning.ai/the-batch/issue-372/" target="_blank" rel="noopener">deeplearning.ai</a> — 건당 $0.0007·$0.06·$0.12와 총합 67%라는 반올림 값, 그리고 경쟁 모델 세 종의 이름이 여기서 나왔다. 이 기사의 건당 값과 회사 대시보드 값이 항목마다 다르게 어긋난다는 것이 2.3절의 내용이다.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">AI타임스(임대준, 2026년 9월 26일). <a href="https://www.aitimes.com/news/articleView.html?idxno=215675" target="_blank" rel="noopener">aitimes.com</a> — 국내 보도로 가격과 회의론을 재확인한 자리다. 이 기사가 쓴 400분의 1과 200배는 회사 헤드라인을 반올림해 옮긴 값으로 보이며, 어느 모델과 견준 값인지는 기사에도 적혀 있지 않다.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Financial Times(Nicole Jeffrey, 2026년 9월 25일) 및 The Information(2026년 9월 24일) — 아레나 최고경영자의 회의론 축자, 창업자의 시드 마감 시점 확인, 10억 달러 조달 논의가 여기서 나왔다. <strong>파이낸셜타임스 원문은 유료 구독 기사이고 이 리포트는 미러를 거쳐 확인했다.</strong> 인용 경계가 어긋날 수 있으므로 본문에는 귀속절이 붙은 형태로만 실었다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">독립 평가 (벤더가 설계하지 않음)</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">7.</span><span class="ref-body">Mike Taylor(Every), "Mini Vibe Check: TypeSafe's Jev…". <a href="https://every.to/vibe-check/mini-vibe-check-typesafe-s-jev-judged-everything-i-ve-written-in-0-7-seconds" target="_blank" rel="noopener">every.to</a> — 문서 37개에 질문 21개를 던진 777건 판정, 0.7초 미만, 약 4분의 1센트. 같은 글의 별도 실험에서 나온 문단당 중위 0.35초 대 8.83초, 결함 7건 중 6건, 약 580배 저렴도 여기서 옮겼다.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">PriorBench, 사전등록 평가(2026년 9월 20일). <a href="https://github.com/priorbench/jev" target="_blank" rel="noopener">github.com/priorbench/jev</a> — 예측 50개 사전등록, 실험 21건, 호출 5,721건, 총 $0.176. 400문항 제로샷 95.9%와 대조군 77.2%·66.0%, 그리고 질문 문구가 틀렸을 때의 16.7%가 이 연구의 결과다. 게이트웨이를 경유해 측정했으므로 모델 자체 지연과 게이트웨이 지연이 분리되지 않는다는 한계를 저자가 명시했다.</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">scienthoon, 분포 밖 보정 연구(2026년 9월 19일, MIT 라이선스). <a href="https://github.com/scienthoon/jev-ood-calibration" target="_blank" rel="noopener">github.com/scienthoon/jev-ood-calibration</a> — 합성 티켓 900건과 공개 벤치마크 3,721항목, 보정 오차 0.107 대 노이즈 바닥 0.024, 알 수 없는 질문에서의 44.7%와 평균 확신 0.74, 0.99 구간의 커버리지 60.2%와 범위 밖 30건 중 0건, 확신 필드의 보정 오차 0.18이 모두 이 연구에서 나왔다.</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">Vercel, "AI Gateway: Jev model launch"(2026년 9월 18일). <a href="https://vercel.com/blog/ai-gateway-jev-model-launch" target="_blank" rel="noopener">vercel.com</a> — 24시간 내 유료 팀 13%와 18시간 내 10% 도달의 출처다. 분모는 공개돼 있지 않고, 이 모델이 9월 25일까지 해당 게이트웨이에서 무료였다는 점을 함께 읽어야 한다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">법령 (직접 확인)</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">11.</span><span class="ref-body">EU 인공지능법 부속서 III 제5항 (b). <a href="https://artificialintelligenceact.eu/annex/3/" target="_blank" rel="noopener">artificialintelligenceact.eu</a> — 자연인의 신용도 평가와 신용점수 산정을 고위험으로 분류하며 금융사기 탐지는 제외한다. 시스템이 유일한 의사결정자가 아니어도 고위험 분류를 피하지 못한다는 해석의 근거도 이 조항 계열이다.</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">Regulation (EU) 2026/1744(디지털 옴니버스) — 2026년 7월 24일 관보 게재, 7월 27일 발효. 부속서 III 고위험 시스템의 핵심 의무 적용을 2027년 12월 2일로, 부속서 I 계열을 2028년 8월 2일로 옮겼다. 원래 기한이 2026년 8월 2일이었으므로 그 엿새 전에 확정된 연기다.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">EU 인공지능법 제99조 제4항(제재)과 제86조(설명받을 권리). <a href="https://artificialintelligenceact.eu/article/99/" target="_blank" rel="noopener">artificialintelligenceact.eu</a> — 고위험 의무 위반의 상한은 1,500만 유로 또는 전 세계 연 매출 3% 중 높은 쪽이다. 흔히 인용되는 3,500만 유로와 7%는 금지된 관행에 적용되는 다른 층이다.</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">「인공지능 발전과 신뢰 기반 조성 등에 관한 기본법」 — 2025년 1월 21일 공포, 2026년 1월 22일 시행. 대출 심사와 채용을 포함한 고영향 인공지능 사업자의 의무가 이 법에 있다. 계도기간은 법정 유예가 아니라 소관 부처의 운영 방침이며, 부칙에 적용 유예 조항이 없다. 2026년 1월 20일 일부개정(법률 제21311호)이 7월 21일 시행됐으므로 조문 인용 시 최신 판본을 확인해야 한다.</span></li>
+                        <li><span class="ref-num">15.</span><span class="ref-body">신용정보법 제36조의2 및 시행령 제31조의2 — 자동화 평가 결과에 대한 설명 요구권, 기초 정보의 정정·삭제 요구권, 재산출 요구권. 금융위원회의 AI 기반 신용평가모형 검증체계도 설명 의무 이행 가능성을 점검 항목으로 둔다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 문헌 (이 제품의 주장을 검증하는 일반 문헌)</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">16.</span><span class="ref-body">Lianmin Zheng 외. "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena." NeurIPS 2023 Datasets &amp; Benchmarks. <a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener">arXiv: 2306.05685</a> — 3.3절의 위치·장황함·자기선호 세 편향의 명명이 여기서 나왔다.</span></li>
+                        <li><span class="ref-num">17.</span><span class="ref-body">Koki Wataoka 외. "Self-Preference Bias in LLM-as-a-Judge." <a href="https://arxiv.org/abs/2410.21819" target="_blank" rel="noopener">arXiv: 2410.21819</a>, 그리고 "LLMs-as-Judges: A Comprehensive Survey on LLM-based Evaluation Methods" <a href="https://arxiv.org/abs/2412.05579" target="_blank" rel="noopener">arXiv: 2412.05579</a> — 자기선호 편향의 측정과 그것을 품질과 갈라내기 어렵다는 방법론적 난점, 그리고 편향 목록의 확장이 이 두 문헌의 내용이다.</span></li>
+                        <li><span class="ref-num">18.</span><span class="ref-body">Collin Burns 외. "Weak-to-Strong Generalization"(2023)과 "Distillation Scaling Laws" <a href="https://arxiv.org/abs/2502.08606" target="_blank" rel="noopener">arXiv: 2502.08606</a> — 3.3절의 증류 천장 논의다. 뒤의 연구는 학생이 교사를 앞서는 구간이 학습 데이터가 유한할 때에 한정되며 데이터를 늘리면 교사 수준으로 수렴한다고 보고한다.</span></li>
+                        <li><span class="ref-num">19.</span><span class="ref-body">Yaniv Ovadia 외. "Can You Trust Your Model's Uncertainty? Evaluating Predictive Uncertainty Under Dataset Shift." NeurIPS 2019. <a href="https://arxiv.org/abs/1906.02530" target="_blank" rel="noopener">arXiv: 1906.02530</a> — 4.1절의 근거다. 분포가 이동할수록 정확도는 떨어지는데 확신은 그만큼 떨어지지 않아 보정 오차가 커진다는 패턴을 여러 방법에 걸쳐 확인했다.</span></li>
+                        <li><span class="ref-num">20.</span><span class="ref-body">Yonatan Geifman, Ran El-Yaniv. "Selective Classification for Deep Neural Networks." NeurIPS 2017 — 위험 대 커버리지 곡선의 출처다. David Madras 외(2018)와 Hussein Mozannar, David Sontag(ICML 2020)은 기권한 문항을 사람에게 넘기는 설계를 정식화했다.</span></li>
+                        <li><span class="ref-num">21.</span><span class="ref-body">Anastasios N. Angelopoulos, Stephen Bates. "Conformal Prediction: A Gentle Introduction." Foundations and Trends in Machine Learning 16(4), 2023. <a href="https://arxiv.org/abs/2107.07511" target="_blank" rel="noopener">arXiv: 2107.07511</a> — 4.1절에서 언급한 분포 무가정 불확실성 정량화의 표준 입문서다. 1절에 인용한 회의론의 발화자와 같은 사람이다.</span></li>
+                        <li><span class="ref-num">22.</span><span class="ref-body">Ilia Shumailov 외. "AI models collapse when trained on recursively generated data." Nature 631, 755–759 (2024). <a href="https://www.nature.com/articles/s41586-024-07566-y" target="_blank" rel="noopener">doi:10.1038/s41586-024-07566-y</a>, 그리고 Matthias Gerstgrasser 외. "Is Model Collapse Inevitable? Breaking the Curse of Recursion by Accumulating Real and Synthetic Data." <a href="https://arxiv.org/abs/2404.01413" target="_blank" rel="noopener">arXiv: 2404.01413</a> — 7.2절에서 합성 데이터 전용 학습을 다룬 두 갈래다. 앞은 실제 데이터를 생성 데이터로 대체하는 조건, 뒤는 버리지 않고 쌓는 조건을 각각 본 것이다.</span></li>
+                        <li><span class="ref-num">23.</span><span class="ref-body">William Stanley Jevons. 『The Coal Question』 (1865) — 6절의 출발점이다. 효율이 좋아지면 소비가 줄어든다는 통념에 반대하며 총 소비가 오히려 늘어난다고 주장한 고전이다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스 블로그 인접 글</h3>
+                    <ul class="reference-list mb-4">
+                        <li><span class="ref-num">24.</span><span class="ref-body"><a href="/report/eu-ai-act-article10-labeling-audit-evidence/ko/">라벨링 화면의 모든 클릭이 감사 증거가 된다</a> — 7.2절에서 참조했다. 라벨을 누가 어떤 기준으로 붙였는지를 증거로 남기는 문제를 규제 쪽에서 다룬 글이다.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260927"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "말은 못 하고 고르기만 하는 AI, 정말 싸게 일할까?",
+            subtitle: "문장 대신 객관식 답과 확률만 돌려주는 타입세이프의 모델 제브가 값을 어디까지 낮췄고 무엇을 대가로 했는지 검토한다",
+            pageTitle: "고르기만 하는 AI 모델의 값과 정확도 | 페블러스",
+            category: "tech",
+            publishDate: "2026-09-27",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/typesafe-jev-classification-cost-collapse/ko/",
+            tags: ["분류 모델", "추론 비용", "LLM 평가", "데이터 라벨링", "모델 보정", "합성 데이터", "AI 비용 구조"],
+            faqs: [
+                { question: "정확도 67.8%면 실무에 쓸 만한가?", answer: "그 숫자가 무엇에 대한 일치율인지부터 봐야 한다. 사람이 매긴 정답과 맞춘 값이 아니라, 더 큰 모델 두 대의 평균 판정과 얼마나 같은가를 잰 값이다. 게다가 과제마다 격차가 다르다. 고객 응대에서는 오히려 오퍼스 5보다 높고, 인보이스 처리에서는 17.3%p 뒤진다. 쓸 만한가는 모델이 아니라 과제에 묻는 질문이다." },
+                { question: "정말 400배 싼가?", answer: "무엇과 비교하느냐에 따라 달라진다. 더배치가 인용한 값으로는 건당 85.7배와 171.4배이고, 회사 자신의 평가표를 집계해 나누면 440배쯤이며, 입력 토큰 단가만 보면 4.8배에서 238배 사이다. 회사가 홈페이지에 건 두 숫자는 비교 대상조차 서로 다르다. 비용 배수는 가장 비싼 모델, 지연 배수는 가장 느린 모델에 각각 들어맞는다." },
+                { question: "기존 제로샷 분류기나 인코더 파인튜닝과 무엇이 다른가?", answer: "업계도 답을 정하지 못했다. 허깅페이스의 제로샷 파이프라인, 코히어 리랭크, 미스트랄의 모더레이션과 실드스트랄이 이미 비슷한 일을 한다는 지적은 사실관계로 맞다. 반대쪽은 여러 형태의 구조화된 답과 확률을 한 상품으로 묶고 보정에 특화해 학습시킨 점이 구분점일 수 있다고 본다. 이 리포트는 어느 쪽 손도 들지 않는다." },
+                { question: "확률이 붙으면 사람 검수를 줄여도 되나?", answer: "확률을 내놓는 것과 그 확률이 맞는 것은 다른 문제다. 독립 평가에서 확신 0.99 구간은 정확도 100%였지만 전체 트래픽의 60.2%만 덮었고, 진짜 범위 밖 메시지 30건은 한 건도 걸러지지 않았다. 원리적으로 알 수 없는 질문에도 평균 확신 0.74로 답해 정확도 44.7%를 냈다. 보정은 분포 안에서만 유지되는 성질이다." },
+                { question: "우리 분류 작업을 옮기려면 무엇부터 재야 하나?", answer: "값이 아니라 오답 1건의 비용부터다. 오답이 다음 단계에서 걸러지는가, 재시도가 가능한가, 확률이 낮을 때 사람에게 넘길 경로가 있는가, 판정 근거를 법이 요구하는가. 이 네 가지를 먼저 답한 뒤에 단가를 본다. 순서를 바꾸면 값이 판단을 대신하게 된다." },
+                { question: "신용 평가나 채용 판정에 써도 되나?", answer: "한국에서는 이미 규제 대상이다. 인공지능기본법이 2026년 1월 22일부터 시행 중이고 대출 심사와 채용은 고영향 인공지능으로 분류된다. 신용정보법 제36조의2는 설명 요구권과 이의제기권을 이미 수년째 보장한다. 유럽은 부속서 III 고위험 의무 적용이 2027년 12월 2일로 미뤄졌다. 지금 더 엄한 쪽은 한국이다." },
+                { question: "합성 데이터만으로 학습한 모델을 믿어도 되나?", answer: "합성 데이터로만 반복 학습하면 붕괴한다는 연구가 있고, 실제 데이터를 버리지 않고 쌓아 가면 붕괴가 일어나지 않는다는 반론도 있다. 두 연구는 서로 다른 조건을 본 것이다. 중요한 것은 이 제품의 경우 학습 라벨도 평가 정답지도 모델이 만들었다는 점이고, 그중 무엇이 성능의 천장을 정했는지는 회사가 공개한 자료로는 갈리지 않는다." },
+                { question: "기업가치 100억 달러는 확정인가?", answer: "아니다. 100억 달러대는 진행 중인 10억 달러 조달 논의의 조건이며 9월 27일 기준 종결 보도가 없다. 출발점인 2억 달러도 한 주 전 값이 아니다. 창업자는 그 시드가 1년도 더 전에 마감됐다고 말했다. 9월 15일은 라운드 마감일이 아니라 스텔스를 끝내고 제품을 공개한 날이다." },
+                { question: "한국 기업이 지금 할 수 있는 일은?", answer: "자사 파이프라인의 모델 호출을 생성 작업과 판정 작업으로 갈라 세는 것이다. 전체 호출 중 분류와 라우팅이 차지하는 비중은 업계 공식 통계가 존재하지 않는다. 그러니 그 비율을 재는 조직은 남의 평균을 베끼는 것이 아니라 자기 수치를 처음 재는 축에 든다." }
+            ]
+        });
+    </script>
+</body>
+</html>
