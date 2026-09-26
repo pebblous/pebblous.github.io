@@ -89,7 +89,7 @@
     document.querySelectorAll('[data-patch-sample]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.patchSample)===state.sample)));
     for(const option of q('#sample').options){const id=Number(option.value);option.textContent=`#${pad(id)} · ${classNames[state.data.samples[id].class]}${pstate.manifest.selection.ids.includes(id)?' · 패치 탐색':''}`;}
     let link=q('#patchInspectorLink');if(!link){link=document.createElement('div');link.id='patchInspectorLink';link.className='patch-inspector-link';q('.inspector').append(link);}
-    link.innerHTML=`<a href="#real-patches">${sample?'이 표본의 실제 패치 열기 ↓':'패치가 준비된 6장 고르기 ↓'}</a>`;
+    link.innerHTML=`<p class="exploration-availability">${sample?'현재 사진으로 살펴볼 수 있다.':'현재 사진에는 조각별 특징 자료가 없다.'}</p><a href="#real-patches">${sample?'이 사진의 조각 비교하기 ↓':'준비된 사진 6장 중 골라 보기 ↓'}</a>`;
     q('#patchSampleTitle').textContent=`#${pad(state.sample)} · ${classNames[state.data.samples[state.sample].class]}${sample?' · '+roles[sample.selection_role]:''}`;
     renderProvenance(sample);
     if(!sample){pstate.sample=null;pstate.matrix=null;pstate.image=null;setStatus('unavailable','이 표본은 이번 6장 추론 범위에 포함되지 않습니다. 위의 썸네일에서 표본을 선택해 주세요. 다른 이미지의 지도를 대신 표시하지 않습니다.');return;}

@@ -17,16 +17,28 @@ function makeSampleImage(id,kind){
  img.onerror=()=>{const note=document.createElement('span');note.className='sample-image-error';note.setAttribute('role','status');note.textContent=`#${id} 이미지 로딩 실패 · 다시 선택해 주세요.`;img.replaceWith(note);};
  img.src=sample.url;return img;
 }
+function updateSelectionSummary(l,s){
+ const selected=l.selection[s],kept=l.selection.filter(v=>v>0).length,total=l.selection.length;
+ $('#sampleMeta').textContent=selected===0?'이번 학습에서는 제외한 사진':'학습용으로 남긴 사진';
+ $('#sampleProtected').hidden=selected!==2;
+ $('#sampleDecisionNote').textContent=selected===2
+  ?`이 사진은 현재 렌즈의 H 실험에서 보호 대상으로 지정됐으며, 최종 학습용 ${kept}장에 포함됐다.`
+  :selected===1?`이 사진은 현재 렌즈의 H 실험에서 최종 학습용 ${kept}장에 포함됐다.`
+  :`이 사진은 현재 렌즈의 H 실험에서 최종 학습용 ${kept}장에 포함되지 않았다. 원본을 삭제했거나 나쁜 사진으로 판정했다는 뜻은 아니다.`;
+ $('#sampleSelectionLens').textContent=l.name;
+ $('#sampleSelectionCount').textContent=`${total}장 중 ${kept}장`;
+ $('#explorerNextSelection').textContent=`선택한 사진 #${String(s).padStart(3,'0')}`;
+}
 function updateExplorer(){
  const l=lens(),s=state.sample;
  document.querySelectorAll('[data-lens]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lens===state.lens)));
  $('#sample').value=s;
  $('#projectionLabel').textContent=`${l.dimension.toLocaleString()}D → 3D · 분산 ${(l.variance.reduce((a,b)=>a+b)*100).toFixed(1)}% 보존`;
- $('#sampleMeta').innerHTML=`${classNames[state.data.samples[s].class]} · ${['제거','보존','보호 + 보존'][l.selection[s]]}<br>H_RBT_OOF · selection seed 0`;
+ updateSelectionSummary(l,s);
  $('#selectedImageHost').replaceChildren(makeSampleImage(s,'selected'));
  $('#selectedImageOpen').disabled=!state.images;
  $('#selectedImageOpen').setAttribute('aria-label',`표본 ${s} 원본 이미지 확대`);
- $('#samplePatchStatus').textContent=!state.images?'이미지 목록을 읽지 못했습니다. 페이지를 새로고침해 주세요.':state.images.samples[s].patch_available?'실제 DINOv3 패치 탐색 가능':'이 표본의 패치 추론은 없습니다. 원본과 CLS 이웃만 제공합니다.';
+ $('#samplePatchStatus').textContent=!state.images?'이미지 목록을 읽지 못했습니다. 페이지를 새로고침해 주세요.':'';
  $('#neighbors').replaceChildren(...l.neighbors[s].map((n,i)=>{
   const b=document.createElement('button');b.className='neighbor-row';b.type='button';b.dataset.neighbor=n;
   b.append(makeSampleImage(n,'neighbor'));

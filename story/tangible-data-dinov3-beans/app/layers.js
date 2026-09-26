@@ -126,7 +126,7 @@
   let link=q('#layerInspectorLink');if(!link){link=document.createElement('div');link.id='layerInspectorLink';link.className='patch-inspector-link';q('.inspector').append(link);}
   const available=!!sample(state.sample)&&state.lens==='dinov3_l';
   q('#layerB').disabled=!available;
-  link.innerHTML=`<a href="#layers">${available?'이 표본의 층별 텐서 열기 ↓':'층별 자료는 DINOv3의 3장에만 있습니다 ↓'}</a>`;
+  link.innerHTML=`<p class="exploration-availability">${available?'현재 사진으로 살펴볼 수 있다.':sample(state.sample)?'이 사진의 층별 자료는 DINOv3에만 있다.':'현재 사진에는 층별 변화 자료가 없다.'}</p><a href="#layers">${available?'이 사진의 층별 변화 비교하기 ↓':'DINOv3의 준비된 사진 3장 보기 ↓'}</a>`;
   q('#layerA').value=sample(state.sample)?state.sample:'';
   if(!available){
    ++ls.request;q('#layerControls').hidden=true;ls.values=null;
