@@ -35,7 +35,9 @@ python3 tools/tangible-intake-check.py <package> --json    # PR 본문에 첨부
 ### 2. 복사와 해시
 - 새 가지: `git fetch && git checkout -B feat/tangible-<slug> origin/main` (사본 저장소)
 - `rsync -a <package>/dist/ story/<slug>/app/` — slug 는 선언 파일 값 그대로(접두어 추가 금지)
-- 해시: 전달본 `stats.treeHash`(검사기가 산출) 와 발행본(`app/` 산출) 둘 다 기록. 접수 쪽이 무엇을 바꿨으면(예: 권리 미확인 서체 제외) 변환 내역을 함께 적는다. 바꾼 것이 없으면 두 해시가 같아야 한다.
+- 변환본 선언: `story/<slug>/tangible.published.json` 을 쓴다 — 전달본 선언을 복사하고 `basedOn.treeHash`(전달본) · `transforms[]`(`copy|design|data|analysis|conclusion`) · `entry: app/index.html` · `stats`(변환본 재산출) · `rights[]`/`externalRuntime[]` 를 변환본 상태로(제외 서체 `excluded`, CDN 선언). `verify-result.json` 도 같은 폴더에 둔다. 그 뒤 **검사기를 `story/<slug>/` 에 다시 돌려 통과해야 다음 단계**. 예제: `docs/blog-service/examples/tangible.dinov3.published.json`
+- 사람이 승인한 규칙 예외(권리 미확인 자산·문체)는 `exceptions[]` 에 누가·언제·왜 를 적는다. 검사기가 warn 으로 내리고 PR 검토 ② 에 그대로 보인다. **예외는 판마다 새로** — 이전 판의 승인·예외를 복사하지 않는다.
+- 바꾼 것이 없으면 두 해시가 같고 `transforms: []` 다.
 - 갱신(`--update`)이면 `app/` 통째 교체, 이전 판은 git 이력에 남는다. 변경 분류 `copy|design|data|analysis|conclusion` 을 PR 에 적는다.
 
 ### 3. 기사 초안 (KO 필수, EN 권장)
@@ -71,7 +73,7 @@ node tools/generate-og-image.js --from-html story/<slug>/en/index.html
 TL;DR(비유 1줄 + 무엇/왜/효과) 뒤에:
 - 판 · 전달본 해시 · 발행본 해시 · 변환 내역 · 검사기 JSON 요약 · ⚠️ 항목
 - **검토 ① 제목**: 두 시험(중학생·클릭) 판정, 후보 목록
-- **검토 ② 권리**: `rights[]` 중 unconfirmed·excluded 와 그 처리
+- **검토 ② 권리**: `rights[]` 중 unconfirmed·excluded 와 그 처리, `exceptions[]`(예외 승인) 목록. 기사의 핵심 자료(모델 파생 임베딩·텐서)는 `required: true` 여야 하며 `required: false` 로 우회하지 않는다
 - **검토 ③ 과장 여부**: 기사의 결론 문장마다 evidence id 를 붙여 실험 조건·결론이 부풀려지지 않았는지 대조
 머지는 형님이 한다.
 

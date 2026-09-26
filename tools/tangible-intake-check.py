@@ -3,16 +3,17 @@
 
     python3 tools/tangible-intake-check.py <package-dir>            # 사람용 요약, 실패 있으면 exit 1
     python3 tools/tangible-intake-check.py <package-dir> --json     # 기계 판독용 {ok, checks[], stats}
+    python3 tools/tangible-intake-check.py story/<slug> --manifest tangible.published.json   # 변환본(없으면 자동 탐색)
 
 검사(각각 pass/fail/warn):
   manifest      tangible.json 존재·파싱·필수 필드(★)·enum·slug 규칙(kind 별 접두)
   entry         entry·reportPath·verifyResultPath 존재
-  register      uiRegister == 해라체 (uiRegisterWaiver 있으면 warn 으로 통과)
+  register      uiRegister == 해라체 (uiRegisterWaiver 또는 exceptions[check=register] 있으면 warn 으로 통과)
   approval      publishApproval.status == approved
   evidence      id 유일·from 참조 존재·kind/transform enum·spec 경로 존재
-  rights        required && unconfirmed → fail · status enum
+  rights        required && unconfirmed → fail · status enum · exceptions[] 에 사람 승인 기록이 있으면 warn
   verify        verify-result.json 파싱·필수 검사 skipped/fail → fail
-  runtime       dist 안 html/css/js 의 실행 참조: 절대경로(/…) fail · 외부 URL 은 externalRuntime 선언 + 허용 호스트
+  runtime       dist 안 html/css/js 의 실행 참조: 절대경로(/…) fail · 외부 URL 은 externalRuntime 선언(접두 일치) + 허용 호스트 · preconnect/dns-prefetch 는 자산 아님
   secrets       .env/.git/.openai/credentials 류 파일 → fail
   stats         fileCount/totalBytes/treeHash 산출(원 dinov3 manifest 알고리즘과 동일) · manifest.stats 와 대조 · 100MB 초과 warn(검토선)
 
@@ -33,7 +34,21 @@ SECRET_NAMES = re.compile(r"^(\.env(\..*)?|\.git|\.openai|.*credentials.*|.*\.pe
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 # 실행 참조: script/link/img/source/iframe 의 src|href, css url(), fetch('…')
-RUNTIME_ATTR = re.compile(r"<(?:script|link|img|source|iframe|video|audio)\b[^>]*?\s(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.I)
+RUNTIME_TAG = re.compile(r"<(script|link|img|source|iframe|video|audio)\b([^>]*)>", re.I)
+ATTR_URL = re.compile(r"\s(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.I)
+HINT_REL = re.compile(r"\srel\s*=\s*[\"'][^\"']*\b(?:preconnect|dns-prefetch)\b", re.I)
+
+
+def runtime_refs(text):
+    """실행 자산 참조만 뽑는다 — preconnect/dns-prefetch 힌트는 자산이 아니다."""
+    out = []
+    for m in RUNTIME_TAG.finditer(text):
+        attrs = m.group(2)
+        if HINT_REL.search(attrs):
+            continue
+        a = ATTR_URL.search(attrs)
+        if a: out.append(a.group(1))
+    return out
 CSS_URL = re.compile(r"url\(\s*[\"']?([^\"')]+)[\"']?\s*\)", re.I)
 FETCH = re.compile(r"\bfetch\(\s*[\"'`]([^\"'`]+)[\"'`]", re.I)
 ABS_URL = re.compile(r"^(?:https?:)?//")
@@ -62,14 +77,16 @@ def host_of(url):
     return m.group(1).lower() if m else ""
 
 
-def check_package(pkg):
+def check_package(pkg, manifest_name=None):
     checks, stats = [], {}
     def add(cid, status, detail=""):
         checks.append({"id": cid, "status": status, "detail": detail})
 
-    mpath = os.path.join(pkg, "tangible.json")
-    if not os.path.isfile(mpath):
-        add("manifest", "fail", "tangible.json 없음"); return checks, stats, None
+    # 선언 파일: 지정 이름 > tangible.json(전달본) > tangible.published.json(변환본, story/<slug>/ 에 둔다)
+    names = [manifest_name] if manifest_name else ["tangible.json", "tangible.published.json"]
+    mpath = next((os.path.join(pkg, n) for n in names if n and os.path.isfile(os.path.join(pkg, n))), None)
+    if not mpath:
+        add("manifest", "fail", "선언 파일 없음: " + " / ".join(n for n in names if n)); return checks, stats, None
     try:
         m = json.load(open(mpath, encoding="utf-8"))
     except Exception as e:
@@ -105,11 +122,19 @@ def check_package(pkg):
             add(key, "pass", v)
 
     # register / approval
+    exc = [e for e in (m.get("exceptions") or []) if isinstance(e, dict)]
+    def exc_for(check, target=None):
+        for e in exc:
+            if e.get("check") == check and (target is None or e.get("target") in (None, "", target)) and e.get("approvedBy") and e.get("reason"):
+                return e
+        return None
     reg = m.get("uiRegister")
     if reg == "해라체":
         add("register", "pass", "해라체")
     elif m.get("uiRegisterWaiver"):
         add("register", "warn", f"{reg} — 예외 사유: {m['uiRegisterWaiver'][:80]}")
+    elif exc_for("register"):
+        e = exc_for("register"); add("register", "warn", f"{reg} — 예외 승인 {e.get('approvedBy')} {e.get('at','')}: {e.get('reason','')[:70]}")
     else:
         add("register", "fail", f"uiRegister {reg!r} — 신규 꾸러미는 해라체(예외는 uiRegisterWaiver)")
     pa = m.get("publishApproval") or {}
@@ -133,11 +158,16 @@ def check_package(pkg):
     # rights
     rs = m.get("rights") or []
     bad = [r.get("target") for r in rs if r.get("status") not in RIGHT_STATUS]
-    blocking = [r.get("target") for r in rs if r.get("required") and r.get("status") == "unconfirmed"]
+    blocking = [r.get("target") for r in rs if r.get("required") and r.get("status") == "unconfirmed" and not exc_for("rights", r.get("target"))]
+    excused = [r.get("target") for r in rs if r.get("required") and r.get("status") == "unconfirmed" and exc_for("rights", r.get("target"))]
     unconf = [r.get("target") for r in rs if r.get("status") == "unconfirmed" and not r.get("required")]
     if bad: add("rights", "fail", "status enum 위반: " + ", ".join(map(str, bad)))
     elif blocking: add("rights", "fail", "필수 자산 권리 미확인: " + ", ".join(map(str, blocking)))
-    else: add("rights", "warn" if unconf else "pass", ("선택 자산 미확인: " + ", ".join(map(str, unconf))) if unconf else f"{len(rs)}건 확인")
+    else:
+        notes = []
+        if excused: notes.append("예외 승인(필수·미확인): " + ", ".join(map(str, excused)))
+        if unconf: notes.append("선택 자산 미확인: " + ", ".join(map(str, unconf)))
+        add("rights", "warn" if notes else "pass", " | ".join(notes) if notes else f"{len(rs)}건 확인")
 
     # verify-result
     vp = m.get("verifyResultPath")
@@ -147,8 +177,9 @@ def check_package(pkg):
             vr = json.load(open(vfile, encoding="utf-8"))
             cks = vr.get("checks") or []
             failed = [c.get("id") for c in cks if c.get("required") and c.get("status") != "pass"]
+            meta = "" if (vr.get("ranAt") and vr.get("env")) else " (ranAt/env 없음 — 실행 환경을 적어 달라)"
             add("verify", "fail" if failed or not cks else "pass",
-                ("필수 검사 미통과: " + ", ".join(map(str, failed))) if failed else (f"{len(cks)}건" if cks else "checks 비어 있음"))
+                ("필수 검사 미통과: " + ", ".join(map(str, failed))) if failed else ((f"{len(cks)}건" + meta) if cks else "checks 비어 있음"))
         except Exception as e:
             add("verify", "fail", f"verify-result 파싱 실패: {e}")
 
@@ -164,12 +195,12 @@ def check_package(pkg):
                 p = os.path.join(dp, f); rel = os.path.relpath(p, pkg).replace(os.sep, "/")
                 try: t = open(p, encoding="utf-8", errors="ignore").read()
                 except Exception: continue
-                refs = RUNTIME_ATTR.findall(t) + FETCH.findall(t) + (CSS_URL.findall(t) if f.lower().endswith((".css", ".html", ".htm")) else [])
+                refs = runtime_refs(t) + FETCH.findall(t) + (CSS_URL.findall(t) if f.lower().endswith((".css", ".html", ".htm")) else [])
                 for r in refs:
                     r = r.strip()
                     if r.startswith(("data:", "#", "mailto:", "blob:")): continue
                     if ABS_URL.match(r):
-                        if r not in declared: ext_undeclared.append(f"{rel}: {r[:70]}")
+                        if not any(r == d or r.startswith(d) for d in declared): ext_undeclared.append(f"{rel}: {r[:70]}")
                         elif host_of(r) not in ALLOWED_HOSTS: ext_bad.append(f"{rel}: {host_of(r)}")
                     elif r.startswith("/"):
                         abs_hits.append(f"{rel}: {r[:60]}")
@@ -203,9 +234,10 @@ def check_package(pkg):
 def main():
     ap = argparse.ArgumentParser(description="탠저블 데이터 발행 꾸러미 검사 v0.1")
     ap.add_argument("package"); ap.add_argument("--json", action="store_true")
+    ap.add_argument("--manifest", help="선언 파일 이름(기본: tangible.json, 없으면 tangible.published.json)")
     a = ap.parse_args()
     pkg = os.path.abspath(a.package)
-    checks, stats, _m = check_package(pkg)
+    checks, stats, _m = check_package(pkg, a.manifest)
     ok = not any(c["status"] == "fail" for c in checks)
     if a.json:
         print(json.dumps({"ok": ok, "package": pkg, "spec": SPEC, "checks": checks, "stats": stats}, ensure_ascii=False, indent=1))
