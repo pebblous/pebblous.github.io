@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duplicate Rows in Anomaly Detection Benchmarks | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="Comparing all 690 OddBench datasets row by row turned up train-test overlap in 355, and switching the counting unit moved AUROC past 0.05 on 50 to 61 of them.">
+    <meta name="keywords" content="anomaly detection benchmark, duplicate rows, train test overlap, label conflict, AUROC reliability, replication-invariant AUROC, OddBench, observational unit, data quality, AI-Ready Data, machine learning evaluation">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/anomaly-benchmark-identical-rows/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/anomaly-benchmark-identical-rows/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/anomaly-benchmark-identical-rows/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/anomaly-benchmark-identical-rows/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="On the AI Exam, the Same Row Carries Two Different Answers">
+    <meta property="og:description" content="Two rows that do not differ in a single cell are labeled normal and anomalous. This is the record of comparing 690 public anomaly detection datasets one row at a time.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/anomaly-benchmark-identical-rows/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/anomaly-benchmark-identical-rows/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Bar diagram comparing the 355 datasets with train-test overlap and the 147 with conflicting labels among 690 public anomaly detection datasets">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-09-28">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="On the AI Exam, the Same Row Carries Two Different Answers">
+    <meta name="twitter:description" content="Switching the counting unit from rows to values moved AUROC by more than 0.05 on 50 to 61 datasets, and changed the top-ranked detector on 30.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/anomaly-benchmark-identical-rows/en/image/index.png">
+    <meta name="twitter:image:alt" content="Bar diagram comparing the 355 datasets with train-test overlap and the 147 with conflicting labels among 690 public anomaly detection datasets">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20260928"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20260928">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20260928">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20260928">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#row-audit" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 690 Datasets, Compared One Row at a Time</a></li>
+                    <li><a href="#what-repetition-means" class="block pl-4 themeable-toc-link transition-colors duration-200">2. What It Means When the Same Row Appears 500 Times</a></li>
+                    <li><a href="#counting-unit" class="block pl-4 themeable-toc-link transition-colors duration-200">3. The Same Four Detectors, a Different Winner</a></li>
+                    <li><a href="#scout" class="block pl-4 themeable-toc-link transition-colors duration-200">4. A Detector That Separates Shape From Frequency</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Why Pebblous Is Watching This Paper</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            When a table arrives and a model is graded on it, we usually count one row as one observation. But if rows with identical values appear several times over, the first thing to settle is what that repetition is. It might be a record of the same account transacting normally for three days straight. It might be the mark left by one record copied three times while two tables were joined. A paper posted to arXiv on 27 August put that question to every public dataset in the anomaly detection field. This article looks at what the audit turned up, and at how much the scoreboard moves once the counting unit changes.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            An exact-row audit of the 690 datasets in the anomaly detection benchmark collection OddBench found that in 355 of them, more than half, the training set and the test set both contained the very same row. And in 147, two rows that did not differ in a single cell carried the labels normal and anomalous respectively. The author stops short of calling this an error. There are legitimate reasons for a row to repeat, and the released table alone cannot tell you which reason applies — that is the paper's actual claim.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Sections 1 through 4 report what the paper says. Section 5 is this article's own reading of it.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Figures</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: Deng, <a href="https://arxiv.org/abs/2609.29580" target="_blank" rel="noopener" class="underline">arXiv:2609.29580</a>, abstract, Table 1, and experimental sections.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">355 / 690</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Datasets where training and test data overlap</p>
+                            <p class="text-xs themeable-muted mt-1">Both sides hold a row whose values match exactly, which is 51.4% of the benchmark</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">137</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Datasets that grade a normal as an anomaly</p>
+                            <p class="text-xs themeable-muted mt-1">A row marked anomalous in the test set is identical to a row taught as normal</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">50&ndash;61</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Datasets where AUROC moved by more than 0.05</p>
+                            <p class="text-xs themeable-muted mt-1">With the model untouched and only the counting unit switched from rows to values, for each of four detectors</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">30</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Datasets where the top detector changed</p>
+                            <p class="text-xs themeable-muted mt-1">The same four detectors ran on the same data, and the winner depended on the counting unit</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="row-audit" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">690 Datasets, Compared One Row at a Time</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Anomaly detection is the work of picking out what stands apart from the normal crowd. Card fraud, early signs of equipment failure, attempts to break into a server. Researchers in this field score every new method against a collection of public datasets. OddBench is one such collection, holding 690 tabular datasets already divided into training and test portions.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What the author did is simple. He opened all 690 and counted where, and how often, a row appeared whose values did not differ in a single cell. Not approximate matches, not similarity, only exact equality. The result is Table 1 of the paper.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This sits on a different layer from the checks the field has run so far. ADBench, from 2022, compared 30 methods across 57 datasets, and MacrOData, out this year, pushed that scale to 2,446. There has been work cataloguing the traps that splitting procedures set in tabular deep learning, and there are tools that learn a representation and rank the samples most likely to be duplicates or label errors. What grew in all of those was the number of methods compared and the number of datasets. What this paper counts is neither methods nor datasets but the rows inside a dataset. Which is why growing the model side does not reach it, as the author notes up front in the introduction. A detector that swaps only its encoder or prediction head cannot recover missing provenance, entity numbers, time, or exposure, and bringing in a foundation model trained on tables wholesale still maps identical rows to identical scores.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="30" font-size="13" font-weight="600" fill="var(--text-secondary)">Exact-row audit of all 690 OddBench datasets (bar length scales with dataset count)</text>
+
+                            <text x="270" y="76" font-size="12" text-anchor="end" fill="var(--text-muted)">All datasets</text>
+                            <rect x="280" y="58" width="360" height="26" rx="4" fill="#BDBDBD" opacity="0.5"/>
+                            <text x="652" y="76" font-size="12.5" font-weight="600" text-anchor="end" fill="var(--text-secondary)">690</text>
+
+                            <text x="270" y="124" font-size="12" text-anchor="end" fill="var(--text-muted)">Train&ndash;test overlap</text>
+                            <rect x="280" y="106" width="185" height="26" rx="4" fill="#F86825"/>
+                            <text x="477" y="124" font-size="12.5" font-weight="600" fill="#F86825">355 (51.4%)</text>
+
+                            <text x="270" y="172" font-size="12" text-anchor="end" fill="var(--text-muted)">Identical values, conflicting labels</text>
+                            <rect x="280" y="154" width="77" height="26" rx="4" fill="#585858"/>
+                            <text x="369" y="172" font-size="12.5" font-weight="600" fill="var(--text-secondary)">147 (21.3%)</text>
+
+                            <text x="270" y="220" font-size="12" text-anchor="end" fill="var(--text-muted)">Inside the test set alone</text>
+                            <rect x="280" y="202" width="73" height="26" rx="4" fill="#808080"/>
+                            <text x="365" y="220" font-size="12.5" font-weight="600" fill="var(--text-secondary)">140 (20.3%)</text>
+
+                            <text x="270" y="268" font-size="12" text-anchor="end" fill="var(--text-muted)">Anomaly = a training normal</text>
+                            <rect x="280" y="250" width="71" height="26" rx="4" fill="#171719"/>
+                            <text x="363" y="268" font-size="12.5" font-weight="600" fill="var(--text-secondary)">137 (19.9%)</text>
+                        </svg>
+                        <figcaption class="text-sm themeable-muted mt-3">Original Pebblous diagram, carrying over the counts in Table 1 of Deng (2026). The lower three categories can overlap one another.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Each line means something slightly different. The 355 are cases where a row from the training set also sits in the test set unchanged. The model meets a question it has already seen. The 147 are cases where rows with completely identical values were split between normal and anomalous, counted across training and test together. Of those, 140 show the same conflict even when you look only inside the test set. And in 137, a row the test grades as anomalous does not differ by a single character from a row the training taught as normal.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That last line is the awkward one because the grading does not hold together. If the model answers normal for that row, it answered as it was taught and gets marked wrong. If it answers anomalous, it gets marked right but answered against what it learned. Neither direction measures ability.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Where rows carry the same values but split labels, no model can tell the two apart. The input is the same, so the output has to be the same, and one side is guaranteed wrong. From here the author computed, for each dataset, the ceiling on the score any model could reach. Twenty-nine datasets cannot touch an AUROC of 0.99 no matter how good the model, 17 are capped at 0.95, and 7 at 0.90. The remaining distance is not a gap in skill but a portion the data deducted in advance.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6">
+                        With Isolation Forest running, the more often this conflict appeared in a dataset, the lower its published AUROC. The correlation is &minus;0.221, not large, yet hard to write off as chance. Overlap showed up on the side that shaves scores rather than inflates them, pointing the same way as the ceiling just described. The author is firm, though, that this is an association and not a causal estimate.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="what-repetition-means" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What It Means When the Same Row Appears 500 Times</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Read only this far and it sounds like a paper faulting whoever built the benchmark. The author does not go that way. The example the introduction opens with shows what kind of paper this is. Suppose one transaction record sits in the table 500 times. A join may have gone wrong and copied one record 500 times. It may be the trace of an attack that sent the same request over and over. Entity numbers and timestamps may have been stripped, leaving 500 genuinely different records looking identical. Or it may simply be a normal transaction that happened 500 times.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The four demand opposite judgments. If it is a replay attack, the repetition itself is the strongest anomaly signal there is. If it is a join accident, the repetition is noise to be erased. If identifiers were stripped, the 500 really are 500, and collapsing them to one destroys information. Yet all the table records is the pattern of values and a count of the rows carrying it.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Why the same row appeared 500 times</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Then the repetition is</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">The right handling</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">A normal transaction that really happened 500 times</td>
+                                    <td class="py-3 pr-4">Business frequency</td>
+                                    <td class="py-3 pr-4">Count it as 500 as it stands</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">An attack sending the same request over and over</td>
+                                    <td class="py-3 pr-4">The anomaly signal itself</td>
+                                    <td class="py-3 pr-4">Feed the count into detection</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">A join gone wrong, copying one record</td>
+                                    <td class="py-3 pr-4">Noise from the data pipeline</td>
+                                    <td class="py-3 pr-4">Collapse it to one</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">Entity numbers and timestamps stripped away</td>
+                                    <td class="py-3 pr-4">500 genuinely different records</td>
+                                    <td class="py-3 pr-4">Collapsing loses information</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The two right-hand columns differ on all four lines. And nothing inside the table tells you which line the left-hand column is on.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper pins this difficulty down as a proposition. How many times a given value is observed on average is written as the product of three things. How long you watched, which is exposure. How often the thing genuinely happens in the business, which is intensity. And by what factor the process that built the data inflated it, which is replication. The trouble is the second and the third. Multiply intensity by any number and divide replication by the same number, and the product is unchanged. Observe as many values as you like and the two shares still cannot be separated, which the author calls the non-identifiability of frequency causes.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Assigning a cause requires information from outside the table. The paper names four. Records of the same object observed repeatedly at several points in time, a provenance history of where and how each row entered, entity identifiers, and interventions that deliberately alter values. Miss any one of them and the meaning of a duplicate stays undetermined. A static table gives no answer.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6 mt-6">
+                        So the paper's conclusion is not an instruction on how to handle duplicates. It marks out three branches, that multiplicity may be signal, may be nuisance, or may be uninterpretable without further information, and it stops at spelling out the conditions under which each branch holds. This is also why it declines to recommend global deduplication. Wipe duplicates in bulk and the genuine frequency information goes out with them. The author likewise rejects the opposite prescription, writing the duplicate count into a feature column, because the geometry the detector sees gets distorted by exactly that much.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="counting-unit" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Same Four Detectors, a Different Winner</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A model gets graded whether or not the meaning of a duplicate has been settled. How much that report card wobbles is the paper's second experiment. The AUROC in ordinary use counts one row as one vote. If rows with identical values appear 500 times, that one value casts 500 votes. The alternative the author set against it gives one vote per distinct value. However many times it turned up, the same value is one vote. The paper calls the first row weighting and the second support weighting, and it names the metric computed the second way replication-invariant AUROC, a metric proven to hold its value under any amount of row duplication.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 250" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="30" font-size="13" font-weight="600" fill="var(--text-secondary)">One table, two ways of counting</text>
+
+                            <text x="24" y="62" font-size="12" fill="var(--text-muted)">Rows in the table</text>
+                            <rect x="24" y="74" width="150" height="18" rx="3" fill="#F86825" opacity="0.85"/>
+                            <rect x="24" y="96" width="150" height="18" rx="3" fill="#F86825" opacity="0.85"/>
+                            <rect x="24" y="118" width="150" height="18" rx="3" fill="#F86825" opacity="0.85"/>
+                            <rect x="24" y="140" width="150" height="18" rx="3" fill="#F86825" opacity="0.85"/>
+                            <rect x="24" y="162" width="150" height="18" rx="3" fill="#585858" opacity="0.8"/>
+                            <text x="184" y="126" font-size="11.5" fill="var(--text-muted)">Top four are identical</text>
+
+                            <line x1="330" y1="60" x2="330" y2="230" stroke="var(--text-muted)" stroke-width="1" opacity="0.25"/>
+
+                            <text x="370" y="62" font-size="12" font-weight="600" fill="var(--text-secondary)">Row weighting</text>
+                            <text x="370" y="86" font-size="11.5" fill="var(--text-muted)">One vote per row</text>
+                            <rect x="370" y="98" width="270" height="30" rx="4" fill="#BDBDBD" opacity="0.45"/>
+                            <text x="380" y="118" font-size="11.5" fill="var(--text-secondary)">4 votes for the repeated value + 1 = 5</text>
+
+                            <text x="370" y="162" font-size="12" font-weight="600" fill="var(--text-secondary)">Support weighting</text>
+                            <text x="370" y="186" font-size="11.5" fill="var(--text-muted)">One vote per distinct value</text>
+                            <rect x="370" y="198" width="270" height="30" rx="4" fill="#F86825" opacity="0.18"/>
+                            <text x="380" y="218" font-size="11.5" fill="var(--text-secondary)">1 vote for the repeated value + 1 = 2</text>
+                        </svg>
+                        <figcaption class="text-sm themeable-muted mt-3">Original Pebblous diagram, reducing the two weighting schemes Deng (2026) compared to a five-row table.</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Four classical detectors ran across the 690 datasets with both metrics measured side by side. Isolation Forest, ECOD, HBOS, and COPOD, the ones anomaly detection papers always bring along as baselines. That produced 2,760 detector-dataset pairs. Among them, the cases where nothing but the counting unit changed and AUROC still moved by more than 0.05 numbered between 50 and 61 per detector.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A 0.05 swing is not small. Not one model and not one dataset changed, only what counts as a single vote at grading time, and it moved that far. Look at the averages and nothing appears to have happened. Across the four detectors the two metrics differ on average by 0.0054 to 0.0112. The wobble just described was sitting underneath that average. A signed average does not describe the instability of individual datasets, the paper writes. Nothing was overturned wholesale, of course. The rank correlation between the two metrics is 0.929, so they point broadly the same way. On 64 datasets, though, the ordering of the detectors changed, and on 30 of those the top spot changed hands.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The author takes no side here. If each row really is the intended observational unit, row weighting is answering the right question; if multiplicity crept in while the data was being made, the replication-invariant metric gives the right answer. Which of the two applies is, as section 2 showed, not settled by the table alone. So the paper says to use this metric as a sensitivity check rather than a replacement for row weighting. Where a dataset opens a wide gap between the two values, that is a signal to defer interpreting its score until the counting unit has been declared.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="scout" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A Detector That Separates Shape From Frequency</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The report card is not the only thing that wobbles. A detector trained row by row is skewed in what it learns. An anomaly detection model learns the shape in which normal data is scattered, and if one value sits there 500 times, it takes a distribution thickened 500-fold around that value as the picture of normal. The more often a value was replicated, the more normal it looks, and a value that appeared once gets pushed to the margins. The paper describes this as row-level training learning a law biased in proportion to multiplicity. It is the third consequence, following the evaluation ceiling and the metric sensitivity.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So the back half of the paper turns to the question of how to train instead. SCOUT, the author's proposal, splits one model into two channels. One looks only at the shape of the values. It fits the model once per distinct value, so however many times a row is replicated, this channel's score does not change. The other looks only at how often something appeared. This one, though, switches on only when information such as the observation window or the exposure is supplied alongside. Keeping shape and frequency out of the same space is the point of the design.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In a controlled simulation each channel caught only what it was assigned. On anomalies that stand out by shape the shape channel scored 0.9854, while on anomalies that stand out by frequency alone it scored 0.5012, no better than guessing; the frequency channel did the reverse, at 0.9946 and 0.5351. Isolation Forest, measured alongside, came in at 0.5086 on frequency anomalies and 0.9859 on shape anomalies. The kind of anomaly that arrives as the same request repeating is, in other words, effectively invisible to an ordinary detector.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 310" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="30" font-size="13" font-weight="600" fill="var(--text-secondary)">Mechanism check — three detectors against two kinds of anomaly (AUROC, 0.5 = chance)</text>
+
+                            <rect x="24" y="44" width="12" height="12" rx="2" fill="#F86825"/>
+                            <text x="42" y="54" font-size="11.5" fill="var(--text-muted)">Shape anomaly</text>
+                            <rect x="160" y="44" width="12" height="12" rx="2" fill="#BDBDBD"/>
+                            <text x="178" y="54" font-size="11.5" fill="var(--text-muted)">Frequency anomaly</text>
+
+                            <text x="170" y="100" font-size="12.5" font-weight="600" text-anchor="end" fill="var(--text-secondary)">Shape channel</text>
+                            <rect x="184" y="76" width="256" height="18" rx="3" fill="#F86825"/>
+                            <text x="448" y="90" font-size="12" font-weight="600" fill="#F86825">0.9854</text>
+                            <rect x="184" y="100" width="130" height="18" rx="3" fill="#BDBDBD"/>
+                            <text x="322" y="114" font-size="12" fill="var(--text-secondary)">0.5012</text>
+
+                            <text x="170" y="170" font-size="12.5" font-weight="600" text-anchor="end" fill="var(--text-secondary)">Frequency channel</text>
+                            <rect x="184" y="146" width="139" height="18" rx="3" fill="#BDBDBD"/>
+                            <text x="331" y="160" font-size="12" fill="var(--text-secondary)">0.5351</text>
+                            <rect x="184" y="170" width="259" height="18" rx="3" fill="#F86825"/>
+                            <text x="451" y="184" font-size="12" font-weight="600" fill="#F86825">0.9946</text>
+
+                            <text x="170" y="240" font-size="12.5" font-weight="600" text-anchor="end" fill="var(--text-secondary)">Isolation Forest</text>
+                            <rect x="184" y="216" width="256" height="18" rx="3" fill="#F86825"/>
+                            <text x="448" y="230" font-size="12" font-weight="600" fill="#F86825">0.9859</text>
+                            <rect x="184" y="240" width="132" height="18" rx="3" fill="#BDBDBD"/>
+                            <text x="324" y="254" font-size="12" fill="var(--text-secondary)">0.5086</text>
+
+                            <text x="24" y="290" font-size="11.5" fill="var(--text-muted)">&rarr; Isolation Forest catches shape anomalies but misses ones that stand out by frequency alone.</text>
+                        </svg>
+                        <figcaption class="text-sm themeable-muted mt-3">Original Pebblous diagram, carrying over the controlled-simulation values in Table 3 of Deng (2026).</figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The condition for switching the frequency channel on is where the design's honesty lies. Exposure means how much opportunity there was for the value to appear. The months an account was watched, the hours a machine ran. Ten occurrences out of a single day and ten out of a full year are different stories even at the same count. Without that information there is no basis for interpreting a count, so the channel simply stays off. It is the non-identifiability of section 2 transposed into model architecture.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Both channels pass through a calibration step that guarantees a bound on the false alarm rate. It works by holding out normal data unused in training, looking at how the scores spread there, and setting the alarm threshold from that, which holds without assuming an infinite supply of samples. Running it on 100 datasets across 5 seeds for 691,385 scored tests, the actual rate tracked almost exactly the false alarm rate set at 1%, 5%, and 10%. This is the first number anyone asks about when putting an anomaly detection tool into the field.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The question that matters is whether counting this way costs performance. On 686 datasets across 5 seeds, with four dropped for holding fewer than 40 distinct normal values, SCOUT using only the shape channel went up against a row-trained Isolation Forest: ordinary AUROC came out 0.0026 lower for SCOUT. The confidence interval straddles zero by enough to be judged non-inferior, and measured with the replication-invariant metric SCOUT was ahead instead, by 0.0049. Time per fit is much the same, 0.387 seconds against 0.333.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The difference surfaces when replication is deliberately applied. Copying some normal rows artificially several times over and measuring how far the score ordering shifts, the row-trained Isolation Forest had a rank correlation with a median of 0.9825 and a worst case of 0.8883. Six datasets fell below 0.95. Under the same intervention the ordering from SCOUT's shape channel was exactly as before. Not approximately alike but identical to the limits of numerical precision.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On real data which side comes out ahead varied by table. In the 172 datasets in the top quartile by duplication rate in the training data, SCOUT's ordinary AUROC was 0.0104 lower and its replication-invariant metric 0.0198 higher, opening a clear gap between the two approaches. In the remaining three quarters that gap stayed within 0.0006. Where there are few duplicates, it hardly matters what you count as one, and this discussion turns urgent in tables where identical values have piled up thick.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To the question of whether it would not be better to keep both channels on at all times, the paper answers no with its own experiment. On anomalies that stand out by shape alone, the combined score came in 0.0146 below the shape channel used by itself. Splitting the test in two costs that much, so the default was left at the single channel. What the frequency channel adds is also conditional. Where the rate of occurrence varies sharply with the features, it climbs to between 0.057 and 0.083, but where that dependence is weak it comes to between 0.003 and 0.006. All six comparisons were statistically significant; what settled their usefulness was the size of the gap, not the p-value.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper puts three limits on itself. Both the audit and the detector handle only cases of exact equality. A one-character typo, a rounding position, the same entity differing in a few cells — none of these are caught this way. The guarantee the calibration provides rests on the assumption that normal data behaves the same whatever order it arrives in, so it breaks if the behaviour drifts over time or if anomalies contaminate the calibration data. The frequency channel's usefulness was confirmed only in semi-synthetic experiments, because OddBench carries no exposure information at all.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        An extension swapping the backbone for a Deep Isolation Forest lowered AUROC by 0.0036 across 100 datasets, and the confidence interval failed to clear the non-inferiority bar, so the result was left on the record rather than presented as a successful extension. Another detector that looked promising in simulation reached 0.679 on 20 real datasets, short of the 0.705 from an Isolation Forest built the same way.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Is Watching This Paper</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        From here on this article rereads the paper through the lens of data quality.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        When we say we are inspecting data quality, what we mostly look at is values. Are there blanks, do the digits line up, is anything outside its range. What this paper points at is the layer below that. The values are all perfectly fine, and nowhere is it written whether that one row stands for a single event or for many. With a gap on this layer, every value check passes. And with it passed, the model gets trained and the score gets assigned.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Put the non-identifiability proposition into working language and it goes like this. Once data has been made, no amount of staring at it will produce the answer. The answer was back where it was being made. Which join was applied, which column was dropped for privacy reasons, how the aggregation window was drawn — if that is kept on the record, the meaning of a duplicate is settled, and if it is not, it can never be recovered. Keeping a provenance history and entity identifiers turns out to be not paperwork but the only key that can be used later.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        And this paper does not recommend the deduplicate button. That is the first prescription anyone working on data reaches for, and the moment identical rows are erased the genuine frequency information goes with them. What has to be settled first is what counts as one, and only after that declaration does keeping or deleting follow. If deduplication sits in your toolkit as basic data hygiene, one field needs to go in front of it, recording the observational unit.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In the experiments here not a single model changed, and the top spot on 30 datasets changed hands. If two candidates on an internal model comparison sheet sit within 0.05 of each other, there is nothing on hand to tell whether the difference came from the model or from repetition inside the table. Scoring the same data twice, once by row and once by value, and seeing how far the two values diverge is a day's work. Which tables make that check worth running was already shown in section 4. Where duplicates are few, the result came out nearly the same whichever unit did the counting. So what to measure first is not the score but the duplication rate in your own table.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The observational unit lives in the head of whoever built the data, and it disappears when that person moves teams. What single thing does one row of this table stand for, if the same value appears in several rows how many events is that, which tables were joined to build this one. Three sentences are enough, and they need to sit somewhere that travels with the data, whether beside the schema or in a data description document. Whether the person scoring a model on this table later can interpret their own number depends on that.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The integrity of evaluation sets is ground Pebblous has covered before. We took up <a href="/blog/llm-benchmark-contamination/en/" class="text-orange-500 hover:text-orange-400 underline">benchmark contamination in large language models</a>, where the exam questions were already inside the training data, and we looked at <a href="/blog/preterm-birth-leakage-proof-benchmark/en/" class="text-orange-500 hover:text-orange-400 underline">a preterm birth prediction benchmark</a> whose performance had been inflated because records from one mother were split across training and test. This story sits a layer below both. Nothing leaked out of the exam, and no patient was split across the divide. It sits somewhere that fixing the splitting procedure does not reach. Nobody wrote down what unit a single row counts.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So there is one question that opens your own table. How many pairs of rows with completely identical values sit across our training data and our evaluation data? If nobody has counted, that is worth counting, and if the count comes back positive, the next question is whether that repetition is a number of events that really occurred on the books or a mark left while the data was being moved. Without records that can answer the second question, a score assigned on that data is still short of interpretation.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        Thank you for reading this far. The paper this article follows is available <a href="https://arxiv.org/abs/2609.29580" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">in full and free on arXiv</a>. We would be glad if you counted how many pairs of exactly identical rows sit in the evaluation data your organization uses, and told us what you found.
+                    </p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Primary Source</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Deng, J. (2026). "<a href="https://arxiv.org/abs/2609.29580" target="_blank" rel="noopener">When Identical Rows Disagree: From Benchmark Identifiability to Replication-Robust Anomaly Detection</a>." arXiv preprint.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Compared Benchmarks</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">Han, S., Hu, X., Huang, H., Jiang, M. &amp; Zhao, Y. (2022). "<a href="https://proceedings.neurips.cc/paper_files/paper/2022/hash/cf93972b116ca5268827d575f2cc226b-Abstract.html" target="_blank" rel="noopener">ADBench: Anomaly Detection Benchmark</a>." <em>Advances in Neural Information Processing Systems</em>, Vol. 35.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Ding, X., Klüttermann, S., Wen, H., Chen, Y. &amp; Akoglu, L. (2026). "<a href="https://arxiv.org/abs/2602.09329" target="_blank" rel="noopener">MacrOData: New Benchmarks of Thousands of Datasets for Tabular Outlier Detection</a>." <em>Proceedings of the ACM SIGKDD Conference on Knowledge Discovery and Data Mining</em>.</span></li>
+                    </ul>
+                </section>
+
+                <!-- FAQ placeholder — rendered from the faqs array in config -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20260928"></script>
+    <script src="/scripts/citation-download.js?v=20260928" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-09-27T23:44:20.671Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-09-28T00:00:21.672Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1790552660672-ia4ppe",
+                "version": "0.1.0",
+                "sha": "4d286adf0479514d8eff335c4c5ce2eccb6cecf5",
+                "builtAt": "2026-09-26T10:19:57.769Z"
+              },
+              "recordedAt": "2026-09-28T01:56:59.773Z"
+            },
+            mainTitle: "On the AI Exam, the Same Row Carries Two Different Answers",
+            subtitle: "An exact-row audit of all 690 OddBench anomaly detection datasets found train-test overlap in 355 and conflicting labels on identical rows in 147",
+            pageTitle: "Duplicate Rows in Anomaly Detection Benchmarks | Pebblous",
+            category: "tech",
+            publishDate: "2026-09-28",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/anomaly-benchmark-identical-rows/en/",
+            tags: ["Anomaly Detection", "Benchmark", "Duplicate Rows", "AUROC", "Data Quality", "OddBench", "ML Evaluation", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "What kind of data is OddBench?",
+                    answer: "It is a public benchmark gathering 690 tabular anomaly detection datasets. Researchers publishing new anomaly detection methods use it as standard material for comparing performance, and it ranks among the largest of its kind. Each dataset is divided into training and test portions, and every row carries a label of normal or anomalous."
+                },
+                {
+                    question: "What does a row with completely identical values mean?",
+                    answer: "It means a row whose every feature cell matches without a single difference. Not a similar row or a row with high similarity, only exact equality was counted. That is why this audit cannot catch near-duplicates such as a one-character typo, a rounding position, or the same entity differing in a few cells. The paper states this limit itself."
+                },
+                {
+                    question: "Is the train-test overlap found in 355 datasets an error?",
+                    answer: "The paper does not conclude that it is. There are legitimate reasons for the same value to appear in both the training set and the test set. The same account repeating a normal transaction of the same shape across several days is one. But the released table alone cannot distinguish a legitimate repetition from a copy created while the data was being built, and that is the paper's claim."
+                },
+                {
+                    question: "Why are the 137 more awkward than the 355 or the 147?",
+                    answer: "They are cases where a row graded as an anomaly in the test set carries the same values as a row taught as normal during training. Answer normal as the model was taught and it is marked wrong; answer anomalous and it is marked right but has answered against what it learned. Since neither answer measures ability, the grading itself does not hold together."
+                },
+                {
+                    question: "What does it mean that a ceiling forms on the evaluation score?",
+                    answer: "Where rows carry the same values but split labels, the input is the same, so the output has to be the same, and one side is guaranteed wrong. That fixes in advance the highest score each dataset can reach. Twenty-nine datasets cannot touch an AUROC of 0.99 with any model, 17 are capped at 0.95, and 7 at 0.90. That distance is not a gap in model skill."
+                },
+                {
+                    question: "What is the proof that the cause of a duplicate row cannot be known from the data alone?",
+                    answer: "How many times a given value is observed on average is written as the product of how long you watched, how often the thing genuinely happens in the business, and how many times over the data-generating process inflated it. Multiply one of the last two by any number and divide the other by the same number, and the product is unchanged. Since the observed values are the same, the two shares cannot be separated. The paper calls this the non-identifiability of frequency causes, and writes that assigning a cause requires one of four things: repeated observation records, a provenance history, entity identifiers, or an intervention."
+                },
+                {
+                    question: "How do row weighting and support weighting differ?",
+                    answer: "Row weighting gives one vote to each row written in the table. If the same value appears 500 times, that value casts 500 votes. Support weighting gives one vote per distinct value. However many times it turned up, the same value is one vote. The paper calls the metric computed the second way replication-invariant AUROC, and proves it holds its value no matter how many times rows are replicated."
+                },
+                {
+                    question: "So should replication-invariant AUROC be used from now on?",
+                    answer: "The author does not argue that. If each row really is the intended observational unit, ordinary AUROC is answering the right question; if multiplicity crept in while the data was being made, the replication-invariant metric gives the right answer. The paper says to use this metric as a sensitivity check rather than a replacement. Where a dataset opens a wide gap between the two values, that is a signal to defer interpreting the score until the counting unit has been declared."
+                },
+                {
+                    question: "How much do results change when the counting unit changes?",
+                    answer: "Running four classical detectors across 690 datasets produced 2,760 pairs, and the cases where nothing but the counting unit changed and AUROC still moved by more than 0.05 numbered between 50 and 61 per detector. The rank correlation between the two metrics is 0.929, pointing broadly the same way, but on 64 datasets the ordering of the detectors changed, and on 30 of those the top spot changed hands."
+                },
+                {
+                    question: "Why not simply delete all the duplicates?",
+                    answer: "The paper explicitly rejects two prescriptions, and one of them is global deduplication. Erase identical rows in bulk and the genuine business frequency information goes with them. The other is writing the duplicate count into a feature column, rejected on the grounds that the geometry the detector sees gets distorted by exactly that much. Declare the observational unit first and fit the detector afterwards is the paper's conclusion."
+                },
+                {
+                    question: "Does SCOUT perform better than existing methods?",
+                    answer: "A higher score is not the goal. On 686 datasets across 5 seeds, SCOUT using only the shape channel was judged non-inferior to a row-trained Isolation Forest, with an ordinary AUROC difference of 0.0026, and was ahead by 0.0049 on the replication-invariant metric. Time per fit is similar too, 0.387 seconds against 0.333. Where the values diverge is when replication is deliberately applied. Isolation Forest saw its score rank correlation wobble to a median of 0.9825, while the ordering from SCOUT's shape channel was exactly as before."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
