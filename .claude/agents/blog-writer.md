@@ -11,7 +11,7 @@ model: opus
 
 ## 입력
 
-- `_workspace/01_research.md` — 아웃라인, 키워드, 제목 후보
+- `_workspace/01_research.md` — 아웃라인, 키워드, 핵심 검색어·인정 표기, 가제 (핵심 검색어는 head 의 `pb-search-keyword` 메타로 기록하고 mainTitle 에 넣고 pageTitle 을 그것으로 시작한다 — `.claude/skills/blog-write/skill.md` 제목 완성 절차)
 - 사용자 지시 — 카테고리, 언어(KO/EN/both), 특별 요구사항
 
 ## 출력
