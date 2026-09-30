@@ -437,7 +437,7 @@ main table tbody tr:hover {
                 // Hero Section용 동적 제목 (필수!)
                 mainTitle: "주요 제목",  // <h1 id="page-h1-title">에 삽입됨
                 subtitle: "부제목",      // mainTitle과 합쳐져서 full title 생성
-                pageTitle: "주요 제목: 부제목 | 페블러스",  // <title> 태그용
+                pageTitle: "핵심 검색어 + 이 글이 주는 것 | 페블러스",  // <title> 태그와 같은 값 — 핵심 검색어로 시작, mainTitle 복사 금지(title-strategy §2)
 
                 // Hero Section용 발행 정보 (필수!)
                 publishDate: "2025년 XX월 XX일",           // <span id="publish-date">에 삽입
@@ -1001,7 +1001,8 @@ main table tbody tr:hover {
 - [ ] ❌ `<span id="publish-date">`, `<span id="publisher">` 태그 내부를 **비워둠** (정적 텍스트 작성 금지!)
 - [ ] ✅ `config.mainTitle` 속성 정의 (주요 제목)
 - [ ] ✅ `config.subtitle` 속성 정의 (부제목)
-- [ ] ✅ `config.pageTitle` 속성 정의 ("[mainTitle]: [subtitle] | 페블러스" 형식)
+- [ ] ✅ `config.pageTitle` 속성 정의 (핵심 검색어로 시작(앞 1/3) + 이 글이 주는 것(분석·검증·비교·정리·가이드·"~란?") + " | 페블러스" — `docs/title-strategy.md` §2, mainTitle 복사 금지. `<title>` 과 같은 값)
+- [ ] ✅ head 에 `<meta name="pb-search-keyword" content="핵심 검색어">` (정본 `docs/ko-style-standard.md` §4-2)
 - [ ] ✅ `config.publishDate` 속성 정의 ("2025년 XX월 XX일" 형식)
 - [ ] ✅ `config.publisher` 속성 정의 (기본: "페블러스 데이터 커뮤니케이션 팀")
 - [ ] `<header class="text-center mb-16">` 중앙 정렬 확인

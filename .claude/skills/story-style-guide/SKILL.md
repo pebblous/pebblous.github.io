@@ -30,6 +30,7 @@ DataClinic 스토리 포스트 생성 시 **반드시** 따라야 할 HTML/CSS �
 - [ ] `og:image:alt` 메타 태그 포함
 - [ ] `twitter:image:alt` 메타 태그 포함
 - [ ] `PebblousPage.init(config)` 직접 호출 (DOMContentLoaded 래퍼 없음, typeof 가드 없음)
+- [ ] head 에 `pb-search-keyword` — 핵심 검색어(§7). `config.pageTitle`·`<title>` 은 그 검색어로 시작하고 서로 같은 값
 
 ---
 
@@ -197,23 +198,26 @@ EN 버전:
 
 ## 7. 제목/부제목 일관성 (Title Consistency Rule)
 
-제목과 부제목은 **5곳에서 동일**해야 합니다:
+제목과 부제목은 **아래 자리에서 같은 사실**이어야 합니다. 검색 결과 제목(`pageTitle`·`<title>`)만은 본문 제목을 옮기지 않고
+핵심 검색어로 따로 씁니다 — 정본 [`docs/ko-style-standard.md` §4-2](../../../docs/ko-style-standard.md) · [`docs/title-strategy.md` §2](../../../docs/title-strategy.md).
 
 | 위치 | 제목 | 부제목 |
 |------|------|--------|
-| `config.mainTitle` | ✅ 원본 | |
+| `<head>` 메타 | `<meta name="pb-search-keyword" content="핵심 검색어">` (+ 선택 `pb-search-keyword-forms` — 같은 이름의 다른 표기만) | |
+| `config.mainTitle` | ✅ 원본 — 핵심 검색어를 담는다 | |
 | `config.subtitle` | | ✅ 원본 |
-| `config.pageTitle` | `{mainTitle} — {subtitle} \| 페블러스` | |
-| `<title>` | `config.pageTitle`과 동일 | |
+| `config.pageTitle` | 핵심 검색어로 시작(앞 1/3) + 이 글이 주는 것(분석·검증·비교·정리·가이드·"~란?") + ` \| 페블러스` — title-strategy §2, mainTitle 복사 금지 | |
+| `<title>` | `config.pageTitle`과 글자까지 동일 (다르면 제목 관문 결함) | |
 | `og:title` | `{mainTitle} — {subtitle}` | |
 | `twitter:title` | `og:title`과 동일 | |
 | `articles.json title` | `{mainTitle} — {subtitle}` | |
 | OG 이미지 | `og:title`에서 렌더링 (줄바꿈만 다름) | |
 
 **변경 시 체크리스트:**
+0. head 에 `pb-search-keyword` 가 있는가 — 핵심 검색어(사람들이 이 이야기를 찾으려고 치는 이름)
 1. `config.mainTitle` / `config.subtitle` 수정
-2. `config.pageTitle` 수정
-3. `<title>` 태그 수정
+2. `config.pageTitle` 수정 — 본문 제목을 바꿨다고 따라 바꾸지 않는다. 검색 결과 제목은 핵심 검색어로 시작하는 따로 쓴 제목이다
+3. `<title>` 태그 수정 — `config.pageTitle` 과 같은 값
 4. `og:title` + `twitter:title` 수정
 5. `og:image:alt` + `twitter:image:alt` 수정
 6. **사이드카** `articles.d/<id>.json` 의 title + description 수정 (⛔ articles.json 직접편집 금지 — 사이드카가 없으면 그 글의 항목으로 새로 생성. CI가 base에 overlay. 샤딩: `docs/articles-sharding.md`)

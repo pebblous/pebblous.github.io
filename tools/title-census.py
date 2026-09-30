@@ -1,37 +1,48 @@
 #!/usr/bin/env python3
 """
-title-census.py — 한글 제목 전수조사 (제목 정본 v3 — docs/ko-style-standard.md §4-2, 2026-09-13 형님 판정).
+title-census.py — 한글 제목 전수조사 (제목 정본 v3 — docs/ko-style-standard.md §4-2, 2026-09-13 형님 판정 · 핵심 검색어 2026-09-28 형님 판정).
 
-정본 v3: 중학생이 알아듣고 누르고 싶은 제목. 세 형태(질문형·신문 명사형·현재형 주장) 중 하나로 쓰고,
-과거형 서술 종결·제목 안 수치·낯선 고유명사/전문용어·AI 어투를 금지한다. 주어 먼저·20~35자·평이한 낱말은 유지.
-이 도구는 그중 코드로 잴 수 있는 것만 잰다 — 과거형 서술 종결(종결 음절 받침 ㅆ)·제목 안 아라비아 수치·영문 약어 4자 이상(권고)·
+정본: 주인공 이름(핵심 검색어)을 담고, 중학생이 알아듣고 누르고 싶은 제목. 세 형태(질문형·신문 명사형·현재형 주장) 중 하나로 쓰고,
+과거형 서술 종결·제목 안 수치·업계 용어·AI 어투를 금지한다. 주어 먼저·20~35자·평이한 낱말은 유지.
+핵심 검색어(main search keyword)는 사람들이 이 이야기를 찾으려고 치는 이름이다(the name people type to find this story) —
+글 head 의 <meta name="pb-search-keyword" content="…"> 와 선택 <meta name="pb-search-keyword-forms" content="Jev|제브|TypeSafe Jev">(인정 표기, | 로 가름)에서 읽는다.
+이 도구는 그중 코드로 잴 수 있는 것만 잰다 — 핵심 검색어가 mainTitle 에 있는가·pageTitle 에 있는가(앞 1/3 권장)·기록이 이름인가·기획 고정값과 같은가·
+과거형 서술 종결(종결 음절 받침 ㅆ)·제목 안 아라비아 수치(핵심 검색어 속 숫자는 이름의 일부라 세지 않는다)·영문 약어 4자 이상(권고)·
 길이·줄표/콜론의 허용 형태·인용+반전·대조 공식·미끼·키워드 나열·잘린 명사형·수수께끼 패턴·관형절 사슬.
 중학생 시험(이해)·클릭 시험은 title-gate 의 눈감은 심판(LLM)과 사람이 본다 — 검사기 통과 ≠ 좋은 제목.
 
 articles.json의 published=true, language=ko 전 글에 대해 제목 3슬롯을 결정론 규칙으로 채점한다:
-  - mainTitle  (= articles.json title, 카드/Hero 제목) — 가장 엄격
+  - mainTitle  (= articles.json title, 카드/Hero 제목) — 가장 엄격. 핵심 검색어가 없으면 결함
   - subtitle   (글 HTML의 PebblousPage.init config에서 추출) — 리드문 기준
-  - pageTitle  (글 HTML에서 추출) — 검색 변형 기준
+  - pageTitle  (글 HTML config, 없으면 <title>) — 검색 결과 제목. 핵심 검색어 필수(앞 1/3 권장)·브랜드 꼬리·mainTitle 복사 금지·<title> 과 같아야 한다
 
 출력은 admin 제목 검토 콘솔(/admin/titles)의 데이터 계약(title-review.ts loadCensus)과 호환:
-  [{slug, mt_score, mt_reason, mt_fix, ...}]  — mt_score 낮을수록 우선 검토 대상.
+  [{slug, mt_score, mt_reason, mt_fix, ..., keyword}]  — mt_score 낮을수록 우선 검토 대상.
 채점 스케일: 0~10 (10 = §0 통과). 감점 근거는 mt_labels/mt_reason에 남긴다.
 mt_fix(제안 새 제목)는 이 도구가 만들지 않는다 — 규칙 위반 목록을 근거로 사람/LLM이 채운다.
 
 사용:
   python3 tools/title-census.py                     # cwd의 articles.json → _workspace/title-review/titles_scored.json
-  python3 tools/title-census.py --repo <clone경로>   # 다른 클론 대상
+  python3 tools/title-census.py --repo <클론경로>   # 다른 클론 대상
   python3 tools/title-census.py --dry-run           # 파일 안 쓰고 통계만
   python3 tools/title-census.py --min-score 7       # 해당 점수 미만만 출력(리포트용)
+  python3 tools/title-census.py --check-html <글/ko/index.html> [--check-html …]
+                                                    # 게이트 모드: 3슬롯 판정 JSON, 위반 있으면 exit 1
+  python3 tools/title-census.py --check-html <파일> --keyword Jev --keyword-forms 'Jev|제브|TypeSafe Jev'
+                                                    # 핵심 검색어를 메타 대신 지정(단일 파일 검사·옛 글 재현용)
+  python3 tools/title-census.py --check-html <파일> --require-keyword --pinned-keyword Jev --pinned-forms 'Jev|제브'
+                                                    # 엔진 title-gate 가 새 글에 붙이는 것 — 기록 없음 = 결함, 기획 고정값과 대조
 
 기존 titles_scored.json이 있으면 titles_scored-<UTC시각>.bak.json 으로 백업 후 덮어쓴다.
 """
 import argparse
 import datetime
+import html
 import json
 import os
 import re
 import sys
+import unicodedata
 
 # ── 제목 정본 v3 결정론 규칙 (docs/ko-style-standard.md §4-2, 2026-09-13) ──────────
 # 인용 검출 — 실제 인용(쌍)만 잡는다. 영어 아포스트로피(소유격 's·축약 n't·'re 등)는
@@ -271,19 +282,234 @@ def _has_jaeda(t: str) -> bool:
     return bool(_JAEDA.search(t))
 
 
+# ── 핵심 검색어 (2026-09-28 형님 판정: "핵심 키워드가 없는 제목을 누가 보겠니?") ─────────────────────────
+# 핵심 검색어(main search keyword) = 사람들이 이 이야기를 찾으려고 치는 이름(the name people type to find this story).
+# 제품·모델명은 원래 철자(Jev·Gemma 4·VLA·DINOv3), 널리 알려진 회사·인물·기관·나라·법은 독자의 언어(한국어 글: 버니 샌더스·앤트로픽·구글,
+# 영어 글: 원래 철자), 이름 붙은 주인공이 없으면 가장 많이 검색되는 주제 명사. 글 head 에 적는다:
+#   <meta name="pb-search-keyword" content="Jev">                         (하나, 필수)
+#   <meta name="pb-search-keyword-forms" content="Jev|제브|TypeSafe Jev">  (선택 — 제목에 들어가면 인정되는 표기, | 로 가름)
+# 판정: mainTitle 에 인정 표기가 하나도 없으면 결함('핵심 검색어 없음', -3 → 게이트 탈락).
+#       pageTitle(브랜드 꼬리를 뗀 검색 결과 제목)에 인정 표기가 하나도 없으면 결함('핵심 검색어 없음', -3).
+#       있지만 앞 1/3 밖에서 시작하면 권고('핵심 검색어가 뒤에 있음', -1) — 판례집 C 의 C2(6.1%)·C7(3.0%)은 검색어가 줄표 뒤에 있는데도
+#       잘 눌렸다. 판례집 D "규칙이 판례와 어긋나면 규칙을 고친다"(2026-09-30)에 따라 '뒤'는 결함에서 권고로 내렸다.
+#       메타 기록에 관한 판정은 글 머리(keyword_labels)에 붙는다 — 칸이 비어도 사라지지 않게(2026-09-30 리뷰):
+#         '핵심 검색어 미기재'(메타 없음 — --require-keyword 면 결함, 아니면 권고) · '핵심 검색어가 이름이 아님(…)'·'인정 표기가 이름이 아님(…)'
+#         (보통명사 한 낱말·설명구·수치만 — 결함, 그 표기는 제목 대조에서 뺀다) · '핵심 검색어가 기획과 다름(…)'(--pinned-keyword 와 겹치는 표기가 없음 — 결함,
+#         제목은 기획 검색어로 대조한다).
+# 앞 1/3 의 자는 스킬 blog-search-appeal 의 check_proposals.py K1 과 같다(위치 ≤ max(3, 길이/3)) — 두 도구가 같은 제목에 다른 판정을 내지 않게.
+# 표기 비교는 대소문자·띄어쓰기·하이픈을 가리지 않는다("gemma 4"="Gemma4", "가상세포"="가상 세포"). 라틴·숫자로 시작·끝나는 표기는
+# 앞뒤가 라틴·숫자에 붙어 있으면 다른 낱말로 본다("Jev"≠"Jevons", "Gemma 4"≠"Gemma 40", "AI"≠"OpenAI"). 한글 표기는 조사가 붙어도 인정("샌더스의").
+KEYWORD_META = 'pb-search-keyword'
+_BRAND_SUFFIX = re.compile(r'\s*\|\s*(페블러스|Pebblous)\s*$')
+KEYWORD_FORMS_META = 'pb-search-keyword-forms'
+_KW_SEP = r'[\s\-‐‑]*'
+_KW_STRIP = re.compile(r'[\s\-‐‑]+')
+_LATIN_OR_DIGIT = re.compile(r'[A-Za-z0-9]')
+
+
+def _nfc(t: str) -> str:
+    return unicodedata.normalize('NFC', t or '')
+
+
+def split_forms(s) -> list:
+    """'Jev|제브|TypeSafe Jev' → ['Jev', '제브', 'TypeSafe Jev'] (빈 칸·중복 제거, 순서 유지). 리스트도 받는다."""
+    items = s if isinstance(s, (list, tuple)) else (s or '').split('|')
+    out = []
+    for x in items:
+        x = _nfc(str(x)).strip()
+        if x and x not in out:
+            out.append(x)
+    return out
+
+
+def keyword_forms(keyword, forms=None):
+    """핵심 검색어 + 인정 표기 → 인정 표기 목록(핵심 검색어가 맨 앞). 아무것도 없으면 None(= 미기재)."""
+    out = split_forms([keyword] if keyword else []) + split_forms(forms)
+    out = list(dict.fromkeys(out))
+    return out or None
+
+
+def _form_regex(form: str):
+    core = _KW_STRIP.sub('', _nfc(form))
+    if not core:
+        return None
+    body = _KW_SEP.join(re.escape(c) for c in core)
+    pre = r'(?<![A-Za-z0-9])' if _LATIN_OR_DIGIT.match(core[0]) else ''
+    post = r'(?![A-Za-z0-9])' if _LATIN_OR_DIGIT.match(core[-1]) else ''
+    return re.compile(pre + body + post, re.IGNORECASE)
+
+
+def keyword_spans(t: str, forms) -> list:
+    """제목 안 인정 표기 자리 [(시작, 끝)] — 시작 순. forms 가 없으면 []."""
+    t = _nfc(t)
+    spans = []
+    for f in forms or []:
+        rx = _form_regex(f)
+        if rx:
+            spans.extend(m.span() for m in rx.finditer(t))
+    return sorted(set(spans))
+
+
+def keyword_pos(t: str, forms) -> int:
+    """제목 안 첫 인정 표기의 시작 자리, 없으면 -1."""
+    spans = keyword_spans(t, forms)
+    return spans[0][0] if spans else -1
+
+
+def _mask_keyword(t: str, forms) -> str:
+    """핵심 검색어 자리를 'x' 로 덮는다 — 이름 속 숫자(Gemma 4·ISO 5259-2)·약어(CRISPR)는 이름의 일부라 수치·약어로 세지 않는다.
+    덮개가 라틴 소문자라 약어 규칙(대문자 4자+)에 안 걸리고, 수치 규칙의 '라틴에 붙은 숫자는 이름' 예외도 그대로 산다.
+    업계 용어 목록(거버넌스 등)은 덮은 글이 아니라 원래 제목에서 센다 — 검색어를 'AI 거버넌스' 로 적어 용어 규칙을 피하던 우회를 막는다(2026-09-30 리뷰)."""
+    t = _nfc(t)
+    if not forms:
+        return t
+    chars = list(t)
+    for s, e in keyword_spans(t, forms):
+        for i in range(s, e):
+            chars[i] = 'x'
+    return ''.join(chars)
+
+
+def keyword_up_front(page_title: str, forms) -> bool:
+    """검색 결과 제목(브랜드 꼬리를 뗀 것)이 핵심 검색어로 시작하는가 — 첫 인정 표기가 앞 1/3(짧은 제목은 3자) 안에 있으면 참."""
+    bare = _BRAND_SUFFIX.sub('', _nfc(page_title)).strip()
+    pos = keyword_pos(bare, forms)
+    return pos >= 0 and pos <= max(3, len(bare) / 3)
+
+
+_META_TAG = re.compile(r'<meta\b[^>]*>', re.IGNORECASE)
+_META_ATTR = re.compile(r'([A-Za-z_:][\w:.-]*)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'>]+))')
+
+
+def read_keyword_meta(txt: str):
+    """HTML head 의 pb-search-keyword · pb-search-keyword-forms 메타 → (핵심 검색어 | None, 인정 표기 목록).
+    속성 순서·따옴표 종류·HTML 엔티티(&amp; 등)를 가리지 않는다. 본문에 예시로 적힌 메타를 잡지 않도록 </head> 앞만 본다."""
+    end = re.search(r'</head\s*>', txt, re.IGNORECASE)
+    head = txt[:end.start()] if end else txt
+    keyword, forms = None, []
+    for tag in _META_TAG.findall(head):
+        attrs = {m.group(1).lower(): html.unescape(next(g for g in m.groups()[1:] if g is not None))
+                 for m in _META_ATTR.finditer(tag)}
+        name = (attrs.get('name') or '').strip().lower()
+        if name == KEYWORD_META and keyword is None:
+            keyword = _nfc(attrs.get('content') or '').strip() or None
+        elif name == KEYWORD_FORMS_META and not forms:
+            forms = split_forms(attrs.get('content') or '')
+    return keyword, forms
+
+
+# ── 이름이 아닌 표기 (2026-09-30 리뷰 — 검색어 메타로 검사를 비켜 가는 우회를 막는다) ─────────────────────
+# 인정 표기는 **같은 이름의 다른 표기**(원래 철자·한국어 표기·정식 이름·줄인 이름)만이다. 보통명사 한 낱말(AI·모델·회사·법안·연구소)이나
+# 설명구("고르기만 하는 AI")를 적으면 이름이 빠진 제목도 '검색어가 들었다'고 통과한다 — 형님이 버린 Jev 글 제목에 인정 표기
+# 'Jev|고르기만 하는 AI' 를 붙이면 10/10/10 이었다. 그런 표기는 제목 대조에서 빼고, 글 머리 결함으로 남긴다.
+# 핵심 검색어 자신이 보통명사 한 낱말이어도 같다('AI' 로 적으면 Jev 가 빠진 제목이 통과했다) — 이름 있는 주인공이 없는 글은
+# 가장 많이 찾는 주제 명사(데이터 품질·합성 데이터·온톨로지처럼 이 글에 딸린 말)를 쓴다. 블로그 전체가 다루는 'AI' 한 낱말은 아무도 이 글을 찾을 때 치지 않는다.
+_GENERIC_KEYWORDS = frozenset(re.sub(r'[\s\-‐‑]+', '', w).lower() for w in (
+    'AI', '인공지능', '에이아이', 'LLM', '모델', 'AI 모델', '언어 모델', '데이터', '로봇', '회사', '기업', '법안', '법', '법률', '연구소', '연구',
+    '연구진', '정부', '기술', '논문', '스타트업', '서비스', '제품', '플랫폼', '시스템', '알고리즘',
+    'model', 'AI model', 'data', 'robot', 'company', 'bill', 'law', 'lab', 'research', 'startup', 'government', 'technology',
+    'paper', 'artificial intelligence'))
+# 설명구: 이름은 조사·어미로 이어진 구가 아니다. 마지막 낱말 앞에 관형형(~하는·~고르는·~던·~할)이나 조사·연결어미(을·를·만·보다·에서·으로·처럼·
+# 하고·해서·하며)로 끝나는 낱말이 있으면 설명구다. 약한 관형형(~한·~인)은 사람 이름(문재인)·명사 끝음절과 겹쳐 보지 않는다.
+_DESC_TAIL = re.compile(r'[가-힣](을|를|만|보다|에서|으로|처럼|하고|해서|하며)$')
+
+
+def _form_key(f: str) -> str:
+    return _KW_STRIP.sub('', _nfc(f)).lower()
+
+
+def _is_description_form(f: str) -> bool:
+    toks = _nfc(f).split()
+    return len(toks) >= 2 and any(_adnominal_kind(tok) == 'strong' or _DESC_TAIL.search(tok) for tok in toks[:-1])
+
+
+_COUNTER = re.compile(r'(억|만|천|백|조|배|건|명|개|편|년|월|일|원|달러|위|등|가지|점|퍼센트|시간|분|초|개월|주)')
+
+
+def form_problem(f: str):
+    """표기가 이름이 아니면 까닭('수치만'·'일반 낱말'·'설명구'), 이름이면 None."""
+    if not re.search(r'[A-Za-z가-힣]', _COUNTER.sub('', _NUMBER_CHUNK.sub('', _nfc(f)))):
+        return '수치만'   # "700만"·"65%"·"2.7배" — 수치는 이름이 아니다(이름 속 숫자 "Gemma 4" 는 글자가 남아 여기 안 걸린다)
+    if _form_key(f) in _GENERIC_KEYWORDS:
+        return '일반 낱말'
+    if _is_description_form(f):
+        return '설명구'
+    return None
+
+
+def _forms_overlap(a_forms, b_forms) -> bool:
+    """두 표기 목록이 같은 이름을 가리키는가 — 같은 표기이거나 한쪽이 다른 쪽 안에 낱말로 들어 있다("샌더스"⊂"버니 샌더스", "Jev"⊂"TypeSafe Jev")."""
+    for a in a_forms:
+        for b in b_forms:
+            if _form_key(a) == _form_key(b):
+                return True
+            ra, rb = _form_regex(a), _form_regex(b)
+            if (ra and ra.search(_nfc(b))) or (rb and rb.search(_nfc(a))):
+                return True
+    return False
+
+
+def keyword_record(keyword, forms, pinned_keyword=None, pinned_forms=None, require=False):
+    """글에 적힌 핵심 검색어 기록(메타 또는 --keyword)을 기획 고정값(--pinned-keyword)과 대조한다.
+    반환 (match_forms | None, labels, defects):
+      match_forms — 제목 대조에 쓰는 인정 표기(이름이 아닌 표기는 뺐다). 기록이 기획과 어긋나면 기획 검색어로 대조한다. 잴 수 없으면 None.
+      labels      — 글 머리 판정 전부(keyword_labels). defects 는 그중 결함(ok=false)인 것.
+    '미기재'는 require(=이 run 이 새로 만든 글, 엔진이 --require-keyword 로 알린다)일 때만 결함이다 — 옛 글은 기록이 없는 게 보통이다."""
+    recorded = keyword_forms(keyword, forms) or []
+    labels, defects = [], []
+
+    def add(label, defect):
+        labels.append(label)
+        if defect:
+            defects.append(label)
+
+    valid = []
+    for i, f in enumerate(recorded):
+        why = form_problem(f)
+        if why is None:
+            valid.append(f)
+        else:
+            add(f'{"핵심 검색어" if i == 0 else "인정 표기"}가 이름이 아님({why} "{f}")', True)
+    pin_all = keyword_forms(pinned_keyword, pinned_forms) or []
+    pin = [f for f in pin_all if form_problem(f) is None]
+    if pin_all and not pin:
+        add(f'기획 핵심 검색어가 이름이 아님("{pin_all[0]}") — 기획 대조 생략', False)
+    if not recorded:
+        add('핵심 검색어 미기재', require)
+        return (pin or None), labels, defects
+    if pin and not _forms_overlap(recorded, pin):
+        add(f'핵심 검색어가 기획과 다름(기획 "{pin[0]}" · 기록 "{recorded[0]}")', True)
+        return pin, labels, defects
+    match = list(dict.fromkeys(valid + pin))
+    return (match or None), labels, defects
+
+
+# 전달문 종결(2026-09-28 형님 판정 — 샌더스 글 부제 "…30일 안에 없애라고 적는다"를 "무슨 글인지 모르겠다"로 거름):
+# 부제가 "~라고/~다고 적는다" 로 끝나면 조문을 옮겨 적은 서기 문장이다. 무슨 일이 있었는지 말하지 않는다 — 위반.
+# 신문 부제의 흔한 "~라고 밝혔다" 는 건드리지 않는다(판례가 없다). '적는다/적었다/적시한다/적혀 있다' 꼴만 잡는다.
+_REPORTED_WRITE_END = re.compile(
+    r'(?:라고|다고|냐고|자고)\s*(?:적는다|적었다|적고\s*있다|적어\s*두었다|적어\s*뒀다|적시한다|적시했다|적혀\s*있다)\s*[.!…]*\s*$')
+
+
 # 길이 (정본: 20~35자 권장). 45자 초과는 위반, 36~45자·20자 미만은 권고 이탈, 12자 미만은 추상 위험.
 LEN_MIN, LEN_MAX, LEN_HARD = 20, 35, 45
 
 
-def eval_maintitle(t: str):
+def eval_maintitle(t: str, kw_forms=None):
     """mainTitle — 헤드라인. 정본 v3(2026-09-13): 질문형·신문 명사형·현재형 주장 중 하나, 주어 먼저·20~35자.
-    코드로 재는 것: 과거형 서술 종결(위반)/제목 안 수치(1개 권고·2개+ 위반)/영문 약어 4자+(권고)/따옴표/인용+반전/대조/
+    코드로 재는 것: 핵심 검색어(kw_forms 가 주어지면 인정 표기 하나는 있어야 한다 — 2026-09-28 형님 판정)/
+    과거형 서술 종결(위반)/제목 안 수치(1개 권고·2개+ 위반)/영문 약어 4자+(권고)/따옴표/인용+반전/대조/
     줄표·콜론 허용 형태/미끼/키워드 나열/잘린 명사형/수수께끼/관형절 사슬/길이.
-    현재형 종결·질문형·'X: Y'·'— 출처' 꼬리·낱말 강조 작은따옴표는 허용이라 감점하지 않는다."""
+    현재형 종결·질문형·'X: Y'·'— 출처' 꼬리·낱말 강조 작은따옴표는 허용이라 감점하지 않는다.
+    kw_forms=None(잴 수 있는 기록 없음)이면 핵심 검색어는 보지 않는다 — 기록 판정(미기재·이름이 아님)은 글 머리(keyword_labels)에 붙는다."""
     labels, ded = [], 0
+    if kw_forms and keyword_pos(t, kw_forms) < 0:
+        labels.append('핵심 검색어 없음'); ded += 3  # 위반 — 이름을 일반 풀이·보통명사로 바꾸면 찾는 사람이 못 알아본다(Jev·샌더스 판례)
+    # 핵심 검색어 속 숫자·약어는 이름의 일부 — 덮고 센다(Gemma 4 · ISO 5259-2 · CRISPR). 덮은 자리 밖의 것은 그대로 센다.
+    tm = _mask_keyword(t, kw_forms)
     if _has_jaeda(t):
         labels.append('재다→측정하다'); ded += 3  # 위반 — 형님 2026-09-15, 한자어 술어
-    for w in _jargon_hits(t):
+    for w in _jargon_hits(t):   # 원래 제목에서 센다 — 검색어로 용어를 덮지 않는다
         labels.append(f'전문용어({w})'); ded += 3  # 위반 — 중학생이 모르는 업계 용어는 제목에 못 온다
     if _has_quote(t):
         labels.append('따옴표'); ded += 4
@@ -311,12 +537,12 @@ def eval_maintitle(t: str):
         labels.append('수수께끼(주어 없는 무엇을 …)'); ded += 1  # v3: 권고 감점
     if _is_past_end(t):
         labels.append('과거형 종결'); ded += 3  # v3 위반 — 사건 보고문
-    nums = _count_numbers(t)
+    nums = _count_numbers(tm)
     if nums >= 2:
         labels.append('수치 나열'); ded += 3  # v3 위반 — 수치는 부제로
     elif nums == 1:
         labels.append('수치 1'); ded += 1  # v3 권고
-    for a in _unknown_acronyms(t):
+    for a in _unknown_acronyms(tm):
         labels.append(f'영문 약어({a})'); ded += 1  # v3 권고 — 위반은 아니다
     if BALANCED_PAIR.search(t):
         labels.append('균형 대구'); ded += 2
@@ -352,6 +578,8 @@ def eval_subtitle(t: str):
         labels.append('따옴표'); ded += 4
     if SPEECH_TWIST.search(t):
         labels.append('인용+반전'); ded += 3
+    if _REPORTED_WRITE_END.search(t):
+        labels.append('전달문 종결(~라고 적는다)'); ded += 3  # 위반 — 2026-09-28 형님 판정(샌더스 글 부제)
     if CONTRAST.search(t):
         labels.append('대조공식'); ded += 3
     if CLICKBAIT.search(t):
@@ -371,14 +599,30 @@ def eval_subtitle(t: str):
     return max(0, 10 - ded), labels
 
 
-def eval_pagetitle(t: str, main_title: str = ''):
-    """pageTitle — 검색 변형. 따옴표/대조/미끼 금지, 줄표 1개 허용, 브랜드 접미사 필수.
-    main_title이 주어지면 '검색 변형인가'도 본다(§0): 브랜드 접미사만 뗀 게 mainTitle과
-    완전 동일하면 키워드 보강 기회를 놓친 것 — WARN(-2, 8점으로 통과선 위에 남되 표시)."""
+def _same_text(a: str, b: str) -> bool:
+    """띄어쓰기·문장부호·대소문자만 다른 두 문자열이면 참(검색 제목이 본문 제목을 그대로 옮겼는지 볼 때)."""
+    norm = lambda s: re.sub(r'[\W_]+', '', _nfc(s)).lower()
+    return bool(norm(a)) and norm(a) == norm(b)
+
+
+def eval_pagetitle(t: str, main_title: str = '', kw_forms=None):
+    """pageTitle — 검색 결과 제목(<title>). 2026-09-28 형님 판정 이후 검색어로 찾는 사람을 위한 제목이다:
+    핵심 검색어로 시작(앞 1/3 안) → 그 뒤에 이 글이 주는 것(분석·검증·비교·정리·가이드·'~란?') → " | 페블러스"/" | Pebblous".
+    결함(-3, 게이트 탈락): 핵심 검색어가 아예 없음 · 브랜드 꼬리 없음 · mainTitle 을 그대로 옮김.
+    권고: 핵심 검색어가 앞 1/3 밖(-1 — 판례집 C2·C7 은 줄표 뒤 검색어로도 잘 눌렸다) · 60자 초과(-1) · 업계 용어(-1).
+    따옴표/대조/미끼 금지, 줄표 1개 허용, 수치 허용(검색 제목은 수치를 담아도 된다 — 판례집 C 의 '15가지'·'5가지').
+    kw_forms=None(잴 수 있는 기록 없음)이면 핵심 검색어는 보지 않는다 — 기록 판정은 글 머리(keyword_labels)에 붙는다."""
     labels, ded = [], 0
+    bare = _BRAND_SUFFIX.sub('', _nfc(t)).strip()
+    if kw_forms and keyword_pos(bare, kw_forms) < 0:
+        labels.append('핵심 검색어 없음'); ded += 3  # 결함 — 검색한 이름이 검색 결과 제목에 없다(판례집 A 의 Jev·Gemma 4)
+    elif kw_forms and not keyword_up_front(t, kw_forms):
+        # 권고 — 앞에 있을수록 좋지만(판례집 C1·C3), C2 "스스로 연구하고 논문쓰는 AI — AI Scientist v2 분석"(6.1%)·
+        # C7 "한국 합성 페르소나 700만 — Nemotron-Personas-Korea 심층 분석"(3.0%)은 줄표 뒤 검색어로도 사이트 평균의 3~6배 눌렸다.
+        labels.append('핵심 검색어가 뒤에 있음'); ded += 1
     if _has_jaeda(t):
         labels.append('재다→측정하다'); ded += 3  # 위반 — 형님 2026-09-15, 한자어 술어
-    for w in _jargon_hits(t):
+    for w in _jargon_hits(t):   # 원래 제목에서 센다 — 검색어로 용어를 덮지 않는다
         labels.append(f'전문용어({w})→쉬운 말'); ded += 1  # 권고 — 부제도 중학생 시험(2026-09-18)
     if _has_quote(t):
         labels.append('따옴표'); ded += 4
@@ -388,15 +632,53 @@ def eval_pagetitle(t: str, main_title: str = ''):
         labels.append('미끼'); ded += 3
     if len(re.findall(r'[—–]', t)) >= 2:
         labels.append('줄표 2개+'); ded += 2
-    if not re.search(r'\|\s*(페블러스|Pebblous)\s*$', t):
-        labels.append('브랜드 접미사 없음'); ded += 1
+    if not _BRAND_SUFFIX.search(t):
+        labels.append('브랜드 접미사 없음'); ded += 3  # 결함(2026-09-30 권고 -1 → 결함) — 정본 §4-2 세는 자
     if len(t) > 62:
         labels.append('김(60자 초과)'); ded += 1
-    if main_title:
-        bare = re.sub(r'\s*\|\s*(페블러스|Pebblous)\s*$', '', t).strip()
-        if bare and bare == main_title.strip():
-            labels.append('mainTitle와 동일(검색 변형 아님)'); ded += 2
+    # 본문 제목 복사본 = 결함(2026-09-30, 종전 권고 -2). 콘솔 교정이 "구글 최신 AI, 게임용 그래픽카드 한 장이면 충분 | 페블러스"로
+    # 검색 제목을 덮어써 "gemma 4 31b" 로 찾던 사람을 잃었다(판례집 A). 띄어쓰기·문장부호만 다른 것도 복사본으로 본다.
+    if main_title and bare and _same_text(bare, main_title):
+        labels.append('mainTitle와 동일(검색 변형 아님)'); ded += 3
     return max(0, 10 - ded), labels
+
+
+# 검색 결과가 실제로 보여 주는 것은 <title> 이다(2026-09-30 리뷰). config pageTitle 이 비면 <title> 을 검색 결과 제목 칸으로 재고,
+# 둘이 다르면 결함 — 교정·재작성이 한쪽만 고치면 검사기는 config 를 보고 통과를 주는데 검색 결과는 옛 <title> 을 보인다.
+_TITLE_TAG = re.compile(r'<title\b[^>]*>(.*?)</title\s*>', re.IGNORECASE | re.DOTALL)
+
+
+def read_title_tag(txt: str) -> str:
+    """head 의 <title> 글자(엔티티 풀고 공백 한 칸으로). 없거나 비었으면 ''."""
+    end = re.search(r'</head\s*>', txt, re.IGNORECASE)
+    head = txt[:end.start()] if end else txt
+    m = _TITLE_TAG.search(head)
+    return re.sub(r'\s+', ' ', _nfc(html.unescape(m.group(1)))).strip() if m else ''
+
+
+def _js_unescape(s: str) -> str:
+    """config 문자열 리터럴 속 이스케이프(\\" · \\u2014)를 푼다. 못 풀면 그대로."""
+    try:
+        return json.loads('"' + s + '"')
+    except ValueError:
+        return s
+
+
+def eval_page_slot(config_value: str, title_tag: str, main_title: str = '', kw_forms=None):
+    """검색 결과 제목 칸 — config pageTitle 이 있으면 그것을, 없으면 <title> 을 잰다. 칸이 없으면 None.
+    반환 {value, score, labels, source: 'config'|'title'}. 둘 다 있고 다르면 'pageTitle≠<title>'(-3, 결함)."""
+    if config_value:
+        score, labels = eval_pagetitle(config_value, main_title, kw_forms)
+        src = 'config'
+        if title_tag and re.sub(r'\s+', ' ', _nfc(_js_unescape(config_value))).strip() != title_tag:
+            labels = labels + ['pageTitle≠<title>']
+            score = max(0, score - 3)
+    elif title_tag:
+        score, labels = eval_pagetitle(title_tag, main_title, kw_forms)
+        src = 'title'
+    else:
+        return None
+    return {'value': config_value or title_tag, 'score': score, 'labels': labels, 'source': src}
 
 
 CONFIG_FIELD = {
@@ -407,9 +689,12 @@ CONFIG_FIELD = {
 
 
 def extract_config(repo: str, path_rel: str):
-    """글 HTML의 PebblousPage.init config에서 mainTitle/subtitle/pageTitle 추출 (없으면 빈 값)."""
+    """글 HTML의 PebblousPage.init config에서 mainTitle/subtitle/pageTitle 추출 (없으면 빈 값)
+    + head 의 <title>(title_tag) + head 메타의 핵심 검색어(keyword: str|None, keyword_forms: list)."""
     html_path = os.path.join(repo, path_rel.rstrip('/'), 'index.html')
     out = {k: '' for k in CONFIG_FIELD}
+    out['title_tag'] = ''
+    out['keyword'], out['keyword_forms'] = None, []
     try:
         with open(html_path, encoding='utf-8') as f:
             txt = f.read()
@@ -417,6 +702,8 @@ def extract_config(repo: str, path_rel: str):
             m = rx.search(txt)
             if m:
                 out[k] = m.group(1)
+        out['title_tag'] = read_title_tag(txt)
+        out['keyword'], out['keyword_forms'] = read_keyword_meta(txt)
     except OSError:
         pass
     return out
@@ -439,30 +726,56 @@ def reason_text(labels, score):
 GATE_FAIL_MAX = 7
 
 
-def check_html(html_file: str) -> dict:
+def check_html(html_file: str, keyword=None, keyword_forms_override=None,
+               pinned_keyword=None, pinned_forms=None, require_keyword=False) -> dict:
     """단일 HTML의 3슬롯 게이트 판정 — 발행 파이프라인 title-gate phase가 호출.
-    반환: {file, ok, slots:{mainTitle|subtitle|pageTitle: {value, score, labels}}} (빈 슬롯은 생략)."""
+    핵심 검색어는 head 메타(pb-search-keyword · pb-search-keyword-forms)에서 읽는다. keyword/keyword_forms_override 가
+    주어지면(CLI --keyword · --keyword-forms) 메타 대신 그것을 쓴다 — 둘 중 하나라도 주면 메타 값은 통째로 무시한다
+    (다른 검색어의 인정 표기가 섞이지 않게). --keyword-forms 만 주면 첫 표기가 핵심 검색어다.
+    pinned_keyword/pinned_forms(CLI --pinned-keyword · --pinned-forms) = 엔진이 기획 단계에서 run 에 고정한 핵심 검색어. 기록이 그것과
+    겹치지 않으면 결함이고, 제목은 기획 검색어로 대조한다 — 글이 스스로 적은 검색어만 믿지 않는다(2026-09-30 리뷰).
+    require_keyword(CLI --require-keyword) = 이 run 이 새로 만든 글 — 기록이 없으면 결함.
+    검색 결과 제목 칸은 config pageTitle, 없으면 <title> 을 잰다. 둘 다 있고 다르면 결함.
+    반환: {file, ok, keyword: str|None, keyword_forms: [...], keyword_source: 'meta'|'cli'|None,
+           keyword_match_forms: [...], keyword_labels: [...], keyword_defects: [...],
+           slots:{mainTitle|subtitle|pageTitle: {value, score, labels}}} (빈 슬롯은 생략. pageTitle 칸엔 source: 'config'|'title')."""
     with open(html_file, encoding='utf-8') as f:
         txt = f.read()
     vals = {}
     for k, rx in CONFIG_FIELD.items():
         m = rx.search(txt)
         vals[k] = m.group(1) if m else ''
-    evals = {
-        'mainTitle': eval_maintitle,
-        'subtitle': eval_subtitle,
-        'pageTitle': eval_pagetitle,
-    }
-    slots, ok = {}, True
-    for k, fn in evals.items():
-        if not vals[k]:
+    if keyword or keyword_forms_override:
+        cli_forms = split_forms(keyword_forms_override)
+        kw, extra, source = (keyword or (cli_forms[0] if cli_forms else None)), cli_forms, 'cli'
+    else:
+        kw, extra = read_keyword_meta(txt)
+        source = 'meta' if (kw or extra) else None
+    forms = keyword_forms(kw, extra)
+    if forms and not kw:
+        kw = forms[0]   # 인정 표기만 적고 핵심 검색어 메타를 빠뜨린 글 — 첫 표기를 핵심 검색어로 본다
+    match, kw_labels, kw_defects = keyword_record(kw, extra, pinned_keyword, pinned_forms, require_keyword)
+    slots, ok = {}, not kw_defects
+    for k in ('mainTitle', 'subtitle', 'pageTitle'):
+        if k == 'pageTitle':
+            # pageTitle은 mainTitle과 비교해 '검색 변형인가'까지 본다(§0). config 가 비면 <title> 을 잰다.
+            slot = eval_page_slot(vals[k], read_title_tag(txt), vals['mainTitle'], match)
+            if slot is None:
+                continue
+        elif not vals[k]:
             continue
-        # pageTitle은 mainTitle과 비교해 '검색 변형인가'까지 본다(§0)
-        score, labels = fn(vals[k], vals['mainTitle']) if k == 'pageTitle' else fn(vals[k])
-        slots[k] = {'value': vals[k], 'score': score, 'labels': labels}
-        if score <= GATE_FAIL_MAX:
+        elif k == 'mainTitle':
+            score, labels = eval_maintitle(vals[k], match)
+            slot = {'value': vals[k], 'score': score, 'labels': labels}
+        else:
+            score, labels = eval_subtitle(vals[k])
+            slot = {'value': vals[k], 'score': score, 'labels': labels}
+        slots[k] = slot
+        if slot['score'] <= GATE_FAIL_MAX:
             ok = False
-    return {'file': html_file, 'ok': ok, 'slots': slots}
+    return {'file': html_file, 'ok': ok, 'keyword': kw, 'keyword_forms': forms or [], 'keyword_source': source,
+            'keyword_match_forms': match or [], 'keyword_labels': kw_labels, 'keyword_defects': kw_defects,
+            'slots': slots}
 
 
 def main():
@@ -475,11 +788,24 @@ def main():
                     help='게이트 모드: 이 HTML 파일(들)의 3슬롯만 판정, JSON 출력. 위반 있으면 exit 1')
     ap.add_argument('--no-backup', action='store_true',
                     help='기존 titles_scored.json을 .bak로 백업하지 않고 덮어쓴다(자동/스케줄 실행용 — 백업 누적 방지)')
+    ap.add_argument('--keyword', metavar='KEYWORD',
+                    help='--check-html 전용: 핵심 검색어를 head 메타(pb-search-keyword) 대신 지정한다(단일 파일 검사·옛 글 재현)')
+    ap.add_argument('--keyword-forms', metavar='FORMS',
+                    help="--check-html 전용: 인정 표기를 | 로 갈라 지정한다(예: 'Jev|제브|TypeSafe Jev'). 주면 메타 값은 무시한다")
+    ap.add_argument('--pinned-keyword', metavar='KEYWORD',
+                    help='--check-html 전용: 기획 단계가 고정한 핵심 검색어(엔진 run 상태). 글의 기록이 이것과 겹치지 않으면 결함, 제목은 이것으로 대조')
+    ap.add_argument('--pinned-forms', metavar='FORMS', help="--check-html 전용: 기획 고정값의 인정 표기(| 로 가른다)")
+    ap.add_argument('--require-keyword', action='store_true',
+                    help='--check-html 전용: 새 글 — 핵심 검색어 기록이 없으면 결함(기본은 권고)')
     args = ap.parse_args()
+    if (args.keyword or args.keyword_forms or args.pinned_keyword or args.pinned_forms or args.require_keyword) and not args.check_html:
+        ap.error('--keyword/--keyword-forms/--pinned-keyword/--pinned-forms/--require-keyword 는 --check-html 과 함께만 쓴다'
+                 '(전수조사는 글마다 head 메타를 읽는다)')
 
     # ── 게이트 모드 (발행 파이프라인 title-gate) ──
     if args.check_html:
-        results = [check_html(f) for f in args.check_html]
+        results = [check_html(f, args.keyword, args.keyword_forms, args.pinned_keyword, args.pinned_forms, args.require_keyword)
+                   for f in args.check_html]
         print(json.dumps(results, ensure_ascii=False, indent=1))
         sys.exit(0 if all(r['ok'] for r in results) else 1)
 
@@ -494,9 +820,12 @@ def main():
     for i, a in enumerate(arts):
         title = a.get('title') or ''
         cfg = extract_config(repo, a['path'])
-        mt_score, mt_labels = eval_maintitle(title)
+        forms = keyword_forms(cfg['keyword'], cfg['keyword_forms'])
+        match, kw_labels, _ = keyword_record(cfg['keyword'], cfg['keyword_forms'])
+        mt_score, mt_labels = eval_maintitle(title, match)
         st_score, st_labels = eval_subtitle(cfg['subtitle']) if cfg['subtitle'] else (None, [])
-        pt_score, pt_labels = eval_pagetitle(cfg['pageTitle'], cfg.get('mainTitle') or title) if cfg['pageTitle'] else (None, [])
+        pt = eval_page_slot(cfg['pageTitle'], cfg['title_tag'], cfg.get('mainTitle') or title, match)
+        pt_value, pt_score, pt_labels = (pt['value'], pt['score'], pt['labels']) if pt else ('', None, [])
         rows.append({
             'idx': i,
             'slug': slug_of(a['path']),
@@ -511,11 +840,14 @@ def main():
             'st_labels': st_labels,
             'st_reason': reason_text(st_labels, st_score) if cfg['subtitle'] else '',
             'st_fix': '',
-            'pageTitle': cfg['pageTitle'],
+            'pageTitle': pt_value,
             'pt_score': pt_score,
             'pt_labels': pt_labels,
-            'pt_reason': reason_text(pt_labels, pt_score) if cfg['pageTitle'] else '',
-            'standard': '제목 정본 v3 (2026-09-13 ko-style-standard §4-2)',
+            'pt_reason': reason_text(pt_labels, pt_score) if pt else '',
+            'keyword': cfg['keyword'] or (forms[0] if forms else None),
+            'keyword_forms': forms or [],
+            'kw_labels': kw_labels,
+            'standard': '제목 정본 v3 (2026-09-13 ko-style-standard §4-2) · 핵심 검색어 (2026-09-28)',
         })
         dist[mt_score] = dist.get(mt_score, 0) + 1
 
