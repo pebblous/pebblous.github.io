@@ -15,7 +15,7 @@
  *   --light      밝은 배경 테마 사용 (기본: 다크)
  */
 
-const puppeteer = require('puppeteer');
+// puppeteer 는 그릴 때만 불러온다 — 추출·자르기 함수만 쓰는 시험·도구가 브라우저 없이 이 파일을 require 할 수 있게.
 const path = require('path');
 const fs = require('fs');
 
@@ -190,27 +190,49 @@ function calcTitleFontSize(title) {
         return u * F;
     }
 
-    // 수동 <br>/\n·nbsp를 공백으로 펴서 어절로 나눔. 수동 줄 수는 하한으로 존중.
-    const plain = title.replace(/<br\s*\/?>/gi, ' ').replace(/\n/g, ' ').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
-    const forced = title.replace(/\n/g, '<br>').split(/<br\s*\/?>/i).length;
-    const words = plain.split(' ').filter(Boolean);
+    // 수동 줄바꿈(<br>/\n)으로 나뉜 조각마다 따로 채운다 — 조각은 서로 한 줄을 나눠 쓰지 못한다.
+    // 예전엔 수동 줄 수를 하한으로만 쓰고 어절을 한 줄기로 채워, "VLA란?⏎피지컬 AI 모델 진화와 데이터 전략" 을
+    // 두 줄로 셈했다(실제 세 줄 → 부제·로고를 덮음, 2026-09-30). 수동 줄바꿈이 없으면 결과가 예전과 같다.
+    const segments = title.replace(/\n/g, '<br>').split(/<br\s*\/?>/i)
+        .map(seg => seg.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean));
 
     // 유튜브 커버처럼 큼직하게: 폰트는 크게 고정(76)하고 길이는 "줄 수"로 흡수.
     // 줄 수는 어절을 720px 폭에 greedy 패킹해 실제 줄바꿈(및 text-wrap:balance의 최소 줄 수)과
     // 일치시킨다 — 긴 단어(예: "Colonization")를 무시하던 총량-추정 버그를 없앤다. 넘칠 때만 축소.
     const AVAIL = 720, SPACE = 0.30, LH = 1.3, HBUD = 250, MAXF = 76, MINF = 40;
     for (let F = MAXF; F >= MINF; F -= 2) {
-        let lines = 1, cur = 0;
-        for (const w of words) {
-            const ww = wordPx(w, F);
-            const add = cur > 0 ? SPACE * F + ww : ww;
-            if (cur > 0 && cur + add > AVAIL) { lines++; cur = ww; }
-            else cur += add;
+        let lines = 0;
+        for (const words of segments) {
+            let segLines = 1, cur = 0;
+            for (const w of words) {
+                const ww = wordPx(w, F);
+                const add = cur > 0 ? SPACE * F + ww : ww;
+                if (cur > 0 && cur + add > AVAIL) { segLines++; cur = ww; }
+                else cur += add;
+            }
+            lines += segLines;
         }
-        lines = Math.max(lines, forced);
         if (lines * F * LH <= HBUD) return F;
     }
     return MINF;
+}
+// 문장 끝 판정 — '。'·'…' 은 그 자체로 끝, '.'·'!'·'?' 는 뒤가 공백·문자열 끝·닫는 따옴표/괄호일 때만.
+function isSentenceEnd(s, i) {
+    const c = s[i];
+    if (c === '。' || c === '…') return true;
+    if (!'.!?'.includes(c)) return false;
+    const nx = s[i + 1];
+    if (!(nx === undefined || /[\s"'”’)\]」』]/.test(nx))) return false;
+    // 줄임말의 점(vs. · e.g. · Dr. …)은 문장 끝이 아니다 — "pass@1 +12.9pp vs." 에서 끊기지 않게.
+    if (c === '.' && /(?:^|[^A-Za-z])(?:vs|e\.g|i\.e|cf|Dr|Mr|Mrs|Ms|Prof|No|Fig|approx|et al)$/i.test(s.slice(0, i))) return false;
+    return true;
+}
+// 절 경계 판정 — 숫자 사이의 쉼표·콜론(1,134건 · 10:30)은 숫자의 일부라 경계가 아니다.
+function isClauseBreak(s, i) {
+    const c = s[i];
+    if (!',、·;:—'.includes(c)) return false;
+    if ((c === ',' || c === ':') && /\d/.test(s[i - 1] || '') && /\d/.test(s[i + 1] || '')) return false;
+    return true;
 }
 // 부제를 2줄 한도에서 문장/문구 경계로 깔끔히 끝낸다(단어 중간 절단 방지).
 // 문장 종결(마침표·물음표·느낌표)로 끝나면 말줄임표 없이, 아니면 절/어절 경계 + "…".
@@ -226,13 +248,15 @@ function fitSubtitle(s) {
     let cut = s.length;
     while (cut > 0 && ulen(s.slice(0, cut)) > budget - 1.2) cut--;
     const head = s.slice(0, cut);
-    // 1) 문장 종결부호가 예산 내 있으면 거기까지 — 완결 문장이라 말줄임표 없음
+    // 1) 문장 종결부호가 예산 내 있으면 거기까지 — 완결 문장이라 말줄임표 없음.
+    //    점·물음표·느낌표는 뒤가 공백·끝·닫는 따옴표/괄호일 때만 문장 끝이다. 소수점(0.25%)·버전(v2.0)·
+    //    도메인(pebblous.ai)의 점을 문장 끝으로 보면 "GPQA Diamond 0." 에서 끊긴다(2026-09-30, Gemma NVFP4 커버).
     let end = -1;
-    for (let i = 0; i < head.length; i++) if ('.!?…。'.includes(head[i])) end = i;
+    for (let i = 0; i < head.length; i++) if (isSentenceEnd(s, i)) end = i;
     if (end >= 0 && ulen(head.slice(0, end + 1)) >= budget * 0.5) return head.slice(0, end + 1).trim();
     // 2) 절 경계(쉼표·가운뎃점·세미콜론·콜론·줄표)까지 + "…"
     let cl = -1;
-    for (let i = 0; i < head.length; i++) if (',、·;:—'.includes(head[i])) cl = i;
+    for (let i = 0; i < head.length; i++) if (isClauseBreak(s, i)) cl = i;
     if (cl >= 0 && ulen(head.slice(0, cl)) >= budget * 0.4) return head.slice(0, cl).replace(/[\s,、·;:—]+$/, '').trim() + '…';
     // 3) 마지막 어절(공백) 경계 + "…"
     const sp = head.lastIndexOf(' ');
@@ -271,7 +295,8 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
     // 합성어 하이픈("AI-레디"·"GPT-4"·"AI-Ready")은 줄바꿈에서 안 쪼개지게
     // 한글이 붙은 하이픈만 비분리(U+2011)로("AI-레디"). 영어 하이픈·긴 합성어는 유지.
     const nbHyphen = (x) => (x || "").replace(/(\S)-(\S)/g, (m,a,b) => (/[가-힣]/.test(a) || /[가-힣]/.test(b)) ? a+"\u2011"+b : m);
-    title = nbHyphen(title);
+    // 콘솔 미리보기는 커버 제목을 명령행 인자로 넘긴다 — 줄바꿈 표시 &#10; 를 여기서도 줄바꿈으로 읽는다(--from-html 경로와 같게).
+    title = nbHyphen(decodeLineBreaks(title));
     subtitle = nbHyphen(subtitle);
     // 괄호 묶음 "(AI BOM)"·"（…）"은 줄바꿈에서 절대 안 쪼개지게 내부 공백을 nbsp로 보호
     title = title.replace(/[（(]([^）)]*)[）)]/g, (m) => m.replace(/ /g, '\u00A0'));
@@ -466,6 +491,7 @@ async function generateOGImage(title, subtitle, outputPath, category, projectRoo
     console.log(`  Theme: ${light ? 'light' : 'dark'}`);
     console.log(`  Output: ${outputPath}`);
 
+    const puppeteer = require('puppeteer');
     const browser = await puppeteer.launch({
         headless: 'new',
         args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -502,6 +528,50 @@ async function generateOGImage(title, subtitle, outputPath, category, projectRoo
     }
 }
 
+// og-image-title 의 줄바꿈 표시(&#10; · &#xA; · 두 번 바뀐 &amp;#10;) → \n. 다른 엔티티는 HTML 로 그대로 넘긴다(렌더러가 푼다).
+function decodeLineBreaks(v) {
+    return (v || '').replace(/&(?:amp;)*#(?:10|x0*a);/gi, '\n');
+}
+// config 문자열 리터럴의 JS 이스케이프를 푼다.
+function unescapeJsString(v) {
+    return (v || '')
+        .replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+        .replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
+}
+function decodeAttr(v) {
+    return (v || '').replace(/&quot;/g, '"').replace(/&#0*39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+}
+// 핵심 검색어 메타(pb-search-keyword · pb-search-keyword-forms '|' 구분) → 인정 표기 목록. </head> 앞만 본다.
+// 검사기(tools/title-census.py read_keyword_meta)와 같은 칸을 읽는다. 속성 순서·따옴표 종류를 가리지 않는다.
+function readSearchKeywordForms(htmlContent) {
+    const endHead = htmlContent.search(/<\/head\s*>/i);
+    const head = endHead >= 0 ? htmlContent.slice(0, endHead) : htmlContent;
+    let keyword = '', forms = [];
+    for (const tag of head.match(/<meta\b[^>]*>/gi) || []) {
+        const name = (tag.match(/\bname\s*=\s*["']([^"']*)["']/i) || [])[1];
+        const content = (tag.match(/\bcontent\s*=\s*(?:"([^"]*)"|'([^']*)')/i) || []);
+        const val = decodeAttr(content[1] ?? content[2] ?? '').normalize('NFC').trim();
+        if (!name) continue;
+        if (name.toLowerCase() === 'pb-search-keyword' && !keyword) keyword = val;
+        else if (name.toLowerCase() === 'pb-search-keyword-forms' && !forms.length) forms = val.split('|').map(x => x.trim()).filter(Boolean);
+    }
+    return [...new Set([keyword, ...forms].filter(Boolean))];
+}
+// 제목에 인정 표기가 하나라도 있는가 — 대소문자·공백·하이픈 차이를 무시하고, 라틴/숫자로 시작·끝나는 표기는 낱말 경계를 본다
+// (검사기 _form_regex 와 같은 규칙: "Jev" 는 "Jevons" 에 들지 않는다).
+function hasKeywordForm(text, forms) {
+    const t = (text || '').replace(/\n/g, ' ').normalize('NFC');
+    const esc = c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return forms.some(f => {
+        const core = f.normalize('NFC').replace(/[\s\-‐‑]+/g, '');
+        if (!core) return false;
+        const body = [...core].map(esc).join('[\\s\\-‐‑]*');
+        const pre = /[A-Za-z0-9]/.test(core[0]) ? '(?<![A-Za-z0-9])' : '';
+        const post = /[A-Za-z0-9]/.test(core[core.length - 1]) ? '(?![A-Za-z0-9])' : '';
+        return new RegExp(pre + body + post, 'i').test(t);
+    });
+}
+
 // Extract info from HTML file with articles.json fallback
 function extractFromHTML(htmlPath, projectRoot) {
     const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
@@ -525,21 +595,32 @@ function extractFromHTML(htmlPath, projectRoot) {
     let title = '';
     const ogImageTitleMatch = htmlContent.match(/<meta\s+name="og-image-title"\s+content="([^"]+)"/i);
     if (ogImageTitleMatch) {
-        // Decode &#10; → \n for manual line break control
-        title = ogImageTitleMatch[1].replace(/&#10;/g, '\n');
+        // 줄바꿈 표시 &#10;(&#xA;) → \n. 두 번 바뀌어 적힌 &amp;#10; 도 줄바꿈이다 — 콘솔이 읽은 값을 풀지 않고
+        // 다시 저장하면 & 가 &amp; 로 바뀌어 커버에 "&#10;" 가 글자로 그려졌다(2026-09-30, physical-ai 커버).
+        title = decodeLineBreaks(ogImageTitleMatch[1]);
         console.log(`  [og-image-title] Using custom OG image title`);
+    }
+    // 본문 제목(mainTitle) — 커버 제목 오버라이드가 핵심 검색어를 빠뜨렸을 때 대신 그린다(아래).
+    const mainTitleMatch = htmlContent.match(/mainTitle:\s*(["'])((?:\\.|(?!\1).)*)\1/);
+    const mainTitleText = mainTitleMatch ? unescapeJsString(mainTitleMatch[2]).replace(/<br\s*\/?>/gi, ' ').trim() : '';
+    // 커버 제목도 핵심 검색어를 담는다(docs/title-strategy.md §1.1). 글에 검색어 메타가 있고 오버라이드에 인정 표기가 하나도
+    // 없으면 오버라이드를 버리고 본문 제목(검색어가 든 칸)으로 그린다. 본문 제목에도 없으면 오버라이드를 그대로 쓰고 경고만 남긴다.
+    if (title) {
+        const kwForms = readSearchKeywordForms(htmlContent);
+        if (kwForms.length && !hasKeywordForm(title, kwForms)) {
+            if (mainTitleText && hasKeywordForm(mainTitleText, kwForms)) {
+                console.log(`  [og-image-title] 핵심 검색어("${kwForms[0]}")가 없어 본문 제목으로 그린다`);
+                title = mainTitleText;
+            } else {
+                console.warn(`  ⚠️ [og-image-title] 커버 제목에 핵심 검색어("${kwForms[0]}")가 없다 — 본문 제목에도 없어 그대로 그린다`);
+            }
+        }
     }
     // 본문 제목(mainTitle) = 글의 진짜 제목 → OG 이미지는 이걸 그린다.
     // SEO 메타(og:title·<title>)는 검색엔진용이라 뒤로. (2026-07-01: AI BOM stale-og 재발 방지)
-    if (!title) {
-        const mtMatch = htmlContent.match(/mainTitle:\s*(["'])((?:\\.|(?!\1).)*)\1/);
-        if (mtMatch) {
-            title = mtMatch[2]
-                .replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
-                .replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, '\\')
-                .replace(/<br\s*\/?>/gi, ' ').trim();
-            console.log(`  [mainTitle] Using body title`);
-        }
+    if (!title && mainTitleText) {
+        title = mainTitleText;
+        console.log(`  [mainTitle] Using body title`);
     }
     const ogTitleMatch = htmlContent.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
     if (!title && ogTitleMatch) {
@@ -623,7 +704,7 @@ function extractFromHTML(htmlPath, projectRoot) {
 }
 
 // 다른 도구(리뷰 서버 등)가 함수를 재사용할 수 있게 export
-module.exports = { extractFromHTML, generateOGImage, generateHTML, getTheme, getFontFaces, calcTitleFontSize };
+module.exports = { extractFromHTML, generateOGImage, generateHTML, getTheme, getFontFaces, calcTitleFontSize, fitSubtitle, decodeLineBreaks, readSearchKeywordForms, hasKeywordForm };
 
 // CLI로 직접 실행될 때만 아래 main 로직 수행 (require 시엔 skip)
 if (require.main === module) {

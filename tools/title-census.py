@@ -709,6 +709,32 @@ def extract_config(repo: str, path_rel: str):
     return out
 
 
+_OG_IMAGE_TITLE = re.compile(r'<meta\b[^>]*\bname\s*=\s*["\']og-image-title["\'][^>]*>', re.IGNORECASE)
+
+
+def read_og_image_title(txt: str) -> str:
+    """OG 이미지 커버 제목 오버라이드(<meta name="og-image-title">) → 그려지는 글자(줄바꿈은 공백). 없으면 ''.
+    줄바꿈 표시 &#10; 와 두 번 바뀐 &amp;#10; 을 모두 줄바꿈으로 본다(생성기 decodeLineBreaks 와 같다)."""
+    end = re.search(r'</head\s*>', txt, re.IGNORECASE)
+    head = txt[:end.start()] if end else txt
+    m = _OG_IMAGE_TITLE.search(head)
+    if not m:
+        return ''
+    c = re.search(r'\bcontent\s*=\s*(?:"([^"]*)"|\'([^\']*)\')', m.group(0), re.IGNORECASE)
+    raw = (c.group(1) if c and c.group(1) is not None else (c.group(2) if c else '')) or ''
+    raw = re.sub(r'&(?:amp;)*#(?:10|x0*a);', ' ', raw, flags=re.IGNORECASE)
+    return re.sub(r'\s+', ' ', _nfc(html.unescape(raw))).strip()
+
+
+def eval_og_image_title(t: str, kw_forms=None):
+    """커버 제목 칸 — 핵심 검색어만 본다(형태·길이 규칙은 본문 제목 칸이 이미 잰다; 커버는 그 압축본이다, title-strategy §1.1).
+    검색어 기록이 있는데 인정 표기가 하나도 없으면 결함('핵심 검색어 없음', -3). 기록이 없으면 판정하지 않는다(10)."""
+    labels, ded = [], 0
+    if kw_forms and keyword_pos(t, kw_forms) < 0:
+        labels.append('핵심 검색어 없음'); ded += 3  # 결함 — SNS 카드에서 이름을 보고 누르는 사람이 못 알아본다(Gemma NVFP4 커버 판례)
+    return max(0, 10 - ded), labels
+
+
 def slug_of(path_rel: str) -> str:
     return re.sub(r'/(ko|en)/?$', '', path_rel).rstrip('/')
 
@@ -738,7 +764,8 @@ def check_html(html_file: str, keyword=None, keyword_forms_override=None,
     검색 결과 제목 칸은 config pageTitle, 없으면 <title> 을 잰다. 둘 다 있고 다르면 결함.
     반환: {file, ok, keyword: str|None, keyword_forms: [...], keyword_source: 'meta'|'cli'|None,
            keyword_match_forms: [...], keyword_labels: [...], keyword_defects: [...],
-           slots:{mainTitle|subtitle|pageTitle: {value, score, labels}}} (빈 슬롯은 생략. pageTitle 칸엔 source: 'config'|'title')."""
+           slots:{mainTitle|subtitle|pageTitle|ogImageTitle: {value, score, labels}}} (빈 슬롯은 생략. pageTitle 칸엔 source: 'config'|'title'.
+           ogImageTitle = <meta name="og-image-title"> 커버 제목 오버라이드 — 있을 때만, 핵심 검색어만 잰다)."""
     with open(html_file, encoding='utf-8') as f:
         txt = f.read()
     vals = {}
@@ -772,6 +799,13 @@ def check_html(html_file: str, keyword=None, keyword_forms_override=None,
             slot = {'value': vals[k], 'score': score, 'labels': labels}
         slots[k] = slot
         if slot['score'] <= GATE_FAIL_MAX:
+            ok = False
+    # 커버 제목 오버라이드가 있을 때만 — 없으면 생성기가 본문 제목(mainTitle 칸)을 그린다.
+    og_title = read_og_image_title(txt)
+    if og_title:
+        score, labels = eval_og_image_title(og_title, match)
+        slots['ogImageTitle'] = {'value': og_title, 'score': score, 'labels': labels}
+        if score <= GATE_FAIL_MAX:
             ok = False
     return {'file': html_file, 'ok': ok, 'keyword': kw, 'keyword_forms': forms or [], 'keyword_source': source,
             'keyword_match_forms': match or [], 'keyword_labels': kw_labels, 'keyword_defects': kw_defects,
