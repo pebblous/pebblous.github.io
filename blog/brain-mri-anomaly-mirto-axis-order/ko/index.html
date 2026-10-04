@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뇌 MRI 이상 탐지 평가 MIRTO 분석 — 축 순서 오류가 점수를 바꾸는 구조 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="10월 1일 arXiv에 올라온 평가 방법 MIRTO가 뇌 MRI 이상 탐지 모델을 15,552가지 채점 경로로 다시 돌렸다. 이상 지도의 축 순서가 어긋난 것만으로 한 확산 모델의 칸 단위 점수가 0.873에서 0.583으로 떨어졌지만, 장 단위 점수는 거의 움직이지 않았다.">
+    <meta name="keywords" content="뇌 MRI 이상 탐지, MIRTO, 비지도 이상 탐지, 축 순서, 정합 검사, voxel AUROC, slice AUROC, BraTS 2020, 멀티버스 분석, AI 벤치마크, 데이터 품질, AI-Ready Data, arXiv">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="뇌 MRI 이상 탐지">
+    <meta name="pb-search-keyword-forms" content="뇌 MRI 이상 탐지|MIRTO">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="뇌 MRI 이상 탐지 AI, 축 순서 하나가 점수를 가른다">
+    <meta property="og:description" content="모델도 데이터도 그대로인데 저장된 이상 지도의 축 순서가 어긋나자 칸 단위 점수가 0.873에서 0.583으로 떨어졌다. 같은 사고에서 장 단위 점수는 거의 움직이지 않아 아무도 눈치채지 못했다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="축 순서가 어긋난 이상 지도가 칸 단위 점수만 떨어뜨리고 장 단위 점수는 그대로 두는 구조">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-10-05">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="뇌 MRI 이상 탐지 AI, 축 순서 하나가 점수를 가른다">
+    <meta name="twitter:description" content="같은 모델, 같은 데이터, 같은 가중치다. 저장된 이상 지도를 읽는 축 순서 하나가 어긋나자 칸 단위 점수가 0.873에서 0.583으로 내려갔고, 요약 점수는 그 사고를 보지 못했다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/ko/image/index.png">
+    <meta name="twitter:image:alt" content="축 순서가 어긋난 이상 지도가 칸 단위 점수만 떨어뜨리고 장 단위 점수는 그대로 두는 구조">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261005"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261005">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261005">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261005">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#not-the-model" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 점수를 떨어뜨린 것은 모델이 아니었다</a></li>
+                    <li><a href="#quiet-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 요약 점수는 왜 조용했나</a></li>
+                    <li><a href="#second-incident" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 같은 사고가 한 번 더 있었다</a></li>
+                    <li><a href="#multiverse" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 채점 경로 15,552가지를 전부 돌린다</a></li>
+                    <li><a href="#whose-number" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 우리가 보는 성능 숫자는 무엇의 숫자인가</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 글은 뇌 MRI 이상 탐지 AI의 성적표가 모델이 아니라 채점 절차 때문에 흔들린 사례를 본다. 10월 1일 arXiv에 올라온 논문이고, 저자들이 MIRTO라고 이름 붙인 평가 방법을 제안한다. 대상은 건강한 사람의 뇌 영상만 보고 학습한 뒤 병변이 있는 영상에서 이상한 자리를 스스로 찾아내는 모델 넷이다. 이런 모델은 보통 점수 하나로 순위가 매겨지는데, 그 점수 뒤에는 거의 보고되지 않는 선택들이 줄지어 서 있다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            가장 눈에 띄는 숫자는 0.873과 0.583이다. 한 확산 모델이 내놓은 이상 지도를 잘못된 축 순서로 읽고 잘라 낸 시야를 되돌리지 않았더니 칸 단위 점수가 0.873에서 0.583으로 내려갔다. 모델도 가중치도 시험 데이터도 그대로였다. 그런데 같은 사고에서 장 단위 점수는 0.112만큼밖에 움직이지 않아, 요약된 숫자만 보던 자리에서는 사고가 보이지 않았다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            4절까지는 논문이 잰 것과 저자들이 밝혀 둔 수치를 따라간다. 5절에서 학습 데이터 품질 쪽으로 옮기는 대목은 논문에 없는 이 글의 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        아래 네 가지는 모두 같은 논문 한 편에서 나왔다. 앞의 둘은 하나의 사고를 두 점수가 얼마나 다르게 보았는지를 나란히 놓은 것이고, 셋째는 전체 평균 바깥으로 흩어 놓았을 때에야 드러난 신호다. 넷째에서는 지표를 바꾸자 점수를 쥐고 있는 쪽까지 달라졌다.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: Kafee Hernashki·Chatterjee, <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">MIRTO: a registration-gated, multiverse-tested evaluation protocol for unsupervised anomaly segmentation in brain MRI</a> arXiv:2610.02136(2026-10-01) 초록 및 본문</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.873→0.583</p>
+                            <p class="text-sm themeable-text-secondary mt-1">축 순서가 어긋났을 때 칸 단위 점수</p>
+                            <p class="text-xs themeable-muted mt-1">모델도 가중치도 시험 데이터도 바뀌지 않았다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.112</p>
+                            <p class="text-sm themeable-text-secondary mt-1">같은 사고에서 장 단위 점수가 움직인 폭</p>
+                            <p class="text-xs themeable-muted mt-1">칸 단위는 0.290 움직였다. 중앙값으로 보면 0.083이다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">24%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">거꾸로 짚은 환자의 비율</p>
+                            <p class="text-xs themeable-muted mt-1">환자별 점수가 0.5 아래다. 동전을 던지는 쪽이 낫다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.95 vs 0.14</p>
+                            <p class="text-sm themeable-text-secondary mt-1">'어떤 모델인가'가 점수를 설명하는 몫</p>
+                            <p class="text-xs themeable-muted mt-1">칸 단위 점수에서는 0.95, 병변 민감도에서는 0.14다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="not-the-model" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">점수를 떨어뜨린 것은 모델이 아니었다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        뇌 MRI 이상 탐지는 병변의 모양을 미리 배우지 않는다. 건강한 사람의 뇌 영상만 잔뜩 보여 주고 "정상이란 이렇게 생긴 것"을 익히게 한 다음, 새 영상에서 그 정상에서 벗어난 자리를 스스로 짚게 한다. 결과물은 영상과 같은 크기의 지도 한 장이다. 칸마다 "여기가 얼마나 이상한가"라는 점수가 적혀 있고, 이것을 이상 지도라 부른다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        채점은 그 지도를 정답과 맞대 보는 일이다. 정답은 사람이 종양 영역을 칠해 둔 라벨이다. 이번 논문이 쓴 시험 데이터는 BraTS 2020의 환자 312명이고, 네 모델 모두 같은 건강 영상으로 학습한 뒤 같은 환자들로 시험했다. 비교한 방법은 REFLECT, cDDPM, UCCD, AnomalyDINO 넷이다. 한 번의 수송으로 정상 영상을 복원하는 방식, 조건을 준 확산 모델 두 종류, 학습 없이 기성 기반 모델의 특징만 기억해 두고 쓰는 방식을 고르게 담았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        점수로는 칸 단위 점수(voxel AUROC)를 많이 쓴다. 병변 칸 하나와 정상 칸 하나를 아무렇게나 뽑았을 때 모델이 병변 쪽에 더 높은 점수를 줄 확률이다. 1에 가까우면 잘 짚은 것이고, 0.5는 동전 던지기다. 0.5보다 낮으면 모델이 거꾸로 짚고 있다는 뜻이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        사고는 지도를 읽는 자리에서 났다. 모델마다 전처리가 달라서 각자 자기 방식대로 지도를 저장한다. 어느 축을 먼저 적을지, 시야를 어디까지 잘라 냈는지, 해상도를 얼마로 줄였는지가 제각각이다. 정답과 맞대려면 그 선택들을 하나씩 되돌려야 하는데, 저자들은 이 되돌리기가 "틀리기는 쉽고 눈에 띄기는 어렵다"고 적었다. 실제로 cDDPM의 지도를 잘못된 축 순서로 읽고 잘라 낸 시야를 무시한 대응이 쓰였고, 그때 칸 단위 점수는 0.583이었다. 같은 지도를 올바르게 되돌리자 0.873이 나왔다. 차이는 0.290이고 구간은 0.277에서 0.302다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        축 순서가 어긋나면 지도가 통째로 뒤집히거나 비틀린다. 3차원 영상은 숫자 덩어리로 저장되고, 어느 방향을 첫 번째 축으로 적어 두었는지는 파일 바깥의 약속으로만 전해진다. 그 약속이 어긋나면 왼쪽 앞의 신호가 오른쪽 위로 가서 앉는다. 모델은 종양 자리를 제대로 짚었는데 채점표가 다른 자리를 보고 있는 것이다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="축 순서가 바뀌면 모델이 짚은 칸이 다른 자리로 읽힌다는 것을 보여주는 격자 비교 도식. 왼쪽 격자는 모델이 실제로 짚은 병변 칸(왼쪽 앞)을 오렌지로 표시하고, 오른쪽 격자는 축 순서를 바꿔 읽었을 때 그 칸이 오른쪽 위로 옮겨가 앉는 모습을 점선으로 표시된 원래 자리와 함께 보여준다.">
+                            <text x="340" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">같은 칸인데 다른 자리로 읽힌다</text>
+                            <text x="340" y="47" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">모델이 짚은 자리는 그대로인데 채점표가 읽는 좌표가 달라진다</text>
+
+                            <text x="122" y="70" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">모델이 짚은 자리</text>
+                            <text x="122" y="83" text-anchor="middle" font-size="9" fill="var(--text-muted,#9CA3AF)">(왼쪽 앞)</text>
+
+                            <rect x="80" y="90" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="108" y="90" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="136" y="90" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="80" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="108" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="136" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="80" y="146" width="28" height="28" fill="#F86825" stroke="#F86825"/>
+                            <rect x="108" y="146" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="136" y="146" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <text x="94" y="164" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">병변</text>
+
+                            <line x1="178" y1="132" x2="458" y2="132" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5" stroke-dasharray="4,3"/>
+                            <polygon points="458,132 446,126 446,138" fill="var(--text-muted,#9CA3AF)"/>
+                            <text x="318" y="121" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">축 순서를 바꿔 읽음</text>
+                            <text x="318" y="146" text-anchor="middle" font-size="9" fill="var(--text-muted,#9CA3AF)">cDDPM 사례: 0.873 → 0.583</text>
+
+                            <text x="558" y="70" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">채점표가 읽은 자리</text>
+                            <text x="558" y="83" text-anchor="middle" font-size="9" fill="var(--text-muted,#9CA3AF)">(오른쪽 위)</text>
+
+                            <rect x="470" y="90" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="498" y="90" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="526" y="90" width="28" height="28" fill="#F86825" stroke="#F86825"/>
+                            <text x="540" y="108" text-anchor="middle" font-size="9" font-weight="700" fill="#ffffff">병변</text>
+                            <rect x="470" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="498" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="526" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="470" y="146" width="28" height="28" fill="none" stroke="#F86825" stroke-width="1.5" stroke-dasharray="3,2"/>
+                            <rect x="498" y="146" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="526" y="146" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <text x="484" y="190" text-anchor="middle" font-size="8.5" fill="var(--text-muted,#9CA3AF)">원래 있어야</text>
+                            <text x="484" y="201" text-anchor="middle" font-size="8.5" fill="var(--text-muted,#9CA3AF)">할 자리</text>
+
+                            <rect x="110" y="236" width="460" height="46" rx="10" fill="#F86825" fill-opacity="0.1" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="340" y="258" text-anchor="middle" font-size="10.5" font-weight="700" fill="#F86825">모델은 병변을 제자리에 짚었다</text>
+                            <text x="340" y="273" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">어긋난 것은 채점표가 읽는 좌표뿐이다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: Kafee Hernashki·Chatterjee(2026), <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="underline">arXiv:2610.02136</a> 본문 수치 재구성
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="quiet-summary" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">요약 점수는 왜 조용했나</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문에서 가장 서늘한 대목은 떨어진 숫자가 아니라 떨어지지 않은 숫자다. 같은 사고에서 장 단위 점수(slice AUROC)는 0.112만 움직였고, 환자별로 늘어놓고 가운데 값을 보면 0.083이었다. 칸 단위 점수가 0.290 움직이는 동안이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 점수가 묻는 질문이 다르기 때문이다. 칸 단위 점수는 "이 칸이 병변인가"를 칸마다 묻는다. 장 단위 점수는 MRI를 한 장씩 썬 단면을 놓고 "이 단면에 병변이 있는가"만 묻고, 단면 안에서 가장 높은 이상 점수 하나로 그 단면을 대표한다. 지도가 비틀리면 칸 하나하나의 좌표는 전부 어긋나지만, 어느 단면이 수상한지는 상당 부분 남는다. 그래서 세밀한 점수는 무너지는데 요약된 점수는 멀쩡해 보인다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 320" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="같은 축 순서 사고를 두 가지 점수가 다르게 본다는 비교 도식. 칸 단위 점수는 칸마다 병변인지를 묻고 사고가 났을 때 0.290만큼 움직인다. 장 단위 점수는 단면마다 병변이 있는지만 묻고 같은 사고에서 0.112만 움직인다. 아래에는 잘못 읽은 지도에서 환자 24퍼센트가 거꾸로 짚은 판정을 받았다는 설명이 붙는다.">
+                            <text x="340" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">같은 사고를 두 점수가 다르게 본다</text>
+                            <text x="340" y="47" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">축 순서를 바로잡았을 때 점수가 움직인 폭</text>
+
+                            <rect x="30" y="72" width="300" height="150" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="180" y="96" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-primary,#111827)">칸 단위 점수</text>
+                            <text x="180" y="117" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">"이 칸이 병변인가"를 칸마다 묻는다</text>
+                            <line x1="60" y1="176" x2="300" y2="176" stroke="var(--border-color,#E5E7EB)" stroke-width="1"/>
+                            <rect x="60" y="146" width="232" height="30" rx="4" fill="#F86825"/>
+                            <text x="176" y="166" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">0.290</text>
+                            <text x="180" y="200" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#9CA3AF)">0.583에서 0.873으로</text>
+
+                            <rect x="350" y="72" width="300" height="150" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="500" y="96" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-primary,#111827)">장 단위 점수</text>
+                            <text x="500" y="117" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">"이 단면에 병변이 있는가"만 묻는다</text>
+                            <line x1="380" y1="176" x2="620" y2="176" stroke="var(--border-color,#E5E7EB)" stroke-width="1"/>
+                            <rect x="380" y="146" width="90" height="30" rx="4" fill="var(--text-muted,#9CA3AF)"/>
+                            <text x="425" y="166" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">0.112</text>
+                            <text x="500" y="200" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#9CA3AF)">가운데 값으로 보면 0.083</text>
+
+                            <rect x="110" y="244" width="460" height="56" rx="10" fill="#F86825" fill-opacity="0.1" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="340" y="268" text-anchor="middle" font-size="11.5" font-weight="700" fill="#F86825">잘못 읽은 지도에서 환자 24%가 거꾸로 짚은 판정을 받았다</text>
+                            <text x="340" y="288" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">환자별 칸 단위 점수가 0.5 아래. 요약 점수만 보면 드러나지 않는 신호다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: Kafee Hernashki·Chatterjee(2026), <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="underline">arXiv:2610.02136</a> 본문 수치 재구성
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그러면 사고는 무엇으로 잡았는가. 정답 라벨을 쓰지 않는 진단이 잡았다. 전체 평균 대신 환자를 한 사람씩 떼어 점수를 매기고, 0.5보다 낮은 사람이 몇 명인지를 센다. 저자들은 이 비율을 거꾸로 짚은 비율이라 부른다. 잘못 읽은 지도에서는 cDDPM 시험 환자의 24%가 여기 걸렸다. 평균 한 칸으로 뭉쳐 두면 보이지 않고, 사람 단위로 흩어 놓으면 네 명 중 한 명이 뒤집혀 있는 것이 그대로 드러난다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 신호는 혼자 서 있지 않다. 논문은 정답 라벨 없이 잴 수 있는 양을 다섯 가지 세워 두었다. 거꾸로 짚은 비율 말고도, 같은 종양을 가리켜야 할 두 조건에서 환자별 점수의 순위가 함께 가는지 보는 순위 안정성이 있고, 종양이 얼마나 눈에 띄는지는 환자에게 속한 성질이니 방법이 달라져도 환자별 점수가 같이 움직여야 한다는 공유 현저성이 있다. 어느 쪽도 정답을 들여다보지 않는다. 채점표가 제자리에 있는지를 모델의 성적과 떼어 놓고 물을 수 있다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            여기서 잰 것은 이상 탐지 모델의 성능이 아니다. 잰 것은 채점표가 모델의 출력을 제자리에 놓고 있느냐다. 그 하나가 어긋나면 모델이 병변을 아무리 정확히 가려내도 점수는 동전 던지기 근처로 내려온다. 그런데 그 추락은 흔히 보고되는 요약 점수에 거의 나타나지 않는다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="second-incident" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">같은 사고가 한 번 더 있었다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 번이면 누군가의 부주의로 접을 수 있다. 저자들은 이 벤치마크를 조립하는 동안 같은 종류의 사고를 한 번 더 만났다고 적어 두었다. 이번에는 REFLECT의 지도를 내보내는 과정에서였다. 시험 환자의 26%가 거꾸로 짚은 판정을 받았고, 칸 단위 점수는 0.936에서 0.616으로 내려갔다. 그동안 장 단위 점수는 0.915에 그대로 머물렀다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 번째 사고가 중요한 까닭은 수치가 더 크기 때문이 아니다. 같은 사람들이 같은 주의를 기울이며 벤치마크를 만드는 동안에도 다시 일어났기 때문이다. 방법마다 자기 축 순서와 자기 잘라 내기와 자기 해상도로 지도를 저장하는 한, 비교할 때마다 되돌려야 할 변환이 생기고 그 변환은 조용히 틀린다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        MIRTO가 모든 비교 앞에 검문소를 세운 이유가 이것이다. 기하가 맞는지 먼저 확인하고 통과한 쌍만 점수를 매긴다. 검문소의 성능은 답을 아는 가짜 영상으로 미리 검증했다. 그대로 둔 영상, 공 모양에서 40%를 잘라 낸 시야, 한 칸 깎아 낸 영상, 20% 부풀린 영상은 통과시키고, 면내 뒤집기와 축 맞바꾸기와 두 단면 밀림은 걸러 낸다. 뒤집기와 축 맞바꾸기는 순위 안정성과 거꾸로 짚은 비율 두 진단만으로 환자 서른 명만 있어도 거짓 경보율 0.05에서 빠짐없이 잡혔다. 실제 자료에서는 방법과 환자를 짝지은 1,344쌍 가운데 1,342쌍이 검문소를 통과했다. 네 방법 각각에 시험 환자 312명과 검증 환자 24명을 짝지어 나온 수다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 400" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="검문소가 답을 아는 합성 영상으로 미리 검증된 과정을 보여주는 도식. 그대로 둔 영상, 시야 40%를 잘라낸 영상, 한 칸 깎아낸 영상, 20% 부풀린 영상은 통과시키고, 면내 뒤집기, 축 맞바꾸기, 두 단면 밀림은 걸러낸다. 실제 자료에서는 1,344쌍 가운데 1,342쌍이 통과했다.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">검문소: 기하가 맞는지 먼저 확인한다</text>
+                            <text x="340" y="46" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">답을 아는 합성 영상으로 미리 성능을 검증했다</text>
+
+                            <rect x="250" y="60" width="180" height="46" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="340" y="88" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">답을 아는 합성 영상</text>
+
+                            <line x1="340" y1="106" x2="340" y2="124" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+                            <polygon points="340,130 334,118 346,118" fill="var(--text-muted,#9CA3AF)"/>
+
+                            <rect x="260" y="132" width="160" height="46" rx="10" fill="#F86825" fill-opacity="0.12" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="340" y="160" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">검문소</text>
+
+                            <line x1="300" y1="178" x2="180" y2="206" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+                            <line x1="380" y1="178" x2="500" y2="206" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+
+                            <rect x="60" y="208" width="220" height="118" rx="10" fill="#F86825" fill-opacity="0.06" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="170" y="230" text-anchor="middle" font-size="11.5" font-weight="700" fill="#F86825">통과</text>
+                            <text x="80" y="250" font-size="9.5" fill="var(--text-secondary,#4B5563)">✓ 그대로 둔 영상</text>
+                            <text x="80" y="268" font-size="9.5" fill="var(--text-secondary,#4B5563)">✓ 시야 40% 잘라냄</text>
+                            <text x="80" y="286" font-size="9.5" fill="var(--text-secondary,#4B5563)">✓ 한 칸 깎음(침식)</text>
+                            <text x="80" y="304" font-size="9.5" fill="var(--text-secondary,#4B5563)">✓ 20% 부풀림</text>
+
+                            <rect x="400" y="208" width="220" height="118" rx="10" fill="var(--text-muted,#9CA3AF)" fill-opacity="0.08" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="510" y="230" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary,#4B5563)">차단</text>
+                            <text x="420" y="250" font-size="9.5" fill="var(--text-secondary,#4B5563)">✗ 면내 뒤집기</text>
+                            <text x="420" y="268" font-size="9.5" fill="var(--text-secondary,#4B5563)">✗ 축 맞바꾸기</text>
+                            <text x="420" y="286" font-size="9.5" fill="var(--text-secondary,#4B5563)">✗ 두 단면 밀림</text>
+
+                            <rect x="110" y="344" width="460" height="40" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="340" y="368" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">실제 자료: 1,344쌍 가운데 1,342쌍이 검문소를 통과했다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: Kafee Hernashki·Chatterjee(2026), <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="underline">arXiv:2610.02136</a> 본문 수치 재구성
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="multiverse" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">채점 경로 15,552가지를 전부 돌린다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        축 순서는 채점 절차에 숨은 선택 가운데 하나일 뿐이다. 어떤 영상을 기준으로 삼을지, 뇌 전체를 볼지 시야가 겹치는 부분만 볼지, 임계값을 어느 데이터에서 정할지, 거짓 양성을 몇 세제곱센티미터까지 허용할지, 작은 덩어리를 병변으로 칠지, 얼마나 겹쳐야 맞혔다고 할지, 환자별 점수를 평균으로 묶을지 가운데 값으로 묶을지가 전부 선택이다. 논문은 이런 축을 열 개 세우고 각 축의 선택지를 모두 곱했다. 방법 하나당 155,520가지가 나온다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그중 누가 봐도 변호할 수 있는 조합만 남겼다. 기준 영상은 정본 하나로 고정하고, 칸 부피는 실제 값만 쓰고, 임계값은 검증 데이터·등각 예측·시험 맞춤 세 가지만 인정한다. 그렇게 추리면 지표 하나당 2,592가지, 여섯 지표를 합쳐 15,552가지가 남는다. 모든 비교를 이 15,552가지 경로에서 되풀이하고, 환자 단위로 짝지은 부트스트랩 구간과 다중 비교 보정을 붙인다. 심리학에서 출발한 멀티버스 분석을 의료 영상 채점에 옮겨 놓은 셈이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 발상이 이 논문에서 처음 나온 것은 아니다. 하나의 결론을 변호할 수 있는 분석 경로 전부에 걸쳐 확인해 보는 <a href="https://journals.sagepub.com/doi/10.1177/1745691616658637" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">멀티버스 분석</a>과 명세 곡선이 먼저 있었고, 같은 자료를 여러 연구 팀에 동시에 맡겨 본 설계에서는 합리적인 경로들끼리도 결론이 갈렸다. 의료 영상 쪽에도 비슷한 경고가 쌓여 있었다. 챌린지 순위가 어떤 지표와 어떤 집계를 쓰느냐에 따라 흔들린다는 보고가 있었고, 시험 데이터를 들여다보고 내린 선택이 성능 추정을 부풀린다는 보고도 있었다. 논문이 새로 얹은 것은 임계값으로 이상 영역을 잘라 내는 작업에 반드시 따라붙는 한 가지다. 어느 지점에서 끊어 이상이라 부를지를 숨기지 않고 적어 두는 일이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전부 돌려 보면 지표마다 점수를 쥐고 있는 것이 다르다. 칸 단위 점수와 칸 단위 정밀도-재현율 면적에서는 "어떤 모델을 썼는가"가 결과 차이의 0.95 이상을 설명한다. Dice에서는 0.77이다. 그런데 병변 민감도에서는 0.14로 내려앉고, 대신 병변을 무엇으로 정의하고 얼마나 겹쳐야 맞혔다고 칠지가 결과를 가른다. 같은 모델 묶음을 두고도 어느 지표로 이겼다고 말하느냐에 따라 승자가 바뀔 수 있다는 뜻이다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 350" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="위쪽은 채점 경로를 추리는 과정으로, 열 개 축을 모두 곱하면 155,520가지가 나오고 변호 가능한 조합만 남기면 지표당 2,592가지, 합쳐서 15,552가지가 된다. 아래쪽은 어떤 모델을 썼는가가 결과 차이를 설명하는 몫을 지표별로 비교한 막대로, 칸 단위 점수 0.95, Dice 0.77, 병변 민감도 0.14다.">
+                            <text x="340" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">채점 경로를 추리고, 지표마다 다시 센다</text>
+
+                            <rect x="40" y="52" width="170" height="70" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="125" y="78" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-primary,#111827)">155,520</text>
+                            <text x="125" y="100" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">열 개 축을 모두 곱한 수</text>
+
+                            <polygon points="218,87 236,79 236,95" fill="var(--text-muted,#9CA3AF)"/>
+
+                            <rect x="244" y="52" width="192" height="70" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="340" y="76" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">기준 영상 고정 · 참 칸 부피</text>
+                            <text x="340" y="94" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">임계값 세 가지만 인정</text>
+                            <text x="340" y="113" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#9CA3AF)">변호할 수 있는 조합만 남긴다</text>
+
+                            <polygon points="444,87 462,79 462,95" fill="#F86825"/>
+
+                            <rect x="470" y="52" width="170" height="70" rx="10" fill="#F86825" fill-opacity="0.1" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="555" y="78" text-anchor="middle" font-size="14" font-weight="700" fill="#F86825">15,552</text>
+                            <text x="555" y="100" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">지표 하나당 2,592가지</text>
+
+                            <text x="340" y="158" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-primary,#111827)">"어떤 모델을 썼는가"가 결과 차이를 설명하는 몫</text>
+
+                            <text x="150" y="196" text-anchor="end" font-size="10" fill="var(--text-secondary,#4B5563)">칸 단위 점수</text>
+                            <rect x="162" y="183" width="418" height="20" rx="4" fill="var(--border-color,#E5E7EB)"/>
+                            <rect x="162" y="183" width="397" height="20" rx="4" fill="#F86825"/>
+                            <text x="600" y="197" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">0.95</text>
+
+                            <text x="150" y="232" text-anchor="end" font-size="10" fill="var(--text-secondary,#4B5563)">Dice</text>
+                            <rect x="162" y="219" width="418" height="20" rx="4" fill="var(--border-color,#E5E7EB)"/>
+                            <rect x="162" y="219" width="322" height="20" rx="4" fill="#F86825" fill-opacity="0.75"/>
+                            <text x="600" y="233" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">0.77</text>
+
+                            <text x="150" y="268" text-anchor="end" font-size="10" fill="var(--text-secondary,#4B5563)">병변 민감도</text>
+                            <rect x="162" y="255" width="418" height="20" rx="4" fill="var(--border-color,#E5E7EB)"/>
+                            <rect x="162" y="255" width="59" height="20" rx="4" fill="#F86825" fill-opacity="0.45"/>
+                            <text x="600" y="269" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">0.14</text>
+
+                            <rect x="110" y="294" width="460" height="42" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="340" y="320" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">병변 민감도는 병변 정의와 겹침 기준이 결과를 쥔다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: Kafee Hernashki·Chatterjee(2026), <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="underline">arXiv:2610.02136</a> 본문 재구성
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 방식으로 또 하나가 드러났다. 검증 데이터에서 정한 임계값으로 재면 유의하던 Dice 우위가, 시험에서 실제로 발생한 거짓 양성 부피를 서로 맞추자 사라졌다. 저자들은 정확한 항등식으로 이 차이가 임계값을 옮겨 쓰는 데서 왔음을 밝혔다. 반대 방향의 사례도 있다. REFLECT의 잠재공간 집계 방식을 학습 없이 바꿨더니 같은 거짓 양성 부담에서 Dice가 0.052 올랐다. 더 좋은 모델이 아니라 더 좋은 채점 약속이 점수를 올린 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들은 자기 결과에도 선을 그어 두었다. 가설 아홉 개를 미리 정한 기준에 대고 검정했지만, 프로토콜을 다듬는 데 쓴 환자 집단과 검정에 쓴 집단이 같아서 모든 추론은 탐색적이라고 적었다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="whose-number" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">우리가 보는 성능 숫자는 무엇의 숫자인가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델 성능을 보고받는 자리에서 우리가 실제로 받는 것은 숫자 하나다. 그 숫자가 나오기까지 예측을 어떤 좌표계로 옮겼고, 임계값을 어느 데이터에서 골랐고, 여러 사례를 어떻게 한 줄로 묶었는지는 보고서에 거의 적히지 않는다. 적히지 않은 선택이 틀려도 숫자는 여전히 숫자의 모양을 하고 나온다. 축 순서 하나가 0.873을 0.583으로 끌어내린 사고가 꼭 그랬다. 평가 절차는 모델을 재는 중립적인 잣대가 아니라 그 자체로 데이터를 가공하는 공정이고, 공정에는 품질 결함이 생긴다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 눈여겨볼 것은 그 결함이 어디에 숨었느냐다. 사고를 가려 준 것은 거짓말이 아니라 집계였다. 단면 하나를 대표 값 하나로 줄이는 순간 좌표가 어긋난 사실이 함께 지워졌다. 평균과 최댓값은 보기 좋게 정리하는 도구이면서 동시에 결함을 덮는 도구다. 데이터 품질을 전체 지표로만 보는 자리에서 같은 일이 생긴다. 결측률도 중복률도 기준을 넘지 않는데 모델이 특정 구간에서만 틀린다면, 뭉쳐 둔 숫자를 흩어서 단위별로 다시 세어 봐야 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문이 내놓은 해법도 더 똑똑한 지표가 아니었다. 비교를 시작하기 전에 기하가 맞는지 검문하고, 정답을 쓰지 않는 진단으로 뒤집힌 사례가 몇 퍼센트인지 세고, 채점 선택을 하나씩 바꿔 가며 결론이 버티는지 확인한다. 셋 다 모델을 건드리지 않는 절차다. 학습 데이터를 다루는 자리에서도 같은 질문을 걸 수 있다. 라벨과 입력이 같은 좌표에 놓여 있다고 무엇으로 확인했는가. 지금 보고 있는 지표는 뭉쳐진 것인가 흩어진 것인가. 전처리 약속을 하나 바꾸면 결론이 뒤집히는가.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            페블러스가 데이터 품질을 볼 때 되묻는 물음 하나가 이 논문과 겹친다. 지금 보고받은 이 숫자는 무엇을 재고 있는가. 모델의 실력인가, 아니면 그 실력을 재기 위해 깔아 둔 약속들인가. 두 번째 쪽이 틀렸을 때 숫자는 경고를 띄우지 않고 그냥 조금 낮아진다. 축 순서 사고는 요약 점수에 거의 나타나지 않았다. 그 조용함의 가장 선명한 사례다. 다만 이 겹침은 논문이 한 말이 아니라 이 글이 읽어 낸 것이다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주셔서 감사하다. 원문은 <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv:2610.02136</a>에서 전문을 볼 수 있고, 이 글의 수치는 초록과 본문에서 직접 확인했다. 평가 절차의 어긋남을 뒤늦게 발견한 경험이 있다면 어떤 신호로 알아챘는지 나눠 주시면 좋겠다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>(주)페블러스 데이터 커뮤니케이션팀</strong><br>
+                        <span class="themeable-muted text-sm">2026년 10월 5일</span>
+                    </p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            RIS
+                        </button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Kafee Hernashki, N. &amp; Chatterjee, S. (2026). "<a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener">MIRTO: a registration-gated, multiverse-tested evaluation protocol for unsupervised anomaly segmentation in brain MRI</a>." arXiv:2610.02136.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Steegen, S., Tuerlinckx, F., Gelman, A., &amp; Vanpaemel, W. (2016). "<a href="https://journals.sagepub.com/doi/10.1177/1745691616658637" target="_blank" rel="noopener">Increasing Transparency Through a Multiverse Analysis</a>." <em>Perspectives on Psychological Science</em>, 11(5), 702–712.</span></li>
+                    </ul>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261005"></script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20261005" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-10-04T17:07:30.530Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-10-04T17:21:14.957Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1791133650531-1blcyq",
+                "version": "0.1.0",
+                "sha": "a3715ffe2ebe43690af61a26c9a3b45d30b0871a",
+                "builtAt": "2026-10-02T01:47:56.306Z"
+              },
+              "recordedAt": "2026-10-04T18:21:38.645Z"
+            },
+            mainTitle: "뇌 MRI 이상 탐지 AI, 축 순서 하나가 점수를 가른다",
+            subtitle: "축 순서가 어긋난 것만으로 한 AI의 칸 단위 점수가 0.873에서 0.583으로 하락 — 평가 방법 MIRTO",
+            pageTitle: "뇌 MRI 이상 탐지 평가 MIRTO 분석 — 축 순서 오류가 점수를 바꾸는 구조 | 페블러스",
+            category: "tech",
+            publishDate: "2026-10-05",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/brain-mri-anomaly-mirto-axis-order/ko/",
+            tags: ["뇌 MRI 이상 탐지", "MIRTO", "비지도 이상 탐지", "AI 벤치마크", "데이터 품질", "의료 AI", "재현성", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "MIRTO는 무엇인가?",
+                    answer: "뇌 MRI 비지도 이상 탐지 모델을 채점할 때 쓰는 평가 방법이다. 2026년 10월 1일 arXiv에 공개됐다. 핵심은 네 가지다. 모든 비교 앞에 기하가 맞는지 확인하는 검문소를 두고, 임계값은 검증 데이터에서만 정하고 시험에서 실제로 발생한 거짓 양성 부피를 보고하며, 모든 비교를 변호할 수 있는 15,552가지 채점 경로에서 되풀이하고, 환자 단위로 짝지은 부트스트랩 구간에 다중 비교 보정을 붙인다."
+                },
+                {
+                    question: "뇌 MRI 이상 탐지는 어떻게 작동하나?",
+                    answer: "병변의 모양을 미리 배우지 않는다. 건강한 사람의 뇌 영상만 보여 주고 정상이 어떻게 생겼는지를 익히게 한 뒤, 새 영상에서 그 정상에서 벗어난 자리를 스스로 짚게 한다. 결과물은 영상과 같은 크기의 이상 지도이고, 칸마다 여기가 얼마나 이상한가라는 점수가 적혀 있다. 이번 논문이 비교한 모델은 REFLECT, cDDPM, UCCD, AnomalyDINO 넷이고, 넷 모두 같은 건강 영상으로 학습한 뒤 BraTS 2020의 환자 312명으로 시험했다."
+                },
+                {
+                    question: "축 순서가 어긋난다는 것이 정확히 무슨 뜻인가?",
+                    answer: "3차원 영상은 숫자 덩어리로 저장되는데, 어느 방향을 첫 번째 축으로 적어 두었는지는 파일 바깥의 약속으로만 전해진다. 모델마다 전처리가 달라 각자 자기 축 순서와 자기 시야 자르기로 이상 지도를 저장하고, 정답과 맞대려면 그 선택을 하나씩 되돌려야 한다. 되돌리기가 틀리면 지도가 통째로 뒤집히거나 비틀려서, 왼쪽 앞의 신호가 오른쪽 위에 가서 앉는다. 모델은 제대로 짚었는데 채점표가 다른 자리를 보게 된다."
+                },
+                {
+                    question: "0.873과 0.583은 무엇을 재는 점수인가?",
+                    answer: "칸 단위 AUROC다. 병변 칸 하나와 정상 칸 하나를 아무렇게나 뽑았을 때 모델이 병변 쪽에 더 높은 점수를 줄 확률을 뜻한다. 1에 가까울수록 잘 짚은 것이고 0.5는 동전 던지기다. cDDPM의 이상 지도를 잘못된 축 순서로 읽고 잘라 낸 시야를 무시했을 때 0.583이 나왔고, 같은 지도를 올바르게 되돌리자 0.873이 나왔다. 차이는 0.290이고 구간은 0.277에서 0.302다."
+                },
+                {
+                    question: "장 단위 점수는 왜 이 사고를 보지 못했나?",
+                    answer: "두 점수가 묻는 질문이 다르기 때문이다. 칸 단위 점수는 칸마다 병변인지를 묻고, 장 단위 점수는 MRI를 한 장씩 썬 단면을 놓고 그 단면에 병변이 있는지만 묻는다. 단면 안에서 가장 높은 이상 점수 하나가 그 단면을 대표한다. 지도가 비틀리면 칸 하나하나의 좌표는 전부 어긋나지만 어느 단면이 수상한지는 상당 부분 남는다. 실제로 장 단위 점수는 0.112만 움직였고 환자별 가운데 값으로는 0.083이었다."
+                },
+                {
+                    question: "거꾸로 짚은 비율이란 무엇인가?",
+                    answer: "환자를 한 사람씩 떼어 점수를 매겼을 때 칸 단위 AUROC가 0.5 아래인 사람의 비율이다. 0.5 아래라는 것은 병변 칸과 정상 칸의 순위가 뒤집혀 있다는 뜻이다. 정답 라벨 없이도 잴 수 있는 진단이라 채점표가 어긋났는지 미리 알아볼 수 있다. 잘못 읽은 지도에서는 cDDPM 시험 환자의 24%가 여기 걸렸다."
+                },
+                {
+                    question: "같은 사고가 또 있었나?",
+                    answer: "저자들은 벤치마크를 조립하는 동안 같은 종류의 사고를 한 번 더 만났다고 적었다. REFLECT의 지도를 내보내는 과정에서 같은 축 오류가 생겨 시험 환자의 26%가 거꾸로 짚은 판정을 받았고, 칸 단위 점수가 0.936에서 0.616으로 내려갔다. 그동안 장 단위 점수는 0.915에 그대로 머물렀다. 한 번의 부주의가 아니라 반복되는 구조라는 근거다."
+                },
+                {
+                    question: "검문소는 무엇을 거르고 무엇을 통과시키나?",
+                    answer: "답을 아는 가짜 영상으로 미리 검증했다. 그대로 둔 영상, 공 모양에서 40%를 잘라 낸 시야, 한 칸 깎아 낸 영상, 20% 부풀린 영상은 통과시키고, 면내 뒤집기와 축 맞바꾸기와 두 단면 밀림은 걸러 낸다. 뒤집기와 축 맞바꾸기는 환자 서른 명만 있어도 거짓 경보율 0.05에서 빠짐없이 잡혔다. 실제 자료에서는 방법과 환자를 짝지은 1,344쌍 가운데 1,342쌍이 통과했다."
+                },
+                {
+                    question: "15,552가지 채점 경로는 어떻게 나온 수인가?",
+                    answer: "채점 절차에 숨은 선택을 열 개 축으로 세우고 각 축의 선택지를 모두 곱하면 155,520가지가 나온다. 기준 영상, 보는 범위, 칸 부피, 임계값 정하는 법, 거짓 양성 허용량, 후처리, 병변 정의, 맞혔다고 치는 겹침 기준, 환자별 점수를 묶는 법, 지표가 그 열 개다. 여기서 기준 영상을 정본으로 고정하고 참 칸 부피만 쓰고 임계값은 검증 데이터·등각 예측·시험 맞춤 세 가지만 인정하면 지표 하나당 2,592가지, 여섯 지표를 합쳐 15,552가지가 남는다."
+                },
+                {
+                    question: "지표마다 점수를 쥐고 있는 것이 다르다는 말은 무슨 뜻인가?",
+                    answer: "채점 경로를 전부 돌린 뒤 결과 차이가 어디서 왔는지 나눠 보니 지표별로 답이 달랐다. 칸 단위 AUROC와 칸 단위 AUPRC에서는 어떤 모델을 썼는가가 차이의 0.95 이상을 설명했고 Dice에서는 0.77이었다. 그런데 병변 민감도에서는 0.14로 내려앉고, 대신 병변을 무엇으로 정의하고 얼마나 겹쳐야 맞혔다고 칠지가 결과를 갈랐다. 같은 모델 묶음을 두고도 어느 지표로 이겼다고 말하느냐에 따라 승자가 바뀔 수 있다는 뜻이다."
+                },
+                {
+                    question: "이 논문의 한계는 무엇인가?",
+                    answer: "저자들이 직접 선을 그어 두었다. 가설 아홉 개를 미리 정한 기준에 대고 검정했지만 프로토콜을 다듬는 데 쓴 환자 집단과 검정에 쓴 집단이 같아서 모든 추론은 탐색적이라고 적었다. 또 비교 대상은 네 방법이고 시험 코호트는 BraTS 2020 하나다. 여기서 나온 순위를 다른 자료로 그대로 옮기기보다, 채점 절차를 명시하고 그 선택이 결론을 뒤집는지 확인하는 방법 쪽을 가져가는 것이 이 논문의 쓸모에 가깝다."
+                },
+                {
+                    question: "페블러스가 이 논문을 보는 이유는 무엇인가?",
+                    answer: "평가 절차 자체가 데이터를 가공하는 공정이고 그 공정에도 품질 결함이 생기기 때문이다. 축 순서 하나가 0.873을 0.583으로 끌어내렸는데 모델도 데이터도 그대로였다. 결함이 집계 뒤에 숨었다는 점이 더 중요하다. 단면을 대표 값 하나로 줄이면 좌표가 어긋난 사실도 함께 사라진다. 전체 지표로만 들여다보는 데이터 품질도 같은 일을 겪는다. 다만 이 연결은 논문의 주장이 아니라 이 글의 해석이다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
