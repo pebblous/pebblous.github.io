@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain MRI Anomaly Detection — MIRTO Axis Order Explained | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="MIRTO ran brain MRI anomaly models through 15,552 scoring paths. A wrong axis order pulled one voxel score from 0.873 to 0.583, and slice scores barely moved.">
+    <meta name="keywords" content="brain MRI anomaly detection, MIRTO, unsupervised anomaly segmentation, axis order, registration gate, voxel AUROC, slice AUROC, BraTS 2020, multiverse analysis, AI benchmark, data quality, AI-Ready Data, arXiv">
+
+    <!-- Main search keyword -->
+    <meta name="pb-search-keyword" content="brain MRI anomaly detection">
+    <meta name="pb-search-keyword-forms" content="brain MRI anomaly detection|MIRTO">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="One Axis Order Decides the Score in Brain MRI Anomaly Detection">
+    <meta property="og:description" content="The model, the weights and the test data were untouched. The stored anomaly map was read in the wrong axis order, the voxel-level score fell from 0.873 to 0.583, and the slice-level score barely moved, so nobody noticed.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Diagram of how a mismatched axis order drops the voxel-level score while leaving the slice-level score in place">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-10-05">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="One Axis Order Decides the Score in Brain MRI Anomaly Detection">
+    <meta name="twitter:description" content="Same model, same data, same weights. One mismatched axis order in the stored anomaly map took the voxel-level score from 0.873 to 0.583, and the summary score never saw it happen.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/brain-mri-anomaly-mirto-axis-order/en/image/index.png">
+    <meta name="twitter:image:alt" content="Diagram of how a mismatched axis order drops the voxel-level score while leaving the slice-level score in place">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261005"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261005">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261005">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261005">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#not-the-model" class="block pl-4 themeable-toc-link transition-colors duration-200">1. What Dropped the Score Was Not the Model</a></li>
+                    <li><a href="#quiet-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Why the Summary Score Stayed Quiet</a></li>
+                    <li><a href="#second-incident" class="block pl-4 themeable-toc-link transition-colors duration-200">3. The Same Accident Happened Twice</a></li>
+                    <li><a href="#multiverse" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Running All 15,552 Scoring Paths</a></li>
+                    <li><a href="#whose-number" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Whose Number Is the Performance Number?</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            This article looks at a case where the report card for a brain MRI anomaly detection AI moved because of the scoring procedure rather than the model. The source is a paper posted to arXiv on October 1, and its authors named the evaluation protocol they propose MIRTO. Its subjects are four models that learn from healthy brain scans alone and then mark, on their own, the places that look wrong in a scan that holds a lesion. Models like these are usually ranked by a single score, and behind that score stands a line of choices that almost never get reported.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The two numbers that stand out are 0.873 and 0.583. One diffusion model's anomaly map was read in the wrong axis order, the cropped field of view was never restored, and the voxel-level score fell from 0.873 to 0.583. The model, the weights and the test data were all untouched. In that same accident the slice-level score moved by only 0.112, so anyone watching the summary number saw nothing go wrong.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Sections 1 through 4 follow what the paper measured and the figures its authors recorded. Section 5 carries the finding over to training-data quality, and that move is this article's reading rather than anything the paper claims.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key figures</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        All four cards below come from the same paper. The first two set a single accident beside the two scores that watched it, and they disagree. The third is a signal that surfaces only once the overall average is broken apart. In the fourth, changing the metric changed what the score is really tracking.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: Kafee Hernashki and Chatterjee, <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">MIRTO: a registration-gated, multiverse-tested evaluation protocol for unsupervised anomaly segmentation in brain MRI</a>, arXiv:2610.02136 (2026-10-01), abstract and text</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.873→0.583</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Voxel-level score under a mismatched axis order</p>
+                            <p class="text-xs themeable-muted mt-1">The model, the weights and the test data never changed</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.112</p>
+                            <p class="text-sm themeable-text-secondary mt-1">How far the slice-level score moved in that same accident</p>
+                            <p class="text-xs themeable-muted mt-1">The voxel-level score moved 0.290. By median the slice figure is 0.083</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">24%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Share of subjects scored backwards</p>
+                            <p class="text-xs themeable-muted mt-1">Their per-subject score sits below 0.5, which a coin flip beats</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.95 vs 0.14</p>
+                            <p class="text-sm themeable-text-secondary mt-1">How much "which model" explains the score</p>
+                            <p class="text-xs themeable-muted mt-1">0.95 for the voxel-level score, 0.14 for lesion sensitivity</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="not-the-model" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What Dropped the Score Was Not the Model</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Brain MRI anomaly detection never learns what a lesion looks like. A model is shown nothing but scans of healthy brains until it has absorbed what normal looks like, and then it is handed a new scan and asked to mark the places that depart from that normal. What comes out is a single map the same size as the scan. Every voxel in it carries a score saying how unusual that spot is, and the map is called an anomaly map.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Scoring means holding that map up against the answer key. The answer key is a label a person painted over the tumour region. The test data in this paper is 312 subjects from BraTS 2020, and all four models were trained on the same healthy scans and tested on the same subjects. The four compared are REFLECT, cDDPM, UCCD and AnomalyDINO. One restores a normal scan in a single pass, two are conditioned diffusion models, and one does no training at all and simply remembers the features of an off-the-shelf foundation model.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The usual score is the voxel-level AUROC. Pick one lesion voxel and one healthy voxel at random, and it is the probability that the model gave the lesion voxel the higher score. Close to 1 means the model marked the right places, 0.5 is a coin flip, and anything below 0.5 means the model is pointing the wrong way.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The accident happened where the map gets read. Preprocessing differs from model to model, so each one stores its map in its own way. Which axis gets written first, how far the field of view was cropped, how much the resolution was reduced, all of it varies. Comparing against the answer key means undoing those choices one by one, and the authors wrote that this undoing is easy to get wrong and hard to see. In practice a mapping was used that read cDDPM's map in the wrong axis order and ignored the cropped field of view, and the voxel-level score under it was 0.583. Undoing the same map correctly gave 0.873. The difference is 0.290, with an interval from 0.277 to 0.302.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A mismatched axis order means the whole map is flipped or twisted. A three-dimensional scan is stored as a block of numbers, and which direction was written as the first axis travels only as a convention outside the file. Break that convention and a signal from the front left lands at the upper right. The model marked the tumour correctly, and the scoresheet is looking somewhere else.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 300" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="A grid comparison showing that swapping axis order reads the same cell in a different place. The left grid marks the voxel the model actually flagged as lesion (front left) in orange. The right grid shows that same data landing at the upper right once the axis order is swapped on read, with a dashed outline marking where it should have been.">
+                            <text x="340" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">Same cell, read in a different place</text>
+                            <text x="340" y="47" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">The model's mark never moved — the coordinate the scoresheet reads did</text>
+
+                            <text x="122" y="70" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">Where the model marked it</text>
+                            <text x="122" y="83" text-anchor="middle" font-size="9" fill="var(--text-muted,#9CA3AF)">(front left)</text>
+
+                            <rect x="80" y="90" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="108" y="90" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="136" y="90" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="80" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="108" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="136" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="80" y="146" width="28" height="28" fill="#F86825" stroke="#F86825"/>
+                            <rect x="108" y="146" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="136" y="146" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <text x="94" y="163" text-anchor="middle" font-size="7" font-weight="700" fill="#ffffff">lesion</text>
+
+                            <line x1="178" y1="132" x2="458" y2="132" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5" stroke-dasharray="4,3"/>
+                            <polygon points="458,132 446,126 446,138" fill="var(--text-muted,#9CA3AF)"/>
+                            <text x="318" y="121" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">Axis order swapped on read</text>
+                            <text x="318" y="146" text-anchor="middle" font-size="9" fill="var(--text-muted,#9CA3AF)">cDDPM case: 0.873 → 0.583</text>
+
+                            <text x="558" y="70" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">Where the scoresheet read it</text>
+                            <text x="558" y="83" text-anchor="middle" font-size="9" fill="var(--text-muted,#9CA3AF)">(upper right)</text>
+
+                            <rect x="470" y="90" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="498" y="90" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="526" y="90" width="28" height="28" fill="#F86825" stroke="#F86825"/>
+                            <text x="540" y="107" text-anchor="middle" font-size="7" font-weight="700" fill="#ffffff">lesion</text>
+                            <rect x="470" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="498" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="526" y="118" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="470" y="146" width="28" height="28" fill="none" stroke="#F86825" stroke-width="1.5" stroke-dasharray="3,2"/>
+                            <rect x="498" y="146" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <rect x="526" y="146" width="28" height="28" fill="none" stroke="var(--border-color,#E5E7EB)"/>
+                            <text x="484" y="190" text-anchor="middle" font-size="8.5" fill="var(--text-muted,#9CA3AF)">where it should</text>
+                            <text x="484" y="201" text-anchor="middle" font-size="8.5" fill="var(--text-muted,#9CA3AF)">have been</text>
+
+                            <rect x="110" y="236" width="460" height="46" rx="10" fill="#F86825" fill-opacity="0.1" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="340" y="258" text-anchor="middle" font-size="10.5" font-weight="700" fill="#F86825">The model marked the lesion correctly</text>
+                            <text x="340" y="273" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">Only the scoresheet's coordinate was wrong</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Original Pebblous diagram | Source: Kafee Hernashki and Chatterjee (2026), <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="underline">arXiv:2610.02136</a>, figures rebuilt from the text
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="quiet-summary" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why the Summary Score Stayed Quiet</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The coldest part of this paper is not the number that fell. It is the number that did not. In the same accident the slice-level AUROC moved by 0.112, and laid out per subject the middle value is 0.083. All of that while the voxel-level score moved 0.290.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The two scores ask different questions. The voxel-level score asks of every voxel whether it is lesion. The slice-level score takes the MRI one cross-section at a time and asks only whether that slice contains a lesion, with the single highest anomaly score inside the slice standing in for the whole slice. Twist the map and the coordinates of every individual voxel go wrong, but much of which slice looks suspicious survives. So the fine-grained score collapses while the summary score looks fine.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 320" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="A comparison showing that two scores see the same axis order accident differently. The voxel-level score asks of every voxel whether it is lesion and moves by 0.290 when the accident is corrected. The slice-level score asks only whether a slice contains a lesion and moves by 0.112 in the same accident. Below is a note that in the misread map, 24 percent of subjects were scored backwards.">
+                            <text x="340" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">One accident, two scores, two readings</text>
+                            <text x="340" y="47" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">How far each score moved when the axis order was corrected</text>
+
+                            <rect x="30" y="72" width="300" height="150" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="180" y="96" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-primary,#111827)">Voxel-level score</text>
+                            <text x="180" y="117" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">Asks of every voxel whether it is lesion</text>
+                            <line x1="60" y1="176" x2="300" y2="176" stroke="var(--border-color,#E5E7EB)" stroke-width="1"/>
+                            <rect x="60" y="146" width="232" height="30" rx="4" fill="#F86825"/>
+                            <text x="176" y="166" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">0.290</text>
+                            <text x="180" y="200" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#9CA3AF)">From 0.583 to 0.873</text>
+
+                            <rect x="350" y="72" width="300" height="150" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="500" y="96" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-primary,#111827)">Slice-level score</text>
+                            <text x="500" y="117" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">Asks only whether a slice holds a lesion</text>
+                            <line x1="380" y1="176" x2="620" y2="176" stroke="var(--border-color,#E5E7EB)" stroke-width="1"/>
+                            <rect x="380" y="146" width="90" height="30" rx="4" fill="var(--text-muted,#9CA3AF)"/>
+                            <text x="425" y="166" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">0.112</text>
+                            <text x="500" y="200" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#9CA3AF)">0.083 by the middle value</text>
+
+                            <rect x="110" y="244" width="460" height="56" rx="10" fill="#F86825" fill-opacity="0.1" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="340" y="268" text-anchor="middle" font-size="11.5" font-weight="700" fill="#F86825">In the misread map, 24% of subjects were scored backwards</text>
+                            <text x="340" y="288" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">Per-subject voxel score below 0.5. The summary score never shows it</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Original Pebblous diagram | Source: Kafee Hernashki and Chatterjee (2026), <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="underline">arXiv:2610.02136</a>, figures rebuilt from the text
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So what caught the accident? A diagnostic that never touches the answer key. Instead of the overall average, each subject is pulled out and scored alone, and the count is of how many land below 0.5. The authors call that share the anti-location rate. Under the misread map, 24% of cDDPM's test subjects fell into it. Packed into a single average it stays invisible, and spread back out per subject it is plain that one in four is inverted.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That signal does not stand alone. The paper sets out five quantities that can be measured without labels. Besides the anti-location rate there is rank stability, which checks whether per-subject scores keep the same order across two conditions that should be pointing at the same tumour, and shared conspicuity, which rests on the fact that how visible a tumour is belongs to the subject, so per-subject scores ought to move together even when the method changes. Neither one looks at the answer key. That means the question of whether the scoresheet is in the right place can be asked apart from how well the model did.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            What this measures is not the anomaly detection model's ability. It is whether the scoresheet puts the model's output in the right place. Break that one thing and the score comes down near a coin flip no matter how precisely the model picked the lesion out. And that collapse barely registers in the summary score most papers report.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="second-incident" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Same Accident Happened Twice</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Once could be folded away as somebody's slip. The authors recorded that they met the same kind of accident a second time while assembling this benchmark. That time it came while exporting REFLECT's maps. Of the test subjects, 26% were scored backwards, and the voxel-level score came down from 0.936 to 0.616. Through all of it the slice-level score stayed put at 0.915.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The second accident matters not because its numbers are larger. It matters because it happened again while the same people were building a benchmark with the same care. As long as every method stores its maps with its own axis order, its own cropping and its own resolution, every comparison creates a transform that has to be undone, and that transform fails quietly.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That is why MIRTO puts a registration gate in front of every comparison. The geometry gets checked first, and only the pairs that pass go on to be scored. The gate's own power was validated in advance on synthetic volumes whose answers are known. It passes the identity, a field of view with 40% of a sphere removed, a one-voxel erosion and a 20% dilation, and it fails an in-plane flip, a transpose and a two-slice offset. Rank stability and the anti-location rate, two label-free diagnostics by themselves, caught every flip and transpose at a false-alarm rate of 0.05 with as few as thirty subjects. On the real data, 1,342 of 1,344 method–subject pairs passed the gate. That count comes from pairing each of the four methods with 312 test subjects and 24 validation subjects.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 400" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="A diagram of how the registration gate was validated in advance on synthetic volumes whose answers are known. It passes the identity, a field of view with 40 percent of a sphere removed, a one-voxel erosion and a 20 percent dilation, and it fails an in-plane flip, a transpose and a two-slice offset. On the real data, 1,342 of 1,344 pairs passed.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">The gate: check the geometry first</text>
+                            <text x="340" y="46" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">Validated in advance on synthetic volumes whose answers are known</text>
+
+                            <rect x="250" y="60" width="180" height="46" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="340" y="88" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">Synthetic volumes, known answers</text>
+
+                            <line x1="340" y1="106" x2="340" y2="124" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+                            <polygon points="340,130 334,118 346,118" fill="var(--text-muted,#9CA3AF)"/>
+
+                            <rect x="260" y="132" width="160" height="46" rx="10" fill="#F86825" fill-opacity="0.12" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="340" y="160" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">Registration gate</text>
+
+                            <line x1="300" y1="178" x2="180" y2="206" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+                            <line x1="380" y1="178" x2="500" y2="206" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+
+                            <rect x="60" y="208" width="220" height="118" rx="10" fill="#F86825" fill-opacity="0.06" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="170" y="230" text-anchor="middle" font-size="11.5" font-weight="700" fill="#F86825">Pass</text>
+                            <text x="80" y="250" font-size="9.5" fill="var(--text-secondary,#4B5563)">✓ Identity</text>
+                            <text x="80" y="268" font-size="9.5" fill="var(--text-secondary,#4B5563)">✓ 40% of FOV cropped</text>
+                            <text x="80" y="286" font-size="9.5" fill="var(--text-secondary,#4B5563)">✓ One-voxel erosion</text>
+                            <text x="80" y="304" font-size="9.5" fill="var(--text-secondary,#4B5563)">✓ 20% dilation</text>
+
+                            <rect x="400" y="208" width="220" height="118" rx="10" fill="var(--text-muted,#9CA3AF)" fill-opacity="0.08" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="510" y="230" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary,#4B5563)">Blocked</text>
+                            <text x="420" y="250" font-size="9.5" fill="var(--text-secondary,#4B5563)">✗ In-plane flip</text>
+                            <text x="420" y="268" font-size="9.5" fill="var(--text-secondary,#4B5563)">✗ Transpose</text>
+                            <text x="420" y="286" font-size="9.5" fill="var(--text-secondary,#4B5563)">✗ Two-slice offset</text>
+
+                            <rect x="110" y="344" width="460" height="40" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="340" y="368" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Real data: 1,342 of 1,344 pairs passed the gate</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Original Pebblous diagram | Source: Kafee Hernashki and Chatterjee (2026), <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="underline">arXiv:2610.02136</a>, rebuilt from the text
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="multiverse" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Running All 15,552 Scoring Paths</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Axis order is only one of the choices hidden inside a scoring procedure. Which scan serves as the reference, whether to look at the whole brain or only where the fields of view overlap, which data the threshold is set on, how many cubic centimetres of false positives to allow, whether small blobs count as lesions, how much overlap counts as a hit, whether per-subject scores are pooled by mean or by median: every one of those is a choice. The paper laid out ten such axes and multiplied the options on each of them together. That gives 155,520 combinations per method.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        From there only the combinations anyone could defend were kept. The reference scan is fixed to the canonical one, the voxel volume is the true one, and only three threshold protocols are admitted: validation, conformal and test-matched. Trimmed that way, 2,592 combinations remain per metric, and 15,552 across the six metrics. Every comparison is then repeated over those 15,552 paths, with paired subject bootstrap intervals and a correction for multiple comparisons attached. It amounts to carrying multiverse analysis, which began in psychology, over to medical image scoring.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The idea did not originate with this paper. <a href="https://journals.sagepub.com/doi/10.1177/1745691616658637" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Multiverse analysis</a> and specification curves, which check a single conclusion across every defensible analysis path, came first, and in the many-analysts design, which hands the same data to several research teams at once, even reasonable paths landed on different conclusions. Medical imaging had its own warnings on the pile. Challenge rankings were reported to shift depending on which metric and which aggregation were used, and choices made after looking at the test data were reported to inflate performance estimates. What the paper adds is the one thing that always comes attached to carving out anomalous regions with a threshold: writing down, rather than hiding, the point at which something gets called an anomaly.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Run all of them, and what holds the score differs from metric to metric. For the voxel-level AUROC and the voxel-level area under the precision-recall curve, "which model was used" explains 0.95 or more of the variation in results. For Dice it is 0.77. For lesion sensitivity it drops to 0.14, and the result is driven instead by how a lesion is defined and how much overlap counts as a hit. The same set of models can hand the win to a different method depending on which metric is used to declare it.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 350" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="The upper half shows how the scoring paths are trimmed: multiplying all ten axes gives 155,520 combinations, and keeping only defensible ones leaves 2,592 per metric and 15,552 in total. The lower half compares, by metric, how much which model was used explains the differences in results: 0.95 for the voxel-level score, 0.77 for Dice and 0.14 for lesion sensitivity.">
+                            <text x="340" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">Trim the scoring paths, then count again per metric</text>
+
+                            <rect x="40" y="52" width="170" height="70" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="125" y="78" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text-primary,#111827)">155,520</text>
+                            <text x="125" y="100" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">All ten axes multiplied</text>
+
+                            <polygon points="218,87 236,79 236,95" fill="var(--text-muted,#9CA3AF)"/>
+
+                            <rect x="244" y="52" width="192" height="70" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="340" y="76" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Reference fixed · true voxel volume</text>
+                            <text x="340" y="94" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Three threshold protocols only</text>
+                            <text x="340" y="113" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#9CA3AF)">Keep only defensible combinations</text>
+
+                            <polygon points="444,87 462,79 462,95" fill="#F86825"/>
+
+                            <rect x="470" y="52" width="170" height="70" rx="10" fill="#F86825" fill-opacity="0.1" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="555" y="78" text-anchor="middle" font-size="14" font-weight="700" fill="#F86825">15,552</text>
+                            <text x="555" y="100" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">2,592 per metric</text>
+
+                            <text x="340" y="158" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-primary,#111827)">How much "which model was used" explains the differences</text>
+
+                            <text x="150" y="196" text-anchor="end" font-size="10" fill="var(--text-secondary,#4B5563)">Voxel-level score</text>
+                            <rect x="162" y="183" width="418" height="20" rx="4" fill="var(--border-color,#E5E7EB)"/>
+                            <rect x="162" y="183" width="397" height="20" rx="4" fill="#F86825"/>
+                            <text x="600" y="197" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">0.95</text>
+
+                            <text x="150" y="232" text-anchor="end" font-size="10" fill="var(--text-secondary,#4B5563)">Dice</text>
+                            <rect x="162" y="219" width="418" height="20" rx="4" fill="var(--border-color,#E5E7EB)"/>
+                            <rect x="162" y="219" width="322" height="20" rx="4" fill="#F86825" fill-opacity="0.75"/>
+                            <text x="600" y="233" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">0.77</text>
+
+                            <text x="150" y="268" text-anchor="end" font-size="10" fill="var(--text-secondary,#4B5563)">Lesion sensitivity</text>
+                            <rect x="162" y="255" width="418" height="20" rx="4" fill="var(--border-color,#E5E7EB)"/>
+                            <rect x="162" y="255" width="59" height="20" rx="4" fill="#F86825" fill-opacity="0.45"/>
+                            <text x="600" y="269" font-size="10.5" font-weight="700" fill="var(--text-primary,#111827)">0.14</text>
+
+                            <rect x="110" y="294" width="460" height="42" rx="10" fill="var(--card-bg,#F9FAFB)" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="340" y="320" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Lesion sensitivity is held by the lesion definition and the hit criterion</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Original Pebblous diagram | Source: Kafee Hernashki and Chatterjee (2026), <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="underline">arXiv:2610.02136</a>, rebuilt from the text
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The same approach turned up one more thing. A Dice advantage that was significant when measured at a threshold set on validation data disappeared once the false-positive volumes actually realised at test time were matched against each other. The authors used an exact identity to pin that difference on carrying a threshold across. There is a case running the other way too. Changing how REFLECT aggregates its latent space, with no training involved, raised Dice by 0.052 at the same false-positive burden. It was not a better model that lifted the score but a better scoring convention.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The authors drew a line around their own results as well. They tested nine hypotheses against criteria fixed in advance, and they wrote that because the cohort used to refine the protocol was the same one used in the tests, every inference is exploratory.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="whose-number" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Whose Number Is the Performance Number?</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        When model performance gets reported to us, what we actually receive is one number. Which coordinate frame the predictions were moved into on the way to that number, which data the threshold was picked from, how many separate cases were folded into a single line: almost none of it makes the report. And when an unrecorded choice turns out to be wrong, the number still arrives looking exactly like a number. The axis order accident that dragged 0.873 down to 0.583 was exactly that. An evaluation procedure is not a neutral yardstick held up to a model. It is itself a process that handles data, and processes develop quality defects.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Where the defect hid deserves a closer look. What covered the accident was not a lie but an aggregation. The moment a slice was reduced to one representative value, the fact that its coordinates were wrong got erased along with everything else. Means and maxima are tools for tidying things up and tools for burying defects, both at once. The same thing happens wherever data quality is watched only through overall metrics. If the missing-value rate and the duplicate rate both stay inside their thresholds and the model still fails in one particular range, the packed-together numbers have to be spread back out and counted unit by unit.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The remedy this paper offers is not a smarter metric either. Check the geometry before any comparison begins, count with label-free diagnostics what percentage of cases came out inverted, and change the scoring choices one at a time to see whether the conclusion holds. None of the three touches the model. The same questions can be put to anyone handling training data. What was used to confirm that the labels and the inputs sit in the same coordinate frame? Is the metric on the screen right now a packed one or a spread-out one? Change one preprocessing convention, and does the conclusion flip?
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            There is a question Pebblous keeps asking about data quality, and this paper asks it too. What is the number just reported actually measuring? The model's ability, or the conventions laid down in order to measure that ability? When the second one is wrong, the number raises no alarm. It simply comes out a little lower. The axis order accident barely registered in the summary score. That is the sharpest example of the quiet. The overlap, though, is something this article drew out, not something the paper says.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        Thanks for reading this far. The full paper is at <a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv:2610.02136</a>, and every figure quoted here was checked against the abstract and the text. If you have ever found a mismatch in an evaluation procedure after the fact, we would be glad to hear what gave it away.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>Pebblous Data Communication Team</strong><br>
+                        <span class="themeable-muted text-sm">October 5, 2026</span>
+                    </p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            RIS
+                        </button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Kafee Hernashki, N. &amp; Chatterjee, S. (2026). "<a href="https://arxiv.org/abs/2610.02136" target="_blank" rel="noopener">MIRTO: a registration-gated, multiverse-tested evaluation protocol for unsupervised anomaly segmentation in brain MRI</a>." arXiv:2610.02136.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Steegen, S., Tuerlinckx, F., Gelman, A., &amp; Vanpaemel, W. (2016). "<a href="https://journals.sagepub.com/doi/10.1177/1745691616658637" target="_blank" rel="noopener">Increasing Transparency Through a Multiverse Analysis</a>." <em>Perspectives on Psychological Science</em>, 11(5), 702–712.</span></li>
+                    </ul>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261005"></script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20261005" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-10-04T17:07:30.530Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-10-04T17:21:14.957Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1791133650531-1blcyq",
+                "version": "0.1.0",
+                "sha": "a3715ffe2ebe43690af61a26c9a3b45d30b0871a",
+                "builtAt": "2026-10-02T01:47:56.306Z"
+              },
+              "recordedAt": "2026-10-04T18:21:38.645Z"
+            },
+            mainTitle: "One Axis Order Decides the Score in Brain MRI Anomaly Detection",
+            subtitle: "An evaluation protocol called MIRTO found that a mismatched axis order alone took one model's voxel-level score from 0.873 to 0.583, while the slice-level score barely moved",
+            pageTitle: "Brain MRI Anomaly Detection — MIRTO Axis Order Explained | Pebblous",
+            category: "tech",
+            publishDate: "2026-10-05",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/brain-mri-anomaly-mirto-axis-order/en/",
+            tags: ["Brain MRI Anomaly Detection", "MIRTO", "Unsupervised Anomaly Detection", "AI Benchmark", "Data Quality", "Medical AI", "Reproducibility", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "What is MIRTO?",
+                    answer: "An evaluation protocol for scoring unsupervised anomaly detection models on brain MRI, released on arXiv on October 1, 2026. It has four parts. A registration gate sits in front of every comparison to confirm the geometry matches, thresholds are set on validation data only while the false-positive volumes actually realised at test time are reported, every comparison is repeated over 15,552 defensible scoring paths, and paired subject bootstrap intervals carry a correction for multiple comparisons."
+                },
+                {
+                    question: "How does brain MRI anomaly detection work?",
+                    answer: "It never learns what a lesion looks like. The model is shown scans of healthy brains until it has absorbed what normal looks like, and then it is handed a new scan and asked to mark the places that depart from that normal. The output is an anomaly map the same size as the scan, with a score in every voxel saying how unusual that spot is. The models compared in this paper are REFLECT, cDDPM, UCCD and AnomalyDINO, all four trained on the same healthy scans and tested on 312 subjects from BraTS 2020."
+                },
+                {
+                    question: "What exactly does a mismatched axis order mean?",
+                    answer: "A three-dimensional scan is stored as a block of numbers, and which direction was written as the first axis travels only as a convention outside the file. Preprocessing differs from model to model, so each one stores its anomaly map with its own axis order and its own cropping, and comparing against the answer key means undoing those choices one by one. Get the undoing wrong and the whole map is flipped or twisted, so a signal from the front left lands at the upper right. The model marked the right place, and the scoresheet ends up looking somewhere else."
+                },
+                {
+                    question: "What do 0.873 and 0.583 measure?",
+                    answer: "They are voxel-level AUROC. Pick one lesion voxel and one healthy voxel at random, and the figure is the probability that the model gave the lesion voxel the higher score. Closer to 1 means the model marked the right places and 0.5 is a coin flip. Reading cDDPM's anomaly map in the wrong axis order and ignoring the cropped field of view gave 0.583, and undoing the same map correctly gave 0.873. The difference is 0.290, with an interval from 0.277 to 0.302."
+                },
+                {
+                    question: "Why did the slice-level score miss this accident?",
+                    answer: "The two scores ask different questions. The voxel-level score asks of every voxel whether it is lesion, while the slice-level score takes the MRI one cross-section at a time and asks only whether that slice contains a lesion. The single highest anomaly score inside the slice stands in for the whole slice. Twist the map and the coordinates of every individual voxel go wrong, but much of which slice looks suspicious survives. In practice the slice-level score moved only 0.112, and by the per-subject median it was 0.083."
+                },
+                {
+                    question: "What is the anti-location rate?",
+                    answer: "It is the share of subjects whose voxel-level AUROC falls below 0.5 when each subject is pulled out and scored alone. Below 0.5 means the ranking of lesion voxels and healthy voxels has been inverted. Because it can be measured without the answer key, it gives advance warning that the scoresheet is misaligned. Under the misread map, 24% of cDDPM's test subjects fell into it."
+                },
+                {
+                    question: "Did the same accident happen more than once?",
+                    answer: "The authors recorded that they met the same kind of accident a second time while assembling the benchmark. The same axis error arose while exporting REFLECT's maps, 26% of the test subjects were scored backwards, and the voxel-level score came down from 0.936 to 0.616. Through all of it the slice-level score stayed put at 0.915. That is the evidence that this is a recurring structure rather than a single slip."
+                },
+                {
+                    question: "What does the registration gate pass and what does it stop?",
+                    answer: "Its power was validated in advance on synthetic volumes whose answers are known. It passes the identity, a field of view with 40% of a sphere removed, a one-voxel erosion and a 20% dilation, and it fails an in-plane flip, a transpose and a two-slice offset. Flips and transposes were caught without exception at a false-alarm rate of 0.05 with as few as thirty subjects. On the real data, 1,342 of 1,344 method–subject pairs passed."
+                },
+                {
+                    question: "Where does the figure of 15,552 scoring paths come from?",
+                    answer: "The choices hidden inside a scoring procedure are laid out as ten axes, and multiplying the options on each gives 155,520 combinations per method. The ten are the reference scan, the support region, the voxel volume, the way the threshold is set, the false-positive allowance, the post-processing, the lesion definition, the overlap that counts as a hit, the way per-subject scores are pooled, and the metric. Fixing the reference to the canonical one, using the true voxel volume only, and admitting just the validation, conformal and test-matched threshold protocols leaves 2,592 combinations per metric and 15,552 across the six metrics."
+                },
+                {
+                    question: "What does it mean that different metrics are held by different things?",
+                    answer: "After running every scoring path, the differences in results were decomposed, and the answer came out differently for each metric. For voxel-level AUROC and voxel-level AUPRC, which model was used explained 0.95 or more of the differences, and for Dice it was 0.77. For lesion sensitivity it dropped to 0.14, and the result was driven instead by how a lesion is defined and how much overlap counts as a hit. The same set of models can hand the win to a different method depending on which metric is used to declare it."
+                },
+                {
+                    question: "What are the limits of this paper?",
+                    answer: "The authors drew the line themselves. They tested nine hypotheses against criteria fixed in advance, but because the cohort used to refine the protocol was the same one used in the tests, they wrote that every inference is exploratory. The comparison also covers four methods and a single test cohort in BraTS 2020. Rather than carrying the rankings here over to other data, the usable part of this paper is the method of stating the scoring procedure and checking whether those choices overturn the conclusion."
+                },
+                {
+                    question: "Why is Pebblous looking at this paper?",
+                    answer: "Because an evaluation procedure is itself a process that handles data, and processes develop quality defects. One axis order dragged 0.873 down to 0.583 while the model and the data stayed as they were. The defect hid behind an aggregation, and that is the part worth dwelling on. Reduce a slice to one representative value and the fact that its coordinates were wrong disappears with it. Data quality watched only through overall metrics runs into the same thing. This connection, though, is this article's reading and not a claim the paper makes."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
