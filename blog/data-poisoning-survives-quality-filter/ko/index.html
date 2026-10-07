@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터 오염은 왜 품질 필터를 통과하나 — AI 안전장치가 깨지는 구조와 실험 분석 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="충칭대·저장대 연구진이 품질 선별을 통과하는 오염 표본을 만들어 실험했다. 전체의 90%를 걸러내도 오염 표본은 90% 이상 남았고, 그 데이터로 미세조정한 모델의 유해 응답 점수는 3.30에서 4.01까지 올랐다. 내용 검열 도구도 같은 표본의 93%를 안전으로 분류했다.">
+    <meta name="keywords" content="데이터 오염, data poisoning, 품질 필터, 데이터 선별, AI 안전, 안전 정렬, LLM 미세조정, 파인튜닝, DataMan, LlamaGuard, AI-Ready Data, 데이터 품질">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="데이터 오염">
+    <meta name="pb-search-keyword-forms" content="데이터 오염|data poisoning|품질 필터">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/data-poisoning-survives-quality-filter/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/data-poisoning-survives-quality-filter/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/data-poisoning-survives-quality-filter/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/data-poisoning-survives-quality-filter/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="데이터 오염, 열에 아홉을 걸러도 그대로 남는다">
+    <meta property="og:description" content="품질 점수 상위 10%만 남겨도 오염 표본의 90% 이상이 살아남는다. 품질과 안전은 같은 축이 아니다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/data-poisoning-survives-quality-filter/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/data-poisoning-survives-quality-filter/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="품질 필터를 통과한 데이터만 남겨도 오염 표본이 살아남는 구조를 나타낸 도식">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-10-07">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="데이터 오염, 열에 아홉을 걸러도 그대로 남는다">
+    <meta name="twitter:description" content="노골적으로 유해한 표본은 품질 선별에서 전부 떨어진다. 선별을 노리고 다듬은 표본은 열에 아홉이 남는다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/data-poisoning-survives-quality-filter/ko/image/index.png">
+    <meta name="twitter:image:alt" content="품질 필터를 통과한 데이터만 남겨도 오염 표본이 살아남는 구조를 나타낸 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="데이터 오염, 열에 아홉을 걸러도 그대로 남는다">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/10/07">
+    <meta name="citation_online_date" content="2026/10/07">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261007"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261007">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261007">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261007">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#what-filters-measure" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 품질 필터가 실제로 보는 것</a></li>
+                    <li><a href="#what-survives" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 글만 다듬은 표본이 가장 강한 선별을 통과한다</a></li>
+                    <li><a href="#gradient" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 잘 쓴 문장이 모델을 안전과 반대로 민다</a></li>
+                    <li><a href="#moderator" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 내용 검열 도구도 같이 속는다</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 페블러스가 이 연구를 주목하는 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 글은 충칭대와 저장대 연구진이 2026년 10월 1일 arXiv에 올린 논문 한 편을 읽는다. 제목이 결론을 그대로 적고 있다. "고품질 데이터가 곧 안전을 뜻하지는 않는다." 미세조정용 데이터셋을 고를 때 돌리는 품질 선별기는 글이 얼마나 정확하고 완결됐는지를 점수로 매긴다. 그 점수는 이 데이터가 모델의 안전장치를 건드리는지 아닌지를 묻지 않는다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            연구진은 그 간격을 노리고 다듬은 오염 표본 100개를 만들어 무해한 데이터 1,900개에 섞었다. 품질 점수가 낮은 순서로 전체의 90%를 걸러내자 노골적으로 유해한 표본은 한 개도 남지 않았는데, 이 100개는 열에 아홉이 그대로 남았다. 남은 데이터로 미세조정한 모델의 유해 응답 점수는 5점 만점에 3.30에서 4.01이었다. 손대기 전 같은 모델들의 점수는 1.13에서 1.69 사이였다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            1절부터 4절까지는 논문의 표와 본문에서 확인한 사실이다. 5절은 그 사실을 데이터를 다루는 사람의 눈으로 다시 읽은 이 글의 해석이고, 논문이 제안하지 않은 방어책을 이 글이 대신 제안하지도 않는다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        숫자는 네 개면 된다. 선별을 가장 세게 건 조건에서 모델이 얼마나 흔들렸는지, 그 조건에서 오염 표본이 얼마나 남았는지, 안전을 본다는 도구가 같은 표본을 어떻게 읽었는지, 그리고 그 일을 벌이는 데 표본이 몇 개 들었는지다.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: Li·Chen 외, <a href="https://arxiv.org/abs/2610.01367" target="_blank" rel="noopener" class="underline">High-quality Data Do not Mean Safe!</a> (arXiv:2610.01367), 표 1·표 4.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">4.01</p>
+                            <p class="text-sm themeable-text-secondary mt-1">걸러낸 뒤 유해 응답 점수</p>
+                            <p class="text-xs themeable-muted mt-1">5점 만점. 같은 모델이 손대기 전에는 1.28이었다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">91%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">선별 뒤 남은 오염 표본</p>
+                            <p class="text-xs themeable-muted mt-1">노골적으로 유해한 표본은 같은 조건에서 한 개도 남지 않는다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">93%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">검열 도구가 안전이라 본 비율</p>
+                            <p class="text-xs themeable-muted mt-1">같은 도구가 노골적 유해 표본은 87%를 잡아낸다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">100개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">쓰인 오염 표본의 수</p>
+                            <p class="text-xs themeable-muted mt-1">후보 500개에서 고른 뒤 무해한 데이터 1,900개에 섞었다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="what-filters-measure" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">품질 필터가 실제로 보는 것</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공개 데이터를 긁어모아 모델을 미세조정하는 팀은 대개 그 데이터를 그대로 쓰지 않는다. 데이터 선별기를 한 번 돌려 점수가 높은 쪽만 남긴다. 논문이 실험에 쓴 DataMan이나 QuRater, DEITA 같은 도구가 그 일을 한다. 이 도구들이 보는 것은 문장이 정확한지, 지시와 응답이 맞물리는지, 내용이 얼마나 충실한지 같은 글의 성질이다. 안전을 묻는 항목은 애초에 없다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 현장에서는 "품질 선별을 돌렸다"가 "위험한 데이터를 뺐다"로 읽히는 일이 흔하다. 그 믿음이 아주 근거 없는 것은 아니다. 노골적으로 유해한 표본은 문장이 어색하고 맥락이 끊겨 낮은 점수를 받는 경향이 있고, 그래서 실제로 잘 걸러진다. 논문이 비교군으로 쓴 Pure Bad 계열 표본은 전체의 90%를 걸러내는 조건에서 한 개도 살아남지 못했다. 무너지는 속도도 빠르다. 전체의 10%만 걸러낸 조건에서 100개 가운데 30개로 줄고, 30%를 걸러내면 6개만 남는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 "전부 못 거른다"가 아니라 "특정한 종류를 못 거른다"는 데 있다. 겉보기에 멀쩡한 악성 표본은 평범한 양성 데이터와 품질 점수 분포가 겹친다. 분포가 겹치면 임계값으로 가를 수가 없다. 그 표본들을 떨어뜨리려면 멀쩡한 데이터까지 함께 버려야 하고, 그러면 선별을 돌린 이유가 사라진다.
+                    </p>
+
+                    <div class="rounded-xl p-4 mb-3" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 640 230" class="w-full h-auto" role="img" aria-label="품질 점수 분포 그림. 노골적 유해 표본은 임계값보다 한참 낮은 쪽에, 일반 양성 데이터와 겉보기 양성 공격 표본은 임계값 부근에서 서로 겹친다.">
+                            <text x="0" y="16" font-size="13" fill="var(--text-secondary)">품질 점수 분포 — 어디서 겹치는가 (개념도)</text>
+
+                            <path d="M40,190 C75,190 89,105 110,105 C131,105 145,190 180,190 Z" fill="var(--text-muted)" opacity="0.3" stroke="var(--text-muted)" stroke-width="1"></path>
+                            <path d="M280,190 C355,190 385,80 430,80 C475,80 505,190 580,190 Z" fill="#BDBDBD" opacity="0.5" stroke="#808080" stroke-width="1"></path>
+                            <path d="M350,190 C415,190 441,95 480,95 C519,95 545,190 610,190 Z" fill="#F86825" opacity="0.3" stroke="#F86825" stroke-width="1.5"></path>
+
+                            <line x1="40" y1="190" x2="610" y2="190" stroke="var(--text-muted)" stroke-width="1"></line>
+                            <line x1="470" y1="40" x2="470" y2="190" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4,3"></line>
+                            <text x="470" y="32" font-size="11" text-anchor="middle" fill="var(--text-muted)">상위 10% 선(예시)</text>
+                            <text x="478" y="206" font-size="11" fill="var(--text-muted)">통과(살아남음) ▶</text>
+                            <text x="325" y="222" font-size="11" text-anchor="middle" fill="var(--text-muted)">품질 점수: 낮음 → 높음</text>
+
+                            <text x="110" y="92" font-size="11" text-anchor="middle" fill="var(--text-secondary)">노골적 유해 표본</text>
+                            <text x="110" y="105" font-size="10" text-anchor="middle" fill="var(--text-muted)">(Pure Bad)</text>
+
+                            <text x="430" y="65" font-size="11" text-anchor="middle" fill="var(--text-secondary)">일반 양성 데이터</text>
+
+                            <text x="522" y="108" font-size="11" fill="#F86825" font-weight="600">겉보기 양성</text>
+                            <text x="522" y="122" font-size="11" fill="#F86825" font-weight="600">공격 표본</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted mb-8">
+                        ▲ 페블러스 원본 도식(Fig. 2a 재해석) — 노골적으로 유해한 표본은 임계값에서 멀찍이 떨어져 전부 걸러지지만, 겉보기 양성 공격 표본은 일반 양성 데이터와 점수 분포가 겹쳐 임계값만으로는 가려낼 수 없다. 출처: arXiv:2610.01367 (논문 figure 재해석, 수치·축척 그대로가 아님).
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진은 한 걸음 더 들어가 물었다. 선별을 통과한 상위권 표본만 모으면 안전한가. 전체의 90%를 걸러낸 뒤 DataMan 기준으로 품질 점수 4점 이상을 받은 표본만 골라 미세조정했는데도 모델의 유해 응답 점수가 올라갔다. 품질 점수를 더 높게 잡는 것으로는 해결되지 않는다는 뜻이다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            품질 선별기는 글을 평가하도록 만들어졌고, 실제로 글을 평가한다. 이 도구가 안전까지 책임진다고 읽는 것은 도구의 잘못이 아니라 도구를 쓰는 쪽의 기대가 잘못 걸린 것이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="what-survives" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">글만 다듬은 표본이 가장 강한 선별을 통과한다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진은 이 간격을 의도적으로 공략하는 표본 생성 기법을 만들고 Bi-QSTO라고 이름 붙였다. 방식은 두 개의 신호를 동시에 보는 것이다. 하나는 후보 표본이 모델에 일으키는 파라미터 변화가 유해한 표본이 일으키는 변화와 얼마나 닮았는지를 측정한 값이고, 다른 하나는 데이터 선별기가 그 표본에 매기는 품질 점수다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 신호를 한꺼번에 밀어 올리면 서로를 깎아 먹는다. 그래서 순서를 둘로 나눴다. 먼저 품질을 신경 쓰지 않고 유해한 방향만 끝까지 밀어 올려 강한 후보를 확보하고, 그다음 단계에서 품질 점수가 기준선 아래로 내려갈 때만 벌점을 물려 글을 다듬는다. 다듬는 일은 GPT-4o-mini가 맡아 지시와 맥락과 응답을 반복해 고쳐 쓴다. 이렇게 만든 후보 500개 가운데 100개를 최종 표본으로 골랐다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        출발점은 두 가지를 썼다. 하나는 노골적으로 유해한 표본에서 시작해 문장만 다듬어 올리는 쪽이고, 다른 하나는 기존 선별기가 상위권으로 뽑아 둔 무해해 보이는 Dolly 표본에서 시작해 유해한 방향으로 밀어 가는 쪽이다. 아래 표를 비롯해 이 글이 적는 수치는 따로 밝히지 않는 한 모두 앞쪽, 유해한 표본에서 출발한 경우다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실험은 이 100개를 Dolly 데이터셋에서 가져온 무해한 지시 데이터 1,900개와 섞는 것으로 시작한다. 그다음 품질 점수가 낮은 쪽부터 0%에서 90%까지 비율을 올려 가며 걸러내고, 남은 데이터로 모델을 미세조정한 뒤 안전을 측정한다. 측정 도구는 HEx-PHI 벤치마크의 유해 프롬프트 330개이고, 모델이 내놓은 응답을 심판 모델이 1점에서 5점으로 채점한 평균이 유해 응답 점수다. 점수가 높을수록 모델이 거절하지 않고 해로운 답을 내놓았다는 뜻이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 거친 조건, 그러니까 품질 상위 10%만 남긴 조건의 결과는 다음과 같다. 비교를 위해 오염 표본을 섞지 않고 깨끗한 데이터만으로 같은 선별과 미세조정을 거친 경우를 함께 적었다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b themeable-border">
+                                    <th class="text-left py-3 px-4 font-semibold">모델</th>
+                                    <th class="text-left py-3 px-4 font-semibold">미세조정 전</th>
+                                    <th class="text-left py-3 px-4 font-semibold">깨끗한 데이터</th>
+                                    <th class="text-left py-3 px-4 font-semibold">오염 데이터</th>
+                                    <th class="text-left py-3 px-4 font-semibold">남은 오염 표본</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4">Llama2-7B-Chat</td>
+                                    <td class="py-3 px-4">1.13</td>
+                                    <td class="py-3 px-4">1.65</td>
+                                    <td class="py-3 px-4 font-semibold">3.30</td>
+                                    <td class="py-3 px-4">91%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4">Llama3-8B-Instruct</td>
+                                    <td class="py-3 px-4">1.28</td>
+                                    <td class="py-3 px-4">1.73</td>
+                                    <td class="py-3 px-4 font-semibold">4.01</td>
+                                    <td class="py-3 px-4">91%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4">Qwen2-7B-Instruct</td>
+                                    <td class="py-3 px-4">1.69</td>
+                                    <td class="py-3 px-4">1.69</td>
+                                    <td class="py-3 px-4 font-semibold">3.43</td>
+                                    <td class="py-3 px-4">92%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-8">
+                        전체의 90%를 걸러낸 뒤의 유해 응답 점수(5점 만점)와 오염 표본 잔존율. 출처: arXiv:2610.01367 표 1.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        깨끗한 데이터로 같은 과정을 거친 모델은 미세조정 전과 거의 같은 자리에 머문다. 미세조정이라는 과정 자체가 안전을 전혀 건드리지 않는다는 말은 아니다. 선별을 하나도 걸지 않은 칸에서는 깨끗한 데이터만으로도 점수가 2.20에서 2.74 사이로 올라간다. 위 표에 적은 값은 전체의 90%를 걸러낸 조건의 것이다. 같은 선별, 같은 학습 조건에서 갈라진 것은 데이터 안에 100개가 섞여 있었는지 아닌지뿐이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        더 눈여겨볼 대목은 잔존율의 역설이다. 선별을 피하려고 애쓴 공격일수록 선별이 잡지 못한다. 같은 조건에서 비교군들이 어떻게 갈렸는지를 그림으로 옮기면 이렇다.
+                    </p>
+
+                    <div class="rounded-xl p-4 mb-3" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 640 230" class="w-full h-auto" role="img" aria-label="90% 필터링 후 남은 오염 표본 비율 막대그래프. Pure Bad 0%, Bi-Anchor 32%, Self-Inf-N 39%, Bi-QSTO 91%.">
+                            <text x="0" y="16" font-size="13" fill="var(--text-secondary)">전체의 90%를 걸러낸 뒤 남은 오염 표본 비율 (Llama2-7B-Chat)</text>
+
+                            <text x="0" y="56" font-size="13" fill="var(--text-secondary)">Pure Bad</text>
+                            <rect x="150" y="44" width="2" height="18" fill="#BDBDBD"></rect>
+                            <text x="162" y="58" font-size="13" fill="var(--text-muted)">0%</text>
+
+                            <text x="0" y="96" font-size="13" fill="var(--text-secondary)">Bi-Anchor</text>
+                            <rect x="150" y="84" width="140" height="18" fill="#808080"></rect>
+                            <text x="300" y="98" font-size="13" fill="var(--text-muted)">32%</text>
+
+                            <text x="0" y="136" font-size="13" fill="var(--text-secondary)">Self-Inf-N</text>
+                            <rect x="150" y="124" width="171" height="18" fill="#808080"></rect>
+                            <text x="331" y="138" font-size="13" fill="var(--text-muted)">39%</text>
+
+                            <text x="0" y="176" font-size="13" fill="var(--text-secondary)">Bi-QSTO</text>
+                            <rect x="150" y="164" width="398" height="18" fill="#F86825"></rect>
+                            <text x="558" y="178" font-size="13" font-weight="600" fill="#F86825">91%</text>
+
+                            <line x1="150" y1="200" x2="588" y2="200" stroke="var(--text-muted)" stroke-width="1"></line>
+                            <text x="150" y="218" font-size="11" fill="var(--text-muted)">0%</text>
+                            <text x="360" y="218" font-size="11" fill="var(--text-muted)">50%</text>
+                            <text x="568" y="218" font-size="11" fill="var(--text-muted)">100%</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted mb-8">
+                        ▲ 노골적으로 유해한 Pure Bad는 전부 떨어지고, 겉보기 양성 공격인 Bi-Anchor와 Self-Inf-N은 셋에 하나꼴로 남는다. 출처: arXiv:2610.01367 표 1.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다만 선별을 통과하는 일과 모델을 흔드는 일이 저절로 함께 오지는 않는다. 앞에서 갈라 둔 두 출발점 가운데 무해한 표본에서 시작한 쪽도 전체의 90%를 걸러낸 뒤 83%에서 85%가 남았다. 그런데 그 데이터로 학습한 모델의 유해 응답 점수는 1.63에서 2.36 사이에 머물러, 오염 표본을 아예 섞지 않은 경우와 크게 벌어지지 않았다. 잔존율이 높다는 사실만으로는 안전이 깎였다고 말할 수 없고, 두 값을 함께 봐야 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 결과가 한 모델에만 걸린 우연인지도 확인했다. Llama2-7B-Chat에서 만든 표본을 그대로 다른 모델에 넣었더니 Llama2-13B-Chat에서 3.92, Llama2-70B-Chat에서 2.93이 나왔다. 계열이 다른 모델로 옮겼을 때는 Llama3-8B-Instruct에서 4.05, Qwen2-7B-Instruct에서 2.85가 나와, 두 모델을 직접 겨냥해 만든 표본이 기록한 4.01과 3.43에 견주면 앞쪽은 거의 같고 뒤쪽만 조금 낮다. 선별기를 DataMan에서 QuRater나 DEITA로 바꿔도 잔존율이 비교군보다 꾸준히 높게 유지됐다. 채점하는 심판 모델을 다섯 개로 바꿔 가며 다시 매긴 표에서도 값이 3.17에서 3.58 사이에 모였다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="gradient" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">잘 쓴 문장이 모델을 안전과 반대로 민다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        왜 고품질 표본이 안전장치를 흔드는가. 논문이 내놓은 답은 학습이 실제로 일어나는 층위에 있다. 모델은 데이터를 한 걸음씩 학습할 때마다 파라미터를 어느 방향으로 얼마만큼 옮길지를 계산한다. 연구진은 안전 정렬을 지키는 방향을 기준선으로 잡고, 각 표본이 만들어 내는 이동 방향이 그 기준선과 같은 쪽인지 반대쪽인지를 측정했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        선별을 통과한 고품질 표본 가운데 상당수가 기준선과 반대 방향을 가리켰다. 한 번의 이동량은 작지만 같은 방향으로 반복해서 쌓이면 안전 정렬이 깎인다. 층별로 나눠 보면 아래쪽과 중간 층에서 이미 유해 표본과 겹치고, 위로 갈수록 겹치는 폭이 넓어진다. 부록의 정리 두 개가 이런 누적이 안전 목적함수를 끌어올린다는 것을 수식으로 보인다.
+                    </p>
+
+                    <div class="rounded-xl p-4 mb-3" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 640 230" class="w-full h-auto" role="img" aria-label="그래디언트 방향 개념도. 안전 정렬 기준 방향을 가로축으로 두면, 일반 양성 표본은 기준과 비슷한 방향을, 노골적 유해 표본과 Bi-QSTO 표본은 기준과 반대 방향을 가리킨다.">
+                            <defs>
+                                <marker id="arrowOrange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                    <path d="M0,0 L10,5 L0,10 z" fill="#F86825"></path>
+                                </marker>
+                                <marker id="arrowGray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                    <path d="M0,0 L10,5 L0,10 z" fill="#808080"></path>
+                                </marker>
+                                <marker id="arrowMuted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                    <path d="M0,0 L10,5 L0,10 z" fill="var(--text-muted)"></path>
+                                </marker>
+                            </defs>
+
+                            <text x="0" y="16" font-size="13" fill="var(--text-secondary)">각 표본이 파라미터를 미는 방향 (개념도)</text>
+
+                            <line x1="320" y1="60" x2="320" y2="190" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4,3"></line>
+                            <text x="420" y="72" font-size="11" text-anchor="middle" fill="var(--text-muted)">코사인 유사도 &gt; 0</text>
+                            <text x="220" y="72" font-size="11" text-anchor="middle" fill="var(--text-muted)">코사인 유사도 &lt; 0 (안전과 반대)</text>
+
+                            <line x1="320" y1="170" x2="520" y2="170" stroke="#F86825" stroke-width="2" marker-end="url(#arrowOrange)"></line>
+                            <text x="520" y="186" font-size="11" text-anchor="end" fill="#F86825" font-weight="600">안전 정렬 기준 방향</text>
+
+                            <line x1="320" y1="170" x2="508" y2="102" stroke="#808080" stroke-width="2" marker-end="url(#arrowGray)"></line>
+                            <text x="512" y="100" font-size="11" fill="var(--text-secondary)">일반 양성 표본</text>
+
+                            <line x1="320" y1="170" x2="179" y2="119" stroke="var(--text-muted)" stroke-width="2" marker-end="url(#arrowMuted)"></line>
+                            <text x="80" y="115" font-size="11" text-anchor="middle" fill="var(--text-secondary)">Pure Bad</text>
+                            <text x="80" y="128" font-size="10" text-anchor="middle" fill="var(--text-muted)">(노골적 유해)</text>
+
+                            <line x1="320" y1="170" x2="156" y2="75" stroke="#F86825" stroke-width="2.5" marker-end="url(#arrowOrange)"></line>
+                            <text x="156" y="60" font-size="11" text-anchor="middle" fill="#F86825" font-weight="600">Bi-QSTO 표본</text>
+                            <text x="156" y="48" font-size="10" text-anchor="middle" fill="#F86825">(품질 선별은 통과)</text>
+
+                            <circle cx="320" cy="170" r="3" fill="var(--text-muted)"></circle>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted mb-8">
+                        ▲ 페블러스 원본 도식(Fig. 2c 재해석) — 화살표는 각 표본이 학습 중 모델 파라미터를 미는 방향을 단순화해 나타낸다. Bi-QSTO 표본은 품질 점수가 높은데도 Pure Bad와 같은 반쪽(코사인 유사도 음수)을 가리킨다. 출처: arXiv:2610.01367 (개념 재구성, 실제 각도·좌표 값이 아님).
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 두 축이 갈린다. 품질 점수는 표본을 글로 읽고 매기는 값이고, 안전 위험은 그 표본이 파라미터를 어느 쪽으로 미는지에 있다. 둘 사이에 느슨한 상관은 있다. 글이 거칠고 내용이 노골적인 표본은 품질도 낮고 방향도 나쁜 경우가 많다. 다만 상관이 있다는 것과 하나가 다른 하나를 대신할 수 있다는 것은 다른 말이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Bi-QSTO가 하는 일은 그 상관을 끊는 작업이다. 유해한 이동 방향은 그대로 둔 채 글의 표면만 다듬어 품질 점수를 올린다. 기법의 어느 부분이 그 일을 하는지도 분해해 두었다. 유해한 방향을 먼저 끝까지 탐색하는 첫 단계를 빼면 가장 거친 조건에서 점수가 3.30에서 2.64로 떨어진다. 품질을 다듬는 두 번째 단계를 빼도 88%는 여전히 품질 점수 4점 이상을 받는다. 달라지는 것은 그 위다. 만점인 5점을 받는 표본의 비율이 91%에서 42%로 주저앉는다. 이 단계가 하는 일은 턱걸이로 통과시키는 것이 아니라 최상위권에 올려 두는 것이다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="moderator" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">내용 검열 도구도 같이 속는다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기까지 읽으면 자연스럽게 떠오르는 대응이 있다. 품질 필터가 안전을 못 본다면 안전을 보는 도구를 하나 더 얹으면 되지 않나. 연구진은 그 대응을 따로 실험했다. 같은 표본 100개를 안전과 위험으로 가르는 분류기 LlamaGuard에 그대로 넣은 결과가 다음 표다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b themeable-border">
+                                    <th class="text-left py-3 px-4 font-semibold">표본 종류</th>
+                                    <th class="text-left py-3 px-4 font-semibold">안전으로 분류</th>
+                                    <th class="text-left py-3 px-4 font-semibold">위험으로 분류</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4">Pure Bad</td>
+                                    <td class="py-3 px-4">13</td>
+                                    <td class="py-3 px-4">87</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4">Bi-Anchor</td>
+                                    <td class="py-3 px-4">100</td>
+                                    <td class="py-3 px-4">0</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4">Self-Inf-N</td>
+                                    <td class="py-3 px-4">100</td>
+                                    <td class="py-3 px-4">0</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4 font-semibold">Bi-QSTO</td>
+                                    <td class="py-3 px-4 font-semibold">93</td>
+                                    <td class="py-3 px-4 font-semibold">7</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-8">
+                        표본 100개를 LlamaGuard로 분류한 결과(개수). 출처: arXiv:2610.01367 표 4.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 표를 2절의 잔존율과 겹쳐 읽어야 뜻이 드러난다. 노골적으로 유해한 Pure Bad는 검열 도구가 100개 중 87개를 잡아내고, 품질 선별에서도 전부 떨어진다. 두 관문 가운데 어느 쪽에 걸려도 막힌다. 반대로 Bi-Anchor와 Self-Inf-N은 검열 도구를 100% 통과하지만 품질 선별에서 셋에 둘꼴로 떨어져 나간다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Bi-QSTO로 다듬은 표본은 어느 쪽에도 거의 걸리지 않는다. 품질 점수로는 상위권이고, 내용으로는 안전으로 읽힌다. 검열 도구를 하나 더 세우는 것이 쓸모없다는 뜻은 아니다. 다만 그 도구가 보는 것도 결국 글의 내용이라, 글의 표면을 다듬어 빠져나가는 표본 앞에서는 품질 필터와 같은 자리에 선다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            관문을 두 개 세워도 둘 다 글을 읽는다면 관문은 사실상 하나다. 막아야 할 것이 글의 표면이 아니라 학습이 만들어 내는 이동 방향이라면, 측정하는 자리도 거기에 있어야 한다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 이 연구를 주목하는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스가 AI-Ready Data를 말할 때 되풀이하는 전제는 데이터가 어떤 검사를 통과했는지 그 기록이 데이터와 함께 남아야 한다는 것이다. 이 논문은 그 전제에 물음 하나를 더 얹는다. 어떤 검사를 통과했는지를 적어 두는 것만으로는 부족하고, 그 검사가 무엇을 보지 않았는지도 함께 적어야 한다는 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지금 많은 미세조정 파이프라인에서 데이터 선별은 한 번에 끝나는 단계다. 점수를 매기고, 임계값을 긋고, 남은 것을 학습으로 보낸다. 그 하나의 관문이 분량 조절과 품질 보증과 안전 검증을 동시에 맡고 있다. 세 가지 일을 하나의 점수가 대신한다는 설계는 어디에도 명시돼 있지 않고, 그래서 어디에서도 검토되지 않는다. "좋은 데이터만 골랐다"는 문장이 "위험한 데이터를 뺐다"로 조용히 번역되는 자리가 거기다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터를 다루는 팀이 이 논문에서 가져갈 수 있는 것은 단순하다. 품질 지표 옆에 안전 지표를 따로 세우고, 둘을 따로 기록하는 일이다. 품질 점수가 높다는 사실과 안전 점검을 통과했다는 사실이 같은 칸에 적혀 있으면 둘을 구별할 방법이 없다. 그리고 선별 뒤에 남긴 데이터가 아니라 학습을 마친 모델 쪽에서 안전을 다시 측정하는 절차가 있어야 한다. 이 논문에서 안전이 깎였다고 말하는 수치는 모두 미세조정을 마친 뒤에야 드러난 값이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>이 연구가 말하지 않는 것</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        범위를 분명히 해 둘 필요가 있다. 안전 측정은 HEx-PHI 하나에 기댔고, 모델은 70억에서 700억 파라미터 사이의 Llama와 Qwen 계열에 한정됐다. 더 큰 상용 모델이나 다른 방식으로 안전 훈련을 받은 모델에서도 같은 패턴이 나오는지는 이 논문이 답하지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공격 쪽에 붙는 조건도 가볍지 않다. 이 기법이 작동하려면 공격자가 표적과 비슷한 모델의 파라미터 변화를 계산할 수 있어야 하고, 상대가 쓰는 품질 선별기를 직접 돌려 점수를 확인할 수 있어야 한다. 공개 모델과 공개 선별기를 쓰는 환경에서는 둘 다 어렵지 않다. 그래도 아무나 손쉽게 따라 하지는 못한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문 자신도 방어 기법을 내놓지 않는다. 결론에서 데이터 선별 방법이 학습 효과만이 아니라 안전 차원에도 더 큰 비중을 둬야 한다는 원론을 적는 데서 멈춘다. 공격을 보인 쪽이 방어까지 설계할 의무는 없지만, 그 빈칸이 지금 실무자 앞에 그대로 놓여 있다는 사실은 달라지지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결국 이 연구가 묻는 것은 하나다. 우리 데이터 선별기는 지금까지 무엇을 측정하고 있었나. 품질이라고 부르던 그 값이 사실은 글이 얼마나 읽기 좋은지였다면, 안전이라고 믿었던 자리는 아직 아무도 재지 않은 채로 비어 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주셔서 감사하다. 이 글의 수치는 arXiv:2610.01367의 표와 본문에서 옮긴 것이고, 2026년 10월 1일에 올라온 사전 공개 논문이라 동료 심사를 거치지 않았다는 점을 함께 적어 둔다. 원문은 <a href="https://arxiv.org/abs/2610.01367" target="_blank" rel="noopener" class="underline">arXiv 페이지</a>에서 볼 수 있다. 지금 여러분의 팀이 쓰는 데이터 선별 기준에 안전을 보는 항목이 몇 개나 들어 있는지, 그리고 그 항목이 품질 점수와 같은 칸에 적혀 있지는 않은지 한 번 확인해 보시기를 권한다.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261007"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-10-07T00:04:56.622Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-10-07T00:18:17.045Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1791331496623-ngups6",
+                "version": "0.1.0",
+                "sha": "a3715ffe2ebe43690af61a26c9a3b45d30b0871a",
+                "builtAt": "2026-10-02T01:47:56.306Z"
+              },
+              "recordedAt": "2026-10-07T01:26:39.081Z"
+            },
+            mainTitle: "데이터 오염, 열에 아홉을 걸러도 그대로 남는다",
+            subtitle: "충칭대·저장대 연구에서 품질 상위 10%만 남겨도 오염 표본은 90% 이상 남고, 그 데이터로 학습한 모델이 유해한 답을 낸다",
+            pageTitle: "데이터 오염은 왜 품질 필터를 통과하나 — AI 안전장치가 깨지는 구조와 실험 분석 | 페블러스",
+            category: "tech",
+            publishDate: "2026-10-07",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/data-poisoning-survives-quality-filter/ko/",
+            tags: ["데이터 오염", "data poisoning", "품질 필터", "데이터 선별", "AI 안전", "안전 정렬", "LLM 미세조정", "DataMan", "LlamaGuard", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "데이터 오염이란 무엇인가?",
+                    answer: "모델이 학습하는 데이터에 의도적으로 표본을 섞어 모델의 행동을 바꾸는 일이다. 이 논문이 다루는 것은 그중에서도 미세조정 단계를 노려 모델의 안전장치를 깎는 경우다. 공개 데이터를 모아 미세조정하는 파이프라인이라면 외부에서 들어온 표본이 섞일 통로가 열려 있다."
+                },
+                {
+                    question: "품질 필터로 거르면 오염 데이터가 빠지지 않나?",
+                    answer: "일부는 빠진다. 노골적으로 유해한 표본은 문장이 어색하고 맥락이 끊겨 낮은 점수를 받기 때문에, 전체의 90%를 걸러내는 조건에서 비교군 Pure Bad는 한 개도 살아남지 못했다. 다만 겉보기에 멀쩡한 악성 표본은 평범한 데이터와 점수 분포가 겹쳐서 임계값으로 가를 수가 없다."
+                },
+                {
+                    question: "90% 필터링에서 얼마나 남았나?",
+                    answer: "연구진이 만든 Bi-QSTO 표본은 Llama2-7B-Chat과 Llama3-8B-Instruct에서 91%, Qwen2-7B-Instruct에서 92%가 남았다. 같은 조건에서 Llama2-7B-Chat 기준으로 비교군 Bi-Anchor는 32%, Self-Inf-N은 39%, Pure Bad는 0%였다. 선별을 피하려고 다듬은 공격일수록 선별이 잡지 못한다는 뜻이다."
+                },
+                {
+                    question: "유해 응답 점수 3.30이나 4.01은 무슨 뜻인가?",
+                    answer: "HEx-PHI 벤치마크의 유해 프롬프트 330개에 모델이 내놓은 응답을 심판 모델이 1점에서 5점으로 채점한 평균이다. 점수가 높을수록 모델이 거절하지 않고 해로운 답을 내놓았다는 뜻이다. 손대기 전 같은 모델들의 점수는 1.13에서 1.69 사이였고, 깨끗한 데이터로 같은 미세조정을 거친 경우에도 1.65에서 1.73에 머물렀다."
+                },
+                {
+                    question: "왜 품질이 높은 표본이 안전을 무너뜨리나?",
+                    answer: "학습 과정에서 각 표본이 모델 파라미터를 미는 방향 때문이다. 연구진이 안전 정렬을 지키는 방향을 기준선으로 잡고 측정했더니, 선별을 통과한 고품질 표본 가운데 상당수가 기준선과 반대 방향을 가리켰다. 한 번의 이동량은 작지만 같은 방향으로 쌓이면 안전 정렬이 깎인다. 품질 점수는 글의 표면을 보고 매겨지므로 이 방향을 보지 못한다."
+                },
+                {
+                    question: "LlamaGuard 같은 안전 분류기를 붙이면 막을 수 있나?",
+                    answer: "이 표본 앞에서는 충분하지 않다. 같은 표본 100개를 LlamaGuard에 넣었더니 93개가 안전으로 분류됐다. 같은 도구가 노골적으로 유해한 Pure Bad는 87개를 위험으로 잡아낸다. 검열 도구가 보는 것도 결국 글의 내용이라, 글의 표면을 다듬어 빠져나가는 표본 앞에서는 품질 필터와 같은 자리에 선다."
+                },
+                {
+                    question: "다른 모델이나 다른 선별기에서도 통하나?",
+                    answer: "통한다. Llama2-7B-Chat에서 만든 표본을 그대로 넣었을 때 가장 거친 선별 조건에서 Llama2-13B-Chat이 3.92, Llama2-70B-Chat이 2.93을 기록했다. 선별기를 DataMan에서 QuRater나 DEITA로 바꿔도 잔존율이 비교군보다 꾸준히 높게 유지됐다. 특정 모델이나 특정 선별기에만 맞춘 공격이 아니라는 뜻이다."
+                },
+                {
+                    question: "이 공격을 실행하려면 무엇이 필요한가?",
+                    answer: "표적과 비슷한 모델의 파라미터 변화를 계산할 수 있어야 하고, 상대가 쓰는 품질 선별기를 직접 돌려 점수를 확인할 수 있어야 한다. 표본을 다듬는 작업에는 별도의 언어 모델을 리라이터로 쓴다. 공개 모델과 공개 선별기를 쓰는 환경이라면 두 조건 모두 충족하기 어렵지 않다."
+                },
+                {
+                    question: "논문이 방어 방법도 제안하나?",
+                    answer: "제안하지 않는다. 결론에서 데이터 선별 방법이 학습 효과만이 아니라 안전 차원에도 더 큰 비중을 둬야 한다는 원론을 적는 데서 멈춘다. 구체적인 방어 설계는 이 논문이 비워 둔 자리다."
+                },
+                {
+                    question: "이 연구의 범위에는 어떤 한계가 있나?",
+                    answer: "안전 측정은 HEx-PHI 벤치마크 하나에 기댔고, 모델은 70억에서 700억 파라미터 사이의 Llama와 Qwen 계열로 한정됐다. 더 큰 상용 모델이나 다른 방식으로 안전 훈련을 받은 모델에서도 같은 패턴이 나오는지는 확인되지 않았다. 2026년 10월 1일 arXiv에 올라온 사전 공개 논문이라 동료 심사도 아직 거치지 않았다."
+                },
+                {
+                    question: "데이터를 다루는 팀은 무엇을 바꿔야 하나?",
+                    answer: "품질 지표 옆에 안전 지표를 따로 세우고 둘을 따로 기록하는 일이 먼저다. 품질 점수가 높다는 사실과 안전 점검을 통과했다는 사실이 같은 칸에 적혀 있으면 구별할 방법이 없다. 그리고 선별을 마친 데이터가 아니라 학습을 마친 모델 쪽에서 안전을 다시 측정하는 절차가 있어야 한다. 이 논문에서 안전이 깎였다고 말하는 수치도 전부 미세조정을 마친 뒤에야 드러난 값이다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
