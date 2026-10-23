@@ -13,9 +13,14 @@
   (발굴 후보에서 시작한 run 은 주제 줄 "핵심 검색어: …" 로 run 생성 때 고정)
         │
         ▼ title-gate
+검사기 판 고르기(resolveTitleChecker) — 워크트리의 tools/title-census.py 가 origin/main 판과 다르면 main 판을 <runDir>/title-census.main.py 에 받아 쓴다
+        │ 원격 조회 불가 ─▶ 워크트리 판 그대로(audit 에 사유) · 어디에도 없음 ─▶ 판정 없음(skipped)
+        ▼
 기획 고정값이 있고 새 ko 글에 메타가 없으면 엔진이 메타를 채운다
         ▼
-결정론 검사(tools/title-census.py --check-html) — 옛 글 · 새 en 글(--require-keyword) · 새 ko 글(--require-keyword --pinned-keyword)
+결정론 검사(검사기 --check-html) — 옛 글 · 새 en 글(--require-keyword) · 새 ko 글(--require-keyword --pinned-keyword)
+        │ 검사기가 인자를 모름(exit 2 "unrecognized arguments") ─▶ 그 인자만 빼고 재실행 = 부분 판정(partial, 핵심 검색어 검사 생략을 audit)
+        │ 검사기 실행 실패 ─▶ 판정 없음(skipped) — phases[] 에 completed 가 아니라 skipped, 심판도 생략
         │ 옛 글 위반 ─▶ audit 만(콘솔 후속, LLM 없음)
         │ 새 글 위반·핵심 검색어 결함·글 머리 결함 ─▶ sonnet 교정 1회(새 글만) ─▶ 검색어 메타가 바뀌었으면 되돌림 ─▶ 재검사
         │ 통과(또는 교정 뒤)
@@ -39,7 +44,8 @@
 | 단계 본체(교정·심판 호출·부제·검색어 메타 복원·차단 스위치) | `service/blog-service-engine/src/core/pipelines.ts` (`runTitleGate`, `titleGateBlocking`) |
 | 핵심 검색어 고정(주제 줄·기획 파일 → `state.searchKeyword`) | `service/blog-service-engine/src/core/pipelines.ts` (`pinSearchKeyword`, `KEYWORD_PLAN_PHASE`) |
 | 심판(프롬프트·파싱·판정·재작성 프롬프트·핵심 검색어 메타 읽기·채우기·복원·부제 복원) | `service/blog-service-engine/src/core/title-judge.ts` |
-| 결정론 검사기(규칙의 단일 정본, TS 에 중복 구현하지 않는다) | `tools/title-census.py` |
+| 결정론 검사기(규칙의 단일 정본, TS 에 중복 구현하지 않는다) | `tools/title-census.py` — 어느 판을 쓰는지는 `resolveTitleChecker`(아래 §7) |
+| 단계 마무리(판정 없음이면 `phases[]` status=skipped · audit `phase-skipped`) | `service/blog-service-engine/src/core/pipelines.ts` (`finishDeterministicPhase`, `PhaseRecord.outcome`) |
 | 규칙 본문 | `docs/ko-style-standard.md` §4-2 — 교정·재작성 프롬프트가 워커에게 먼저 Read 하게 한다 |
 
 - 1단계는 **제목 한 줄만** 본다 — 핵심 검색어·주제 첫 줄·부제·본문을 보지 않는다. 발굴 run 의 주제 첫 줄은 "제목 방향: <발굴 제목>" 이라 최종 제목과 가깝고, 같은 호출에 넣으면 추측이 제목이 아니라 주제 줄에서 나온다. 그러면 2단계의 accurate(추측이 글과 맞는가)가 부풀어 오해·모호 검사가 약해진다(2026-09-30 리뷰). 핵심 검색어와 주제 첫 줄(run 주제의 첫 줄, 300자까지)은 **클릭 단계**에만 준다. 2단계는 1단계 답을 고치지 못하고 글과 대조만 한다.
@@ -128,7 +134,7 @@
 
 기본은 발행을 막지 않는다. 심판 호출 실패·타임아웃(단계당 180초)·JSON 파싱 불가·mainTitle 없음은 `심판 생략 — <사유>` 로 audit 에 남기고 통과 처리한다. 재작성 호출이 실패하면 원제목으로 발행한다. 결과가 미달로 끝난 제목은 제목 검토 콘솔에서 사후 정리한다.
 
-`BLOG_TITLE_GATE_BLOCKING=on` 일 때만, 관문 뒤에도 새 글에 핵심 검색어 결함(칸의 `핵심 검색어 없음`, 글 머리의 미기재·이름이 아님·기획과 다름)이나 심판 미달이 남은 run 을 `holdForPublish` 로 돌린다 — 발행을 버리지 않고 publish-prep 앞에서 사람 승인을 기다린다. 검사기가 크래시해 판정을 못 한 경우는 차단하지 않는다. 권고(`핵심 검색어가 뒤에 있음`)와 옛 글 위반으로는 차단하지 않는다. 새 글의 핵심 검색어 **미기재**는 이제 결함이다(종전 권고) — 기획 고정값이 있으면 엔진이 메타를 채우므로, 고정값도 없고 교정도 메타를 적지 못한 글만 남는다. 발행 차단으로 바꿀지는 형님 결정 대기라 기본은 끔이다.
+`BLOG_TITLE_GATE_BLOCKING=on` 일 때만, 관문 뒤에도 새 글에 핵심 검색어 결함(칸의 `핵심 검색어 없음`, 글 머리의 미기재·이름이 아님·기획과 다름)이나 심판 미달이 남은 run 을 `holdForPublish` 로 돌린다 — 발행을 버리지 않고 publish-prep 앞에서 사람 승인을 기다린다. 검사기가 돌지 못해 **판정이 없는** run(skipped)과 옛 검사기라 **핵심 검색어 검사를 못 한** run(partial)도 스위치가 켜져 있으면 같이 멈춘다(2026-10-02 — 종전엔 "판정을 못 했으니 차단도 하지 않는다" 였고, 그 틈으로 run q2uglm 이 검사 없이 자동 머지됐다). 권고(`핵심 검색어가 뒤에 있음`)와 옛 글 위반으로는 차단하지 않는다. 새 글의 핵심 검색어 **미기재**는 이제 결함이다(종전 권고) — 기획 고정값이 있으면 엔진이 메타를 채우므로, 고정값도 없고 교정도 메타를 적지 못한 글만 남는다. 발행 차단으로 바꿀지는 형님 결정 대기라 기본은 끔이다.
 
 ## 5. 환경변수
 
@@ -164,7 +170,26 @@
 핵심 검색어 권고(차단 사유 아님):
 - <file> pageTitle: 핵심 검색어가 뒤에 있음 "<값>"
 관문 차단 — 사람 검토 대기 :: 핵심 검색어 결함 <N>건 · 심판 미달 <file>, …
+검사기 판 — 워크트리 판(<sha7>) ≠ origin/main 판(<sha7>) — main 판으로 검사            (판이 같으면 이 줄은 없다)
+검사기 판 — 워크트리 판(<sha7>)으로 검사 — origin/main 과 비교 못 함: 원격 조회 실패(…) · origin/main 판 조회 불가
+핵심 검색어 검사 생략 — 검사기가 --require-keyword … 를 모른다(옛 판): 형태 검사만 수행, … [검사기: <판 사유>]
+관문 차단 — 사람 검토 대기 :: 핵심 검색어 검사 생략(옛 검사기: --require-keyword …)
+관문 차단 — 사람 검토 대기 :: 검사기 실행 실패로 판정 없음 (checker 실행 실패 — 게이트 생략: exit=<n> stderr: <마지막 줄>)
 ```
+
+판정이 없을 때(검사기 실행 실패·검사기 없음·판정 대상 탐색 실패)는 kind `phase-failed` 로 `title-gate 생략 — 검사기 실행 실패(심판도 생략) [검사기: <판 사유>]: checker 실행 실패 — 게이트 생략: exit=<n> stderr: <마지막 줄>` 이 남고, 단계 마무리가 kind `phase-skipped` 로 `title-gate 판정 없이 지나감 — status=skipped(완료 아님): <사유>` 를 덧붙인다. `phases[]` 의 title-gate 는 `status: 'skipped'`, `outcome: { verdict: 'skipped', detail, at }` 다. 부분 판정은 `status: 'completed'` 에 `outcome.verdict: 'partial'`, `phase-completed` 의 detail 이 `부분 판정 — …` 으로 시작한다. 보통은 `outcome.verdict: 'judged'`.
+
+## 7. 검사기 판 어긋남 (2026-10-02)
+
+run-1790707775584-q2uglm(리포트, 사본 PR #1903)은 옛 엔진 4d286ad 에서 2026-09-29 18:49Z 에 떴고, 새 엔진 56c06e6 이 배포된 직후 09-30 03:56Z 에 재개됐다. 워크트리 가지는 사본 동기화 PR #1894(56c06e6 자동 동기) **이전**에 갈라져 `tools/title-census.py` 가 옛 판(35,295바이트)이었다. 새 엔진이 `--require-keyword` 를 넘기자 argparse 가 `exit 2`·빈 stdout·stderr `unrecognized arguments: --require-keyword` 로 끝났고, 엔진은 "JSON 아님 = 크래시" 로 보고 결정론 검사·심판을 둘 다 생략했다. audit 에는 `phase-failed` 가 남았지만 `phases[]` 는 `completed` 였고, 글은 검색어 메타도 제목 검사도 없이 자동 머지됐다. 기획이 옛 엔진에서 돌아 `state.searchKeyword` 도 없었다.
+
+수리(세 겹):
+
+1. **판은 엔진이 고른다** — `resolveTitleChecker(repo, runDir)`. `git fetch origin main` 뒤 `origin/main:tools/title-census.py` 의 blob 과 워크트리 파일의 `git hash-object` 를 비교해 다르면 main 판을 `<runDir>/title-census.main.py` 에 받아 그것으로 검사한다(audit `검사기 판 — …`). 엔진(main 에서 배포)과 검사기(main 의 tools/)는 함께 판이 오르므로 검사기는 main 판이 맞다. **워크트리에 받지 않는다** — 발행 스킬이 `git add -A` 를 하므로 워크트리에 받으면 글 PR 에 섞인다. 검사기는 표준 라이브러리만 쓰는 파일 하나라 어디서 돌려도 같다(`--check-html` 은 cwd 기준 상대 경로). 원격 조회가 안 되면 워크트리 판으로 가되 사유를 적는다.
+2. **모르는 인자는 감지하고 한 단 낮춰 다시 돈다** — exit 2 + `unrecognized arguments: …` 면 그 인자(값 포함)만 빼고 재실행한다. 그러면 형태 검사와 심판은 돌지만 핵심 검색어 결함(미기재·검색어 없음·기획과 다름)은 못 본다 — audit `핵심 검색어 검사 생략 — …` 과 `outcome.verdict: 'partial'` 로 남긴다. 한 번 모른다고 한 인자는 같은 관문 안에서 다시 넘기지 않는다(교정 뒤 재검사도 같은 검사기). 크래시 사유에는 종료코드와 stderr 마지막 줄을 싣는다(종전엔 "Command failed: python3 …" 한 줄뿐).
+3. **판정 없는 관문은 완료가 아니다** — `PhaseRecord.outcome`(judged / partial / skipped)을 두고, `finishDeterministicPhase` 가 skipped 면 `phases[]` status 를 `skipped` 로 적고 `phase-skipped` audit 을 남긴다(콘솔 단계목록의 회색 `skipped` 배지, MCP 상태의 ⏭). 차단 스위치가 켜져 있으면 skipped·partial 도 `holdForPublish` 다(§4).
+
+재개된 run 에 `state.searchKeyword` 가 없어도 새 글에는 `--require-keyword` 가 붙으므로, 검사기가 돌기만 하면 메타 없는 새 글은 `핵심 검색어 미기재` 결함으로 교정 대상이 된다(`test/title-gate-checker-skew.test.cjs` T1). 범위 밖(후속): 재개된 run 의 워크트리에 남은 옛 **문서·스킬**(정본 §4-2 등)을 LLM 교정·재작성이 읽는 문제 — 이번 수리는 결정론 검사기만 다룬다.
 
 결정론 검사의 audit(`§0 위반 감지 …`·`자동 교정 후 §0 재판정 통과`·`교정 후 위반 잔존`)은 종전 이름 그대로다 — `§0` 은 게이트 이름(호환)일 뿐, 규칙은 정본 §4-2 다. 이제 새 글만 싣는다. 위반 리포트(교정 프롬프트에도 그대로 들어간다)에 글 머리 결함이 있으면 그 줄과 함께 mainTitle·pageTitle 을 점수와 무관하게 싣고 고칠 방향을 붙인다 — 교정 프롬프트는 "리포트에 없는 칸은 건드리지 않는다" 라서, 칸이 빠지면 모델이 메타만 적고 제목에 이름을 넣지 못했다(2026-09-30 리뷰):
 
