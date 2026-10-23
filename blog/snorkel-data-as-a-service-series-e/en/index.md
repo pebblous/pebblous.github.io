@@ -1,56 +1,56 @@
 ---
-title: The Company That Makes AI
-subtitle: Snorkel AI, which used to sell labeling software, now sells finished datasets, and its valuation has gone from $1.3 billion to $3.5 billion in seventeen months
+title: Snorkel AI Trades Labeling Tools for Training Data and Nearly Triples Its Value
+subtitle: A company that sold labeling software now builds training data itself, and its valuation has gone from $1.3 billion to $3.5 billion
 date: 2026-09-28
 category: business
 source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
 ---
 
-# The Company That Makes AI
+# Snorkel AI Trades Labeling Tools for Training Data and Nearly Triples Its Value
 
-_Snorkel AI, which used to sell labeling software, now sells finished datasets, and its valuation has gone from $1.3 billion to $3.5 billion in seventeen months_
+_A company that sold labeling software now builds training data itself, and its valuation has gone from $1.3 billion to $3.5 billion_
 
 ## Executive Summary
 
 > [!callout]
-> Snorkel AI announced a Series E on September 22. The money raised was $350 million, and the valuation attached to it was $3.5 billion, close to three times the $1.3 billion the company carried seventeen months earlier when it raised a $100 million Series D. What settles the character of the announcement, though, is not the size of the round but what the company sold to get there. Snorkel used to sell software that automated the job of putting labels on a customer's data. Over the past year it changed the thing it sells, and now builds finished datasets, reinforcement learning environments and evaluation tasks itself and delivers them. This article reads the round through that change.
+> Snorkel AI raised a $350 million Series E at a $3.5 billion valuation, close to three times the $1.3 billion it carried at its $100 million Series D in May 2025. The company used to sell software that automated the job of putting labels on a customer's data. Since September 2025 it has built finished datasets, reinforcement learning environments and evaluation tasks itself and delivered them. The round came a year after that change in what it sells.
 
-> The figure the company put forward is an annualized revenue run rate of $375 million, with a note that it has grown more than eighteenfold over the past year. Divide the two and the starting point a year ago lands near $21 million. Half the reason the multiple looks large is that the base was small. The other thing to carry is that an annualized run rate is not money that came in over twelve months but a recent stretch of performance projected out to a year.
+> The figure the company put forward is an annualized revenue run rate of $375 million, more than eighteen times what it was less than a year earlier. Reuters put the run rate a year before at about $20 million. Much of the size of the multiple comes from how small the base was. An annualized run rate is not money that came in over twelve months but a recent stretch of performance projected out to a year.
 
-> Sections 1 through 3 stay with what the company's post and the TechCrunch report say. Section 4 is the reading this article draws from them.
+> Sections 1 to 3 compare the company's post and press release with reporting by TechCrunch and Reuters. Section 4 is Pebblous's interpretation.
 
 ### Key Figures
 
-Sources: [Snorkel AI's announcement](https://snorkel.ai/blog/data-2-0-and-the-research-era-of-ai-data/) (2026-09-22) and [TechCrunch](https://techcrunch.com/2026/09/22/snorkel-ai-triples-valuation-to-3-5b-as-demand-for-ai-training-data-booms/). The two ratios are this article's own division of the published figures.
+Sources: [Snorkel AI's announcement](https://snorkel.ai/blog/data-2-0-and-the-research-era-of-ai-data/) and [press release](https://snorkel.ai/press/snorkel-ai-raises-350m-to-scale-the-data-factory-for-frontier-ai/) (2026-09-22), [TechCrunch](https://techcrunch.com/2026/09/22/snorkel-ai-triples-valuation-to-3-5b-as-demand-for-ai-training-data-booms/) and [Reuters](https://www.reuters.com/legal/transactional/snorkel-ai-valued-35-billion-amid-surging-demand-complex-ai-training-data-2026-09-22/). The 9x ratio is this article's own division of the published figures.
 
 <!-- stat-card -->
-**$3.5B** — Valuation set at the Series E — Seventeen months ago, at the Series D, it was $1.3 billion, on a raise of $100 million
+**$3.5B** — Valuation set at the Series E — At the Series D in May 2025 it was $1.3 billion, on a raise of $100 million
 
 <!-- stat-card -->
-**$375M** — Annualized run rate the company disclosed — Not twelve months of receipts but a recent run projected to a year. The post says the company crossed that line this week
+**$375M** — Annualized run rate the company disclosed — Not twelve months of receipts but a recent run projected to a year. The company says it crossed that line the week of the announcement
 
 <!-- stat-card -->
-**about $21M** — Where the eighteenfold starts — $375 million divided by 18. A year ago this company's annualized run rate sat near there
+**about $20M** — Run rate a year earlier — As reported by Reuters. It squares with $375 million divided by 18 (about $21 million)
 
 <!-- stat-card -->
 **about 9x** — Valuation divided by run rate — $3.5 billion over $375 million comes to 9.3. The multiple assumes the run rate turns into a full year of revenue
 
 ## From Selling the Tool to Selling the Dataset
 
-Snorkel AI launched commercially in 2019, following four years of research by co-founder and chief executive Alex Ratner and his team at a Stanford AI lab. For most of the years since, the product was software. Rather than have people put a label on every record by hand, customers used rules and models to apply those labels automatically. Building the data stayed the customer's job, and what Snorkel sold was the tool that made the job faster.
+Snorkel AI began as a research project at the Stanford AI Lab, led by co-founder and chief executive Alex Ratner, and became a company in 2019. For most of the years since, the product was software. Rather than have people put a label on every record by hand, customers used rules and models to apply those labels automatically. Building the data stayed the customer's job, and what Snorkel sold was the tool that made the job faster.
 
 ![Portrait photo of Alex Ratner, co-founder and CEO of Snorkel AI](./image/img-01-alex-ratner.jpg)
 *▲ Alex Ratner, who led the research at a Stanford AI lab and founded Snorkel AI in 2019 | Source: [Snorkel AI's announcement](https://snorkel.ai/blog/data-2-0-and-the-research-era-of-ai-data/)*
 
-In that arrangement the price is capped by what the customer can do. Hand someone a good tool and nothing moves if nobody on their side can decide which label belongs on a given record. Software is priced by seats and usage, while the hard part, the judgment, stays with the buyer. The boundary is what the company changed over the past year. What Snorkel sells now is the result rather than the tool: finished datasets that experts have worked over, reinforcement learning environments for training models, and evaluation tasks for checking what a model can do. Going by Ratner's announcement, this line of business will soon be a year old.
+In that arrangement the price is capped by what the customer can do. Hand someone a good tool and nothing moves if nobody on their side can decide which label belongs on a given record. Software is priced by seats and usage, while the hard part, the judgment, stays with the buyer. The boundary is what the company changed over the past year. Snorkel now sells the result: finished datasets that experts have worked over, reinforcement learning environments for training models, and evaluation tasks for checking what a model can do. The company's press release dates the start of this business to September 2025.
 
-The post lists the customers as the leading frontier labs, hyperscalers, neolabs, vertical AI leaders, enterprises, and U.S. government agencies. TechCrunch puts the growth down to "AI labs' insatiable appetite for high-end training data." The round was led by Insight Partners and S32, with existing investors Addition, Lightspeed, Greylock, GV and Wells Fargo taking part.
+The post lists the customers as the leading frontier labs, hyperscalers, neolabs, vertical AI leaders, enterprises, and U.S. government agencies. TechCrunch puts the growth down to "AI labs' insatiable appetite for high-end training data." Insight Partners and S32 co-led the round, with significant participation from existing investor Addition. Third Point Ventures, March Capital, Blumberg Capital and others joined as new investors, and existing backers including Greylock, Lightspeed, GV and Wells Fargo took part.
 
-Along with what is sold, the way it gets made is different too. TechCrunch calls the method hybrid: "Rather than operating purely as a human expert marketplace, Snorkel relies on a hybrid approach, using its software and models to generate data synthetically alongside subject matter experts." Machines draft and people rule on the draft, instead of people building each item end to end, and that is also why the money going out to experts lands in a different place on this company's books than on a competitor's.
+The way it gets made is different too. TechCrunch calls the method hybrid: "Rather than operating purely as a human expert marketplace, Snorkel relies on a hybrid approach, using its software and models to generate data synthetically alongside subject matter experts." Machines draft and people rule on the draft, instead of people building each item end to end, and that is also why the money going out to experts lands in a different place on this company's books than on a competitor's.
 
 > [!callout]
-> The bend in Snorkel's revenue curve sits at the point where the unit of sale changed, not at the point where some new technology arrived. Sell a license and the invoice is set by how many people use it. Sell datasets and it is set by how hard the data is and how much of it there is. That is where the same company with the same technology begins writing invoices of an entirely different size.
+> Snorkel's revenue climbed steeply when the unit of sale changed. Sell a license and the invoice is set by how many people use it. Sell datasets and it is set by how hard the data is and how much of it there is. That is how the same technology can produce revenue of an entirely different size.
 
 ## The Founder's Two Names: Data 1.0 and Data 2.0
 
@@ -62,11 +62,11 @@ Ratner works the distinction out on coding data. Several years ago large languag
 
 The same pattern is spreading through legal, finance and biology. Where it was once enough to gather a sufficient volume of relevant experts to write basic chatbot Q&A tasks or preference labels, one frontier data point now stands for an expert task that might take a person days or weeks, and some cases call for an environment simulating an entire company.
 
-Ratner nails the conclusion down in two sentences. "Frontier data is no longer solvable by the optimized supply of human hours and bodies." And: "building the data and environments to safely measure and train AI is becoming too hard for even the smartest human experts to do alone." The bottleneck in data work has moved from the supply of people to the difficulty of the judgment, which doubles as the explanation for why this company chose to build and sell data rather than recruit people.
+Ratner states the conclusion in two sentences. "Frontier data is no longer solvable by the optimized supply of human hours and bodies." And: "building the data and environments to safely measure and train AI is becoming too hard for even the smartest human experts to do alone." The bottleneck in data work has moved from the supply of people to the difficulty of the judgment, which doubles as the explanation for why this company chose to build and sell data rather than recruit people.
 
-The easy misreading is one Ratner heads off himself. Calling it a research and technology problem does not mean people can be taken out. Frontier data is worth something only insofar as it targets what a model does not already know, and purely synthetic data will be highly correlated with what the model knows already. Once AI makes its own data and trains on it, mode collapse follows and the range of answers it gives narrows. Setting aside distillation, which carries a large model's capability down into a small one, the conclusion is that data with a human in the loop stays the most valuable kind.
+Ratner adds that calling it a research and technology problem does not mean people can be taken out. Frontier data is worth something only insofar as it targets what a model does not already know, and purely synthetic data will be highly correlated with what the model knows already. Once AI makes its own data and trains on it, mode collapse follows and the range of answers it gives narrows. Setting aside distillation, which carries a large model's capability down into a small one, the conclusion is that data with a human in the loop stays the most valuable kind.
 
-A normative reason is written in alongside it. Data is how AI gets measured and aligned to human values and judgment, so data developed without any humans in the loop is, in the post's words, "tantamount to abdicating human oversight and alignment entirely." Read the passage not as a plan to use fewer people but as a plan to move where people stand, toward review and adjudication.
+A normative reason is written in alongside it. Data is how AI gets measured and aligned to human values and judgment, so data developed without any humans in the loop is, in the post's words, "tantamount to abdicating human oversight and alignment entirely." It is closer to a plan to move where people stand, toward review and adjudication, than a plan to use fewer of them.
 
 ### 2.1. The One Piece of Evidence the Company Offers
 
@@ -77,13 +77,13 @@ The loop turns once more from there. Human review at scale is fed back as weak s
 ![Diagram of the recursive self-improvement (RSI) loop between AI agents and human experts — AI agents accelerate humans, and human expertise refines AI](./image/img-02-rsi-loop.png)
 *▲ The recursive self-improvement loop as Snorkel AI describes it — AI agents accelerate human experts, and human feedback in turn refines the AI agents | Source: [Snorkel AI's announcement](https://snorkel.ai/blog/data-2-0-and-the-research-era-of-ai-data/)*
 
-These are numbers the company measured on its own process by its own standard. It defined the baseline it measured against, and no third party has published a check of the same thing under the same conditions. That is not a reason to doubt the figures. It is a note about how far they have been confirmed.
+These are numbers the company measured on its own process by its own standard. It defined the baseline it measured against, and no third party has published a check of the same thing under the same conditions. So they are given here as company-reported figures.
 
-The split itself leaves one more thing to say. Naming 1.0 a staffing and logistics problem and 2.0 a research and technology problem also sets this company apart from the competitors that grew by putting more people to work. The phrase describes a change running through the industry and it describes what this company sells. Nothing in this post separates the two.
+The Data 1.0 and 2.0 split has another effect. Naming 1.0 a staffing and logistics problem and 2.0 a research and technology problem also sets this company apart from the competitors that grew by putting more people to work. The phrase describes a change running through the industry and it describes what this company sells. Nothing in this post separates the two.
 
-The argument is not new this week, though. Ratner brings back, in the same post, the thesis the project started from at Stanford a decade ago: AI progress would become increasingly data-centric, and therefore data development should be studied as a true research and technology problem, not just a staffing and crowdsourcing one. What changed this time is the name, and the claim that the market has come around to the argument.
+Nor is the argument new. Ratner brings back, in the same post, the thesis the project started from at Stanford a decade ago: AI progress would become increasingly data-centric, and therefore data development should be studied as a true research and technology problem, not just a staffing and crowdsourcing one. What changed this time is the name, and Ratner sees the market as having come around to the argument.
 
-## How to Read the $375 Million
+## Four Conditions on the $375 Million
 
 The most quoted figure from this announcement is the annualized revenue run rate of $375 million. Four things are worth checking before it is copied across as annual revenue.
 
@@ -93,13 +93,13 @@ An annualized run rate takes the most recent month or quarter and multiplies it 
 
 ### 3.2. Where the Eighteenfold Starts
 
-Snorkel AI and TechCrunch both say this revenue grew eighteenfold over the past year. Divide $375 million by 18 and about $21 million comes out. The company's annualized run rate a year ago sat at about that level. Eighteen is a large multiple, and half the reason it is large is that the number being divided into was small. For the same company to manage eighteenfold again next year it would have to clear $6.7 billion, and this post is not saying that will happen.
+Snorkel AI's [press release](https://snorkel.ai/press/snorkel-ai-raises-350m-to-scale-the-data-factory-for-frontier-ai/) says its run rate grew more than eighteenfold in less than a year, and TechCrunch says eighteenfold over the last 12 months. [Reuters](https://www.reuters.com/legal/transactional/snorkel-ai-valued-35-billion-amid-surging-demand-complex-ai-training-data-2026-09-22/) reported the run rate a year earlier at about $20 million, which squares with $375 million divided by 18 (about $21 million). Eighteen is a large multiple, and much of that comes from how small the base was. For the company to manage eighteenfold again next year it would have to clear $6.7 billion, and it has made no such forecast.
 
-There is a question about the date of that starting point as well. Ratner writes that the new data service is coming up on a year old. But the [press release of May 29, 2025](https://www.businesswire.com/news/home/20250529083998/en/Snorkel-AI-Announces-$100-Million-Series-D-and-Expanded-Platform-to-Power-Next-Phase-of-AI-with-Expert-Data) that announced the Series D seventeen months ago had already announced Snorkel Expert Data-as-a-Service as generally available, together with Snorkel Evaluate. If a product under that name was already selling then, some share of this business was already inside the $21 million run rate of a year ago. Whether the start the post refers to is the moment the product shipped or the moment the company moved its center of gravity is not settled by laying the two documents side by side.
+The date of that starting point holds a clue as well. This week's press release says the data service launched in September 2025, and Ratner writes that it is coming up on a year old. But the [press release of May 29, 2025](https://www.businesswire.com/news/home/20250529083998/en/Snorkel-AI-Announces-$100-Million-Series-D-and-Expanded-Platform-to-Power-Next-Phase-of-AI-with-Expert-Data) that announced the Series D had already announced Snorkel Expert Data-as-a-Service as generally available, together with Snorkel Evaluate. If a product under that name was already selling then, some share of this business was already inside the roughly $20 million run rate of a year ago. Whether September 2025 marks the moment the product first shipped or the moment the company moved its center of gravity is not settled by the two documents.
 
-### 3.3. Two Sentences, Two Different Things Measured
+### 3.3. The Eighteenfold Is the Whole Company
 
-The same eighteenfold is written slightly differently in the two places. Ratner's post says that since launching the new data-as-a-service offering, the company has grown over 18x. TechCrunch says the company's annualized revenue run rate rose eighteenfold over the last 12 months. Growth in one new line and growth in a whole company's revenue can be written with the same number without being the same statement. For both sentences to hold, nearly all of the company's revenue from a year ago would have had to vanish or to have been small enough to ignore. The public record says neither.
+The sources word the eighteenfold a little differently, but they point at the same thing. The press release says the run rate grew more than eighteenfold. Ratner's post says that since launching the data-as-a-service offering, "we've grown over 18x," and TechCrunch says the company's run rate rose eighteenfold. All three are talking about the whole company's revenue, not one business line. What differs is the period: less than a year in the press release, since the launch in Ratner's post, the last 12 months at TechCrunch. Reuters gave the current run rate as more than $350 million, slightly different from the company's $375 million, but both say the line was crossed, so they do not conflict.
 
 ### 3.4. Revenue Means Different Things at Different Companies
 
@@ -108,13 +108,11 @@ TechCrunch sets other companies in the same market side by side. Mercor's gross 
 Snorkel AI says its accounting works differently. Because it sells reinforcement learning environments and complete datasets rather than human labor, payments to its human experts are accounted for in its cost of goods sold rather than in the headline annualized revenue number. If that holds, Snorkel's $375 million and Mercor's $2 billion were not measured with the same ruler. Expert cost is already out of the first figure and not yet out of the second.
 
 > [!callout]
-> None of the four checks is grounds for calling the published numbers false. The trouble is that these figures end up on one line, compared with no mark saying what each of them measured. That the definition of revenue differs from one data company to the next reads, on its own, as a sign that this market is still a young one.
+> None of the four conditions means the published numbers are wrong. The trouble is that figures with no mark of what they measure end up compared on one line. That companies in the same market define revenue differently is itself a sign that the market is still young.
 
 ## Why Pebblous Is Watching This Round
 
-From here the announcement gets read through the eyes of someone who works with data.
-
-What got priced this round is not a model. It is the work of making data. Inside a company that work usually shows up as a cost line. Open the budget for adopting a model and there are rows for training and for API calls, while the work of cleaning up the data to train on and deciding the correct answers sits scattered through somebody's working hours. What this announcement says is that the market has begun putting a price on that work.
+What got priced in this round is the work of making data. Inside a company that work usually shows up as a cost line. Open the budget for adopting a model and there are rows for training and for API calls, while the work of cleaning up the data to train on and deciding the correct answers sits scattered through somebody's working hours. What this announcement says is that the market has begun putting a price on that work.
 
 Ratner's split can be laid directly over the data work inside a company. Where your organization's data work is stuck right now, is it short of hands, or is it hard to settle what the right answer is?
 
@@ -122,14 +120,16 @@ Ratner's split can be laid directly over the data work inside a company. Where y
 - •If the hard part is agreeing on the answer, ten times the people will not solve it. If two of your people often rule differently on the same material, this is the one you have.
 - •What that second case needs is not headcount. It needs a standard for ruling, someone able to set that standard, and a procedure that makes the same ruling come out the same way next time.
 
-Earlier Pebblous pieces gather at the same spot. Once labeling itself got cheap, what rose in price was the environment for training and scoring agents, which we [covered once already](/blog/labeling-to-rl-environments/en/), and the concentration of AI training-data supply into a handful of companies we [worked out separately](/blog/ai-data-supply-oligopoly/en/). This announcement is a case of those two currents meeting on one company's revenue sheet.
+This connects with two earlier pieces on the Pebblous blog. Once labeling itself got cheap, what rose in price was the environment for training and scoring agents, which we [covered once already](/blog/labeling-to-rl-environments/en/), and the concentration of AI training-data supply into a handful of companies we [worked out separately](/blog/ai-data-supply-oligopoly/en/). This announcement is a case of those two currents meeting on one company's revenue sheet.
 
 So three questions are enough to carry back to your own organization from this news. In your data work, which stage takes longest, gathering or ruling? How many people in the organization can make that ruling, and does the work stop when one of them is away? And can the amount attached to data preparation in this year's budget be pulled out as a single line?
 
-Thank you for reading this far. The documents this article cites can be read directly at [Snorkel AI's announcement](https://snorkel.ai/blog/data-2-0-and-the-research-era-of-ai-data/) and in the [TechCrunch report](https://techcrunch.com/2026/09/22/snorkel-ai-triples-valuation-to-3-5b-as-demand-for-ai-training-data-booms/). We would be glad to hear which side your organization's data work was stuck on, and whether that call held up.
+The documents this article cites can be read directly in [Snorkel AI's announcement](https://snorkel.ai/blog/data-2-0-and-the-research-era-of-ai-data/) and [press release](https://snorkel.ai/press/snorkel-ai-raises-350m-to-scale-the-data-factory-for-frontier-ai/), and in reporting by [TechCrunch](https://techcrunch.com/2026/09/22/snorkel-ai-triples-valuation-to-3-5b-as-demand-for-ai-training-data-booms/) and [Reuters](https://www.reuters.com/legal/transactional/snorkel-ai-valued-35-billion-amid-surging-demand-complex-ai-training-data-2026-09-22/).
 
 ## References
 
 - 1.Ratner, A. (2026, September 22). "[Data 2.0 and the Research Era of AI Data](https://snorkel.ai/blog/data-2-0-and-the-research-era-of-ai-data/)." Snorkel AI Blog.
 - 2.Temkin, M. (2026, September 22). "[Snorkel AI triples valuation to $3.5B as demand for AI training data booms](https://techcrunch.com/2026/09/22/snorkel-ai-triples-valuation-to-3-5b-as-demand-for-ai-training-data-booms/)." TechCrunch.
 - 3.Snorkel AI. (2025, May 29). "[Snorkel AI Announces $100 Million Series D and Expanded Platform to Power Next Phase of AI with Expert Data](https://www.businesswire.com/news/home/20250529083998/en/Snorkel-AI-Announces-$100-Million-Series-D-and-Expanded-Platform-to-Power-Next-Phase-of-AI-with-Expert-Data)." Business Wire.
+- 4.Snorkel AI. (2026, September 22). "[Snorkel AI Raises $350M Series E](https://snorkel.ai/press/snorkel-ai-raises-350m-to-scale-the-data-factory-for-frontier-ai/)." Snorkel AI Press.
+- 5.Reuters. (2026, September 22). "[Snorkel AI valued at $3.5 billion amid surging demand for complex AI training data](https://www.reuters.com/legal/transactional/snorkel-ai-valued-35-billion-amid-surging-demand-complex-ai-training-data-2026-09-22/)." Reuters.
