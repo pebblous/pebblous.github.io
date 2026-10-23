@@ -83,32 +83,16 @@ The Data 1.0 and 2.0 split has another effect. Naming 1.0 a staffing and logisti
 
 Nor is the argument new. Ratner brings back, in the same post, the thesis the project started from at Stanford a decade ago: AI progress would become increasingly data-centric, and therefore data development should be studied as a true research and technology problem, not just a staffing and crowdsourcing one. What changed this time is the name, and Ratner sees the market as having come around to the argument.
 
-## Four Conditions on the $375 Million
+## Conditions on the $375 Million
 
-The most quoted figure from this announcement is the annualized revenue run rate of $375 million. Four things are worth checking before it is copied across as annual revenue.
+The most quoted figure from this announcement is the annualized revenue run rate of $375 million. Three things are worth knowing before it is copied across as annual revenue.
 
-### 3.1. What "Annualized" Qualifies
-
-An annualized run rate takes the most recent month or quarter and multiplies it by twelve or by four to stretch it into a year. It is not money received over twelve months. Ratner's post says the company crossed that line this week; it does not say the company earned that much over the past year. The figure holds on the condition that contracts do not lapse and the present pace keeps up.
-
-### 3.2. Where the Eighteenfold Starts
-
-Snorkel AI's [press release](https://snorkel.ai/press/snorkel-ai-raises-350m-to-scale-the-data-factory-for-frontier-ai/) says its run rate grew more than eighteenfold in less than a year, and TechCrunch says eighteenfold over the last 12 months. [Reuters](https://www.reuters.com/legal/transactional/snorkel-ai-valued-35-billion-amid-surging-demand-complex-ai-training-data-2026-09-22/) reported the run rate a year earlier at about $20 million, which squares with $375 million divided by 18 (about $21 million). Eighteen is a large multiple, and much of that comes from how small the base was. For the company to manage eighteenfold again next year it would have to clear $6.7 billion, and it has made no such forecast.
-
-The date of that starting point holds a clue as well. This week's press release says the data service launched in September 2025, and Ratner writes that it is coming up on a year old. But the [press release of May 29, 2025](https://www.businesswire.com/news/home/20250529083998/en/Snorkel-AI-Announces-$100-Million-Series-D-and-Expanded-Platform-to-Power-Next-Phase-of-AI-with-Expert-Data) that announced the Series D had already announced Snorkel Expert Data-as-a-Service as generally available, together with Snorkel Evaluate. If a product under that name was already selling then, some share of this business was already inside the roughly $20 million run rate of a year ago. Whether September 2025 marks the moment the product first shipped or the moment the company moved its center of gravity is not settled by the two documents.
-
-### 3.3. The Eighteenfold Is the Whole Company
-
-The sources word the eighteenfold a little differently, but they point at the same thing. The press release says the run rate grew more than eighteenfold. Ratner's post says that since launching the data-as-a-service offering, "we've grown over 18x," and TechCrunch says the company's run rate rose eighteenfold. All three are talking about the whole company's revenue, not one business line. What differs is the period: less than a year in the press release, since the launch in Ratner's post, the last 12 months at TechCrunch. Reuters gave the current run rate as more than $350 million, slightly different from the company's $375 million, but both say the line was crossed, so they do not conflict.
-
-### 3.4. Revenue Means Different Things at Different Companies
-
-TechCrunch sets other companies in the same market side by side. Mercor's gross annualized revenue has climbed to $2 billion, Handshake hit the $1 billion milestone earlier this year, and Micro1 has scaled to $500 million. The same article attaches a condition right after: "Since these companies pay out roughly 60% to 70% of their top-line income directly to the domain specialists doing the work, it's important to note that their actual net annual revenue is substantially lower than those headline gross figures."
-
-Snorkel AI says its accounting works differently. Because it sells reinforcement learning environments and complete datasets rather than human labor, payments to its human experts are accounted for in its cost of goods sold rather than in the headline annualized revenue number. If that holds, Snorkel's $375 million and Mercor's $2 billion were not measured with the same ruler. Expert cost is already out of the first figure and not yet out of the second.
+- •**It is not a year of earnings.** It stretches the most recent month or quarter out to a year, and it assumes the present pace continues.
+- •**The eighteenfold looks large because the base was small.** [Reuters](https://www.reuters.com/legal/transactional/snorkel-ai-valued-35-billion-amid-surging-demand-complex-ai-training-data-2026-09-22/) put the run rate a year earlier at about $20 million. The company says the data service launched in September 2025, yet a product under the same name was already announced as generally available in the [May 2025 Series D press release](https://www.businesswire.com/news/home/20250529083998/en/Snorkel-AI-Announces-$100-Million-Series-D-and-Expanded-Platform-to-Power-Next-Phase-of-AI-with-Expert-Data).
+- •**It does not compare directly with competitors.** The figures for Mercor ($2 billion), Handshake ($1 billion) and Micro1 ($500 million) are gross, before the 60 to 70 percent paid out to experts. Snorkel says it books expert costs as cost of goods sold.
 
 > [!callout]
-> None of the four conditions means the published numbers are wrong. The trouble is that figures with no mark of what they measure end up compared on one line. That companies in the same market define revenue differently is itself a sign that the market is still young.
+> Companies in the same market define revenue differently. Before lining the numbers up, check what each one measures.
 
 ## Why Pebblous Is Watching This Round
 
