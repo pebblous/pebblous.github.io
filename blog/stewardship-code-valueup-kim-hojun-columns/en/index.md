@@ -12,7 +12,7 @@ note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 �
 _Four Etoday columns by Kim Ho-jun, summarized: signing the code matters less than showing what investors did and what changed_
 
 <!-- stat-card -->
-****This article summarizes columns by Kim Ho-jun, CEO of Ditto ESG.** The Pebblous Data Communication Team condensed four guest columns he wrote for the opinion pages of the Korean daily Etoday between December 2025 and October 2026. The arguments in sections 1 to 4 are his; only section 5 is our reading. Links to the original Korean columns are in the [Original columns](#references) section at the end.**
+****This article summarizes columns by Kim Ho-jun, CEO of Ditto ESG.** The Pebblous Data Communication Team condensed four guest columns he wrote for the opinion pages of the Korean daily Etoday between December 2025 and October 2026. The arguments in sections 1 to 4 are his; section 5 is a Pebblous editorial on the role of AI and data in next-generation corporate governance. Links to the original Korean columns are in the [Original columns](#references) section at the end.**
 
 ## Executive Summary
 
@@ -105,13 +105,24 @@ Demanding more of asset managers alone will not make the system work, he adds. H
 > [!callout]
 > Kim closes by changing the question. Not whether an investor joined the code, but whether it could confidently show its stewardship activities and results if its client came for due diligence tomorrow. Fiduciary capitalism that benefits everyone, he writes, starts not with a declaration but with evidence.
 
-## The thread through four columns
+## Next-generation governance will run on AI and data
 
-This section is not a summary of the columns but a reading by the Pebblous Data Communication Team.
+This section is not a summary of the columns but an editorial by the Pebblous Data Communication Team. It is not Kim's argument.
 
 In Kim's framing, Commercial Act reform that moves companies is one pillar, and stewardship reform that moves institutional investors is the other. Read side by side, the four columns written over ten months show where that second pillar is heading. The first sets the principle that those entrusted must account; the second turns that account into a compliance-check regime; the third applies the same logic to corporate value-up; and the fourth raises the bar for the account to evidence. The question moves from "did you join, did you disclose" to "what did you do, and what changed."
 
-Evidence comes from records. If no one kept track of when an issue was spotted, who discussed what with whom, and how the company responded, a value story becomes a narrative assembled after the fact. It fits that the fourth column lists data among the costs of active engagement. That is why Pebblous, which works on the quality and lineage of data, took note of these columns: proving fiduciary responsibility ultimately means building records that can be trusted.
+### 5.1. The scale of proof is beyond human hands
+
+Evidence comes from records. If no one kept track of when an issue was spotted, who discussed what with whom, and how the company responded, a value story becomes a narrative assembled after the fact. Yet the system the columns describe multiplies the records. Compliance checks will reach securities firms and banks by 2028, and every institution will disclose the results of 12 activities under 7 principles each year. As passive funds and ETFs grow, a single asset manager may have to vote at hundreds of companies. Reading every investee's disclosures and meeting agendas, logging engagement and then weaving the results into a convincing account is more than people alone can handle.
+
+What Kim calls "financializing" stewardship, translating governance and ESG issues into the language of revenue, costs and the cost of capital, is ultimately data work: joining scattered disclosures, financials and engagement records and explaining how they relate. The corporate side is no different. A board cannot review its business portfolio against the cost of capital without numbers it can trust. We believe next-generation corporate governance will work this way, with AI helping to read, connect and explain.
+
+### 5.2. AI-built evidence is only as good as its data
+
+But evidence assembled by AI is only as trustworthy as the data beneath it. Figures of unknown origin, misread disclosures and ESG scores built on different standards turn a value story into a plausible wrong answer. For a fiduciary to prove something to its client, or a company to the market, it must show not only the conclusion but where the underlying data came from and how it was handled. Proving stewardship leads to the same question as proving data.
+
+> [!callout]
+> That is why Pebblous is paying attention to these columns. Pebblous works on diagnosing the quality of the data AI relies on and recording its lineage. If governance comes to run on AI and data, asking whether the data at the bottom can be trusted becomes part of governance itself. We want to prepare for the era of proof starting from that question.
 
 ## Original columns
 
