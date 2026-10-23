@@ -96,17 +96,23 @@ The most quoted figure from this announcement is the annualized revenue run rate
 
 ## Why Pebblous Is Watching This Round
 
-What got priced in this round is the work of making data. Inside a company that work usually shows up as a cost line. Open the budget for adopting a model and there are rows for training and for API calls, while the work of cleaning up the data to train on and deciding the correct answers sits scattered through somebody's working hours. What this announcement says is that the market has begun putting a price on that work.
+What caught Pebblous's attention is less the size of the round than the logic Ratner sets out. That logic overlaps with the technology Pebblous has built since its founding and with where it is headed.
 
-Ratner's split can be laid directly over the data work inside a company. Where your organization's data work is stuck right now, is it short of hands, or is it hard to settle what the right answer is?
+### 4.1. To Aim, First Find the Gaps
 
-- •If it is a shortage of hands, adding people or buying more outsourced volume solves it. Check whether progress rises in proportion to the number of people put on the job and the answer comes clear.
-- •If the hard part is agreeing on the answer, ten times the people will not solve it. If two of your people often rule differently on the same material, this is the one you have.
-- •What that second case needs is not headcount. It needs a standard for ruling, someone able to set that standard, and a procedure that makes the same ruling come out the same way next time.
+The core of Ratner's Data 2.0 argument is that a small amount of data aimed precisely at the hard problems makes the remaining difference. Pebblous started from the same idea. When the company was founded in 2021, its first project was synthesizing only the data a model was missing, aimed with precision.
 
-This connects with two earlier pieces on the Pebblous blog. Once labeling itself got cheap, what rose in price was the environment for training and scoring agents, which we [covered once already](/blog/labeling-to-rl-environments/en/), and the concentration of AI training-data supply into a handful of companies we [worked out separately](/blog/ai-data-supply-oligopoly/en/). This announcement is a case of those two currents meeting on one company's revenue sheet.
+To aim, you first have to know where the data has gaps. Pebblous's DataClinic maps data into a high-dimensional space and finds the density and the empty regions of its distribution. That diagnostic technology, and the synthetic data generation that fills the gaps it finds, are core technologies Pebblous holds under U.S. [patents](/project/ISO5259/iso5259-standardization-roadmap/en/) (US 12,481,720 and US 11,967,308). Ratner lists distributionally targeting a model's error modes as a condition of good data, and finding those spots is what DataClinic does.
 
-So three questions are enough to carry back to your own organization from this news. In your data work, which stage takes longest, gathering or ruling? How many people in the organization can make that ruling, and does the work stop when one of them is away? And can the amount attached to data preparation in this year's budget be pulled out as a single line?
+### 4.2. A Loop That Grows Data
+
+Snorkel calls the loop in which human experts and AI agents improve each other an RSI engine. Pebblous works differently but has a structure that plays the same role. The [Data Greenhouse](/project/DataGreenhouse/data-greenhouse-strategy/en/) runs a loop that diagnoses data, fills what is missing with synthetic data, trims what is unnecessary, and diagnoses again. PebbloSim is the simulation environment that generates that synthetic data. Pebblous is extending the loop to AI agents as the Agent Greenhouse.
+
+### 4.3. Cultivating Data Instead of Hunting for It
+
+The difference is clear too. Snorkel builds and sells data; Pebblous does not yet sell data it makes. Still, the two companies share a similar dream: moving from finding and gathering the data you need to diagnosing what is missing, aiming at it, and growing it.
+
+Pebblous has put this as ["We do not hunt for data. We cultivate it."](/project/PhysicalAI/data-greenhouse-vision/en/) Hunting for scattered data depends on luck; cultivating it by diagnosing and aiming depends on design. This round is a sign that the market has begun to price the work of cultivating data, and that is why Pebblous is paying attention.
 
 The documents this article cites can be read directly in [Snorkel AI's announcement](https://snorkel.ai/blog/data-2-0-and-the-research-era-of-ai-data/) and [press release](https://snorkel.ai/press/snorkel-ai-raises-350m-to-scale-the-data-factory-for-frontier-ai/), and in reporting by [TechCrunch](https://techcrunch.com/2026/09/22/snorkel-ai-triples-valuation-to-3-5b-as-demand-for-ai-training-data-booms/) and [Reuters](https://www.reuters.com/legal/transactional/snorkel-ai-valued-35-billion-amid-surging-demand-complex-ai-training-data-2026-09-22/).
 
