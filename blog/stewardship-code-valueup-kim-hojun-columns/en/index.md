@@ -12,7 +12,7 @@ note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 �
 _Four Etoday columns by Kim Ho-jun, summarized: signing the code matters less than showing what investors did and what changed_
 
 <!-- stat-card -->
-****This article summarizes columns by Kim Ho-jun, CEO of 디토이에스지.** The Pebblous Data Communication Team condensed four guest columns he wrote for the opinion pages of the Korean daily Etoday between December 2025 and October 2026. The arguments in sections 1 to 4 are his; only section 5 is our reading. Links to the original Korean columns are in the [Original columns](#references) section at the end.**
+****This article summarizes columns by Kim Ho-jun, CEO of Ditto ESG.** The Pebblous Data Communication Team condensed four guest columns he wrote for the opinion pages of the Korean daily Etoday between December 2025 and October 2026. The arguments in sections 1 to 4 are his; only section 5 is our reading. Links to the original Korean columns are in the [Original columns](#references) section at the end.**
 
 ## Executive Summary
 
@@ -115,7 +115,7 @@ Evidence comes from records. If no one kept track of when an issue was spotted, 
 
 ## Original columns
 
-All four are guest columns by Kim Ho-jun, CEO of 디토이에스지, in the opinion pages of Etoday. The full Korean texts are available on Etoday.
+All four are guest columns by Kim Ho-jun, CEO of Ditto ESG, in the opinion pages of Etoday. The full Korean texts are available on Etoday.
 
 - 1.Kim, Ho-jun. (2025). "[[기고] 스튜어드십코드 '합리적 균형' 찾길](https://www.etoday.co.kr/news/view/2541024)" (Seeking a 'reasonable balance' in the Stewardship Code). Etoday, 2025-12-31.
 - 2.Kim, Ho-jun. (2026). "[[기고] "밸류업 위해 소액주주 연대할까요"](https://www.etoday.co.kr/news/view/2558668)" (Shall minority shareholders join forces for Value-Up?). Etoday, 2026-02-24.
