@@ -1,7 +1,7 @@
 ---
 title: Why Is Robot Learning Data Still Scarce When Video Is Everywhere?
 subtitle: After VLAs and world models, robot learning needs four translators: automatic labeling, retargeting, physics-grounded 3D reasoning and success detection
-date: 2026-10-24
+date: 2026-08-11
 category: tech
 source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.

@@ -1,7 +1,7 @@
 ---
 title: 로봇 학습 데이터는 왜 넘치는데도 모자랄까?
 subtitle: VLA와 월드 모델 다음에 필요한 번역 장치는 자동 라벨링, 리타게팅, 물리 기반 3D 추론, 성공 판정 네 가지다
-date: 2026-10-24
+date: 2026-08-11
 category: tech
 source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
