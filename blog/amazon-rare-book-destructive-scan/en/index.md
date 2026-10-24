@@ -14,7 +14,7 @@ _A tracker hidden in one shipment stopped at Amazon_
 ## Executive Summary
 
 > [!callout]
-> A location tracker packed into a shipment of rare books stopped sending in Las Vegas. 404 Media planted it there and published what it found on August 17. The signal ended inside a facility where Amazon scans books for AI training. The facility is called VGT3, and the picture it uses for itself is a dinosaur holding a book in its claws.
+> Amazon runs a facility that cuts the bindings off rare books and scans them for AI training. 404 Media found it by packing a location tracker into a shipment of rare books and following the signal. The signal ended at VGT3, a facility in Las Vegas whose emblem is a dinosaur holding a book in its claws.
 
 > What happens inside is not only scanning. People who have worked at the site say the spines of the arriving books are cut off before scanning, and no print copy survives the process. The scan data goes into training Nova, Amazon's own model. One reason print copies are worth this much lies in the year of publication. A book published before 2022 cannot contain sentences written by an LLM, and training again on AI-generated text raises the risk of model collapse.
 
