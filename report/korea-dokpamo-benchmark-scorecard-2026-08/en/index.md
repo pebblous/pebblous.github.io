@@ -1,5 +1,5 @@
 ---
-title: The Benchmark Leader Came Last. We Rebuilt Korea
+title: Where Was Korea
 subtitle: Through 75 of the 100 points the four teams were 1.7 points apart, and the order was made in the last block, the 25 points of user evaluation
 date: 2026-08-28
 category: tech
@@ -7,14 +7,14 @@ source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
 ---
 
-# The Benchmark Leader Came Last. We Rebuilt Korea
+# Where Was Korea
 
 _Through 75 of the 100 points the four teams were 1.7 points apart, and the order was made in the last block, the 25 points of user evaluation_
 
 ## Executive Summary
 
 > [!callout]
-> On 18 August the Korean government announced the second-stage results of its Sovereign AI Foundation Model project, and said two things in the same breath. Motif Technologies would not advance. And Korea now stands third in the world, behind the United States and China. But the 100 points that decided the elimination and the evidence offered for third place are not measured with the same ruler. The first is a selection score for picking domestic contractors. The second is a snapshot of a global leaderboard at one moment in time. This report takes the published numbers and rebuilds that 100-point score.
+> The Korean government announced the second-stage results of its Sovereign AI Foundation Model project and said two things in the same breath. Motif Technologies would not advance. And Korea now stands third in the world, behind the United States and China. But the 100 points that decided the elimination and the evidence offered for third place are not measured with the same ruler. The first is a selection score for picking domestic contractors. The second is a snapshot of a global leaderboard at one moment in time. This report takes the published numbers and rebuilds that 100-point score.
 
 > Rebuilding it only became possible on 27 August, when the per-team block scores were finally released in full. Through the benchmark and expert blocks, 75 of the 100 points, the four teams sat inside 1.7 points of each other. At that stage the team that was eliminated was in second place. The order changed in the final user-evaluation stretch. Dropping one block at a time makes it sharper. Remove any single block and the last-placed team stays last; only when the whole 25-point user evaluation is lifted out does the order rearrange. This is not a scoring error. It is a property of weighted-sum scorecards: which item makes the ranking is decided not by its weight but by how far apart the candidates fall on it. The composite-indicator literature formalised this gap years ago and measured it in university league tables and the Human Development Index.
 
@@ -34,7 +34,7 @@ _Through 75 of the 100 points the four teams were 1.7 points apart, and the orde
 
 ## What the 100 points are made of
 
-Some context for readers outside Korea. The Sovereign AI Foundation Model project, known domestically as _dokpamo_, is a state programme that funds a shrinking set of national teams to build frontier-class Korean models, with GPU allocation and public money attached to each stage gate. Four teams entered the second stage: SK Telecom with A.X K2, Upstage with Solar Open 2, LG AI Research with K-EXAONE 2.0, and Motif Technologies with Motif 3.
+Some context for readers outside Korea. The Sovereign AI Foundation Model project, known domestically as "dokpamo", is a state programme that funds a shrinking set of national teams to build frontier-class Korean models, with GPU allocation and public money attached to each stage gate. Four teams entered the second stage: SK Telecom with A.X K2, Upstage with Solar Open 2, LG AI Research with K-EXAONE 2.0, and Motif Technologies with Motif 3.
 
 The outcome arrived on 18 August. The scorecard arrived later. On announcement day the Ministry of Science and ICT gave only block averages and the first-to-fourth gap in each block. Two days later the detailed scoring rules and the top score in each block were published, and the criticism continued because totals and rankings still were not. All sixteen per-team block scores became public on 27 August, after the eliminated team, Motif Technologies, filed an objection and the remaining three consented to disclosure. Every calculation in this report starts from that last release.
 
