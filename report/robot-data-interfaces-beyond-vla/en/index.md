@@ -1,20 +1,20 @@
 ---
-title: Robots Aren
-subtitle: The four translators robot learning needs after VLAs and world models — automatic labeling, retargeting, physics-grounded 3D reasoning, and success detection
-date: 2026-08-11
+title: Why Is Robot Learning Data Still Scarce When Video Is Everywhere?
+subtitle: After VLAs and world models, robot learning needs four translators: automatic labeling, retargeting, physics-grounded 3D reasoning and success detection
+date: 2026-10-24
 category: tech
 source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
 ---
 
-# Robots Aren
+# Why Is Robot Learning Data Still Scarce When Video Is Everywhere?
 
-_The four translators robot learning needs after VLAs and world models — automatic labeling, retargeting, physics-grounded 3D reasoning, and success detection_
+_After VLAs and world models, robot learning needs four translators: automatic labeling, retargeting, physics-grounded 3D reasoning and success detection_
 
 ## Executive Summary
 
 > [!callout]
-> The argument about robot learning has run for years on a single axis: bigger VLAs, or world models? A position paper posted in June 2026 says the bottleneck is somewhere else entirely. The world is full of video of people doing things, and only a sliver of it has ever been translated into a form a robot can read. Public teleoperation footage carrying precise action labels amounts to roughly ten thousand hours. Unlabeled egocentric human video amounts to roughly a million. The side with the surplus never reaches the robot.
+> A new position paper argues that the bottleneck in robot learning lies less in bigger VLAs or world models than in translating data. It was posted to arXiv in June 2026. The world is full of video of people doing things, and only a sliver of it has ever been translated into a form a robot can read. Public teleoperation footage carrying precise action labels amounts to roughly ten thousand hours. Unlabeled egocentric human video amounts to roughly a million. The side with the surplus never reaches the robot.
 
 > The paper names four translators that ought to sit in between: one that manufactures action labels from unlabeled video, one that carries a human gesture over to a robot's joints, one that reasons in three dimensions about contact and weight, and one that decides whether the attempt succeeded. Check each against independent work published outside the paper and the picture splits in two. Translation genuinely works: with only ten demonstrations on hand, pretraining on video that carries no action labels at all lifts success rates more than fivefold. Translation is also still worse than a person. Automatically inferred action labels remain behind real ones, and the models asked to judge success clear barely half of a human score on physical-common-sense tests.
 
