@@ -56,6 +56,7 @@ function buildFixture() {
   write(jinbon, 'docs/pending.md', '진본 최신\n');                 // 진본만 최신 → NOT reverse
   write(jinbon, 'tools/brand-new.js', 'fresh\n');                 // jinbon-only
   write(jinbon, 'docs/seo/disavow.txt', '진본 비밀\n');            // 제외돼야 함
+  write(jinbon, 'docs/internal/decision-log.md', '진본 내부\n');     // 제외돼야 함
   write(jinbon, '.gitattributes', 'articles.json merge=articles-union\n');
 
   // --- 사본: 먼저 봇이 미러링 (docs/seo/ 는 애초에 안 나감, brand-new 는 아직 없음) ---
@@ -119,6 +120,11 @@ test('진본에만 있음 → jinbon-only, reverse-divergence 아님', () => {
   const r = by['tools/brand-new.js'];
   assert.strictEqual(r.status, 'jinbon-only');
   assert.strictEqual(r.reverseDiverged, false);
+});
+
+test('docs/internal/ 은 사본에 없어도 감사 대상에서 제외', () => {
+  assert.strictEqual(by['docs/internal/decision-log.md'], undefined);
+  assert.ok(!a.collectPaths(fx.jinbon).has('docs/internal/decision-log.md'));
 });
 
 test('docs/seo/ 는 양쪽이 달라도 감사 대상에서 제외', () => {
