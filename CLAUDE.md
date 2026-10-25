@@ -34,7 +34,7 @@ Pebblous Blog (`blog.pebblous.ai`) — a static site on GitHub Pages for Pebblou
 
 ⚠️ **사람 검토는 충돌 시에만 개입한다.** 자동 머지가 실패해야(= reverse-divergence 충돌 등) PR이 열린 채 남는다. 즉 **사본에 나가는 걸 막을 마지막 관문은 사본 PR이 아니라 진본 머지 시점**이다 — 진본 main에 들어가는 순간 사실상 사본에도 나간다고 보고 검토할 것.
 
-상세: [`docs/blog-service/sync.md`](docs/blog-service/sync.md)
+상세: [`docs/internal/blog-service/sync.md`](docs/internal/blog-service/sync.md)
 
 ### Reverse-divergence 발생 시 (이미 사본에서 수정된 변경이 있다면)
 
@@ -57,9 +57,9 @@ reverse-divergence 자체가 안 생긴다.
 
 ### 관련 문서
 
-- [`docs/blog-service/decision-log.md`](docs/blog-service/decision-log.md) — 진본/사본 분리 결정 (2026-05-22)
-- [`docs/blog-service/architecture.md`](docs/blog-service/architecture.md) — 3-자산 분리 비전
-- [`docs/blog-service/sync.md`](docs/blog-service/sync.md) — 자동 동기화 워크플로우 + 트러블슈팅
+- [`docs/internal/blog-service/decision-log.md`](docs/internal/blog-service/decision-log.md) — 진본/사본 분리 결정 (2026-05-22)
+- [`docs/internal/blog-service/architecture.md`](docs/internal/blog-service/architecture.md) — 3-자산 분리 비전
+- [`docs/internal/blog-service/sync.md`](docs/internal/blog-service/sync.md) — 자동 동기화 워크플로우 + 트러블슈팅
 
 ## ⛔ Branch Policy — 새 작업 시작 시 반드시 확인
 
@@ -561,10 +561,10 @@ For deeper reference, see `docs/`:
 - `docs/style.md` — UX/UI design rules and CSS conventions
 - `docs/layout-guidelines.md` — Layout system details
 - `docs/pebblous-modules.md` — PebblousChart & PebblousTabs API
-- `docs/project.md` — Master project context and vision
+- `docs/internal/project.md` — Master project context and vision
 - `docs/content-guidelines.md` — Text-First writing rules
 - `docs/sns-writing-tone.md` — SNS "Warm Expert Tone" with data-farming metaphors
-- `docs/index-renovation.md` — Index page renovation history (P0-P3)
+- `docs/internal/index-renovation.md` — Index page renovation history (P0-P3)
 - `docs/post-writing-lessons-for-pb.md` — pb(Pebblo Claw) 전용 포스팅 작성 가이드 (PR#23 리뷰 교훈)
 - `docs/ko-style-standard.md` — **한국어 문체·용어 표준** (판정 기준=격 일치, 중의성, 항목을 세우는 절차)
 - `docs/terminology-ledger.md` — **용어 대장** (낱말이 두 이름으로 갈릴 때의 결정과 근거)
