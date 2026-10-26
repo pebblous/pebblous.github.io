@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카본-X란? — 허깅페이스 DNA 언어모델의 토크나이저 설계와 벤치마크 분석 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="허깅페이스와 중관춘학원, 이탈리아 텔레톤 유전의학연구소가 2026년 10월 23일 DNA 모델 카본-X를 아파치 2.0으로 공개했다. 염기 여섯 개를 토큰 하나로 묶는 전용 토크나이저를 쓰고, 3,020억 토큰의 구성비를 백분율로 전부 적어 뒀다. 다섯 가지 시험 평균은 66.7%다.">
+    <meta name="keywords" content="카본-X, Carbon-X, 허깅페이스 DNA 모델, DNA 토크나이저, 염기서열 AI 모델, 유전체 언어모델, 큐원3-14B, 유전자 변이 예측, AI-Ready Data, 오픈소스 AI">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="카본-X">
+    <meta name="pb-search-keyword-forms" content="카본-X|Carbon-X">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/carbon-x-dna-tokenizer-design/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/carbon-x-dna-tokenizer-design/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/carbon-x-dna-tokenizer-design/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/carbon-x-dna-tokenizer-design/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="DNA를 읽는 AI 카본-X, 여섯 글자씩 묶어도 될까?">
+    <meta property="og:description" content="허깅페이스가 공개한 DNA 모델은 염기 여섯 개를 글자 하나로 묶어 읽는다. 자르는 단위를 정하는 일이 이 모델이 무엇을 잘하고 무엇을 못하는지를 가른다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/carbon-x-dna-tokenizer-design/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/carbon-x-dna-tokenizer-design/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="DNA 염기서열이 여섯 개씩 끊겨 토큰 하나로 묶이는 과정을 그린 도식">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-10-27">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="DNA를 읽는 AI 카본-X, 여섯 글자씩 묶어도 될까?">
+    <meta name="twitter:description" content="허깅페이스가 공개한 DNA 모델은 염기 여섯 개를 글자 하나로 묶어 읽는다. 자르는 단위를 정하는 일이 이 모델이 무엇을 잘하고 무엇을 못하는지를 가른다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/carbon-x-dna-tokenizer-design/ko/image/index.png">
+    <meta name="twitter:image:alt" content="DNA 염기서열이 여섯 개씩 끊겨 토큰 하나로 묶이는 과정을 그린 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261027"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261027">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261027">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261027">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="DNA를 읽는 AI 카본-X, 여섯 글자씩 묶어도 될까?">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/10/27">
+    <meta name="citation_online_date" content="2026/10/27">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#what-was-released" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 누가 무엇을 공개했나</a></li>
+                    <li><a href="#six-bases-one-token" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 염기 여섯 개가 글자 하나</a></li>
+                    <li><a href="#data-mix" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 무엇을 먹였는지 백분율로 적혀 있다</a></li>
+                    <li><a href="#benchmarks" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 어디서 이기고 어디서 지나</a></li>
+                    <li><a href="#limits" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 묶고 나면 안쪽은 흐릿하다</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 페블러스가 이 공개를 주목하는 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            DNA 염기서열과 사람 말을 한 모델에서 같이 다루는 AI가 누구나 내려받을 수 있게 공개됐다는 소식이다. 이름은 카본-X이고, 허깅페이스와 중관춘학원(中关村学院), 이탈리아 텔레톤 유전의학연구소, 나폴리 페데리코 2세 대학교가 2026년 10월 23일 아파치 2.0 라이선스로 내놓았다. 변이가 해로운지 아닌지를 예측하고, 유전자 활동을 조절하는 구간을 짚고, 다음에 올 염기를 맞히고, 그렇게 판단한 이유를 말로 설명한다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            이 글이 들여다보는 것은 성능표가 아니라 그 앞에 놓인 설계 하나다. 카본-X는 DNA를 받을 때 염기 여섯 개를 잘라 토큰 하나로 묶는다. 자연어 모델이 문장을 어느 단위로 끊어 읽을지 정하는 일과 같은 종류의 결정이고, 그 결정이 이 모델이 무엇을 잘하고 무엇을 못하는지를 꽤 많이 설명한다. 다섯 가지 시험 평균은 66.7%이고, 같은 표에서 1위는 아니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            1절부터 4절까지, 그리고 5절의 앞부분까지는 모델 카드와 보도에 적힌 것을 따라간다. 묶는 단위를 데이터 설계 문제로 옮겨 읽는 5절 끝과 6절은 이 글의 해석이고, 본문에서도 그 자리를 따로 밝혔다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://huggingface.co/HuggingFaceBio/Carbon-X" target="_blank" rel="noopener" class="underline">허깅페이스 카본-X 모델 카드</a>, <a href="https://www.aitimes.com/news/articleView.html?idxno=216683" target="_blank" rel="noopener" class="underline">AI타임스</a> 보도(2026-10-26).</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">66.7%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">다섯 가지 시험 평균</p>
+                            <p class="text-xs themeable-muted mt-1">바탕이 된 큐원3-14B보다 27포인트 높다. 다만 가장 높은 GPT-6.1 Sol의 67.5%에는 닿지 못했다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">6염기</p>
+                            <p class="text-sm themeable-text-secondary mt-1">토큰 하나가 덮는 DNA 길이</p>
+                            <p class="text-xs themeable-muted mt-1">가능한 조합 4,096가지가 글자 하나씩을 받았다. 8,192 토큰이면 약 49,000 염기쌍이 들어간다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">55%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">학습 토큰 중 원본 DNA 비중</p>
+                            <p class="text-xs themeable-muted mt-1">3,020억 토큰의 구성비가 백분율로 전부 적혀 있고, 더하면 정확히 100이 된다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">29.8%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">가장 낮은 점수 — 스플라이스 자리</p>
+                            <p class="text-xs themeable-muted mt-1">모델 카드가 스스로 약한 영역으로 적어 둔 자리다. 히스톤 표지 문제도 34.6%에 그쳤다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="what-was-released" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">누가 무엇을 공개했나</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        카본-X는 148억 개의 매개변수를 가진 모델이다. 맨바닥에서 만든 것이 아니라 알리바바가 공개한 큐원3-14B를 가져다 3,020억 토큰을 더 학습시켰다. 허깅페이스가 중관춘학원, 이탈리아 텔레톤 유전의학연구소, 나폴리 페데리코 2세 대학교와 함께 만들었고, 2026년 10월 23일 아파치 2.0 라이선스로 내놓았다. 라이선스가 아파치 2.0이라는 말은 상업적으로 써도 되고 고쳐서 다시 내놓아도 된다는 뜻이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델 카드가 밝힌 할 일은 다섯 가지다. 어떤 돌연변이가 해로운지 아닌지를 예측하고, 유전자가 언제 켜지고 꺼지는지를 조절하는 구간을 찾아내고, 서열을 보고 어느 생물군의 것인지 분류하고, 서열의 다음 염기를 맞히고, 그렇게 판단한 근거를 말로 풀어 놓는다. 마지막 항목이 이 모델의 성격을 말해 준다. 숫자만 뱉는 예측기가 아니라 질문에 문장으로 답하는 쪽이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        왜 굳이 공개했는지도 모델 카드에 적혀 있다. bfloat16 정밀도로 올리면 80GB짜리 GPU 한 장에 가중치가 들어가서, 연구자가 민감하거나 아직 발표하지 않은 서열을 자기 장비 안에 둔 채로 돌릴 수 있다는 것이다. AI타임스 보도는 같은 대목을 허깅페이스의 말로 옮겼다. "소수의 폐쇄형 AI 서비스에 의존하지 않고 연구 도구를 직접 운영하면서, 민감하거나 아직 발표하지 않은 DNA 데이터를 내부에 보관할 수 있"게 하려는 것이다. 유전 정보를 남의 서버에 올리는 일이 간단치 않다는 사정이 이 공개의 배경에 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        돈 이야기도 붙어 있다. 공개 데이터베이스 클린바에 쌓여 있는 '의미를 모르는 변이' 240만 건을 전부 분석한다고 치면, 카본-X로는 약 300달러가 든다. 같은 일을 비교 대상으로 삼은 상용 모델들에 맡기면 3만 2천 달러에서 400만 달러가 든다. 적게 잡아도 백 배, 많게는 만 배가 넘게 벌어지는 이 간격이 보도가 집어 든 제목이었다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 210" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="28" font-size="12.5" font-weight="600" fill="var(--text-secondary)">클린바 240만 건 분석 비용 — 로그 눈금으로 봐야 차이가 보인다</text>
+
+                            <line x1="97" y1="150" x2="97" y2="118" stroke="#F86825" stroke-width="1.5" stroke-dasharray="3 2"/>
+                            <circle cx="97" cy="150" r="6" fill="#F86825"/>
+                            <text x="97" y="108" text-anchor="middle" font-size="12" font-weight="600" fill="#F86825">카본-X 약 $300</text>
+
+                            <line x1="340" y1="150" x2="592" y2="150" stroke="var(--text-muted)" stroke-width="5" stroke-linecap="round"/>
+                            <line x1="340" y1="143" x2="340" y2="157" stroke="var(--text-muted)" stroke-width="2"/>
+                            <line x1="592" y1="143" x2="592" y2="157" stroke="var(--text-muted)" stroke-width="2"/>
+                            <line x1="466" y1="150" x2="466" y2="118" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="3 2"/>
+                            <text x="466" y="108" text-anchor="middle" font-size="12" fill="var(--text-secondary)">비교 상용 모델 $32,000~$4,000,000</text>
+
+                            <line x1="40" y1="150" x2="640" y2="150" stroke="var(--text-muted)" stroke-width="1"/>
+                            <line x1="40" y1="146" x2="40" y2="154" stroke="var(--text-muted)"/>
+                            <text x="40" y="172" text-anchor="middle" font-size="10" fill="var(--text-muted)">$100</text>
+                            <line x1="160" y1="146" x2="160" y2="154" stroke="var(--text-muted)"/>
+                            <text x="160" y="172" text-anchor="middle" font-size="10" fill="var(--text-muted)">$1,000</text>
+                            <line x1="280" y1="146" x2="280" y2="154" stroke="var(--text-muted)"/>
+                            <text x="280" y="172" text-anchor="middle" font-size="10" fill="var(--text-muted)">$10,000</text>
+                            <line x1="400" y1="146" x2="400" y2="154" stroke="var(--text-muted)"/>
+                            <text x="400" y="172" text-anchor="middle" font-size="10" fill="var(--text-muted)">$100,000</text>
+                            <line x1="520" y1="146" x2="520" y2="154" stroke="var(--text-muted)"/>
+                            <text x="520" y="172" text-anchor="middle" font-size="10" fill="var(--text-muted)">$1M</text>
+                            <line x1="640" y1="146" x2="640" y2="154" stroke="var(--text-muted)"/>
+                            <text x="640" y="172" text-anchor="middle" font-size="10" fill="var(--text-muted)">$10M</text>
+
+                            <text x="24" y="195" font-size="11" fill="var(--text-secondary)">가로축은 로그 눈금이다. 한 칸씩 옮겨 갈 때마다 비용이 10배씩 뛴다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식. 카본-X와 비교 상용 모델의 비용 차이는 눈금 두 칸 이상(100배 이상) 벌어져 있다. 수치는 모델 카드의 추정치다
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="six-bases-one-token" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">염기 여섯 개가 글자 하나</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        언어 모델은 글을 글자 단위로 읽지 않는다. 자주 붙어 다니는 덩어리를 미리 정해 두고 그 덩어리를 하나의 기호로 바꿔 읽는다. 한국어로 치면 '데이터'를 세 글자로 볼지 한 덩어리로 볼지, '읽었다'를 '읽/었/다'로 끊을지 통째로 둘지를 미리 정해 놓는 일이다. 이 결정을 바꾸면 같은 문장이 더 짧아지기도 하고 더 길어지기도 하고, 모델이 알아보는 패턴도 달라진다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        카본-X는 DNA에 대해 그 결정을 이렇게 내렸다. 서열을 앞에서부터 여섯 개씩 겹치지 않게 끊고, 그 여섯 개 묶음 하나를 토큰 하나로 쓴다. 염기 글자는 A·C·G·T 넷뿐이므로 여섯 자리로 만들 수 있는 조합은 4의 6제곱, 곧 4,096가지다. 모델은 이 4,096가지에 전부 자기 번호를 붙여 뒀다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        끊기 전에 먼저 할 일이 있다. 들어온 글에서 어디까지가 서열인지 가려내는 일이다. 모델 카드가 적어 둔 규칙은 간단하다. A·C·G·T만으로 이어진 자리가 여섯 글자 이상 나오면 그 구간을 DNA로 보고 앞뒤에 <code class="inline-code">&lt;dna&gt;</code>와 <code class="inline-code">&lt;/dna&gt;</code> 표시를 두른 다음 여섯 개씩 끊는다. 사용자가 "여기부터 서열입니다"라고 따로 일러 줄 필요가 없다. 무엇을 서열로 칠지 정하는 문턱도 같은 숫자 여섯이다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 250" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="30" font-size="12.5" font-weight="600" fill="var(--text-secondary)">서열을 여섯 개씩 끊어 토큰 하나로 바꾼다</text>
+
+                            <text x="24" y="70" font-size="11" fill="var(--text-muted)">받은 서열</text>
+                            <text x="24" y="96" font-size="15" font-family="monospace" letter-spacing="2" fill="var(--text-secondary)">A C G T T A</text>
+                            <text x="166" y="96" font-size="15" font-family="monospace" letter-spacing="2" fill="var(--text-secondary)">G G C A T C</text>
+                            <text x="308" y="96" font-size="15" font-family="monospace" letter-spacing="2" fill="var(--text-secondary)">T A N G C A</text>
+                            <text x="450" y="96" font-size="15" font-family="monospace" letter-spacing="2" fill="var(--text-secondary)">C G T</text>
+
+                            <line x1="24" y1="110" x2="152" y2="110" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="166" y1="110" x2="294" y2="110" stroke="#F86825" stroke-width="1.5"/>
+                            <line x1="308" y1="110" x2="436" y2="110" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 3"/>
+                            <line x1="450" y1="110" x2="512" y2="110" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+                            <text x="24" y="146" font-size="11" fill="var(--text-muted)">바뀐 토큰</text>
+                            <rect x="24" y="158" width="128" height="34" rx="7" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="88" y="180" text-anchor="middle" font-size="12" fill="#F86825">6-mer 토큰</text>
+                            <rect x="166" y="158" width="128" height="34" rx="7" fill="none" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="230" y="180" text-anchor="middle" font-size="12" fill="#F86825">6-mer 토큰</text>
+                            <rect x="308" y="158" width="128" height="34" rx="7" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 3"/>
+                            <text x="372" y="180" text-anchor="middle" font-size="12" fill="var(--text-muted)">&lt;oov&gt; 한 개</text>
+                            <rect x="450" y="158" width="100" height="34" rx="7" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 3"/>
+                            <text x="500" y="180" text-anchor="middle" font-size="12" fill="var(--text-muted)">꼬리 토큰</text>
+
+                            <text x="24" y="224" font-size="11" fill="var(--text-secondary)">세 번째 묶음에 A·C·G·T가 아닌 글자 N이 하나 섞이면, 나머지 다섯 개까지 묶어 모르는 토큰 하나가 된다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식. 여섯 개씩 끊는 방식, 길이가 안 맞을 때 쓰는 꼬리 토큰, N이 섞인 묶음을 통째로 모르는 토큰으로 바꾸는 처리는 모두 모델 카드에 적힌 규칙이다
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        서열 길이가 늘 6의 배수로 떨어지지는 않는다. 그래서 남는 꼬리를 받아 줄 토큰을 따로 1,364개 두었다. 이 숫자도 그냥 나온 것이 아니다. 길이 1짜리 조합이 4가지, 2짜리가 16가지, 이렇게 5짜리 1,024가지까지 모두 더하면 정확히 1,364가 된다. 여기에 DNA 구간의 시작과 끝을 알리는 표시, 모르는 글자 표시, 그리고 사전 크기를 128의 배수로 맞추려고 비워 둔 칸까지 더해 DNA 전용 토큰이 5,515개다. 원래 큐원3이 쓰던 글자 토큰 151,669개 위에 이 5,515개를 얹어 전체 사전은 157,184개가 됐다. 이 수는 128의 1,228배로 정확히 떨어진다. 사전 크기를 그렇게 맞춰 두었다고 모델 카드가 밝힌 그대로다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 설계가 주는 것은 길이다. 토큰 하나가 염기 여섯 개를 덮으니 같은 서열을 여섯 분의 일 길이로 줄여 넣을 수 있다. 중간 학습 단계에서 쓴 8,192 토큰짜리 창은 DNA로 치면 약 49,000 염기쌍이고, 모델이 받아들이는 최대 길이인 40,960 토큰은 약 246,000 염기쌍이다. 한 글자에 한 토큰을 썼다면 같은 창에 여섯 분의 일밖에 못 담았을 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        대신 조건이 붙는다. 6-mer를 이루는 글자는 A·C·G·T 넷뿐이고, 그 밖의 글자가 하나라도 섞인 묶음은 통째로 모르는 토큰 하나가 된다. 실제 서열 데이터에는 어떤 염기인지 확정하지 못한 자리를 N으로 적어 두는 관행이 있는데, 그런 N 하나가 들어가면 그 자리의 멀쩡한 다섯 글자까지 같이 사라진다는 뜻이다. 자르는 단위를 크게 잡을수록 한 번의 결손이 가리는 범위도 같이 커진다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그러면 왜 하필 여섯인가. 모델 카드는 여섯으로 묶는다는 사실과 그 결과로 생긴 숫자들을 적어 뒀을 뿐, 넷이나 여덟이 아니라 여섯을 고른 이유는 적지 않았다. 숫자 하나를 바꾸면 사전 크기도, 창에 들어가는 서열 길이도, 한 글자가 가리는 범위도 전부 따라 움직이는데, 그 선택의 근거는 공개된 문서에 남아 있지 않다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="data-mix" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">무엇을 먹였는지 백분율로 적혀 있다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델이 무슨 데이터를 얼마나 먹었는지는 대개 "다양한 공개 자료"라는 한 줄로 끝난다. 카본-X 모델 카드는 그 자리에 표를 놓았다. 중간 학습에 쓴 3,020억 토큰이 어떤 비율로 섞였는지를 갈래별로, 갈래 안쪽까지 소수점 한 자리로 나눠 놓았다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">갈래</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">비중</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">안에서 다시 나뉘는 비율</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">원본 DNA</td>
+                                    <td class="py-3 pr-4">55%</td>
+                                    <td class="py-3">진핵생물 유전체 38.5% · mRNA 8.8% · 원핵생물 유전체 5.5% · 주석 붙은 mRNA 2.2%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">영어 글</td>
+                                    <td class="py-3 pr-4">20%</td>
+                                    <td class="py-3">FineWeb-Edu 8% · DCLM 8% · FinePDFs-Edu 4%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">생물학 문헌</td>
+                                    <td class="py-3 pr-4">15%</td>
+                                    <td class="py-3">긴 서열이 실린 문서 7% · 그 밖의 생물학 글 7% · 기계가 지어낸 설명문 1%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">지시문</td>
+                                    <td class="py-3 pr-4">10%</td>
+                                    <td class="py-3">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 표는 더해 볼 수 있다. 네 갈래를 더하면 100이 되고, 원본 DNA 안쪽의 네 항목을 더하면 55가 된다. 가장 큰 덩어리인 진핵생물 유전체 38.5%는 모델 카드에서 한 단계 더 쪼개져 척추동물 16.2%, 포유류 10.3%, 무척추동물 7.6%, 식물 3.1%, 곰팡이 1.1%, 원생동물 0.2%로 적혀 있는데, 이 여섯을 더해도 정확히 38.5가 나온다. 표가 스스로 앞뒤가 맞는다는 사실을 독자가 확인할 수 있는 상태다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 170" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="28" font-size="12.5" font-weight="600" fill="var(--text-secondary)">3,020억 토큰의 구성 — 반은 DNA, 반은 말을 잊지 않으려는 몫</text>
+
+                            <rect x="40" y="60" width="330" height="50" fill="#F86825"/>
+                            <rect x="370" y="60" width="120" height="50" fill="#585858"/>
+                            <rect x="490" y="60" width="90" height="50" fill="#808080"/>
+                            <rect x="580" y="60" width="60" height="50" fill="#BDBDBD"/>
+                            <rect x="40" y="60" width="600" height="50" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+
+                            <text x="205" y="90" text-anchor="middle" font-size="13" font-weight="600" fill="#ffffff">55%</text>
+                            <text x="430" y="90" text-anchor="middle" font-size="13" font-weight="600" fill="#ffffff">20%</text>
+                            <text x="535" y="90" text-anchor="middle" font-size="12" font-weight="600" fill="#ffffff">15%</text>
+                            <text x="610" y="90" text-anchor="middle" font-size="11" font-weight="600" fill="#1f1f1f">10%</text>
+
+                            <text x="205" y="132" text-anchor="middle" font-size="10.5" fill="var(--text-secondary)">원본 DNA</text>
+                            <text x="430" y="132" text-anchor="middle" font-size="10.5" fill="var(--text-secondary)">영어 글</text>
+                            <text x="535" y="132" text-anchor="middle" font-size="10.5" fill="var(--text-secondary)">생물학 문헌</text>
+                            <text x="610" y="132" text-anchor="middle" font-size="10.5" fill="var(--text-secondary)">지시문</text>
+
+                            <text x="24" y="156" font-size="11" fill="var(--text-muted)">DNA가 아닌 세 갈래(45%)는 바탕 모델의 언어 능력을 지키는 데 쓰였다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식. 비율은 모델 카드에 적힌 백분율 그대로이며 네 갈래를 더하면 정확히 100이 된다
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        구성에서 눈에 걸리는 대목은 DNA가 아닌 쪽이 45%나 된다는 점이다. 영어 글 20%는 DNA와 아무 상관이 없어 보이지만, 바탕이 된 모델이 원래 갖고 있던 말하는 능력을 잃지 않게 붙잡아 두는 몫이다. 염기만 계속 먹이면 모델은 서열은 잘 읽게 되어도 사람 질문에 답하는 능력을 잃는다. 생물학 문헌 15%는 서열과 설명을 잇는 다리이고, 지시문 10%는 질문을 받아 답하는 형식을 익히는 몫이다. 반쯤은 DNA를 배우고 반쯤은 하던 말을 잊지 않는 데 쓴 셈이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        학습은 세 단계로 나뉘었다. 3,020억 토큰을 8,192 토큰짜리 길이로 끊어 먹인 중간 학습이 첫 단계다. 그다음은 데이터셋 스무 묶음을 섞어 세 바퀴 돌린 지도 학습이고, 마지막이 강화 학습 두 차례다. 강화 학습에서는 답이 맞았는지 기계가 확인할 수 있는 과제만 썼고, 생각하기 기능은 꺼 둔 채로 돌렸다고 적혀 있다. 다만 투입한 계산량이나 GPU 시간은 모델 카드에 나오지 않는다. 데이터 구성은 자세히 적었어도 비용은 적지 않았다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="benchmarks" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">어디서 이기고 어디서 지나</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델 카드는 다섯 가지 시험을 놓고 여러 상용 모델과 나란히 점수를 매겼다. 카본-X의 평균은 66.7%이고, 바탕이 된 큐원3-14B보다 27포인트 높다. 같은 표에서 가장 높은 평균을 받은 것은 GPT-6.1 Sol의 67.5%다. 148억짜리 공개 모델이 최상위 상용 모델에 0.8포인트 차로 따라붙었다는 말이지, 이겼다는 말은 아니다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">시험</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">무엇을 묻나</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">카본-X</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">GPT-6.1 Sol</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">BioReason Coding</td>
+                                    <td class="py-3 pr-4">코딩 영역 변이의 효과</td>
+                                    <td class="py-3 pr-4 font-semibold" style="color:#F86825;">74.9</td>
+                                    <td class="py-3">71.0</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">NextBase</td>
+                                    <td class="py-3 pr-4">다음에 올 염기 맞히기</td>
+                                    <td class="py-3 pr-4 font-semibold" style="color:#F86825;">39.4</td>
+                                    <td class="py-3">32.9</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">BioReason Non-SNV</td>
+                                    <td class="py-3 pr-4">복합 변이의 효과</td>
+                                    <td class="py-3 pr-4">85.1</td>
+                                    <td class="py-3 font-semibold">91.7</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">GenomeQA</td>
+                                    <td class="py-3 pr-4">DNA에 관한 이해</td>
+                                    <td class="py-3 pr-4">63.6</td>
+                                    <td class="py-3 font-semibold">67.2</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">FrontierVEP</td>
+                                    <td class="py-3 pr-4">단일 염기 변이의 효과</td>
+                                    <td class="py-3 pr-4">70.4</td>
+                                    <td class="py-3 font-semibold">74.9</td>
+                                </tr>
+                                <tr class="border-b-2 themeable-border">
+                                    <td class="py-3 pr-4 font-semibold themeable-heading">평균</td>
+                                    <td class="py-3 pr-4"></td>
+                                    <td class="py-3 pr-4 font-semibold">66.7</td>
+                                    <td class="py-3 font-semibold">67.5</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다섯 가운데 둘에서 이기고 셋에서 졌다. 이긴 둘이 어떤 종류의 문제인지가 2절의 설계와 맞물린다. 다음에 올 염기를 맞히는 NextBase는 서열 자체의 통계를 몸에 익혀야 풀리는 문제인데, 같은 표에 실린 상용 모델 하나는 이 항목에서 1.1점을 받았다. 염기를 토큰으로 가져 본 적 없는 모델에게 이 문제는 사실상 풀 수 없는 축에 든다. 코딩 영역의 변이가 어떤 결과를 낳는지 묻는 BioReason Coding에서도 74.9로 앞섰다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        진 셋은 성격이 조금 다르다. 복합 변이의 효과나 DNA에 관한 일반적 이해를 묻는 문제는 서열을 직접 읽는 능력만큼이나 생물학 지식과 추론을 요구한다. 덩치가 수십 배 큰 모델들이 쌓아 둔 폭넓은 지식이 여기서 힘을 낸다. 148억짜리가 그 영역에서 평균 몇 포인트 차로 따라붙었다는 사실 쪽이 오히려 눈에 띈다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 270" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)">
+                            <text x="24" y="26" font-size="12.5" font-weight="600" fill="var(--text-secondary)">다섯 시험 가운데 둘에서 앞섰다</text>
+
+                            <rect x="460" y="14" width="10" height="10" fill="#F86825"/>
+                            <text x="474" y="23" font-size="10" fill="var(--text-secondary)">카본-X</text>
+                            <rect x="556" y="14" width="10" height="10" fill="#808080"/>
+                            <text x="570" y="23" font-size="10" fill="var(--text-secondary)">GPT-6.1 Sol</text>
+
+                            <line x1="40" y1="130" x2="640" y2="130" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="2 3" opacity="0.5"/>
+                            <text x="34" y="133" text-anchor="end" font-size="8" fill="var(--text-muted)">50</text>
+                            <text x="34" y="224" text-anchor="end" font-size="8" fill="var(--text-muted)">0</text>
+                            <line x1="40" y1="220" x2="640" y2="220" stroke="var(--text-muted)" stroke-width="1"/>
+
+                            <rect x="66" y="85" width="30" height="135" fill="#F86825"/>
+                            <rect x="104" y="92" width="30" height="128" fill="#808080"/>
+                            <text x="81" y="80" text-anchor="middle" font-size="9" fill="#F86825">74.9</text>
+                            <text x="119" y="87" text-anchor="middle" font-size="9" fill="var(--text-secondary)">71.0</text>
+                            <text x="100" y="233" text-anchor="middle" font-size="8.5" fill="var(--text-muted)"><tspan x="100">BioReason</tspan><tspan x="100" dy="9">Coding</tspan></text>
+
+                            <rect x="186" y="149" width="30" height="71" fill="#F86825"/>
+                            <rect x="224" y="161" width="30" height="59" fill="#808080"/>
+                            <text x="201" y="144" text-anchor="middle" font-size="9" fill="#F86825">39.4</text>
+                            <text x="239" y="156" text-anchor="middle" font-size="9" fill="var(--text-secondary)">32.9</text>
+                            <text x="220" y="238" text-anchor="middle" font-size="8.5" fill="var(--text-muted)">NextBase</text>
+
+                            <rect x="306" y="67" width="30" height="153" fill="#F86825"/>
+                            <rect x="344" y="55" width="30" height="165" fill="#808080"/>
+                            <text x="321" y="62" text-anchor="middle" font-size="9" fill="#F86825">85.1</text>
+                            <text x="359" y="50" text-anchor="middle" font-size="9" fill="var(--text-secondary)">91.7</text>
+                            <text x="340" y="233" text-anchor="middle" font-size="8.5" fill="var(--text-muted)"><tspan x="340">BioReason</tspan><tspan x="340" dy="9">Non-SNV</tspan></text>
+
+                            <rect x="426" y="106" width="30" height="114" fill="#F86825"/>
+                            <rect x="464" y="99" width="30" height="121" fill="#808080"/>
+                            <text x="441" y="101" text-anchor="middle" font-size="9" fill="#F86825">63.6</text>
+                            <text x="479" y="94" text-anchor="middle" font-size="9" fill="var(--text-secondary)">67.2</text>
+                            <text x="460" y="238" text-anchor="middle" font-size="8.5" fill="var(--text-muted)">GenomeQA</text>
+
+                            <rect x="546" y="93" width="30" height="127" fill="#F86825"/>
+                            <rect x="584" y="85" width="30" height="135" fill="#808080"/>
+                            <text x="561" y="88" text-anchor="middle" font-size="9" fill="#F86825">70.4</text>
+                            <text x="599" y="80" text-anchor="middle" font-size="9" fill="var(--text-secondary)">74.9</text>
+                            <text x="580" y="238" text-anchor="middle" font-size="8.5" fill="var(--text-muted)">FrontierVEP</text>
+
+                            <text x="24" y="262" font-size="10" fill="var(--text-muted)">점수는 모델 카드의 다섯 가지 평가 표 그대로다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식. 막대 높이는 0~100점 척도이며, 수치는 모델 카드의 벤치마크 표와 같다
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 점수들은 모두 생각하기 기능을 끈 상태에서 나왔다. 대화 서식 자체는 생각하기를 켤 수 있게 되어 있지만, 카본-X는 끈 상태로 후속 학습을 받았고 평가도 그 상태로 이루어졌다고 모델 카드가 밝힌다. 그러니 그대로 두기를 권한다는 문장까지 붙어 있다. 켜고 측정하면 점수가 어떻게 되는지는 공개된 자리에 없다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="limits" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">묶고 나면 안쪽은 흐릿하다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델 카드의 한계 항목은 짧지 않다. 먼저 임상에 쓸 수 있게 검증된 모델이 아니라고 못 박는다. 의료 판단에 쓰지 말라는 문장이 따로 붙어 있고, 유전 데이터가 민감하다는 경고와 어디에 올려 돌리느냐에 따라 입출력이 다르게 다뤄질 수 있다는 주의도 함께 적혀 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기술적인 약점으로 카드가 꼽은 것은 네 가지다. 정확한 서열 조작을 맡기면 염기 개수를 잘못 세거나 좌표를 혼동하거나 엉뚱한 자리를 고치는데, 특히 긴 서열에서 위치를 짚을 때 그렇다고 한다. 정보가 모자란 질문을 받으면 서열의 정체나 기능을 지어내기도 한다. 작업별 편차도 크다. 스플라이스 자리와 히스톤 표지를 묻는 문제는 각각 29.8%와 34.6%로 낮고, 짧은 DNA 연습 문제나 교과서 수준 생물학도 변이 효과 예측만큼 믿을 만하지 않다. 마지막으로 긴 서열을 만들어 내라고 하면 품질이 떨어진다. 이 모델은 있는 서열을 읽고 설명하도록 만들어졌지 새 서열을 설계하도록 만들어지지 않았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        길이에 관한 단서도 적혀 있다. 중간 학습은 8,192 토큰짜리 서열로 했고 후속 학습 예시는 1만 6천 토큰보다 짧았다. 모델이 받아들이는 최대 길이는 40,960 토큰이지만 학습에서 본 것보다 훨씬 긴 입력은 평가해 보지 않았다고 한다. 받아 주는 길이와 검증된 길이가 다르다는 말이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        쓰는 법을 안내하는 대목에는 주문이 하나 더 있다. 서열과 질문을 한 메시지에 같이 넣으라는 것, 그리고 이미 알고 있는 맥락이 있으면 빠뜨리지 말고 함께 적으라는 것이다. 모델 카드가 예로 든 맥락은 어느 유전자인지, 어느 가닥인지, 좌표가 어디인지, 주석이 붙어 있는지다. 서열만 던져 놓고 알아서 읽으라고 하지 말라는 쪽에 가깝다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            여기부터는 이 글의 해석이다. 카드가 꼽은 약점 가운데 염기 개수 세기, 좌표 혼동, 스플라이스 자리 같은 항목은 공통점이 있다. 전부 염기 한 개 단위의 정확한 위치를 요구하는 일이다. 반대로 카본-X가 앞선 항목들은 구간의 성질을 묻는 쪽이었다. 여섯 개를 한 글자로 묶어 버린 모델에게 "이 묶음 안에서 몇 번째 자리"를 되묻는 것은 묶기 전으로 돌아가라는 요구에 가깝다. 좌표와 주석을 질문에 함께 적어 달라는 안내도 같은 자리에서 읽힌다. 묶음 안쪽에서 흐려진 위치 정보를 쓰는 사람이 말로 채워 넣어 달라는 부탁인 셈이다. 다만 모델 카드가 이 약점의 원인을 토크나이저로 돌리지는 않는다는 점은 분명히 해 둔다. 카드는 약점을 적었을 뿐이고, 설계와 연결 짓는 것은 이 글의 읽기다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 이 공개를 주목하는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        카본-X에서 우리가 눈여겨본 것은 유전체 점수가 아니다. 모델을 만들기 전에 데이터를 어떤 꼴로 다듬었는지가 문서로 남아 있고, 그래서 그 선택을 바깥에서 따져 볼 수 있다는 점이다. 이런 사례는 드물다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>자르는 단위를 정하는 일이 곧 데이터 설계다</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AI-Ready Data를 말할 때 우리는 보통 값의 상태를 먼저 본다. 빠진 칸이 있는지, 라벨이 맞는지, 출처가 남아 있는지. 카본-X가 보태는 것은 그 앞의 질문이다. 이 데이터를 모델에게 넘길 때 어느 크기로 잘라서 넘기는가. 센서 기록을 1초 단위로 자를지 10초 단위로 자를지, 로그를 요청 하나씩 자를지 세션 단위로 자를지는 전처리 담당자가 별생각 없이 정하고 넘어가기 쉬운 항목이다. 그런데 그 선택이 모델이 알아볼 수 있는 패턴의 하한을 정한다. 1초보다 짧은 사건은 1초 단위로 자른 데이터에서 영영 보이지 않는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>구성비를 적어 두면 바깥에서 검산할 수 있다</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        3절의 표가 왜 드문지는 반대 경우를 떠올려 보면 분명해진다. "공개 유전체와 생물학 문헌을 폭넓게 학습했다"고만 적힌 모델에 대해서는 어떤 질문도 던질 수 없다. 식물이 3.1%뿐이라는 사실이 적혀 있어야 "그러면 식물 서열에는 약하겠다"는 예상을 세우고 확인해 볼 수 있다. 사내에서 학습 데이터를 모을 때도 같다. 어디서 얼마나 가져왔는지를 비율로 남겨 두면, 나중에 모델이 특정 구간에서 이상하게 굴 때 데이터 쪽을 먼저 짚어 볼 수 있다. 그 기록이 없으면 원인을 찾는 일이 처음부터 시작된다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>압축의 대가는 나중에 읽는 쪽이 치른다</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여섯 개를 하나로 묶으면 같은 창에 여섯 배를 담을 수 있다. 공짜처럼 보이지만 공짜가 아니다. 묶음 안쪽의 자리 정보는 흐려지고, 한 글자의 결손이 여섯 글자를 가린다. 전처리에서 데이터를 요약하거나 모아 담을 때 같은 거래가 일어난다. 분 단위 값을 시간 단위 평균으로 바꾸면 저장 비용과 학습 시간은 줄지만, 분 단위에서만 보이던 튀는 값은 사라진다. 요약을 하지 말자는 말이 아니라, 무엇을 버리기로 했는지를 알고 하자는 말이다. 카본-X가 좋은 사례인 이유는 그 거래의 양쪽이 같은 문서 안에 적혀 있기 때문이다. 창이 여섯 배로 길어졌다는 이득과, 정확한 좌표를 못 짚는다는 한계가 나란히 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 종류의 선택을 다른 생물 데이터에서도 본 적이 있다. 스탠퍼드의 <a href="/blog/scvision-single-cell-foundation-model/ko/" class="text-orange-500 hover:text-orange-400 underline">scVision</a>은 세포의 유전자 발현값을 104×104 이미지로 그려 비전 모델에 먹였고, 미세조정 없이 유전자를 토큰으로 다루는 모델들을 앞질렀다. 같은 세포 데이터를 표로 둘지 그림으로 바꿀지가 결과를 갈랐다. 반대편에는 자르는 단위가 아니라 들어온 값의 상태가 발목을 잡은 사례가 있다. <a href="/blog/genebench-pro-ai-biology-judgment/ko/" class="text-orange-500 hover:text-orange-400 underline">GeneBench Pro</a>에서는 최상위 모델이 31.5%에 멈췄는데, 지식이 모자라서가 아니라 노이즈가 섞인 유전체 데이터 앞에서 판단이 무너졌기 때문이었다. 어느 단위로 자를지 정하는 쪽과 들어온 값을 믿을지 가리는 쪽은, 둘 다 모델에 손대기 전에 끝나 있어야 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주셔서 감사하다. 이 글이 인용한 수치와 한계 서술은 <a href="https://huggingface.co/HuggingFaceBio/Carbon-X" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">허깅페이스 카본-X 모델 카드</a>에서, 공개 경위와 비용 비교는 <a href="https://www.aitimes.com/news/articleView.html?idxno=216683" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">AI타임스</a> 10월 26일 보도에서 확인할 수 있다. 여러분의 데이터는 모델에게 넘어가기 전에 어느 단위로 잘리고 있는가. 그 단위를 누가 정했고 어디에 적어 두었는지 이야기를 나눠 주시면 좋겠다.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Hugging Face, Zhongguancun Academy, Telethon Institute of Genetics and Medicine, &amp; University of Naples Federico II. (2026). "<a href="https://huggingface.co/HuggingFaceBio/Carbon-X" target="_blank" rel="noopener">Carbon-X</a>." Hugging Face Model Card. 2·3·4·5절 인용 — 토크나이저 구성, 학습 데이터 구성비, 벤치마크 점수, 한계 서술.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">AI타임스. (2026). "<a href="https://www.aitimes.com/news/articleView.html?idxno=216683" target="_blank" rel="noopener">허깅페이스, DNA 읽고 질문에 답하는 '카본-X' 공개…유전자 분석 비용 낮춘다</a>." AI타임스, 2026-10-26. 1절 인용 — 공개 날짜, 참여 기관 한국어 표기, 허깅페이스 설명, 비용 비교.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261027"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-10-26T20:11:07.755Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-10-26T20:26:14.313Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1793045467755-tyb7tb",
+                "version": "0.1.0",
+                "sha": "052a2a95afa30d7970808c86a8f2efabf743c560",
+                "builtAt": "2026-10-24T13:53:43.526Z"
+              },
+              "recordedAt": "2026-10-26T21:41:46.947Z"
+            },
+            mainTitle: "DNA를 읽는 AI 카본-X, 여섯 글자씩 묶어도 될까?",
+            subtitle: "허깅페이스가 유전자 변이가 해로운지 가려내는 카본-X를 누구나 내려받게 공개했다. 시험 다섯 가지 평균은 66.7%다",
+            pageTitle: "카본-X란? — 허깅페이스 DNA 언어모델의 토크나이저 설계와 벤치마크 분석 | 페블러스",
+            category: "tech",
+            publishDate: "2026-10-27",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/carbon-x-dna-tokenizer-design/ko/",
+            tags: ["카본-X", "허깅페이스", "DNA 언어모델", "토크나이저", "유전체", "AI-Ready Data", "오픈소스 AI", "큐원3-14B"],
+            faqs: [
+                {
+                    question: "카본-X는 무엇을 하는 모델인가?",
+                    answer: "DNA 염기서열과 사람 말을 한 모델에서 같이 다루는 148억 매개변수짜리 언어 모델이다. 어떤 돌연변이가 해로운지 아닌지를 예측하고, 유전자 활동을 조절하는 구간을 찾아내고, 서열을 보고 어느 생물군의 것인지 분류하고, 다음에 올 염기를 맞히고, 그렇게 판단한 근거를 문장으로 설명한다."
+                },
+                {
+                    question: "누가 언제 공개했나?",
+                    answer: "허깅페이스가 중관춘학원(中关村学院), 이탈리아 텔레톤 유전의학연구소, 나폴리 페데리코 2세 대학교와 함께 만들어 2026년 10월 23일 공개했다. 라이선스는 아파치 2.0이라 상업적으로 쓰거나 고쳐서 다시 내놓는 일이 허용된다."
+                },
+                {
+                    question: "'염기 여섯 개를 토큰 하나로 묶는다'는 말이 무슨 뜻인가?",
+                    answer: "언어 모델은 글을 미리 정해 둔 덩어리 단위로 끊어 읽는다. 카본-X는 DNA 서열을 앞에서부터 여섯 개씩 겹치지 않게 끊고, 그 묶음 하나를 토큰 하나로 쓴다. 어디까지가 서열인지는 토크나이저가 알아서 가린다. A·C·G·T만으로 이어진 자리가 여섯 글자 이상 나오면 그 구간을 DNA로 보고 앞뒤에 표시를 둘러 끊는다. 염기 글자가 A·C·G·T 넷뿐이라 여섯 자리로 만들 수 있는 조합은 4,096가지이고, 모델은 이 4,096가지에 전부 번호를 붙여 뒀다. 길이가 6의 배수로 떨어지지 않을 때 쓰는 꼬리 토큰 1,364개와 구간 표시를 더해 DNA 전용 토큰은 5,515개다."
+                },
+                {
+                    question: "왜 하필 여섯 개인가?",
+                    answer: "모델 카드에 이유가 적혀 있지 않다. 여섯으로 묶는다는 사실과 그 결과로 나온 숫자들은 자세히 적었지만, 넷이나 여덟이 아니라 여섯을 고른 근거는 공개된 문서에 없다."
+                },
+                {
+                    question: "학습 데이터는 무엇으로 이루어져 있나?",
+                    answer: "중간 학습에 쓴 3,020억 토큰 가운데 원본 DNA가 55%, 영어 글이 20%, 생물학 문헌이 15%, 지시문이 10%다. 원본 DNA 안쪽은 진핵생물 유전체 38.5%, mRNA 8.8%, 원핵생물 유전체 5.5%, 주석 붙은 mRNA 2.2%로 나뉜다. 비율이 백분율로 전부 적혀 있어서 더해 보면 앞뒤가 맞는지 확인할 수 있다."
+                },
+                {
+                    question: "성능은 어느 정도인가?",
+                    answer: "다섯 가지 시험 평균이 66.7%로, 바탕이 된 큐원3-14B보다 27포인트 높다. 같은 표에서 가장 높은 평균은 GPT-6.1 Sol의 67.5%다. 다섯 가운데 BioReason Coding(74.9 대 71.0)과 NextBase(39.4 대 32.9) 둘에서 앞섰고, 복합 변이 효과·DNA 이해·단일 염기 변이 효과 셋에서는 뒤졌다. 모든 점수는 생각하기 기능을 끈 상태에서 측정됐다."
+                },
+                {
+                    question: "모델 카드가 밝힌 한계는 무엇인가?",
+                    answer: "임상에서 검증되지 않았고 의료 판단에 써서는 안 된다는 점이 먼저 적혀 있다. 기술적으로는 염기 개수를 잘못 세거나 좌표를 혼동할 수 있고, 정보가 모자란 질문에는 서열의 정체를 지어낼 수 있으며, 스플라이스 자리(29.8%)와 히스톤 표지(34.6%) 문제에 약하고, 긴 서열을 새로 만들어 내는 일은 품질이 떨어진다. 중간 학습은 8,192 토큰짜리 서열로 했고 그보다 훨씬 긴 입력은 평가해 보지 않았다."
+                },
+                {
+                    question: "유전자 분석 비용이 실제로 얼마나 줄어드나?",
+                    answer: "공개 데이터베이스 클린바에 쌓인 '의미를 모르는 변이' 240만 건을 전부 분석한다고 가정할 때, 카본-X로는 약 300달러가 든다는 것이 모델 카드의 추정이다. 같은 일을 비교 대상 상용 모델들에 맡기면 3만 2천 달러에서 400만 달러가 든다."
+                },
+                {
+                    question: "이 모델을 직접 돌리려면 무엇이 필요한가?",
+                    answer: "bfloat16 정밀도로 올리면 80GB짜리 GPU 한 장에 가중치가 들어간다고 모델 카드가 밝힌다. 민감하거나 아직 발표하지 않은 서열을 바깥에 올리지 않고 자기 장비 안에서 다룰 수 있게 하려는 것이 공개의 이유로 제시된 대목이다."
+                },
+                {
+                    question: "데이터를 다루는 쪽에서 이 사례에서 가져갈 것은 무엇인가?",
+                    answer: "세 가지다. 첫째, 데이터를 모델에 넘기기 전에 어느 크기로 자를지 정하는 일이 그 자체로 설계 결정이다. 자른 단위보다 작은 사건은 모델에게 영영 보이지 않는다. 둘째, 학습 데이터를 어디서 얼마나 가져왔는지 비율로 남겨 두면 나중에 모델이 특정 구간에서 이상하게 굴 때 데이터 쪽을 먼저 짚어 볼 수 있다. 셋째, 묶거나 요약해서 얻는 이득에는 반드시 잃는 것이 따라붙으므로, 무엇을 버리기로 했는지를 함께 기록해 둔다."
+                }
+            ]
+        });
+    </script>
+    <script src="/scripts/citation-download.js?v=20261027" defer></script>
+</body>
+
+</html>
