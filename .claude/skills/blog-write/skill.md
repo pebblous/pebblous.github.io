@@ -162,7 +162,7 @@ PebblousPage.init({
 <p class="text-sm themeable-muted">2026.03 · (주)페블러스 데이터 커뮤니케이션팀</p>
 <p class="text-sm themeable-muted mt-1">읽는 시간: ~10분 · <a href="../en/" class="text-orange-400 hover:text-orange-300 transition-colors">English</a></p>
 
-<!-- Executive Summary (hero 직후, 섹션 1 이전) -->
+<!-- Executive Summary (hero 직후, 섹션 1 이전) — 첫 문장은 제목처럼 무슨 소식인지부터(날짜·장소 디테일·"이 글은 ~을 읽는다" 금지), 중국 고유명사는 간체 병기, FAQ 도 해라체: docs/ko-style-standard.md §4-1·§4-3·§4-4 -->
 <section id="executive-summary" class="mb-16 fade-in-card">
   <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
   <div class="key-insight">
