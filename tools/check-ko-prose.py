@@ -8,7 +8,7 @@
     python3 tools/check-ko-prose.py <파일…> --light-verbs   # 경동사 정리 (요청 시)
     python3 tools/check-ko-prose.py <파일…> --json          # 기계 판독용
 
-설계 근거: docs/ko-prose-checker-v5.md · 종결체(R1): docs/ko-style-standard.md §4-1
+설계 근거: docs/ko-prose-checker-v5.md · 종결체(R1·R2): docs/ko-style-standard.md §4-1 · M1·M2·T13: 같은 표준(2026-10-25)
 """
 
 import argparse
@@ -108,6 +108,8 @@ CHECKS = [
     ("V2", "광고체", "S2", r"(혁신적|획기적|게임 체인저)", 0.0),
     ("V3", "AI 접속부사", "S2",
      r"(흥미롭게도|주목할 만한(?! AI 모델)|결론적으로|이러한 맥락에서)", 0.0),
+    # T13 부정 대조 — 2026-10-25 실측(사본 KO 893편) p75 = 14.6. "A가 아니라 B" 단정이 문단마다 반복되는 버릇(10-23 형님 지적한 글들).
+    ("T13", "부정 대조 반복", "S2", r"(?:이|가) 아니라|아니다\.", 14.6),
 ]
 
 # ⛔ 의도적으로 뺀 것 — 넣으면 사람 글을 AI 글로 오판한다
@@ -227,6 +229,82 @@ def check_register(text, example_limit=3):
     }
 
 
+# ──────────────────────────────────────────────────────────────────
+# M1·M2·R2 — 2026-10-23~24 형님 결정(초록 첫 문장·메타 '읽는다' 금지)과 10-24 발견(FAQ 종결체 구멍)
+# 정본: docs/ko-style-standard.md · 실측: 사본 KO 893편(2026-10-25) M1 138편 · M2 254편 · R2 610편
+# 판정은 1건 이상이면 걸림. 모두 인용(따옴표 안)은 뺀다.
+# ──────────────────────────────────────────────────────────────────
+
+# M1 — 글쓴이가 주어인 '읽는다'. 저자·연구진의 해석("논문은 이를 ~로 읽는다")은 표지가 없어 걸리지 않는다.
+_RX_META_SUBJECT = (r"(?:이 글(?:은|이)|이 리포트는|이 보고서는|여기서부터는|여기부터는|지금부터는|아래에서"
+                    r"|이 절(?:은|에서)|\d절(?:은|과|에서)|우리는|데이터를 다루는 (?:쪽|눈)|해석으로)")
+_RX_META_READS = re.compile(_RX_META_SUBJECT + r"[^.?!\n]{0,160}(?:읽는다|읽어 본다|읽어 보자|읽어 보려 한다)[.]")
+
+
+def check_meta_reads(main_text):
+    hits = [m.group(0).strip()[-120:] for m in _RX_META_READS.finditer(main_text)]
+    return {"code": "M1", "name": "메타 '읽는다'", "severity": "S2", "count": len(hits),
+            "in_quote": 0, "flagged": len(hits) > 0, "examples": hits[:3]}
+
+
+# M2 — 초록(Executive Summary) 첫 문장이 날짜나 "이 글은"으로 시작. 장소 리드는 코드로 못 잡는다(스킬 규칙·사람 판정).
+_RX_LEAD_DATE = re.compile(r"^\s*(?:\d{4}년\s*)?\d{1,2}월\s*\d{1,2}일|^\s*이 (?:글은|리포트는|보고서는)")
+
+
+def executive_summary_first_sentence(raw):
+    m = re.search(r'id="executive-summary"[^>]*>.*?<p[^>]*>(.*?)</p>', raw, flags=re.DOTALL | re.IGNORECASE)
+    if m:
+        para = html.unescape(re.sub(r"<[^>]+>", " ", m.group(1)))
+    else:  # Markdown 원고(index.md)
+        m = re.search(r"^#+\s*Executive Summary\s*\n+(?:>\s*\[!callout\]\s*\n)?>?\s*(.+)", raw, flags=re.MULTILINE)
+        if not m:
+            return None
+        para = m.group(1)
+    para = re.sub(r"\s+", " ", para).strip()
+    return re.split(r"(?<=[.?!])\s", para)[0] if para else None
+
+
+def check_lead(raw):
+    first = executive_summary_first_sentence(raw)
+    hit = bool(first and _RX_LEAD_DATE.search(first))
+    return {"code": "M2", "name": "초록 첫 문장 리드", "severity": "S2", "count": int(hit), "in_quote": 0,
+            "flagged": hit, "has_summary": first is not None, "examples": [first[:120]] if hit else []}
+
+
+# R2 — FAQ·목차·도식 글자의 종결체. R1 은 <main> 본문만 재서 FAQ(PebblousPage.init faqs — 화면에 보인다)·
+# <nav> 목차·<svg><text> 를 놓쳤다(10-24 8월 글 3편에서 FAQ 합쇼체 29·38문장 발견).
+_RX_R2_HAPSYO = re.compile(r"(?<!아)니다[.!?]|니까\?")
+_RX_R2_HAEYO = re.compile(r"(?:해요|예요|에요|죠|네요|거예요)[.!?]|[가나까]요\?")
+
+
+def check_aux_register(raw):
+    parts = []
+    # 키는 따옴표 없이(PebblousPage.init) 또는 있이(json.dumps — scripts/generate-qa-post.py) 쓰인다
+    parts += [("faq", q) for q in re.findall(r'"?(?:question|answer)"?\s*:\s*"((?:[^"\\]|\\.)*)"', raw)]
+    # <nav> 가 여럿일 수 있다(빵부스러기 뒤에 목차 — qa-post 템플릿). 전부 본다
+    for nav in re.findall(r"<nav[^>]*>(.*?)</nav>", raw, flags=re.DOTALL | re.IGNORECASE):
+        parts += [("toc", t) for t in re.findall(r">([^<>]+)<", nav) if t.strip()]
+    parts += [("svg", t) for t in re.findall(r"<text[^>]*>([^<]+)</text>", raw)]
+    hapsyo = haeyo = 0
+    by_zone = Counter()
+    examples = []
+    for zone, t in parts:
+        t = mask_quotes(html.unescape(t).replace('\\"', '"'))
+        # 목차·도식 글자는 마침표 없이 끝나기도 한다 — 끝에 마침표를 붙여 같은 자로 잰다
+        if zone != "faq" and re.search(r"[가-힣]$", t.strip()):
+            t = t.strip() + "."
+        h, y = len(_RX_R2_HAPSYO.findall(t)), len(_RX_R2_HAEYO.findall(t))
+        if h or y:
+            by_zone[zone] += h + y
+            if len(examples) < 3:
+                examples.append(f"[{zone}] " + t.strip()[:100])
+        hapsyo += h
+        haeyo += y
+    n = hapsyo + haeyo
+    return {"code": "R2", "name": "FAQ·목차·도식 종결체", "severity": "S2", "count": n, "in_quote": 0,
+            "hapsyo": hapsyo, "haeyo": haeyo, "by_zone": dict(by_zone), "flagged": n > 0, "examples": examples}
+
+
 def run_checks(text, detect):
     """빈도의 분모는 본문 전체(text), 검출은 인용을 지운 쪽(detect)에서 한다."""
     chars = len(text)
@@ -292,7 +370,7 @@ def find_light_verbs(text):
 # 출력
 # ─────────────────────────────────────────────────────────────────────────────
 
-def report(path, text, rows, endings, lv, register=None):
+def report(path, text, rows, endings, lv, register=None, extra=None):
     chars = len(text)
     print(f"\n{'=' * 72}\n{path}\n본문 {chars:,}자\n{'=' * 72}")
     print(f"{'코드':<6} {'등급':<4} {'항목':<18} {'건수':>5} {'1만 자당 빈도':>14}  판정")
@@ -317,6 +395,14 @@ def report(path, text, rows, endings, lv, register=None):
             for s in r["examples"]:
                 print(f"     예: {s}")
         rows = rows + [r]
+
+    for r in (extra or []):
+        mark = "⚠️  위반" if r["flagged"] else "   정상"
+        detail = f"합쇼 {r['hapsyo']} · 해요 {r['haeyo']} {r.get('by_zone', {})}" if r["code"] == "R2" else f"{r['count']}건"
+        print(f"{r['code']:<4} {r['severity']:<4} {r['name']:<18} {detail}  {mark}")
+        for ex in r.get("examples", [])[:3] if r["flagged"] else []:
+            print(f"     예: {ex}")
+    rows = rows + list(extra or [])
 
     flagged = [r for r in rows if r["flagged"]]
     s2 = [r for r in flagged if r["severity"] == "S2"]
@@ -354,11 +440,13 @@ def main():
         main_text, had_main = extract_main_for_register(path)
         register = check_register(main_text)
         register["had_main"] = had_main
+        raw = open(path, encoding="utf-8").read()
+        extra = [check_meta_reads(main_text), check_lead(raw), check_aux_register(raw)]
         if args.json:
-            out.append({"path": path, "chars": len(text), "checks": rows + [register],
+            out.append({"path": path, "chars": len(text), "checks": rows + [register] + extra,
                         "endings": endings, "register": register, "light_verbs": lv})
         else:
-            report(path, text, rows, endings, lv, register)
+            report(path, text, rows, endings, lv, register, extra)
 
     if args.json:
         print(json.dumps(out, ensure_ascii=False, indent=2))
