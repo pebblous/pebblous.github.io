@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>소프트맥스 정밀도 절벽 분석 — 표준 구현의 수치 결함 둘, 누가 걸리나 | 페블러스</title>
+    <meta name="description" content="구글 딥마인드 연구진이 소프트맥스와 교차 엔트로피의 표준 구현에서 수치 결함 둘을 찾았다. 모델이 정답을 확신해 로짓 마진이 bf16에서 5.5, fp32에서 16.6을 넘으면 손실도 정답 기울기도 0.0이 되고, 기울기 합이 깨진다.">
+    <meta name="keywords" content="소프트맥스, softmax, 교차 엔트로피, cross-entropy, 소프트맥스 붕괴, 정밀도 절벽, 부동소수점, bf16, PyTorch, JAX, 구글 딥마인드, 지식 증류, 그로킹, 성질 기반 테스트, 데이터 품질">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="소프트맥스">
+    <meta name="pb-search-keyword-forms" content="소프트맥스|softmax|log-softmax|로그 소프트맥스">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/softmax-precision-cliff/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/softmax-precision-cliff/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/softmax-precision-cliff/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/softmax-precision-cliff/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="소프트맥스, 교과서와 파이토치가 같은 자리에서 틀린다">
+    <meta property="og:description" content="모델이 정답을 아주 확신하는 순간 손실도 정답 기울기도 0.0이 된다. 구글 딥마인드 연구진이 소프트맥스와 교차 엔트로피의 표준 구현에서 찾은 결함 둘.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/softmax-precision-cliff/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/softmax-precision-cliff/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="소프트맥스, 교과서와 파이토치가 같은 자리에서 틀린다">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="소프트맥스, 교과서와 파이토치가 같은 자리에서 틀린다">
+    <meta name="twitter:description" content="모델이 정답을 아주 확신하는 순간 손실도 정답 기울기도 0.0이 된다. 구글 딥마인드 연구진이 소프트맥스와 교차 엔트로피의 표준 구현에서 찾은 결함 둘.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/softmax-precision-cliff/ko/image/index.png">
+    <meta name="twitter:image:alt" content="소프트맥스, 교과서와 파이토치가 같은 자리에서 틀린다">
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="소프트맥스, 교과서와 파이토치가 같은 자리에서 틀린다">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/10/29">
+    <meta name="citation_online_date" content="2026/10/29">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정: theme-variables -> tailwind-build -> common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261029">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261029">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261029">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* 도식 상자·캡션·원문 인용 — 공통 컴포넌트가 없어 이 리포트 로컬로만 정의 */
+        .fig-box {
+            background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+        .fig-caption {
+            font-size: 0.85rem;
+            color: var(--text-muted, #808080);
+            line-height: 1.7;
+            margin-top: 0.5rem;
+        }
+        .comparison-table td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .comparison-table th.num { text-align: right; }
+        .comparison-table .hit { color: #F86825; font-weight: 700; }
+        .src-quote {
+            border-left: 3px solid #BDBDBD;
+            padding: 0.25rem 0 0.25rem 1rem;
+            margin: 1.25rem 0;
+            color: var(--text-secondary, #475569);
+            line-height: 2.0;
+            font-size: 1rem;
+        }
+        .src-quote .orig {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted, #808080);
+            line-height: 1.8;
+        }
+        .formula-line {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 1rem;
+            text-align: center;
+            padding: 0.75rem 0.5rem;
+            margin: 1.25rem 0;
+            background: var(--bg-secondary, #f8fafc);
+            border-radius: 0.5rem;
+            color: var(--text-primary, #171719);
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 손실이 가장 좋은 값을 가리키며 멈춘다</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 절벽의 높이는 유효 비트가 정한다</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 마진은 절벽까지 자라는가</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 교사와 똑같은 학생이 교사에게서 밀려난다</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 고침의 고침의 고침</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 그래서 지금 누가 노출돼 있나</a></li>
+                    <li><a href="#pebblous-perspective" class="block pl-4 themeable-toc-link transition-colors duration-200">페블러스 관심의 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            딥러닝을 배우면 가장 먼저 만나는 수식인 소프트맥스(softmax)와 교차 엔트로피의 표준 구현에 수치 결함이 둘 있다는 논문이 나왔다. 구글 딥마인드 연구진 세 명이 2026년 10월 22일 arXiv에 올린 아홉 쪽짜리 글이다. 모델이 정답을 아주 확신하는 순간, 정답 쪽 기울기만 0.0으로 반올림되고 나머지는 양수로 남는다. 더해서 0이 되어야 할 기울기 합이 깨지는 것이다. 같은 순간 손실도 0.0이라, 계기판은 가장 좋은 값을 가리킨다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            걸리는 조건은 두 수가 만나는 자리다. 모델이 정답을 얼마나 확신해야 결함이 시작되는지는 부동소수점의 유효 비트가 정하고, 그 확신이 어디까지 자라는지는 최적화기 Adam의 ε이 정한다. 널리 쓰이는 기본값 아래서 두 수는 아슬아슬하게 교차한다. 그리고 이 결함이 만드는 손실 스파이크에는 네 해 전에 이미 이름이 붙어 있었다. 원인은 모른 채였다. 2022년에 붙은 그 이름이 새총(slingshot) 현상이다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            여기까지가 논문이 보인 <strong>사실</strong>이고, 아래는 이 글의 <strong>해석</strong>이다. 논문은 피해를 모듈러 산술 장난감 과제에서만 입증했고, 스스로 결론에 "대규모 학습에서는 흔치 않다"고 적었다. 그런데 지금 대부분이 무사한 이유는 이 층이 검증돼서가 아니라 프레임워크 기본값이 손실 계산을 fp32로 올려 주기 때문이다. 속도를 얻으려 그 기본값 밖으로 나가는 경로가 이번 주에 처음 이름으로 지목됐다. 저정밀 손실, 융합 커널, 컴파일 실행이 그것이다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">5.5</p>
+                            <p class="text-sm themeable-text-secondary mt-1">bf16의 정밀도 절벽</p>
+                            <p class="text-xs themeable-muted mt-1">로짓 마진이 이 선을 넘으면 결함이 시작된다. 정답 확률로는 99.6%로, 학습 후반에 흔한 확신이다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">18.4 vs 16.6</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Adam 기본값의 균형 마진과 fp32 절벽</p>
+                            <p class="text-xs themeable-muted mt-1">ε=10⁻⁸이 데려가는 마진이 절벽 바로 위다. ε을 한 자리만 키웠으면 넘지 않았다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">61% → 23%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">가중치 감쇠 없는 과제의 테스트 정확도</p>
+                            <p class="text-xs themeable-muted mt-1">a²+b² mod 97, ε=10⁻¹⁶에서 스텝 1250 근처. 고친 구현은 같은 자리에서 85%까지 간다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.000e+00</p>
+                            <p class="text-sm themeable-text-secondary mt-1">어휘 32,000·마진 30에서 fp32가 내놓는 정답 기울기</p>
+                            <p class="text-xs themeable-muted mt-1">fp64로 계산한 참값은 2.994e-09다. 실제 학습 스택에 올라온 제보에서 나온 수다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">손실이 가장 좋은 값을 가리키며 멈춘다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문 제목은 <strong>A Fix for Softmax and Cross-Entropy</strong>이고, 저자는 조너선 배런(Jonathan T. Barron)·댄 그나나프라가삼(Dan Gnanapragasam)·미카엘 차넨(Michael Tschannen) 세 명이다. 표제면에 적힌 소속은 셋 다 구글 딥마인드다. 2026년 10월 22일에 1판이, 나흘 뒤인 26일에 2판이 올라왔다. 본문은 아홉 쪽이고 부록이 없다. 이 글의 수치는 그 2판을 기준으로 한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        먼저 공을 제자리에 돌려놓아야 한다. 이 논문이 다루는 결함은 둘인데, <strong>첫째는 이 논문이 찾은 것이 아니다.</strong> 논문 자신이 서론에서 그렇게 적는다.
+                    </p>
+                    <div class="src-quote">
+                        첫째 결함은 프리에토 외(2025)가 소프트맥스 붕괴라는 이름으로 밝혀낸 것이다.
+                        <span class="orig">"The first bug, identified by Prieto et al. (2025) as Softmax Collapse…"</span>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        프리에토 외의 논문은 2025년 1월 arXiv에 올라와 그해 ICLR에 실렸다. 이름을 붙인 쪽도, 원인을 지목한 쪽도 거기다. 이 논문이 새로 세운 것은 <strong>둘째 결함인 소프트맥스 상쇄</strong>(논문 표현으로 "which we will call")와, <strong>두 결함을 한꺼번에 고치는 구현</strong>이다. 첫째 결함에 대해 이 논문이 한 일은 재발견이 아니라 직접 고침이다. 이 구분을 지키지 않으면 네 해에 걸친 계보가 통째로 한 논문의 공으로 접혀 버린다. 계보는 5절에서 여섯 대목으로 편다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>확신이 어느 선을 넘으면 손실이 0.0이 된다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        분류 모델은 마지막 층에서 범주마다 점수 하나씩을 뱉는다. 그 점수를 <strong>로짓</strong>(logits)이라 부른다. 교차 엔트로피 손실은 정답 범주의 로짓이 나머지 로짓들보다 얼마나 큰지를 보는데, 그 "얼마나 큰지"를 한 수로 적은 것이 <strong>로짓 마진</strong>이다. 정답 로짓에서, 나머지 로짓들을 지수로 바꿔 더한 뒤 다시 로그를 취한 값을 뺀다.
+                    </p>
+                    <div class="formula-line">m = z<sub>t</sub> − log Σ<sub>j≠t</sub> e<sup>z<sub>j</sub></sup></div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 마진으로 손실을 다시 쓰면 아주 단순한 꼴이 된다. 손실은 1에 e<sup>−m</sup>을 더한 값의 로그다. 모델이 정답을 확신할수록 m이 커지고, e<sup>−m</sup>은 0에 가까워진다. 사람의 산수에서는 그래도 손실이 0보다 크다. 부동소수점에서는 다르다. e<sup>−m</sup>이 1에 견주어 충분히 작아지면 <strong>1 + e<sup>−m</sup>이 그냥 1.0으로 반올림되고</strong>, log(1) = 0이므로 손실이 정확히 0.0이 된다.
+                    </p>
+                    <div class="formula-line">손실 = log(1 + e<sup>−m</sup>) → log(1.0) = 0.0</div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        역방향도 같은 자리에서 무너진다. 정답 범주에 대한 기울기는 모델이 그 범주에 매긴 확률에서 1을 뺀 값인데, 그 확률 역시 1 ÷ (1 + e<sup>−m</sup>) 꼴이라 같은 반올림을 겪는다. 1.0 − 1 = 0.0. 즉 <strong>손실도 0.0, 정답 쪽 기울기도 0.0</strong>이다. 경고도, NaN도, 발산도 없다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 드는 예는 로짓 세 개짜리다. fp32에서 z = [9.0, −9.0, −9.0]을 넣고 첫 범주를 정답이라 하면, JAX와 optax의 표준 구현과 논문의 고친 구현이 아래처럼 갈린다.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>구현</th>
+                                <th class="num">정답 로그확률</th>
+                                <th class="num">손실</th>
+                                <th class="num">정답 기울기</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>표준 (<span class="inline-code">jax.nn</span>·<span class="inline-code">optax</span>)</td>
+                                <td class="num hit">0.0</td>
+                                <td class="num hit">0.0</td>
+                                <td class="num hit">0.0</td>
+                            </tr>
+                            <tr>
+                                <td>논문의 고친 구현</td>
+                                <td class="num">−3.046e-8</td>
+                                <td class="num">3.046e-8</td>
+                                <td class="num">−3.046e-8</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">조건은 fp32, z = [9.0, −9.0, −9.0], 정답은 첫 범주다. 같은 입력에서 표준 구현은 정답의 로그확률을 0.0으로, 고친 구현은 −3.046e-8로 적는다. 둘의 차이는 1억분의 3 남짓이지만, 그 차이가 학습 신호의 전부다.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.2</span>진짜 문제는 0이 된 것이 아니라 한쪽만 0이 된 것이다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 한 걸음을 더 가야 이 결함의 성질이 보인다. 0.0이 된 것은 <strong>정답 쪽 한 칸뿐</strong>이다. 위 예에서 나머지 두 칸의 기울기는 각각 1.523e-8로 멀쩡히 남아 있다. 교차 엔트로피의 기울기는 원래 전부 더하면 0이 되어야 한다. 정답 칸이 음수로 끌고 나머지 칸이 양수로 미는 힘이 정확히 맞물리기 때문이다. 그런데 한 칸만 0으로 반올림되면 그 균형이 깨진다. 논문 초록이 결과로 꼽는 것도 바로 그것이다.
+                    </p>
+                    <div class="src-quote">
+                        기울기가 더 이상 0으로 합해지지 않는다.
+                        <span class="orig">"…gradients that no longer sum to zero."</span>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        남은 양수들은 아주 작다. 1.523e-8은 그대로 두면 가중치를 거의 못 움직인다. 피해는 그다음에 생긴다. Adam 계열 최적화기는 기울기를 그 크기의 이동평균으로 나눠 쓰기 때문에, 작기만 하고 방향이 한쪽으로 쏠린 신호를 <strong>정상 크기의 갱신으로 증폭</strong>한다. 그래서 정답 쪽 제동이 사라진 상태에서 나머지 로짓만 계속 밀려 내려가고, 마진은 더 자라고, 손실 곡선에는 뒤에서 볼 스파이크가 찍힌다.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>기울기 소실과는 다른 현상이다.</strong> 기울기 소실은 층을 거슬러 올라가며 신호가 점점 작아지는 오래된 문제이고, 여기서 일어난 일은 참값이 이미 작은 상태에서 <strong>한 항만</strong> 0.0으로 반올림돼 합이 깨지는 것이다. 둘을 같은 말로 옮기면 독자가 전혀 다른 그림을 떠올린다. 이 글은 전자를 "기울기 소실", 후자를 "기울기 합이 깨진다"로만 적는다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 가지 안심되는 대목을 적어 둔다. 고친 구현이 내놓는 3.046e-8이라는 수는 세 곳에서 따로 나온다. 논문 본문, 파이토치 수정 PR의 설명문, 그리고 뒤에 나올 제3자의 포팅 저장소에서 같은 값이 찍힌다. 서로 다른 세 구현이 같은 조건에서 같은 수를 뱉는다는 것은, 적어도 무엇이 참값인지에 대해서는 이견이 없다는 뜻이다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">절벽의 높이는 유효 비트가 정한다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        1절의 반올림이 일어나는 지점에는 이름이 있다. 논문은 그 선을 <strong>정밀도 절벽</strong>(precision cliff)이라 부른다. 마진이 절벽을 넘으면 손실과 정답 기울기가 0.0으로 떨어진다. 기사에 따라 "임계 마진"이라 옮기기도 하는데, 그 말은 쓰지 않는 편이 낫다. 마진은 넘는 쪽이고 절벽은 선이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        절벽의 높이는 외워야 하는 상수가 아니다. 쓰는 숫자 형식 하나로 정해진다. 부동소수점은 수를 "유효 숫자 × 2의 거듭제곱" 꼴로 저장하는데, 유효 숫자에 몇 비트를 주느냐가 형식마다 다르다. 1에 아주 작은 수를 더할 때 그 작은 수가 유효 비트가 담을 수 있는 자리보다 아래로 내려가면 덧셈이 통째로 없던 일이 된다. 그 경계를 마진으로 환산하면 유효 비트 수에 ln2를 곱한 값이 된다.
+                    </p>
+                    <div class="formula-line">절벽 높이 = 유효 비트 수 × ln2</div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 한 줄은 후속 논문의 저자 마즈(Maaz)가 유도한 것이다. 넣어 보면 배런 연구진이 실측한 세 값과 맞는다. 마즈 본인의 표현으로는 "예측한 임계값들이 배런 외의 수치 실험과 들어맞는다"이다.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>형식</th>
+                                <th class="num">유효 비트</th>
+                                <th class="num">절벽 (논문 표기)</th>
+                                <th class="num">유도값</th>
+                                <th class="num">그때 정답 확률</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>bf16</td>
+                                <td class="num">8</td>
+                                <td class="num hit">5.5</td>
+                                <td class="num">5.545</td>
+                                <td class="num">0.9959</td>
+                            </tr>
+                            <tr>
+                                <td>fp32</td>
+                                <td class="num">24</td>
+                                <td class="num hit">16.6</td>
+                                <td class="num">16.636</td>
+                                <td class="num">1 − 6.2×10⁻⁸</td>
+                            </tr>
+                            <tr>
+                                <td>fp64</td>
+                                <td class="num">53</td>
+                                <td class="num hit">36.7</td>
+                                <td class="num">36.737</td>
+                                <td class="num">1 − 1.2×10⁻¹⁶</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">논문 그림 1 캡션의 세 값과, 유효 비트 × ln2로 얻은 유도값을 나란히 뒀다. 자릿수가 다른 것은 어긋남이 아니라 같은 양을 다르게 반올림한 것이다. 맨 오른쪽 칸은 절벽에서 모델이 정답에 매기고 있는 확률을 이 글이 다시 계산한 값이다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        오른쪽 끝 칸이 이 표에서 가장 많은 것을 말한다. bf16에서 절벽에 닿는 확신은 <strong>99.6%</strong>다. 모델이 정답에 99.6% 확률을 주는 일은 학습 후반에 흔하디흔하다. fp32로 올라가면 사정이 전혀 달라서, 정답 확률이 1에서 1억분의 6 남짓밖에 떨어져 있지 않아야 절벽에 닿는다. 유효 비트는 세 배로 늘었을 뿐인데 확신의 문턱은 6만 배 넘게 멀어진다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 가지 단서를 달아야 한다. 절벽의 정확한 위치는 소수점 아래 한 자리까지 고정돼 있지 않다. 어떤 반올림 모형을 쓰느냐에 따라 유도값이 반 칸쯤 움직이고, 합을 어떤 순서로 더하느냐에 따라 실측값도 흔들린다. 논문과 독립으로 넘파이에서 같은 실험을 돌려 본 한 개발자는 fp32 절벽을 16.0으로 측정했고, 입력을 바꿔 가며 다시 측정하니 값이 15.8에서 16.7 사이에 흩어졌다고 적었다. 절벽의 자리는 자연상수보다는 쓰는 사람의 합산 순서에 딸린 성질이라는 것이 그의 결론이다. 이 글이 기준으로 삼는 수는 논문이 실측한 <strong>16.6</strong> 하나이고, 그 둘레로 ln2 한 칸만큼의 흔들림이 있다고 읽으면 된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        흔들림에는 출처가 하나 더 있다. 마진이라는 말을 모두가 같은 뜻으로 쓰지 않는다. 이 글의 마진은 정답 로짓에서 나머지를 지수로 바꿔 더한 뒤 로그를 취한 값을 뺀 것이지만, 2026년 5월에 이 결함이 부동소수점의 결과임을 증명한 류 외의 논문은 나머지 가운데 <strong>최댓값 하나만</strong> 빼는 정의를 쓴다. 그 자로 재면 fp32의 임계값은 유효 비트에서 하나를 뺀 수에 ln2를 곱한 값이 되어 16에 가깝게 나온다. 16.6과 16은 어긋난 측정이 아니라 다른 자로 잰 같은 선이다. 그래서 이 글은 둘을 한 표에 세우지 않는다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        fp16은 이 표에 없다. 논문이 다루지 않았기 때문이다. bf16과 fp16은 둘 다 16비트지만 유효 비트가 8과 11로 달라 절벽도 다른 자리에 선다. 이 글도 논문이 재지 않은 값을 유도해 적지는 않는다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">마진은 절벽까지 자라는가</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        절벽의 높이를 알았으니 남은 물음은 하나다. 학습을 돌려 두면 마진이 실제로 거기까지 가는가. 가지 않으면 절벽은 그림 속의 선일 뿐이다. 그리고 마진이 어디서 멈추는지를 정하는 것은 손실 함수도 데이터도 아니고, <strong>최적화기 설정 한 칸</strong>이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Adam 계열 최적화기는 기울기를 그 크기의 이동평균으로 나눈다. 나눗셈이 0으로 터지지 않게 분모에 아주 작은 수를 더해 두는데, 그 수가 <strong>ε</strong>이고 기본값은 보통 10⁻⁸이다. 가중치 감쇠까지 켜 두면 로짓을 키우려는 힘과 가중치를 줄이려는 힘이 어느 지점에서 맞서 멈춘다. 논문 5절은 그 자리, 즉 균형 마진을 식 하나로 적는다. ε이 작을수록 마진은 더 멀리 간다.
+                    </p>
+                    <div class="formula-line">균형 마진 ≈ log(1 / ε)</div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기본값 10⁻⁸을 넣으면 18.4가 나온다. fp32의 절벽은 16.6이다. <strong>기본 설정으로 학습을 돌리면 마진은 절벽을 넘어가도록 되어 있다.</strong> 그것도 아슬아슬하게 넘는다. 논문이 같은 대목에 적어 둔 문장이 이 글에서 가장 서늘하다.
+                    </p>
+                    <div class="src-quote">
+                        ε ≥ 10⁻⁷이면 log(1/ε) ≤ 16.1로 fp32 절벽 16.6보다 작고, 표준 교차 엔트로피는 스파이크 없이 가라앉는다.
+                        <span class="orig">"…whereas for ϵ ≥ 10−7, log(1/ϵ) ≤ 16.1 &lt; c32 and standard cross-entropy settles without spiking."</span>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        ε을 한 자리만 키웠으면 아무 일도 일어나지 않았다는 뜻이다. 기본값을 고른 사람도, 그 기본값을 쓰는 사람도 이 교차를 알 길이 없었다. 두 수는 서로 다른 동네에서 왔다. 하나는 부동소수점 형식의 유효 비트에서, 다른 하나는 0으로 나누는 것을 막으려고 고른 관행값에서 온다. 그 둘이 같은 눈금 위에서 만난다는 것을 아무도 확인하지 않았을 뿐이다. 아래 그림이 그 눈금이다.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 700 250" width="100%" role="img" aria-label="로짓 마진 눈금 위에 정밀도 절벽과 Adam의 균형 마진을 함께 표시한 도식. 절벽은 bf16 5.5, fp32 16.6, fp64 36.7이고, 균형 마진은 ε=10의 마이너스 8제곱에서 18.4, 10의 마이너스 12제곱에서 27.6, 10의 마이너스 16제곱에서 36.8이다. fp32 절벽 16.6 바로 오른쪽에 기본값의 균형 마진 18.4가 있다.">
+                            <text x="60" y="22" font-size="12" fill="var(--text-muted, #808080)">위: 정밀도 절벽 (형식이 정한다)</text>
+                            <text x="60" y="243" font-size="12" fill="var(--text-muted, #808080)">아래: 균형 마진 (Adam의 ε이 정한다)</text>
+
+                            <!-- axis -->
+                            <line x1="60" y1="150" x2="670" y2="150" stroke="#BDBDBD" stroke-width="1"></line>
+                            <text x="60" y="168" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">0</text>
+                            <text x="210" y="168" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">10</text>
+                            <text x="360" y="168" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">20</text>
+                            <text x="510" y="168" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">30</text>
+                            <text x="660" y="168" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">40</text>
+                            <text x="600" y="186" font-size="11" fill="var(--text-muted, #808080)">로짓 마진</text>
+
+                            <!-- cliffs -->
+                            <line x1="143" y1="62" x2="143" y2="150" stroke="#F86825" stroke-width="2"></line>
+                            <text x="143" y="54" font-size="13" text-anchor="middle" fill="#F86825" font-weight="700">5.5</text>
+                            <text x="143" y="38" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">bf16</text>
+                            <line x1="309" y1="62" x2="309" y2="150" stroke="#F86825" stroke-width="2"></line>
+                            <text x="309" y="54" font-size="13" text-anchor="middle" fill="#F86825" font-weight="700">16.6</text>
+                            <text x="309" y="38" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">fp32</text>
+                            <line x1="611" y1="62" x2="611" y2="150" stroke="#F86825" stroke-width="2"></line>
+                            <text x="611" y="54" font-size="13" text-anchor="middle" fill="#F86825" font-weight="700">36.7</text>
+                            <text x="611" y="38" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">fp64</text>
+
+                            <!-- equilibrium margins -->
+                            <line x1="336" y1="150" x2="336" y2="208" stroke="#171719" stroke-width="2"></line>
+                            <circle cx="336" cy="150" r="4" fill="#171719"></circle>
+                            <text x="336" y="222" font-size="13" text-anchor="middle" fill="var(--text-primary, #171719)" font-weight="700">18.4</text>
+                            <text x="336" y="204" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">ε=10⁻⁸ (기본값)</text>
+                            <line x1="474" y1="150" x2="474" y2="190" stroke="#808080" stroke-width="2"></line>
+                            <circle cx="474" cy="150" r="4" fill="#808080"></circle>
+                            <text x="474" y="204" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">27.6</text>
+                            <text x="474" y="188" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">ε=10⁻¹²</text>
+                            <line x1="613" y1="150" x2="613" y2="190" stroke="#808080" stroke-width="2"></line>
+                            <circle cx="613" cy="150" r="4" fill="#808080"></circle>
+                            <text x="613" y="204" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">36.8</text>
+                            <text x="613" y="188" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">ε=10⁻¹⁶</text>
+
+                            <!-- gap annotation -->
+                            <line x1="309" y1="112" x2="336" y2="112" stroke="#F86825" stroke-width="1" stroke-dasharray="3 3"></line>
+                            <text x="348" y="116" font-size="11" fill="#F86825">기본값은 fp32 절벽 바로 바깥에 선다</text>
+                        </svg>
+                        <p class="fig-caption">논문 5절의 균형 마진 식과 그림 1의 절벽 값을 한 눈금에 올린 것이다. 위쪽 주황 선이 넘으면 안 되는 선이고, 아래쪽 검은 표시가 학습이 실제로 멈추는 자리다. bf16은 눈금의 왼쪽 끝에 있어 어느 ε으로도 피하기 어렵고, fp32는 기본값에서 1.8만큼 넘어선다. 맨 오른쪽에서 fp64 절벽 36.7과 ε=10⁻¹⁶의 균형 마진 36.8이 거의 겹치는데, 그만큼 작은 ε을 쓰는 경우는 드물다.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        bf16은 사정이 더 나쁘다. 절벽 5.5를 피하려면 ε을 0.004보다 크게 잡아야 하는데, 그 정도면 Adam의 분모를 바꿔 학습 자체를 다른 알고리즘으로 만드는 값이다. 실제로 논문 표 1에서 bf16 표준 교차 엔트로피의 최종 마진은 ε을 10⁻⁸에서 10⁻¹²로, 다시 10⁻¹⁶으로 내려도 <strong>5.1 · 5.6 · 5.8</strong>에 머문다. 세 설정에서 마진이 거의 움직이지 않는다는 것은, 마진이 ε이 데려가는 자리까지 가지 못하고 절벽에 붙어 버렸다는 뜻이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문 본문에는 없고 저자가 X에 올린 글에만 있는 설명이 하나 더 있다. 작은 ε이 위험하다는 업계의 속설이 사실은 이 결함 때문이었을 수 있다는 것이다. 가중치 감쇠와 Adam의 ε이 함께 로짓이 자랄 수 있는 한계를 정하는데, 기본값 10⁻⁸이 하필 fp32에서 결함이 시작되는 자리 바로 너머에 있다고 저자는 적었다. 이 문장은 논문이 아니라 저자의 글에 있으므로, 논문의 주장과는 등급을 갈라 읽는 편이 맞다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>네 해 동안 원인이 아니라 이름으로 불린 것</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        마진이 절벽을 넘은 뒤 학습 곡선에 무엇이 찍히는지는 이미 2022년부터 알려져 있었다. 틸락 외 여섯 명이 그해 6월 arXiv에 올린 논문이 그 현상에 <strong>새총(slingshot) 현상</strong>이라는 이름을 붙였다. 적응형 최적화기로 오래 학습하면 손실이 갑자기 튀었다가 돌아오는 일이 반복되고, 그 직후에 모델이 갑자기 일반화하는 그로킹이 따라오곤 한다는 관찰이었다. 당시 저자들은 원인을 찾지 못했다고 초록에 그대로 적었다.
+                    </p>
+                    <div class="src-quote">
+                        새총 현상은 우리가 아는 어떤 최적화 이론에서도 따라 나오지 않으며, 자세히 들여다보지 않으면 쉽게 지나칠 수 있다.
+                        <span class="orig">"…the Slingshot Mechanism does not follow from any known optimization theories that we are aware of, and can be easily overlooked without an in depth examination."</span>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 문장에 답이 붙기까지 두 해 일곱 달이 걸렸다. 프리에토 외가 2025년 1월에 원인을 소프트맥스 붕괴로 지목했고, 이번 논문 4절은 한 문장으로 둘을 묶는다. 새총 스파이크는 소프트맥스 붕괴의 직접적인 결과라는 것이다. 네 해 동안 사람들이 본 것은 결함이 아니라 결함의 그림자였고, 그 그림자에 이름이 먼저 붙었다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 그로킹 과제에서 표준 구현과 고친 구현을 나란히 돌린 결과가 아래 표다. 조건을 떼고 수치만 옮기면 과장이 되므로, 각 줄에 과제와 설정을 함께 적는다.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>과제와 설정</th>
+                                <th class="num">표준 교차 엔트로피</th>
+                                <th class="num">고친 교차 엔트로피</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>a+b mod 31 · 가중치 감쇠 있음(λ=1) · ε=10⁻⁸</td>
+                                <td class="num">94 ± 5%</td>
+                                <td class="num hit">100 ± 0%</td>
+                            </tr>
+                            <tr>
+                                <td>a²+b² mod 97 · 가중치 감쇠 없음(λ=0) · ε=10⁻¹⁶</td>
+                                <td class="num hit">61% → 23%</td>
+                                <td class="num">85%</td>
+                            </tr>
+                            <tr>
+                                <td>a³+b mod 97 · 같은 설정</td>
+                                <td class="num">60% → 21%</td>
+                                <td class="num">논문에 값 없음</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">전부 fp32다. 가운데 줄의 화살표는 스텝 1250 근처에서 마진이 fp32 절벽에 닿는 순간 테스트 정확도가 61%에서 23%로 떨어졌다는 뜻이다. 맨 아래 줄은 같은 설정의 다른 과제인데, 논문이 고친 구현 쪽 값을 적지 않아 빈칸으로 둔다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        읽는 법이 두 가지다. 첫째, 가중치 감쇠를 켜 둔 평범한 설정에서는 손해가 6%p쯤이다. 작지만 공짜로 되찾을 수 있는 6%p다. 둘째, 가중치 감쇠와 정규화를 모두 끈 설정에서는 학습이 한 번 올라갔다가 무너진다. 같은 결함이 조건에 따라 "조금 손해"와 "다 잃음" 사이를 오간다는 뜻이고, 그래서 "정확도가 61%에서 23%로 떨어진다"만 떼어 옮기면 틀린 말이 된다. 고친 쪽도 85%이지 100%가 아니라는 것까지 함께 읽어야 한다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표에 없는 설정이 하나 더 있고, 그 자리가 2022년의 관찰을 설명한다. 논문은 스파이크가 일반화에 득이 되는지 해가 되는지는 신경망의 가중치 크기를 무엇이 붙잡고 있느냐에 달렸다고 적는다. 출력층 앞에 층 정규화를 두고 가중치 감쇠를 쓰지 않으면, 그 앞쪽 가중치가 커져도 로짓은 그대로인데 실효 학습률만 줄어든다. 스파이크가 날 때마다 가중치 크기가 부풀고, 그만큼 학습률이 저절로 깎이는 것이다. 틸락 외와 프리에토 외가 본 설정이 그것이다. 그 자리에서 새총은 해가 아니라 우연한 학습률 감쇠로 보였고, 그래서 결함의 그림자가 네 해 동안 때로는 이득처럼 읽혔다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">교사와 똑같은 학생이 교사에게서 밀려난다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지금까지가 첫째 결함이다. 둘째 결함은 이 논문이 처음 이름 붙인 것으로, <strong>소프트맥스 상쇄</strong>라고 부른다. 걸리는 자리도 다르다. 첫째가 모델이 정답을 확신할 때 생긴다면, 둘째는 <strong>두 모델이 서로 거의 같은 답을 낼 때</strong> 생긴다. 증류가 정확히 그런 상황이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        증류는 큰 모델(교사)이 내놓은 확률 분포를 작은 모델(학생)이 따라 하게 만드는 학습이다. 학생이 교사를 완전히 따라잡으면 둘의 확률이 같아지고, 두 확률의 차이로 만들어지는 기울기는 정확히 0이 되어야 한다. 더 배울 것이 없으니 더 움직이지 않는 것이 맞다. 이것이 깨지면 안 되는 성질, 곧 불변식이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        부동소수점에서는 깨진다. 거의 같은 두 수를 빼면 앞자리가 모두 지워지고 뒤에 남는 자리만 결과가 되는데, 그 뒷자리에는 참값이 아니라 반올림 찌꺼기가 들어 있다. 수치해석에서 오래된 함정이고, 파국적 상쇄(catastrophic cancellation)라는 이름까지 붙어 있다. 여기에 한 가지가 겹친다. 전방 계산의 소프트맥스와 역방 계산이 쓰는 로그 소프트맥스는 수학적으로 같은 값을 주어야 하지만, 구현이 다르니 마지막 자리가 어긋난다. 그 어긋난 두 수를 빼는 것이 바로 증류의 기울기다. 지워질 것은 앞자리이고, 남는 것은 어긋남 그 자체다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문의 예는 교사 로짓 [2.0, 1.0, 0.0]에, 학생이 거기서 1천만분의 1만큼 비켜 선 상태다. 이때 표준 구현이 내놓는 기울기와, fp64로 계산한 참값(고친 구현도 같은 값을 준다)을 나란히 두면 이렇다.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>기울기 항</th>
+                                <th class="num">표준 구현</th>
+                                <th class="num">참값 (fp64·고친 구현)</th>
+                                <th>어긋난 꼴</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>첫째</td>
+                                <td class="num">−5.960e-8</td>
+                                <td class="num">−4.596e-8</td>
+                                <td>크기가 1.3배 부풀었다</td>
+                            </tr>
+                            <tr>
+                                <td>둘째</td>
+                                <td class="num">1.452e-8</td>
+                                <td class="num">4.144e-8</td>
+                                <td class="hit">2.85배로 쪼그라들었다</td>
+                            </tr>
+                            <tr>
+                                <td>셋째</td>
+                                <td class="num">−1.123e-9</td>
+                                <td class="num">4.513e-9</td>
+                                <td class="hit">부호가 뒤집혔다</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">조건은 fp32, 교사 로짓 [2.0, 1.0, 0.0], 학생 로짓은 거기에 [−1e-7, 1e-7, 0]을 더한 값이다. 논문은 이를 "둘째 항을 거의 3배 줄이고 셋째 항의 부호를 뒤집는다"고 적었고, 두 값을 직접 나눠 보면 2.85배로 확인된다. 셋째 항은 음수가 양수로 바뀌었으니, 학습이 밀어야 할 방향의 반대로 민다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        방향이 뒤집힌 기울기를 받은 학생은 교사에게 더 가까워지는 대신 <strong>교사에게서 밀려난다</strong>. 이미 완성된 학생을 더 학습시킬수록 나빠진다는 뜻이다. 1절의 결함이 계기판을 속이는 쪽이라면, 이쪽은 조향 장치를 반대로 돌리는 쪽이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>밀려나는 정도는 정밀도가 정한다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다만 "학생이 밀려난다"를 조건 없이 옮기면 과장이 된다. 논문 7절이 세 정밀도를 각각 돌려 보고 결과가 셋으로 갈린다고 적었기 때문이다. <strong>bf16</strong>에서는 어긋남이 10⁻³ 수준이라 학생이 실제로 교사에게서 밀려나고 테스트 정확도가 떨어진다. <strong>fp32</strong>에서는 어긋남이 10⁻⁸ 수준이라 학습 초반에 두 분포의 거리가 한 번 튀었다가 10⁻⁶ 언저리를 바닥 삼아 더 내려가지 않는다. <strong>fp64</strong>에서는 어긋남이 10⁻¹⁷ 수준이라 fp32로 저장된 가중치를 바꾸지도 못한다. 실무에서 눈에 보이는 손해가 나는 쪽은 bf16 하나다.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>실험 규모를 여기서 밝혀 둔다.</strong> 이 증류 실험의 모델은 2층 ReLU 다층 퍼셉트론이고, 과제는 a+b mod 53을 100% 정확도로 푸는 교사를 똑같은 가중치의 학생에게 2,000스텝 동안 증류하는 것이다. 온도 4, 학습률 2×10⁻³, 가중치 감쇠 없음, ε=10⁻⁸. 논문의 실험은 전부 이런 모듈러 산술 과제이고, 언어 모델 규모의 실험이나 실제 데이터셋 실험은 한 건도 없다. 그래서 이 글은 6절에서 피해 입증의 범위를 따로 적는다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">고침의 고침의 고침</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        계보를 펴기 전에 이 논문의 고침이 무엇인지부터 보고 가야 한다. 두 결함의 처방은 원칙 하나에서 같이 나온다. <strong>1을 더하지 않는다.</strong> 1절에서 손실이 0.0이 된 것은 구현이 1 + e<sup>−m</sup>을 실제로 만들어 버렸기 때문이고, 논문은 그 덧셈이 식에 아예 등장하지 않도록 계산을 다시 짠다. 가장 큰 로짓을 0으로 두고, 그 항을 뺀 나머지만 모아 마진 m을 구한 다음, 손실을 소프트플러스로 바로 계산한다. 소프트플러스는 log(1 + e<sup>x</sup>)를 1 + e<sup>x</sup>를 실제로 만들지 않고 구하는 함수다. 기울기도 같은 방식이어서 −e<sup>−m</sup> ÷ (1 + e<sup>−m</sup>) 꼴로 남는다. 분모가 1.0으로 반올림되더라도 분자의 e<sup>−m</sup>은 지워지지 않으니, 1.0으로 나눈 몫이 곧 참값이 된다. fp32에서는 마진이 88쯤 되어 지수부 자체가 바닥날 때까지 이 꼴이 버틴다.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 700 390" width="100%" role="img" aria-label="같은 손실 공식을 계산하는 두 경로를 비교한 도식. 왼쪽 표준 구현은 1 더하기 e의 마이너스 m제곱이라는 중간값을 실제로 만들어 그 값이 1.0으로 반올림되면서 손실과 기울기가 모두 0.0이 된다. 오른쪽 논문의 고침은 소프트플러스 함수로 그 중간값을 만들지 않고 바로 계산해 작은 값을 끝까지 보존하고 참값 3.046e-8을 낸다.">
+                            <text x="175" y="24" font-size="14" text-anchor="middle" font-weight="700" fill="var(--text-primary, #171719)">표준 구현 — 1을 더한다</text>
+                            <text x="525" y="24" font-size="14" text-anchor="middle" font-weight="700" fill="#F86825">논문의 고침 — 1을 더하지 않는다</text>
+
+                            <!-- Left column: standard implementation -->
+                            <rect x="30" y="40" width="290" height="60" rx="8" fill="none" stroke="var(--text-muted, #808080)" stroke-width="1.5"></rect>
+                            <text x="175" y="64" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">e^(−m) 을 계산한다</text>
+                            <text x="175" y="84" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">(아주 작은 값)</text>
+
+                            <line x1="175" y1="100" x2="175" y2="128" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow)"></line>
+
+                            <rect x="30" y="130" width="290" height="60" rx="8" fill="none" stroke="var(--text-muted, #808080)" stroke-width="1.5"></rect>
+                            <text x="175" y="154" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">1 + e^(−m) 을 실제로 만든다</text>
+                            <text x="175" y="174" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">중간값이 메모리에 존재</text>
+
+                            <line x1="175" y1="190" x2="175" y2="218" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow)"></line>
+
+                            <rect x="30" y="220" width="290" height="60" rx="8" fill="none" stroke="#F86825" stroke-width="2"></rect>
+                            <text x="175" y="244" font-size="12" text-anchor="middle" fill="#F86825" font-weight="700">e^(−m) 이 1 옆에서 사라진다</text>
+                            <text x="175" y="264" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">1 + e^(−m) → 1.0 으로 반올림</text>
+
+                            <line x1="175" y1="280" x2="175" y2="308" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow)"></line>
+
+                            <rect x="30" y="310" width="290" height="60" rx="8" fill="var(--bg-secondary, #f8fafc)" stroke="var(--text-muted, #808080)" stroke-width="1.5"></rect>
+                            <text x="175" y="334" font-size="13" text-anchor="middle" fill="var(--text-primary, #171719)" font-weight="700">log(1.0) = 0.0</text>
+                            <text x="175" y="354" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">손실도 기울기도 0.0</text>
+
+                            <!-- Right column: the paper's fix -->
+                            <rect x="380" y="40" width="290" height="60" rx="8" fill="none" stroke="var(--text-muted, #808080)" stroke-width="1.5"></rect>
+                            <text x="525" y="64" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">m 을 소프트플러스에 바로 전달</text>
+                            <text x="525" y="84" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">softplus(−m) = log(1+e^(−m))</text>
+
+                            <line x1="525" y1="100" x2="525" y2="128" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow)"></line>
+
+                            <rect x="380" y="130" width="290" height="60" rx="8" fill="none" stroke="var(--text-muted, #808080)" stroke-width="1.5"></rect>
+                            <text x="525" y="154" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">1 + e^(−m) 을 한 번도 만들지 않는다</text>
+                            <text x="525" y="174" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">중간값 자체가 없다</text>
+
+                            <line x1="525" y1="190" x2="525" y2="218" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow)"></line>
+
+                            <rect x="380" y="220" width="290" height="60" rx="8" fill="none" stroke="#F86825" stroke-width="2"></rect>
+                            <text x="525" y="244" font-size="12" text-anchor="middle" fill="#F86825" font-weight="700">e^(−m) 의 작은 값이 끝까지 보존된다</text>
+                            <text x="525" y="264" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">반올림에 먹히는 자리가 없다</text>
+
+                            <line x1="525" y1="280" x2="525" y2="308" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow)"></line>
+
+                            <rect x="380" y="310" width="290" height="60" rx="8" fill="none" stroke="#F86825" stroke-width="2"></rect>
+                            <text x="525" y="334" font-size="13" text-anchor="middle" fill="#F86825" font-weight="700">loss = 3.046e-8</text>
+                            <text x="525" y="354" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">fp64 참값과 일치</text>
+
+                            <defs>
+                                <marker id="sm-arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                                    <path d="M0,0 L8,4 L0,8 Z" fill="var(--text-muted, #808080)"></path>
+                                </marker>
+                            </defs>
+                        </svg>
+                        <p class="fig-caption">페블러스 원본 도식(Fig. 재해석) — 같은 손실 공식을 계산하는 두 경로. 왼쪽 표준 구현은 1 + e⁻ᵐ이라는 중간값을 실제로 만들어 e⁻ᵐ이 그 안에서 반올림에 먹힌다. 오른쪽 논문의 고침은 소프트플러스로 그 중간값 자체를 식에서 지워 같은 작은 값을 끝까지 보존한다. 두 경로 모두 수학적으로는 같은 값을 계산하지만, 부동소수점에서는 경로가 결과를 가른다.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        4절의 상쇄도 같은 원칙으로 푼다. 학생과 교사의 확률을 직접 빼는 대신 두 확률의 비를 로그 공간에서 구하고, 거기서 차이를 되살리는 데 <span class="inline-code">expm1</span>과 <span class="inline-code">log1p</span>을 쓴다. 둘 다 1을 더하거나 빼는 자리를 식에서 지우려고 만들어진 함수다. 마지막에는 기울기의 합이 0이 되도록 맞추는 항이 한 번 더 붙는다. 그래서 학생과 교사가 정확히 같아지면 기울기도 정확히 0이 된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 고침의 효력을 논문 초록이 한 문장으로 적는데, 거기에 지나치기 쉬운 단서가 붙어 있다.
+                    </p>
+                    <div class="src-quote">
+                        이 함수들을 소프트플러스와 <span class="inline-code">expm1</span>과 <span class="inline-code">log1p</span>으로 로그 공간에서 다시 쓰면, 내부적으로 더 높은 정밀도로 올리지 않고도 bf16과 fp32와 fp64 전부에서 정확하고 합이 0인 기울기가 되살아난다.
+                        <span class="orig">"Rewriting these functions in log space using softplus, expm1, and log1p restores accurate, zero-sum gradients across bf16, fp32, and fp64 without internally casting to higher precision."</span>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        마지막 구절이 중요하다. 6절에서 볼 자동 형변환은 손실 계산만 fp32로 올려 절벽을 뒤로 미루는 방식이고, 이 고침은 계산하는 자릿수를 그대로 둔 채 식을 바꾸는 방식이다. 앞의 것은 결함을 피해 가고 뒤의 것은 결함을 없앤다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 결함의 역사는 한 논문의 발견담이 아니다. 네 해에 걸쳐 여섯 번 사람과 기계가 번갈아 들어갔고, <strong>매번 뭔가를 고치면서 매번 뭔가를 남겼다.</strong> 남긴 것을 다음 차례가 찾아내는 식으로 이어진다. 그 여섯 번을 아래 표에 담았다.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>때</th>
+                                <th>누가</th>
+                                <th>찾은 것</th>
+                                <th>남긴 것</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2022-06</td>
+                                <td>틸락 외 (사람)</td>
+                                <td>손실 스파이크에 새총 현상이라는 이름을 붙이고 경험적으로 연구했다</td>
+                                <td>원인을 찾지 못했고, 초록에 그렇게 적었다</td>
+                            </tr>
+                            <tr>
+                                <td>2025-01</td>
+                                <td>프리에토 외 (사람)</td>
+                                <td>원인을 소프트맥스 붕괴로 지목하고 이름을 붙였다</td>
+                                <td>대체 함수 StableMax를 내놨는데, 지수 대신 선형이라 마진이 2,322에서 21,252까지 네 자리로 폭주한다</td>
+                            </tr>
+                            <tr>
+                                <td>2026-05</td>
+                                <td>류 외 (사람)</td>
+                                <td>이 결함이 부동소수점 한계의 결과임을 증명하고 임계식을 세웠다</td>
+                                <td>기울기에서 평균을 빼는 교정을 제안했는데, ε이 작은 설정에서 정확도가 48.9%로 내려앉는다</td>
+                            </tr>
+                            <tr>
+                                <td>2026-10-22</td>
+                                <td>배런 외 (구글 딥마인드)</td>
+                                <td class="hit">소프트맥스 상쇄를 새로 찾고, 두 결함을 함께 고치는 구현을 냈다</td>
+                                <td>모든 값이 −∞인 행에서 기울기가 NaN이 된다</td>
+                            </tr>
+                            <tr>
+                                <td>2026-10-27</td>
+                                <td>마즈 (사람 + 성질 기반 테스트)</td>
+                                <td>그 NaN을, 야코비안의 행 합이 0이라는 성질 하나로 재발견했다</td>
+                                <td>함수 하나를 바꿔 고쳤고, 그 방법이 새 아이디어가 아니라고 본인이 적었다</td>
+                            </tr>
+                            <tr>
+                                <td>2026-10-27</td>
+                                <td>애스트라 (AI 리뷰어)</td>
+                                <td>파이토치 포팅에서 유한한 입력이 무한대를 내놓는 오버플로를 잡았다</td>
+                                <td>리뷰라 코드가 없고, 그 PR은 아직 초안 상태다</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">각 줄의 "남긴 것"은 비난이 아니라 다음 줄의 출발점이다. 가운데 세 줄은 전부 손실 함수를 고치려는 시도였고, 셋 다 각자의 부작용을 남겼다. 간격도 눈여겨볼 만하다. 첫 둘 사이가 두 해 일곱 달, 둘째와 넷째 사이가 한 해 아홉 달인데, 마지막 셋은 <strong>닷새 안에</strong> 전부 일어났다.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        앞선 교정 둘을 조금 더 적는다. 프리에토 외가 내놓은 StableMax는 지수 함수를 조각별 유리함수로 바꿔 소프트맥스 붕괴 자체를 피한다. 대신 확률이 로짓에 대해 선형으로만 줄어들기 때문에, 같은 확신에 도달하려면 로짓이 훨씬 더 크게 벌어져야 한다. 논문 표 1에 찍힌 StableMax의 최종 마진이 네 자리 수인 이유가 그것이다. 류 외의 교정은 기울기 벡터에서 평균을 빼서 합을 강제로 0으로 맞추는 방식인데, 정답 쪽 기울기가 이미 0으로 반올림된 상태에서 평균만 빼면 정답은 나머지 전체의 −1/K만 받게 된다. 표 1에서 그 설정의 정확도가 절반 아래로 떨어진다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>찾은 쪽도 고친 쪽도 깬 쪽도 반은 기계였다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 사건에는 논문 본문에 적히지 않은 둘째 줄거리가 있다. 저자가 X에 올린 글에 따르면 <strong>이 결함을 처음 찾아 고친 것은 제미나이 플래시 3.7</strong>이고, 논문 실험 대부분은 플래시 3.8이 돌렸으며, 논문 초고와 그림은 제미나이 4 아르곤이 썼다고 한다. 저자는 그 초고를 자기가 집요하게 다듬었고 내용은 단단해졌지만 문장은 그러지 못했다고 덧붙였다. 이 주장의 1차 출처는 논문이 아니라 저자의 X 글이고, 후속 논문이 각주에서 "그들은 이 문제들을 제미나이 플래시 3.7로 찾고 고쳤다고 주장한다"고 따로 적어 두어 두 번 확인된다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        파이토치 쪽도 비슷하다. 논문이 올라오고 사흘 뒤 한 사용자가 파이토치 저장소에 이 고침을 반영해 달라는 이슈를 올렸고, 나흘째에 메인테이너가 수정 PR을 열었다. 그 PR의 디프를 쓴 것도 사람이 아니라 에이전트다. 메인테이너가 이슈에 남긴 유일한 댓글이 상황을 그대로 말해 준다.
+                    </p>
+                    <div class="src-quote">
+                        지금 그 PR을 들여다보는 중인데, 에이전트가 짜증 날 만큼 긴 디프를 만들어 놔서 아직 읽고 있다.
+                        <span class="orig">"I'm noodling on …/pull/202049 but the agent generated an annoyingly long diff so I'm still reading it."</span>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 PR에 달린 리뷰 코멘트 다섯 건은 전부 "애스트라라는 AI 조수가 메인테이너를 대신해 올린 글"이라는 머리말로 시작한다. 그리고 그 다섯 건 가운데 하나가 <strong>사람이 못 본 진짜 결함</strong>을 잡았다. fp32에서 로짓 [1, 0, 0]에 역방향 입력으로 [2e38, −1.75e38, −1.75e38]을 넣으면, 새로 추가된 분기가 중간 계산에서 음의 무한대로 넘쳐 첫 기울기가 무한대로 나온다. fp64로 계산한 참값은 2.8641753e38이고, 이 값은 fp32가 표현할 수 있는 범위 안에 있다. 멀쩡히 표현 가능한 답을 무한대로 만들어 버린 것이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        시각 기록은 또렷하다. 리뷰 다섯 건이 10월 27일 15시 15분과 15시 17분에 올라왔고, 1시간 37분 뒤인 16시 52분에 "리뷰 코멘트 반영"이라고 적힌 커밋이 붙었다. 그날 18시 21분에 갱신된 PR 설명문에는 부호 조건과 유한성 조건으로 오버플로를 막는다는 설명이 들어 있다. 커밋 메시지가 어느 리뷰를 가리키는지는 적혀 있지 않으니 단정할 수는 없다. 확인되는 사실은 <strong>리뷰가 올라온 지 두 시간이 안 돼 반영 커밋이 붙었다</strong>는 것까지다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        반대 방향의 사례도 같은 주에 있었다. 후속 논문의 저자 마즈는 성질 기반 테스트, 곧 "이 함수가 어떤 입력에서도 지켜야 하는 성질"을 적어 두고 반례를 자동으로 찾게 하는 방식으로 배런 구현의 NaN을 찾아냈다. 성질 두 개를 깨는 입력으로 도구가 내놓은 것은 [0.0, 37.0]과 <strong>[0.0, 1.0]</strong>이었다. 앞의 것은 마진 37이 fp64 절벽 36.737을 넘는 극단값이지만, 뒤의 것은 어떤 교과서에도 나올 법한 평범한 벡터다. 기계가 쓴 고침을 사람이 만든 도구가 깼고, 그 도구의 계보는 2000년의 퀵체크와 2019년의 하이포시시스로 거슬러 올라간다. 마즈 자신이 2025년에 그 도구를 에이전트와 결합해 라이브러리의 버그를 찾는 논문을 썼고, 이번에 그 방법을 소프트맥스 고침에 겨눈 것이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 이 절은 어느 쪽 편도 들지 않는다. 기계가 찾은 결함은 진짜였고, 기계가 쓴 디프는 사람이 다 읽지 못할 만큼 길었고, 기계가 한 리뷰는 사람이 놓친 오버플로를 잡았고, 사람이 만든 도구는 기계의 고침을 깼고, 사람이 만든 앞선 교정 둘도 각각 부작용을 남겼다. 그 여섯이 전부 사실이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>여섯 번 모두 지표가 아니라 불변식으로 찾았다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공통점은 다른 데 있다. 여섯 번 다 결함을 찾아낸 방법이 같다. 아무도 "정확도가 떨어졌으니 뭔가 잘못됐다"에서 출발하지 않았다. 대신 깨지면 안 되는 성질 하나씩을 들고 갔다. <strong>기울기의 합이 0인가. 학생과 교사가 같으면 기울기가 0인가. 야코비안의 행 합이 0인가. 유한한 입력에 유한한 출력이 나오는가.</strong> 넷 다 모델이 잘하는지를 묻지 않고, 산술이 자기 약속을 지키는지를 묻는다. 평균 성적으로는 보이지 않던 것이 그 물음 하나에서 드러났다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        끝으로 가장 조용한 대목을 적는다. 마즈가 배런 구현의 NaN을 고치는 데 쓴 방법은 수치해석 쪽에서 이미 알려진 것이고, 그가 지목한 출처는 2021년 수치해석 학술지에 실린 로그-합-지수와 소프트맥스 계산에 관한 논문이다. 두 논문이 모두 그 글을 인용한다. 최댓값을 빼서 안정화하는 기법도, 이번에 쓰인 함수 교체도 다섯 해 전 그 글에 이미 있었다. 수치해석 저널에서 딥러닝 손실 함수까지 다섯 해가 걸린 셈이다.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">그래서 지금 누가 노출돼 있나</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결함이 있다는 말과 지금 당신의 학습이 틀리고 있다는 말은 다르다. 그 선을 가장 또렷하게 그은 것은 논문 자신이다. 결론 문단에 이렇게 적혀 있다.
+                    </p>
+                    <div class="src-quote">
+                        우리 실험이 건드린 극단적인 마진과 학생·교사 사이의 거의 0에 가까운 간극은 표준적인 대규모 학습에서는 흔치 않지만, 우리가 고친 함수들은 그대로 갈아 끼우기 쉬운 대체 구현이다.
+                        <span class="orig">"Though the extreme margins and near-zero student–teacher gaps probed by our experiments are uncommon in standard large-scale training, our fixed functions are easy drop-in replacements…"</span>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 문장을 빼고 쓰면 이 글은 공포 조장이 된다. 동시에 이 문장만 읽고 덮으면 반대쪽을 놓친다. <strong>방아쇠는 흔하고, 피해 입증은 장난감 과제에서만 됐다.</strong> 이 한 줄이 이 글 전체의 수위다. 아래는 그 방아쇠가 어디에 깔려 있는지를 1차 문서로 확인한 결과다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>기본값이 막아 주고 있었다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2절의 표를 보면 bf16의 절벽 5.5는 정답 확률 99.6%에서 온다. 학습 후반의 분류 모델에 흔한 확신이다. 그런데도 대부분의 학습이 멀쩡한 이유가 있다. 파이토치의 자동 형변환(autocast)은 혼합 정밀도 학습에서 연산마다 정밀도를 자동으로 고르는데, 공식 문서의 <strong>"fp32로 올려서 계산하는 연산 목록"</strong>에 교차 엔트로피와 로그 소프트맥스와 소프트맥스가 전부 들어 있다. 사용자가 bf16으로 학습을 돌려도 손실 계산만은 fp32로 올라간다는 뜻이다. 절벽이 5.5에서 16.6으로 옮겨 간다.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>사실과 해석을 갈라 둔다.</strong> 사실은 그 목록에 해당 연산들이 들어 있다는 것뿐이다. 파이토치 문서는 이 목록을 왜 그렇게 정했는지 이유를 적지 않는다. 그러니 "수치 안정성을 염려해 넣어 뒀다"는 서술은 그럴듯한 추측일 뿐이고 문서가 보증하지는 않는다. 확인되는 문장은 하나다. 목록에 들어 있어서 결과적으로 bf16 절벽을 피한다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>기본값 밖으로 나가는 경로에 이름이 붙었다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그러면 노출된 쪽은 기본값 밖으로 나간 경로다. 그리고 그 경로의 목록은 추측이 아니라 파이토치 수정 PR이 스스로 적어 둔 제외 목록에서 나온다. 고침이 병합되더라도 거기 적힌 경로들은 옛 수치를 그대로 쓴다.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>경로</th>
+                                <th>지금 서 있는 자리</th>
+                                <th>근거</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>자동 형변환 안의 보통 학습</td>
+                                <td>손실이 fp32로 올라가 bf16 절벽을 피한다</td>
+                                <td>파이토치 자동 형변환 문서</td>
+                            </tr>
+                            <tr>
+                                <td>자동 형변환 밖에서 bf16으로 손실 계산</td>
+                                <td class="hit">절벽 5.5에 그대로 선다</td>
+                                <td>파이토치 이슈 작성자가 직접 겪고 fp32로 옮겨 우회했다고 적었다</td>
+                            </tr>
+                            <tr>
+                                <td>fp32 + Adam 기본 ε</td>
+                                <td class="hit">균형 마진 18.4가 절벽 16.6을 넘는다</td>
+                                <td>논문 5절</td>
+                            </tr>
+                            <tr>
+                                <td>컴파일 실행(<span class="inline-code">torch.compile</span>)</td>
+                                <td class="hit">PR이 병합돼도 옛 수치를 유지한다</td>
+                                <td>PR 본문의 제외 목록</td>
+                            </tr>
+                            <tr>
+                                <td>애플 실리콘(MPS)·XPU·Vulkan·Metal 등</td>
+                                <td class="hit">고침 범위 밖이다</td>
+                                <td>PR 본문의 제외 목록</td>
+                            </tr>
+                            <tr>
+                                <td>융합·청크 교차 엔트로피 경로</td>
+                                <td class="hit">정규화 항을 스스로 계산하므로 범위 밖이다</td>
+                                <td>PR 본문이 그 경로를 이름으로 적어 제외했다</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">왼쪽 첫 줄만 안전한 쪽이고 나머지는 전부 기본값 밖이다. 공통점이 있다. 제외 목록에 오른 경로는 대개 <strong>속도를 얻으려고 만든 경로</strong>다. 컴파일해서 빠르게, 커널을 합쳐서 빠르게, 정밀도를 낮춰서 빠르게.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기까지는 가능성이다. 논문이 올라온 주에 그 가능성에 이름이 붙었다. 대규모 언어 모델 학습에 쓰이는 프레임워크 세 곳에 "확신한 정답의 로그확률과 기울기가 정확히 0이 된다"는 제보가 파일과 함수 이름까지 지목된 채 올라왔다.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>저장소</th>
+                                <th>지목된 자리</th>
+                                <th>상태</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>torchtitan</td>
+                                <td>손실 병렬 교차 엔트로피 함수. 같은 함수를 재사용하는 강화학습 토큰별 로그확률 계산도 같은 영향을 받는다고 적혀 있다</td>
+                                <td>열려 있음</td>
+                            </tr>
+                            <tr>
+                                <td>verl</td>
+                                <td>로그확률 계산 함수 둘과 Triton 융합 선형 교차 엔트로피 커널. bf16 분기는 마진 5.5에서 이미 반올림된다고 적혀 있다</td>
+                                <td>열려 있음</td>
+                            </tr>
+                            <tr>
+                                <td>prime-rl</td>
+                                <td>강화학습용 청크 로그확률·엔트로피 함수와 지도 미세조정용 청크 교차 엔트로피 함수</td>
+                                <td>열려 있음</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">세 건의 재현 코드는 같은 꼴이다. 어휘 32,000에서 정답 로짓이 나머지보다 30 앞선 상황을 만들면, fp32에서 손실과 로그확률과 정답 기울기가 모두 <strong>0.000e+00</strong>으로 나오고 나머지 기울기의 합만 2.994e-09로 남는다. fp64로 계산한 참값은 정답 쪽 −2.994e-09, 나머지 합 2.994e-09다. 어휘 32,000에서 마진 30은 흔하다.</p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>이 제보들을 읽을 때 반드시 같이 들고 다녀야 하는 단서가 셋이다.</strong> 첫째, 세 건 모두 <strong>같은 한 사람</strong>이 올렸다. 두 건은 1초 간격으로 올라왔다. "세 팀이 각자 발견했다"가 아니라 한 사람이 세 스택에서 같은 자리를 찾아 제보한 것이다. 둘째, 재현 코드는 손으로 만든 로짓이지 <strong>망가진 실제 학습 기록이 아니다.</strong> 셋째, 딸린 수정 PR 네 건은 이 글을 쓰는 시점에 <strong>전부 병합되지 않았다.</strong> 그럼에도 이 제보가 중요한 이유는 하나다. 논문이 "흔치 않다"고 적은 그 조건이, 강화학습의 토큰별 로그확률과 융합 언어 모델 헤드에서는 예외가 아니라 일상이고, 그 경로의 이름이 처음으로 공개된 자리에 적혔다.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        JAX 쪽은 사정이 또 다르다. JAX에는 자동 형변환이 없어서 손실을 어느 정밀도로 계산할지는 전적으로 사용자가 쓴 대로 간다. 그리고 1절에서 본 논문의 실행 예 자체가 JAX와 optax에서 0.0이 나오는 장면이었다. 그런데도 두 저장소에는 이 논문을 인용한 이슈나 PR이 아직 한 건도 없다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>고침의 비용은 누가 치르나</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        고치는 쪽의 값도 따져야 한다. 논문은 결론에서 이 고침이 "의미 있는 속도 저하 없이" 구현될 수 있다고 적었다. 파이토치 PR에 실린 커널 실측은 그보다 결이 다양하다. 대형 GPU에서 로그 소프트맥스 전방 계산은 fp32에서 1.03배, bf16에서 1.15배로 느려지고, 교차 엔트로피 전방과 역방을 합치면 1.02배와 1.10배다. CPU는 1.0에서 1.3배 사이다. 다만 <strong>로그 소프트맥스의 역방 계산만 떼면 최대 1.7배</strong>까지 올라간다. x86은 측정되지 않았다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        셋을 나란히 두면 논문의 주장이 대체로 지지되면서도 경계가 보인다. 그리고 가장 날카로운 지적은 AI 리뷰어가 남겼다. 지금 설계대로면 컴파일 실행은 고침을 못 받고 결함을 그대로 안고 가는데, 즉시 실행은 보고된 속도 저하를 치른다는 것이다. <strong>비용은 한쪽이 내고 이득은 다른 쪽이 못 받는 구조</strong>라는 말이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.4</span>대규모 실증은 이웃 동네에 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그러면 큰 학습에서 실제로 손해가 측정된 사례는 아직 없는가. 소프트맥스 붕괴에 관해서는 없다. 다만 <strong>아주 가까운 이웃</strong>에는 있다. 이 논문보다 24일 앞선 9월 28일에 올라온 다른 논문이 bf16 어텐션에서 보존 법칙이 깨지는 현상을 보고했다. 4억 5천만 파라미터 모델을 500억 토큰으로 사전학습하는 동안 250억 토큰 지점에서 기울기 노름이 1000배로 뛰었고, 최종 손실이 fp32 학습보다 0.2 nats 나빴다. 그동안 <strong>NaN은 한 번도 나오지 않았다.</strong> 그 논문 초록이 원인의 일부로 지목한 문장은 이렇다.
+                    </p>
+                    <div class="src-quote">
+                        남은 오차는 깨진 보존 법칙에서 온다. 소프트맥스 점수의 기울기는 행마다 0으로 합해져야 하는데, 이를 bf16으로 반올림하면 0이 아닌 작은 합이 남아 키 벡터의 평균이 기울기로 새어 든다.
+                        <span class="orig">"The remaining error comes from a broken conservation law. The softmax score gradient sums to zero along every row… rounding it to BF16 leaves a small nonzero sum that leaks the mean key into the gradient."</span>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 결함이라고 읽으면 안 된다. <strong>깨진 불변식은 같고 깨지는 이유는 다르다.</strong> 이쪽은 1 + e⁻ᵐ이 1로 반올림되는 문제가 아니라, bf16으로 형변환한 뒤 행 합이 새는 문제다. 다만 두 사건을 나란히 두면 이 글의 수위가 정확해진다. 소프트맥스에 걸린 불변식 하나가 깨졌을 때 대규모 학습에서 무슨 일이 일어나는지는, 바로 옆 연산에서 이미 측정돼 있다. 그리고 그때도 경고는 뜨지 않았다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.5</span>고침을 병합한 주류 프레임워크는 아직 없다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 올라온 지 일주일이 지난 2026년 10월 29일 기준으로 생태계의 상태를 세어 보면 이렇다. 파이토치 이슈는 열려 있고 댓글 하나뿐이다. 수정 PR은 초안 상태로 병합되지 않았다. 해커뉴스 스레드는 19점에 댓글 하나다. 깃허브 전체에서 이 논문 번호를 인용한 이슈와 PR은 51건이다. <strong>주류 파이썬 프레임워크 가운데 고침을 병합한 곳은 0곳이다.</strong> 병합된 곳은 한 사람이 소유한 러스트 재구현 둘과 Go 라이브러리 하나다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        "우리 학습에서 이걸 겪었다"는 공개 증언은 지금까지 한 건이다. 파이토치 이슈를 올린 사용자가 bf16에서 소프트맥스 붕괴를 겪었고 손실 계산만 fp32로 옮겨 우회했다고 적었다. 그 밖의 공개 활동은 재현과 포팅과 제보인데, 전부 소수의 개인이 올린 것이다. 2절에 나온 독립 재현도 개인 블로그에 올라온 것이고, 포팅 저장소들은 별이 한 자리 수에서 열 몇 개 사이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이것을 게으름이라 읽을 필요는 없다. 손실 함수의 수치를 바꾸는 변경은 모든 사용자의 학습 결과를 미세하게 바꾸고, 수백 개 백엔드와 컴파일 경로마다 같은 식을 옮겨 심어야 하며, 에이전트가 만든 700줄 넘는 디프를 사람이 다 읽어야 한다. <strong>속도의 사실로만 적으면 이렇다.</strong> 결함이 공개되고 일주일 동안, 학계의 반박과 재현과 후속 논문은 닷새 안에 붙었고, 표준 라이브러리의 수정은 아직 초안이다.
+                    </p>
+                </section>
+
+                <!-- 페블러스 관심의 이유 -->
+                <section id="pebblous-perspective" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스 관심의 이유</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스가 수치해석 쪽 논문 한 편을 이렇게 오래 들여다본 데는 이유가 있다. 모델 성적이 나쁠 때 우리가 가장 먼저 의심하는 것은 거의 언제나 데이터다. 그 의심은 대개 옳다. 문제는 그다음에 있다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.1</span>쓸 수 있는 상태인지 묻는 질문에는 아래층이 하나 더 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AI-Ready Data는 "이 데이터가 쓸 수 있는 상태인가"를 묻는다. 이 사건은 그 질문 아래에 층을 하나 더 드러낸다. <strong>그 데이터를 숫자로 받아 적는 연산은 쓸 수 있는 상태인가.</strong> 그리고 그 층의 안전은 설계로 보장된 것이 아니었다. 6절에서 본 대로 기본값이 손실을 fp32로 올려 주고 있었을 뿐이고, 문서는 그 이유조차 적지 않는다. 성능을 얻으려고 기본값 밖으로 나가는 순간 그 보장은 함께 사라진다. 데이터 쪽에서도 구조는 같다. 빠른 경로일수록 검사를 건너뛰고, 건너뛴 검사는 어디에도 기록되지 않는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.2</span>"데이터는 이상 없었다"가 뜻을 가지려면</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터 품질 판정에서 가장 자주 쓰이는 문장이 "데이터를 봤는데 이상 없었다"이다. 이 문장이 "데이터가 범인이 아니다"를 뜻하려면, 다른 층이 깨끗하다는 근거가 따로 있어야 한다. 이 사건에서 그 근거는 <strong>"표준 구현이니까"</strong>였다. 그리고 5절에서 본 대로 그 근거는 여섯 번 연달아 조금씩 틀렸다. 데이터 품질 보고서가 뜻을 가지려면 연산 층의 전제를 적는 칸이 있어야 한다. 손실을 어느 정밀도로 계산했는지, 어느 커널을 탔는지, 컴파일 경로였는지. 지금 어떤 데이터 품질 보고서도 그 칸을 갖고 있지 않다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 축은 페블러스 블로그가 앞서 다룬 두 글과 이어지되 질문이 다르다. <a href="/blog/open-1b-auditable-training-run/ko/" class="underline">가중치와 데이터와 레시피를 다 공개해도 같은 모델이 안 나온다는 글</a>은 부동소수점이 <strong>재현성</strong>을 깨는 이야기였다. 이 글은 같은 수가 안 나오는 이야기가 아니라 <strong>틀린 수가 나오는</strong> 이야기다. <a href="/report/ai-driven-discovery-verification/ko/" class="underline">AI 시대의 병목이 생성이 아니라 검증이라는 글</a>은 검증이 있느냐 없느냐를 물었다. 이번 소재에서는 검증이 여섯 번이나 있었다. 그런데도 매번 뭔가가 남았다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.3</span>오늘 할 수 있는 확인 넷</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        학습을 직접 돌리는 쪽이라면 오늘 확인할 수 있는 것이 넷 있고, 넷 다 새 도구가 필요 없다.
+                    </p>
+                    <ul class="themeable-text leading-relaxed space-y-2 mb-6 ml-6">
+                        <li>손실을 자동 형변환 밖에서 저정밀로 계산하고 있지 않은지 본다. 파이토치 이슈 작성자가 겪은 것이 정확히 그 경우다.</li>
+                        <li>학습 중 <strong>손실이 정확히 0.0이 되는 스텝</strong>이 있는지 센다. 있다면 수렴이 아니라 절벽일 수 있다.</li>
+                        <li>증류를 한다면 학생이 교사에 가까워진 뒤에도 두 분포의 거리가 바닥을 치고 더 내려가지 않는지 본다.</li>
+                        <li>강화학습 미세조정이나 융합 언어 모델 헤드를 쓴다면 <strong>로그확률이 정확히 0.0으로 찍히는 토큰</strong>이 몇 개인지 센다. 6절의 제보가 지목한 자리가 거기다.</li>
+                    </ul>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        넷 다 성적을 들여다보는 일이 아니고, <strong>깨지면 안 되는 것이 깨졌는지를 보는 일</strong>이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.4</span>지표가 아니라 불변식을 묻는 자리</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        5절에서 적은 공통점이 페블러스가 서 있는 자리와 겹친다. 여섯 번 다 성능 지표 대신 불변식을 들고 갔다. 기울기의 합이 0인가, 학생과 교사가 같으면 기울기가 0인가, 유한한 입력에 유한한 출력이 나오는가. 데이터에서 그에 해당하는 물음은 분포가 좋아 보이느냐가 아니다. <strong>불변식이 깨졌느냐다.</strong> 페블러스가 서려는 자리가 거기다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 이 글의 결론은 하나다. <strong>"검증했다"는 말에는 어느 층까지인지가 붙어야 뜻이 생긴다.</strong> 데이터는 봤다. 모델 구조도 봤다. 손실 함수의 구현은 누가 봤는가. 그 아래 부동소수점 형식이 데려오는 절벽은.
+                    </p>
+
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            이 글의 수치는 논문 2판과 후속 논문, 파이토치 이슈·PR 원문을 직접 열어 대조했고, 배수와 확률은 다시 계산해 확인했다. 확인하지 못한 것도 적어 둔다. 저자의 X 글은 원문 페이지에 접근이 막혀 있어 우회 경로로 확보한 영어 원문을 근거로 삼았고, 그래서 5절은 큰따옴표 대신 간접화법으로 적었다. 융합 교차 엔트로피 커널 가운데 이름을 걸고 지목할 수 있는 것은 자기 제보를 올린 verl과 자기 PR에 제외 목록을 적은 파이토치뿐이고, 다른 커널이 fp32 절벽에 서는지는 이 글이 판정하지 않는다. 1절부터 6절까지는 1차 출처가 적은 것이고 7절은 페블러스의 해석이니 나눠서 읽어 주시기 바란다. 긴 글 읽어 주셔서 감사하다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ (empty section — content rendered by config.faqs) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- 참고문헌 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        출처의 등급이 달라 세 묶음으로 나눈다. 첫 묶음이 본문 수치가 나온 학술 문헌이고, 둘째 묶음은 코드와 이슈와 공식 문서, 셋째 묶음은 다른 축에서 같은 질문을 다룬 페블러스의 인접 글이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 문헌</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Barron, J. T., Gnanapragasam, D., Tschannen, M. (2026). <strong>A Fix for Softmax and Cross-Entropy.</strong> arXiv:2610.31642. v1 2026-10-22, v2 2026-10-26. 1·2·3·4·6절의 수치가 이 논문 2판 본문에서 나왔다. <a href="https://arxiv.org/abs/2610.31642" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Maaz, M. (2026). <strong>Property-Based Testing for Robust Softmax and Cross-Entropy.</strong> arXiv:2610.36427 v1, 2026-10-27. 절벽 높이의 유도식, NaN 반례, 함수 교체가 여기 있다. <a href="https://arxiv.org/abs/2610.36427" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Prieto, L., Barsbey, M., Mediano, P. A. M., Birdal, T. (2025). <strong>Grokking at the Edge of Numerical Stability.</strong> ICLR 2025, arXiv:2501.04697. 소프트맥스 붕괴에 이름을 붙인 논문이다. <a href="https://arxiv.org/abs/2501.04697" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Liu 외 (2026). <strong>Grokking or Glitching? How Low-Precision Drives Slingshot Loss Spikes.</strong> arXiv:2605.06152. 이 결함이 부동소수점의 결과임을 증명하고 영합 투영을 제안했다. <a href="https://arxiv.org/abs/2605.06152" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Thilak, V., Littwin, E., Zhai, S., Saremi, O., Paiss, R., Susskind, J. (2022). <strong>The Slingshot Mechanism: An Empirical Study of Adaptive Optimizers and the Grokking Phenomenon.</strong> arXiv:2206.04817. 3.1절의 축자 인용이 이 논문 초록에서 나왔다. <a href="https://arxiv.org/abs/2206.04817" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Blanchard, P., Higham, D. J., Higham, N. J. (2021). <strong>Accurately computing the log-sum-exp and softmax functions.</strong> IMA Journal of Numerical Analysis 41(4):2311–2330. 두 논문이 모두 인용하는 수치해석 쪽 정본이고, 5.2절의 아이러니가 여기서 나온다.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">저자 12인 (2026). <strong>Broken Symmetry in BF16 Attention.</strong> arXiv:2609.34272, 2026-09-28. 6.4절의 대규모 실측이 이 논문 초록에서 나왔다. <strong>같은 불변식, 다른 기전</strong>이라는 단서를 반드시 함께 읽어야 한다. <a href="https://arxiv.org/abs/2609.34272" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Qiu, Z., Yao, A. (2026). <strong>Why Low-Precision Transformer Training Fails: An Analysis on Flash Attention.</strong> ICLR 2026, arXiv:2510.04212. 배런 논문이 "같은 결함이 단독 소프트맥스에도 영향을 준다"는 근거로 인용하는 논문이다. 다만 이 논문 본문의 기전은 저랭크 표현과 bf16 누적의 편향된 반올림이라 결이 다르다. <strong>이 글이 어텐션 쪽 확산을 이 인용에 기대어 적지 않은 이유다.</strong> <a href="https://arxiv.org/abs/2510.04212" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Maaz, M., DeVoe, J., Hatfield-Dodds, Z., Carlini, N. (2025). <strong>Agentic property-based testing.</strong> arXiv:2510.09907, NeurIPS 2025 DL4C 워크숍. 5.1절에 나오는 도구의 계보다. 그 위로 Claessen &amp; Hughes의 QuickCheck(ICFP 2000)와 MacIver 외의 Hypothesis(JOSS 4(43):1891, 2019)가 있다. <a href="https://arxiv.org/abs/2510.09907" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">코드·이슈·공식 문서</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">10.</span><span class="ref-body">PyTorch 이슈 <strong>#201986</strong>(2026-10-25, 제3자가 올린 기능 요청, 열려 있음)과 수정 PR <strong>#202049</strong>(2026-10-26, 초안·미병합). 제외 목록, 커널 성능 실측, 애스트라 리뷰 다섯 건, 메인테이너 댓글이 전부 이 두 스레드에 있다. <a href="https://github.com/pytorch/pytorch/issues/201986" target="_blank" rel="noopener">github.com</a></span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">PyTorch <strong><span class="inline-code">torch.amp</span> 공식 문서</strong> — "CUDA Ops that can autocast to float32" 목록. 6.1절의 근거이고, 문서가 이유를 적지 않는다는 단서도 여기서 확인했다. <a href="https://docs.pytorch.org/docs/stable/amp.html" target="_blank" rel="noopener">docs.pytorch.org</a></span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">학습 스택 제보 셋 — <strong>torchtitan #5623 · verl #8376 · prime-rl #4271</strong>(2026-10-25~26, 전부 열려 있음)과 딸린 수정 PR 넷(#5624 · #8377 · #8378 · #4272, 전부 미병합). 6.2절의 표와 재현 수치가 이 제보 본문에서 나왔다. 세 건 모두 같은 제보자가 올렸다.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">독립 포팅과 재구현 — <span class="inline-code">mmaaz-git/softmax-fix</span>(후속 논문 저자 본인) · <span class="inline-code">PwnerHarry/barron-softmax-fix</span> · <span class="inline-code">Dicklesworthstone/frankentorch</span> #8과 <span class="inline-code">frankenjax</span> #1(한 사람이 소유한 러스트 재구현, 여기서는 고쳐서 병합됐다).</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">Barron, J. T. <strong>X 스레드</strong>(2026-10-23). 제미나이 귀속과 ε 관련 언급의 1차 출처다. 원문 페이지가 막혀 있어 우회 경로로 확보한 영어 원문에 근거했고, 본문에서는 간접화법으로만 적었다.</span></li>
+                        <li><span class="ref-num">15.</span><span class="ref-body">Chu, F. <strong>넘파이 독립 재현</strong>(개인 블로그, 2026-10-23)과 Hacker News 스레드(2026-10-23, 19점·댓글 1). 2절의 절벽 흔들림과 6.5절의 생태계 규모가 여기서 나왔다. 자가 출판 글이라 등급을 밝혀 인용한다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스 블로그 인접 글</h3>
+                    <ul class="reference-list mb-4">
+                        <li><span class="ref-num">16.</span><span class="ref-body"><a href="/blog/open-1b-auditable-training-run/ko/">가중치와 데이터와 레시피를 다 공개해도 같은 모델이 안 나오는 이유</a> — 부동소수점과 <strong>재현성</strong>의 축. 이 글은 같은 수 대신 <strong>틀린 수</strong>가 나오는 축이다.</span></li>
+                        <li><span class="ref-num">17.</span><span class="ref-body"><a href="/report/ai-driven-discovery-verification/ko/">AI 시대의 병목은 생성이 아니라 검증이라는 글</a> — 검증이 있느냐 없느냐를 묻는 축. 이 글은 검증이 여섯 번 있었는데도 매번 남은 것을 묻는 보강이다.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261029"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-10-28T18:23:47.394Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-10-28T18:26:31.292Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-10-28T19:22:34.233Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1793211827394-13tv2t",
+                "version": "0.1.0",
+                "sha": "052a2a95afa30d7970808c86a8f2efabf743c560",
+                "builtAt": "2026-10-24T13:53:43.526Z"
+              },
+              "recordedAt": "2026-10-28T20:37:33.153Z"
+            },
+            mainTitle: "소프트맥스, 교과서와 파이토치가 같은 자리에서 틀린다",
+            subtitle: "구글 딥마인드 연구진이 찾은 결함 둘은 모델이 정답을 아주 확신할 때 나타나고, 그 순간 손실도 학습 신호도 0.0으로 바뀐다",
+            pageTitle: "소프트맥스 정밀도 절벽 분석 — 표준 구현의 수치 결함 둘, 누가 걸리나 | 페블러스",
+            category: "tech",
+            publishDate: "2026-10-29",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/softmax-precision-cliff/ko/",
+            tags: ["소프트맥스", "softmax", "교차 엔트로피", "cross-entropy", "소프트맥스 붕괴", "정밀도 절벽", "부동소수점", "bf16", "PyTorch", "JAX", "구글 딥마인드", "지식 증류", "그로킹", "성질 기반 테스트", "데이터 품질"],
+            faqs: [
+                { question: "내가 돌리는 학습도 이 결함에 걸리나?", answer: "파이토치에서 자동 형변환을 켜고 평범하게 학습한다면 손실 계산이 fp32로 올라가므로 bf16 절벽 5.5는 피한다. 다만 fp32에서도 Adam 기본값 ε=10⁻⁸의 균형 마진이 18.4라 절벽 16.6을 넘는다. 즉 조건은 성립한다. 걸리는 것과 눈에 보이는 손해가 나는 것은 다른 말이고, 논문 스스로 피해 입증은 모듈러 산술 장난감 과제에서만 했다고 적었다." },
+                { question: "소프트맥스 붕괴는 기울기 소실과 뭐가 다른가?", answer: "기울기 소실은 깊은 신경망에서 층을 거슬러 올라갈수록 신호가 작아지는 오래된 문제다. 여기 결함은 참값이 이미 작은 상태에서 정답 항 하나만 0.0으로 반올림돼 기울기의 합이 깨지는 것이다. 나머지 항들은 멀쩡히 양수로 남는다. 피해도 신호가 작아져서 생기는 것이 아니라, 한쪽으로 쏠린 그 작은 신호를 Adam이 정상 크기로 증폭해서 생긴다." },
+                { question: "왜 하필 bf16에서 5.5인가?", answer: "절벽 높이는 쓰는 숫자 형식의 유효 비트 수에 ln2를 곱한 값이다. bf16은 유효 비트가 8이라 8×ln2 = 5.545가 되고, 논문은 실측값을 5.5로 적는다. fp32는 24비트라 16.6, fp64는 53비트라 36.7이다. 외워야 하는 상수가 아니라 형식에서 한 줄로 유도되는 수다." },
+                { question: "Adam의 ε을 키우면 해결되나?", answer: "fp32에서는 상당 부분 해결된다. 논문이 ε ≥ 10⁻⁷이면 균형 마진이 16.1로 절벽 16.6 아래라 스파이크 없이 가라앉는다고 적었다. bf16에서는 다르다. 절벽 5.5를 피하려면 ε을 0.004보다 크게 잡아야 하는데 그 정도면 최적화기의 성질 자체가 달라진다. 실제로 논문 표 1에서 bf16 표준 교차 엔트로피의 최종 마진은 ε을 10⁻⁸에서 10⁻¹⁶까지 내려도 5.1·5.6·5.8에 붙어 있다." },
+                { question: "지금 당장 확인할 수 있는 방법이 있나?", answer: "있고 전부 공짜다. 학습 중 손실이 정확히 0.0으로 찍히는 스텝을 센다. 손실을 자동 형변환 밖에서 저정밀로 계산하고 있지 않은지 본다. 강화학습 미세조정이나 융합 언어 모델 헤드를 쓴다면 로그확률이 정확히 0.0이 되는 토큰 수를 센다. 증류를 한다면 학생이 교사에 가까워진 뒤 두 분포의 거리가 바닥을 치고 멈추는지 본다." },
+                { question: "파이토치는 언제 고쳐지나? 고쳐지면 다 해결되나?", answer: "2026년 10월 29일 기준으로 수정 PR은 초안 상태이고 병합되지 않았다. 그리고 병합돼도 전부 해결되지는 않는다. PR 본문이 제외 목록을 직접 적는데, 컴파일 실행과 애플 실리콘을 비롯한 여러 백엔드, 희소 로그 소프트맥스, 융합·청크 교차 엔트로피 경로가 거기 있다. 이 경로들은 후속 작업이 같은 식을 옮겨 심을 때까지 옛 수치를 쓴다." },
+                { question: "증류를 하고 있는데 뭘 봐야 하나?", answer: "정밀도부터 본다. 논문 7절에서 실제로 학생이 교사에게서 밀려난 것은 bf16뿐이다. fp32는 학습 초반에 두 분포의 거리가 한 번 튀었다가 10⁻⁶ 언저리를 바닥 삼아 더 내려가지 않고, fp64는 fp32 가중치를 바꾸지도 못한다. 그러니 bf16으로 증류를 돌린다면 학생이 교사를 따라잡은 뒤의 구간을 특히 눈여겨볼 만하다." },
+                { question: "결함을 AI가 찾았다는 게 사실인가?", answer: "저자가 X에 올린 글에 따르면 그렇다. 처음 찾아 고친 것은 제미나이 플래시 3.7이고, 실험 대부분은 플래시 3.8이 돌렸으며, 논문 초고와 그림은 제미나이 4 아르곤이 썼다고 적혀 있다. 이 주장은 논문 본문에는 없고 저자의 글에 있다. 후속 논문이 각주로 같은 내용을 인용해 두 번 확인되지만, 1차 출처가 소셜 미디어 글이라는 점은 밝혀 두는 편이 맞다." },
+                { question: "이 논문의 고침을 그대로 갖다 써도 되나?", answer: "조심할 자리가 하나 있다. 후속 논문이 성질 기반 테스트로 찾아낸 것은 모든 값이 음의 무한대인 행에서 이 구현의 기울기가 NaN이 된다는 사실이다. 인과 어텐션 마스킹의 첫 행이 정확히 그 꼴이다. 다만 배런의 함수는 손실 계산용으로 제안된 것이고, 그 NaN은 논문이 권한 대로 다른 자리에 그대로 갈아 끼웠을 때 생긴다. 후속 논문의 교체본은 같은 입력에서 NaN을 내지 않는다." },
+                { question: "그동안의 학습 결과를 다시 돌려야 하나?", answer: "그렇게 읽을 근거는 아직 없다. 논문은 극단적인 마진과 거의 0에 가까운 학생·교사 간극이 표준적인 대규모 학습에서는 흔치 않다고 결론에 적었고, 피해를 측정한 실험은 전부 장난감 과제다. 지금 확인된 것은 방아쇠가 깔려 있는 코드 경로의 이름이지 망가진 대규모 학습 기록이 아니다." },
+                { question: "JAX를 쓰면 어떻게 되나?", answer: "JAX에는 파이토치의 자동 형변환 같은 장치가 없어서 손실을 어느 정밀도로 계산할지는 사용자가 쓴 대로 간다. 논문이 든 실행 예 자체가 JAX와 optax에서 손실과 기울기가 0.0으로 나오는 장면이었다. 그런데도 두 저장소에는 이 논문을 인용한 이슈나 PR이 2026년 10월 29일까지 한 건도 올라오지 않았다." },
+                { question: "강화학습 미세조정에도 해당되나?", answer: "학습 스택 세 곳에 올라온 제보가 지목한 자리가 바로 거기다. 토큰별 로그확률을 계산하는 함수와 융합 교차 엔트로피 커널이 이름으로 지목됐다. 어휘 32,000에서 정답이 나머지보다 30 앞선 상황을 만들면 fp32에서 로그확률과 기울기가 0.000e+00으로 나온다. 다만 세 건 모두 같은 한 사람이 올렸고, 재현은 손으로 만든 로짓이며, 딸린 수정 PR은 전부 병합되지 않았다." }
+            ]
+        });
+    </script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20261029" defer></script>
+</body>
+</html>

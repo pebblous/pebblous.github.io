@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>Softmax Precision Cliff: Two Bugs, Who Is Exposed | Pebblous</title>
+    <meta name="description" content="Google DeepMind researchers found two numerical bugs in the standard implementations of softmax and cross-entropy. Once a model is confident enough that the logit margin passes 5.5 in bf16 or 16.6 in fp32, the loss and the target gradient both read 0.0 and the gradients stop summing to zero.">
+    <meta name="keywords" content="softmax, cross-entropy, log-softmax, Softmax Collapse, precision cliff, floating point, bf16, PyTorch, JAX, Google DeepMind, knowledge distillation, grokking, property-based testing, data quality">
+
+    <!-- Main search keyword -->
+    <meta name="pb-search-keyword" content="softmax">
+    <meta name="pb-search-keyword-forms" content="softmax|log-softmax|Softmax Collapse|Softmax Cancellation">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/softmax-precision-cliff/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/softmax-precision-cliff/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/softmax-precision-cliff/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/softmax-precision-cliff/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Softmax: The Textbook and PyTorch Get It Wrong in the Same Place">
+    <meta property="og:description" content="The moment a model is very sure of the right answer, both the loss and the target gradient read 0.0. The two bugs Google DeepMind researchers found in the standard implementations of softmax and cross-entropy.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/softmax-precision-cliff/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/softmax-precision-cliff/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Softmax: The Textbook and PyTorch Get It Wrong in the Same Place">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="Softmax: The Textbook and PyTorch Get It Wrong in the Same Place">
+    <meta name="twitter:description" content="The moment a model is very sure of the right answer, both the loss and the target gradient read 0.0. The two bugs Google DeepMind researchers found in the standard implementations of softmax and cross-entropy.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/softmax-precision-cliff/en/image/index.png">
+    <meta name="twitter:image:alt" content="Softmax: The Textbook and PyTorch Get It Wrong in the Same Place">
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="Softmax: The Textbook and PyTorch Get It Wrong in the Same Place">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/10/29">
+    <meta name="citation_online_date" content="2026/10/29">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (fixed order: theme-variables -> tailwind-build -> common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261029">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261029">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261029">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* Figure box, caption, source quote — defined locally for this report, no shared component exists */
+        .fig-box {
+            background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+        .fig-caption {
+            font-size: 0.85rem;
+            color: var(--text-muted, #808080);
+            line-height: 1.7;
+            margin-top: 0.5rem;
+        }
+        .comparison-table td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .comparison-table th.num { text-align: right; }
+        .comparison-table .hit { color: #F86825; font-weight: 700; }
+        .src-quote {
+            border-left: 3px solid #BDBDBD;
+            padding: 0.25rem 0 0.25rem 1rem;
+            margin: 1.25rem 0;
+            color: var(--text-secondary, #475569);
+            line-height: 2.0;
+            font-size: 1rem;
+        }
+        .src-quote .orig {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted, #808080);
+            line-height: 1.8;
+        }
+        .formula-line {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 1rem;
+            text-align: center;
+            padding: 0.75rem 0.5rem;
+            margin: 1.25rem 0;
+            background: var(--bg-secondary, #f8fafc);
+            border-radius: 0.5rem;
+            color: var(--text-primary, #171719);
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. The Loss Reads Its Best Value and Stops</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The Height of the Cliff Is Set by Mantissa Bits</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Does the Margin Grow All the Way to the Cliff</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. A Student Identical to Its Teacher Gets Pushed Away</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. A Fix of a Fix of a Fix</a></li>
+                    <li><a href="#section-6" class="block pl-4 themeable-toc-link transition-colors duration-200">6. So Who Is Exposed Right Now</a></li>
+                    <li><a href="#pebblous-perspective" class="block pl-4 themeable-toc-link transition-colors duration-200">Why Pebblous Is Watching</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            This article is about a paper claiming that the standard implementations of softmax and cross-entropy, the first equations anyone meets when learning deep learning, carry two numerical bugs. Three Google DeepMind researchers posted the nine-page note to arXiv on October 22, 2026. The moment a model becomes very sure of the right answer, the gradient on the correct class alone rounds to 0.0 while the rest stay positive. Gradients that should add up to zero no longer do. At that same moment the loss is 0.0 as well, so the instrument panel reads the best value it can show.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The trigger sits where two numbers meet. How sure a model has to be before the bug starts is set by the mantissa bits of the floating-point format, and how far that confidence is allowed to grow is set by the epsilon inside the Adam optimizer. Under the defaults almost everyone uses, the two numbers cross by a narrow gap. The loss spikes this bug produces have carried a name for four years without carrying a cause. That name, given in 2022, is the slingshot mechanism.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Everything above is what the paper showed, and what follows is this article's reading of it. The paper demonstrated harm only on toy modular-arithmetic tasks and wrote in its own conclusion that the conditions are "uncommon in standard large-scale training." Yet the reason most training runs are fine today is not that this layer was audited. It is that framework defaults quietly promote the loss computation to fp32. The routes that step outside those defaults in exchange for speed were named in public for the first time this week: low-precision loss, fused kernels, and compiled execution.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">5.5</p>
+                            <p class="text-sm themeable-text-secondary mt-1">The precision cliff in bf16</p>
+                            <p class="text-xs themeable-muted mt-1">Past this logit margin the bug begins. In probability terms that is 99.6% on the correct class, a confidence classifiers routinely reach late in training</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">18.4 vs 16.6</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Equilibrium margin at Adam's default vs. the fp32 cliff</p>
+                            <p class="text-xs themeable-muted mt-1">The margin that ε=10⁻⁸ carries you to sits just past the cliff. One decimal place larger and it would not have crossed</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">61% → 23%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Test accuracy on the task run without weight decay</p>
+                            <p class="text-xs themeable-muted mt-1">a²+b² mod 97 at ε=10⁻¹⁶, around step 1250. The fixed implementation reaches 85% in the same place</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.000e+00</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Target gradient fp32 returns at vocabulary 32,000 and margin 30</p>
+                            <p class="text-xs themeable-muted mt-1">The true value computed in fp64 is 2.994e-09. This number comes from a report filed against a real training stack</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Loss Reads Its Best Value and Stops</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper is titled <strong>A Fix for Softmax and Cross-Entropy</strong>, and the authors are Jonathan T. Barron, Dan Gnanapragasam and Michael Tschannen. The title page lists all three at Google DeepMind. Version 1 went up on October 22, 2026, and version 2 four days later on the 26th. The body runs nine pages with no appendix. Every number in this article is taken from that second version.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Credit first. The paper covers two bugs, and <strong>the first one is not its own discovery.</strong> The paper says so in its own introduction.
+                    </p>
+                    <div class="src-quote">
+                        "The first bug, identified by Prieto et al. (2025) as Softmax Collapse…"
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The Prieto et al. paper went to arXiv in January 2025 and appeared at ICLR that year. The name and the diagnosis both came from there. What this paper adds is <strong>the second bug, Softmax Cancellation</strong> (the paper's own phrasing is "which we will call"), and <strong>one implementation that fixes both at once</strong>. On the first bug its contribution is a fix, not a rediscovery. Drop that distinction and a four-year lineage collapses into the credit of a single paper. Section 5 lays that lineage out across six points in time.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>Past a Certain Confidence, the Loss Becomes 0.0</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A classifier emits one score per class in its final layer. Those scores are called <strong>logits</strong>. Cross-entropy loss looks at how much larger the correct class's logit is than the rest, and the single number that records "how much larger" is the <strong>logit margin</strong>. Take the correct logit, then subtract the log of the summed exponentials of all the others.
+                    </p>
+                    <div class="formula-line">m = z<sub>t</sub> − log Σ<sub>j≠t</sub> e<sup>z<sub>j</sub></sup></div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Rewritten in terms of that margin, the loss takes a very simple form: the log of 1 plus e<sup>−m</sup>. The surer the model is about the right answer, the larger m grows and the closer e<sup>−m</sup> gets to zero. In human arithmetic the loss still stays above zero. In floating point it does not. Once e<sup>−m</sup> is small enough relative to 1, <strong>1 + e<sup>−m</sup> simply rounds to 1.0</strong>, and since log(1) = 0, the loss becomes exactly 0.0.
+                    </p>
+                    <div class="formula-line">loss = log(1 + e<sup>−m</sup>) → log(1.0) = 0.0</div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The backward pass fails in the same spot. The gradient on the correct class is the probability the model assigned to it minus 1, and that probability is itself of the form 1 ÷ (1 + e<sup>−m</sup>), so it suffers the same rounding. 1.0 − 1 = 0.0. So <strong>the loss is 0.0 and the gradient on the correct class is 0.0</strong>. No warning, no NaN, no divergence.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's example uses three logits. In fp32, feed in z = [9.0, −9.0, −9.0] with the first class as the target, and the standard implementation in JAX and optax parts ways with the paper's fixed one as follows.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>Implementation</th>
+                                <th class="num">Log-prob of the target</th>
+                                <th class="num">Loss</th>
+                                <th class="num">Target gradient</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Standard (<span class="inline-code">jax.nn</span>, <span class="inline-code">optax</span>)</td>
+                                <td class="num hit">0.0</td>
+                                <td class="num hit">0.0</td>
+                                <td class="num hit">0.0</td>
+                            </tr>
+                            <tr>
+                                <td>The paper's fixed implementation</td>
+                                <td class="num">−3.046e-8</td>
+                                <td class="num">3.046e-8</td>
+                                <td class="num">−3.046e-8</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">Conditions are fp32, z = [9.0, −9.0, −9.0], with the first class as the target. On the same input the standard implementation records the target's log-probability as 0.0 and the fixed one as −3.046e-8. The gap between them is about three hundred-millionths, and that gap is the entire training signal.</p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.2</span>The Real Problem Is Not That It Hit Zero but That Only One Side Did</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One more step is needed before the character of this bug comes into view. What went to 0.0 is <strong>the single slot for the correct class</strong>. In the example above, the gradients in the other two slots survive intact at 1.523e-8 each. Cross-entropy gradients are supposed to add up to zero: the target slot pulls negative, the remaining slots push positive, and the two forces interlock exactly. Round one slot to zero and that balance breaks. That is precisely what the paper's abstract names as the consequence.
+                    </p>
+                    <div class="src-quote">
+                        "…gradients that no longer sum to zero."
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The surviving positives are tiny. Left alone, 1.523e-8 barely moves a weight. The damage comes next. Adam-family optimizers divide the gradient by a running average of its own magnitude, which <strong>amplifies a signal that is small but one-sided into a full-size update</strong>. With the brake on the target side gone, the remaining logits keep getting pushed down, the margin grows further, and the loss curve picks up the spikes we will see later.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>This is not vanishing gradients.</strong> Vanishing gradients is the old problem of a signal shrinking as it propagates back through layers. What happens here is that the true values are already small, <strong>one term alone</strong> rounds to 0.0, and the sum breaks. Translating both into the same phrase leaves a reader picturing something else entirely. This article reserves "vanishing gradients" for the former and says "the gradients stop summing to zero" for the latter.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One reassuring detail is worth recording. The value 3.046e-8 that the fixed implementation returns shows up independently in three places: the body of the paper, the description on the PyTorch fix PR, and a third party's port that appears later in this article. Three separate implementations printing the same number at the same point means that at least there is no dispute about what the true value is.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Height of the Cliff Is Set by Mantissa Bits</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The point where the rounding in section 1 occurs has a name. The paper calls that line the <strong>precision cliff</strong>. Once the margin goes past the cliff, the loss and the target gradient drop to 0.0. Some coverage renders it as "critical margin," but that phrasing is better avoided. The margin is the thing that crosses; the cliff is the line.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The height of the cliff is not a constant anyone has to memorize. One choice of number format fixes it. Floating point stores a value as "significand × a power of two," and how many bits go to the significand differs by format. When you add a very small number to 1 and that small number falls below the last place the mantissa bits can hold, the addition is erased entirely. Convert that boundary into margin terms and it comes out as the number of mantissa bits times ln2.
+                    </p>
+                    <div class="formula-line">cliff height = mantissa bits × ln2</div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That one line was derived by Maaz, the author of the follow-up paper. Plug the formats in and it matches the three values Barron's team measured. In Maaz's own words, "These predicted thresholds line up with the numerical experiments of Barron et al. (2026)."
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>Format</th>
+                                <th class="num">Mantissa bits</th>
+                                <th class="num">Cliff (as the paper writes it)</th>
+                                <th class="num">Derived value</th>
+                                <th class="num">Probability on the target there</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>bf16</td>
+                                <td class="num">8</td>
+                                <td class="num hit">5.5</td>
+                                <td class="num">5.545</td>
+                                <td class="num">0.9959</td>
+                            </tr>
+                            <tr>
+                                <td>fp32</td>
+                                <td class="num">24</td>
+                                <td class="num hit">16.6</td>
+                                <td class="num">16.636</td>
+                                <td class="num">1 − 6.2×10⁻⁸</td>
+                            </tr>
+                            <tr>
+                                <td>fp64</td>
+                                <td class="num">53</td>
+                                <td class="num hit">36.7</td>
+                                <td class="num">36.737</td>
+                                <td class="num">1 − 1.2×10⁻¹⁶</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">The three values from the caption of the paper's Figure 1, placed next to the values derived from mantissa bits × ln2. The differing decimal places are not a disagreement, just the same quantity rounded two ways. The rightmost column is this article's own recalculation of the probability the model is assigning to the correct class at the cliff.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The far-right column says the most. In bf16 the confidence that reaches the cliff is <strong>99.6%</strong>. A model putting 99.6% on the right answer is utterly ordinary late in training. In fp32 the situation is completely different: the probability on the target has to sit within roughly six hundred-millionths of 1 before the cliff is reached. The mantissa only tripled in bits, yet the threshold of confidence moved more than sixty thousand times further away.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One caveat belongs here. The exact position of the cliff is not pinned down to one decimal place. The derived value shifts by about half a step depending on which rounding model you assume, and the measured value wobbles depending on the order in which the sum is accumulated. One developer who reran the experiment in NumPy independently of the paper measured the fp32 cliff at 16.0, and on re-measuring with varied inputs found values scattered between 15.8 and 16.7. His conclusion was that the location of the cliff is a property of your summation order more than of any natural constant. The number this article anchors to is the <strong>16.6</strong> the paper measured, with roughly one ln2 of wobble around it.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is a second source of wobble. Not everyone uses the word margin to mean the same thing. The margin in this article subtracts the log of the summed exponentials of the non-target logits from the target logit. But the Liu et al. paper from May 2026, which proved this bug to be a consequence of floating point, uses a definition that subtracts only <strong>the single largest</strong> of the others. Measured with that ruler, the fp32 threshold becomes mantissa bits minus one, times ln2, which lands close to 16. So 16.6 and 16 are not conflicting measurements but the same line measured with two different rulers. That is why this article does not put them in one table.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        fp16 is absent from the table because the paper did not cover it. bf16 and fp16 are both 16-bit, but their mantissas differ at 8 bits and 11 bits, so their cliffs stand in different places. This article does not derive and publish a value the paper never measured.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Does the Margin Grow All the Way to the Cliff</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        With the height of the cliff known, one question remains. Over a real training run, does the margin really travel that far? If it does not, the cliff is just a line on a chart. And what decides where the margin stops is neither the loss function nor the data. It is <strong>a single optimizer setting</strong>.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Adam-family optimizers divide the gradient by a running average of its magnitude. To keep that division from blowing up at zero, a very small number is added to the denominator. That number is <strong>ε</strong>, and its default is usually 10⁻⁸. Turn on weight decay as well and the force growing the logits meets the force shrinking the weights, and the two balance at some point. Section 5 of the paper writes that stopping point, the equilibrium margin, as a single line. The smaller ε is, the further the margin travels.
+                    </p>
+                    <div class="formula-line">equilibrium margin ≈ log(1 / ε)</div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Put in the default 10⁻⁸ and you get 18.4. The fp32 cliff is at 16.6. <strong>Train with the default settings and the margin is set up to cross the cliff.</strong> It crosses by a narrow gap, too. The sentence the paper leaves at that same spot is the coldest line in this article.
+                    </p>
+                    <div class="src-quote">
+                        "…whereas for ϵ ≥ 10−7, log(1/ϵ) ≤ 16.1 &lt; c32 and standard cross-entropy settles without spiking."
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The c32 in that sentence is the fp32 cliff, 16.6. One decimal place larger on ε and nothing would have happened. Neither the people who chose the default nor the people who use it had any way to see this crossing. The two numbers come from different neighborhoods. One comes from the mantissa bits of a floating-point format, the other from a conventional value picked to avoid dividing by zero. Nobody had checked that the two meet on the same scale. The figure below is that scale.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 700 250" width="100%" role="img" aria-label="A single logit-margin scale showing the precision cliffs and Adam's equilibrium margins together. The cliffs are 5.5 for bf16, 16.6 for fp32 and 36.7 for fp64. The equilibrium margins are 18.4 at epsilon 10 to the minus 8, 27.6 at 10 to the minus 12 and 36.8 at 10 to the minus 16. The default equilibrium margin of 18.4 sits just to the right of the fp32 cliff at 16.6.">
+                            <text x="60" y="22" font-size="12" fill="var(--text-muted, #808080)">Above: precision cliff (set by the format)</text>
+                            <text x="60" y="243" font-size="12" fill="var(--text-muted, #808080)">Below: equilibrium margin (set by Adam's ε)</text>
+
+                            <!-- axis -->
+                            <line x1="60" y1="150" x2="670" y2="150" stroke="#BDBDBD" stroke-width="1"></line>
+                            <text x="60" y="168" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">0</text>
+                            <text x="210" y="168" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">10</text>
+                            <text x="360" y="168" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">20</text>
+                            <text x="510" y="168" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">30</text>
+                            <text x="660" y="168" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">40</text>
+                            <text x="600" y="186" font-size="11" fill="var(--text-muted, #808080)">logit margin</text>
+
+                            <!-- cliffs -->
+                            <line x1="143" y1="62" x2="143" y2="150" stroke="#F86825" stroke-width="2"></line>
+                            <text x="143" y="54" font-size="13" text-anchor="middle" fill="#F86825" font-weight="700">5.5</text>
+                            <text x="143" y="38" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">bf16</text>
+                            <line x1="309" y1="62" x2="309" y2="150" stroke="#F86825" stroke-width="2"></line>
+                            <text x="309" y="54" font-size="13" text-anchor="middle" fill="#F86825" font-weight="700">16.6</text>
+                            <text x="309" y="38" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">fp32</text>
+                            <line x1="611" y1="62" x2="611" y2="150" stroke="#F86825" stroke-width="2"></line>
+                            <text x="611" y="54" font-size="13" text-anchor="middle" fill="#F86825" font-weight="700">36.7</text>
+                            <text x="611" y="38" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">fp64</text>
+
+                            <!-- equilibrium margins -->
+                            <line x1="336" y1="150" x2="336" y2="208" stroke="#171719" stroke-width="2"></line>
+                            <circle cx="336" cy="150" r="4" fill="#171719"></circle>
+                            <text x="336" y="222" font-size="13" text-anchor="middle" fill="var(--text-primary, #171719)" font-weight="700">18.4</text>
+                            <text x="336" y="204" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">ε=10⁻⁸ (default)</text>
+                            <line x1="474" y1="150" x2="474" y2="190" stroke="#808080" stroke-width="2"></line>
+                            <circle cx="474" cy="150" r="4" fill="#808080"></circle>
+                            <text x="474" y="204" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">27.6</text>
+                            <text x="474" y="188" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">ε=10⁻¹²</text>
+                            <line x1="613" y1="150" x2="613" y2="190" stroke="#808080" stroke-width="2"></line>
+                            <circle cx="613" cy="150" r="4" fill="#808080"></circle>
+                            <text x="613" y="204" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">36.8</text>
+                            <text x="613" y="188" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">ε=10⁻¹⁶</text>
+
+                            <!-- gap annotation -->
+                            <line x1="309" y1="112" x2="336" y2="112" stroke="#F86825" stroke-width="1" stroke-dasharray="3 3"></line>
+                            <text x="348" y="116" font-size="11" fill="#F86825">the default stands just past the fp32 cliff</text>
+                        </svg>
+                        <p class="fig-caption">The equilibrium-margin formula from section 5 of the paper and the cliff values from its Figure 1, placed on one scale. The orange lines above are the lines that must not be crossed; the black markers below are where training actually comes to rest. bf16 sits at the left end of the scale, hard to avoid at any ε, while fp32 is overshot by 1.8 at the default. At the far right the fp64 cliff at 36.7 and the ε=10⁻¹⁶ equilibrium margin at 36.8 nearly coincide, though an ε that small is rarely used.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        bf16 is in worse shape. Avoiding the cliff at 5.5 would require an ε larger than 0.004, a value that rewrites Adam's denominator and turns training into a different algorithm. In Table 1 of the paper, the final margin for standard cross-entropy in bf16 stays at <strong>5.1, 5.6 and 5.8</strong> as ε drops from 10⁻⁸ to 10⁻¹² to 10⁻¹⁶. A margin that barely moves across three settings means it never traveled to where ε would have taken it. It stuck to the cliff instead.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One more line exists outside the paper, in a post the author put on X. The industry folklore that small ε is dangerous may in fact have been this bug all along. Weight decay and Adam's ε together set the ceiling on how far logits can grow, the author wrote, and the default 10⁻⁸ happens to land just past the point where the bug begins in fp32. Since that sentence lives in the author's post rather than in the paper, it is worth reading at a different grade of evidence than the paper's claims.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>Four Years of Being Called by a Name Instead of a Cause</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What appears on the training curve once the margin passes the cliff has been known since 2022. A paper by Thilak and five co-authors, posted to arXiv that June, gave the phenomenon the name <strong>the slingshot mechanism</strong>. Their observation was that training long enough with an adaptive optimizer produces repeated episodes where the loss suddenly jumps and comes back, and that grokking, the sudden onset of generalization, often follows right after. The authors wrote plainly in the abstract that they had not found the cause.
+                    </p>
+                    <div class="src-quote">
+                        "…the Slingshot Mechanism does not follow from any known optimization theories that we are aware of, and can be easily overlooked without an in depth examination."
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        It took two years and seven months for an answer to attach itself to that sentence. Prieto et al. named Softmax Collapse as the cause in January 2025, and section 4 of this new paper ties the two together in a single sentence: the slingshot spikes are a direct consequence of Softmax Collapse. For four years what people were looking at was not the bug but the bug's shadow, and the shadow got named first.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Below are the paper's results from running the standard and the fixed implementation side by side on grokking tasks. Lifting the numbers out without their conditions would turn them into an exaggeration, so each row carries its task and settings.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>Task and settings</th>
+                                <th class="num">Standard cross-entropy</th>
+                                <th class="num">Fixed cross-entropy</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>a+b mod 31 · with weight decay (λ=1) · ε=10⁻⁸</td>
+                                <td class="num">94 ± 5%</td>
+                                <td class="num hit">100 ± 0%</td>
+                            </tr>
+                            <tr>
+                                <td>a²+b² mod 97 · no weight decay (λ=0) · ε=10⁻¹⁶</td>
+                                <td class="num hit">61% → 23%</td>
+                                <td class="num">85%</td>
+                            </tr>
+                            <tr>
+                                <td>a³+b mod 97 · same settings</td>
+                                <td class="num">60% → 21%</td>
+                                <td class="num">not reported in the paper</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">All runs are fp32. The arrow in the middle row means test accuracy fell from 61% to 23% at the moment the margin reached the fp32 cliff, around step 1250. The bottom row is a different task under the same settings; the paper reports no value for the fixed implementation there, so the cell is left empty.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There are two ways to read this. First, in an ordinary setup with weight decay turned on, the loss is about 6 percentage points. Small, but 6 points available for free. Second, with weight decay and normalization both off, training climbs once and then collapses. The same bug swings between "slightly worse" and "everything lost" depending on conditions, which is why lifting out "accuracy drops from 61% to 23%" on its own makes the claim false. The fixed side reaching 85% rather than 100% has to be read along with it.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One more setting is missing from the table, and it is the one that explains the 2022 observation. The paper writes that whether a spike helps or hurts generalization depends on what is holding the network's weight norm in place. Put layer normalization in front of the output layer and use no weight decay, and growing the weights before it leaves the logits unchanged while shrinking only the effective learning rate. Every spike inflates the weight norm, and the learning rate gets trimmed by exactly that much on its own. That is the setup Thilak et al. and Prieto et al. were looking at. In that configuration the slingshot looked less like harm and more like an accidental learning-rate decay, which is how the bug's shadow sometimes read as a benefit for four years.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A Student Identical to Its Teacher Gets Pushed Away</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That was the first bug. The second is the one this paper names for the first time: <strong>Softmax Cancellation</strong>. It strikes somewhere else. Where the first arises when a model is confident about the right answer, the second arises <strong>when two models produce almost the same answer</strong>. Distillation is exactly that situation.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Distillation trains a small model (the student) to imitate the probability distribution of a large one (the teacher). Once the student has fully caught up, the two probabilities are equal, and the gradient formed from their difference should be exactly zero. Nothing left to learn means nothing left to move. That is the property that must not break, the invariant.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In floating point it breaks. Subtract two nearly equal numbers and the leading digits all cancel, leaving only the trailing digits as the result, and those trailing digits hold rounding residue rather than true value. It is an old trap in numerical analysis, old enough to have a name: catastrophic cancellation. One more thing compounds it here. The softmax in the forward pass and the log-softmax used in the backward pass should give mathematically identical values, but the implementations differ, so their last digits disagree. Subtracting those two disagreeing numbers is precisely the distillation gradient. What cancels is the leading digits; what remains is the disagreement itself.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's example puts the teacher logits at [2.0, 1.0, 0.0] with the student standing one ten-millionth off. Here are the gradients the standard implementation returns next to the true values computed in fp64, which the fixed implementation also reproduces.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>Gradient term</th>
+                                <th class="num">Standard implementation</th>
+                                <th class="num">True value (fp64, fixed implementation)</th>
+                                <th>How it went wrong</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>First</td>
+                                <td class="num">−5.960e-8</td>
+                                <td class="num">−4.596e-8</td>
+                                <td>Magnitude inflated by 1.3x</td>
+                            </tr>
+                            <tr>
+                                <td>Second</td>
+                                <td class="num">1.452e-8</td>
+                                <td class="num">4.144e-8</td>
+                                <td class="hit">Shrunk by a factor of 2.85</td>
+                            </tr>
+                            <tr>
+                                <td>Third</td>
+                                <td class="num">−1.123e-9</td>
+                                <td class="num">4.513e-9</td>
+                                <td class="hit">Sign flipped</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">Conditions are fp32, teacher logits [2.0, 1.0, 0.0], and student logits equal to those plus [−1e-7, 1e-7, 0]. The paper describes this as shrinking the second term by nearly 3x and flipping the sign of the third; dividing the two values directly confirms the factor as 2.85. The third term went from negative to positive, so it pushes against the direction training is supposed to go.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A student handed a gradient pointing the wrong way does not move closer to its teacher. It <strong>gets pushed away from the teacher</strong>. Training an already finished student further makes it worse. If the bug in section 1 lies to the instrument panel, this one turns the steering wheel the wrong way.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>How Far It Gets Pushed Is Set by Precision</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That said, repeating "the student gets pushed away" without conditions overstates it. Section 7 of the paper runs all three precisions and reports three different outcomes. In <strong>bf16</strong> the discrepancy sits around 10⁻³, and the student really does get pushed away from the teacher as test accuracy falls. In <strong>fp32</strong> the discrepancy is around 10⁻⁸, so the distance between the two distributions spikes once early in training and then stops descending at a floor near 10⁻⁶. In <strong>fp64</strong> the discrepancy is around 10⁻¹⁷, too small even to move weights stored in fp32. The only precision where the damage is visible in practice is bf16.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>The scale of the experiment belongs here.</strong> The model in this distillation experiment is a two-layer ReLU multilayer perceptron, and the task is distilling a teacher that solves a+b mod 53 at 100% accuracy into a student with identical weights over 2,000 steps. Temperature 4, learning rate 2×10⁻³, no weight decay, ε=10⁻⁸. Every experiment in the paper is a modular-arithmetic task of this kind. There is not one language-model-scale run and not one run on a real dataset. That is why section 6 of this article states the scope of the demonstrated harm separately.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A Fix of a Fix of a Fix</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Before laying out the lineage, it is worth seeing what this paper's fix actually does. Both prescriptions come from one principle: <strong>never add 1</strong>. The loss hit 0.0 in section 1 because the implementation physically constructed 1 + e<sup>−m</sup>, and the paper rewrites the computation so that addition never appears in the expression at all. It pins the largest logit at 0, collects only the remaining terms to obtain the margin m, then computes the loss directly with softplus. Softplus is the function that evaluates log(1 + e<sup>x</sup>) without ever forming 1 + e<sup>x</sup>. The gradient follows the same route and remains in the form −e<sup>−m</sup> ÷ (1 + e<sup>−m</sup>). Even if the denominator rounds to 1.0, the e<sup>−m</sup> in the numerator is not erased, so dividing by 1.0 leaves exactly the true value. In fp32 this form holds until the margin reaches about 88, where the exponent range itself runs out.
+                    </p>
+                    <div class="fig-box">
+                        <svg viewBox="0 0 700 390" width="100%" role="img" aria-label="Diagram comparing two routes to the same loss formula. On the left, the standard implementation physically constructs the intermediate value 1 plus e to the power of minus m, which rounds to 1.0 and makes the loss and gradient both 0.0. On the right, the paper's fix computes the same loss directly with softplus, never forming that intermediate value, so the small value survives all the way to the true result of 3.046e-8.">
+                            <text x="175" y="24" font-size="14" text-anchor="middle" font-weight="700" fill="var(--text-primary, #171719)">Standard implementation — adds 1</text>
+                            <text x="525" y="24" font-size="14" text-anchor="middle" font-weight="700" fill="#F86825">The paper's fix — never adds 1</text>
+
+                            <!-- Left column: standard implementation -->
+                            <rect x="30" y="40" width="290" height="60" rx="8" fill="none" stroke="var(--text-muted, #808080)" stroke-width="1.5"></rect>
+                            <text x="175" y="64" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">Compute e^(−m)</text>
+                            <text x="175" y="84" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">(a very small value)</text>
+
+                            <line x1="175" y1="100" x2="175" y2="128" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow-en)"></line>
+
+                            <rect x="30" y="130" width="290" height="60" rx="8" fill="none" stroke="var(--text-muted, #808080)" stroke-width="1.5"></rect>
+                            <text x="175" y="154" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">Physically form 1 + e^(−m)</text>
+                            <text x="175" y="174" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">intermediate value exists in memory</text>
+
+                            <line x1="175" y1="190" x2="175" y2="218" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow-en)"></line>
+
+                            <rect x="30" y="220" width="290" height="60" rx="8" fill="none" stroke="#F86825" stroke-width="2"></rect>
+                            <text x="175" y="244" font-size="12" text-anchor="middle" fill="#F86825" font-weight="700">e^(−m) vanishes next to 1</text>
+                            <text x="175" y="264" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">1 + e^(−m) → rounds to 1.0</text>
+
+                            <line x1="175" y1="280" x2="175" y2="308" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow-en)"></line>
+
+                            <rect x="30" y="310" width="290" height="60" rx="8" fill="var(--bg-secondary, #f8fafc)" stroke="var(--text-muted, #808080)" stroke-width="1.5"></rect>
+                            <text x="175" y="334" font-size="13" text-anchor="middle" fill="var(--text-primary, #171719)" font-weight="700">log(1.0) = 0.0</text>
+                            <text x="175" y="354" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">loss and gradient both 0.0</text>
+
+                            <!-- Right column: the paper's fix -->
+                            <rect x="380" y="40" width="290" height="60" rx="8" fill="none" stroke="var(--text-muted, #808080)" stroke-width="1.5"></rect>
+                            <text x="525" y="64" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">Pass m directly to softplus</text>
+                            <text x="525" y="84" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">softplus(−m) = log(1+e^(−m))</text>
+
+                            <line x1="525" y1="100" x2="525" y2="128" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow-en)"></line>
+
+                            <rect x="380" y="130" width="290" height="60" rx="8" fill="none" stroke="var(--text-muted, #808080)" stroke-width="1.5"></rect>
+                            <text x="525" y="154" font-size="12" text-anchor="middle" fill="var(--text-secondary, #475569)">1 + e^(−m) is never formed</text>
+                            <text x="525" y="174" font-size="11" text-anchor="middle" fill="var(--text-muted, #808080)">no intermediate value exists</text>
+
+                            <line x1="525" y1="190" x2="525" y2="218" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow-en)"></line>
+
+                            <rect x="380" y="220" width="290" height="60" rx="8" fill="none" stroke="#F86825" stroke-width="2"></rect>
+                            <text x="525" y="244" font-size="12" text-anchor="middle" fill="#F86825" font-weight="700">the small value of e^(−m) survives</text>
+                            <text x="525" y="264" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">nothing left for rounding to erase</text>
+
+                            <line x1="525" y1="280" x2="525" y2="308" stroke="var(--text-muted, #808080)" stroke-width="1.5" marker-end="url(#sm-arrow-en)"></line>
+
+                            <rect x="380" y="310" width="290" height="60" rx="8" fill="none" stroke="#F86825" stroke-width="2"></rect>
+                            <text x="525" y="334" font-size="13" text-anchor="middle" fill="#F86825" font-weight="700">loss = 3.046e-8</text>
+                            <text x="525" y="354" font-size="11" text-anchor="middle" fill="var(--text-secondary, #475569)">matches the fp64 true value</text>
+
+                            <defs>
+                                <marker id="sm-arrow-en" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                                    <path d="M0,0 L8,4 L0,8 Z" fill="var(--text-muted, #808080)"></path>
+                                </marker>
+                            </defs>
+                        </svg>
+                        <p class="fig-caption">Pebblous original diagram (Fig. reinterpretation) — two routes to the same loss formula. The standard implementation on the left physically constructs the intermediate value 1 + e⁻ᵐ, and e⁻ᵐ gets rounded away inside it. The paper's fix on the right uses softplus to erase that intermediate value from the expression itself, preserving the same small value all the way through. Both routes compute the same number mathematically; in floating point, the route decides the result.</p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The cancellation in section 4 yields to the same principle. Instead of subtracting the student's and teacher's probabilities directly, the fix takes the ratio of the two in log space and recovers the difference there using <span class="inline-code">expm1</span> and <span class="inline-code">log1p</span>. Both functions exist precisely to erase the place where a 1 would be added or subtracted. A final term then adjusts the gradients so they sum to zero. That way, when student and teacher become exactly equal, the gradient becomes exactly zero.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's abstract states the effect of both fixes in one sentence, and a clause easy to skim past is attached to it.
+                    </p>
+                    <div class="src-quote">
+                        "Rewriting these functions in log space using softplus, expm1, and log1p restores accurate, zero-sum gradients across bf16, fp32, and fp64 without internally casting to higher precision."
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That closing clause matters. The autocast machinery we will meet in section 6 promotes only the loss computation to fp32 and pushes the cliff further out. This fix leaves the working precision exactly where it is and changes the expression instead. The former routes around the bug; the latter removes it.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The history of this bug is not one paper's discovery story. Over four years, humans and machines took turns entering six times, and <strong>each pass fixed something and left something behind.</strong> What one pass left behind is what the next one found. Here are the six points in time.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>When</th>
+                                <th>Who</th>
+                                <th>What they found</th>
+                                <th>What they left behind</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2022-06</td>
+                                <td>Thilak et al. (human)</td>
+                                <td>Named the loss spikes the slingshot mechanism and studied them empirically</td>
+                                <td>Could not find the cause, and said so in the abstract</td>
+                            </tr>
+                            <tr>
+                                <td>2025-01</td>
+                                <td>Prieto et al. (human)</td>
+                                <td>Identified the cause as Softmax Collapse and gave it that name</td>
+                                <td>Offered StableMax as a replacement, but being linear instead of exponential it lets the margin run away into four digits, from 2,322 to 21,252</td>
+                            </tr>
+                            <tr>
+                                <td>2026-05</td>
+                                <td>Liu et al. (human)</td>
+                                <td>Proved the bug to be a consequence of floating-point limits and derived the threshold formula</td>
+                                <td>Proposed subtracting the mean from the gradient, which drops accuracy to 48.9% in small-ε settings</td>
+                            </tr>
+                            <tr>
+                                <td>2026-10-22</td>
+                                <td>Barron et al. (Google DeepMind)</td>
+                                <td class="hit">Found Softmax Cancellation and shipped one implementation that fixes both bugs</td>
+                                <td>Gradients become NaN on a row whose values are all −∞</td>
+                            </tr>
+                            <tr>
+                                <td>2026-10-27</td>
+                                <td>Maaz (human plus property-based testing)</td>
+                                <td>Rediscovered that NaN from one property alone: the rows of the Jacobian sum to zero</td>
+                                <td>Fixed it by swapping one function, and noted himself that the method is not a new idea</td>
+                            </tr>
+                            <tr>
+                                <td>2026-10-27</td>
+                                <td>Astra (AI reviewer)</td>
+                                <td>Caught an overflow in the PyTorch port where finite inputs produce infinity</td>
+                                <td>Being a review, it carries no code, and that PR is still a draft</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">The "left behind" column is a starting point for the next entry, not an accusation. The middle three rows were all attempts to fix the loss function, and all three left a side effect of their own. The gaps are worth noting too. Two years and seven months separate the first two, one year and nine months separate the second and the fourth, and the last three all happened <strong>within five days</strong>.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The two middle entries deserve a little more. The StableMax that Prieto et al. introduced replaces the exponential with a piecewise rational function and so avoids Softmax Collapse outright. The cost is that probability now decays only linearly in the logits, so reaching the same confidence requires the logits to spread much wider. That is why StableMax's final margins in Table 1 of the paper run to four digits. The Liu et al. correction subtracts the mean from the gradient vector to force the sum back to zero, but when the target gradient has already rounded to zero, subtracting the mean leaves the target with only −1/K of the total from the rest. In Table 1 that configuration's accuracy falls below half.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>Finder, Fixer and Breaker Were All Half Machine</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This episode has a second storyline that never made it into the paper. According to a post the author put on X, <strong>the bug was first found and fixed by Gemini Flash 3.7</strong>, most of the paper's experiments were run by Flash 3.8, and the first draft and the figures were written by Gemini 4 Argon. The author added that he reworked that draft obsessively, that the content got stronger, and that the prose did not. The primary source for this claim is the author's post rather than the paper, and it is corroborated once more by the follow-up paper, whose background section records that "They claim that these issues were found and fixed using Gemini Flash 3.7."
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The PyTorch side looks similar. Three days after the paper went up, a user filed an issue on the PyTorch repository asking for the fix to be adopted, and on the fourth day a maintainer opened a PR. The diff in that PR was written by an agent, not a person. The maintainer's only comment on the issue describes the situation exactly.
+                    </p>
+                    <div class="src-quote">
+                        "I'm noodling on …/pull/202049 but the agent generated an annoyingly long diff so I'm still reading it"
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        All five review comments on that PR open with a header saying they were posted by an AI assistant named Astra on the maintainer's behalf. And one of those five caught <strong>a real bug no human had seen</strong>. In fp32, with logits [1, 0, 0] and a backward input of [2e38, −1.75e38, −1.75e38], a newly added branch overflows to negative infinity in an intermediate step and the first gradient comes out as infinity. The true value computed in fp64 is 2.8641753e38, which sits comfortably inside the range fp32 can represent. A perfectly representable answer was turned into infinity.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The timestamps are sharp. The five reviews went up at 15:15 and 15:17 on October 27, and a commit labeled as addressing review comments landed 1 hour and 37 minutes later at 16:52. The PR description updated at 18:21 that day explains that a sign condition and a finiteness condition now block the overflow. The commit message does not say which review it answers, so nothing can be asserted beyond this: <strong>a commit addressing the reviews landed less than two hours after they were posted</strong>.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The reverse case happened the same week. Maaz, author of the follow-up paper, found the NaN in Barron's implementation using property-based testing: write down the properties a function must uphold on any input, then let a tool hunt automatically for counterexamples. The inputs the tool produced to break two properties were [0.0, 37.0] and <strong>[0.0, 1.0]</strong>. The first is an extreme value whose margin of 37 exceeds the fp64 cliff at 36.737. The second is an ordinary vector that could appear in any textbook. A human-built tool broke a machine-written fix, and the lineage of that tool runs back to QuickCheck in 2000 and Hypothesis in 2019. Maaz himself wrote a 2025 paper on pairing that tool with agents to find bugs in libraries, and here he pointed the method at the softmax fix.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So this section takes no side. The bug a machine found was real, the diff a machine wrote was too long for a human to finish reading, the review a machine performed caught an overflow a human missed, a human-built tool broke the machine's fix, and the two earlier human corrections each left a side effect. All six entries are facts.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>All Six Found It Through an Invariant, Not a Metric</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The common thread lies elsewhere. The method of discovery was the same in all six entries. Nobody started from "accuracy dropped, so something is wrong." Each brought along one property that must not break. <strong>Do the gradients sum to zero? If student and teacher match, is the gradient zero? Do the rows of the Jacobian sum to zero? Does a finite input yield a finite output?</strong> None of the four asks whether the model is doing well. All four ask whether the arithmetic is keeping its own promise. What average scores never revealed showed up in that one line.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One last quiet detail. The method Maaz used to repair the NaN in Barron's implementation was already known in numerical analysis, and the source he cites is a 2021 paper in a numerical analysis journal on computing log-sum-exp and softmax. Both papers cite it. The max-subtraction stabilization trick and the function swap used here were both in that paper five years ago. Five years from a numerical analysis journal to a deep learning loss function.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="section-6" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">So Who Is Exposed Right Now</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Saying a bug exists is not the same as saying your training run is wrong today. The clearest line on that was drawn by the paper itself, in its concluding paragraph.
+                    </p>
+                    <div class="src-quote">
+                        "Though the extreme margins and near-zero student–teacher gaps probed by our experiments are uncommon in standard large-scale training, our fixed functions are easy drop-in replacements…"
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Write this article without that sentence and it becomes scaremongering. Read only that sentence and close the tab, and you miss the other half. <strong>The trigger is common; the demonstrated harm exists only on toy tasks.</strong> That single line sets the register of this entire article. What follows is where that trigger is laid, confirmed against primary documents.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>The Defaults Have Been Shielding You</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In the table from section 2, the bf16 cliff at 5.5 corresponds to a probability of 99.6% on the correct class, a level of confidence common for a classifier late in training. There is a reason most runs are fine anyway. PyTorch's autocast picks a precision per operation during mixed-precision training, and the official documentation's <strong>list of operations that are promoted to fp32</strong> contains cross-entropy, log-softmax and softmax, all three. So even when a user trains in bf16, the loss computation alone is promoted to fp32. The cliff moves from 5.5 to 16.6.
+                    </p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Fact and interpretation, separated.</strong> The fact is only that those operations appear on the list. The PyTorch documentation never states why the list was drawn that way. So writing "they were placed there out of concern for numerical stability" is a plausible guess the documentation does not underwrite. One sentence is verifiable: being on the list, they end up avoiding the bf16 cliff.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>The Routes Outside the Defaults Now Have Names</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What is exposed, then, is whatever leaves the defaults. And the list of those routes is not guesswork. It comes from the exclusion list the PyTorch fix PR wrote for itself. Even once the fix merges, the paths named there keep the old numerics.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>Route</th>
+                                <th>Where it stands today</th>
+                                <th>Evidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Ordinary training inside autocast</td>
+                                <td>The loss is promoted to fp32 and avoids the bf16 cliff</td>
+                                <td>PyTorch autocast documentation</td>
+                            </tr>
+                            <tr>
+                                <td>Loss computed in bf16 outside autocast</td>
+                                <td class="hit">Stands directly on the cliff at 5.5</td>
+                                <td>The author of the PyTorch issue hit it and wrote that he worked around it by moving to fp32</td>
+                            </tr>
+                            <tr>
+                                <td>fp32 with Adam's default ε</td>
+                                <td class="hit">An equilibrium margin of 18.4 crosses the cliff at 16.6</td>
+                                <td>Section 5 of the paper</td>
+                            </tr>
+                            <tr>
+                                <td>Compiled execution (<span class="inline-code">torch.compile</span>)</td>
+                                <td class="hit">Keeps the old numerics even after the PR merges</td>
+                                <td>Exclusion list in the PR description</td>
+                            </tr>
+                            <tr>
+                                <td>Apple Silicon (MPS), XPU, Vulkan, Metal and others</td>
+                                <td class="hit">Outside the scope of the fix</td>
+                                <td>Exclusion list in the PR description</td>
+                            </tr>
+                            <tr>
+                                <td>Fused and chunked cross-entropy paths</td>
+                                <td class="hit">Out of scope because they compute the normalization term themselves</td>
+                                <td>The PR description names that path and excludes it</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">Only the first row is on the safe side; every other row is outside the defaults. They share something. The routes on the exclusion list are mostly <strong>routes built to go faster</strong>: faster by compiling, faster by fusing kernels, faster by dropping precision.</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Everything to this point is possibility. In the week the paper appeared, the possibility acquired names. Three frameworks used for large language model training received reports that the log-probability and gradient of a confident correct token go to exactly zero, with the files and functions named.
+                    </p>
+                    <table class="comparison-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>Repository</th>
+                                <th>Location named</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>torchtitan</td>
+                                <td>The loss-parallel cross-entropy function. The report notes that the per-token log-probability computation for reinforcement learning, which reuses the same function, is affected the same way</td>
+                                <td>Open</td>
+                            </tr>
+                            <tr>
+                                <td>verl</td>
+                                <td>Two log-probability functions and the Triton fused linear cross-entropy kernel. The report states that the bf16 branch already rounds at a margin of 5.5</td>
+                                <td>Open</td>
+                            </tr>
+                            <tr>
+                                <td>prime-rl</td>
+                                <td>The chunked log-probability and entropy functions for reinforcement learning, and the chunked cross-entropy function for supervised fine-tuning</td>
+                                <td>Open</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="fig-caption mb-6">The reproduction code in all three reports takes the same shape. Set up a vocabulary of 32,000 where the correct logit leads the rest by 30, and in fp32 the loss, the log-probability and the target gradient all read <strong>0.000e+00</strong>, leaving only the sum of the remaining gradients at 2.994e-09. The true values computed in fp64 are −2.994e-09 on the target and 2.994e-09 for the rest. At a vocabulary of 32,000, a margin of 30 is common.</p>
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            <strong>Three caveats have to travel with these reports.</strong> First, all three were filed by <strong>the same person</strong>, two of them one second apart. This is not "three teams each found it" but one person locating the same spot across three stacks. Second, the reproduction code uses hand-constructed logits, <strong>not a record of a training run that broke.</strong> Third, the four accompanying fix PRs are <strong>all unmerged</strong> as of this writing. These reports still matter for one reason. The condition the paper called uncommon is routine rather than exceptional in per-token log-probabilities for reinforcement learning and in fused language model heads, and the names of those paths were written down in public for the first time.
+                        </p>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        JAX is a different story again. JAX has no autocast, so the precision the loss is computed in is entirely whatever the user wrote. And the paper's own worked example from section 1 was a scene of 0.0 coming out of JAX and optax. Even so, neither repository has a single issue or PR citing this paper yet.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>Who Pays for the Fix</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The price on the fixing side has to be counted too. The paper's conclusion says the fix can be implemented "without meaningful slowdown." The kernel measurements posted on the PyTorch PR are more varied than that. On a large GPU, the log-softmax forward pass slows by 1.03x in fp32 and 1.15x in bf16, and cross-entropy forward plus backward comes to 1.02x and 1.10x. CPU lands between 1.0x and 1.3x. But <strong>isolate the log-softmax backward pass alone and it rises to as much as 1.7x</strong>. x86 was not measured.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Lined up together, the three figures broadly support the paper's claim while showing its edges. And the sharpest observation came from the AI reviewer: as currently designed, compiled execution does not receive the fix and carries the bug forward, while eager execution pays the reported slowdown. <strong>One side pays the cost and the other side never collects the benefit.</strong>
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.4</span>The Large-Scale Evidence Sits in the Next Neighborhood</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So is there no case yet where the harm was measured in a large training run? For Softmax Collapse, no. But there is one <strong>very close by</strong>. A different paper posted on September 28, 24 days before this one, reported a broken conservation law in bf16 attention. While pretraining a 450-million-parameter model on 50 billion tokens, the gradient norm jumped by a factor of 1000 at the 25-billion-token mark, and the final loss came out 0.2 nats worse than the fp32 run. Throughout, <strong>not a single NaN appeared.</strong> Here is the sentence that paper's abstract names as part of the cause.
+                    </p>
+                    <div class="src-quote">
+                        "The remaining error comes from a broken conservation law. The softmax score gradient sums to zero along every row… rounding it to BF16 leaves a small nonzero sum that leaks the mean key into the gradient."
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This must not be read as the same bug. <strong>The broken invariant is the same; the reason it breaks is not.</strong> That case is not about 1 + e⁻ᵐ rounding to 1. It is about the row sum leaking after a cast to bf16. Still, putting the two side by side fixes the register of this article. What happens in large-scale training when one softmax invariant breaks has already been measured, in the operation right next door. And there too, no warning fired.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.5</span>No Mainstream Framework Has Merged the Fix</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Counting the state of the ecosystem as of October 29, 2026, a week after the paper appeared: the PyTorch issue is open with a single comment. The fix PR sits in draft, unmerged. The Hacker News thread has 19 points and one comment. Across all of GitHub, 51 issues and PRs cite this paper's number. <strong>Among mainstream Python frameworks, zero have merged the fix.</strong> The places that merged it are two Rust reimplementations owned by one person and a Go library.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Public testimony amounting to "we hit this in our own training" stands at one. The user who filed the PyTorch issue wrote that he hit Softmax Collapse in bf16 and worked around it by moving the loss computation alone to fp32. The rest of the public activity is reproductions, ports and reports, all posted by a handful of individuals. The independent reproduction from section 2 appeared on a personal blog, and the porting repositories carry star counts in the single digits to the low teens.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        None of this has to be read as laziness. Changing the numerics of a loss function shifts every user's training results slightly, the same expression has to be transplanted across hundreds of backends and compilation paths, and a human has to finish reading a 700-line diff an agent wrote. <strong>Stated purely as facts about speed:</strong> in the week since the bug went public, the academic rebuttal, the reproduction and the follow-up paper all arrived within five days, and the fix in the standard library is still a draft.
+                    </p>
+                </section>
+
+                <!-- Why Pebblous Is Watching -->
+                <section id="pebblous-perspective" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Is Watching</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is a reason Pebblous spent this long on a numerical analysis paper. When a model performs badly, the first thing we suspect is almost always the data. That suspicion is usually right. The problem is what comes after it.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.1</span>The Question of Readiness Has One More Layer Beneath It</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AI-Ready Data asks whether a dataset is in a usable state. This episode exposes one more layer underneath that question. <strong>Is the arithmetic that transcribes that data into numbers in a usable state?</strong> And the safety of that layer was never guaranteed by design. As section 6 showed, a default was promoting the loss to fp32, and the documentation does not even record why. Step outside the defaults in pursuit of performance and the guarantee leaves with you. The structure is identical on the data side. The faster the path, the more checks it skips, and the skipped checks are recorded nowhere.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.2</span>What "The Data Was Fine" Needs in Order to Mean Something</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The most common sentence in data quality verdicts is "we looked at the data and it was fine." For that sentence to mean "the data is not the culprit," there has to be separate evidence that the other layers are clean. In this episode that evidence was <strong>"because it is the standard implementation."</strong> And as section 5 showed, that evidence was slightly wrong six times in a row. For a data quality report to mean anything, it needs a field recording the assumptions of the arithmetic layer: what precision the loss was computed in, which kernel it went through, whether it was a compiled path. No data quality report today has that field.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This axis connects to two earlier pieces on the Pebblous blog, with a different question each time. <a href="/blog/open-1b-auditable-training-run/en/" class="underline">The piece on publishing weights, data and recipe and still not getting the same model</a> was about floating point breaking <strong>reproducibility</strong>. This one is not about failing to get the same number. It is about <strong>getting a wrong number</strong>. <a href="/report/ai-driven-discovery-verification/en/" class="underline">The piece arguing that the bottleneck in the AI era is verification rather than generation</a> asked whether verification was present at all. In this subject verification was present six times. Something was left behind on every one of them.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.3</span>Four Checks You Can Run Today</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If you run training yourself, there are four things you can check today, and none of the four needs a new tool.
+                    </p>
+                    <ul class="themeable-text leading-relaxed space-y-2 mb-6 ml-6">
+                        <li>Check whether the loss is being computed in low precision outside autocast. That is exactly what the author of the PyTorch issue hit.</li>
+                        <li>Count whether any <strong>step shows a loss of exactly 0.0</strong> during training. If one does, that may be the cliff rather than convergence.</li>
+                        <li>If you distill, watch whether the distance between the two distributions hits a floor and stops descending once the student has closed in on the teacher.</li>
+                        <li>If you use reinforcement learning fine-tuning or a fused language model head, count how many <strong>tokens record a log-probability of exactly 0.0</strong>. That is the spot the reports in section 6 named.</li>
+                    </ul>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        None of the four inspects a score. All four check <strong>whether something that must not break has broken</strong>.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">7.4</span>The Place That Asks About Invariants Rather Than Metrics</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The common thread from section 5 overlaps with where Pebblous stands. All six entries carried an invariant instead of a performance metric. Do the gradients sum to zero, is the gradient zero when student and teacher match, does a finite input yield a finite output. The equivalent position on the data side is not the one asking whether the distribution looks good. It is <strong>the one asking whether a property that must not break has broken</strong>. That is where Pebblous means to stand.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So this article ends on one point. <strong>"We verified it" only means something once you say which layer you verified down to.</strong> We looked at the data. We looked at the model architecture. Who looked at the implementation of the loss function? And at the cliff the floating-point format brings with it, one layer below that?
+                    </p>
+
+                    <div class="info-card">
+                        <p class="themeable-text leading-relaxed">
+                            The numbers in this article were checked against the second version of the paper, the follow-up paper, and the original text of the PyTorch issue and PR, and the ratios and probabilities were recomputed. What could not be confirmed is recorded too. The author's post on X could not be reached on its original page, so this article relied on the English text obtained through a mirror, which is why section 5 uses indirect speech rather than quotation marks. Among fused cross-entropy kernels, the only ones this article can name on the record are verl, which filed its own report, and PyTorch, which wrote the exclusion list into its own PR; whether other kernels stand on the fp32 cliff is not something this article rules on. Sections 1 through 6 are what the primary sources say, and section 7 is Pebblous's reading, so please read them apart. Thank you for reading this far.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ (empty section — content rendered by config.faqs) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The sources come at different grades of evidence, so they are split into three groups. The first holds the academic literature the article's numbers came from, the second holds code, issues and official documentation, and the third holds adjacent Pebblous pieces that approached the same question along a different axis.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Academic literature</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Barron, J. T., Gnanapragasam, D., Tschannen, M. (2026). <strong>A Fix for Softmax and Cross-Entropy.</strong> arXiv:2610.31642. v1 2026-10-22, v2 2026-10-26. The numbers in sections 1, 2, 3, 4 and 6 come from the body of the second version. <a href="https://arxiv.org/abs/2610.31642" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Maaz, M. (2026). <strong>Property-Based Testing for Robust Softmax and Cross-Entropy.</strong> arXiv:2610.36427 v1, 2026-10-27. Source of the cliff-height derivation, the NaN counterexample and the function swap. <a href="https://arxiv.org/abs/2610.36427" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Prieto, L., Barsbey, M., Mediano, P. A. M., Birdal, T. (2025). <strong>Grokking at the Edge of Numerical Stability.</strong> ICLR 2025, arXiv:2501.04697. The paper that named Softmax Collapse. <a href="https://arxiv.org/abs/2501.04697" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Liu et al. (2026). <strong>Grokking or Glitching? How Low-Precision Drives Slingshot Loss Spikes.</strong> arXiv:2605.06152. Proved the bug to be a consequence of floating point and proposed zero-sum projection. <a href="https://arxiv.org/abs/2605.06152" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Thilak, V., Littwin, E., Zhai, S., Saremi, O., Paiss, R., Susskind, J. (2022). <strong>The Slingshot Mechanism: An Empirical Study of Adaptive Optimizers and the Grokking Phenomenon.</strong> arXiv:2206.04817. The verbatim quotation in section 3.1 comes from this abstract. <a href="https://arxiv.org/abs/2206.04817" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Blanchard, P., Higham, D. J., Higham, N. J. (2021). <strong>Accurately computing the log-sum-exp and softmax functions.</strong> IMA Journal of Numerical Analysis 41(4):2311–2330. The numerical analysis reference both papers cite, and the source of the irony in section 5.2.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Twelve authors (2026). <strong>Broken Symmetry in BF16 Attention.</strong> arXiv:2609.34272, 2026-09-28. The large-scale measurement in section 6.4 comes from this abstract. It has to be read with the caveat attached: <strong>same invariant, different mechanism</strong>. <a href="https://arxiv.org/abs/2609.34272" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Qiu, Z., Yao, A. (2026). <strong>Why Low-Precision Transformer Training Fails: An Analysis on Flash Attention.</strong> ICLR 2026, arXiv:2510.04212. The Barron paper cites this as evidence that the same bug affects standalone softmax. The mechanism in this paper's body is low-rank representation plus biased rounding in bf16 accumulation, which is a different story. <strong>That is why this article does not lean on the citation to claim spread into attention.</strong> <a href="https://arxiv.org/abs/2510.04212" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Maaz, M., DeVoe, J., Hatfield-Dodds, Z., Carlini, N. (2025). <strong>Agentic property-based testing.</strong> arXiv:2510.09907, NeurIPS 2025 DL4C workshop. The lineage of the tool in section 5.1. Above it sit Claessen &amp; Hughes's QuickCheck (ICFP 2000) and MacIver et al.'s Hypothesis (JOSS 4(43):1891, 2019). <a href="https://arxiv.org/abs/2510.09907" target="_blank" rel="noopener">arxiv.org</a></span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Code, issues and official documentation</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">10.</span><span class="ref-body">PyTorch issue <strong>#201986</strong> (2026-10-25, a feature request filed by a third party, open) and fix PR <strong>#202049</strong> (2026-10-26, draft, unmerged). The exclusion list, the kernel benchmarks, the five Astra reviews and the maintainer's comment all live in these two threads. <a href="https://github.com/pytorch/pytorch/issues/201986" target="_blank" rel="noopener">github.com</a></span></li>
+                        <li><span class="ref-num">11.</span><span class="ref-body">PyTorch <strong><span class="inline-code">torch.amp</span> documentation</strong> — the "CUDA Ops that can autocast to float32" list. The basis for section 6.1, and where the caveat that the docs give no reason was confirmed. <a href="https://docs.pytorch.org/docs/stable/amp.html" target="_blank" rel="noopener">docs.pytorch.org</a></span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">Three reports against training stacks — <strong>torchtitan #5623, verl #8376, prime-rl #4271</strong> (2026-10-25 to 26, all open) and the four fix PRs attached to them (#5624, #8377, #8378, #4272, all unmerged). The table and reproduction figures in section 6.2 come from the text of these reports. All three were filed by the same person.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">Independent ports and reimplementations — <span class="inline-code">mmaaz-git/softmax-fix</span> (the follow-up paper's own author), <span class="inline-code">PwnerHarry/barron-softmax-fix</span>, and <span class="inline-code">Dicklesworthstone/frankentorch</span> #8 with <span class="inline-code">frankenjax</span> #1 (Rust reimplementations owned by one person, where the fix was merged).</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">Barron, J. T. <strong>X thread</strong> (2026-10-23). The primary source for the Gemini attribution and the remarks about ε. The original page was unreachable, so this article relied on the English text obtained through a mirror and reports it only in indirect speech.</span></li>
+                        <li><span class="ref-num">15.</span><span class="ref-body">Chu, F. <strong>Independent NumPy reproduction</strong> (personal blog, 2026-10-23) and the Hacker News thread (2026-10-23, 19 points, 1 comment). The cliff wobble in section 2 and the ecosystem counts in section 6.5 come from here. Both are self-published, and are cited with that grade stated.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Adjacent pieces on the Pebblous blog</h3>
+                    <ul class="reference-list mb-4">
+                        <li><span class="ref-num">16.</span><span class="ref-body"><a href="/blog/open-1b-auditable-training-run/en/">Why publishing the weights, the data and the recipe still does not reproduce the same model</a> — the floating point and <strong>reproducibility</strong> axis. This article runs on the axis of a <strong>wrong number</strong> instead of a different one.</span></li>
+                        <li><span class="ref-num">17.</span><span class="ref-body"><a href="/report/ai-driven-discovery-verification/en/">The piece arguing the bottleneck in the AI era is verification, not generation</a> — the axis of whether verification exists at all. This article extends it by asking what was left behind each of the six times verification did happen.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261029"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-10-28T18:23:47.394Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-10-28T18:26:31.292Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-10-28T19:22:34.233Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1793211827394-13tv2t",
+                "version": "0.1.0",
+                "sha": "052a2a95afa30d7970808c86a8f2efabf743c560",
+                "builtAt": "2026-10-24T13:53:43.526Z"
+              },
+              "recordedAt": "2026-10-28T20:37:33.153Z"
+            },
+            mainTitle: "Softmax: The Textbook and PyTorch Get It Wrong in the Same Place",
+            subtitle: "The two bugs Google DeepMind researchers found appear when a model is very sure of the right answer, and at that moment the loss and the training signal both turn into 0.0",
+            pageTitle: "Softmax Precision Cliff: Two Bugs, Who Is Exposed | Pebblous",
+            category: "tech",
+            publishDate: "2026-10-29",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "report/softmax-precision-cliff/en/",
+            tags: ["softmax", "cross-entropy", "log-softmax", "Softmax Collapse", "precision cliff", "floating point", "bf16", "PyTorch", "JAX", "Google DeepMind", "knowledge distillation", "grokking", "property-based testing", "data quality"],
+            faqs: [
+                { question: "Is my own training run hit by this bug?", answer: "If you train normally in PyTorch with autocast on, the loss computation is promoted to fp32, so you avoid the bf16 cliff at 5.5. Even in fp32, though, Adam's default ε=10⁻⁸ gives an equilibrium margin of 18.4, which crosses the cliff at 16.6. So the condition does hold. Meeting the condition and suffering visible damage are different claims, and the paper itself states that it demonstrated harm only on toy modular-arithmetic tasks." },
+                { question: "How is Softmax Collapse different from vanishing gradients?", answer: "Vanishing gradients is the old problem of a signal shrinking as it propagates back through the layers of a deep network. This bug is a case where the true values are already small and the single term for the correct class rounds to 0.0, breaking the sum of the gradients. The remaining terms stay positive and intact. The damage does not come from the signal being small either. It comes from Adam amplifying that small, one-sided signal back up to full size." },
+                { question: "Why is it 5.5 for bf16 specifically?", answer: "The cliff height is the number of mantissa bits in the format times ln2. bf16 has 8 mantissa bits, so 8×ln2 = 5.545, and the paper records the measured value as 5.5. fp32 has 24 bits, giving 16.6, and fp64 has 53 bits, giving 36.7. It is not a constant to memorize but a number derived from the format in one line." },
+                { question: "Does raising Adam's ε solve it?", answer: "In fp32 it largely does. The paper writes that at ε ≥ 10⁻⁷ the equilibrium margin is 16.1, below the cliff at 16.6, and standard cross-entropy settles without spiking. bf16 is different. Avoiding the cliff at 5.5 would require an ε above 0.004, which changes the character of the optimizer itself. In Table 1 of the paper, the final margin of standard cross-entropy in bf16 stays pinned at 5.1, 5.6 and 5.8 even as ε drops from 10⁻⁸ to 10⁻¹⁶." },
+                { question: "Is there something I can check right now?", answer: "Yes, and all of it is free. Count the steps where the loss reads exactly 0.0 during training. Check whether the loss is being computed in low precision outside autocast. If you use reinforcement learning fine-tuning or a fused language model head, count the tokens whose log-probability is exactly 0.0. If you distill, watch whether the distance between the two distributions hits a floor and stops once the student has closed in on the teacher." },
+                { question: "When will PyTorch be fixed, and does the fix solve everything?", answer: "As of October 29, 2026, the fix PR is a draft and unmerged. And merging it will not solve everything. The PR description writes out its own exclusion list, which covers compiled execution, several backends including Apple Silicon, sparse log-softmax, and the fused and chunked cross-entropy paths. Those paths keep the old numerics until follow-up work transplants the same expression into them." },
+                { question: "I am running distillation. What should I look at?", answer: "Start with precision. In section 7 of the paper, the only precision where the student actually got pushed away from the teacher was bf16. In fp32 the distance between the two distributions spikes once early in training and then stops descending at a floor near 10⁻⁶, and in fp64 it cannot even move fp32 weights. So if you distill in bf16, the stretch after the student has caught up to the teacher is worth particular attention." },
+                { question: "Is it true that an AI found the bug?", answer: "According to a post the author put on X, yes. It says the bug was first found and fixed by Gemini Flash 3.7, that most of the experiments were run by Flash 3.8, and that the first draft and the figures were written by Gemini 4 Argon. The claim is absent from the paper's body and lives in the author's post. The follow-up paper repeats it in its background section, which corroborates it twice, but it is worth stating that the primary source is a social media post." },
+                { question: "Can I drop the paper's fix straight into my code?", answer: "There is one place to be careful. What the follow-up paper found through property-based testing is that this implementation's gradient becomes NaN on a row whose values are all negative infinity. The first row of causal attention masking is exactly that shape. That said, Barron's function was proposed for loss computation, and the NaN appears when it is dropped into a different position as the paper recommends. The replacement in the follow-up paper does not produce a NaN on the same input." },
+                { question: "Do I need to rerun my past training runs?", answer: "There is no basis for reading it that way yet. The paper's conclusion states that extreme margins and near-zero student-teacher gaps are uncommon in standard large-scale training, and every experiment that measured harm was a toy task. What has been established so far is the names of code paths where the trigger is laid, not a record of a large training run that broke." },
+                { question: "What happens if I use JAX?", answer: "JAX has no equivalent of PyTorch's autocast, so the precision the loss is computed in is whatever the user wrote. The paper's own worked example was a scene of the loss and gradients coming out as 0.0 in JAX and optax. Even so, as of October 29, 2026, neither repository has received a single issue or PR citing this paper." },
+                { question: "Does this apply to reinforcement learning fine-tuning?", answer: "That is exactly the spot the reports filed against three training stacks named. The functions computing per-token log-probabilities and the fused cross-entropy kernels were called out by name. Set up a vocabulary of 32,000 where the correct class leads the rest by 30, and in fp32 the log-probability and the gradient come out as 0.000e+00. That said, all three reports were filed by the same person, the reproductions use hand-constructed logits, and the accompanying fix PRs are all unmerged." }
+            ]
+        });
+    </script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20261029" defer></script>
+</body>
+</html>
