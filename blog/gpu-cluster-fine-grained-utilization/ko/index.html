@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU 클러스터 사용률 실측 분석 — 0.1초 간격 모니터링이 드러낸 유휴 구간 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="프린스턴대 연구진이 319개 GPU로 이뤄진 공유 클러스터의 열흘치 작업 7,399건을 0.1초 간격으로 측정했다. 단일 GPU 작업의 70% 이상이 메모리를 20%도 쓰지 않았고, 작업 절반은 연산 코어 사용률이 평균 5% 아래였다.">
+    <meta name="keywords" content="GPU 클러스터, GPU 사용률, GPU 유휴, DCGM, SM 사용률, nvidia-smi, GPU 모니터링, GPU 스케줄링, MIG, MPS, AI 인프라, 데이터 인프라, 프린스턴대, arXiv 2610.36329">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="GPU 클러스터">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/gpu-cluster-fine-grained-utilization/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/gpu-cluster-fine-grained-utilization/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/gpu-cluster-fine-grained-utilization/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/gpu-cluster-fine-grained-utilization/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="GPU 클러스터, 자리는 다 찼는데 일을 안 한다">
+    <meta property="og:description" content="프린스턴대 연구진이 319개 GPU로 이뤄진 공유 클러스터의 열흘치 작업 7,399건을 0.1초 간격으로 측정했다. 단일 GPU 작업의 70% 이상이 메모리를 20%도 쓰지 않았고, 작업 절반은 연산 코어 사용률이 평균 5% 아래였다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/gpu-cluster-fine-grained-utilization/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/gpu-cluster-fine-grained-utilization/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="예약된 GPU 자리는 가득 찼지만 실제 연산 코어는 비어 있는 상태를 보여주는 도식">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-10-30">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GPU 클러스터, 자리는 다 찼는데 일을 안 한다">
+    <meta name="twitter:description" content="프린스턴대 연구진이 319개 GPU로 이뤄진 공유 클러스터의 열흘치 작업 7,399건을 0.1초 간격으로 측정했다. 단일 GPU 작업의 70% 이상이 메모리를 20%도 쓰지 않았고, 작업 절반은 연산 코어 사용률이 평균 5% 아래였다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/gpu-cluster-fine-grained-utilization/ko/image/index.png">
+    <meta name="twitter:image:alt" content="예약된 GPU 자리는 가득 찼지만 실제 연산 코어는 비어 있는 상태를 보여주는 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261030"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261030">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261030">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261030">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="GPU 클러스터, 자리는 다 찼는데 일을 안 한다">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/10/30">
+    <meta name="citation_online_date" content="2026/10/30">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#two-numbers" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 같은 달에 놓인 두 숫자</a></li>
+                    <li><a href="#how-measured" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 89개 노드를 0.1초마다 들여다본 도구</a></li>
+                    <li><a href="#idle" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 80GB를 받아 16GB만 쓴다</a></li>
+                    <li><a href="#duration" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 스케줄러가 믿는 숫자부터 틀렸다</a></li>
+                    <li><a href="#rhythm" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 0.1초라서 보인 규칙적인 빈틈</a></li>
+                    <li><a href="#why-pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 페블러스가 GPU 클러스터 사용률을 주목하는 이유</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            대학 GPU 클러스터의 속을 0.1초 간격으로 들여다본 측정 결과가 나왔다는 소식이다. 프린스턴대 컴퓨터과학과 연구진은 89개 노드·319개 GPU로 이뤄진 공유 클러스터에 자체 제작한 경량 모니터링 도구를 붙여 몇 달치 자원 사용량을 기록했고, 그중 열흘치 작업 7,399건을 분석해 10월 26일 arXiv에 공개했다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            단일 GPU 작업의 70% 이상은 GPU 메모리를 20%도 쓰지 않았다. 연산 코어 쪽은 그보다 더 한가해서, 작업 절반이 평균 5%를 넘기지 못했다. 그런데 같은 클러스터에서 단일 GPU 작업 하나가 줄에서 기다린 시간은 중앙값으로 22시간이다. 자리를 잡으려면 하루를 기다리는데, 잡은 자리는 대부분 비어 있었다는 뜻이다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            1절부터 5절까지는 이 논문과 같은 달 나온 GPU 임대 비용 보도에서 확인되는 내용을 따라간다. 사용률 숫자를 읽기 전에 그 숫자를 어느 간격으로 쟀는지부터 물어야 한다고 보는 6절은 이 글의 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-3">네 칸 모두 프린스턴대 연구진이 열흘치 작업 7,399건에서 직접 센 값이다. 앞의 셋은 자원이 얼마나 남아도는지를, 마지막 하나는 그 자원을 쓰려는 줄이 얼마나 긴지를 가리킨다.</p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2610.36329" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv 2610.36329</a> (2026-10-26)</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">70%+</p>
+                            <p class="text-sm themeable-text-secondary mt-1">GPU 메모리를 20%도 쓰지 않은 작업</p>
+                            <p class="text-xs themeable-muted mt-1">단일 GPU 작업 기준. 메모리의 75%까지 올라간 작업은 전체의 5%뿐이다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">5% 미만</p>
+                            <p class="text-sm themeable-text-secondary mt-1">작업 절반의 평균 연산 코어 사용률</p>
+                            <p class="text-xs themeable-muted mt-1">A100 한 장에 든 연산 코어 108개 중 몇 개가 실제로 돌았는지를 센 값이다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">29%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">클러스터 전체 평균 GPU 연산 사용률</p>
+                            <p class="text-xs themeable-muted mt-1">GPU 메모리는 16%, CPU는 21%, 호스트 RAM은 17%에 머물렀다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">22시간</p>
+                            <p class="text-sm themeable-text-secondary mt-1">단일 GPU 작업이 줄에서 기다린 중앙값</p>
+                            <p class="text-xs themeable-muted mt-1">GPU를 여러 장 요청한 작업은 중앙값이 이틀로 늘어난다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="two-numbers" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">같은 달에 놓인 두 숫자</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        10월 12일 한국경제는 월스트리트저널을 인용해 GPU를 구하기가 얼마나 어려워졌는지 전했다. 데이터 분석업체 세미애널리시스 집계로, 엔비디아 H100 기반 연산능력을 1년 계약으로 빌릴 때 시간당 비용이 지난 1년간 60% 올랐다는 내용이다. 여기서 한 가지는 짚어 둘 만하다. 60%는 1년 약정 계약 기준이고, 시간 단위로 빌리는 온디맨드 가격은 같은 기간 다른 방향으로 움직이기도 했다. 그래도 장기 물량을 확보하려는 쪽이 더 비싼 값을 치르고 있다는 사실은 바뀌지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        2주 뒤인 10월 26일, 프린스턴대 컴퓨터과학과의 앤드루 샤인버그·사먀크 굽타·카이 리가 arXiv에 논문 한 편을 올렸다. 제목은 "Plenty of Room in the Middle"이다. 자기 학교 공유 GPU 클러스터를 0.1초 간격으로 열흘 동안 기록한 보고다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        제목의 가운데는 클러스터의 가운데가 아니라 컴퓨팅 스택의 가운데다. 연산을 빠르게 만드는 노력은 보통 양 끝에서 이뤄진다. 아래쪽에서 더 빠른 하드웨어를 만드는 일과 위쪽에서 애플리케이션을 더 잘 짜는 일이다. 저자들은 아래쪽에 여유가 많다고 한 파인만의 1960년 글과 위쪽에 여유가 많다고 한 2020년 논문을 나란히 인용한 뒤, 가운데에도 여유가 많다고 적는다. GPU를 작업에 배정하고 순서를 정하고 여러 작업을 겹쳐 태우는 시스템 계층이 그 가운데다. 오늘날 클러스터가 놀리고 있는 용량의 상당 부분을 이 계층에서 되찾을 수 있다는 것이 저자들의 주장이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 숫자는 서로를 반박하지 않는다. 품귀가 과장이라는 뜻도 아니다. 오히려 논문의 첫 문단이 품귀를 전제로 깔고 시작한다. GPU 클러스터는 높은 비용과 늘어나는 수요 탓에 긴 대기를 낳는다는 문장이다. 그리고 그 대기는 이 클러스터에서도 그대로 측정됐다. 단일 GPU 하나를 요청한 작업이 줄에서 기다린 시간이 중앙값으로 거의 22시간, GPU를 여러 장 요청하면 이틀이었다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 300" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)" role="img" aria-label="같은 10월에 나란히 나온 두 숫자를 비교하는 도식. 왼쪽은 세미애널리시스 집계로 H100 1년 계약 임대 비용이 60% 올랐다는 수치, 오른쪽은 프린스턴대 클러스터 실측으로 GPU 연산 사용률이 29%에 그쳤다는 수치를 보여준다.">
+                            <text x="350" y="28" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">같은 10월에 나온 두 숫자</text>
+
+                            <line x1="350" y1="50" x2="350" y2="250" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4,4"/>
+
+                            <text x="175" y="70" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="12.5" font-weight="700" fill="var(--text-primary)">GPU 임대 시장</text>
+                            <path d="M175,92 L155,132 L167,132 L167,158 L183,158 L183,132 L195,132 Z" fill="#F86825"/>
+                            <text x="175" y="196" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="26" font-weight="700" fill="#F86825">+60%</text>
+                            <text x="175" y="220" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">H100 1년 계약 임대 비용</text>
+                            <text x="175" y="236" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">세미애널리시스 집계 · 10월 12일 보도</text>
+
+                            <text x="525" y="70" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="12.5" font-weight="700" fill="var(--text-primary)">프린스턴대 클러스터 실측</text>
+                            <rect x="455" y="110" width="140" height="20" rx="10" fill="none" stroke="var(--text-muted)" stroke-width="1.2"/>
+                            <rect x="455" y="110" width="40.6" height="20" rx="10" fill="#F86825"/>
+                            <text x="525" y="196" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="26" font-weight="700" fill="#F86825">29%</text>
+                            <text x="525" y="220" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">클러스터 전체 평균 GPU 연산 사용률</text>
+                            <text x="525" y="236" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">arXiv 2610.36329 · 10월 26일 공개</text>
+
+                            <text x="350" y="272" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">서로 다른 모집단의 값이지만, 같은 한 달 안에서 품귀와 유휴가 함께 보고됐다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 — 10월에 나란히 보도된 두 숫자(세미애널리시스 GPU 임대비 집계, 프린스턴대 클러스터 실측). 두 수치는 서로 다른 출처·모집단에서 나온 값이다
+                        </figcaption>
+                    </figure>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            줄에서 기다리는 시간은 중앙값으로 22시간이고, 그 줄이 기다리는 자원의 평균 연산 사용률은 29%다. 품귀와 유휴가 같은 클러스터 안에 함께 있다. 두 사실을 가른 것은 하드웨어가 아니라 측정 간격이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="how-measured" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">89개 노드를 0.1초마다 들여다본 도구</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        측정 대상은 12개 학과 150명이 함께 쓰는 연구용 클러스터다. 고성능 노드 20대에는 AMD EPYC Rome CPU(128코어)와 768GB RAM, NVIDIA A100 PCIe 40GB 두 장이 들어 있고, 표준 노드 69대에는 Intel Ice Lake CPU(48코어)와 100GB RAM, A100 SXM4 80GB 네 장이 들어 있다. 노드끼리는 100Gb/s InfiniBand로 묶여 있다. 모두 합쳐 89개 노드, 319개 GPU다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진은 수개월치를 모았지만 분석은 열흘치로 좁혔다. 작업 번호와 GPU의 대응 관계가 흐트러짐 없이 남아 있는 구간만 골랐기 때문이다. 그 열흘 안에 7,399건의 작업이 돌았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        간격을 0.1초로 잡은 데는 두 가지 이유가 적혀 있다. 하나는 엔비디아의 DCGM 라이브러리가 지원하는 가장 촘촘한 해상도가 그것이기 때문이고, 다른 하나는 리눅스 기본 라운드로빈 타임슬라이스의 길이와 같기 때문이다. 운영체제가 CPU를 나눠 쓰는 단위와 같은 눈금으로 GPU를 보겠다는 선택이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 간격으로 몇 달을 돌리려면 도구가 가벼워야 한다. 연구진이 C로 짠 독립 실행 데몬은 CPU 코어 하나를 기준으로 약 0.9%를 쓰고, GPU 네 장이 달린 호스트에서 샘플링 한 바퀴에 약 800마이크로초가 걸린다. 쌓이는 데이터는 호스트당 하루 1.5GB 안팎이고, 로컬 버퍼는 600샘플로 2MB를 넘지 않는다. 호스트마다 따로 SQLite 데이터베이스를 두어 중앙 동기화도 필요 없다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        도구가 0.1초마다 받아 적는 항목은 여섯 가지다. 연산 코어(SM) 사용률, GPU 메모리 사용률, SM Occupancy, PCIe 송수신량, NVLink 트래픽, 텐서 코어 사용률. 3절에서 볼 유휴 수치는 앞의 두 항목에서 나오고, 5절의 통신 주기는 PCIe와 NVLink 기록에서 읽어 낸 것이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>분 단위 잣대가 못 보던 것</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        앞선 연구들이 쓴 눈금은 훨씬 성겼다. 마이크로소프트의 Philly와 Helios는 100초 간격, AntMan은 1초 안팎이었다. MIT SuperCloud는 100ms로 쟀지만 nvidia-smi에 기댄 값이라 사정이 다르다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        nvidia-smi가 내주는 사용률은 커널이 돌고 있던 시간의 비율이다. 몇 개의 연산 코어가 돌았는지는 따지지 않는다. 논문이 든 예가 선명하다. A100에 든 연산 코어 108개 중 단 하나만 쓰는 작업도 nvidia-smi에서는 100%로 찍힐 수 있다. DCGM의 SM Activity는 그 비율을 코어 단위로 나눠 보기 때문에 같은 순간을 훨씬 낮게 적는다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 320" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)" role="img" aria-label="A100 GPU의 연산 코어 108개를 가로 12칸 세로 9칸 격자로 그린 도식. 격자 가운데 한 칸만 주황색으로 칠해져 있고 나머지 107칸은 비어 있다. 왼쪽에는 nvidia-smi가 이 상태를 100% 사용 중으로 보고한다고 적혀 있고, 오른쪽에는 DCGM의 SM Activity가 108칸 중 1칸, 약 1%로 적는다고 쓰여 있다.">
+                            <text x="350" y="30" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">같은 순간, 같은 GPU</text>
+
+                            <g fill="none" stroke="var(--text-muted)" stroke-width="0.9">
+                                <rect x="220" y="56" width="18" height="18" rx="2"/><rect x="242" y="56" width="18" height="18" rx="2"/><rect x="264" y="56" width="18" height="18" rx="2"/><rect x="286" y="56" width="18" height="18" rx="2"/><rect x="308" y="56" width="18" height="18" rx="2"/><rect x="330" y="56" width="18" height="18" rx="2"/><rect x="352" y="56" width="18" height="18" rx="2"/><rect x="374" y="56" width="18" height="18" rx="2"/><rect x="396" y="56" width="18" height="18" rx="2"/><rect x="418" y="56" width="18" height="18" rx="2"/><rect x="440" y="56" width="18" height="18" rx="2"/><rect x="462" y="56" width="18" height="18" rx="2"/>
+                                <rect x="220" y="78" width="18" height="18" rx="2"/><rect x="242" y="78" width="18" height="18" rx="2"/><rect x="264" y="78" width="18" height="18" rx="2"/><rect x="286" y="78" width="18" height="18" rx="2"/><rect x="308" y="78" width="18" height="18" rx="2"/><rect x="330" y="78" width="18" height="18" rx="2"/><rect x="352" y="78" width="18" height="18" rx="2"/><rect x="374" y="78" width="18" height="18" rx="2"/><rect x="396" y="78" width="18" height="18" rx="2"/><rect x="418" y="78" width="18" height="18" rx="2"/><rect x="440" y="78" width="18" height="18" rx="2"/><rect x="462" y="78" width="18" height="18" rx="2"/>
+                                <rect x="220" y="100" width="18" height="18" rx="2"/><rect x="242" y="100" width="18" height="18" rx="2"/><rect x="264" y="100" width="18" height="18" rx="2"/><rect x="286" y="100" width="18" height="18" rx="2"/><rect x="330" y="100" width="18" height="18" rx="2"/><rect x="352" y="100" width="18" height="18" rx="2"/><rect x="374" y="100" width="18" height="18" rx="2"/><rect x="396" y="100" width="18" height="18" rx="2"/><rect x="418" y="100" width="18" height="18" rx="2"/><rect x="440" y="100" width="18" height="18" rx="2"/><rect x="462" y="100" width="18" height="18" rx="2"/>
+                                <rect x="220" y="122" width="18" height="18" rx="2"/><rect x="242" y="122" width="18" height="18" rx="2"/><rect x="264" y="122" width="18" height="18" rx="2"/><rect x="286" y="122" width="18" height="18" rx="2"/><rect x="308" y="122" width="18" height="18" rx="2"/><rect x="330" y="122" width="18" height="18" rx="2"/><rect x="352" y="122" width="18" height="18" rx="2"/><rect x="374" y="122" width="18" height="18" rx="2"/><rect x="396" y="122" width="18" height="18" rx="2"/><rect x="418" y="122" width="18" height="18" rx="2"/><rect x="440" y="122" width="18" height="18" rx="2"/><rect x="462" y="122" width="18" height="18" rx="2"/>
+                                <rect x="220" y="144" width="18" height="18" rx="2"/><rect x="242" y="144" width="18" height="18" rx="2"/><rect x="264" y="144" width="18" height="18" rx="2"/><rect x="286" y="144" width="18" height="18" rx="2"/><rect x="308" y="144" width="18" height="18" rx="2"/><rect x="330" y="144" width="18" height="18" rx="2"/><rect x="352" y="144" width="18" height="18" rx="2"/><rect x="374" y="144" width="18" height="18" rx="2"/><rect x="396" y="144" width="18" height="18" rx="2"/><rect x="418" y="144" width="18" height="18" rx="2"/><rect x="440" y="144" width="18" height="18" rx="2"/><rect x="462" y="144" width="18" height="18" rx="2"/>
+                                <rect x="220" y="166" width="18" height="18" rx="2"/><rect x="242" y="166" width="18" height="18" rx="2"/><rect x="264" y="166" width="18" height="18" rx="2"/><rect x="286" y="166" width="18" height="18" rx="2"/><rect x="308" y="166" width="18" height="18" rx="2"/><rect x="330" y="166" width="18" height="18" rx="2"/><rect x="352" y="166" width="18" height="18" rx="2"/><rect x="374" y="166" width="18" height="18" rx="2"/><rect x="396" y="166" width="18" height="18" rx="2"/><rect x="418" y="166" width="18" height="18" rx="2"/><rect x="440" y="166" width="18" height="18" rx="2"/><rect x="462" y="166" width="18" height="18" rx="2"/>
+                                <rect x="220" y="188" width="18" height="18" rx="2"/><rect x="242" y="188" width="18" height="18" rx="2"/><rect x="264" y="188" width="18" height="18" rx="2"/><rect x="286" y="188" width="18" height="18" rx="2"/><rect x="308" y="188" width="18" height="18" rx="2"/><rect x="330" y="188" width="18" height="18" rx="2"/><rect x="352" y="188" width="18" height="18" rx="2"/><rect x="374" y="188" width="18" height="18" rx="2"/><rect x="396" y="188" width="18" height="18" rx="2"/><rect x="418" y="188" width="18" height="18" rx="2"/><rect x="440" y="188" width="18" height="18" rx="2"/><rect x="462" y="188" width="18" height="18" rx="2"/>
+                                <rect x="220" y="210" width="18" height="18" rx="2"/><rect x="242" y="210" width="18" height="18" rx="2"/><rect x="264" y="210" width="18" height="18" rx="2"/><rect x="286" y="210" width="18" height="18" rx="2"/><rect x="308" y="210" width="18" height="18" rx="2"/><rect x="330" y="210" width="18" height="18" rx="2"/><rect x="352" y="210" width="18" height="18" rx="2"/><rect x="374" y="210" width="18" height="18" rx="2"/><rect x="396" y="210" width="18" height="18" rx="2"/><rect x="418" y="210" width="18" height="18" rx="2"/><rect x="440" y="210" width="18" height="18" rx="2"/><rect x="462" y="210" width="18" height="18" rx="2"/>
+                                <rect x="220" y="232" width="18" height="18" rx="2"/><rect x="242" y="232" width="18" height="18" rx="2"/><rect x="264" y="232" width="18" height="18" rx="2"/><rect x="286" y="232" width="18" height="18" rx="2"/><rect x="308" y="232" width="18" height="18" rx="2"/><rect x="330" y="232" width="18" height="18" rx="2"/><rect x="352" y="232" width="18" height="18" rx="2"/><rect x="374" y="232" width="18" height="18" rx="2"/><rect x="396" y="232" width="18" height="18" rx="2"/><rect x="418" y="232" width="18" height="18" rx="2"/><rect x="440" y="232" width="18" height="18" rx="2"/><rect x="462" y="232" width="18" height="18" rx="2"/>
+                            </g>
+                            <rect x="308" y="100" width="18" height="18" rx="2" fill="#F86825"/>
+
+                            <text x="350" y="276" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" fill="var(--text-muted)">A100 한 장의 연산 코어 108개 가운데 한 개만 돌고 있는 상태</text>
+
+                            <text x="110" y="128" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">nvidia-smi</text>
+                            <text x="110" y="158" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="22" font-weight="700" fill="var(--text-primary)">100%</text>
+                            <text x="110" y="182" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">커널이 돌았으면</text>
+                            <text x="110" y="198" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">사용 중으로 적는다</text>
+
+                            <text x="588" y="128" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">DCGM SM Activity</text>
+                            <text x="588" y="158" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="22" font-weight="700" fill="#F86825">약 1%</text>
+                            <text x="588" y="182" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">몇 칸이 돌았는지를</text>
+                            <text x="588" y="198" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">코어 단위로 나눠 본다</text>
+
+                            <text x="350" y="304" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">잣대를 바꾸면 같은 GPU가 꽉 찬 자원이 되기도, 거의 빈 자원이 되기도 한다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 논문이 든 예(A100의 연산 코어 108개 중 하나만 쓰는 작업도 nvidia-smi에서는 100%로 보고될 수 있다)를 페블러스가 도식으로 옮긴 것. 오른쪽 수치는 108분의 1을 백분율로 환산한 값이다
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="idle" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">80GB를 받아 16GB만 쓴다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        메모리부터 보면 이렇다. 단일 GPU 작업의 70% 이상이 메모리 용량의 20% 미만을 썼다. 메모리를 75%까지 채워 본 작업은 전체의 5%에 그쳤고, 8시간 넘게 도는 장기 작업으로 좁혀도 90%를 넘긴 것은 그중 10%뿐이었다. 80GB짜리 A100을 잡아 놓고 16GB 남짓만 쓰는 작업이 다수라는 뜻이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연산 쪽은 더 비어 있다. 작업의 50%가 평균 SM 사용률 5% 미만을 유지했다. 75%는 최대 메모리 사용량과 평균 SM 사용률이 모두 20% 아래였다. 평균 SM 사용률이 50%를 넘긴 단일 GPU 작업은 전체의 10%였다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        작업 단위가 아니라 클러스터 전체로 평균을 내도 그림은 같다. GPU 연산 사용률 29%, GPU 메모리 사용률 16%다. GPU만 그런 것도 아니어서, CPU 사용률이 21%, 호스트 RAM 사용량이 17%로 함께 낮다. 자원 전반이 예약된 채 비어 있다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            여기서 갈라지는 두 말이 있다. GPU를 쓰고 있다는 말과 GPU가 일하고 있다는 말이다. 스케줄러가 보는 장부에서 이 클러스터는 거의 만석이다. 0.1초 간격으로 코어를 세는 잣대에서는 같은 시간이 대부분 빈칸이다. 둘 다 같은 클러스터의 같은 순간을 적은 값이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="duration" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">스케줄러가 믿는 숫자부터 틀렸다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공유 클러스터에 작업을 넣을 때 사용자는 얼마나 걸릴지를 스스로 적어 낸다. 스케줄러는 그 숫자를 믿고 자리를 배치한다. 이 클러스터에서 그 숫자는 열에 여덟이 틀렸다. 실제 실행 시간이 요청 시간의 두 배 안쪽에 들어온 경우는 20% 남짓이었다. 어긋난 쪽도 조금씩 어긋난 것이 아니어서, 상당수는 요청과 실제가 열 배 넘게 벌어졌다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        틀린 방향은 한쪽으로 쏠려 있지 않다. 작업의 60.7%는 정상적으로 끝났지만 34.2%는 요청 시간을 다 쓰고도 끝나지 못해 강제 종료됐고, 나머지 5.1%는 실패로 분류됐다. 열에 셋은 시간을 너무 짧게 적어 일하던 중에 잘렸고, 또 다른 상당수는 시간을 너무 길게 적어 쓰지도 않을 자리를 묶어 두었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        묶어 두기만 한 자리가 얼마나 되는지도 따로 세어 놓았다. 논문은 실행되는 내내 GPU가 한 번도 돌지 않은 작업을 완전 유휴로 분류하고, 지속 시간대별로 나눴다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">완전 유휴 작업의 지속 시간</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">전체 작업 중 비중</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">예약된 GPU 시간 중 비중</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">1분 미만</td>
+                                    <td class="py-3 pr-4">14.1%</td>
+                                    <td class="py-3 pr-4">0.02%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">1분 이상 10분 미만</td>
+                                    <td class="py-3 pr-4">0.8%</td>
+                                    <td class="py-3 pr-4">0.001%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">10분 이상 2시간 이하</td>
+                                    <td class="py-3 pr-4">2.2%</td>
+                                    <td class="py-3 pr-4">0.44%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">2시간 초과 8시간 이하</td>
+                                    <td class="py-3 pr-4">0.4%</td>
+                                    <td class="py-3 pr-4">0.12%</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">8시간 초과</td>
+                                    <td class="py-3 pr-4">0.6%</td>
+                                    <td class="py-3 pr-4">2.15%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        건수로 가장 많은 칸과 시간으로 가장 무거운 칸이 서로 다르다. 1분도 안 되어 끝난 완전 유휴 작업이 전체의 14.1%를 차지하지만 예약 시간으로 치면 0.02%에 불과하다. 설정을 잘못해 바로 죽은 작업들로 보인다. 반대로 8시간을 넘긴 완전 유휴 작업은 건수로는 0.6%뿐인데 예약된 GPU 시간의 2.15%를 가져갔다. 완전 유휴 작업 전체가 가져간 예약 시간은 2.82%이고, 그 대부분이 이 마지막 줄 하나에서 나온다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        스케줄러 입장에서 이것은 알고리즘 문제가 아니다. 들어오는 입력이 틀렸으니 어떤 배치 전략을 써도 결과가 좋아질 수 없다. 그래서 저자들이 첫 번째로 제안하는 것도 과거 실행 이력을 학습해 실행 시간을 자동으로 예측하는 쪽이다. 사용자에게 더 정확히 적어 내라고 요구하는 대신, 시스템이 스스로 추정하자는 것이다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="rhythm" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">0.1초라서 보인 규칙적인 빈틈</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 번째 발견은 앞의 둘과 성격이 다르다. 여러 장의 GPU를 쓰는 작업들이 아주 규칙적인 통신 주기를 보였다는 관찰이다. 다만 표본이 작다. 열흘 치에서 GPU를 여러 장 쓴 작업은 343건, 노드를 여러 대 묶은 작업은 7건뿐이었다. 저자들도 이 점을 한계로 적어 두었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래도 이 소수가 쓰는 몫은 작지 않다. 건수로는 95%가 GPU 한 장만 요청했지만, 할당된 GPU 시간으로 따지면 26%가 병렬 작업 몫이다. 스무 건에 한 건꼴로 들어오는 작업이 클러스터 시간의 사분의 일을 가져가는 셈이다. 표본이 적다는 것과 비중이 작다는 것은 여기서 다른 이야기다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        신경과학 연구실이 GPU 네 장으로 돌린 작업에서는 약 17분 주기의 큰 통신 구간이 나타났고, 그 사이에 1분 간격의 작은 버스트가 섞였다. 심리학 연구실의 네 장짜리 작업은 10초 주기와 60초 주기 버스트가 겹쳐 돌았다. 두 경우 모두 작업이 끝날 때까지 같은 모양이 반복됐다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 또렷한 사례는 전자공학과의 작업이다. 노드 네 대, GPU 열여섯 장으로 12시간을 돌았는데 그동안 네트워크가 100Gb/s에 가깝게 포화되는 2초짜리 구간이 되풀이됐다. 그리고 7초마다 1초씩, 연산 코어가 완전히 멈춰 서는 골이 생겼다. 전체가 동기화를 기다리는 구간으로 보인다. 저자들은 이 골에 다른 일을 끼워 넣을 수 있다면 12시간 동안 약 21시간어치의 GPU 연산을 되찾을 수 있다고 계산했다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 290" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)" role="img" aria-label="전자공학과 16GPU 작업에서 관찰된 두 반복 패턴을 보여주는 타임라인 도식. 위쪽 행은 네트워크 처리량이 2초씩 포화되는 구간을 주황색 블록으로 표시하고, 아래쪽 행은 연산 코어 사용률이 7초마다 1초씩 완전히 멈추는 지점을 주황색 틈으로 표시한다.">
+                            <text x="350" y="26" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="13" font-weight="700" fill="var(--text-primary)">12시간 동안 반복된 두 리듬</text>
+                            <text x="350" y="44" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="10.5" fill="var(--text-muted)">전자공학과 16GPU 작업 — 예시 구간(실제 두 패턴의 위상 관계는 논문에 명시되지 않음)</text>
+
+                            <text x="80" y="72" font-family="'Pretendard',sans-serif" font-size="11.5" font-weight="700" fill="var(--text-primary)">네트워크 처리량</text>
+                            <text x="80" y="88" font-family="'Pretendard',sans-serif" font-size="10" fill="var(--text-muted)">100Gb/s 근접 포화가 2초씩 되풀이</text>
+                            <rect x="80" y="100" width="540" height="24" rx="4" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <rect x="100" y="100" width="50" height="24" fill="#F86825"/>
+                            <rect x="280" y="100" width="50" height="24" fill="#F86825"/>
+                            <rect x="460" y="100" width="50" height="24" fill="#F86825"/>
+
+                            <text x="80" y="156" font-family="'Pretendard',sans-serif" font-size="11.5" font-weight="700" fill="var(--text-primary)">연산 코어(SM) 사용률</text>
+                            <text x="80" y="172" font-family="'Pretendard',sans-serif" font-size="10" fill="var(--text-muted)">7초마다 1초, 코어가 완전히 멈춘다</text>
+                            <rect x="80" y="184" width="540" height="24" rx="4" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+                            <rect x="170" y="184" width="18" height="24" fill="#F86825"/>
+                            <rect x="350" y="184" width="18" height="24" fill="#F86825"/>
+                            <rect x="530" y="184" width="18" height="24" fill="#F86825"/>
+
+                            <text x="80" y="222" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-muted)">0초</text>
+                            <text x="350" y="222" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-muted)">…</text>
+                            <text x="620" y="222" text-anchor="end" font-family="'Pretendard',sans-serif" font-size="9.5" fill="var(--text-muted)">약 21초</text>
+
+                            <text x="350" y="252" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" fill="var(--text-primary)" font-weight="700">저자 추정: 이 정지 구간을 다른 작업으로 채우면</text>
+                            <text x="350" y="270" text-anchor="middle" font-family="'Pretendard',sans-serif" font-size="11" fill="var(--text-primary)" font-weight="700">12시간 동안 약 21시간어치 GPU 연산을 되찾을 수 있다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 — 전자공학과 16GPU 작업(12시간) 중 관찰된 두 반복 패턴을 재구성한 것. 두 패턴이 같은 시점에 겹쳐 일어났는지는 논문에 적혀 있지 않다
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        규칙적이라는 점이 핵심이다. 빈틈이 언제 생길지 미리 알 수 있으면 그 자리에 다른 작업을 밀어 넣을 수 있다. 저자들이 두 번째로 제안하는 방향이 여기서 나온다. GPU를 더 사는 대신 지금 있는 GPU를 나눠 쓰자는 것이고, 수단은 이미 엔비디아가 만들어 둔 것들이다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>MIG</strong> — GPU 한 장을 하드웨어 수준에서 여러 조각으로 쪼개 작업마다 따로 준다. 격리가 가장 강하다</li>
+                        <li class="themeable-text leading-relaxed"><strong>MPS</strong> — 여러 프로세스의 커널을 한 GPU에서 동시에 돌린다. 격리는 약하지만 빈 코어를 메우기 좋다</li>
+                        <li class="themeable-text leading-relaxed"><strong>UVM</strong> — 물리 메모리보다 많은 양을 할당할 수 있게 해 메모리가 남는 작업끼리 겹쳐 태운다</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        적용 순서까지 적혀 있다. 여러 GPU를 한꺼번에 띄울 필요가 없는 단일 GPU 작업이 먼저고, 메모리 사용량이 안정적인 작업이 그다음이며, 통신 주기가 예측되는 작업이 마지막이다. 시간을 나누는 단위로는 100~200ms를 제안한다. 운영체제가 CPU를 나누는 호흡과 같은 간격이고, 이 논문이 측정에 쓴 간격이기도 하다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        남은 한계도 저자들이 직접 적어 두었다. DCGM의 상한이 초당 열 번이라 마이크로초 단위로 일어나는 커널 거동은 여전히 보이지 않는다. 분석 구간은 수개월 중 깨끗한 열흘이고, 멀티 GPU 표본은 작다. A100 두 기종을 백분율로 묶어 분석한 탓에 이기종 하드웨어의 영향도 분리되지 않았다. 무엇보다 대학 연구 클러스터 한 곳의 관측이다. 상용 데이터센터의 숫자가 이와 같으리라는 보장은 이 논문 어디에도 없다.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="why-pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 GPU 클러스터 사용률을 주목하는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문이 흥미로운 지점은 새로운 하드웨어도, 새로운 알고리즘도 아니라는 데 있다. 바꾼 것은 잣대 하나뿐이다. 100초에서 0.1초로 눈금을 줄였더니 같은 클러스터가 만석에서 빈방으로 뒤집혔다. 측정이 결론을 만든 사례다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        데이터 품질을 다루는 쪽에서는 익숙한 구조다. 어떤 값이 참인지 거짓인지 이전에, 그 값이 무엇을 세고 있었는지를 먼저 물어야 하는 상황. 사용률 92%라는 숫자는 틀린 값이 아닐 수 있다. 다만 그것이 커널이 돌던 시간의 비율인지, 코어가 돌던 비율인지, 1분 평균인지 0.1초 표본인지에 따라 같은 숫자가 전혀 다른 사실을 가리킨다. 지표 이름만 보고 대시보드를 믿으면 그 차이가 보이지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        GPU 증설 품의를 올리기 전에, 혹은 클라우드 GPU 예산을 늘리기 전에 확인해 볼 만한 것이 세 가지다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">우리가 보는 사용률은 어느 도구가 어느 간격으로 낸 값인가. nvidia-smi 기반 분 단위 집계라면 부분 사용이 100%로 보고되고 있을 수 있다</li>
+                        <li class="themeable-text leading-relaxed">예약된 자원과 실제로 돌아간 자원의 차이를 따로 적고 있는가. 둘을 한 숫자로 합쳐 두면 묶어만 둔 자리가 드러나지 않는다</li>
+                        <li class="themeable-text leading-relaxed">사용자가 적어 낸 실행 시간과 실제 실행 시간을 비교해 남겨 두는가. 이 기록이 없으면 예측으로 스케줄러를 고치는 길이 막힌다</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 말하는 가운데의 여유는 하드웨어를 바꾸거나 애플리케이션을 다시 짜서 얻는 것이 아니다. 지금 있는 GPU를 누구에게 언제 주고 어떻게 겹쳐 태울지를 정하는 계층에서 나온다. 그런데 그 계층을 손보려면 그 계층이 무엇을 놓치고 있었는지부터 보여야 하고, 이 클러스터에서 그것을 보이게 만든 것은 더 촘촘한 눈금이었다. 자원을 늘리는 일과 자원을 제대로 세는 일 중에서, 먼저 필요했던 것은 두 번째였다. 품귀가 심해질수록 둘 사이의 순서는 더 분명해진다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주셔서 감사하다. 클러스터 구성과 모니터링 도구 사양, 메모리·SM 사용률 분포, 요청 시간과 실제 시간의 불일치, 완전 유휴 작업 표, 세 건의 주기적 통신 사례, 제안과 한계는 모두 2026년 10월 26일 arXiv에 공개된 논문 2610.36329에서 확인했다. H100 1년 계약 임대 비용이 1년간 60% 올랐다는 집계는 10월 12일 한국경제가 월스트리트저널을 인용해 전한 세미애널리시스 수치다. 측정 간격을 먼저 물어야 한다고 보는 6절은 이 글의 해석이다. 운영 중인 클러스터에서 사용률을 어느 간격으로 재고 있는지 들려주시면 좋겠다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>(주)페블러스 데이터 커뮤니케이션팀</strong><br>
+                        <span class="themeable-muted text-sm">2026년 10월 30일</span>
+                    </p>
+                </section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Sheinberg, A., Gupta, S., Li, K. (2026). "<a href="https://arxiv.org/abs/2610.36329" target="_blank" rel="noopener">Plenty of Room in the Middle: Revealing Opportunities on a GPU Cluster via Fine-Grained Monitoring</a>." arXiv:2610.36329 (2026-10-26).</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">als244 (Andrew Sheinberg). "<a href="https://github.com/als244/gpu_server_monitoring" target="_blank" rel="noopener">gpu_server_monitoring</a>." GitHub. 논문이 쓴 경량 DCGM 모니터링 도구의 오픈소스 저장소.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">한국경제. (2026-10-12). "<a href="https://www.hankyung.com/article/202610125140i" target="_blank" rel="noopener">돈 있어도 못 구해…AI 열풍에 GPU 임대료 60% 껑충</a>." 월스트리트저널을 인용해 전한 세미애널리시스 집계.</span></li>
+                    </ul>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261030"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-10-29T17:04:19.805Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-10-29T17:23:27.433Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1793293459805-cz7fbk",
+                "version": "0.1.0",
+                "sha": "052a2a95afa30d7970808c86a8f2efabf743c560",
+                "builtAt": "2026-10-24T13:53:43.526Z"
+              },
+              "recordedAt": "2026-10-29T18:41:21.827Z"
+            },
+            mainTitle: "GPU 클러스터, 자리는 다 찼는데 일을 안 한다",
+            subtitle: "프린스턴대 공유 클러스터를 0.1초 간격으로 열흘 측정 — 작업 절반이 GPU 연산 코어를 평균 5%도 쓰지 않는다",
+            pageTitle: "GPU 클러스터 사용률 실측 분석 — 0.1초 간격 모니터링이 드러낸 유휴 구간 | 페블러스",
+            category: "tech",
+            publishDate: "2026-10-30",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/gpu-cluster-fine-grained-utilization/ko/",
+            tags: ["GPU 클러스터", "GPU 사용률", "GPU 유휴", "DCGM", "SM 사용률", "nvidia-smi", "GPU 모니터링", "GPU 스케줄링", "MIG", "MPS", "AI 인프라", "데이터 인프라"],
+            faqs: [
+                {
+                    question: "이 측정은 누가 어디서 한 것인가?",
+                    answer: "프린스턴대 컴퓨터과학과의 앤드루 샤인버그, 사먀크 굽타, 카이 리가 자기 학교의 연구용 공유 GPU 클러스터를 대상으로 수행했다. 89개 노드에 319개 GPU가 달려 있고 12개 학과 150명이 함께 쓴다. 수개월치를 모은 뒤 작업 번호와 GPU의 대응이 분명한 열흘 구간을 골라 작업 7,399건을 분석했고, 결과를 2026년 10월 26일 arXiv에 공개했다."
+                },
+                {
+                    question: "왜 하필 0.1초 간격인가?",
+                    answer: "두 가지 이유가 논문에 적혀 있다. 엔비디아 DCGM 라이브러리가 지원하는 가장 촘촘한 해상도가 100ms라는 것이 하나이고, 리눅스 기본 라운드로빈 타임슬라이스의 길이와 같다는 것이 다른 하나다. 운영체제가 CPU를 나눠 쓰는 단위와 같은 눈금으로 GPU를 보겠다는 선택이다."
+                },
+                {
+                    question: "분 단위로 재면 무엇을 놓치나?",
+                    answer: "두 겹을 놓친다. 하나는 시간의 겹이다. 7초마다 1초씩 멈추는 작업을 1분 평균으로 접으면 그 골이 사라진다. 다른 하나는 공간의 겹이다. nvidia-smi가 내주는 사용률은 커널이 돌던 시간의 비율이라 몇 개의 코어가 돌았는지를 따지지 않는다. 논문은 A100의 연산 코어 108개 중 하나만 쓰는 작업도 100%로 보고될 수 있다고 적었다."
+                },
+                {
+                    question: "핵심 수치는 무엇인가?",
+                    answer: "단일 GPU 작업의 70% 이상이 GPU 메모리의 20% 미만을 썼고, 작업의 50%가 평균 SM 사용률 5% 미만에 머물렀다. 메모리를 75%까지 채운 작업은 전체의 5%뿐이다. 클러스터 전체 평균으로는 GPU 연산 29%, GPU 메모리 16%, CPU 21%, 호스트 RAM 17%였다."
+                },
+                {
+                    question: "요청 시간과 실제 시간이 어긋난다는 것은 어느 정도인가?",
+                    answer: "실제 실행 시간이 요청 시간의 두 배 안쪽에 들어온 작업은 20% 남짓이다. 나머지 80%는 크게 어긋났다. 결과로 보면 60.7%가 정상 완료, 34.2%가 요청 시간을 다 쓰고 강제 종료, 5.1%가 실패였다. 스케줄러가 받는 입력이 틀렸으니 배치 전략만 바꿔서는 나아지지 않는다."
+                },
+                {
+                    question: "GPU를 한 번도 돌리지 않은 작업도 있었나?",
+                    answer: "있다. 논문은 실행 내내 GPU가 완전히 유휴였던 작업을 따로 분류했고, 그런 작업이 예약된 GPU 시간의 2.82%를 가져갔다. 건수로는 1분 미만짜리가 전체 작업의 14.1%로 가장 많지만 예약 시간으로는 0.02%에 불과하다. 반대로 8시간을 넘긴 완전 유휴 작업은 건수로 0.6%인데 예약 시간의 2.15%를 차지했다."
+                },
+                {
+                    question: "대기 시간은 얼마나 되나?",
+                    answer: "단일 GPU 하나를 요청한 작업의 대기 시간 중앙값이 거의 22시간이다. GPU를 여러 장 요청하면 중앙값이 이틀로 늘고, 노드를 여러 대 묶으면 더 길어진다. 자원이 비어 있다는 측정과 줄이 길다는 측정이 같은 클러스터에서 동시에 나온다."
+                },
+                {
+                    question: "주기적 통신 패턴이 왜 중요한가?",
+                    answer: "빈틈이 언제 생길지 미리 알 수 있다는 뜻이기 때문이다. 전자공학과의 16GPU 작업은 7초마다 1초씩 연산 코어가 완전히 멈췄고, 저자들은 그 골을 다른 일로 채울 수 있다면 12시간 동안 약 21시간어치의 GPU 연산을 되찾을 수 있다고 계산했다. 신경과학 작업은 약 17분, 심리학 작업은 10초와 60초 주기를 보였다."
+                },
+                {
+                    question: "저자들이 제안하는 해법은 무엇인가?",
+                    answer: "하드웨어 교체 없이 가능한 두 방향이다. 첫째는 과거 실행 이력으로 실행 시간을 자동 예측해 스케줄러 입력을 바로잡는 것이다. 둘째는 이미 있는 GPU를 나눠 쓰는 것으로, MIG로 GPU를 하드웨어 수준에서 쪼개거나 MPS로 여러 프로세스를 동시에 돌리거나 UVM으로 메모리를 겹쳐 쓰는 방법을 든다. 시간을 나누는 단위로는 100~200ms를 제안한다."
+                },
+                {
+                    question: "이 숫자를 우리 회사 클러스터에 그대로 적용해도 되나?",
+                    answer: "그대로 적용할 수는 없다. 대학 연구 클러스터 한 곳을 열흘 관측한 결과이고, 멀티 GPU 작업 343건·멀티 노드 작업 7건이라는 작은 표본과 A100 두 기종을 묶어 분석한 점을 저자들이 한계로 적어 두었다. 다만 이 글에서 가져갈 것은 수치 자체가 아니라 물음이다. 지금 보고 있는 사용률이 어느 도구로 어느 간격에서 나온 값인지를 확인하는 일은 어느 클러스터에서나 할 수 있다."
+                }
+            ]
+        });
+    </script>
+
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20261030" defer></script>
+</body>
+
+</html>
