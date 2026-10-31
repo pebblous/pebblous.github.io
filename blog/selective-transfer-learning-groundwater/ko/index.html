@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전이학습 역효과 정리 — 네덜란드 지하수 관측정 457곳 실측과 선택적 전이 비교 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="전이학습을 우물 단위로 다시 센 arXiv 논문 정리. 사전학습 모델을 모든 현장에 똑같이 적용하면 전체 평균 오차는 거의 움직이지 않는데, 우물의 18.38~51.86%에서는 예측이 오히려 나빠졌다. 선택적 전이가 그 피해를 어디까지 되돌리는지, 저자들이 어디에 선을 그었는지까지 정리했다.">
+    <meta name="keywords" content="전이학습, transfer learning, 네거티브 전이, 지하수위 예측, 선택적 전이학습, 도메인 적응, 사전학습 모델, 데이터 이질성, 모델 재사용, AI-Ready Data">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="전이학습">
+    <meta name="pb-search-keyword-forms" content="전이학습|transfer learning">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/selective-transfer-learning-groundwater/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/selective-transfer-learning-groundwater/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/selective-transfer-learning-groundwater/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/selective-transfer-learning-groundwater/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="전이학습, 평균은 올라도 손해 보는 우물이 생긴다">
+    <meta property="og:description" content="네덜란드 지하수 관측정 457곳을 다시 측정했더니, 미리 학습시킨 모델을 그대로 가져다 쓰는 방식은 평균을 올리는 동안에도 우물의 18.38~51.86%에서 예측을 더 틀렸다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/selective-transfer-learning-groundwater/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/selective-transfer-learning-groundwater/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="사전학습 없는 모델과 전이 모델을 우물마다 다른 비율로 섞는 선택적 전이학습의 구조를 나타낸 도식">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-11-01">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="전이학습, 평균은 올라도 손해 보는 우물이 생긴다">
+    <meta name="twitter:description" content="평균 성적표 한 줄로는 우리 현장이 이득을 보는 쪽인지 손해를 보는 쪽인지 알 수 없다. 네덜란드 관측정 457곳이 그 간극을 숫자로 보여 준다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/selective-transfer-learning-groundwater/ko/image/index.png">
+    <meta name="twitter:image:alt" content="사전학습 없는 모델과 전이 모델을 우물마다 다른 비율로 섞는 선택적 전이학습의 구조를 나타낸 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="전이학습, 평균은 올라도 손해 보는 우물이 생긴다">
+    <meta name="citation_author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="citation_publication_date" content="2026/11/01">
+    <meta name="citation_online_date" content="2026/11/01">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261101"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261101">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261101">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261101">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#scoreboard" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 성적표는 한 줄인데 우물은 제각각 갈린다</a></li>
+                    <li><a href="#setup" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 457곳을 어떻게 측정했나</a></li>
+                    <li><a href="#similarity" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 유사도가 높다고 전이가 잘 되지는 않는다</a></li>
+                    <li><a href="#casl" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 되살아난 우물, 저자들은 그 공을 차지하지 않는다</a></li>
+                    <li><a href="#why-pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 페블러스가 이 논문을 주목하는 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            남의 데이터로 미리 학습시킨 모델을 우리 데이터에 가져다 쓰면 성적이 오른다는 말은 평균에서만 참이다. 암스테르담대 연구진이 네덜란드 지하수 관측정 457곳과 시험 구간 1만 3718개로 전이학습(transfer learning)을 다시 측정해 10월 27일 arXiv에 올린 논문이 그 평균 아래에서 손해를 본 쪽의 크기를 숫자로 적었다. 이 글은 그 숫자가 어디까지 말하고 어디서 멈추는지를 본다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            사전학습한 모델을 모든 우물에 똑같이 적용했을 때, 다섯 번의 반복 실험에서 18.38~51.86%의 우물이 사전학습을 쓰지 않았을 때보다 나쁜 예측을 냈다. 전체 평균 오차는 그동안 거의 그대로였다. 논문이 제안한 선택적 방식은 손해 본 우물의 97.53~99.50%를 조금이라도 되돌렸지만, 사전학습을 쓰지 않은 모델보다 나아진 데까지 간 비율은 23.46~43.78%에 그쳤다. 저자들은 그 회복이 맥락을 알아봤다는 증거는 아니라고 직접 적었다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            1절부터 4절까지는 논문이 적은 내용이다. 5절은 이 결과를 데이터를 맡은 쪽의 질문으로 옮긴 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        네 숫자 모두 다섯 번 되풀이한 실험에서 나온 범위다. 하나의 값으로 떨어지지 않고 범위로 적힌다는 사실 자체가 하나의 결과다. 설정을 그대로 둔 채 난수만 바꿔도 결과가 아래 범위만큼 벌어진다.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2610.37733" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Selective Transfer Learning for Groundwater Level Anomaly Forecasting</a>, arXiv 2610.37733.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">18.38~51.86%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">전이가 해친 우물 비율</p>
+                            <p class="text-xs themeable-muted mt-1">우물을 가리지 않고 전이를 걸면 이만큼이 사전학습 없는 모델에 못 미쳤다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">97.53~99.50%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">조금이라도 회복한 비율</p>
+                            <p class="text-xs themeable-muted mt-1">선택적 방식을 걸었을 때 손해가 줄어든 우물의 몫. 손해가 사라졌다는 뜻은 아니다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">23.46~43.78%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">원래보다 나아진 비율</p>
+                            <p class="text-xs themeable-muted mt-1">손해를 덜어내는 데서 멈추지 않고 사전학습 없는 모델보다 좋아진 우물이 넷 중 하나에서 둘 사이다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.424~1.084%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">평균 오차가 줄어든 폭</p>
+                            <p class="text-xs themeable-muted mt-1">사전학습 없는 모델과 견준 선택적 방식의 오차 감소다. 평균만 보면 이 정도 차이다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="scoreboard" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">성적표는 한 줄인데 우물은 제각각 갈린다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 맞세운 것은 네 가지 방식이다. 모두 같은 신경망 구조를 쓰고, 다른 것은 남의 데이터로 배운 것을 얼마나 들이느냐뿐이다.
+                    </p>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>사전학습 없음</strong>(No TL). 네덜란드 관측정 데이터만으로 처음부터 학습한다. 비교의 바닥이 되는 기준선이다</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>늘 전이</strong>(Always TL). 수문기후 격자 자료로 먼저 학습한 뒤 관측정 데이터로 미세조정한다. 업계에서 전이학습이라 부를 때 대개 가리키는 방식이다</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>전체 고정 혼합</strong>(Global Convex Blend). 위 두 모델의 예측을 섞되, 섞는 비율은 실험 한 번에 하나로 고정한다. 모든 우물이 같은 비율을 쓴다</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>맥락 인식 선택 학습</strong>(CASL). 같은 두 모델을 섞되, 섞는 비율을 우물마다 그리고 시점마다 다르게 정한다. 저자들이 제안한 방식이다</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다섯 번의 반복 실험을 평균한 결과는 아래와 같다. 오차(RMSE·MAE)는 낮을수록, 설명력(R²)은 높을수록 좋다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-4">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-table-header-row">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">방식</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">RMSE</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">MAE</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">R²</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">사전학습 없음</td>
+                                    <td class="border themeable-border px-4 py-3">2.169 ± 0.016</td>
+                                    <td class="border themeable-border px-4 py-3">0.936 ± 0.014</td>
+                                    <td class="border themeable-border px-4 py-3">0.211 ± 0.012</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">늘 전이</td>
+                                    <td class="border themeable-border px-4 py-3">2.167 ± 0.026</td>
+                                    <td class="border themeable-border px-4 py-3">0.902 ± 0.032</td>
+                                    <td class="border themeable-border px-4 py-3">0.212 ± 0.019</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">전체 고정 혼합</td>
+                                    <td class="border themeable-border px-4 py-3">2.166 ± 0.018</td>
+                                    <td class="border themeable-border px-4 py-3">0.929 ± 0.013</td>
+                                    <td class="border themeable-border px-4 py-3">0.213 ± 0.013</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">맥락 인식 선택 학습</td>
+                                    <td class="border themeable-border px-4 py-3">2.153 ± 0.015</td>
+                                    <td class="border themeable-border px-4 py-3">0.904 ± 0.020</td>
+                                    <td class="border themeable-border px-4 py-3">0.222 ± 0.011</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-8">
+                        출처: arXiv 2610.37733 표 2. 다섯 개 시드의 평균과 표본 표준편차다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표만 보면 넷은 거의 같은 모델이다. 가장 좋은 방식과 가장 나쁜 방식의 RMSE 차이가 0.016인데, 각 값에 붙은 흔들림 폭이 그만큼이거나 그보다 크다. 평균만 적힌 보고를 받는 자리라면 "전이학습을 적용해 오차를 소폭 개선했다"는 한 줄로 끝났을 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        열을 하나씩 짚으면 앞서는 방식이 바뀐다. 오차의 크기를 그대로 평균 내는 MAE에서는 늘 전이가 0.902로 가장 낮고 선택적 방식이 0.904로 그 뒤를 따른다. 큰 오차에 벌점을 더 얹는 RMSE와 설명력 R²에서는 순서가 뒤집혀 선택적 방식이 앞선다. 연구진은 가장 좋은 모델이 무엇을 손실로 잡느냐에 따라 달라진다는 것을 이 비교에서 일관되게 나타난 패턴으로 적었다. 차이가 모두 흔들림 폭을 넘지 않아 순위를 못 박을 일은 아니지만, 열 하나만 떼어 보고 방식을 고르면 다른 열에서는 다른 답이 나온다는 사실은 표가 이미 담고 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        우물 단위로 나누면 그림이 달라진다. 늘 전이 방식은 다섯 번의 실험에서 18.38~51.86%의 우물을 사전학습 없는 모델보다 나쁘게 만들었다. 가장 심했던 시드 42에서는 457곳 가운데 201곳, 그러니까 43.98%가 손해를 봤다. 같은 설정에 난수 씨앗만 바꿨는데 피해 규모가 두 배 넘게 흔들렸다. 손해 본 우물이 전체의 5분의 1에 그칠지 절반에 닿을지는 미리 알 수 없다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 170" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="0%부터 60%까지의 축 위에 손해 본 우물 비율의 범위 18.38%에서 51.86%까지를 오렌지 띠로 표시한 그림. 띠 안쪽 43.98% 지점에 시드 42의 값이 점으로 표시되어 있다.">
+                            <text x="340" y="22" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">손해 본 우물 비율 — 다섯 시드 사이의 흔들림</text>
+
+                            <line x1="60" y1="100" x2="620" y2="100" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+                            <g font-size="9" fill="var(--text-muted,#6B7280)">
+                                <line x1="60" y1="96" x2="60" y2="104" stroke="var(--text-muted,#9CA3AF)"/>
+                                <text x="60" y="118" text-anchor="middle">0%</text>
+                                <line x1="153.3" y1="96" x2="153.3" y2="104" stroke="var(--text-muted,#9CA3AF)"/>
+                                <text x="153.3" y="118" text-anchor="middle">10%</text>
+                                <line x1="246.7" y1="96" x2="246.7" y2="104" stroke="var(--text-muted,#9CA3AF)"/>
+                                <text x="246.7" y="118" text-anchor="middle">20%</text>
+                                <line x1="340" y1="96" x2="340" y2="104" stroke="var(--text-muted,#9CA3AF)"/>
+                                <text x="340" y="118" text-anchor="middle">30%</text>
+                                <line x1="433.3" y1="96" x2="433.3" y2="104" stroke="var(--text-muted,#9CA3AF)"/>
+                                <text x="433.3" y="118" text-anchor="middle">40%</text>
+                                <line x1="526.7" y1="96" x2="526.7" y2="104" stroke="var(--text-muted,#9CA3AF)"/>
+                                <text x="526.7" y="118" text-anchor="middle">50%</text>
+                                <line x1="620" y1="96" x2="620" y2="104" stroke="var(--text-muted,#9CA3AF)"/>
+                                <text x="620" y="118" text-anchor="middle">60%</text>
+                            </g>
+
+                            <rect x="231.6" y="88" width="312.4" height="24" rx="4" fill="#F86825" fill-opacity="0.22" stroke="#F86825" stroke-width="1.5"/>
+                            <circle cx="470.5" cy="100" r="5" fill="#F86825" stroke="#ffffff" stroke-width="1.5"/>
+
+                            <text x="231.6" y="78" text-anchor="middle" font-size="10" font-weight="700" fill="#F86825">18.38%</text>
+                            <text x="544.0" y="78" text-anchor="middle" font-size="10" font-weight="700" fill="#F86825">51.86%</text>
+                            <text x="470.5" y="140" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-primary,#111827)">시드 42: 43.98%</text>
+
+                            <text x="340" y="158" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">같은 설정, 난수 씨앗만 다섯 가지로 바꾼 결과다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: <a href="https://arxiv.org/abs/2610.37733" target="_blank" rel="noopener" class="underline">arXiv 2610.37733</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다만 이 흔들림이 무엇의 흔들림인지는 연구진이 선을 그어 두었다. 다섯 번의 반복은 자료와 분할을 고정한 채 학습 과정의 난수만 바꾼 것이라, 18.38~51.86%라는 범위가 말해 주는 것은 학습의 무작위성이다. 다른 시기로 옮기거나 다른 우물 집단에 걸었을 때 얼마나 더 벌어질지는 이 범위가 답하는 물음이 아니다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            평균이 좋아졌다는 말과 우리 현장이 좋아졌다는 말은 다른 문장이다. 이 논문이 숫자로 못 박은 것이 그 간극이고, 간극의 폭은 다섯 곳 중 한 곳에서 많게는 절반을 조금 넘는 데까지 벌어졌다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="setup" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">457곳을 어떻게 측정했나</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        대상은 네덜란드 지하수 관측정 457곳이다. 모델이 맞혀야 하는 것은 평년과 견준 지하수위의 어긋남, 즉 이상치다. 입력은 빠진 달 없이 이어진 아홉 달치 관측이고, 맞혀야 하는 것은 정확히 세 달 뒤의 값이다. 비어 있는 달을 앞뒤 값으로 채워 넣는 보간은 쓰지 않았다. 빠진 구간을 메워 억지로 창을 만들면 모델이 자기가 만든 매끄러움을 다시 맞히게 되는데, 그 지점을 먼저 닫아 둔 셈이다. 그렇게 남은 시험 구간이 1만 3718개다. 학습은 2008년 7월까지의 기록으로 하고, 시험은 2013년 6월부터 2016년 6월까지 떼어 두었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 사이를 더 잘게 보면 구간은 네 토막이다. 학습에 쓴 기록은 1996년 10월부터 2008년 7월까지이고, 2008년 8월부터 2011년 6월까지가 검증, 2011년 7월부터 2013년 5월까지가 보정, 그 뒤 2016년 6월까지가 시험이다. 세 번째 토막인 보정 구간은 4절에 나오는 선택 장치를 맞추는 데만 쓰려고 따로 떼어 둔 자리다. 네 토막이 시간 순으로 이어져 있으니 앞 구간으로 학습한 모델이 뒤 구간을 미리 보는 길은 설계에서 닫혀 있다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 190" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="1996년 10월부터 2016년 6월까지를 학습, 검증, 보정, 시험 네 구간으로 나눈 시간순 막대그림. 보정 구간은 2011년 7월부터 2013년 5월까지로 가장 짧고 주황으로 강조되어 있으며, 4절에 나오는 선택 게이트를 맞추는 데만 쓰인다는 설명이 붙어 있다.">
+                            <text x="340" y="22" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">네 토막으로 나뉜 학습 · 검증 · 보정 · 시험 구간</text>
+
+                            <rect x="60" y="70" width="338.7" height="40" fill="var(--text-muted,#9CA3AF)" fill-opacity="0.15" stroke="var(--text-muted,#9CA3AF)" stroke-width="1"/>
+                            <rect x="398.7" y="70" width="81.7" height="40" fill="var(--text-muted,#9CA3AF)" fill-opacity="0.30" stroke="var(--text-muted,#9CA3AF)" stroke-width="1"/>
+                            <rect x="480.4" y="70" width="52.9" height="40" fill="#F86825" stroke="#F86825" stroke-width="1.5"/>
+                            <rect x="533.3" y="70" width="86.6" height="40" fill="var(--text-muted,#9CA3AF)" fill-opacity="0.45" stroke="var(--text-muted,#9CA3AF)" stroke-width="1"/>
+
+                            <text x="229.4" y="94" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">학습</text>
+                            <text x="439.6" y="94" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">검증</text>
+                            <text x="506.9" y="94" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">보정</text>
+                            <text x="576.6" y="94" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">시험</text>
+
+                            <line x1="60" y1="110" x2="60" y2="126" stroke="var(--text-muted,#9CA3AF)" stroke-width="1"/>
+                            <line x1="398.7" y1="110" x2="398.7" y2="142" stroke="var(--text-muted,#9CA3AF)" stroke-width="1"/>
+                            <line x1="480.4" y1="110" x2="480.4" y2="126" stroke="var(--text-muted,#9CA3AF)" stroke-width="1"/>
+                            <line x1="533.3" y1="110" x2="533.3" y2="142" stroke="var(--text-muted,#9CA3AF)" stroke-width="1"/>
+                            <line x1="619.9" y1="110" x2="619.9" y2="126" stroke="var(--text-muted,#9CA3AF)" stroke-width="1"/>
+
+                            <text x="60" y="137" text-anchor="middle" font-size="8.5" fill="var(--text-muted,#6B7280)">1996.10</text>
+                            <text x="398.7" y="153" text-anchor="middle" font-size="8.5" fill="var(--text-muted,#6B7280)">2008.07</text>
+                            <text x="480.4" y="137" text-anchor="middle" font-size="8.5" fill="var(--text-muted,#6B7280)">2011.06</text>
+                            <text x="533.3" y="153" text-anchor="middle" font-size="8.5" fill="var(--text-muted,#6B7280)">2013.05</text>
+                            <text x="619.9" y="137" text-anchor="middle" font-size="8.5" fill="var(--text-muted,#6B7280)">2016.06</text>
+
+                            <text x="340" y="175" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">보정 구간(주황)은 4절의 선택 게이트를 맞추는 데만 쓰인다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: <a href="https://arxiv.org/abs/2610.37733" target="_blank" rel="noopener" class="underline">arXiv 2610.37733</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        남의 데이터, 그러니까 소스 도메인은 TSMP-G2A·COSMO-REA6·GLEAM 세 가지 수문기후 격자 자료다. 격자 512칸에서 12만 2880개의 행이 나오는데, 연구진은 이 가운데 네 칸만 골라 썼다. 고른 기준은 겹치는 기간의 궤적이 얼마나 닮았는지를 코사인 유사도로 계산해 0.60을 넘는 칸만 남기는 방식이고, 그 뒤 시드 42에서 늘 전이 방식의 검증 오차만 보고 한 번 확정한 다음 다섯 번의 실험 내내 고정했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 짚어 둘 것이 있다. 소스와 타깃은 같은 종류의 데이터가 아니다. 한쪽은 넓은 칸의 평균을 내놓는 기후 모델 산출물이고, 다른 쪽은 땅에 박힌 관측정 한 점의 수위다. 비슷한 신호를 담고 있지만 같은 자를 쓰지는 않는다. 연구진은 이 어긋남이 우물마다 결과가 갈리는 데 영향을 줄 수 있다고 적으면서도, 그것이 원인이라고 단정하지는 않았다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="similarity" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">유사도가 높다고 전이가 잘 되지는 않는다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        남의 모델을 들일 때 가장 먼저 떠오르는 안전장치는 비슷한 데이터를 고르는 일이다. 우리 현장과 닮은 데이터로 배운 모델이라면 덜 어긋나리라는 기대이고, 이번 연구도 소스 칸을 고를 때 유사도 문턱을 걸었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 유사도와 전이 성과의 관계를 따로 계산해 보면 기대가 흔들린다. 격자 512칸 전체에서 그 상관은 −0.080에서 0.054 사이였고, 문턱을 통과해 실제로 쓰인 네 칸 안에서도 −0.056에서 0.072 사이였다. 크기가 작을 뿐 아니라 부호가 뒤집힌다. 닮을수록 좋아진다고도, 닮을수록 나빠진다고도 말할 수 없는 상태다. 연구진 자신도 이 비교가 무엇이 더 중요한지를 가리거나 원인을 밝히거나 실패를 미리 잡아내는 근거는 되지 못한다고 못 박았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이것이 전이학습에서 네거티브 전이(negative transfer)라 부르는 현상의 실물이다. 소스에서 배운 표현이 타깃의 패턴과 어긋나면, 미리 배운 것이 출발점이 아니라 걸림돌이 된다. 정작 그 어긋남은 평균 지표에 거의 드러나지 않는다. 이득 본 우물과 손해 본 우물이 서로를 상쇄하면 전체 오차는 조용히 제자리를 지킨다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="casl" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">되살아난 우물, 저자들은 그 공을 차지하지 않는다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진이 택한 길은 전이를 쓸지 말지를 우물마다 다시 묻는 것이다. 두 부모 모델(사전학습 없음, 늘 전이)을 먼저 학습해 얼려 두고, 그 둘의 예측을 얼마나 섞을지를 정하는 게이트를 따로 학습시킨다. 게이트가 보는 입력은 47개인데, 최근 수위 상태와 달력 정보, 계절을 나타내는 사인·코사인 값, 그 우물의 학습 기간 평균과 변동 폭 같은 이력, 그리고 소스와의 유사도 요약이 들어간다. 게이트는 히스토그램 그래디언트 부스팅 모델이고, 관측 하나하나마다 0과 1 사이의 혼합 비율을 내놓는다. 이 게이트를 맞추는 데 쓴 보정 데이터는 우물 407곳에서 나온 6562개 관측이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 6562개는 2011년 7월부터 2013년 5월까지의 보정 구간에서만 뽑았다. 그런데 이 구간에서 쓸 만한 창이 하나도 나오지 않은 우물이 50곳 있었다. 게이트를 맞추는 데 참여한 우물은 457곳 가운데 407곳이고, 나머지 50곳은 자기 자료가 한 줄도 들어가지 않은 채 시험 집단에 남았다. 현장마다 따로 정해 주겠다는 설계인데, 정할 근거를 모을 자리가 비어 있던 현장이 전체의 10분의 1을 넘는다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 250" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="선택적 전이학습의 구조를 그린 도식. 왼쪽에는 얼려 둔 두 부모 모델, 즉 사전학습 없이 현장 데이터만으로 학습한 모델과 수문기후 격자 자료로 먼저 학습한 뒤 미세조정한 모델이 있다. 가운데에는 최근 수위, 계절, 사이트 이력, 유사도 요약 등 47개 입력을 받는 게이트가 있고, 오른쪽에는 관측마다 0과 1 사이의 혼합 비율이 나온다. 아래에는 모든 우물에 하나의 비율을 쓰는 전체 고정 혼합과 달리 우물과 시점마다 비율이 바뀐다는 설명이 붙어 있다.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">두 모델을 우물마다 다른 비율로 섞는 구조</text>
+
+                            <rect x="24" y="52" width="168" height="52" rx="10" fill="none" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+                            <text x="108" y="74" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary,#4B5563)">부모 ① 사전학습 없음</text>
+                            <text x="108" y="92" text-anchor="middle" font-size="9" fill="var(--text-primary,#111827)">현장 데이터만으로 학습</text>
+
+                            <rect x="24" y="118" width="168" height="52" rx="10" fill="none" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+                            <text x="108" y="140" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary,#4B5563)">부모 ② 늘 전이</text>
+                            <text x="108" y="158" text-anchor="middle" font-size="9" fill="var(--text-primary,#111827)">격자 자료로 먼저 학습</text>
+
+                            <line x1="196" y1="78" x2="252" y2="100" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+                            <line x1="196" y1="144" x2="252" y2="122" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+
+                            <rect x="258" y="68" width="172" height="86" rx="12" fill="none" stroke="#F86825" stroke-width="2"/>
+                            <text x="344" y="92" text-anchor="middle" font-size="10.5" font-weight="700" fill="#F86825">게이트 (입력 47개)</text>
+                            <text x="344" y="114" text-anchor="middle" font-size="9" fill="var(--text-primary,#111827)">최근 수위 · 계절 · 사이트 이력</text>
+                            <text x="344" y="132" text-anchor="middle" font-size="9" fill="var(--text-primary,#111827)">소스와의 유사도 요약</text>
+
+                            <line x1="436" y1="111" x2="486" y2="111" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+                            <path d="M492 111 L 482 106 L 482 116 Z" fill="var(--text-muted,#9CA3AF)"/>
+
+                            <rect x="496" y="68" width="160" height="86" rx="12" fill="none" stroke="var(--text-muted,#9CA3AF)" stroke-width="1.5"/>
+                            <text x="576" y="92" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-secondary,#4B5563)">혼합 비율</text>
+                            <text x="576" y="114" text-anchor="middle" font-size="9" fill="var(--text-primary,#111827)">관측마다 0에서 1 사이</text>
+                            <text x="576" y="132" text-anchor="middle" font-size="9" fill="var(--text-primary,#111827)">우물·시점별로 달라진다</text>
+
+                            <line x1="24" y1="192" x2="656" y2="192" stroke="var(--border-color,#E5E7EB)" stroke-width="1"/>
+                            <text x="340" y="215" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">전체 고정 혼합은 이 비율을 실험 한 번에 하나로 묶는다</text>
+                            <text x="340" y="235" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">두 방식의 부모 모델은 같고, 다른 것은 비율을 어디까지 쪼개느냐다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: <a href="https://arxiv.org/abs/2610.37733" target="_blank" rel="noopener" class="underline">arXiv 2610.37733</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        효과는 손해 본 우물에서 가장 뚜렷하다. 늘 전이 방식에 당한 우물 가운데 97.53~99.50%가 선택적 방식에서는 손해를 덜었다. 다만 덜었다는 것과 없앴다는 것은 다르다. 사전학습을 아예 쓰지 않은 기준선보다 좋아진 데까지 간 우물은 23.46~43.78%였다. 시드 42를 예로 들면 손해 본 201곳 가운데 200곳이 조금이라도 나아졌고, 그중 88곳이 기준선을 넘어섰다. 반대로 늘 전이로 이득을 보던 우물 가운데 3.52%는 선택적 방식 때문에 새로 손해를 봤다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        시드 42의 457곳을 겹치지 않는 다섯 갈래로 갈라 보면 비율의 모양이 더 분명해진다. 완전히 되살아난 곳 88, 손해가 줄기만 한 곳 112, 그조차 없던 곳 1, 늘 전이로 보던 이득을 선택을 거친 뒤에도 지킨 곳 247, 새로 손해를 본 곳 9다. 피해와 회복 쪽 숫자만 이어 읽으면 전이가 망쳐 놓은 판처럼 보이는데, 가장 큰 덩어리는 처음부터 득을 봤고 끝까지 그 득을 잃지 않은 247곳이다. 저자들이 전이를 그만두라고 말하지 않는 이유도 거기에 있다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 220" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="시드 42의 457개 우물을 다섯 갈래로 나눈 막대그림. 왼쪽부터 늘 전이로 이득을 보고 선택적 방식에서도 그 이득을 지킨 247곳, 손해에서 완전히 되살아난 88곳, 손해가 줄기만 한 112곳, 줄지도 않은 1곳, 선택적 방식 때문에 새로 손해를 본 9곳 순이다.">
+                            <text x="340" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">시드 42, 457개 우물의 다섯 갈래</text>
+
+                            <rect x="60" y="70" width="300" height="40" fill="var(--text-muted,#9CA3AF)" fill-opacity="0.25" stroke="var(--text-muted,#9CA3AF)" stroke-width="1"/>
+                            <rect x="360" y="70" width="108" height="40" fill="#F86825"/>
+                            <rect x="468" y="70" width="134" height="40" fill="#F86825" fill-opacity="0.35"/>
+                            <rect x="602" y="70" width="4" height="40" fill="var(--text-muted,#9CA3AF)"/>
+                            <rect x="606" y="70" width="10" height="40" fill="#CF1D21"/>
+
+                            <text x="210" y="60" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-secondary,#4B5563)">이득 유지 247</text>
+                            <text x="414" y="60" text-anchor="middle" font-size="10" font-weight="700" fill="#F86825">완전 회복 88</text>
+                            <text x="535" y="130" text-anchor="middle" font-size="10" font-weight="700" fill="#F86825">부분 회복만 112</text>
+
+                            <line x1="604" y1="70" x2="604" y2="40" stroke="var(--text-muted,#9CA3AF)" stroke-width="1"/>
+                            <text x="604" y="30" text-anchor="middle" font-size="9" fill="var(--text-secondary,#4B5563)">변화 없음 1</text>
+
+                            <line x1="611" y1="110" x2="645" y2="150" stroke="#CF1D21" stroke-width="1"/>
+                            <text x="648" y="155" text-anchor="start" font-size="9" font-weight="700" fill="#CF1D21">새로 손해 9</text>
+
+                            <text x="340" y="190" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">선택적 방식 적용 후 늘 전이 대비 결과가 바뀐 방향 기준</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 | 출처: <a href="https://arxiv.org/abs/2610.37733" target="_blank" rel="noopener" class="underline">arXiv 2610.37733</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 저자들이 붙인 단서가 이 논문을 다른 전이학습 논문과 갈라 놓는다. 두 예측을 볼록하게 섞는 연산은 구조상 극단을 깎는다. 나쁜 쪽으로 치우친 예측에 안전한 예측을 조금만 섞어도 오차는 줄어든다. 그러니 부분적인 회복은 게이트가 맥락을 알아봤다는 증거가 아니라 혼합이라는 연산 자체에서 나왔을 수 있다는 것이다. 이 문장은 초록에 그대로 적혀 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        선택적 방식과 전체 고정 혼합의 차이가 어떤 모양인지도 같은 시드에서 드러난다. 선택적 방식은 손해가 그대로 남은 우물 113곳에 새로 생긴 9곳을 더해 122곳이 피해 쪽에 남았고, 전체 고정 혼합은 124곳이 남았으되 새로 생긴 피해는 한 곳도 없었다. 총량은 두 곳 차이인데 피해의 성격이 갈린다. 비율을 잘게 쪼갠 쪽은 없던 손해를 만들 수 있고, 하나로 묶은 쪽은 그럴 자리가 없다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        어느 방식이 이겼다고도 적지 않았다. 다섯 번의 실험 가운데 네 번은 전체 고정 혼합 쪽이 더 많은 우물을 지켰고, 네 번은 선택적 방식 쪽이 전체 오차가 낮았다. 정확도와 위험은 맞바꾸는 관계이지 한쪽이 다른 쪽을 포함하지 않는다. 적용 범위에도 선이 그어져 있다. 월 단위 자료라 짧게 스치는 가뭄의 극값은 평탄해지고, 시점을 밀어 가며 재학습하는 실전 방식으로는 검증하지 않았으며, 가뭄 사건을 실제로 잡아내는지는 평가 대상이 아니었다. 선택적 방식과 고정 혼합 방식의 보정 목표가 서로 달라, 맥락 입력이 기여한 몫만 떼어 보는 것도 불가능하다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="why-pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 이 논문을 주목하는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        우물을 걷어 내면 남는 구조는 낯설지 않다. 데이터가 모자란 현장에 외부에서 학습한 모델을 들이는 일은 제조 설비의 이상 감지에서도, 병원의 영상 판독에서도, 지점마다 손님이 다른 매장의 수요 예측에서도 똑같이 벌어진다. 이때 손에 쥐는 근거는 대개 평균 한 줄이다. 벤치마크 점수가 올랐다거나, 파일럿에서 오차가 몇 퍼센트 줄었다는 문장이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문이 보여 준 것은 그 한 줄이 가릴 수 있는 폭이다. 457곳의 평균은 거의 움직이지 않는 동안, 그 안에서 적게는 다섯 곳 중 하나가 손해를 봤다. 평균을 받아 든 쪽은 자기 현장이 어느 편인지 알 방법이 없다. 그래서 남의 데이터로 배운 모델을 우리 데이터에 들일 때, 먼저 확인할 것이 셋이다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>평균 옆에 분포를 같이 요구한다</strong>. 오차가 몇 퍼센트 줄었는지가 아니라, 전체 현장 가운데 몇 곳이 나빠졌는지를 같은 보고서에 적게 한다. 표 2만 보면 네 방식은 구별되지 않았고, 구별은 우물 단위로 쪼갠 뒤에야 나타났다</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>유사도 점수를 보증서로 쓰지 않는다</strong>. 소스와 타깃이 닮았다는 수치는 고를 때의 참고는 되어도 성과를 담보하지 않는다. 이 데이터에서는 상관의 부호조차 일정하지 않았다. 닮은 데이터를 골랐으니 안전하다는 문장은 검증 결과가 아니라 기대다</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>섞은 비율을 기록으로 남긴다</strong>. 연구진도 예측값 옆에 혼합 비율을 함께 보고하라고 권한다. 어떤 현장에서 외부 모델에 얼마나 기댔는지가 남아 있어야, 나중에 결과가 어긋났을 때 데이터가 문제였는지 비중이 문제였는지를 되짚을 수 있다</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 번째 항목에는 연구진이 선을 하나 그어 두었다. 예측값 옆에 적어 두는 그 비율은 어느 부모 모델이 더 많이 기여했는지를 나중에 따져 볼 수 있게 해 주는 기록일 뿐, 전이가 안전하다는 확률도 아니고 물리적 인과를 설명하는 값도 아니다. 기록을 남기는 일과 안전을 보장받는 일은 여기서도 다른 칸에 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AI-Ready Data를 이야기할 때 우리는 주로 데이터를 모델이 쓰기 좋은 상태로 만드는 일을 다룬다. 이 논문은 거기에 질문을 하나 보탠다. 들여온 모델이 우리 데이터와 맞는지를 무엇으로 확인할 것인가. 평균 성적표는 그 답이 되지 못했고, 유사도 점수도 되지 못했다. 남은 것은 현장 단위로 쪼개 보는 일과, 쪼갠 결과를 기록해 두는 일이다.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            이 논문의 미덕은 새 방법을 내놓은 데 있지 않다. 자기가 내놓은 방법이 평균에서만 조금 낫고, 회복처럼 보이는 것이 연산의 부산물일 수 있으며, 다섯 번 중 네 번은 더 단순한 방식이 더 많은 우물을 지켰다고 스스로 적어 둔 데 있다. 전이학습을 다룬 글에서 보기 드문 종류의 정직함이다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주셔서 감사하다. 이 글의 수치와 인용은 arXiv에 공개된 논문 2610.37733의 초록과 본문에서 확인했다. 논문은 아직 심사 전 공개본이고, 운영하듯 주기적으로 다시 학습시켜 가며 시험한 결과는 들어 있지 않으니 그 점을 감안해 읽어 주시면 좋겠다. 외부에서 학습한 모델을 현장에 들였다가 일부 지점에서만 성적이 떨어진 경험이 있다면, 그때 무엇을 보고 알아차렸는지 나눠 주시면 좋겠다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mt-8 text-right">
+                        <strong>(주)페블러스 데이터 커뮤니케이션팀</strong><br>
+                        <span class="themeable-muted text-sm">2026년 11월 1일</span>
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            BibTeX
+                        </button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">
+                            RIS
+                        </button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 논문</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Wu, Y., Alsahag, A. M. M., &amp; Mohammadi Ziabari, S. S. (2026). "<a href="https://arxiv.org/abs/2610.37733" target="_blank" rel="noopener">Selective Transfer Learning for Groundwater Level Anomaly Forecasting: Accuracy-Risk Trade-offs</a>." arXiv:2610.37733.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261101"></script>
+    <script src="/scripts/citation-download.js?v=20261101" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-10-31T21:56:31.411Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-10-31T22:08:45.351Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1793483791411-wjbtg5",
+                "version": "0.1.0",
+                "sha": "052a2a95afa30d7970808c86a8f2efabf743c560",
+                "builtAt": "2026-10-24T13:53:43.526Z"
+              },
+              "recordedAt": "2026-10-31T23:20:47.413Z"
+            },
+            mainTitle: "전이학습, 평균은 올라도 손해 보는 우물이 생긴다",
+            subtitle: "네덜란드 지하수 관측정 457곳을 분석한 arXiv 논문에서, 미리 학습시킨 모델이 우물의 18~52%에서 예측을 더 틀렸다",
+            pageTitle: "전이학습 역효과 정리 — 네덜란드 지하수 관측정 457곳 실측과 선택적 전이 비교 | 페블러스",
+            category: "tech",
+            publishDate: "2026-11-01",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/selective-transfer-learning-groundwater/ko/",
+            tags: ["전이학습", "transfer learning", "네거티브 전이", "지하수위 예측", "선택적 전이학습", "도메인 적응", "사전학습 모델", "데이터 이질성", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "이 논문이 측정한 것은 무엇인가?",
+                    answer: "네덜란드 지하수 관측정 457곳의 시험 구간 1만 3718개에서, 다른 데이터로 미리 학습시킨 모델을 가져다 쓰는 방식이 우물마다 어떤 결과를 냈는지다. 평균 오차뿐 아니라 우물 단위로 나아진 곳과 나빠진 곳을 따로 세었다는 점이 이 논문의 특징이다."
+                },
+                {
+                    question: "전이학습이 해롭다는 뜻인가?",
+                    answer: "아니다. 평균적으로는 오차가 조금 줄었고 해를 입지 않은 우물이 더 많았다. 다만 모든 현장에 똑같이 이로운 것은 아니라는 뜻이다. 다섯 번의 반복 실험에서 18.38~51.86%의 우물은 사전학습을 쓰지 않았을 때보다 나쁜 예측을 받았다."
+                },
+                {
+                    question: "18.38~51.86%는 어떻게 나온 범위인가?",
+                    answer: "난수 씨앗을 다섯 가지로 바꿔 같은 실험을 반복한 결과다. 설정은 그대로 두고 초기화와 분할에 쓰이는 난수만 바꿨는데 손해 본 우물의 비율이 두 배 넘게 흔들렸다. 가장 심했던 시드 42에서는 457곳 중 201곳, 43.98%가 손해를 봤다."
+                },
+                {
+                    question: "평균 지표에는 왜 그 피해가 드러나지 않나?",
+                    answer: "이득 본 우물과 손해 본 우물이 서로 상쇄되기 때문이다. 논문의 표 2를 보면 네 가지 방식의 RMSE가 2.153에서 2.169 사이에 모여 있고, 그 차이는 각 값에 붙은 흔들림 폭과 비슷하다. 전체 평균만 보고서에 적으면 우물 단위의 갈림은 보이지 않는다."
+                },
+                {
+                    question: "선택적 전이학습(CASL)은 무엇을 다르게 하나?",
+                    answer: "전이를 쓸지 말지를 우물마다, 그리고 시점마다 다시 정한다. 사전학습 없는 모델과 전이 모델을 먼저 학습해 얼려 둔 뒤, 최근 수위와 계절, 사이트 이력, 유사도 요약 등 47개 입력을 보는 게이트가 관측마다 0과 1 사이의 혼합 비율을 내놓는다. 비교군인 전체 고정 혼합은 같은 두 모델을 쓰되 비율을 실험 한 번에 하나로 묶는다."
+                },
+                {
+                    question: "부분 복구와 완전 복구는 어떻게 다른가?",
+                    answer: "부분 복구는 전이 때문에 생긴 손해가 줄었다는 뜻이고, 완전 복구는 사전학습을 아예 쓰지 않은 기준선보다 좋아졌다는 뜻이다. 손해 본 우물의 97.53~99.50%가 부분 복구에 해당했지만, 완전 복구는 23.46~43.78%에 그쳤다."
+                },
+                {
+                    question: "회복했다는 것이 맥락을 잘 읽었다는 증거인가?",
+                    answer: "연구진은 아니라고 적었다. 두 예측을 볼록하게 섞는 연산은 구조상 극단을 깎기 때문에, 맥락을 보지 않고 섞기만 해도 손해가 줄어들 수 있다. 그래서 부분 복구는 게이트의 맥락 인식이 우월하다는 근거가 되지 못한다는 것이 저자들의 설명이다."
+                },
+                {
+                    question: "유사도가 높은 데이터를 고르면 안전하지 않나?",
+                    answer: "이 데이터에서는 그렇지 않았다. 유사도와 전이 성과의 상관은 격자 512칸 전체에서 −0.080에서 0.054 사이였고, 실제로 쓰인 네 칸 안에서도 −0.056에서 0.072 사이였다. 크기가 작고 부호도 일정하지 않아, 닮은 정도로 전이의 성패를 예측하기 어렵다."
+                },
+                {
+                    question: "이 결과를 바로 현장에 적용해도 되나?",
+                    answer: "적용 범위를 먼저 확인해야 한다. 월 단위 자료라 짧게 스치는 가뭄의 극값은 평탄해지고, 시점을 밀어 가며 재학습하는 실전 방식으로는 검증하지 않았으며, 가뭄 사건 탐지 성능은 평가 대상이 아니었다. 다섯 번의 실험 중 네 번은 더 단순한 전체 고정 혼합이 더 많은 우물을 지켰다는 점도 함께 읽어야 한다."
+                },
+                {
+                    question: "데이터를 맡은 쪽이 먼저 확인할 것은 무엇인가?",
+                    answer: "셋이다. 평균 오차 옆에 현장별 분포, 즉 몇 곳이 나빠졌는지를 같이 요구하고, 소스와 타깃의 유사도 점수를 성과의 보증서로 쓰지 않으며, 외부 모델에 얼마나 기댔는지를 예측값과 함께 기록해 둔다. 마지막 항목은 연구진이 직접 권한 내용이다."
+                },
+                {
+                    question: "지하수 말고 다른 분야에도 해당하는 이야기인가?",
+                    answer: "구조가 같은 곳이면 해당한다. 데이터가 모자란 현장에 외부에서 학습한 모델을 들이고 평균 지표로 성과를 보고하는 상황은 설비 이상 감지, 영상 판독, 지점별 수요 예측에서 똑같이 나타난다. 다만 이 논문이 측정한 수치 자체는 네덜란드 관측정 자료에서 나온 것이니, 비율을 그대로 옮겨 쓰지는 못한다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
