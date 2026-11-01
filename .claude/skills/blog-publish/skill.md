@@ -220,6 +220,29 @@ echo "exit=$?"
 
 > 경계: BlogScope = HTML head/구조 축, `validate-articles.js`(Step 2.5) = articles.json 축. noindex/published 충돌 시 후자 우선.
 
+### 3.6. 본문 그림 검사 (외부 그림은 원본 연결 — 2026-11-01 형님 결정)
+
+"이미지는 자체 생성이 아니면, 원본을 링크로 연결" — 외부 그림을 레포에 복사하지 않는다. KO·EN 을 함께 넘긴다.
+
+```bash
+node tools/check-post-images.js \
+  "[category]/[slug]/ko/index.html" \
+  "[category]/[slug]/en/index.html"
+echo "exit=$?"
+```
+
+| exit | 의미 | 처리 |
+|------|------|------|
+| 0 | 차단 없음 (경고 가능) | 통과 → 다음 단계 |
+| 1 | 차단 ≥ 1 | 아래 고치는 법대로 **HTML 수정** 후 재실행 |
+| 2·3 | 사용법·경로 오류 | 콘텐츠 고치지 말 것 — 명령·경로 점검 |
+
+고치는 법 (차단 코드별, 결정론적으로):
+- `external-copied` — 외부 출처 그림을 로컬 파일로 넣었다. `src` 를 **원본 그림의 직접 주소**로 바꾸고 `referrerpolicy="no-referrer"` 를 단 뒤, 복사한 로컬 파일은 지운다. 원본 그림 주소를 확인할 수 없으면 `<figure>` 를 통째로 뺀다(글은 그림 없이도 읽혀야 한다). 자체 생성 그림이면 `data-origin="pebblous"` 를 단다.
+- `too-large` — 자체 생성 로컬 그림이 1MB 초과. 긴 변 1,600px 로 줄인다(`sips -Z 1600 <file>` 또는 node 로 재인코딩).
+- `no-referrer` · `no-source` — 외부 그림에 `referrerpolicy="no-referrer"`, 캡션에 출처 페이지 링크를 단다.
+- 경고 `ko-en-duplicate` — EN 의 같은 그림 파일을 지우고 `../ko/image/<파일>` 을 참조한다.
+
 ### 4. Changelog 기록
 
 ```bash

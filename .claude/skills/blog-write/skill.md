@@ -399,7 +399,8 @@ grep -n '<li>•\|<li> •' <파일>.html
 EN HTML을 KO에서 복사하여 만들 때, og:image/twitter:image 경로가 `/ko/image/`로 남는 실수가 반복된다.
 EN HTML 생성 후 반드시 실행:
 ```bash
-grep -n "/ko/image/" [EN HTML 파일]  # → 0줄이어야 함. 있으면 /en/image/로 수정
+grep -n -E '(og:image|twitter:image|"image").*/ko/image/' [EN HTML 파일]  # → 0줄이어야 함. 있으면 /en/image/로 수정
 ```
+본문 `<img>` 가 자체 생성 그림을 `../ko/image/` 로 참조하는 것은 정상이다(두 벌 복사 금지 — image-reinforce 스킬). 외부 그림은 원본 주소로 연결한다.
 
 상세 HTML 전체 구조 → `references/html-conventions.md`
