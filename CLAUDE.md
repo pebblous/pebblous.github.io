@@ -161,6 +161,7 @@ node tools/generate-rss.js            # Regenerate RSS feed
 node tools/generate-sitemap.js        # Regenerate sitemap.xml
 python3 tools/generate-llms-txt.py  # Regenerate llms.txt (AI crawler index)
 python3 tools/check-cache-bust.py   # 공용 CSS/JS 변경 시 index.html ?v= 스테일 검사 (사본 CI check-cache-bust.yml이 PR마다 실행)
+node tools/check-post-images.js <ko/index.html> <en/index.html>  # 새 글 본문 그림 검사 — 외부 그림은 원본 주소로 연결(복사 금지)·자체 생성 그림 1MB 이하 (blog-publish §3.6)
 python3 tools/build-search-index.py  # Pagefind 전문 검색 인덱스 빌드 — noindex/보호 페이지 자동 배제 (사본 CI build-search-index.yml이 main push마다 실행, /pagefind/ 커밋)
 python3 tools/build-article-graph.py --site <사본경로> --output <dir>  # 블로그 지식그래프 → PebbloScope Scholar 규격 (graph/corpus/meta.json; --sample N 층화 축소판)
 node tools/audit-sabon-divergence.js --sabon <사본경로>  # 진본↔사본 자산 2/3 갈라짐(reverse-divergence) 감사 — 사본 auto-sync PR이 충돌로 막혔을 때 첫 진단 (CI audit-sabon-divergence.yml 주 1회 + 수동)

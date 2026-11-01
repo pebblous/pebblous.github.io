@@ -1,6 +1,6 @@
 ---
 name: image-reinforce
-description: "Add contextual images to blog posts — auto mode finds, verifies, downloads, and inserts without user intervention"
+description: "Add contextual images to blog posts — auto mode finds, verifies, and links external images to their original URLs (no copying) without user intervention"
 argument-hint: "<path-to-html-post> [--auto]"
 ---
 
@@ -13,13 +13,19 @@ When this skill is invoked with a path to an HTML blog post:
 Analyzes an HTML blog post and inserts contextual images that reinforce the narrative. Three modes:
 
 - **Plan mode** (default): Analyze, propose placements, wait for approval
-- **Auto mode** (`--auto`): Find → verify → download → insert — no user intervention needed
+- **Auto mode** (`--auto`): Find → verify → link original URL → insert — no user intervention needed
 - **Insert mode** (`--insert`): Replace existing placeholders with final URLs
 
 ## Goals
 
-1. Add 4-6 relevant images per post that visually reinforce key concepts
-2. **Download to local repo** (preferred) — eliminates hotlink/404 risks
+1. **그림은 꼭 필요한 곳에만 — 0~3개, 0개도 정상이다** (2026-11-01 형님: 위키미디어·공식 뉴스룸 같은 그림은 "별로 재미가 없어서 굳이 안 넣어도 될 듯")
+   - 빈자리를 외부 그림으로 채우지 않는다. 위키미디어 일러스트·뉴스룸 홍보 사진·보도 사진·인물 사진은 넣지 않는다.
+   - 기본은 **자체 도식**(페블러스 톤 인라인 SVG) — 글의 핵심 구조·비교·흐름을 우리가 직접 그린다.
+   - 외부 그림은 **글이 그 그림 자체를 다룰 때만** 넣는다(예: 분석하는 논문의 핵심 그림, 처음 공개된 제품·로봇의 실물). 넣을 때는 아래 원본 연결 규칙을 따른다.
+2. **⛔ 외부 그림은 레포에 복사하지 않는다 — 원본 그림 주소로 연결한다** (2026-11-01 형님 결정: "이미지는 자체 생성이 아니면, 원본을 링크로 연결하도록 해야 겠다.")
+   - 이유: 내려받아 복사하던 시절 10월 KO 162편이 본문 그림 361장·149MB 를 넣었고, ko/en 이 같은 그림을 두 벌 가졌다. 사이트(GitHub Pages)는 1GB 를 넘겨 배포 경고가 났다.
+   - 레포에 파일로 두는 것은 **자체 생성 그림**(페블러스가 그린 도식·차트·생성 이미지)뿐이다. 자체 생성 래스터 그림은 `data-origin="pebblous"` 를 달고, 긴 변 1,600px·1MB 이하로 줄여 넣는다. 도식은 인라인 SVG 가 우선이다.
+   - 발행 전 `node tools/check-post-images.js <ko/index.html> <en/index.html>` 가 이 규칙을 검사한다(차단이면 exit 1).
 3. Follow Text-First principle: images always appear **after** the explaining paragraph
 4. Maintain 3-theme compatibility (dark/light/beige)
 
@@ -28,23 +34,24 @@ Analyzes an HTML blog post and inserts contextual images that reinforce the narr
 When `--auto` is specified, run the entire pipeline without user interaction:
 
 ```
-1. Analyze post → identify 4-6 visual gap slots
-2. For each slot:
-   a. Search Wikimedia Commons first (most stable)
-   b. Fallback: official sites, Apple Newsroom, arxiv, etc.
-   c. Verify URL: curl -sL -o /dev/null -w "%{http_code}" "[URL]"
-   d. If 200: download to ko/image/ directory
-   e. If 200: verify image content (Read tool — check it's the right image, not an error page)
-   f. If wrong/failed: skip slot, continue to next
-3. Insert verified local images into HTML
-4. Report results (inserted / skipped)
-5. Commit and push
+1. Analyze post → 자체 도식이 독자 이해를 실제로 돕는 자리만 고른다(0~3곳). 그런 자리가 없으면 아무것도 넣지 않고 끝낸다
+2. 자체 도식 자리는 인라인 SVG 로 그린다(아래 "논문 figure 재해석" 규칙의 색·테마 규칙을 따른다)
+3. 글이 외부 그림 자체를 다루는 자리만, for each:
+   a. ⛔ 위키미디어·뉴스룸 홍보 사진으로 자리 채우기 금지 — 그 그림이 글의 대상일 때만
+   b. 원본(논문 arXiv HTML 판·제품 공식 페이지)에서 찾는다
+   c. Find the **direct image URL** (the file itself, e.g. 논문 arXiv HTML 판의 그림 파일 주소) and the **source page URL** (for the caption)
+   d. Verify the direct URL works when embedded on our site (아래 "URL 사전 검증" 3단계 — Referer 를 붙여도 200 + image/* 이어야 한다)
+   e. Verify image content: 확인용으로 **/tmp 에만** 받아 Read 툴로 본다 — 레포에 저장하지 않는다
+   f. If wrong/failed/hotlink-blocked: skip slot, continue to next
+4. Insert verified images into HTML with `src="<direct image URL>"` + `referrerpolicy="no-referrer"`
+5. Report results (inserted / skipped / 넣지 않음 — 0개도 정상 보고)
+6. Commit and push
 ```
 
 **Auto mode rules:**
 - Do NOT wait for user approval — just do it
 - Skip failed slots silently (onerror fallback handles it anyway)
-- Download to `ko/image/img-{nn}-{slug}.{ext}` naming convention
+- ⛔ 외부 그림을 `ko/image/`·`en/image/` 에 내려받지 않는다 (`img-{nn}-{slug}` 로컬 파일 금지)
 - Report only at the end: "5/6 images inserted, 1 skipped (AlexNet: 404)"
 
 ## Step 1: Analyze Post Structure
@@ -65,9 +72,9 @@ Read the HTML post and identify:
 1. **⭐ 논문 핵심 figure의 "원본 재해석 도식"** (최우선) — 논문의 핵심 그림(개념도·핵심 결과 플롯·구조도) 1~3개를
    **페블러스 톤 원본 인라인 SVG**로 직접 재현한다. 논문 figure를 그대로 복사하지 않고 *메시지를 재해석*해
    그린다. 저작권 안전 + 테마 일관(오렌지 #F86825·themeable) + 외부 파일 의존 0(깨질 일 없음). → 아래 "논문 figure 재해석" 참조.
-2. **Wikimedia Commons (CC/PD)** — 재해석이 어려운 일반 개념(예: manifold 일러스트) 보충용으로만
-3. **논문 figure 직접 삽입** — ⚠️ 저작권 판단 영역(pebblous.ai=상업 사이트). 원본 재해석이 불가·부적합할 때만,
-   fair-use 인용으로 출처 명기(`Figure from {저자} et al., arXiv:{id}`)하고 신중히. 인물 사진·뉴스사 기사 이미지는 금지.
+2. ~~Wikimedia Commons~~ — 쓰지 않는다(2026-11-01 형님). 재해석이 어려우면 그림 없이 둔다
+3. **논문 figure 연결** — ⚠️ 저작권 판단 영역(pebblous.ai=상업 사이트). 원본 재해석이 불가·부적합할 때만,
+   arXiv HTML 판 등의 원본 그림 주소로 연결하고 출처 명기(`Figure from {저자} et al., arXiv:{id}`), 신중히. 복사 금지. 인물 사진·뉴스사 기사 이미지는 금지.
 4. Unsplash — **절대 금지**
 
 #### ⭐ 논문 figure 재해석 (원본 인라인 SVG) — 1순위 절차
@@ -95,11 +102,9 @@ Read the HTML post and identify:
 > onerror 빈 슬롯 제거 + 테마 일관 동시 달성.
 
 ### 📌 일반 블로그 포스팅 (blog/, story/, project/)
-1. **대상 소스/프로젝트의 실제 이미지** — 논문 figure, 프로젝트 스크린샷, 공식 프레스 이미지
-2. **Official product screenshots** (Apple Newsroom, NVIDIA newsroom 등)
-3. **Open-license technical diagrams**
-4. **Wikimedia Commons** — 위 소스에서 적절한 이미지가 없을 때 보충용
-5. Unsplash — **절대 금지**
+1. **자체 도식(인라인 SVG)** — 기본. 글의 구조·비교·흐름을 직접 그린다
+2. **글이 다루는 대상 그 자체의 그림** — 분석하는 논문의 핵심 그림, 처음 공개된 제품·로봇의 실물. 원본 주소로 연결
+3. 그 밖의 외부 그림(위키미디어 일러스트·뉴스룸 홍보 사진·보도 사진·인물 사진·Unsplash) — **넣지 않는다**(2026-11-01 형님 "재미가 없어서 굳이 안 넣어도 될 듯")
 
 **CRITICAL: URL 사전 검증 (반드시 실행)**
 
@@ -110,27 +115,27 @@ Read the HTML post and identify:
 curl -sL -o /dev/null -w "%{http_code}" "[URL]"
 # → 200이 아니면 사용 불가
 
-# Step 2: 다운로드
+# Step 2: 우리 사이트에 넣었을 때도 뜨는지 (핫링크 차단 확인)
+curl -sL -o /dev/null -w "%{http_code} %{content_type}" -e "https://blog.pebblous.ai/" "[URL]"
+# → 200 + image/* 가 아니면 사용 불가 (Referer 로 막는 서버는 이 단계에서 걸러진다)
+
+# Step 3: 확인용 내려받기 — /tmp 에만, 레포에 두지 않는다
 curl -sL -o /tmp/check-image.{ext} "[URL]"
 
-# Step 3: 시각적 내용 확인 (Read tool)
+# Step 4: 시각적 내용 확인 (Read tool)
 # → 실제 이미지 내용이 의도한 것과 맞는지 확인
 # → Cloudflare 에러 페이지, 로그인 화면, 다른 콘텐츠가 아닌지 확인
 ```
 
-**3단계 모두 통과한 이미지만 사용한다.** URL이 200을 반환해도 내용이 다를 수 있다 (Statista → EU 시민권 통계가 온 사례).
+**4단계 모두 통과한 이미지만 사용한다.** 원본 주소는 오래 살아 있을 곳을 고른다 — arXiv 판 고정 주소, 제품 공식 페이지의 고정 주소. 서명·만료 쿼리(`?Expires=`, `X-Amz-Signature` 등)가 붙은 주소, 썸네일 캐시 주소는 쓰지 않는다. URL이 200을 반환해도 내용이 다를 수 있다 (Statista → EU 시민권 통계가 온 사례).
 
-## Step 3: Download & Insert
+## Step 3: Link & Insert
 
-### Download Convention
+### 원본 연결 규칙
 
-```
-{post-dir}/ko/image/img-01-{slug}.{ext}
-{post-dir}/ko/image/img-02-{slug}.{ext}
-...
-```
-
-예: `story/nvidia-story-pb/ko/image/img-01-dennys-founding.jpg`
+- 외부 그림: `src` = 원본 그림의 직접 주소, `referrerpolicy="no-referrer"`, 캡션에 출처 **페이지** 링크(`<a href="https://...">`). 레포에 파일을 만들지 않는다.
+- 자체 생성 래스터 그림만 레포에 둔다: `{post-dir}/ko/image/{slug}.{ext}` + `data-origin="pebblous"`, 긴 변 1,600px·1MB 이하. EN 글은 같은 파일을 `../ko/image/{slug}.{ext}` 로 참조한다(복사 금지).
+- 깨졌을 때는 그림만 숨기고 캡션(출처 링크)은 남긴다: `onerror="this.style.display='none'"`.
 
 ### Standard Image Pattern
 
@@ -139,13 +144,14 @@ curl -sL -o /tmp/check-image.{ext} "[URL]"
 ```html
 <!-- Image: [brief description] -->
 <figure class="my-8">
-    <img src="./image/img-01-{slug}.{ext}"
+    <img src="[direct original image URL — https://...]"
          alt="[descriptive alt text for SEO and accessibility]"
          class="w-full max-h-[480px] object-contain rounded-xl border themeable-border mx-auto"
          loading="lazy"
-         onerror="this.parentElement.style.display='none'">
+         referrerpolicy="no-referrer"
+         onerror="this.style.display='none'">
     <figcaption class="text-xs themeable-muted text-center mt-2">
-        ▲ [Korean caption] | Source: <a href="[source page URL]" target="_blank" rel="noopener" class="underline">[source name]</a>
+        ▲ [Korean caption] | 출처: <a href="[source page URL]" target="_blank" rel="noopener" class="underline">[source name]</a>
     </figcaption>
 </figure>
 ```
@@ -154,13 +160,14 @@ curl -sL -o /tmp/check-image.{ext} "[URL]"
 
 ```html
 <figure class="my-8">
-    <img src="./image/img-02-{slug}.{ext}"
+    <img src="[direct original image URL — https://...]"
          alt="[alt text]"
          class="max-w-[560px] max-h-[480px] object-contain w-full rounded-xl border themeable-border mx-auto"
          loading="lazy"
-         onerror="this.parentElement.style.display='none'">
+         referrerpolicy="no-referrer"
+         onerror="this.style.display='none'">
     <figcaption class="text-xs themeable-muted text-center mt-2">
-        ▲ [Caption] | Source: [source]
+        ▲ [Caption] | 출처: <a href="[source page URL]" target="_blank" rel="noopener" class="underline">[source name]</a>
     </figcaption>
 </figure>
 ```
@@ -189,13 +196,13 @@ Wait for user approval before proceeding.
 - Include the key concept the image illustrates
 
 ### Graceful Degradation
-- `onerror="this.parentElement.style.display='none'"` hides broken images
+- `onerror="this.style.display='none'"` hides a broken image but keeps the caption (출처 링크가 남아 독자가 원본을 찾아갈 수 있다)
 - `loading="lazy"` for performance
 - The post must make complete sense without images (images are supplementary)
 
 ### Bilingual Posts
 - KO and EN versions get equivalent images (same concept, different alt/caption language)
-- Use the same image URLs for both versions when appropriate
+- Use the same original image URL for both versions — 외부 그림은 둘 다 원본 주소, 자체 생성 그림은 EN 이 `../ko/image/` 참조
 
 ### Theme Compatibility
 - Use `themeable-border` for border color adaptation
@@ -205,12 +212,14 @@ Wait for user approval before proceeding.
 ## Verify (Auto mode: automatic)
 
 After insertion:
-- [ ] All local image files exist and are valid
+- [ ] `node tools/check-post-images.js <ko/index.html> <en/index.html>` → exit 0 (차단 0)
+- [ ] 외부 그림이 레포에 복사되지 않았다 (`git status` 에 `image/img-*` 새 파일 0)
+- [ ] 자체 생성 로컬 그림은 `data-origin="pebblous"`·1MB 이하
 - [ ] Alt text is descriptive and in the correct language
 - [ ] Captions include source attribution
 - [ ] Images appear after explaining text, not before
-- [ ] No more than 6 images total
-- [ ] `onerror` fallback on every `<img>`
+- [ ] 그림 0~3개 — 위키미디어·뉴스룸 홍보 사진으로 자리를 채우지 않았다
+- [ ] `onerror` fallback on every `<img>` · `referrerpolicy="no-referrer"` on every external `<img>`
 - [ ] `loading="lazy"` on every `<img>`
 - [ ] Bilingual parity (if applicable)
 
