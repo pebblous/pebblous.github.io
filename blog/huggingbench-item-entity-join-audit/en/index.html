@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HuggingBench Join Error Audit and Rescored Results | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="An audit of HuggingBench found item IDs pointing at the wrong entities in three of its four shipped graphs. Repairing them lifted every score measured there.">
+    <meta name="keywords" content="HuggingBench, benchmark audit, data integrity, knowledge graph, recommender systems, Recall@10, join validation, Hugging Face, model hub, data quality, AI-Ready Data, reproducibility">
+
+    <!-- Main search keyword -->
+    <meta name="pb-search-keyword" content="HuggingBench">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="HuggingBench Points Its Models at the Wrong Items">
+    <meta property="og:description" content="All 34 single-file checks passed. The mismatch showed up only when two files were matched by name, and fixing it raised the score of every knowledge-graph method.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="A diagram of item IDs in the interaction file and entity IDs in the knowledge graph pointing at different things">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-11-05">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HuggingBench Points Its Models at the Wrong Items">
+    <meta name="twitter:description" content="Of the 767,927 item endpoints in the 1-hop graph, not one reached the item it describes. What the repair gave back landed almost entirely on rarely liked items.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/en/image/index.png">
+    <meta name="twitter:image:alt" content="A diagram of item IDs in the interaction file and entity IDs in the knowledge graph pointing at different things">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261105"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261105">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261105">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261105">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#scoreboard" class="block pl-4 themeable-toc-link transition-colors duration-200">1. What the Scoreboard Was Graded On</a></li>
+                    <li><a href="#join" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Every Check Passed and the Join Still Broke</a></li>
+                    <li><a href="#rerun" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Fixing the Links Redrew the Leaderboard</a></li>
+                    <li><a href="#unused-text" class="block pl-4 themeable-toc-link transition-colors duration-200">4. The Field Nobody Used Carried the Strongest Signal</a></li>
+                    <li><a href="#data-product" class="block pl-4 themeable-toc-link transition-colors duration-200">5. A Benchmark Is a Data Product</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            An audit of HuggingBench, the benchmark that scores how well systems recommend Hugging Face models and datasets, found that three of the four graphs shipped alongside it attach item IDs to the wrong things. Michał Podstawski of the NASK National Research Institute in Poland posted the paper to arXiv on November 1. The files had already passed all 34 single-file checks, and the error surfaces only when two files are matched by name.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Once the links were repaired, every graph-aware recommender improved on all three misaligned graphs and every seed. Mean Recall@10 rose by 4 to 73 percent, and 10 of the 27 head-to-head comparisons between configurations flipped order. The gains concentrated in items that had collected only a handful of likes. Popular items barely moved, and the aggregate metric is the one popular items drive. The error had nowhere to show up in the average.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Sections 1 through 4 follow what the paper measured and what it left open. Section 5 carries the result over to our own data pipeline design, and that reading belongs to this article rather than to the paper.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Figures</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: Podstawski, <a href="https://arxiv.org/abs/2611.03727" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Auditing a Model-Hub Benchmark</a>, arXiv:2611.03727 (2026)</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">Zero</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Endpoints reaching their own item</p>
+                            <p class="text-xs themeable-muted mt-1">The 1-hop and 2-hop graphs each carry 767,927 item endpoints, and not one of them lands on the item it describes</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">Up to 73%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Score gain after the repair</p>
+                            <p class="text-xs themeable-muted mt-1">Mean Recall@10. The smallest gain was 4 percent, and nothing scored worse than before</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">10 of 27</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Comparisons that reversed</p>
+                            <p class="text-xs themeable-muted mt-1">Of 27 pairs of configurations, 10 swapped order across all three seeds</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.1860</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Simple model reading card text</p>
+                            <p class="text-xs themeable-muted mt-1">Recall@10, 18 percent above the previous best of 0.1578. It trains on a CPU in six minutes</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="scoreboard" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What the Scoreboard Was Graded On</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Hugging Face hosts hundreds of thousands of models, datasets and Spaces, and users press like on the ones they want to keep. In December 2024 a team at Nanjing University crawled the hub into HuggingKG, a graph of 2.6 million nodes and 6.2 million edges, and built three tasks on top of it: recommend the next resource to a user, classify which task a model is built for, and trace which base model a derivative came from. That bundle is HuggingBench, published at SIGIR 2025.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This audit concentrates on the first task. It splits 1.06 million likes from 38,624 users across 25,080 items into training, validation and test, then compares eleven recommenders by Recall@10 — how much of what a user actually pressed like on lands in the top ten suggestions. The items break down into 16,200 models, 3,634 datasets and 5,246 Spaces. Three of the eleven methods read more than the like history; they also read a graph of how items relate to one another, so the benchmark ships four separate external graphs.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The four differ in kind. One is a homogeneous graph joining items to items. One lifts the neighborhood a single step out from each item in the full hub graph, another takes two steps, and the fourth groups resources by who published them. The best score the original paper reported was 0.1578, from KGCL on the homogeneous graph. One method, KGIN, scored close to zero in every configuration, and the paper printed that number as a result.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The audit reproduced those numbers before touching anything. Running all eleven methods on the published configurations and grids unchanged, LightGCN and DCCF matched all eight reported values to four decimal places, and the rest landed within 0.0010 Recall@10, apart from one KGCL cell on the 2-hop graph. KGIN's 0.0004 came back too. The reported numbers are an accurate record of what the published code computes on the published data. What stays open is the question of what that code was measuring.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="join" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Every Check Passed and the Join Still Broke</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A graph-aware recommender carries the item ID straight out of the like file and into the graph. To explain item 17166 it pulls whatever facts entity 17166 holds. Same number, same thing — except that promise is written down in none of the files. It is a long-standing implementation convention in this field, resting on the assumption that items take the first block of entity IDs.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The homogeneous graph keeps the promise. The other three break it. On the 1-hop and 2-hop graphs, not one of the 25,080 items carries the ID it has in the like file; on the publisher graph, four do. Each of those two graphs holds 767,927 endpoints that attach a fact to an item, and none of them reach the item they belong to. No item receives even one correct fact. On the 1-hop graph 117,260 endpoints land on a different item that does not describe them, 99,312 do the same on the 2-hop graph, and the rest fall on entities that are not items at all. Among what falls away sit 278,358 endpoints recording lineage between models — fine-tunes, quantizations, adapters, merges. Those are precisely the facts that explain why the hub holds so many near-identical copies of one model.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        And yet each file was sound. All 34 single-file checks the author ran pass: keys unique, values in range, training and test kept apart. The item name list and the entity name list are each flawless on their own terms. The error appears only at the moment the two lists are matched by name. The author notes that adding that one comparison to the validation code catches it in seconds.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        How it happened is legible in the shape of the release. The same like records appear in six separate file bundles, and every bundle numbers them its own way. Pick any two of the graph bundles and at least 25,077 of the 25,080 items carry different IDs, with no mapping between bundles shipped. Matched by name, the splits in all four bundles turn out identical. The same data went out with fresh numbering per graph, and the reading side trusted that equal numbers meant equal things.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One model makes the consequence concrete. SmolLM2-1.7B-Instruct is item 17166 in the like file. In the 1-hop graph it is entity 366541, carrying 153 facts, one of which is a quantization relation to SmolVLM-Instruct. The recommender never received that fact. It followed the number to entity 17166 and found a Space named dpbos/postvalidation with a single fact attached.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 400" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="A diagram of the link the recommender followed. Item 17166 in the like file is joined to entity 17166 in the graph because the numbers match, but that entity is an unrelated Space, and the same model actually sits at entity 366541.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">What the recommender followed, and what actually matches</text>
+                            <text x="340" y="45" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">Tracing one model, SmolLM2-1.7B-Instruct, through the 1-hop graph</text>
+
+                            <text x="140" y="78" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-secondary,#4B5563)">Like file</text>
+                            <rect x="40" y="92" width="200" height="72" rx="6" fill="var(--text-muted,#6B7280)" fill-opacity="0.07" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="140" y="120" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-primary,#111827)">Item 17166</text>
+                            <text x="140" y="142" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">SmolLM2-1.7B-Instruct</text>
+
+                            <text x="530" y="78" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-secondary,#4B5563)">1-hop graph</text>
+                            <rect x="430" y="92" width="210" height="82" rx="6" fill="#F86825" fill-opacity="0.07" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="535" y="118" text-anchor="middle" font-size="12.5" font-weight="700" fill="#F86825">Entity 17166</text>
+                            <text x="535" y="138" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Space dpbos/postvalidation</text>
+                            <text x="535" y="158" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">1 fact attached</text>
+
+                            <rect x="430" y="250" width="210" height="82" rx="6" fill="var(--text-muted,#6B7280)" fill-opacity="0.07" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5" stroke-dasharray="5,4"/>
+                            <text x="535" y="276" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-primary,#111827)">Entity 366541</text>
+                            <text x="535" y="296" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">SmolLM2-1.7B-Instruct</text>
+                            <text x="535" y="316" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">153 facts attached</text>
+
+                            <defs>
+                                <marker id="arrow-wrong" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#F86825"/>
+                                </marker>
+                                <marker id="arrow-true" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#808080"/>
+                                </marker>
+                            </defs>
+
+                            <line x1="240" y1="122" x2="424" y2="122" stroke="#F86825" stroke-width="2" marker-end="url(#arrow-wrong)"/>
+                            <text x="332" y="112" text-anchor="middle" font-size="9.5" font-weight="600" fill="#F86825">Same number, so treated as the same</text>
+
+                            <path d="M 150 170 C 150 250, 300 291, 424 291" fill="none" stroke="#808080" stroke-width="1.8" stroke-dasharray="6,4" marker-end="url(#arrow-true)"/>
+                            <text x="300" y="275" text-anchor="middle" font-size="9.5" font-weight="600" fill="var(--text-secondary,#4B5563)">The entity that actually matches</text>
+
+                            <text x="40" y="364" font-size="9.5" fill="var(--text-muted,#6B7280)">Instead of its quantization link to SmolVLM-Instruct, the recommender received one fact from an unrelated Space.</text>
+                            <text x="40" y="382" font-size="9.5" fill="var(--text-muted,#6B7280)">Checked file by file, both numbering schemes look sound, so none of the 34 checks sees the mismatch.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Pebblous original diagram (the case in §III of the paper, redrawn as a concept) | Source: <a href="https://arxiv.org/abs/2611.03727" target="_blank" rel="noopener" class="underline">arXiv:2611.03727</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="rerun" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Fixing the Links Redrew the Leaderboard</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The repair itself is plain. Every item is renumbered so that the ID it uses in the like file is the ID it uses in the graph, and the remaining entities move behind them. Not a single fact was added or removed. The author published the corrected files, the mappings, the validators and the run logs on Zenodo in full. Rerunning the same methods there across three seeds produced the table below.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-table-header-row">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Method</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Graph</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Released</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Corrected</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">Change</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGCL</td>
+                                    <td class="border themeable-border px-4 py-3">1-hop</td>
+                                    <td class="border themeable-border px-4 py-3">0.1496</td>
+                                    <td class="border themeable-border px-4 py-3">0.1591</td>
+                                    <td class="border themeable-border px-4 py-3">+6.4%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGCL</td>
+                                    <td class="border themeable-border px-4 py-3">2-hop</td>
+                                    <td class="border themeable-border px-4 py-3">0.1503</td>
+                                    <td class="border themeable-border px-4 py-3">0.1581</td>
+                                    <td class="border themeable-border px-4 py-3">+5.2%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGCL</td>
+                                    <td class="border themeable-border px-4 py-3">Publisher</td>
+                                    <td class="border themeable-border px-4 py-3">0.1540</td>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">0.1604</td>
+                                    <td class="border themeable-border px-4 py-3">+4.2%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGRec</td>
+                                    <td class="border themeable-border px-4 py-3">1-hop</td>
+                                    <td class="border themeable-border px-4 py-3">0.0845</td>
+                                    <td class="border themeable-border px-4 py-3">0.1457</td>
+                                    <td class="border themeable-border px-4 py-3">+72.4%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGRec</td>
+                                    <td class="border themeable-border px-4 py-3">2-hop</td>
+                                    <td class="border themeable-border px-4 py-3">0.0937</td>
+                                    <td class="border themeable-border px-4 py-3">0.1479</td>
+                                    <td class="border themeable-border px-4 py-3">+57.8%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGRec</td>
+                                    <td class="border themeable-border px-4 py-3">Publisher</td>
+                                    <td class="border themeable-border px-4 py-3">0.0943</td>
+                                    <td class="border themeable-border px-4 py-3">0.1204</td>
+                                    <td class="border themeable-border px-4 py-3">+27.7%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGIN</td>
+                                    <td class="border themeable-border px-4 py-3">1-hop</td>
+                                    <td class="border themeable-border px-4 py-3">0.1169</td>
+                                    <td class="border themeable-border px-4 py-3">0.1445</td>
+                                    <td class="border themeable-border px-4 py-3">+23.6%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGIN</td>
+                                    <td class="border themeable-border px-4 py-3">2-hop</td>
+                                    <td class="border themeable-border px-4 py-3">0.1198</td>
+                                    <td class="border themeable-border px-4 py-3">0.1446</td>
+                                    <td class="border themeable-border px-4 py-3">+20.7%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGIN</td>
+                                    <td class="border themeable-border px-4 py-3">Publisher</td>
+                                    <td class="border themeable-border px-4 py-3">0.1152</td>
+                                    <td class="border themeable-border px-4 py-3">0.1475</td>
+                                    <td class="border themeable-border px-4 py-3">+28.0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text-secondary text-sm mb-8">Test-split Recall@10, averaged over three seeds, 100-epoch budget. Source: Table V of the paper, in full. The homogeneous graph was not part of the repair; for reference it gives KGCL 0.1585, KGRec 0.0987 and KGIN 0.1351. KGIN figures use the original authors' implementation. The change column is computed from the rounded values printed here, so its last digits can differ from the 4-to-73-percent range the paper reports from unrounded numbers.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        No cell went down. The corrected version won on every graph, every seed and every method, with gains between 4 and 73 percent — smallest for KGCL, largest for KGRec. Of the 27 pairwise comparisons between configurations, 10 reversed across all three seeds. In the original paper KGIN led KGRec on the released 2-hop graph; on the corrected graph it trails. Which method is better turned out to hinge on one data repair.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Whether the repair delivered real facts or merely fact-shaped filler got its own test. On the corrected 1-hop graph, the author rewired item-to-entity pairs at random while holding item type and degree fixed. Correct alignment beat every random rewiring. But those random rewirings still beat the released version in all nine runs. Plausible type and degree alone buy part of the gain; collecting the rest takes the right facts on the right item.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        KGIN's near-zero score is not explained by the join error alone. Looking into it, the author found that the framework's port of KGIN does not train its embeddings on the GPU, and that "this defect is unrelated to the data." KGIN was therefore rerun with the original authors' implementation. That swap on its own yields 0.1169 on the released 1-hop graph, and the repair takes it to 0.1445. The reported 0.0004 sat at the level of a random ranking, and the author's reproduction returned the same 0.0004. A score at random level, the paper argues, belongs in the error column rather than the findings column.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Why nobody noticed becomes clear once items are split by popularity. On the 1-hop graph with KGRec trained for 500 epochs, items that collected between one and four likes during training recovered 0.004 of their test likes in the top ten under the misaligned graph. After the repair, 0.020 — five times as much. The 20-to-99-like band rose from 0.011 to 0.040. Items above 100 likes went from 0.148 to 0.155. On the 2-hop graph even popular items gained in absolute terms, 0.133 to 0.157, but in relative terms the rarest band again improved far more. Mean Recall is a number the popular items carry, so what happened out in the rare bands barely registered in the aggregate.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The rare side is no small corner either. Items with fewer than 100 training likes receive 54 percent of the test likes. What the average hid was not the margin but half the data.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The audit names a second defect in the same breath. A budget that cuts training off at 100 epochs was reached before the early-stopping criterion in seven or eight of 29 configurations, depending on the seed. Of the 23 truncated configuration-seed pairs, 21 improved when the budget was raised to 500 epochs, by as much as 31 percent. The two defects interact. Models trained on a misaligned graph converge more slowly, so a longer budget shrinks the measured benefit of the repair. Part of that 73 percent is undertraining. For KGRec on the 1-hop graph, the gap between the two versions narrows from an average of 0.0613 to 0.0374. Even so, in all six cases — two model depths times three seeds — the corrected version leads under both budgets.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="unused-text" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Field Nobody Used Carried the Strongest Signal</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        HuggingBench publishes card text for every item: model and dataset card bodies, tags, the publishing organization and name, library, language and description, up to 3,000 characters. Not one of the eleven methods in the original paper reads it. The author aimed at that gap with the simplest recommender available, a linear model called EASE that finishes in one matrix computation with no iterative training.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The results read best in order. Plain EASE, with neither text nor graph, scored 0.1684 and already passed the 0.1578 best reported in the original paper. A variant with per-item adaptive normalization reached 0.1746, and adding the item graph on top gave 0.1776. Swapping the graph for card text in a term-frequency representation did better still at 0.1846, and the best configuration, carrying both, reached 0.1860. That is 18 percent above the previous best.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 330" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="A bar chart of test Recall@10. The best figure reported in the original paper is 0.1578, the plain linear model 0.1684, the linear model with card text 0.1846, and the model with both text and graph 0.1860.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">Test-split Recall@10</text>
+                            <text x="340" y="45" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">Axis starts at zero. Gray is the comparison baseline, orange uses card text</text>
+
+                            <line x1="60" y1="268" x2="640" y2="268" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+
+                            <rect x="95" y="110" width="88" height="158" rx="3" fill="#808080" fill-opacity="0.35"/>
+                            <text x="139" y="102" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--text-secondary,#4B5563)">0.1578</text>
+                            <text x="139" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">Best reported</text>
+                            <text x="139" y="306" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">KGCL · homogeneous graph</text>
+
+                            <rect x="243" y="100" width="88" height="168" rx="3" fill="#808080" fill-opacity="0.35"/>
+                            <text x="287" y="92" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--text-secondary,#4B5563)">0.1684</text>
+                            <text x="287" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">Plain linear model</text>
+                            <text x="287" y="306" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">Like history only</text>
+
+                            <rect x="391" y="84" width="88" height="184" rx="3" fill="#F86825" fill-opacity="0.85"/>
+                            <text x="435" y="76" text-anchor="middle" font-size="12.5" font-weight="700" fill="#F86825">0.1846</text>
+                            <text x="435" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">Plus card text</text>
+                            <text x="435" y="306" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">Term frequency</text>
+
+                            <rect x="539" y="82" width="88" height="186" rx="3" fill="#F86825" fill-opacity="0.85"/>
+                            <text x="583" y="74" text-anchor="middle" font-size="12.5" font-weight="700" fill="#F86825">0.1860</text>
+                            <text x="583" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">Plus text and graph</text>
+                            <text x="583" y="306" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">18% above previous best</text>
+
+                            <text x="60" y="326" font-size="9" fill="var(--text-muted,#6B7280)">Even the rightmost configuration finishes training in 358 seconds on eight CPU cores.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Pebblous original diagram (figures from Table VII of the paper) | Source: <a href="https://arxiv.org/abs/2611.03727" target="_blank" rel="noopener" class="underline">arXiv:2611.03727</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The cost side is the more disconcerting part. Plain EASE trains in 253 seconds on eight CPU cores, and the best configuration, text and graph included, finishes in 358. KGRec, by comparison, needs more than a day on a GPU to sweep its grid on the 2-hop graph.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Against expectation, the same card text vectorized with two recent embedding models lost to the term-frequency representation in all four comparisons, by 0.0046 to 0.0077, with confidence intervals that exclude zero. The author points to how formulaic hub text is. Two models published by one organization have a median term-frequency similarity of 0.40, while two items drawn at random sit at 0.03. Where names and tags recur as near-identical strings, matching characters outright works better than an embedding that generalizes meaning.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The author also pulled the fields apart one by one. Item type plus organization and name alone reaches 0.1850, and the description field by itself lifts plain EASE by 0.0134. Masking URLs, repository identifiers and an item's own organization and name, which rewrites 18,251 of the 19,191 descriptions, still leaves 0.0125. The same signal is written into several fields at once.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        And the place where text contributes most overlaps with the place where the repair mattered most in section 3. For items with one to four likes, plain EASE scored 0.0057, and the text-plus-graph configuration 0.0339. For items above 100 likes, 0.1976 slipped a little to 0.1949. Users who had pressed like rarely show the same shape. Splitting by item type tells the same story: models, which have cards, gained most at 0.012, and Spaces, which have no cards at all, gained least at 0.005. The text is doing work. A broken join and an unread description are separate defects, yet both were cutting the benchmark's scores in the same place and in the same direction.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The other two tasks gave text different roles. In lineage tracing, the best figure in the original paper was MRR 0.559 for a structure-only method, and the author's reproduction gave 0.549; ranking the model names mentioned in a derivative's card body, in order of appearance, with no training whatsoever, reached 0.542. For 54.3 percent of the test triples the answer was written by name inside the card. Putting the card-derived candidates first and ranking the rest with the existing method climbs to 0.831.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Task classification, by contrast, did not yield to card reading. Returning the task names that appear in the card gives micro-F1 0.404, barely above the 0.384 you get by guessing the single most common task, and far short of the reported 0.885. Something else turned up instead. A model's task tag and a dataset's task field spell out a correct label for 99.99 percent of the test items. No classifier code was published, so there is no confirming that those fields were read, but the benchmark should have declared the channel. The audit also records that the count of test items disagrees between the release, at 27,345, and the paper, at 28,682.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="data-product" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">A Benchmark Is a Data Product</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper gives its closing section to recommendations for the people who build benchmarks and model hubs. There are six, and set side by side they ask for one thing: whoever bundles data for release should write down, outside the files, what the bundle promises.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">Validate joins, not files. The error lived between files rather than inside them, and the validator should ship with the data.</li>
+                        <li class="themeable-text leading-relaxed">Prefer explicit links to implicit convention. Frameworks that require a separate item-to-entity link file make this failure structurally impossible.</li>
+                        <li class="themeable-text leading-relaxed">Declare the provenance of every field. Record when and how it was collected, and drop or recompute on the training split any field that can carry held-out information.</li>
+                        <li class="themeable-text leading-relaxed">Let the protocol check itself. Report the epoch at which each configuration peaked, and flag runs that stopped at the budget ceiling.</li>
+                        <li class="themeable-text leading-relaxed">Include a baseline that actually uses what you published. A benchmark that releases side information should report at least one simple model that reads it.</li>
+                        <li class="themeable-text leading-relaxed">Separate provenance tasks from the text that states the provenance. For tasks like lineage and classification, where the answer sits in the card, mask the text or first report how much of the task the text alone solves.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The third recommendation has its origin inside this benchmark too. The like and download counters stored in the graph are crawl-time values, so they can include likes that went into the test split. In 25,057 of the 25,080 items the counter is at least as large as the likes summed across all three splits, and its rank correlation with test likes is 0.80 against 0.71 for training likes. The measured effect came out small, but a small effect and a sound design are two different claims. One thing in the same section came back clean: across the relation types of all four graphs, no user-item like appears as a relation, so test likes never leaked through the graph.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Evidence that this is not one benchmark's accident also sits in the paper. The file format that allowed the misalignment descends from KGAT, and the author ran other datasets released in that format through the same check. Releases that number items first passed. But where another team renumbered the same dataset and released it again, reading it with the earlier release's item list left only 0.7 and 2.4 percent of training pairs on their own items. Each release is sound on its own. The misalignment appears the moment files from different releases are mixed.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        From here on, this is outside the paper. The structure the audit exposes is not peculiar to benchmarks. Anywhere training data is assembled by joining tables from different systems on numeric IDs, the same thing can happen. Each table passes its schema check, the loading pipeline turns green, and the model scores come out tolerable. The misalignment is visible only when two tables are matched on a name a person can read. Fewer teams than you would guess have that comparison in their automated checks.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So three questions are worth asking.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">What guarantees the join keys in our pipeline — the schema, or a convention written down nowhere?</li>
+                        <li class="themeable-text leading-relaxed">Which band does the average metric hide? Unless rare segments get measured on their own, integrity errors stay behind the mean.</li>
+                        <li class="themeable-text leading-relaxed">Which fields have we collected and never once fed to a model? This paper has already demonstrated once that such a field can be the strongest signal in the pile.</li>
+                    </ul>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            The defect Pebblous meets most often when diagnosing a client's data does not sit inside a single table either. Each file honors its specification, then two files turn out to disagree on identifiers, and whatever model ran on top gets its scores reported as a model problem rather than a data problem. Moving the unit of validation from the file to the relation comes before adding more checks.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        Thanks for reading this far. The paper is at <a href="https://arxiv.org/abs/2611.03727" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv:2611.03727</a>, and the corrected files and validators are on <a href="https://doi.org/10.5281/zenodo.23857277" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Zenodo</a>. If your team already runs a join comparison as a standing data check, we would like to hear how you wired it up.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Podstawski, M. (2026). "<a href="https://arxiv.org/abs/2611.03727" target="_blank" rel="noopener">Auditing a Model-Hub Benchmark: Data Quality, Training Budgets, and Side Information in HuggingBench</a>." arXiv:2611.03727 [cs.LG].</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Chen, Q., Huang, K., Zhou, X., Luo, W., Cui, Y., &amp; Cheng, G. (2025). "<a href="https://arxiv.org/abs/2505.17507" target="_blank" rel="noopener">Benchmarking Recommendation, Classification, and Tracing Based on Hugging Face Knowledge Graph</a>." SIGIR 2025.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Podstawski, M. (2026). "<a href="https://doi.org/10.5281/zenodo.23857277" target="_blank" rel="noopener">Corrected HuggingBench knowledge graphs, mappings, validators, and logs</a>." Zenodo.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261105"></script>
+    <script src="/scripts/citation-download.js?v=20261105" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-11-04T17:06:03.855Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-04T17:18:56.918Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1793811963855-ktdrqe",
+                "version": "0.1.0",
+                "sha": "052a2a95afa30d7970808c86a8f2efabf743c560",
+                "builtAt": "2026-10-24T13:53:43.526Z"
+              },
+              "recordedAt": "2026-11-04T18:34:09.719Z"
+            },
+            mainTitle: "HuggingBench Points Its Models at the Wrong Items",
+            subtitle: "Poland's NASK institute matched the files by name, found three of four graphs numbering items differently, and measured recommendation gains of up to 73 percent",
+            pageTitle: "HuggingBench Join Error Audit and Rescored Results | Pebblous",
+            category: "tech",
+            publishDate: "2026-11-05",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/huggingbench-item-entity-join-audit/en/",
+            tags: ["HuggingBench", "benchmark audit", "data integrity", "knowledge graph", "recommender systems", "join validation", "model hub", "AI-Ready Data", "data quality"],
+            faqs: [
+                {
+                    question: "What does HuggingBench measure?",
+                    answer: "It is a bundle of three tasks built on HuggingKG, a graph crawled from the Hugging Face hub: recommend the next resource to a user, classify which task a model is built for, and trace a derivative model back to its base. A team at Nanjing University built it and published it at SIGIR 2025. This audit concentrates on the recommendation task."
+                },
+                {
+                    question: "What does it mean that items and entities are misaligned?",
+                    answer: "For a recommender to pull the right evidence, the item ID in the like file and the entity ID in the graph have to name the same thing. That promise was an implementation convention written down in none of the files, and it was broken in three of the four graphs. On the 1-hop and 2-hop graphs, not one of the 25,080 items carried a matching ID."
+                },
+                {
+                    question: "How can the data be wrong if 34 checks passed?",
+                    answer: "Because those checks look at one file at a time. Key uniqueness, value ranges and split separation are all decided within a single file, and the item list and the entity list were each flawless on their own terms. The comparison that matches the two lists by name was missing from the checks, and the author notes that adding that one line catches the error in seconds."
+                },
+                {
+                    question: "How much do scores improve once the links are repaired?",
+                    answer: "Mean Recall@10 rose by 4 to 73 percent. Every graph-based method improved on all three misaligned graphs and every seed, and nothing scored worse than before. Of the 27 pairwise comparisons between configurations, 10 reversed order across all three seeds."
+                },
+                {
+                    question: "Why did nobody catch this earlier?",
+                    answer: "Because the gains concentrated in items with few likes. The one-to-four-like band went from 0.004 to 0.020, five times as much, while items above 100 likes moved from 0.148 to 0.155. Mean Recall is a number the popular items carry, so losses in the rare bands never reached the aggregate."
+                },
+                {
+                    question: "Can the 73 percent figure be taken at face value?",
+                    answer: "It comes with a condition. The value was measured under a 100-epoch budget, and that budget sometimes ran out before early stopping triggered. Models trained on a misaligned graph converge more slowly, so raising the budget to 500 epochs shrinks the absolute size of the repair's benefit. Even then, in all six cases — two model depths times three seeds — the corrected version leads under both budgets."
+                },
+                {
+                    question: "What is the description field nobody used?",
+                    answer: "It is the card text the benchmark publishes for every item: model and dataset card bodies, tags, organization and name, library, language and description, up to 3,000 characters. None of the eleven methods in the original paper read that field."
+                },
+                {
+                    question: "What happens to the scores once that text goes in?",
+                    answer: "A linear model that finishes in one matrix computation with no iterative training, fed card text and the item graph, reached Recall@10 0.1860. That is 18 percent above the 0.1578 best reported in the original paper. Even the plain linear model with neither text nor graph reached 0.1684, and training finishes in under six minutes on eight CPU cores."
+                },
+                {
+                    question: "Would a recent embedding model do better than term frequency?",
+                    answer: "Not in this experiment. The same card text vectorized with two embedding models came in below the term-frequency representation in all four comparisons. The difference ran from 0.0046 to 0.0077, with confidence intervals that exclude zero."
+                },
+                {
+                    question: "How does this apply to our own data pipeline?",
+                    answer: "Moving the unit of validation from the file to the relation is the first step. Wherever tables from different systems are joined on numeric IDs, put a comparison that matches both sides on a human-readable name into the automated checks, and stand a rare-segment metric next to the average. Carrying this over to pipeline design is this article's reading rather than a claim the paper makes."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
