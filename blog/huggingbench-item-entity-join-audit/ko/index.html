@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HuggingBench 벤치마크 감사 — 지식그래프 조인 오류와 성적 재계산 분석 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="허깅페이스 자원 추천 벤치마크 HuggingBench를 감사했더니 함께 배포된 관계망 네 개 중 세 개에서 항목 번호가 엉뚱한 대상을 가리키고 있었다. 연결을 바로잡자 추천 성적이 전 구간에서 올랐고, 아무도 쓰지 않던 항목 설명문이 가장 강한 신호였다.">
+    <meta name="keywords" content="HuggingBench, 벤치마크 감사, 데이터 정합성, 지식그래프, 추천 시스템, Recall@10, 조인 검증, 허깅페이스, 모델 허브, 데이터 품질, AI-Ready Data, 재현성">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="HuggingBench">
+    <meta name="pb-search-keyword-forms" content="HuggingBench|허깅벤치">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="모델 추천 시험 HuggingBench, 데이터부터 어긋나 있다">
+    <meta property="og:description" content="벤치마크가 함께 배포한 파일들은 하나씩 뜯어보면 흠이 없었다. 양쪽을 이름으로 대조하는 검사 한 줄이 빠져 있었을 뿐이고, 그 연결을 고치자 지식그래프를 쓴 모든 추천 방법의 성적이 올랐다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="상호작용 파일의 항목 번호와 지식그래프의 엔터티 번호가 서로 다른 대상을 가리키는 구조를 그린 도식">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-11-05">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="모델 추천 시험 HuggingBench, 데이터부터 어긋나 있다">
+    <meta name="twitter:description" content="1홉 관계망의 항목 끝점 767,927개 가운데 제 항목을 가리킨 것이 하나도 없었다. 연결을 바로잡자 추천 성적이 73%까지 올랐고, 개선은 좋아요가 적은 항목에 몰려 있었다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/huggingbench-item-entity-join-audit/ko/image/index.png">
+    <meta name="twitter:image:alt" content="상호작용 파일의 항목 번호와 지식그래프의 엔터티 번호가 서로 다른 대상을 가리키는 구조를 그린 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261105"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261105">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261105">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261105">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#scoreboard" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 이 성적표의 점수는 무엇으로 매겨졌나</a></li>
+                    <li><a href="#join" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 검사는 통과했는데 연결이 틀렸다</a></li>
+                    <li><a href="#rerun" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 연결을 고치자 순위표가 다시 짜였다</a></li>
+                    <li><a href="#unused-text" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 아무도 쓰지 않은 설명문이 가장 센 신호다</a></li>
+                    <li><a href="#data-product" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 벤치마크도 데이터 제품이다</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            폴란드 국립연구소 NASK의 미하우 포드스타프스키가 11월 1일 arXiv에 감사 논문 한 편을 올렸다. 허깅페이스의 모델과 데이터셋을 추천하는 벤치마크 HuggingBench를 뜯어보니, 함께 배포된 관계망 네 벌 가운데 세 벌에서 항목 번호가 엉뚱한 대상을 가리키고 있었다. 파일 하나하나를 보는 검사 34개는 그 상태에서도 전부 통과했다. 어긋남은 두 파일을 이름으로 맞춰 봐야만 드러났다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            연결을 바로잡자 어긋나 있던 관계망 세 벌 모두에서 추천 성적이 좋아졌다. 세 시드 어디에서도 성적이 내려가지 않았다. 평균 Recall@10 기준으로 4%에서 73%까지 올랐고, 어느 방법이 앞서는지를 가린 27개 비교 가운데 10개는 앞뒤가 뒤바뀌었다. 개선 폭은 좋아요를 몇 개밖에 받지 못한 항목에서 가장 컸다. 인기 항목 쪽 변화는 상대적으로 작았고, 집계 지표는 그 인기 항목이 좌우한다. 오류가 평균에 비칠 자리가 없었다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            4절까지는 논문이 측정한 것과 유보한 것을 따라간다. 5절에서 이 결과를 우리 쪽 데이터 파이프라인 설계로 옮기는 대목은 논문에 없는 이 글의 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: Podstawski, <a href="https://arxiv.org/abs/2611.03727" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Auditing a Model-Hub Benchmark</a>, arXiv:2611.03727(2026)</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">제 항목을 가리킨 연결</p>
+                            <p class="text-xs themeable-muted mt-1">1홉과 2홉 관계망이 각각 가진 항목 끝점 767,927개 가운데 자기 자신에 닿은 것이 한 개도 없었다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">최대 73%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">연결을 고친 뒤 성적 상승</p>
+                            <p class="text-xs themeable-muted mt-1">평균 Recall@10 기준. 가장 적게 오른 방법도 4% 올랐고 내려간 경우는 없었다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">27개 중 10개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">순서가 뒤집힌 비교</p>
+                            <p class="text-xs themeable-muted mt-1">설정끼리 견준 27개 쌍 가운데 10개가 세 시드 전부에서 역전됐다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.1860</p>
+                            <p class="text-sm themeable-text-secondary mt-1">설명문을 쓴 단순 모델</p>
+                            <p class="text-xs themeable-muted mt-1">기존 최고 보고값 0.1578을 18% 앞선 Recall@10. CPU로 6분 만에 학습한다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="scoreboard" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">이 성적표의 점수는 무엇으로 매겨졌나</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        허깅페이스에는 모델과 데이터셋과 Space가 수십만 개 올라와 있고, 사용자는 마음에 드는 것에 좋아요를 누른다. 난징대 연구진은 2024년 12월에 이 허브를 크롤링해 노드 260만 개와 엣지 620만 개짜리 관계망 HuggingKG를 만들고, 그 위에 세 가지 시험을 얹었다. 사용자에게 다음 자원을 추천하기, 모델이 어떤 과업용인지 분류하기, 파생 모델이 어느 모델에서 나왔는지 추적하기. 이 시험 묶음이 HuggingBench이고, SIGIR 2025에 실렸다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이번 감사가 집중한 것은 첫 번째 시험이다. 사용자 38,624명이 항목 25,080개에 누른 좋아요 106만 건을 훈련·검증·시험으로 나누고, 추천 방법 열한 가지의 성적을 Recall@10으로 비교한다. 상위 열 개를 추천했을 때 실제로 누른 항목을 얼마나 담아냈는지 보는 지표다. 항목은 모델 16,200개와 데이터셋 3,634개와 Space 5,246개로 이뤄져 있다. 열한 가지 가운데 세 가지는 좋아요 기록만 보지 않고 항목끼리의 관계망까지 함께 읽는 지식그래프 기반 추천이라, 벤치마크는 외부 관계망 네 벌을 따로 배포했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        네 벌은 성격이 다르다. 항목과 항목만 이어 붙인 동종 그래프 하나, 허브 전체 관계망에서 항목 주변 한 걸음만 떠낸 1홉 그래프, 두 걸음까지 떠낸 2홉 그래프, 그리고 누가 올린 자원인지로 묶은 퍼블리셔 그래프다. 원 논문이 보고한 최고 성적은 동종 그래프를 쓴 KGCL의 0.1578이었다. 한편 KGIN이라는 방법은 어떤 설정에서도 거의 0에 가까운 점수를 받았는데, 논문은 그것을 그대로 결과로 실었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        감사는 그 숫자들을 먼저 그대로 다시 냈다. 공개된 설정 파일과 격자를 손대지 않고 열한 가지를 모두 돌려 보니 LightGCN과 DCCF는 보고된 여덟 개 값을 소수점 넷째 자리까지 똑같이 냈고, 나머지도 2홉 관계망의 KGCL 한 칸을 빼면 Recall@10 0.0010 안쪽에서 맞았다. KGIN의 0.0004도 그대로 재현됐다. 보고된 숫자는 공개된 코드가 공개된 데이터 위에서 계산한 값을 정확히 적은 기록이다. 남는 물음은 그 값이 무엇을 재고 있었느냐다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="join" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">검사는 통과했는데 연결이 틀렸다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        추천기가 관계망을 읽을 때는 좋아요 파일의 항목 번호를 그대로 들고 건너간다. 항목 17166의 추천 근거를 찾으려면 관계망에서 엔터티 17166이 가진 사실을 긁어 온다. 번호가 같으면 같은 대상이라는 뜻인데, 이 약속은 어느 파일에도 적혀 있지 않다. 이 분야에서 오래 쓰여 온 구현 관행이고, 항목이 엔터티 가운데 앞에서부터 번호를 받는다는 전제 위에 서 있다. 두 파일을 번호로 맞붙이는 이 대목을 데이터 쪽에서는 조인이라고 부른다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        동종 그래프에서는 약속이 지켜졌다. 나머지 셋에서는 깨졌다. 1홉과 2홉 그래프에서는 항목 25,080개 가운데 좋아요 파일과 같은 번호를 쓰는 것이 하나도 없었고, 퍼블리셔 그래프에서는 넷뿐이었다. 두 그래프는 항목에 관한 사실을 이어 붙이는 끝점을 각각 767,927개씩 갖고 있는데, 그중 제 항목에 닿은 것이 하나도 없다. 사실을 하나라도 바르게 받은 항목도 없다. 1홉에서는 117,260개가, 2홉에서는 99,312개가 자기를 설명하지 않는 다른 항목에 가서 붙었고, 나머지는 항목이 아닌 엔터티 쪽에 떨어졌다. 떨어져 나간 자리에는 파인튜닝·양자화·어댑터·머지로 모델 사이의 계보를 적어 둔 끝점 278,358개가 통째로 들어 있다. 허브에 거의 같은 모델이 여러 벌 올라와 있는 구조를 설명하는 바로 그 사실들이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 각 파일은 멀쩡했다. 저자가 돌린 단일 파일 검사 34개를 전부 통과한다. 키가 유일한지, 값이 범위 안에 있는지, 훈련과 시험이 섞이지 않았는지를 보는 검사들이다. 항목 이름 목록도 엔터티 이름 목록도 각자 안에서는 흠이 없었기 때문이다. 오류는 두 목록을 이름으로 맞춰 보는 순간에만 모습을 드러낸다. 저자는 그 대조 한 줄을 검사 코드에 넣으면 몇 초 만에 잡힌다고 적었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        어쩌다 이렇게 됐는지는 배포 파일의 구조를 보면 짐작이 간다. 같은 좋아요 기록이 여섯 벌의 파일 묶음으로 들어 있고, 묶음마다 번호 체계가 따로 돈다. 관계망 묶음 둘을 아무렇게나 골라 비교해도 항목 25,080개 중 최소 25,077개가 서로 다른 번호를 달고 있는데, 묶음 사이를 잇는 매핑은 배포되지 않았다. 이름으로 맞춰 보면 네 묶음의 분할 내용은 전부 같다. 같은 데이터를 관계망마다 번호를 새로 매겨 내보냈을 뿐이고, 읽는 쪽은 번호가 같으면 같은 것이라고 믿었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결과는 모델 하나만 따라가 봐도 선명하다. SmolLM2-1.7B-Instruct는 좋아요 파일에서 항목 17166이다. 1홉 관계망에서 이 모델은 엔터티 366541이고, 사실 153개를 달고 있다. 그 가운데 하나가 SmolVLM-Instruct와의 양자화 관계다. 추천기는 이 사실을 받지 못했다. 번호를 따라 엔터티 17166으로 갔고, 거기 있던 것은 dpbos/postvalidation이라는 Space와 그에 딸린 사실 한 개였다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 400" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="좋아요 파일의 항목 17166이 번호가 같다는 이유로 관계망의 엔터티 17166에 연결되는 구조를 그린 도식. 엔터티 17166은 실제로는 전혀 다른 Space이고, 같은 모델의 진짜 엔터티는 366541번이다.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">추천기가 따라간 연결과 실제로 같은 대상</text>
+                            <text x="340" y="45" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">모델 SmolLM2-1.7B-Instruct 하나를 1홉 관계망에서 따라간 경우</text>
+
+                            <text x="140" y="78" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-secondary,#4B5563)">좋아요 파일</text>
+                            <rect x="40" y="92" width="200" height="72" rx="6" fill="var(--text-muted,#6B7280)" fill-opacity="0.07" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <text x="140" y="120" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-primary,#111827)">항목 17166</text>
+                            <text x="140" y="142" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">SmolLM2-1.7B-Instruct</text>
+
+                            <text x="530" y="78" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-secondary,#4B5563)">1홉 관계망</text>
+                            <rect x="430" y="92" width="210" height="82" rx="6" fill="#F86825" fill-opacity="0.07" stroke="#F86825" stroke-width="1.5"/>
+                            <text x="535" y="118" text-anchor="middle" font-size="12.5" font-weight="700" fill="#F86825">엔터티 17166</text>
+                            <text x="535" y="138" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Space dpbos/postvalidation</text>
+                            <text x="535" y="158" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">달려 있는 사실 1개</text>
+
+                            <rect x="430" y="250" width="210" height="82" rx="6" fill="var(--text-muted,#6B7280)" fill-opacity="0.07" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5" stroke-dasharray="5,4"/>
+                            <text x="535" y="276" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-primary,#111827)">엔터티 366541</text>
+                            <text x="535" y="296" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">SmolLM2-1.7B-Instruct</text>
+                            <text x="535" y="316" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">달려 있는 사실 153개</text>
+
+                            <defs>
+                                <marker id="arrow-wrong" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#F86825"/>
+                                </marker>
+                                <marker id="arrow-true" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#808080"/>
+                                </marker>
+                            </defs>
+
+                            <line x1="240" y1="122" x2="424" y2="122" stroke="#F86825" stroke-width="2" marker-end="url(#arrow-wrong)"/>
+                            <text x="332" y="112" text-anchor="middle" font-size="9.5" font-weight="600" fill="#F86825">번호가 같으니 같은 것으로 본다</text>
+
+                            <path d="M 150 170 C 150 250, 300 291, 424 291" fill="none" stroke="#808080" stroke-width="1.8" stroke-dasharray="6,4" marker-end="url(#arrow-true)"/>
+                            <text x="300" y="275" text-anchor="middle" font-size="9.5" font-weight="600" fill="var(--text-secondary,#4B5563)">실제로 같은 대상</text>
+
+                            <text x="40" y="364" font-size="9.5" fill="var(--text-muted,#6B7280)">추천기는 SmolVLM-Instruct의 양자화판이라는 계보 대신, 상관없는 Space의 사실 한 개를 근거로 받았다.</text>
+                            <text x="40" y="382" font-size="9.5" fill="var(--text-muted,#6B7280)">파일을 따로 검사하면 양쪽 번호 체계가 각자 멀쩡해 보여, 34개 검사 중 어느 것도 이 어긋남을 보지 못한다.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 (논문 §III의 사례를 개념으로 재구성) | 출처: <a href="https://arxiv.org/abs/2611.03727" target="_blank" rel="noopener" class="underline">arXiv:2611.03727</a>
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="rerun" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">연결을 고치자 순위표가 다시 짜였다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        보정 자체는 단순하다. 모든 항목이 좋아요 파일에서 쓰던 번호를 관계망에서도 그대로 쓰도록 다시 매기고, 나머지 엔터티를 그 뒤로 밀었다. 사실은 한 건도 더하거나 빼지 않았다. 저자는 보정판 파일과 매핑, 검증기, 실행 로그를 Zenodo에 통째로 올려 두었다. 그 위에서 같은 방법들을 시드 세 개로 다시 돌린 결과가 아래다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="themeable-table-header-row">
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">방법</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">관계망</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">배포판</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">보정판</th>
+                                    <th class="border themeable-border px-4 py-3 text-left font-semibold">변화</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGCL</td>
+                                    <td class="border themeable-border px-4 py-3">1홉</td>
+                                    <td class="border themeable-border px-4 py-3">0.1496</td>
+                                    <td class="border themeable-border px-4 py-3">0.1591</td>
+                                    <td class="border themeable-border px-4 py-3">+6.4%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGCL</td>
+                                    <td class="border themeable-border px-4 py-3">2홉</td>
+                                    <td class="border themeable-border px-4 py-3">0.1503</td>
+                                    <td class="border themeable-border px-4 py-3">0.1581</td>
+                                    <td class="border themeable-border px-4 py-3">+5.2%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGCL</td>
+                                    <td class="border themeable-border px-4 py-3">퍼블리셔</td>
+                                    <td class="border themeable-border px-4 py-3">0.1540</td>
+                                    <td class="border themeable-border px-4 py-3 font-semibold">0.1604</td>
+                                    <td class="border themeable-border px-4 py-3">+4.2%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGRec</td>
+                                    <td class="border themeable-border px-4 py-3">1홉</td>
+                                    <td class="border themeable-border px-4 py-3">0.0845</td>
+                                    <td class="border themeable-border px-4 py-3">0.1457</td>
+                                    <td class="border themeable-border px-4 py-3">+72.4%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGRec</td>
+                                    <td class="border themeable-border px-4 py-3">2홉</td>
+                                    <td class="border themeable-border px-4 py-3">0.0937</td>
+                                    <td class="border themeable-border px-4 py-3">0.1479</td>
+                                    <td class="border themeable-border px-4 py-3">+57.8%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGRec</td>
+                                    <td class="border themeable-border px-4 py-3">퍼블리셔</td>
+                                    <td class="border themeable-border px-4 py-3">0.0943</td>
+                                    <td class="border themeable-border px-4 py-3">0.1204</td>
+                                    <td class="border themeable-border px-4 py-3">+27.7%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGIN</td>
+                                    <td class="border themeable-border px-4 py-3">1홉</td>
+                                    <td class="border themeable-border px-4 py-3">0.1169</td>
+                                    <td class="border themeable-border px-4 py-3">0.1445</td>
+                                    <td class="border themeable-border px-4 py-3">+23.6%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGIN</td>
+                                    <td class="border themeable-border px-4 py-3">2홉</td>
+                                    <td class="border themeable-border px-4 py-3">0.1198</td>
+                                    <td class="border themeable-border px-4 py-3">0.1446</td>
+                                    <td class="border themeable-border px-4 py-3">+20.7%</td>
+                                </tr>
+                                <tr class="hover:bg-orange-500/5 transition-colors">
+                                    <td class="border themeable-border px-4 py-3">KGIN</td>
+                                    <td class="border themeable-border px-4 py-3">퍼블리셔</td>
+                                    <td class="border themeable-border px-4 py-3">0.1152</td>
+                                    <td class="border themeable-border px-4 py-3">0.1475</td>
+                                    <td class="border themeable-border px-4 py-3">+28.0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text-secondary text-sm mb-8">시험 분할 Recall@10, 세 시드 평균, 100에폭 예산. 출처: 논문 Table V 전체. 보정 대상이 아닌 동종 그래프의 참고값은 KGCL 0.1585, KGRec 0.0987, KGIN 0.1351이다. KGIN은 원저자 구현 기준. 변화 칸은 표에 적힌 반올림값으로 계산한 것이라, 논문이 반올림 전 값으로 보고한 4%에서 73%라는 범위와 끝자리가 다를 수 있다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        내려간 칸은 없었다. 모든 관계망, 모든 시드, 모든 방법에서 보정판이 더 좋았고 상승폭은 4%에서 73% 사이였다. 가장 적게 오른 쪽이 KGCL, 가장 크게 오른 쪽이 KGRec이다. 설정끼리 누가 앞서는지를 견준 27개 비교 가운데 10개는 세 시드 전부에서 순서가 뒤집혔다. 원 논문에서 KGIN이 배포된 2홉 관계망으로 KGRec을 앞섰던 대목은 보정판에서 뒤처지는 쪽으로 바뀐다. 어떤 방법이 더 나은가라는 물음의 답이 데이터 보정 하나로 달라진 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자는 보정이 건넨 것이 제 사실인지 사실 비슷한 무엇인지를 따로 시험했다. 보정된 1홉 관계망에서 항목과 엔터티의 짝을 항목 종류와 연결 수를 맞춰 무작위로 다시 지어 보면, 바르게 맞춘 쪽이 어떤 무작위 짝짓기보다 좋았다. 그런데 그 무작위 짝짓기들도 아홉 번의 실행 전부에서 배포판보다는 좋았다. 종류와 연결 수만 그럴듯해도 어느 정도는 오른다. 끝까지 올리는 것은 제 항목에 제 사실이 붙는 일이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        KGIN의 거의 0점은 조인 오류만으로 설명되지 않는다. 저자가 들여다보니 벤치마크가 쓴 프레임워크의 KGIN 이식본은 임베딩을 GPU에서 학습하지 않았고, 이 결함은 데이터와 상관이 없다. 그래서 KGIN은 원저자 구현으로 바꿔 다시 돌렸다. 바꾼 구현에 배포판 1홉 관계망을 물리면 0.1169가 나오고, 거기에 보정까지 하면 0.1445가 된다. 원래 보고된 0.0004는 무작위로 세운 순위와 같은 수준이었고, 저자의 재현에서도 그대로 0.0004가 나왔다. 저자는 이 대목을 두고, 무작위 수준의 점수는 발견이 아니라 오류 신호로 다뤄야 한다고 적었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        왜 아무도 눈치채지 못했는지는 항목을 인기순으로 갈라 보면 드러난다. 1홉 관계망에서 KGRec을 500에폭으로 돌린 경우, 훈련 구간에서 좋아요를 한 개에서 네 개 받은 항목은 어긋난 관계망에서 시험 좋아요의 0.004만 상위 열 개에 담겼다. 보정 뒤에는 0.020으로 다섯 배가 된다. 좋아요 20개에서 99개 구간도 0.011에서 0.040으로 올랐다. 그런데 좋아요 100개가 넘는 인기 항목에서는 0.148이 0.155가 됐을 뿐이다. 2홉 관계망에서는 인기 항목도 0.133에서 0.157로 절대값이 제법 올랐지만, 상대적인 크기로는 역시 가장 희귀한 쪽의 개선이 훨씬 컸다. 평균 Recall은 인기 항목이 끌고 가는 수치여서, 희귀한 쪽에서 벌어진 일이 집계에 거의 비치지 않았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        희귀한 쪽이 작은 구석인 것도 아니다. 훈련 좋아요가 100개에 못 미치는 항목이 시험 좋아요의 54%를 받는다. 평균이 가린 것은 가장자리가 아니라 절반이었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        감사는 벤치마크의 두 번째 결함도 함께 짚는다. 학습을 100에폭에서 끊는 예산이 조기 종료 조건보다 먼저 닿는 경우가 시드에 따라 29개 설정 중 일고여덟 개 있었다. 그렇게 잘린 설정-시드 쌍 23개 가운데 21개는 예산을 500에폭으로 늘리자 성적이 올랐고, 상승폭은 최대 31%였다. 두 결함은 서로 얽혀 있다. 어긋난 관계망으로 학습한 모델은 수렴이 느려서, 예산을 늘리면 보정의 효과가 조금 줄어든다. 73%라는 숫자에는 학습 부족분이 섞여 있다. 1홉 관계망의 KGRec만 놓고 보면 두 판 사이의 간격이 평균 0.0613에서 0.0374로 좁아진다. 그래도 모델 깊이 둘과 시드 셋을 합친 여섯 경우 전부에서, 두 예산 모두 보정판이 앞선다는 결론은 그대로 남는다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="unused-text" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">아무도 쓰지 않은 설명문이 가장 센 신호다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        HuggingBench는 항목마다 카드 텍스트를 함께 공개한다. 모델 카드와 데이터셋 카드 본문, 태그, 올린 조직과 이름, 라이브러리, 언어, 설명까지 최대 3,000자다. 원 논문이 보고한 열한 가지 방법 가운데 이 텍스트를 쓴 것은 하나도 없다. 저자는 이 공백을 겨냥해 가장 단순한 추천 모델을 가져왔다. 반복 학습 없이 한 번의 행렬 계산으로 끝나는 선형 모델 EASE다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결과는 순서대로 읽을 만하다. 텍스트도 관계망도 없는 맨 EASE가 0.1684로 이미 원 논문 최고 보고값 0.1578을 넘었다. 정규화를 항목별로 조정한 변형이 0.1746, 거기에 항목 관계망을 더하면 0.1776이다. 관계망 대신 카드 텍스트를 단어 빈도 방식으로 넣은 쪽은 0.1846으로 더 높았고, 둘을 다 넣은 최고 구성이 0.1860이었다. 기존 최고값 대비 18%다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 330" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="시험 Recall@10 비교 막대그림. 원 논문 최고 보고값 0.1578, 맨 선형 모델 0.1684, 선형 모델에 카드 텍스트를 더한 0.1846, 텍스트와 관계망을 모두 더한 0.1860이다.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">시험 분할 Recall@10</text>
+                            <text x="340" y="45" text-anchor="middle" font-size="10" fill="var(--text-muted,#6B7280)">세로축은 0부터. 회색은 비교 기준, 오렌지는 카드 텍스트를 쓴 구성</text>
+
+                            <line x1="60" y1="268" x2="640" y2="268" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+
+                            <rect x="95" y="110" width="88" height="158" rx="3" fill="#808080" fill-opacity="0.35"/>
+                            <text x="139" y="102" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--text-secondary,#4B5563)">0.1578</text>
+                            <text x="139" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">원 논문 최고값</text>
+                            <text x="139" y="306" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">KGCL · 동종 그래프</text>
+
+                            <rect x="243" y="100" width="88" height="168" rx="3" fill="#808080" fill-opacity="0.35"/>
+                            <text x="287" y="92" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--text-secondary,#4B5563)">0.1684</text>
+                            <text x="287" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">맨 선형 모델</text>
+                            <text x="287" y="306" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">좋아요 기록만 본다</text>
+
+                            <rect x="391" y="84" width="88" height="184" rx="3" fill="#F86825" fill-opacity="0.85"/>
+                            <text x="435" y="76" text-anchor="middle" font-size="12.5" font-weight="700" fill="#F86825">0.1846</text>
+                            <text x="435" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">+ 카드 텍스트</text>
+                            <text x="435" y="306" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">단어 빈도 방식</text>
+
+                            <rect x="539" y="82" width="88" height="186" rx="3" fill="#F86825" fill-opacity="0.85"/>
+                            <text x="583" y="74" text-anchor="middle" font-size="12.5" font-weight="700" fill="#F86825">0.1860</text>
+                            <text x="583" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">+ 텍스트와 관계망</text>
+                            <text x="583" y="306" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">기존 최고값보다 18% 위</text>
+
+                            <text x="60" y="326" font-size="9" fill="var(--text-muted,#6B7280)">맨 오른쪽 구성도 CPU 8코어에서 358초 만에 학습이 끝난다.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식 (논문 Table VII 수치 재구성) | 출처: <a href="https://arxiv.org/abs/2611.03727" target="_blank" rel="noopener" class="underline">arXiv:2611.03727</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비용 쪽이 더 당혹스럽다. 맨 EASE의 학습은 CPU 8코어에서 253초, 텍스트와 관계망을 다 넣은 최고 구성도 358초에 끝난다. 비교 대상인 KGRec은 2홉 관계망에서 설정을 다 훑는 데 GPU로 하루가 넘게 걸린다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        텍스트를 읽는 방식에서도 예상은 빗나갔다. 같은 카드 텍스트를 최신 임베딩 모델 두 종으로 벡터화해 넣어 봤더니, 네 번의 비교 전부에서 단어 빈도 방식이 더 좋았다. 차이는 0.0046에서 0.0077 사이였고 신뢰구간이 0을 품지 않았다. 저자는 허브 텍스트가 틀에 박혀 있다는 점을 이유로 든다. 같은 조직이 올린 모델 둘의 단어 빈도 유사도는 중앙값이 0.40이고, 무작위로 고른 두 항목은 0.03이다. 이름과 태그가 비슷한 문자열로 되풀이되는 데이터에서는 뜻을 넓게 잡는 임베딩보다 글자를 그대로 맞추는 쪽이 유리하다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        신호가 어느 칸에 들었는지도 뜯어 봤다. 항목 종류와 조직·이름만 남겨도 0.1850에 닿고, 설명문만 넣어도 맨 EASE보다 0.0134 오른다. 주소와 저장소 식별자와 제 조직·이름을 가려 설명문 19,191개 가운데 18,251개를 바꿔 놓아도 0.0125가 남는다. 같은 신호가 여러 칸에 겹쳐 적혀 있다는 뜻이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그리고 텍스트가 가장 크게 기여한 자리는 3절에서 보정이 가장 크게 작용한 자리와 겹친다. 좋아요를 한 개에서 네 개 받은 항목에서 맨 EASE는 0.0057이었고 텍스트와 관계망을 더하면 0.0339가 된다. 좋아요 100개가 넘는 인기 항목에서는 0.1976이 0.1949로 오히려 조금 내려갔다. 좋아요를 적게 누른 사용자 쪽도 같은 모양이다. 항목 종류로 갈라도 결이 같다. 카드가 있는 모델이 0.012로 가장 많이 올랐고, 카드가 아예 없는 Space가 0.005로 가장 적게 올랐다. 텍스트가 일을 하고 있다는 뜻이다. 어긋난 연결과 쓰지 않은 설명문은 서로 다른 결함인데, 벤치마크의 성적을 같은 자리에서 같은 방향으로 깎고 있었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        나머지 두 시험에서 텍스트가 한 일은 서로 달랐다. 계보 추적에서 원 논문 최고 보고값은 구조만 보는 방법의 MRR 0.559, 저자의 재현값은 0.549였는데, 학습을 전혀 하지 않고 파생 모델의 카드 본문에 언급된 모델 이름을 등장 순서대로 세운 것만으로 0.542가 나왔다. 시험 트리플의 54.3%에서 정답이 카드 안에 이름으로 적혀 있었다는 뜻이다. 카드에서 뽑은 후보를 앞에 놓고 나머지를 기존 방법으로 세우면 0.831까지 간다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        반면 과업 분류에서는 카드만 읽는 방식이 통하지 않았다. 카드에 등장하는 과업 이름을 그대로 답으로 내놓으면 micro-F1 0.404에 그친다. 가장 흔한 과업 하나로 전부 찍는 0.384보다 조금 나은 수준이고, 보고된 0.885에는 한참 못 미친다. 대신 다른 것이 걸렸다. 모델의 과업 태그와 데이터셋의 과업 칸이 시험 항목의 99.99%에서 정답 이름을 그대로 적고 있었다. 공개된 분류기 코드가 없어 실제로 그 칸을 봤는지는 확인할 수 없지만, 벤치마크가 먼저 밝혔어야 할 통로다. 시험 항목 수가 배포본 27,345개와 논문 보고 28,682개로 어긋난다는 점도 감사가 함께 적어 두었다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="data-product" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">벤치마크도 데이터 제품이다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문은 마지막 절을 벤치마크와 모델 허브를 만드는 쪽에 건네는 권고로 채웠다. 여섯 가지인데, 묶어 놓고 보면 요구는 하나다. 데이터를 묶어 내보내는 쪽이 그 묶음이 무엇을 약속하는지 파일 바깥에 적어 두라는 것이다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">파일이 아니라 조인을 검증한다. 오류는 파일 안이 아니라 파일 사이에 있었고, 검증기는 데이터와 함께 배포돼야 한다.</li>
+                        <li class="themeable-text leading-relaxed">암묵적 관행보다 명시적 연결을 쓴다. 항목과 엔터티를 잇는 파일을 따로 요구하는 프레임워크에서는 이 실패가 구조적으로 나지 않는다.</li>
+                        <li class="themeable-text leading-relaxed">모든 칸의 출처를 밝힌다. 언제 어떻게 수집했는지 적고, 시험 분할 정보가 섞일 수 있는 칸은 빼거나 훈련 구간에서 다시 계산한다.</li>
+                        <li class="themeable-text leading-relaxed">프로토콜이 스스로 점검하게 한다. 설정마다 최고 성적이 몇 에폭에서 나왔는지 보고하고, 예산 끝에서 멈춘 학습에는 표시를 단다.</li>
+                        <li class="themeable-text leading-relaxed">공개한 것을 실제로 쓰는 기준선을 넣는다. 곁들인 정보를 공개하는 벤치마크라면 그것을 쓰는 단순한 모델 하나는 기본으로 보고한다.</li>
+                        <li class="themeable-text leading-relaxed">출처를 묻는 시험과 그 출처가 적힌 본문을 분리한다. 계보와 분류처럼 답이 카드에 적혀 있는 과업은 텍스트를 가리거나, 텍스트만으로 얼마나 풀리는지 먼저 보고한다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 번째 권고가 나온 자리도 이 벤치마크 안에 있다. 관계망에 저장된 좋아요·다운로드 카운터는 크롤링 시점의 값이라 시험 분할에 들어간 좋아요까지 품고 있을 수 있다. 실제로 항목 25,080개 중 25,057개에서 카운터가 세 분할의 좋아요 합계보다 적지 않았고, 시험 좋아요와의 순위 상관이 0.80으로 훈련 좋아요와의 0.71보다 높았다. 측정해 본 실제 영향은 작았지만, 영향이 작다는 것과 설계가 옳다는 것은 다른 말이다. 반대로 같은 절에서 무혐의로 끝난 것도 있다. 네 관계망의 관계 종류를 전부 훑어 봐도 사용자와 항목 사이의 좋아요가 관계로 들어간 경우는 없어서, 시험 좋아요가 관계망을 타고 새는 일은 일어나지 않았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 실패가 HuggingBench 한 벌의 사고가 아니라는 증거도 논문 안에 있다. 어긋남을 허용한 파일 형식은 KGAT에서 내려온 것이고, 저자는 같은 형식으로 배포된 다른 데이터셋들을 같은 검사에 걸어 봤다. 항목을 앞에서부터 번호 매긴 배포본은 통과했다. 그런데 같은 데이터셋을 다른 팀이 번호를 새로 매겨 다시 배포한 경우에는, 먼저 나온 배포본의 항목 목록으로 읽었을 때 훈련 쌍의 0.7%와 2.4%만 제 항목을 지켰다. 배포본 하나하나는 그 자체로 멀쩡하다. 어긋남은 서로 다른 배포본의 파일을 섞는 순간에 생긴다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기부터는 논문 밖이다. 이 감사가 겨눈 구조는 벤치마크만의 사정이 아니다. 서로 다른 시스템에서 나온 테이블을 번호로 이어 붙여 학습 데이터를 만드는 곳이면 같은 일이 일어난다. 각 테이블은 스키마 검사를 통과하고, 적재 파이프라인은 초록 불을 켜고, 모델 성적은 그럭저럭 나온다. 어긋남은 두 테이블을 사람이 읽을 수 있는 이름으로 맞춰 볼 때만 보인다. 그 대조를 자동 검사에 넣어 둔 팀은 생각보다 적다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 세 가지는 물어볼 만하다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">우리 파이프라인의 조인 키는 무엇이 보증하는가. 스키마가 보증하는가, 아니면 아무 데도 적혀 있지 않은 관행이 보증하는가.</li>
+                        <li class="themeable-text leading-relaxed">평균 지표가 가리는 구간은 어디인가. 희귀 구간을 따로 떼어 보지 않으면 정합성 오류는 평균 뒤에 숨는다.</li>
+                        <li class="themeable-text leading-relaxed">우리가 수집해 놓고 한 번도 모델에 넣지 않은 칸은 무엇인가. 그 칸이 가장 센 신호일 가능성은 이 논문이 이미 한 번 보여 줬다.</li>
+                    </ul>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            페블러스가 고객사 데이터를 진단할 때 가장 자주 만나는 결함도 단일 테이블 안에 있지 않다. 각 파일은 규격을 지키는데 두 파일을 맞춰 보면 식별자가 어긋나 있고, 그 위에서 돌아간 모델의 성적은 데이터 문제가 아니라 모델 문제로 보고된다. 검사를 더 늘리는 것보다 검사의 단위를 파일에서 관계로 옮기는 편이 먼저다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주셔서 감사하다. 원문은 <a href="https://arxiv.org/abs/2611.03727" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv:2611.03727</a>에서 볼 수 있고, 보정 파일과 검증기는 <a href="https://doi.org/10.5281/zenodo.23857277" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Zenodo</a>에 공개돼 있다. 조인 대조를 상시 데이터 검사로 이미 돌리고 있는 팀이 있다면, 어떤 방식으로 걸어 두었는지 들려주시면 좋겠다.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Podstawski, M. (2026). "<a href="https://arxiv.org/abs/2611.03727" target="_blank" rel="noopener">Auditing a Model-Hub Benchmark: Data Quality, Training Budgets, and Side Information in HuggingBench</a>." arXiv:2611.03727 [cs.LG].</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Chen, Q., Huang, K., Zhou, X., Luo, W., Cui, Y., &amp; Cheng, G. (2025). "<a href="https://arxiv.org/abs/2505.17507" target="_blank" rel="noopener">Benchmarking Recommendation, Classification, and Tracing Based on Hugging Face Knowledge Graph</a>." SIGIR 2025.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Podstawski, M. (2026). "<a href="https://doi.org/10.5281/zenodo.23857277" target="_blank" rel="noopener">Corrected HuggingBench knowledge graphs, mappings, validators, and logs</a>." Zenodo.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261105"></script>
+    <script src="/scripts/citation-download.js?v=20261105" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-11-04T17:06:03.855Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-04T17:18:56.918Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1793811963855-ktdrqe",
+                "version": "0.1.0",
+                "sha": "052a2a95afa30d7970808c86a8f2efabf743c560",
+                "builtAt": "2026-10-24T13:53:43.526Z"
+              },
+              "recordedAt": "2026-11-04T18:34:09.719Z"
+            },
+            mainTitle: "모델 추천 시험 HuggingBench, 데이터부터 어긋나 있다",
+            subtitle: "폴란드 국립연구소 감사 — 배포된 관계망 파일 네 개 중 세 개가 항목을 잘못 가리켰고, 고치자 추천 성적이 73%까지 올랐다",
+            pageTitle: "HuggingBench 벤치마크 감사 — 지식그래프 조인 오류와 성적 재계산 분석 | 페블러스",
+            category: "tech",
+            publishDate: "2026-11-05",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/huggingbench-item-entity-join-audit/ko/",
+            tags: ["HuggingBench", "벤치마크 감사", "데이터 정합성", "지식그래프", "추천 시스템", "조인 검증", "모델 허브", "AI-Ready Data", "데이터 품질"],
+            faqs: [
+                {
+                    question: "HuggingBench는 무엇을 재는 벤치마크인가?",
+                    answer: "허깅페이스 허브를 크롤링해 만든 관계망 HuggingKG 위에 세 가지 시험을 얹은 묶음이다. 사용자에게 다음 자원을 추천하기, 모델이 어떤 과업용인지 분류하기, 파생 모델의 베이스 모델을 추적하기다. 난징대 연구진이 만들어 SIGIR 2025에 실었고, 이번 감사가 집중한 것은 추천 시험이다."
+                },
+                {
+                    question: "항목과 엔터티가 어긋났다는 말이 무슨 뜻인가?",
+                    answer: "좋아요 기록 파일의 항목 번호와 관계망의 엔터티 번호가 같은 대상을 가리켜야 추천기가 근거를 제대로 가져온다. 이 약속은 구현 관행일 뿐 어느 파일에도 적혀 있지 않았고, 네 관계망 중 세 곳에서 깨져 있었다. 1홉과 2홉 그래프에서는 항목 25,080개 가운데 번호가 맞는 것이 하나도 없었다."
+                },
+                {
+                    question: "검사 34개를 통과했는데 어떻게 틀릴 수 있나?",
+                    answer: "그 검사들이 파일 하나하나를 따로 보기 때문이다. 키가 유일한지, 값이 범위 안인지, 분할이 섞이지 않았는지는 각 파일 안에서 판정된다. 항목 목록도 엔터티 목록도 각자 안에서는 흠이 없었다. 두 목록을 이름으로 맞춰 보는 대조가 검사에 없었고, 저자는 그 한 줄만 넣으면 몇 초 만에 잡힌다고 적었다."
+                },
+                {
+                    question: "연결을 고치면 성적이 얼마나 오르나?",
+                    answer: "평균 Recall@10 기준으로 4%에서 73%까지 올랐다. 보정 대상이던 관계망 세 벌과 세 시드 모두에서 관계망 기반 방법이 전부 좋아졌고 내려간 경우는 없었다. 설정끼리 견준 27개 비교 가운데 10개는 세 시드 전부에서 순서가 뒤집혔다."
+                },
+                {
+                    question: "왜 그동안 아무도 몰랐나?",
+                    answer: "개선이 좋아요가 적은 항목에 몰려 있었기 때문이다. 좋아요 한 개에서 네 개 구간은 0.004에서 0.020으로 다섯 배가 됐지만, 좋아요 100개가 넘는 인기 항목은 0.148에서 0.155로 거의 그대로였다. 평균 Recall은 인기 항목이 끌고 가는 수치라 희귀 구간의 손실이 집계에 비치지 않았다."
+                },
+                {
+                    question: "73%라는 수치를 그대로 받아도 되나?",
+                    answer: "조건을 함께 봐야 한다. 이 값은 100에폭 예산에서 측정됐고, 그 예산은 조기 종료보다 먼저 끝나는 경우가 있었다. 어긋난 관계망으로 학습한 모델은 수렴이 느려서, 예산을 500에폭으로 늘리면 보정 효과의 절대 크기가 조금 줄어든다. 다만 모델 깊이 둘과 시드 셋을 합친 여섯 경우 전부에서, 두 예산 모두 보정판이 앞선다는 결론은 유지된다."
+                },
+                {
+                    question: "아무도 쓰지 않은 설명문이란 무엇인가?",
+                    answer: "벤치마크가 항목마다 함께 공개한 카드 텍스트다. 모델·데이터셋 카드 본문과 태그, 조직과 이름, 라이브러리, 언어, 설명까지 최대 3,000자가 들어 있는데 원 논문의 열한 가지 방법 중 어느 것도 이 칸을 읽지 않았다."
+                },
+                {
+                    question: "그 설명문을 넣으면 성적이 어떻게 되나?",
+                    answer: "반복 학습 없이 한 번의 행렬 계산으로 끝나는 선형 모델에 카드 텍스트와 항목 관계망을 더한 구성이 Recall@10 0.1860을 냈다. 원 논문 최고 보고값 0.1578보다 18% 높다. 텍스트도 관계망도 없는 맨 선형 모델도 이미 0.1684로 최고 보고값을 넘었고, 학습은 CPU 8코어에서 6분 안에 끝난다."
+                },
+                {
+                    question: "최신 임베딩 모델을 쓰면 더 좋아지지 않나?",
+                    answer: "이 실험에서는 그렇지 않았다. 같은 카드 텍스트를 임베딩 모델 두 종으로 벡터화해 넣은 쪽이 단어 빈도 방식보다 네 번의 비교 전부에서 낮았다. 차이는 0.0046에서 0.0077 사이였고 신뢰구간이 0을 품지 않았다."
+                },
+                {
+                    question: "우리 데이터 파이프라인에는 어떻게 적용하나?",
+                    answer: "검사의 단위를 파일에서 관계로 옮기는 것이 첫걸음이다. 서로 다른 시스템에서 온 테이블을 번호로 잇는 자리마다 사람이 읽을 수 있는 이름으로 양쪽을 맞춰 보는 대조를 자동 검사에 넣고, 평균 지표 옆에 희귀 구간 지표를 따로 세워 둔다. 파이프라인 설계로 옮기는 이 대목은 논문의 주장이 아니라 이 글의 해석이다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
