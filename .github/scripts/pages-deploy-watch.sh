@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pages 배포 실패 감시·자동 재시도 (pages-deploy-watch.yml 이 15분마다 실행)
+# Pages 배포 실패 감시·자동 재시도 (pages-deploy-watch.yml 이 배포 완료 때·보조로 15분 예약 실행)
 #
 # 왜: legacy Pages 배포는 파일 옮기기 단계가 10분을 넘기면 실패한다(배포물 약 2.7GB).
 #     다음 발행이 없으면 새 글이 404 로 남는다(2026-11-06 두 글 약 4시간 404).
