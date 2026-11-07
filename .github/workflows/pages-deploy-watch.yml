@@ -1,0 +1,51 @@
+# Pages 배포 실패 감시·자동 재시도
+#
+# legacy Pages 배포는 파일 옮기기(syncing_files)가 10분을 넘기면 실패한다(배포물 약 2.7GB,
+# 성공 때 1~6분). 다음 발행이 없으면 새 글이 404 로 남는다 — 2026-11-06 두 글 약 4시간 404.
+# 15분마다 최신 pages-build-deployment 런을 보고:
+#   - 실패한 런이 지금 main 머리이면 다시 돌린다(시도 3회까지). 옛 커밋 런은 다시 돌리지 않는다.
+#   - 3회째도 실패하거나 재실행이 거부되면 알림 이슈를 연다. 복구되면 이슈를 닫는다.
+# 판단 규칙은 .github/scripts/pages-deploy-watch.sh 머리 주석. 근본 해결(크기·Actions 배포)은 별건.
+
+name: Pages Deploy Watch
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '판단만 출력하고 아무것도 바꾸지 않음'
+        type: boolean
+        default: true
+      run_id:
+        description: '특정 pages-build-deployment 런 ID로 판단(비우면 최신 런)'
+        type: string
+        default: ''
+
+concurrency:
+  group: pages-deploy-watch
+  cancel-in-progress: false
+
+permissions:
+  actions: write   # 실패한 Pages 런 재실행
+  issues: write    # 알림 이슈 열기·닫기
+  contents: read
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - name: Check latest Pages deployment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+          RUN_ID: ${{ inputs.run_id }}
+          MAX_ATTEMPTS: '3'
+          ASSIGNEE: joohaeng-pbls
+        run: bash .github/scripts/pages-deploy-watch.sh
