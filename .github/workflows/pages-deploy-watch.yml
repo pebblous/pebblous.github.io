@@ -2,7 +2,7 @@
 #
 # legacy Pages 배포는 파일 옮기기(syncing_files)가 10분을 넘기면 실패한다(배포물 약 2.7GB,
 # 성공 때 1~6분). 다음 발행이 없으면 새 글이 404 로 남는다 — 2026-11-06 두 글 약 4시간 404.
-# 배포가 끝날 때마다(보조로 15분 예약) 최신 pages-build-deployment 런을 보고:
+# 배포 상태가 바뀔 때마다(보조로 15분 예약) 최신 pages-build-deployment 런을 보고:
 #   - 실패한 런이 지금 main 머리이면 다시 돌린다(시도 3회까지). 옛 커밋 런은 다시 돌리지 않는다.
 #   - 3회째도 실패하거나 재실행이 거부되면 알림 이슈를 연다. 복구되면 이슈를 닫는다.
 # 판단 규칙은 .github/scripts/pages-deploy-watch.sh 머리 주석. 근본 해결(크기·Actions 배포)은 별건.
@@ -10,11 +10,12 @@
 name: Pages Deploy Watch
 
 on:
-  # 배포가 끝나는 즉시 판단한다. 예약 실행은 이 저장소에서 몇 시간씩 밀리거나 빠지므로
-  # (11-07 실측: 30분 예약이 4~6시간 간격, 15분 예약은 3시간 넘게 0회) 보조로만 둔다.
-  workflow_run:
-    workflows: ['pages build and deployment']
-    types: [completed]
+  # 배포 상태가 바뀔 때(성공·실패) 바로 판단한다. Pages 배포 상태는 사람 계정 이름으로 찍혀
+  # deployment_status 이벤트가 워크플로를 깨울 수 있다.
+  # workflow_run 은 동적 워크플로(pages build and deployment)에는 걸리지 않았다
+  # (11-07 실측: 성공 04:33·실패 04:59 두 번 다 감시 0회). 예약 실행도 몇 시간씩 밀리거나 빠지므로
+  # (30분 예약이 4~6시간 간격, 15분 예약은 5시간 넘게 0회) 보조로만 둔다.
+  deployment_status:
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
@@ -39,8 +40,13 @@ permissions:
 
 jobs:
   watch:
+    # 배포 상태 이벤트는 github-pages 환경의 끝난 상태(성공·실패·오류)만 받는다.
+    if: >-
+      github.event_name != 'deployment_status' ||
+      (github.event.deployment.environment == 'github-pages' &&
+       contains(fromJSON('["success","failure","error"]'), github.event.deployment_status.state))
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,6 +57,8 @@ jobs:
           REPO: ${{ github.repository }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
           RUN_ID: ${{ inputs.run_id }}
+          # 배포 상태가 찍힌 직후에는 런이 아직 마무리 단계일 수 있어, 끝날 때까지 최대 8분 기다린다.
+          WAIT_SECS: ${{ github.event_name == 'deployment_status' && '480' || '0' }}
           MAX_ATTEMPTS: '3'
           ASSIGNEE: joohaeng-pbls
         run: bash .github/scripts/pages-deploy-watch.sh
