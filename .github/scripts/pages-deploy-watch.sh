@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pages 배포 실패 감시·자동 재시도 (pages-deploy-watch.yml 이 배포 완료 때·보조로 15분 예약 실행)
+# Pages 배포 실패 감시·자동 재시도 (pages-deploy-watch.yml 이 배포 상태 변경 때·보조로 15분 예약 실행)
 #
 # 왜: legacy Pages 배포는 파일 옮기기 단계가 10분을 넘기면 실패한다(배포물 약 2.7GB).
 #     다음 발행이 없으면 새 글이 404 로 남는다(2026-11-06 두 글 약 4시간 404).
@@ -12,6 +12,7 @@
 # 환경변수: REPO(필수) · DRY_RUN=1(바꾸지 않음) · RUN_ID(특정 런 판단)
 #           FAKE_HEAD · FAKE_ATTEMPT · FAKE_CONCLUSION(로컬 시험용, DRY_RUN 일 때만)
 #           MAX_ATTEMPTS(기본 3) · ASSIGNEE(알림 이슈 담당)
+#           WAIT_SECS(기본 0) — 최신 런이 진행 중이면 끝날 때까지 이만큼 기다린 뒤 판단
 set -euo pipefail
 
 : "${REPO:?REPO 필요}"
@@ -27,6 +28,14 @@ else
   run=$(gh run list -R "$REPO" -w pages-build-deployment -L 1 --json "$FIELDS" --jq '.[0]')
 fi
 [ -n "$run" ] && [ "$run" != "null" ] || { echo "Pages 런을 찾지 못함"; echo "ACTION=none"; exit 0; }
+
+WAIT_SECS="${WAIT_SECS:-0}"
+waited=0
+while [ "$(jq -r .status <<<"$run")" != "completed" ] && [ "$waited" -lt "$WAIT_SECS" ]; do
+  sleep 20; waited=$((waited+20))
+  run=$(gh run view "$(jq -r .databaseId <<<"$run")" -R "$REPO" --json "$FIELDS")
+done
+if [ "$waited" -gt 0 ]; then echo "런 마무리를 ${waited}초 기다림"; fi
 
 id=$(jq -r .databaseId <<<"$run")
 status=$(jq -r .status <<<"$run")
