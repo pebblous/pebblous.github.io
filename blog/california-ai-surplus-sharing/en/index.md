@@ -38,7 +38,7 @@ Before the main discussion, four numbers sketch its outline: the advance-notice 
 
 On May 21, 2026, California Governor Gavin Newsom signed Executive Order N-6-26 — effectively the first comprehensive AI workforce order from a US governor. It directs state agencies, including the Labor and Workforce Development Agency (LWDA), to study AI's effect on employment and to reexamine safety-net, collective-bargaining, and retraining policies. Several law firms issued client alerts almost immediately, and most read the order in a compliance key: "prepare for an expansion of WARN."
 
-![Official portrait of California Governor Gavin Newsom, who signed Executive Order N-6-26](./image/img-01-newsom-portrait.jpg)
+![Official portrait of California Governor Gavin Newsom, who signed Executive Order N-6-26](../ko/image/img-01-newsom-portrait.jpg)
 *▲ California Governor Gavin Newsom. On May 21, 2026 he signed Executive Order N-6-26, directing state agencies to study AI's employment impact and review profit-sharing mechanisms | Source: [Office of the Governor of California, Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:Governor_of_California_Gavin_Newsom,_2026_Official_Portrait_2.jpg)*
 
 But the order contains one item that stronger notice requirements alone cannot explain — the passage asking the state to review "mechanisms by which workers and the public can share in the profits AI companies create." This sits on a different plane from the procedural demand to give advance warning of when people will be cut. It asks head-on who owns the productivity gains automation produces.
@@ -55,7 +55,7 @@ Cal-WARN, California's layoff-notice regime, requires an employer of 75 or more 
 
 What aims directly at AI is SB 951, the so-called Worker Technological Displacement Act. Introduced by the California Federation of Labor, the bill would require 90 days' advance notice when AI-driven technological displacement affects 25 people or 25% of a workforce, and would bar termination without just cause during the 60 days from notice to layoff. Penalties for violations would accrue to a newly created Technological Displacement Act Fund. The nature of the demand is still procedural: disclose the fact, timing, and reason for a layoff in advance.
 
-![California State Capitol at dusk in Sacramento, where SB 951 is being debated](./image/img-02-ca-capitol.jpg)
+![California State Capitol at dusk in Sacramento, where SB 951 is being debated](../ko/image/img-02-ca-capitol.jpg)
 *▲ The California State Capitol in Sacramento. SB 951 and other AI labor bills are being debated in this legislature | Source: [Frank Schulenburg, Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:California_State_Capitol_during_blue_hour-3982.jpg)*
 
 ### 2.2. The Distribution Track — Universal Basic Capital
@@ -75,7 +75,7 @@ It is hard to read this shift in the center of gravity as one state's experiment
 - **Stronger federal disclosure** — A draft of the Great American AI Act under discussion would tighten transparency disclosures when AI is a material factor in mass layoffs. It is a demand at the level of information disclosure, not distribution.
 - **California ballot initiative 25-0033** — A measure is in preparation that would place an oversight board over public-benefit-corporation AI companies, with obligations to support displaced workers and a requirement for approval before capability expansions.
 
-![Official portrait of New York Assemblymember Alex Bores, sponsor of the AI dividend proposal](./image/img-03-alex-bores.jpg)
+![Official portrait of New York Assemblymember Alex Bores, sponsor of the AI dividend proposal](../ko/image/img-03-alex-bores.jpg)
 *▲ New York Assemblymember Alex Bores. He proposed an "AI dividend" funded by a tax on AI use and by equity stakes in AI companies | Source: [New York State Assembly, Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:AlexBoresAssemblyHeadshot.jpg)*
 
 The intensity of the demands varies. Some stop at disclosure; others reach as far as equity and taxation. The direction, though, points one way. The question "who gets the profits AI creates" has begun to be written down in policy documents.
@@ -88,7 +88,7 @@ Goldman Sachs estimated that over the past year AI adoption cut roughly 16,000 j
 
 Behind distribution becoming a policy agenda is a concentration that has already occurred. In the US, the top 10% of households own about 93% of directly held stock. The first-round distribution of AI's productivity gains, mediated by the stock market, is already skewed toward a tiny few. JPMorgan CEO Jamie Dimon warned at Davos in January 2026 that serious social unrest could follow unless governments and companies intervene.
 
-![JPMorgan Chase CEO Jamie Dimon in a television interview, warning of AI-driven social unrest at Davos](./image/img-04-jamie-dimon.jpg)
+![JPMorgan Chase CEO Jamie Dimon in a television interview, warning of AI-driven social unrest at Davos](../ko/image/img-04-jamie-dimon.jpg)
 *▲ JPMorgan Chase CEO Jamie Dimon. At Davos in January 2026 he warned that serious social unrest from AI could follow without government and corporate intervention | Source: [World Economic Forum, Wikimedia Commons (CC BY-SA 2.0)](https://commons.wikimedia.org/wiki/File:The_Global_Financial_Context_James_Dimon.jpg)*
 
 Yet the Brookings Institution points to a more fundamental gap. A substantial share of the productivity gain AI creates may not be captured at all by today's frameworks for GDP and productivity statistics. Before we can debate what to distribute, we cannot even properly count how much of it there is.

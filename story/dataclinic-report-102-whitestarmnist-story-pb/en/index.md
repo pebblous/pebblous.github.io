@@ -44,13 +44,13 @@ The mathematical foundation is Johan Gielis's **Superformula** (2003), a single 
 
 Closed shapes alone do not yield MNIST-level difficulty. The original paper added two transformations. First, **Concavity** distributes the gap between vertex distance and indent distance across a 0.15–0.95 range. Second, **ConvexNegate** generates negative-space images by subtracting each shape from its convex hull, forming 20% of the dataset. Combine these with eight stroke-thickness levels and random rotations, and the simple shape grid becomes a learnable dataset. LeNet reaches 99.67% accuracy — close to MNIST's 99% — but converges more slowly. The difficulty is by design.
 
-![Star-MNIST and MNIST side-by-side — KCGS 2019 paper Figure 1](./image/star-mnist-paper-fig1-grid.png)
+![Star-MNIST and MNIST side-by-side — KCGS 2019 paper Figure 1](../ko/image/star-mnist-paper-fig1-grid.png)
 *▲ MNIST (left) and Star-MNIST (right) — same 28×28 grid, handwritten digits versus synthetic shapes. Source: Cha & Lee, [KCGS 2019](../source/star-mnist-kcgs-2019.pdf), Figure 1.*
 
-![Star-MNIST four-stage transformations — base shape, stroke thickness, rotation/scale, ConvexNegate](./image/star-mnist-paper-fig2-transforms.png)
+![Star-MNIST four-stage transformations — base shape, stroke thickness, rotation/scale, ConvexNegate](../ko/image/star-mnist-paper-fig2-transforms.png)
 *▲ Four-stage transformations of Star-MNIST — (1) base shape, (2) stroke-thickness variation, (3) random rotation and scale, (4) ConvexNegate. Source: Cha & Lee, KCGS 2019, Figure 2.*
 
-![LeNet network architecture and training curves — Star-MNIST vs MNIST](./image/star-mnist-paper-fig4-lenet.png)
+![LeNet network architecture and training curves — Star-MNIST vs MNIST](../ko/image/star-mnist-paper-fig4-lenet.png)
 *▲ LeNet architecture and classification training curves — Star-MNIST (orange) converges more slowly than MNIST (blue) but reaches 99.67% final accuracy, slightly higher than MNIST. Source: Cha & Lee, KCGS 2019, Figure 4.*
 
 What is interesting is the gap in time. Star-MNIST was created in 2019; this diagnosis was performed in 2026. In those seven years, the role of synthetic training data has shifted from a teaching question — "what comes after MNIST?" — to a governance question: "how do we train industrial models responsibly?" That a dataset receives a quality report card from the perspective of data quality, seven years later, is also a trace of how the meaning of synthetic data has evolved.

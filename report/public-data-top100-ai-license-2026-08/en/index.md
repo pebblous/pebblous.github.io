@@ -33,7 +33,7 @@ _The 27 August Data Ministers_
 
 The second Data Ministers' Meeting convened at 2 p.m. on 27 August 2026 at the Government Complex in Seoul, chaired by Prime Minister Han Seong-sook. Ministers and vice-ministers from the ministries concerned attended, among them Science and ICT, the Interior and Safety, and Culture, Sports and Tourism, along with the head of the data division of the National AI Strategy Committee. The body itself is new: it was established in May 2026 as the whole-of-government coordinating organ for data.
 
-![Exterior of the Government Complex Seoul, where the meeting was held](./image/img-01-government-complex-seoul.jpg)
+![Exterior of the Government Complex Seoul, where the meeting was held](../ko/image/img-01-government-complex-seoul.jpg)
 *▲ The Government Complex in Seoul, where the second Data Ministers' Meeting was held | Source: [Wikimedia Commons (Seoul Institute, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Government_Complex_Seoul_Main_Building.jpg)*
 
 Coverage of the meeting mostly reduced it to a single sentence: the release of 100 high-value public datasets had been moved a year earlier. That summary is accurate, but there were two items on the table that day, and they differed in both the lead ministry and the material covered. Because they were announced on the same day from the same podium, the two are easy to read as one. Anyone who actually intends to download the data and use it has to keep the two apart to make a decision.
@@ -119,7 +119,7 @@ Substitution or deferral of scope is the largest group, with eight. Standardise 
 
 KOGL is the permission mark attached to public works in Korea, the counterpart to Creative Commons for material produced by the state. In January 2026 two new types were added to it at once: Type 0 and the AI type. The Ministry of Science and ICT and the Ministry of Culture, Sports and Tourism jointly announced a plan to expand the use of public works in AI training at the fourth Science and Technology Ministers' Meeting, and the ministry of culture handled the revision and public notice of the marking standard. The exact date the notice took effect does not appear in published material, so this article dates it only to January 2026.
 
-![The six KOGL permission marks — Type 0, the AI type, and Types 1 through 4](./image/img-02-kogl-marks.png)
+![The six KOGL permission marks — Type 0, the AI type, and Types 1 through 4](../ko/image/img-02-kogl-marks.png)
 *▲ The six KOGL permission marks. From left: Type 0, the AI type, and Types 1 through 4 | Source: [Korea Copyright Commission, KOGL](https://www.kogl.or.kr/info/license.do)*
 
 The AI type's summary is short. No attribution required; commercial and non-commercial use permitted; adaptation and other derivative works permitted. Read that far and it looks close to unrestricted. The conditions come in the next paragraph. The KOGL text says the work may be used freely only where it is used as AI training data, and then attaches three requirements.
@@ -149,7 +149,7 @@ This picture comes from laying the rules over one another; it is our reading, no
 
 The second annex, on page 7 of the press release, is titled "Data to Be Converted to the New KOGL Types (AI Type and Others), 37 Items." It has 37 rows in four categories. Publications and policy materials account for 19, more than half; images and video for 8; examination questions and Q&A for 6; deliberation and decision documents for 4. Among the entries are Korea Fair Trade Commission decisions, Anti-Corruption and Civil Rights Commission deliberation materials, Korea Communications Agency examination papers, and recordings and archive material from the National Gugak Center.
 
-![The National Gugak Center, which holds three rows in the 37-item table](./image/img-03-gugak-center.jpg)
+![The National Gugak Center, which holds three rows in the 37-item table](../ko/image/img-03-gugak-center.jpg)
 *▲ The National Gugak Center, which holds the most rows — three — of any institution in the 37-item table | Source: [Wikimedia Commons (Michael Comella, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:National_Gugak_Center_in_Seocho-gu,_Seoul,_South_Korea.jpg)*
 
 | Category (as printed) | Count | Rows |
@@ -197,7 +197,7 @@ The meeting also set follow-up tasks, and these too are split by agenda item. Un
 
 Return to the three culture-ministry rows from section 2. The note on the National Library book records, the performing arts data and the Korean film multimodal data was that data whose copyright has expired will be opened first. Laid over the KOGL system, that phrase has two faces.
 
-![The National Library of Korea, whose book data carries the copyright-expired-first note](./image/img-04-national-library.jpg)
+![The National Library of Korea, whose book data carries the copyright-expired-first note](../ko/image/img-04-national-library.jpg)
 *▲ The National Library of Korea, whose book data carries the "copyright-expired data opened first" note | Source: [Wikimedia Commons (Piotrus, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:National_library_of_korea_main_building_front.jpeg)*
 
 The first face is sensible. The KOGL guidance states that with the creation of Type 0 the old mark for expired public works is abolished, and that public institutions must convert works carrying that old mark to Type 0. Material whose copyright has expired moves, as a matter of the system's design, to the tier with no obligations at all. Opening the expired portion first means opening the cleanest licences first, and as a sequencing decision there is nothing wrong with it.

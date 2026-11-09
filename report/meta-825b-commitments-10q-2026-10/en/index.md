@@ -38,7 +38,7 @@ On October 22, 2026, Meta Platforms filed its quarterly report (Form 10-Q) with 
 
 Open the report and search for $825 billion, though, and you will not find it. The number has never been written in the filing. What is written are three separate figures sitting in different paragraphs of Note 10.
 
-![Meta Platforms logo — the company that filed the Q3 2026 Form 10-Q this article reads](./image/img-01-meta-logo.svg)
+![Meta Platforms logo — the company that filed the Q3 2026 Form 10-Q this article reads](../ko/image/img-01-meta-logo.svg)
 *▲ Meta Platforms. The company behind the Q3 10-Q this article reads | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Meta_Platforms_Inc._logo.svg)*
 
 | Item as filed | Amount | Name in the filing |
@@ -72,7 +72,7 @@ One last thing to note. The self-describing Bloomberg sentence quoted above is n
 
 The largest piece of the $825 billion is leases. And leases carry one clear threshold that accounting has fixed in place. A lease liability and its right-of-use asset are recognized not on the day the contract is signed but on the day **the lease commences**. Commencement is the moment control of the leased asset passes over so it can actually be used. A data center still being graded or framed is pre-commencement even with a signed contract, and so it goes in the notes rather than on the balance sheet.
 
-![A server board being installed at a Meta data center — the kind of pre-commencement equipment that sits in the notes rather than on the balance sheet](./image/img-02-meta-datacenter-server.jpg)
+![A server board being installed at a Meta data center — the kind of pre-commencement equipment that sits in the notes rather than on the balance sheet](../ko/image/img-02-meta-datacenter-server.jpg)
 *▲ A server board being installed at a Meta data center. Equipment at the construction, pre-commencement stage is what sits behind the $355.73 billion of "leases not yet commenced" this article reads | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Facebook_Data_Center_Server_Board.jpg)*
 
 Follow the rule and the result looks strange to the eye. The operating lease liability on Meta's September 30 balance sheet is $31.17 billion, made up of $2.52 billion current and $28.65 billion non-current. The not-yet-commenced leases recorded in the notes on the same date come to $355.73 billion. That is a gap of roughly 11.4 times.

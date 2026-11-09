@@ -65,7 +65,7 @@ The reason for reopening the document after six years lies on the technology sid
 
 The government said the principles are not regulation that loads new obligations onto companies. In Lee Jin-su's framing, statute is hard law and the ethics principles are soft law. This draft also writes out the role of each actor, covering users, civil society, and the government alongside developers and operators.
 
-![Government Complex Sejong, main entrance](./image/img-02-govt-complex-sejong.jpg)
+![Government Complex Sejong, main entrance](../ko/image/img-02-govt-complex-sejong.jpg)
 *▲ Government Complex Sejong, home to MSIT and other central ministries | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Government_Complex_Sejong_20190611_Main_Entrance.jpg) (CC BY-SA 3.0, *Youngjin)*
 
 A statute already exists, so why ethics principles? Kim Kyung-man, head of MSIT's AI policy office, answered that the AI Framework Act put legally binding rules in place, but that enjoying the benefits of AI while limiting the harms takes a minimum standard the public, industry, and civil society can agree on before the law speaks. What the government wants from the document is plainer in Choi Woo-seok's remarks: if these principles are observed well, there will be no need to bring in additional regulation. That makes it closer to a buffer, where voluntary compliance holds back the expansion of hard law.

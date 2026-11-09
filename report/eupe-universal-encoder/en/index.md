@@ -24,7 +24,7 @@ _A 1.9B proxy teacher unifies CLIP, DINOv3, and PElang knowledge into a single 8
 
 The progress of modern vision AI has created an ironic trap: the more an encoder is optimized for one task, the more it degrades on others. Each encoder excels in its training domain but falls short elsewhere. Systems deployed in the real world — where multiple tasks must run simultaneously — run directly into this wall.
 
-![Discriminative neural networks (CLIP/SigLIP) classify images into categories; self-supervised encoders (DINO) learn spatial structure — the training objective determines specialization](./image/img-05-discriminative-generative.png)
+![Discriminative neural networks (CLIP/SigLIP) classify images into categories; self-supervised encoders (DINO) learn spatial structure — the training objective determines specialization](../ko/image/img-05-discriminative-generative.png)
 *▲ Discriminative models (CLIP lineage) excel at classification; self-supervised spatial models (DINO lineage) excel at dense prediction — each training objective creates specialization | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Discriminative_vs_Generative_Neural_Networks.png)*
 
 Three lineages dominate different corners of the problem. CLIP and its successors (SigLIP2, PEcore) use text-image contrastive learning to dominate classification and VLM benchmarks. DINOv2/DINOv3 use self-supervised learning to produce dense spatial features with no rival. SAM achieves zero-shot segmentation through masked learning — but has no language-vision alignment capability.
@@ -51,7 +51,7 @@ The bottleneck sharpens on edge hardware. Running multiple encoders in parallel 
 
 Prior work tried to bridge this gap. RADIO (Ranzinger et al.) and DUNE (Sariyildiz et al.) took an "agglomerative" approach — distilling from multiple teachers simultaneously. This worked reasonably for encoders above 300M parameters, but failed clearly at the sub-86M efficiency range. RADIOv2.5-B showed a significant performance gap versus DINOv3-ViT-B on dense prediction tasks.
 
-![Dense feature PCA comparison across encoders — EUPE captures DINOv3-level spatial structure while preserving SigLIP-level VLM representation](./image/img-paper-fig-x5.png)
+![Dense feature PCA comparison across encoders — EUPE captures DINOv3-level spatial structure while preserving SigLIP-level VLM representation](../ko/image/img-paper-fig-x5.png)
 *▲ EUPE Paper Figure 4 — dense feature PCA visualization per encoder. EUPE (right column) captures spatial structure comparable to DINOv3 while retaining SigLIP-level semantic alignment | Source: [Zhu et al. (2026), arXiv:2603.22387](https://arxiv.org/abs/2603.22387)*
 
 > [!callout]
@@ -75,20 +75,20 @@ Going via the proxy improves SPair (dense prediction) from **35.1 → 53.3** —
 
 Scaling the proxy to 7B produced an interesting result: image understanding and dense prediction improved slightly, but VLM performance dropped. The capacity gap between a 7B proxy and an 86M student became too large for effective knowledge transfer. The paper mentions "Teaching Assistant" progressive distillation (Mirzadeh et al., 2020) as a potential fix in future work.
 
-![EUPE Stage 1 per-teacher distillation flow — each teacher (PEcore-G, PElang-G, DINOv3-H+) connects to the proxy via a 2-layer MLP adapter with separate loss for class and patch tokens](./image/img-paper-fig3-teacher-flow.png)
+![EUPE Stage 1 per-teacher distillation flow — each teacher (PEcore-G, PElang-G, DINOv3-H+) connects to the proxy via a 2-layer MLP adapter with separate loss for class and patch tokens](../ko/image/img-paper-fig3-teacher-flow.png)
 *▲ EUPE Paper Figure 3 — Stage 1 per-teacher flow. Each of the three teachers connects to the 1.9B proxy via a dedicated MLP adapter. Class tokens use cosine similarity loss; patch tokens use a cosine+SmoothL1 blend | Source: [Zhu et al. (2026), arXiv:2603.22387](https://arxiv.org/abs/2603.22387)*
 
 > [!callout]
 > The Capacity Gap hypothesis: when the size gap between teacher and student is too large, knowledge transfer efficiency degrades. EUPE splits the gap into two manageable steps: multi-teacher → 1.9B proxy, then 1.9B proxy → 86M student. Each hop stays within an effective transfer range.
 
-![Vision Transformer (ViT) architecture — images are split into patches processed by transformer self-attention layers, forming the foundation of EUPE's student models](./image/img-01-vit-architecture.gif)
+![Vision Transformer (ViT) architecture — images are split into patches processed by transformer self-attention layers, forming the foundation of EUPE's student models](../ko/image/img-01-vit-architecture.gif)
 *▲ Vision Transformer (ViT) architecture — all EUPE model variants are built on ViT (6M–86M) or ConvNext backbones. The 1.9B proxy is a ViT-G. | Source: [Wikimedia Commons, Davide Caccomini (2021, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Vision_Transformer.gif)*
 
 ## Anatomy of the 3-Stage Distillation Pipeline
 
 EUPE's training pipeline has three stages, each with a distinct role. The combination of Stage 2 (long fixed-resolution training) and Stage 3 (short multi-resolution fine-tuning) is the key to balancing performance across task types.
 
-![EUPE 3-stage distillation pipeline — Stage 1: multi-teacher to 1.9B proxy; Stage 2: proxy to efficient student at fixed resolution; Stage 3: multi-resolution fine-tuning](./image/img-paper-fig2-pipeline.png)
+![EUPE 3-stage distillation pipeline — Stage 1: multi-teacher to 1.9B proxy; Stage 2: proxy to efficient student at fixed resolution; Stage 3: multi-resolution fine-tuning](../ko/image/img-paper-fig2-pipeline.png)
 *▲ EUPE Paper Figure 2 — the full 3-stage distillation pipeline. Stage 1 unifies three teachers into a 1.9B proxy. Stage 2 transfers knowledge to the efficient student at fixed resolution. Stage 3 fine-tunes for multi-resolution robustness | Source: [Zhu et al. (2026), arXiv:2603.22387](https://arxiv.org/abs/2603.22387)*
 
 ### Stage 1 — Multi-Teacher to Proxy
@@ -115,7 +115,7 @@ STAGE 3**Resolution pyramid:** 256 / 384 / 512px (teacher and student select sca
 
 Stage 3 is short but decisive. Real deployment environments present images at varied resolutions. Having teacher and student independently select scale per iteration maximizes training diversity. Multi-resolution training roughly doubles per-iteration cost, so 100k iterations (one-quarter of Stage 2) is used. The paper's ablation shows that skipping Stage 2 (running only Stage 1+3) produces a model strong at dense prediction but significantly weaker at VLM. Both stages are necessary, and their proportions matter.
 
-![Single attention head in a transformer model — Query, Key, Value matrix operations learn relationships between tokens; EUPE uses different loss functions for class tokens vs patch tokens](./image/img-03-attention-head.jpg)
+![Single attention head in a transformer model — Query, Key, Value matrix operations learn relationships between tokens; EUPE uses different loss functions for class tokens vs patch tokens](../ko/image/img-03-attention-head.jpg)
 *▲ Single attention head in a transformer — EUPE's loss function applies cosine similarity to class tokens (CLS) and a cosine+SmoothL1 blend to patch tokens, reflecting their different roles in this architecture | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Process_of_a_Single_Attention_Head_in_a_Transformer_Model.jpg)*
 
 ### Training Data: LVD-1689M
@@ -140,7 +140,7 @@ EUPE's evaluation spans three domains: image understanding (ImageNet-1k KNN/Zero
 
 What makes EUPE-ViT-B's results significant is that nothing was sacrificed. Across all three domains, the model matches or outperforms the respective specialists. RealworldQA at 55.5 exceeds both PEcore-B (52.9) and SigLIP2-B (52.5). ADE20k at 52.4 surpasses DINOv3-ViT-B's 51.3. This is not a compromise — it is genuine universality.
 
-![EUPE benchmark radar chart — EUPE-ViT-B matches or exceeds specialist encoders across all three domains: image understanding, dense prediction, and VLM tasks](./image/img-paper-fig-x1.png)
+![EUPE benchmark radar chart — EUPE-ViT-B matches or exceeds specialist encoders across all three domains: image understanding, dense prediction, and VLM tasks](../ko/image/img-paper-fig-x1.png)
 *▲ EUPE Paper Figure 1 (left) — radar benchmark chart. EUPE-ViT-B (red) covers all three axes at specialist level simultaneously, while individual encoders collapse on at least one domain | Source: [Zhu et al. (2026), arXiv:2603.22387](https://arxiv.org/abs/2603.22387)*
 
 ### Full Model Family
@@ -183,7 +183,7 @@ EUPE-ViT-B is a single 86M encoder that can potentially unify what OpenVLA curre
 - •**Multitask single encoder:** The same feature representation handles grasp planning (dense), instruction following (VLM), and scene understanding (image) simultaneously
 - •**Multi-resolution support:** 256/384/512px native — the same encoder handles both global scene context (lower res) and fine-grained manipulation detail (higher res)
 
-![KUKA KR10 SCARA industrial robot — the type of edge robot system where EUPE could replace the dual DINOv2+SigLIP encoder architecture used by OpenVLA](./image/img-02-kuka-robot.jpg)
+![KUKA KR10 SCARA industrial robot — the type of edge robot system where EUPE could replace the dual DINOv2+SigLIP encoder architecture used by OpenVLA](../ko/image/img-02-kuka-robot.jpg)
 *▲ KUKA KR10 SCARA industrial robot — VLA models like OpenVLA currently need DINOv2 + SigLIP in parallel for this type of system. EUPE's single 86M encoder is a structural path to halving that cost | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:KUKA_Industrial_Robot_KR10_SCARA.jpg)*
 
 ### What Still Needs Verification
@@ -212,7 +212,7 @@ EUPE's paper explicitly describes its feature normalization method: per-teacher 
 > [!callout]
 > DataClinic's three diagnostic levels map directly to EUPE fine-tuning data auditing. Level 1 (basic quality): resolution distribution, missing values, format consistency. Level 2 (DataLens embedding analysis): per-class density distribution, domain balance, cluster structure. Level 3 (custom domain): industry-specific quality criteria. This is the argument for extending "AI-Ready Data" beyond label completeness into embedding space compatibility.
 
-![t-SNE embedding space visualization — per-class density distribution reveals domain imbalance and cluster structure, the same analysis DataClinic Level 2 performs before EUPE fine-tuning](./image/img-04-tsne-embedding.png)
+![t-SNE embedding space visualization — per-class density distribution reveals domain imbalance and cluster structure, the same analysis DataClinic Level 2 performs before EUPE fine-tuning](../ko/image/img-04-tsne-embedding.png)
 *▲ t-SNE embedding space visualization — DataClinic Level 2's density distribution analysis uses this type of view to diagnose domain imbalance and cluster structure. Running this before EUPE fine-tuning is essential | Source: [Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Climate_data_analysis_using_tSNE_method.png)*
 
 ## Pebblous Opportunities — From Immediate Action to Long-Term Positioning

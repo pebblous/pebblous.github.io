@@ -80,7 +80,7 @@ Weights are born for one model. But a skill document written in natural language
 
 Where the three consequences meet, one result waits — **best-or-tied on 52 of 52 cells.** In every cell across 6 benchmarks × 7 models × 3 harnesses, SkillOpt matched or beat all seven baselines (no-skill, human-skill, one-shot LLM-skill, TextGrad, GEPA, Trace2Skill, EvoSkill). Not a single sweep average — 52 independent measurements, all pointing the same direction.
 
-![A diagram of the full SkillOpt pipeline — frozen agent, optimizer model, and the trainable skill document (best_skill.md) in a three-actor structure, with the four-stage rollout, reflection, edit, and validation flow](./image/img-01-skillopt-pipeline.png)
+![A diagram of the full SkillOpt pipeline — frozen agent, optimizer model, and the trainable skill document (best_skill.md) in a three-actor structure, with the four-stage rollout, reflection, edit, and validation flow](../ko/image/img-01-skillopt-pipeline.png)
 *▲ The full SkillOpt pipeline — train/val/test split, rollout batches, the optimizer model, batch-level merge, the validation gate, the rejected-edit buffer, and the epoch-wise slow/meta update. The three-actor structure is visible at a glance: the frozen agent (left), the trainable skill document (center), the optimizer (above). Source: [SkillOpt Project Page](https://microsoft.github.io/SkillOpt/) (Microsoft Research, MIT License).*
 
 > [!callout]
@@ -108,7 +108,7 @@ The authors insist that this isomorphism is engineering, not ornament.
 
 — SkillOpt §1
 
-![SkillOpt's text-space optimization landscape — a trajectory of bounded skill edits descending a validation-error surface, paired with a table mapping weight-space deep learning to text-space SkillOpt one-to-one](./image/img-02-skillopt-text-space-optimization.png)
+![SkillOpt's text-space optimization landscape — a trajectory of bounded skill edits descending a validation-error surface, paired with a table mapping weight-space deep learning to text-space SkillOpt one-to-one](../ko/image/img-02-skillopt-text-space-optimization.png)
 *▲ Gradient descent in text space — bounded skill edits walk down the loss surface, while rejected side-updates scatter into the ad-hoc-updates region. The right-hand mapping nails the correspondences: weight ↔ skill document, learning rate ↔ edit budget, validation check ↔ held-out gate. Source: [SkillOpt Project Page](https://microsoft.github.io/SkillOpt/), Figure 1 (arXiv:2605.23904).*
 
 ### 3.1. Weight space ↔ text space — seven correspondences
@@ -181,7 +181,7 @@ Three cells where the explosion is loudest deserve their own panel — Excel, th
 
 And this advantage holds **across all 52 cells** — pick any model, any harness, any benchmark, and SkillOpt is not below any of its direct rivals (TextGrad, GEPA, Trace2Skill, EvoSkill). More telling is the shape of the training curve as epochs run — not just the final mean but the dynamics over time.
 
-![SkillOpt epoch-wise training curves — train rollout, selection best, and unseen test traces rising across epochs 1 to 16 on the three benchmarks SpreadsheetBench, SearchQA, and LiveMath](./image/img-03-skillopt-epoch-trends.png)
+![SkillOpt epoch-wise training curves — train rollout, selection best, and unseen test traces rising across epochs 1 to 16 on the three benchmarks SpreadsheetBench, SearchQA, and LiveMath](../ko/image/img-03-skillopt-epoch-trends.png)
 *▲ Epoch-wise training dynamics — across all three benchmarks (SpreadsheetBench, SearchQA, LiveMath), the selection-best curve (orange dashed) rises in step with the unseen-test curve (green dashed) as epochs progress. SpreadsheetBench climbs steeply through epoch 2 then plateaus; SearchQA stabilizes after epoch 4; LiveMath improves gradually through all 16 epochs. The pattern of the validation gate suppressing overfit is visible. Source: [SkillOpt Project Page](https://microsoft.github.io/SkillOpt/), Figure 4 (arXiv:2605.23904).*
 
 "SkillOpt is best or tied-best on 52 of 52 cells and outperforms no-skill, human-skill, one-shot LLM-skill, prompt-optimization (TextGrad, GEPA), and skill-evolution (Trace2Skill, EvoSkill) baselines under every model."

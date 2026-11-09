@@ -66,7 +66,7 @@ STF Labs (Studio Tim Fu) is a London-based RIBA and ARB-registered architecture 
 
 However, **the evaluation methodology is not disclosed**. The Beta announcement consists of qualitative phrases like "production workflow integration, reaching stability and precision," with no public quantitative benchmark, evaluation dataset, or baseline comparison. The phrase "automatic GFA calculation" appears, but the underlying regulatory database and algorithm are unspecified. This information asymmetry is the starting point of the present report.
 
-![UrbanWorld system architecture — natural language prompt to Layout generation, MLLM-driven asset design, Diffusion texture rendering, and scene refinement: the standard Spatial AI pipeline](./image/img-02-urbanworld.png)
+![UrbanWorld system architecture — natural language prompt to Layout generation, MLLM-driven asset design, Diffusion texture rendering, and scene refinement: the standard Spatial AI pipeline](../ko/image/img-02-urbanworld.png)
 *▲ The standard Spatial AI pipeline — from natural language to urban assets to 3D environments (UrbanWorld diagram). STF Labs UrbanGPT 2.0 follows the same shape. | Source: [UrbanWorld (arXiv:2407.11965)](https://arxiv.org/abs/2407.11965)*
 
 ## Why Evaluation Is Hard
@@ -114,7 +114,7 @@ This criterion measures whether the relative proportions of building heights, ro
 <!-- stat-card -->
 **Measurement (Proposed)** — Academic Prior — **Rich.** CityDreamer (CVPR 2024) and UrbanWorld (2024) treat DE and CE as standard. CityDreamer reports DE 0.147 / CE 0.060; UrbanWorld improves DE by 44.2% over CityDreamer. GPTEval3D (arXiv:2401.04092) has a "Geometry Plausibility" axis, and 3DGen-Bench (arXiv:2503.21745) splits the same concept into "Geometry Plausibility" and "Geometry Details" — both map directly to this criterion. — Pebblous's Proposed Contribution — Extend with urban-domain sub-metrics. Concrete quantitative claims become possible — e.g., "building height distribution is significant under a KS test against district X."
 
-![CityDreamer city generation outputs — building segmentation masks, depth estimation, and multi-viewpoint city models used to assess Scale Consistency and Depth/Camera Error](./image/img-03-citydreamer.png)
+![CityDreamer city generation outputs — building segmentation masks, depth estimation, and multi-viewpoint city models used to assess Scale Consistency and Depth/Camera Error](../ko/image/img-03-citydreamer.png)
 *▲ CityDreamer visualizes the foundational signals for Scale Consistency — segmentation masks, depth estimation, and multi-view rendering. | Source: [CityDreamer (CVPR 2024, arXiv:2309.00610)](https://arxiv.org/abs/2309.00610)*
 
 ### 3.3. GFA Validation (Gross Floor Area)
@@ -152,7 +152,7 @@ This criterion measures the distributional and geometric distance between genera
 <!-- stat-card -->
 **Measurement (Proposed) — Adopt the HiFi DT 4-metric package** — Academic Prior — **The most mature of the five.** HiFi DT (arXiv:2509.02904) reports CD 0.32 / MMD 1.05e-5 / EMD 0.988 / FD 0.210 on Synthetic (UT-LUMPI) vs Real (LUMPI) evaluation. More striking: the synthetic-trained model achieved 44.74% AP, outperforming the real-data-trained model (42.70%) by +4.8% — **a well-built simulation can exceed real data**. Sat2City (ICCV 2025) also uses the same metric family in the urban domain, reporting Chamfer 100% COV / EMD 60% COV. — Pebblous's Proposed Contribution — Adopt the HiFi DT 4-metric as a standard package for academic compatibility. Extend the domain by adding urban-specific raw data (GIS, satellite, LiDAR).
 
-![Sat2City output — Geometry and Appearance of a 3D city reconstructed from a single satellite image. Chamfer Distance 100% / EMD 60% COV demonstrates the urban-domain applicability of Sim-to-Real Gap metrics](./image/img-01-sat2city.png)
+![Sat2City output — Geometry and Appearance of a 3D city reconstructed from a single satellite image. Chamfer Distance 100% / EMD 60% COV demonstrates the urban-domain applicability of Sim-to-Real Gap metrics](../ko/image/img-01-sat2city.png)
 *▲ Sat2City reconstructs the Geometry and Appearance of a 3D city from a single satellite image — concrete evidence that Chamfer / EMD / MMD metrics are measurable in the urban domain. | Source: [Sat2City (ICCV 2025, arXiv:2507.04403)](https://arxiv.org/abs/2507.04403)*
 
 ### 3.6. The Five Criteria, Side by Side

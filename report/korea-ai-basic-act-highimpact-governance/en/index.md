@@ -38,7 +38,7 @@ When comparing regulations, people usually look at the nominal effective date. B
 
 The timeline below overlays each jurisdiction's nominal schedule and its real activation point on a single axis. While Korea flips the switch in July 2026, the EU has pushed its most contested high-risk duties to the right, and Colorado repealed its original bill outright before it ever took effect.
 
-![South Korea's National Assembly building — where the amended AI Basic Act and its enforcement decree were passed](./image/img-01-korea-national-assembly.jpg)
+![South Korea's National Assembly building — where the amended AI Basic Act and its enforcement decree were passed](../ko/image/img-01-korea-national-assembly.jpg)
 *▲ The National Assembly building. The amended act and enforcement decree that activated real obligations for high-impact AI operators on July 21, 2026 were passed here. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:National_Assembly_Building_of_the_Republic_of_Korea.png)*
 
 *▲ Chart 1. Timeline of high-impact / high-risk AI rules taking effect in Korea, the EU, and the U.S. (2023–2028). Orange = real activation point, gray = preliminary stage, red = repeal. All regulatory facts are as of 2026-07-21. | Source: cross-checked across three law firms; see Table 1.*
@@ -90,7 +90,7 @@ The reason the regulation aims its questions at data is a fact that academic res
 
 Biometrics shows the same grain. A study that measured the error rates of commercial facial-analysis systems broken out by gender and skin tone found that accuracy — near-perfect for lighter-skinned men — collapsed for darker-skinned women (Buolamwini & Gebru, Gender Shades, 2018). A data problem — the underrepresentation of certain demographic groups in the training set — surfaced directly as a performance gap. In credit scoring, too, a "fairness paradox" is reported: even after removing sensitive attributes, discrimination reappears through proxies such as ZIP code and purchase history.
 
-![Facial recognition authentication kiosk at an airport gate — biometric AI identifying people in everyday use](./image/img-02-facial-recognition.jpg)
+![Facial recognition authentication kiosk at an airport gate — biometric AI identifying people in everyday use](../ko/image/img-02-facial-recognition.jpg)
 *▲ A facial-recognition kiosk at an airport boarding gate. Biometrics is one of the ten high-impact domains under Korea's AI Basic Act, where demographic error-rate gaps are the core risk. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Facial_recognition_technology_at_gate_(44275734970).jpg)*
 
 > [!callout]
@@ -128,7 +128,7 @@ Footnote (EU comparison): the EU's Fundamental Rights Impact Assessment (FRIA, A
 
 Crucially, these three layers are already internationally standardized. The ISO/IEC 5259 series (five parts, 2024–2025) provides the language for measuring, managing, and governing data quality and its processes, and the data-documentation practices from academia and industry (Datasheets, Model Cards, Data Cards) form its backbone. How the three layers interlock, and which standard each one answers to, is set out in the concept diagram below.
 
-![Close-up of data center server racks — the infrastructure where training data lineage, quality, and auditability actually accumulate](./image/img-03-data-center-servers.jpg)
+![Close-up of data center server racks — the infrastructure where training data lineage, quality, and auditability actually accumulate](../ko/image/img-03-data-center-servers.jpg)
 *▲ Data center server racks. The "explainability" the safety dossier requires is ultimately evidenced by the logs and history that accumulate on infrastructure like this. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Wikimedia_Foundation_servers_-_CyrusOne_(Carrollton,_Texas)_(31).jpg)*
 
 *▲ Chart 3. The three data-governance layers mapped to ISO/IEC 5259. The flow that starts at lineage, passes through quality, and lands on auditability is the very skeleton of the safety dossier.*
@@ -163,7 +163,7 @@ Korea's KRW 30M looks small next to the EU, but the real risk lies outside the m
 
 New York City's structure is different again. At $500–$1,500 per violation the amounts are small, but there is no cap and it is a continuing-violation regime, so neglecting the audit lets the cumulative fine grow without limit. That is why it doesn't map onto Korea's per-case-capped model in a simple side-by-side. In the end, what separates the three jurisdictions' penalties is not the amount but "what you're punished for failing to evidence" — and that target converges, in all of them, on data governance. The clearest signal is the EU explicitly writing "data-governance breach" into Tier 2.
 
-![New York City Hall building — the jurisdiction that has enforced Local Law 144's hiring-AI bias audits for three years](./image/img-04-nyc-city-hall.jpg)
+![New York City Hall building — the jurisdiction that has enforced Local Law 144's hiring-AI bias audits for three years](../ko/image/img-04-nyc-city-hall.jpg)
 *▲ New York City Hall. Under Local Law 144, hiring-AI bias audits have been enforced since 2023, using an uncapped, continuing-violation penalty structure. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:New_York_City_Hall_-_September_2025.jpg)*
 
 ## What to Do First During the Grace Period — A Quarterly Roadmap

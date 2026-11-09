@@ -42,7 +42,7 @@ Source: [Media Today](https://www.mediatoday.co.kr/news/articleView.html?idxno=3
 
 The signing ceremony for the 2026 metal industry central bargaining round was held on October 27 at the Korean Metal Workers' Union offices in Jeong-dong, Jung-gu, Seoul. Park Sang-man, president of the Korean Metal Workers' Union, and Park Geun-hyung, chair of the Korea Metal Industry Employers' Association, signed the metal industry agreement, and that agreement carries a new clause on protecting labor rights and employment when AI is adopted. It applies to the 69 member companies of the employers' association. TK Elevator, Lotte Energy Materials, DAS, Keyang Electric Machinery and Winia are among the names on that list.
 
-![KMWU president Park Sang-man and KMIEA chair Park Geun-hyung holding the signed metal industry agreement at the ceremony](./image/img-01-joinsik.jpg)
+![KMWU president Park Sang-man and KMIEA chair Park Geun-hyung holding the signed metal industry agreement at the ceremony](../ko/image/img-01-joinsik.jpg)
 *▲ KMWU president Park Sang-man (left) and KMIEA chair Park Geun-hyung hold the signed metal industry agreement at the October 27 signing ceremony | Source: [Media Today](https://www.mediatoday.co.kr/news/articleView.html?idxno=338034) (Photo courtesy of the Korean Metal Workers' Union)*
 
 The members' ballot ran for four days, from October 12 to 15, and the result was ratified with 86.4% in favor. The AI clause was not the only item put to that vote. The same bargaining round settled an ordinary hourly wage of 10,830 won, a rise of 3.93% that runs ahead of the 3.68% statutory minimum wage increase. The 86.4% ratified the central bargaining result as a whole, with that settlement bundled in.

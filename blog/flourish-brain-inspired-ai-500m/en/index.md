@@ -48,7 +48,7 @@ After that "yes," the company took shape quickly. It moved into a ten-story buil
 
 The problem they have declared they will solve comes down to one number. The human brain learns over a lifetime on about 20 watts, less than an incandescent bulb. An Nvidia H100 GPU, the workhorse behind AI training and inference, draws more than 700 watts at full load, and large models run thousands of those chips in parallel. For the same "intelligence," at least a 30x power gap has opened up between biology and silicon. The Cortex AI that Flourish wants to build targets 20 to 50 watts, aiming straight at that gap.
 
-![Lateral view of the human brain showing frontal, parietal, temporal and occipital lobes — the cortical structures Flourish aims to reverse-engineer](./image/img-01-brain-lateral.png)
+![Lateral view of the human brain showing frontal, parietal, temporal and occipital lobes — the cortical structures Flourish aims to reverse-engineer](../ko/image/img-01-brain-lateral.png)
 *▲ Lateral view of the human brain — the cortex Flourish targets for reverse-engineering is built from cortical columns stacked across the Frontal, Parietal, Temporal, and Occipital Lobes. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Blausen_0101_Brain_LateralView.png) (BruceBlaus, CC BY 3.0)*
 
 ## Tracing the Brain Under an Electron Microscope
@@ -59,7 +59,7 @@ That method is connectomics. An electron microscope slices brain tissue down to 
 
 What this design aims at is not power alone. Flourish targets a model that does not end with one enormous training run but keeps learning throughout its life from little data. By reworking how memory is handled, it intends to cut the demand for training data itself. The assumption is that power efficiency and data efficiency emerge together from the same structure.
 
-![DTI-derived tractography of human brain white matter pathways — a connectomics visualization showing neural connections color-coded by direction and density](./image/img-02-dti-tractography.png)
+![DTI-derived tractography of human brain white matter pathways — a connectomics visualization showing neural connections color-coded by direction and density](../ko/image/img-02-dti-tractography.png)
 *▲ DTI-derived tractography of human brain white matter pathways — neural connections color-coded by orientation and density. Flourish goes further, using electron microscopy to map circuits at nanometer resolution. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:DTI_derived_tractography_sagittal_view.png) (AlPi90, CC BY-SA 4.0)*
 
 So Flourish is not a chip company. Unlike Groq or Cerebras, it does not design new silicon; it sees the bottleneck as software structure rather than chips. It targets an architecture that runs both on today's GPUs and on the chips still to come. Among its advisors is Greg Wayne, the DeepMind researcher who led Google's Project Astra, who devotes 20 percent of his working hours to it, alongside UC Berkeley's Ben Recht.
@@ -73,7 +73,7 @@ Why $500 million came together right now is explained by a shift in where AI inf
 
 The numbers show the pressure. Data-center power allocation in major US markets is estimated to be more than 95 percent used up in 2026, and global data-center electricity consumption is on track to pass 1,000 terawatt-hours. More than 60 percent of that still comes from fossil fuels. That is why Microsoft, Google, and Amazon have signed nuclear power deals one after another and are rushing to bring in small modular reactors. To scale AI further now means building a power plant first.
 
-![CERN Computer Center server rack aisle — AI hyperscalers run thousands of racks like these, with a single campus consuming hundreds of megawatts](./image/img-03-datacenter.jpg)
+![CERN Computer Center server rack aisle — AI hyperscalers run thousands of racks like these, with a single campus consuming hundreds of megawatts](../ko/image/img-03-datacenter.jpg)
 *▲ CERN Computer Center server racks — AI hyperscalers run thousands of racks like these, with a single campus consuming hundreds of megawatts. In 2026, securing power is harder than securing chips. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:CERN_Computer_Center_02.jpg) (SimonWaldherr, CC BY-SA 4.0)*
 
 At this point the brain, as a comparison, poses a provocative question. The human brain learns nonstop for decades on 20 watts. Is that gap simply because "the hardware hasn't advanced enough yet"? Or is it an inefficiency in the design itself, one that no amount of added power will close? Flourish's bet is the latter. If the problem is structural, you cannot reach it by running chips faster.

@@ -40,7 +40,7 @@ Source: the result figures and tables in [arXiv:2609.00192](https://arxiv.org/ab
 
 Autonomous-driving research grew a new branch a few years ago. Rather than write out rules one at a time, it brings in a general-purpose model that already knows how the world works and hands it the driving call. The paper cites four earlier works in that branch. They ask and answer questions in language about what the camera saw, treat a driving scene as graph question answering, attach vision-language representations to 3D scene understanding, and wire a large vision-language model into end-to-end driving.
 
-![Waymo self-driving test vehicle fitted with cameras and sensors](./image/img-01-waymo-self-driving-car.jpg)
+![Waymo self-driving test vehicle fitted with cameras and sensors](../ko/image/img-01-waymo-self-driving-car.jpg)
 *▲ An autonomous test vehicle. The paper did not test a car like this — it tested the general-purpose language and vision models that some now propose bolting onto one | Source: Grendelkhan, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Waymo_self-driving_car_front_view.gk.jpg) (CC BY-SA 4.0)*
 
 Three reasons make the approach attractive, as the paper lays them out. A model can produce judgment close to a person's. It can handle situations and edge cases nobody programmed explicitly, using knowledge it already holds. And the burden of collecting real driving data goes down.

@@ -42,7 +42,7 @@ Sources: [TNW on the Financial Times report (2026-10-01)](https://thenextweb.com
 
 On October 1 the Financial Times reported that Tencent had signed a five-year lease with Oracle. The scale is roughly 100,000 high-end AI chips, and the value roughly $7 billion. The chips sit scattered across several Oracle data centers in Southeast Asia, and Tencent does not buy any of them. When the term runs out, no equipment stays behind. By the report's account this is the largest lease Tencent has signed outside China.
 
-![Eight Nvidia Blackwell-generation GPUs mounted in an HGX B200 NVL8 AI server](./image/img-01-dgx-b200-gpu.jpg)
+![Eight Nvidia Blackwell-generation GPUs mounted in an HGX B200 NVL8 AI server](../ko/image/img-01-dgx-b200-gpu.jpg)
 *▲ An Nvidia Blackwell-generation HGX B200 GPU server. The 100,000 chips Tencent leases from Oracle are the same generation, spread across racks like this one | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nvidia_DGX-B200-HGX.jpg)*
 
 Sorting the disclosed from the undisclosed goes like this. The quantity, the value, the term and the condition that about 30% of the contract value is paid up front all appeared in the reporting. Which country and which site, and which chip model, did not. Tencent and Oracle have both declined to confirm the transaction, and Reuters, carrying the report the same day, wrote that it could not independently verify the figures. The market still moved. Oracle shares rose more than 2.5% in after-hours trading once the report landed.
@@ -92,7 +92,7 @@ Late on January 12, 2026, the US House passed the Remote Access Security Act by 
 
 Lawler, who introduced it, said US export controls are only as strong as their weakest link, and that the Chinese Communist Party now holds a very real means of getting around these prohibitions. Representative Bill Huizenga, who chairs the House Foreign Affairs subcommittee with jurisdiction over the bureau, put it more briefly: "In other words and in plain English, you can't buy it, so you shouldn't be able to rent it either." The votes against had their reasons as well. Representative Thomas Massie's office said he opposed the bill because it would bring ordinary cloud computing, remote collaboration and software development under federal control.
 
-![Interior of the US House of Representatives chamber, with seats arranged in a semicircle facing the rostrum](./image/img-02-house-chamber.jpg)
+![Interior of the US House of Representatives chamber, with seats arranged in a semicircle facing the rostrum](../ko/image/img-02-house-chamber.jpg)
 *▲ The US House of Representatives chamber. On January 12, 2026, it passed the Remote Access Security Act (H.R. 2683) 369 to 22 | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:United_States_House_of_Representatives_chamber.jpg)*
 
 ### 3.2. A draft rule being written at Commerce

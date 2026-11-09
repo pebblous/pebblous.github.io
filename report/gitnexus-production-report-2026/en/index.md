@@ -32,7 +32,7 @@ _88% token reduction, a PolyForm license gray zone, and Node OOM on large repos.
 
 ## The Numbers Two Months Later
 
-![Software package dependency graph — directional graph visualizing call relationships between nodes](./image/software-dependency-graph.png)
+![Software package dependency graph — directional graph visualizing call relationships between nodes](../ko/image/software-dependency-graph.png)
 *Software distribution package dependency graph. GitNexus auto-generates a similar function/module call graph from your codebase. Source: Wikimedia Commons (Ludovic Courtès, GFDL 1.3+)*
 
 Stars were 1,195 when trending #1 on April 10. As of June 5: approximately 41,000, with 4.7K forks. Releases progressed through v1.5.0 (Apr 19, cross-repo impact), v1.6.5 (May 16, stable), and into v1.6.6-rc. The v1.6.5 cycle alone produced 61 commits from 23 contributors — 15 of them first-time contributors. In the same period, the graph DB backend was swapped from KuzuDB to LadybugDB v0.15.
@@ -57,7 +57,7 @@ The official Docker image still only bundles the web UI; CLI requires a separate
 
 ## Dissecting the Satapathy Case — How Did 88% Happen?
 
-![Knowledge graph visualization — entity relationship network connected by nodes and edges](./image/knowledge-graph-visualization.png)
+![Knowledge graph visualization — entity relationship network connected by nodes and edges](../ko/image/knowledge-graph-visualization.png)
 *Knowledge graph visualization. In Satapathy's 17-agent setup, GitNexus represents code symbol relationships in this structure, allowing agents to infer dependencies without reading files directly. Source: Wikimedia Commons (Fuzheado, CC BY-SA 4.0)*
 
 Senior engineer Sidharth Satapathy's April 14 post is the most-cited GitNexus adoption case. 88% fewer tool calls, 74% token savings, 100% file-read elimination. Here is how those numbers came to be.
@@ -108,7 +108,7 @@ The token savings are measurable. What's harder to measure showed up in the `Doc
 
 ## What GitNexus Can't Do
 
-![Linux out-of-memory killer log — system log showing OOM process termination](./image/out-of-memory-linux.jpg)
+![Linux out-of-memory killer log — system log showing OOM process termination](../ko/image/out-of-memory-linux.jpg)
 *Linux OOM killer output. GitNexus Issue #1983 documented a similar Node.js heap OOM when attempting to index the Linux kernel repository — a limit that won't be resolved quickly. Source: Wikimedia Commons (Neo139, CC BY-SA 3.0)*
 
 ### 4.1. Breaks on Large Repositories
@@ -125,7 +125,7 @@ Cross-language semantic edges — TypeScript types shadowing Python enums, UI sc
 
 ## Competitive Tool Comparison — Why GitNexus Specifically?
 
-![Software dependency graph example — directional relationship diagram between nodes](./image/dependency-graph-example.svg)
+![Software dependency graph example — directional relationship diagram between nodes](../ko/image/dependency-graph-example.svg)
 *Directed dependency graph example. Different tools approach this structure differently — GitNexus via Tree-sitter AST parsing, CodeGraphContext via multiple graph DB backends. Source: Wikimedia Commons (Aleksi Nurmi, Public Domain)*
 
 ### 5.1. Four-Tier Comparison

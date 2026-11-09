@@ -20,7 +20,7 @@ _About 5,000 roles go this year, around 60% of group actions sit in support func
 
 > Sections 1 through 3 follow what the announcement and the public filings say. Section 4, which lays this over the work of validating data, is this article's own.
 
-![C.S. Venkatakrishnan, Barclays chief executive, speaking at the World Economic Forum Annual Meeting 2025](./image/img-02-ceo-venkatakrishnan.png)
+![C.S. Venkatakrishnan, Barclays chief executive, speaking at the World Economic Forum Annual Meeting 2025](../ko/image/img-02-ceo-venkatakrishnan.png)
 *▲ C.S. Venkatakrishnan, Barclays chief executive — the one who called AI "the icing on the cake" | Source: [World Economic Forum via Wikimedia Commons](https://commons.wikimedia.org/wiki/File:C._S._Venkatakrishnan_(born_1966)_at_World_Economic_Forum_Annual_Meeting_2025.png) (CC BY 3.0)*
 
 ### Key numbers
@@ -45,7 +45,7 @@ Source: Barclays Q3 2026 results (October 22, 2026), [Anthropic announcement](ht
 
 The announcement came in a good quarter. Third-quarter profit before tax reached £2.3 billion, up 12% on the same period last year, and equities trading income jumped 47%. Fixed income, currencies and commodities fell 19%, which Venkatakrishnan singled out as a disappointment, but across the group this was not a quarter in which the money ran short. Barclays announced a share buyback of up to £500 million on the same day.
 
-![Barclays world headquarters building, One Churchill Place, in Canary Wharf, London](./image/img-01-barclays-hq.jpg)
+![Barclays world headquarters building, One Churchill Place, in Canary Wharf, London](../ko/image/img-01-barclays-hq.jpg)
 *▲ One Churchill Place, Barclays' world headquarters in Canary Wharf, London | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Barclays_Bank_PLC_world_headquarters.JPG) (Public Domain)*
 
 The location of the roles going was disclosed fairly clearly. Cross, the chief financial officer, said about 60% of the actions related to support functions, developers included. What the company said is that support functions account for 60%, not that developers account for 60%. Developers are one occupation inside that bundle, and how many of them there are is not in the announcement.

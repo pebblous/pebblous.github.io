@@ -46,7 +46,7 @@ The audit report goes to the state, and a summary is made public within 30 days.
 
 The bill passed both chambers by lopsided margins (110-0, 52-5). At the signing, Governor Pritzker described it as a "nation-leading" measure. Illinois is, in fact, the first U.S. state to force outside audits on large developers.
 
-![Official portrait of Illinois Governor J.B. Pritzker](./image/img-01-pritzker-signing.jpg)
+![Official portrait of Illinois Governor J.B. Pritzker](../ko/image/img-01-pritzker-signing.jpg)
 *▲ Governor Pritzker signed SB 315, creating the first state-mandated annual frontier AI audit in the U.S. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Governor_JB_Pritzker_official_portrait_2019_(crop).jpg)*
 
 ## What California and New York Share, and What Only Illinois Has
@@ -55,7 +55,7 @@ California's SB 53 (September 2025) and New York's RAISE Act (December 2025) als
 
 Illinois SB 315 laid an audit on top of that gap. Every year, a third party with no financial stake verifies whether the company's framework matches its actual operations and files the result with the state. California's original SB 1047 draft had contained a third-party audit clause, but it was dropped before final passage. Illinois filled the empty seat.
 
-![Illinois State Capitol building exterior](./image/img-02-illinois-capitol.jpg)
+![Illinois State Capitol building exterior](../ko/image/img-02-illinois-capitol.jpg)
 *▲ The Illinois State Capitol in Springfield, where SB 315 passed and was signed into law | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Illinois_State_Capitol_pano.jpg)*
 
 | State Law | Core Obligation | Third-Party Annual Audit |
@@ -74,7 +74,7 @@ Here is where the point that matters to data and AI practitioners appears. The s
 
 This reasoning is backed by the audit-methodology literature. The body of work on frontier AI auditing organized by researchers at GovAI and others points out that self-reported company documents yield only a low level of assurance. To reach high assurance, an auditor must have direct access to non-public information such as the training process, compute allocation, and evaluation records. Beneath each item in the catalog sits the same question: when, with what data, and with which logs was this confirmed?
 
-![Data center server racks, illustrating the training data and evaluation logs behind an audit](./image/img-03-data-center.jpg)
+![Data center server racks, illustrating the training data and evaluation logs behind an audit](../ko/image/img-03-data-center.jpg)
 *▲ What an auditor ultimately has to check isn't paperwork — it's the servers holding training data and evaluation logs (illustrative) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:BalticServers_data_center.jpg)*
 
 > [!callout]
@@ -86,7 +86,7 @@ This does not mean the audit regime is airtight. The same research flags its lim
 
 Even so, the current runs one way. Just three weeks ago, Pebblous noted that a [U.S. House GAAIA draft would institutionalize this audit as a licensed profession (the IVO)](../../gaaia-ivo-ai-audit-license/en/). That was still a discussion draft. Illinois SB 315 got there first, actually signed into law and set to take effect in January 2028. The distance between a draft and an enacted law is the distance between "someday" and "starting now."
 
-![U.S. Capitol dome, representing the stalled federal AI audit debate](./image/img-04-us-capitol.jpg)
+![U.S. Capitol dome, representing the stalled federal AI audit debate](../ko/image/img-04-us-capitol.jpg)
 *▲ Congress is still working from a draft. Illinois got there first with a signed law | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:United_States_Capitol_dome_daylight.jpg)*
 
 > [!callout]

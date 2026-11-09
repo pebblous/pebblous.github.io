@@ -50,14 +50,14 @@ The contrast is not idle provocation. AlphaFold went all the way to a Nobel Priz
 
 The company describes this setup as compressing an entire animal vivarium into one system. That system runs three layers deep. At the base sits a microfluidic chip called the TissueDisk, on which hundreds of human tissues grow by self-assembly from a single disk. More than 20 tissue types are built on top of it, each tissue holding somewhere between 200,000 and 500,000 cells. Then comes HIVE, a robotic lab that carries culture, dosing, and observation through in sequence without human hands.
 
-![A robotic arm dispensing liquid into a hexagonal microfluidic chip called the TissueDisk](./image/img-01-tissuedisk-dispensing.jpg)
+![A robotic arm dispensing liquid into a hexagonal microfluidic chip called the TissueDisk](../ko/image/img-01-tissuedisk-dispensing.jpg)
 *▲ HIVE's robotic arm dispensing reagent onto a TissueDisk | Source: [Vivodyne](https://www.vivodyne.com/)*
 
 The robot's job does not end at looking in. HIVE perturbs the tissue with a drug and then reads phenotype through 3D confocal imaging, the transcriptome through single-cell RNA sequencing, and the proteome through 1,000-plex protein profiling. The experiment is itself the intervention, and before and after stay connected in the same tissue. One HIVE tests 10,000 human tissues at a time and returns data within one to two weeks, according to the company. The stated application areas include lung tumors, cell therapies, fibrosis, and drug-induced liver injury, and Chief Biotechnology Officer Tony Bahinski summarized the purpose of the machine in one sentence: "Prediction means knowing what happens when you try something new."
 
 The performance evidence the company puts forward is concordance with human trials. Toxicity responses in liver tissue matched actual human trial results 94% of the time, airway tissue reached 96%, and bone marrow matched 100% across a panel of 20 cancer drugs. These numbers measure how well a substitute testing platform stands in for people rather than how accurate a predictive model is, and they come from company statements to the press rather than from peer review. The human biological datacenter the company announced on August 12 is a disclosure of the same kind. Twelve HIVE units are said to handle 3.1 million large human tissue experiments a year, with eight large pharmaceutical companies paying for early access, though none of those companies were named.
 
-![A row of HIVE Pro robotic lab units in a Vivodyne facility corridor, with a robotic arm visible through the window of one unit](./image/img-02-hive-pro-units.jpg)
+![A row of HIVE Pro robotic lab units in a Vivodyne facility corridor, with a robotic arm visible through the window of one unit](../ko/image/img-02-hive-pro-units.jpg)
 *▲ A row of HIVE Pro units — what the company's human biological datacenter actually looks like | Source: [TechCrunch](https://techcrunch.com/2026/08/19/ai-isnt-close-to-curing-cancer-this-startup-says-it-knows-what-it-will-take/) (photo: Tim Fernholz)*
 
 ## There Was Plenty of Data, and It Was Snapshots

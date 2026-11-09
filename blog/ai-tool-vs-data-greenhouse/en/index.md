@@ -24,7 +24,7 @@ _Four axes that separate an AI tool from a data greenhouse_
 
 Hunting is the act of bringing back one catch per attempt. You draw the bow, hit one animal, and put that one animal in the larder. A good hunt feeds you well, but the next meal starts again from scratch. However skilled you are, you depend each time on the day's wind and the animal's tracks. The moment the hunter sets down the bow, the larder begins to empty.
 
-![Hunters returning through the snow with their dogs after a single hunt — Bruegel's painting depicting the meager catch brought home](./image/img-01-hunters-snow.jpg)
+![Hunters returning through the snow with their dogs after a single hunt — Bruegel's painting depicting the meager catch brought home](../ko/image/img-01-hunters-snow.jpg)
 *▲ Hunters returning from the hunt. The one catch goes into the larder, but the field is unchanged. | Source: [Pieter Bruegel the Elder, Hunters in the Snow (1565), Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_Hunters_in_the_Snow_(Winter)_-_Google_Art_Project.jpg)*
 
 Feeding a topic into an AI writer and receiving one article back is exactly this. The prompt is the bow, and the result is the one animal you bring home. This time it came out well; next time something feels off. The same prompt gives you a different result today than it did yesterday. To get a good outcome you have to summon the skill all over again, and the moment you let go, nothing grows on its own.
@@ -38,7 +38,7 @@ So a lot of practitioners describe the same hollow feeling. The output folder fi
 
 A farmer does not take; a farmer raises. The act of sowing a seed is small, but everything after it is done by sun, rain, and time. While the hunter roams the field all day for a single animal, the farmer tends another plot while the sown seed grows. And crucially, the land grows richer the more it is worked. One year's harvest improves the next year's soil, and a channel cut once makes the next season's irrigation easier.
 
-![A farmer sowing seed across a field against the setting sun — Van Gogh's painting as a metaphor for cultivation, where sun, rain, and time do the growing after a single sowing](./image/img-02-sower.jpg)
+![A farmer sowing seed across a field against the setting sun — Van Gogh's painting as a metaphor for cultivation, where sun, rain, and time do the growing after a single sowing](../ko/image/img-02-sower.jpg)
 *▲ The act of sowing is small; everything after it is done by sun, rain, and time. | Source: [Vincent van Gogh, The Sower (1888), Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:Sower_at_Sunset_-_Vincent_Van_Gogh.jpg)*
 
 A greenhouse takes farming one step further. Instead of leaving the harvest to the weather outside, it regulates light, temperature, and water within a controlled environment, growing crops year-round. Plants grow even in winter, and a bad season is far less likely to empty the larder outright. It does not work against nature; rather, people design the conditions under which nature does its work well.
@@ -74,7 +74,7 @@ A tool leaves only the output. The one animal is there, but when, by whom, and o
 
 Provenance is not a stamp you sign once and forget. The content-authenticity standard C2PA and the data-quality standard ISO/IEC 5259 say much the same thing. It is recorded again at each stage, and the relationship between raw material and processing accumulates like a graph. The reason you do not have to re-inspect everything from the top each time is that trust has grown up beside the result. The hunter's larder holds only meat, but the farmer's land also keeps a record of how the crop grew.
 
-![Cross section of a tree trunk showing growth rings — a metaphor for provenance accumulating beside the output, layer by layer](./image/img-03-tree-rings.jpg)
+![Cross section of a tree trunk showing growth rings — a metaphor for provenance accumulating beside the output, layer by layer](../ko/image/img-03-tree-rings.jpg)
 *▲ Tree rings inscribe how the tree grew right into the cross section. Provenance grows beside the output the same way. | Source: [Wikimedia Commons (CC BY-SA)](https://commons.wikimedia.org/wiki/File:Tree_Trunk_Cross_Section_-_Kolkata_2011-06-04_3687.JPG)*
 
 ### 4.2. State — Stateless, or Alive?
@@ -98,7 +98,7 @@ Let me set the abstraction down on the ground for a moment. The most familiar ex
 
 On the other side is a content greenhouse. Autonomous production, a publish-approval gate, provenance, and pre- and post-publication revision are not separate features running apart but turn as one body. The agent grows the draft, the person oversees at the juncture of publishing, and what passed through which stage and how is recorded alongside the article. The work does not end at publication either, so whatever needs fixing grows back within the same flow. It is not the act of catching one article, but of growing the field in which articles grow.
 
-![A large modern greenhouse growing crops year-round — a metaphor for the Pebblous Greenhouse, where data and content are raised in a controlled environment](./image/img-04-greenhouse.jpg)
+![A large modern greenhouse growing crops year-round — a metaphor for the Pebblous Greenhouse, where data and content are raised in a controlled environment](../ko/image/img-04-greenhouse.jpg)
 *▲ Instead of leaving the harvest to the weather outside, a greenhouse grows crops year-round in a controlled environment. | Source: [Rob Oo, Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Greenhouse_alley_-_Flickr_-_Rob_Oo.jpg)*
 
 The three greenhouses Pebblous envisions — content, data, and agent — are not different crops but three fields tended by the same operating philosophy. Content, data, and the agents that work on top of them are all treated not as game caught once, but as crops raised under the right conditions. In fact, the Pebblous blog, this article included, grows on exactly that flow. A sister piece that handles the same metaphor from the angle of data collection and synthesis,

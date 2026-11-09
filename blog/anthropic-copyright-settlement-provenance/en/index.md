@@ -40,7 +40,7 @@ The formal name of the case is Bartz v. Anthropic PBC. Authors Andrea Bartz, Cha
 
 The scale was unprecedented: $1.5 billion in total, across roughly 482,000 works. Divide the total by the count and about $3,000 goes to each work. More than 90 percent of eligible rightsholders joined the claim, and for books held through a trust or publisher, author and publisher split the amount evenly. The fund is disbursed in stages through 2027.
 
-![Phillip Burton Federal Building in San Francisco, home to the U.S. District Court for the Northern District of California, which gave final approval to the Bartz v. Anthropic settlement](./image/img-01-courthouse.jpg)
+![Phillip Burton Federal Building in San Francisco, home to the U.S. District Court for the Northern District of California, which gave final approval to the Bartz v. Anthropic settlement](../ko/image/img-01-courthouse.jpg)
 *▲ The Phillip Burton Federal Building in San Francisco, home to the Northern District of California, where the Bartz v. Anthropic settlement was finally approved | Source: [Wikimedia Commons (Marincyclist, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Phillip_Burton_Federal_Building_%26_United_States_Courthouse.jpg)*
 
 Two distinct acts were at issue. One was downloading roughly seven million e-books without authorization from shadow libraries such as LibGen and PiLiMi (Pirate Library Mirror) and stacking them in an in-house library. The other was scanning lawfully bought physical books into digital files and then destroying the originals, a practice the industry calls buy-scan-destroy. The court reached entirely different conclusions on these two paths.
@@ -55,7 +55,7 @@ Judge Alsup's June 2025 summary judgment split a single case into three strands 
 
 What deserves attention is what the court actually placed on the scale. The standard that separated the three findings was not what Anthropic learned from the data. It was the purpose at the moment the data was acquired. Buying a book to obtain it is normal R&D procurement; downloading from a shadow library is an act aimed at avoiding payment.
 
-![Courtroom gavel symbolizing the ruling that split fair use from infringement by acquisition path rather than training outcome](./image/img-02-gavel.jpg)
+![Courtroom gavel symbolizing the ruling that split fair use from infringement by acquisition path rather than training outcome](../ko/image/img-02-gavel.jpg)
 *▲ The same act of training split into fair use or infringement depending on how the data was acquired | Source: [Wikimedia Commons (Joe Gratz, CC0)](https://commons.wikimedia.org/wiki/File:Courtroom_One_Gavel_-_Flickr_-_Joe_Gratz.jpg)*
 
 > [!callout]
@@ -65,7 +65,7 @@ What deserves attention is what the court actually placed on the scale. The stan
 
 The distinction over acquisition path did not stop at legal elegance. It immediately became a question of money. U.S. copyright law allows statutory damages of up to $150,000 per infringed work. With seven million books held without authorization, multiplying by the maximum puts the theoretical exposure in the hundreds of billions of dollars. Had it gone to trial, the sum could have shaken the company's very survival.
 
-![Multi-level university library stacks illustrating the physical scale of the seven million books Anthropic held without authorization](./image/img-03-library-stacks.jpg)
+![Multi-level university library stacks illustrating the physical scale of the seven million books Anthropic held without authorization](../ko/image/img-03-library-stacks.jpg)
 *▲ Holding seven million books without authorization is a volume that would fill several floors of a university library's stacks | Source: [Wikimedia Commons (Ibagli, Public Domain)](https://commons.wikimedia.org/wiki/File:OSU_William_Oxley_Thompson_Memorial_Library_Stacks.JPG)*
 
 On the other side, training itself was already in the safe zone. Training on the lawfully purchased portion had been settled as fair use in summary judgment, and that portion was not subject to damages. That clarifies the character of the $1.5 billion figure. This money is not compensation for the fact that Anthropic trained; it is compensation for the fact that it acquired and stored data through an unlawful path.
@@ -76,7 +76,7 @@ Seen from this angle, the roughly $3,000 allocated per work is not a fee for tra
 
 The signal from the ruling spread quickly into practice. Court filings and industry reporting show buy-scan-destroy (purchasing books, scanning them, and destroying the originals) settling in as a data-sourcing standard across several AI companies. The judgment that training is safe as long as the acquisition path is clean has reshaped how companies procure.
 
-![Internet Archive book-scanning facility in San Francisco, illustrating the buy-scan-destroy practice of digitizing lawfully purchased books](./image/img-04-book-scanning.jpg)
+![Internet Archive book-scanning facility in San Francisco, illustrating the buy-scan-destroy practice of digitizing lawfully purchased books](../ko/image/img-04-book-scanning.jpg)
 *▲ A book-scanning facility at the Internet Archive in San Francisco. Buy-scan-destroy is settling in as an industry standard | Source: [Wikimedia Commons (Jason Scott, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:San_Francisco_Internet_Archive_Scanning_Center.jpg)*
 
 Plaintiffs' lawyers changed strategy too. Rather than wading into the thorny debate over whether AI training is fair use, they now aim only to prove that the data in question came from a shadow library such as LibGen. It is easier to prove and the damages are larger. A lawsuit contesting the legitimacy of training has shifted in character into a lawsuit digging up acquisition records.

@@ -46,7 +46,7 @@ But that prediction is closer to a single still photograph. Inside the cell a pr
 
 Structural biology gives these two things different names. One is static structure, a single shape observed under a particular condition. The other is dynamics, the set of many shapes a protein can move between — its conformational ensemble — together with the paths that connect them. The achievements of AlphaFold and its kin are concentrated on the first. A 2026 roadmap paper written by 43 researchers confronts this contrast head-on, stating that a quantitative understanding of how dynamic structural change and higher-order assembly unfold from sequence is still unsolved.
 
-![EF-Tu protein shown in two conformations bound to GDP versus GDPNP — an example of the difference between static structure and dynamics](./image/img-01-conformational-change.png)
+![EF-Tu protein shown in two conformations bound to GDP versus GDPNP — an example of the difference between static structure and dynamics](../ko/image/img-01-conformational-change.png)
 *▲ The same protein (EF-Tu) takes a different shape depending on the ligand it binds — GDP (yellow) on the left, the GTP-mimic GDPNP (red) on the right | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:EF-Tu_conformations.png)*
 
 > [!callout]
@@ -58,7 +58,7 @@ AlphaFold's success is often told as a triumph of model design. The architecture
 
 Why this data is special comes down to three things. First, the ground truth is verified by experiment; what the model imitates is measured, not estimated. Second, the scale is large, with hundreds of thousands of cases showing how different proteins fold. Third, the answers keep arriving fresh. AlphaFold was validated on structures deposited after its training cutoff, generalizing not only to curated benchmarks but to genuinely unseen structures.
 
-![Examples of diverse protein and complex structures deposited in PDB and EMDB — from ribosomes and antibodies to hemoglobin and virus capsids](./image/img-02-pdb-structure-diversity.jpg)
+![Examples of diverse protein and complex structures deposited in PDB and EMDB — from ribosomes and antibodies to hemoglobin and virus capsids](../ko/image/img-02-pdb-structure-diversity.jpg)
 *▲ A slice of the 220,000+ structures accumulated in PDB and EMDB — from ribosomes to insulin, the ground-truth data AlphaFold learned from | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Protein_structure_examples.png)*
 
 Fold those conditions into one sentence and it reads: the answers exist, and they keep coming. In supervised learning there is rarely a better starting point. As special as AlphaFold was, the data it stood on was special too. Which leads naturally to the next question. Does dynamics have a dataset like this?

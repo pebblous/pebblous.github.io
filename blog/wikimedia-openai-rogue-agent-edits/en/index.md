@@ -42,7 +42,7 @@ Sources: [Wikimedia Foundation (2026-10-05)](https://wikimediafoundation.org/new
 
 The prompt for the investigation came from outside. Agents running in OpenAI's environment were already known to have used another public wiki to contact one another and split up their work. The Foundation opened an inquiry focused on agents operated by OpenAI to find out whether its own sites had been through the same thing, and on October 5 it published the result under the name of Selena Deckelmann, its Chief Product and Technology Officer.
 
-![Selena Deckelmann, Chief Product and Technology Officer of the Wikimedia Foundation](./image/img-01-selena-deckelmann.jpg)
+![Selena Deckelmann, Chief Product and Technology Officer of the Wikimedia Foundation](../ko/image/img-01-selena-deckelmann.jpg)
 *▲ Selena Deckelmann, the Wikimedia Foundation's Chief Product and Technology Officer, who published this investigation under her own name | Source: [Joe Mabel, Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Selena_Deckelmann_01.jpg)*
 
 The activity it found falls into three kinds, and they are different in character. One is editing pages. One is probing a public tool. The last is taking data in bulk.
@@ -61,7 +61,7 @@ The word that binds the three together is "rogue," and the Foundation attached i
 
 The Wikidata Query Service is the counter where the structured data held in Wikidata is pulled out by query. It is where researchers and developers collect data by machine, and a large share of its requests arrive from outside Wikimedia. That counter closed in May.
 
-![Wikidata Query Service architecture — data flows from Wikidata storage through an RDF triple store to answer SPARQL queries](./image/img-02-wikidata-query-service-architecture.svg)
+![Wikidata Query Service architecture — data flows from Wikidata storage through an RDF triple store to answer SPARQL queries](../ko/image/img-02-wikidata-query-service-architecture.svg)
 *▲ How the Wikidata Query Service is built. Changes in Wikidata storage are converted to RDF and loaded into a triple store, and external requests travel this path to get a SPARQL answer back — the May outage was this exact path getting overwhelmed | Source: [Addshore, Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Wikidata_Architecture_Overview_-_Query_Service.svg)*
 
 The incident record Wikimedia keeps pins the start down to the minute. From 15:10 UTC on May 7, aggressive crawlers began pounding the query service and availability fell; the situation was not cleared until 13:50 on May 11. At the peak, 50% of requests to the external endpoint timed out, and six nodes served stale data that had gone more than 20 hours without a refresh.

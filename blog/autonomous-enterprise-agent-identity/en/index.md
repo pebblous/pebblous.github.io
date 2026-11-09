@@ -45,7 +45,7 @@ And it isn't only SAP. NVIDIA and ServiceNow introduced Project Arc, a long-runn
 > [!callout]
 > **The premise has changed**: agents are no longer the helper beside a search box. They trigger approvals, alter the books, and issue work orders. When a person does that work, we naturally ask: who did this? For agents, there is still no mechanism that can answer the question.
 
-![IAM identity concept diagram: entities (people and organizations) correspond to identities, and identities consist of attributes and identifiers](./image/img-01-iam-identity-concept.png)
+![IAM identity concept diagram: entities (people and organizations) correspond to identities, and identities consist of attributes and identifiers](../ko/image/img-01-iam-identity-concept.png)
 *▲ An identity corresponds to an entity (person or organization) and consists of a set of attributes and identifiers | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Identity-concept.svg)*
 
 ## People Get an ID. Agents Get Nothing.
@@ -56,7 +56,7 @@ For agents, that skeleton is missing wholesale. When CSA and Oasis Security surv
 
 The scale makes clear why the gap is dangerous. In Okta's 2026 survey, 91% of organizations were already using AI agents, but only about 10% had governance in place. KPMG counts non-human identities outnumbering humans inside the enterprise by 80 to 1. Eighty automated identities per person move through systems, and many of them aren't tracked to anyone.
 
-![IAM lifecycle phases diagram: configuration phase (identity registration, credential provisioning, access authorization) and operation phase (present identity, authenticate, access control)](./image/img-02-iam-phases.png)
+![IAM lifecycle phases diagram: configuration phase (identity registration, credential provisioning, access authorization) and operation phase (present identity, authenticate, access control)](../ko/image/img-02-iam-phases.png)
 *▲ The IAM lifecycle: for people, this registration–authentication–access-control cycle runs automatically. For agents, the skeleton itself is missing | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Fig-IAM-phases-vector.svg)*
 
 The most direct symptom is an inability to tell actors apart. In the CSA survey, 68% of organizations could not clearly separate what an agent did from what a person did. Even opening the logs, you cannot pick out which change came from an employee's hand and which came from an agent's autonomous run. The actor is plainly there, but its identity leaves no trace in the record.
@@ -74,7 +74,7 @@ The faster autonomy moves, the sharper this problem gets. While an agent runs au
 
 Vendors are already moving this way. ServiceNow's AI Control Tower monitors agent behavior in real time and provides auditability, and NVIDIA's OpenShell offers a runtime that fences off an agent's permissions and tool access by policy. That runtime governance and audit trails ship as first-class product features rather than add-ons shows an industry consensus: governance is infrastructure.
 
-![NVIDIA CEO Jensen Huang on stage at ServiceNow Knowledge 2026, presenting the Safe Enterprise Agent OS and OpenShell secure runtime layer for autonomous agents](./image/img-03-nvidia-servicenow.jpg)
+![NVIDIA CEO Jensen Huang on stage at ServiceNow Knowledge 2026, presenting the Safe Enterprise Agent OS and OpenShell secure runtime layer for autonomous agents](../ko/image/img-03-nvidia-servicenow.jpg)
 *▲ NVIDIA CEO Jensen Huang at ServiceNow Knowledge 2026, announcing OpenShell (secure runtime layer) and the Safe Enterprise Agent OS | Source: [NVIDIA Blog](https://blogs.nvidia.com/blog/servicenow-autonomous-ai-agents-enterprises/)*
 
 ## Identity Rests on Data Lineage
@@ -83,7 +83,7 @@ Here we have to go one level deeper. Giving an agent an identity isn't the end o
 
 That is why the enterprise governance playbook talks about four pillars: agent identity, runtime enforcement, comprehensive auditing, and data lineage. If the first three pillars handle "who, with what permission, did what," lineage handles "what trace that action left on which data." Drop lineage and the other three spin in place. Even with perfect identity and permissions, if the data itself doesn't know its own origin, you can't trace the consequences of an action to the end.
 
-![W3C PROV data lineage model: Entity (data), Activity (work), and Agent (actor) nodes connected by relationships including WasGeneratedBy, WasAttributedTo, and WasAssociatedWith, enabling full provenance tracing](./image/img-04-prov-data-lineage.png)
+![W3C PROV data lineage model: Entity (data), Activity (work), and Agent (actor) nodes connected by relationships including WasGeneratedBy, WasAttributedTo, and WasAssociatedWith, enabling full provenance tracing](../ko/image/img-04-prov-data-lineage.png)
 *▲ The W3C PROV data lineage model: Entity (data), Activity (work), and Agent (actor) connected by relationships that let you trace "who produced what" all the way back | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Prov_dm-essentials.png)*
 
 Recall the autonomous close agent from the first section. If this agent adjusted some value in quarterly revenue, the identity record lets you answer "who did it." But unless the data itself remembers which source it based that adjustment on and what the prior value was changed to, tracing stops at the auditor's next question: "why was it changed this way?" Identity fills only half of accountability. The other half is filled only when the data carries its own history.
@@ -104,7 +104,7 @@ Let's turn the abstract diagnosis into a concrete question. Take the agents work
 
 If you can answer "yes" to all four, your company's agents are employees. Wherever one stalls, that much of them is a ghost. And this diagnosis soon translates into the language of regulation. The EU AI Act's high-risk requirements take effect on August 2, 2026, with fines reaching up to €35 million or 7% of global revenue. Explainability and data lineage become, in effect, obligations. "Can you reconstruct who did what" is no longer best practice; it is a legal requirement.
 
-![Advocates at the EU Parliament in Strasbourg holding booklets calling for AI Act legislation — a campaign demanding AI that serves people](./image/img-05-eu-ai-act-parliament.jpg)
+![Advocates at the EU Parliament in Strasbourg holding booklets calling for AI Act legislation — a campaign demanding AI that serves people](../ko/image/img-05-eu-ai-act-parliament.jpg)
 *▲ Advocates at the EU Parliament in Strasbourg pushing for the AI Act. High-risk AI requirements take effect on August 2, 2026 | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:EKO_-_AI_ACT_-_Strasbourg_Parliament_-_52886020107.jpg) (CC BY 2.0)*
 
 The conclusion is simple. On the road to the autonomous enterprise, the bottleneck isn't the intelligence of the model but the maturity of data governance. Before buying one more, smarter agent, you have to build the data identity to give the agents already at work. Because autonomy can't outrun the maturity of your data governance.

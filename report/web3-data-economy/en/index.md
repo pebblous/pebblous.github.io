@@ -38,7 +38,7 @@ Data brokers ($313B) vs. marketplaces ($1.8B)
 
 ## Who Owns the Data? The Structural Ownership Gap
 
-![Centralized vs decentralized network structure comparison](image/img-01-decentralization.svg)
+![Centralized vs decentralized network structure comparison](../ko/image/img-01-decentralization.svg)
 *Centralized (A) vs decentralized (B) network structures. The direction of data ownership transformation. (CC BY-SA 4.0)*
 
 Start with the most fundamental question in the data economy: who owns the data you produce every day? Legally, "data ownership" remains undefined. The EU Data Act grants rights of access, use, and portability -- but deliberately avoids the word "ownership." A Hohfeldian property-rights analysis shows this omission is intentional: because data is non-rivalrous, traditional ownership concepts do not map cleanly onto it.
@@ -64,7 +64,7 @@ A CNIL survey of EU consumers found that the willingness-to-accept price for per
 
 ## Web3's Answer -- DataDAO, DePIN, and Proof-of-Contribution
 
-![Blockchain-based data transaction flow](image/img-02-crypto-transaction.svg)
+![Blockchain-based data transaction flow](../ko/image/img-02-crypto-transaction.svg)
 *Blockchain transaction flow: sender → blockchain verification → receiver. The same transparency applies to data trading. (CC0)*
 
 Web3 addresses the data ownership gap through three mechanisms: collective ownership (DataDAO), decentralized collection (DePIN), and contribution verification (Proof-of-Contribution). Yet quality verification and governance centralization remain structural limitations.

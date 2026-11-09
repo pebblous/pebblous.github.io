@@ -42,7 +42,7 @@ These four numbers are the spine of this piece. The first two show what processi
 
 NetApp, which calls itself the "intelligent data infrastructure company," announced its acquisition of DataPelago on July 16, 2026. Based in Mountain View, California, DataPelago is an AI data infrastructure startup known for an approach that removes the data-processing bottleneck in AI and analytics workloads. The price was not disclosed, and DataPelago becomes a wholly owned subsidiary of NetApp. The company framed the deal as the latest in a run of expansions that includes partnerships with Cisco, Google Cloud, Red Hat, and SK Telecom.
 
-![NetApp headquarters building and sign in Sunnyvale, California](./image/img-01-netapp-hq.jpg)
+![NetApp headquarters building and sign in Sunnyvale, California](../ko/image/img-01-netapp-hq.jpg)
 *▲ NetApp's headquarters in Sunnyvale, California, where the DataPelago acquisition was announced. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:NetApp_Headquarters_Sunnyvale.jpg)*
 
 NetApp's own framing of the problem captures the character of the deal. "AI is the defining platform shift of our time, yet enterprises are realizing the biggest bottleneck lies in preparing, governing, and activating data fast enough to feed it into AI." The bottleneck, in other words, is not compute capacity but the speed of getting data into a usable state.

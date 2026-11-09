@@ -48,7 +48,7 @@ More precisely, data lineage is a record of every path a piece of data travels a
 - •**Transformation**: What ETL, filters, aggregations, joins, and cleaning did it pass through? Did a unit change or a missing value get filled along the way?
 - •**Consumption**: Which dashboard, ML model, or API ultimately uses this data?
 
-![Software library dependency graph — GTK and ATK depending on GLIB shown with nodes and arrows, the same grammar as data lineage](./image/img-01-directed-graph.png)
+![Software library dependency graph — GTK and ATK depending on GLIB shown with nodes and arrows, the same grammar as data lineage](../ko/image/img-01-directed-graph.png)
 *▲ A software library dependency graph — GTK and ATK both "depend on" GLIB, drawn as nodes and arrows (OpenGL stands alone). Data lineage uses the very same grammar to map "what came from what" | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:DependencyGraph.svg)*
 
 ### 1.1. Lineage and Provenance Are Not the Same
@@ -105,7 +105,7 @@ There are two directions in which you read the graph: upstream tracing, going ba
 - •**Upstream tracing**: When you spot a strange value, you follow "where did this data come from" backward to find the source of the error. The days-long hunt in the $250,000 incident in Section 2 was exactly this kind of trace.
 - •**Downstream impact analysis**: You see in advance "what breaks if I change this column." Knowing which dashboards and models depend on this data lets you gauge the blast radius of a change beforehand.
 
-![A real data pipeline lineage graph connecting orchestration, storage, APIs, and consumption stages as nodes and edges](./image/img-02-lineage-pipeline.png)
+![A real data pipeline lineage graph connecting orchestration, storage, APIs, and consumption stages as nodes and edges](../ko/image/img-02-lineage-pipeline.png)
 *▲ A real pipeline's lineage graph — orchestration (Airflow), storage (Elasticsearch, Cassandra), APIs, and consumption linked as nodes and edges | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Image_suggestions_data_workflow.png)*
 
 Representative tools that display this graph include Marquez's UI, DataHub's Lineage Graph tab, and dbt's Lineage Explorer. Amazon DataZone also released an OpenLineage-compatible visualization in preview in 2025, letting you query the history of how lineage changed across versions.
@@ -118,7 +118,7 @@ There are many tools, but the starting point really comes down to one thing: the
 
 OpenLineage is a project of the Linux Foundation's LF AI & Data, an open standard for collecting and representing lineage metadata. It supports major tools like Airflow, Spark, Flink, and dbt; for Spark, attaching a listener captures lineage automatically with no code changes. An extension structure called Facets lets you carry metadata such as schemas, data-quality metrics, and SQL queries alongside the lineage. There is no license cost and the community is active, but in exchange it has fewer connectors than commercial tools, and you should reckon on two to three months on average for the initial implementation. Marquez is the reference implementation of OpenLineage, storing a column-level graph in PostgreSQL and providing a visual UI. It is specialized purely for lineage tracking.
 
-![Apache Airflow logo — a leading workflow orchestrator that captures lineage automatically via OpenLineage](./image/img-03-apache-airflow.png)
+![Apache Airflow logo — a leading workflow orchestrator that captures lineage automatically via OpenLineage](../ko/image/img-03-apache-airflow.png)
 *▲ Apache Airflow — a leading orchestrator supported by OpenLineage; attach a listener and lineage is captured with no code changes | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:AirflowLogo.svg)*
 
 ### 5.2. Transformation and Experiments: dbt and MLflow
@@ -135,7 +135,7 @@ Simplified by scale, it looks like this. Small teams are well served by the Open
 
 In 2026, lineage shifted in status from "nice to have" to "cannot do without." The EU AI Act is the turning point. As rules for high-risk AI systems took full effect in August 2026, documentation of training, validation, and test data became a legal obligation.
 
-![European Parliament hemicycle in Strasbourg — the legislative stage where the EU AI Act mandated training-data documentation for high-risk AI](./image/img-04-eu-parliament.jpg)
+![European Parliament hemicycle in Strasbourg — the legislative stage where the EU AI Act mandated training-data documentation for high-risk AI](../ko/image/img-04-eu-parliament.jpg)
 *▲ The European Parliament hemicycle in Strasbourg — the stage where the EU AI Act made training-data documentation for high-risk AI a legal duty | Source: [Diliff, Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:European_Parliament_Strasbourg_Hemicycle_-_Diliff.jpg)*
 
 ### 6.1. What Article 10 Requires

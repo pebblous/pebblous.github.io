@@ -39,7 +39,7 @@ Sources: [Executive Order 14434](https://www.whitehouse.gov/presidential-actions
 
 The webinar itself was ordinary. The Directorate for Mathematical and Physical Sciences at the National Science Foundation held an online session to walk applicants through a funding opportunity in the mathematical sciences. The agency's own event listing puts it on Wednesday, October 7, at two in the afternoon, an informational webinar for a solicitation that bundles more than a dozen programs. FYI, the newsletter that reported the remark, gave no date and said only "Wednesday."
 
-![Exterior of the National Science Foundation's former headquarters building, Stafford Place, Arlington, Virginia](./image/img-01-nsf-headquarters.jpg)
+![Exterior of the National Science Foundation's former headquarters building, Stafford Place, Arlington, Virginia](../ko/image/img-01-nsf-headquarters.jpg)
 *▲ The National Science Foundation's headquarters building in Arlington, Virginia, used before the agency's 2017 move to Alexandria. The Directorate for Mathematical and Physical Sciences, which held this webinar, is part of the same agency | Source: [Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:NSF_building.jpg)*
 
 The remark FYI carried came from Junping Wang, a deputy division director for mathematical sciences. On the "AI" written into grant abstracts and related documents, he said, "your program director may work with you by changing AI to SI." In the same session he also said that AI tools inside the agency may be used to summarize parts of a submission "but not for making recommendations."

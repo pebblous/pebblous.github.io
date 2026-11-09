@@ -40,7 +40,7 @@ In barely a year, US companion-chatbot regulation moved from an exceptional meas
 
 The details vary from law to law, but the skeleton is remarkably similar: the chatbot must reveal that it is an AI and not a person; minor users must be protected separately; and when a crisis signal appears, the system must respond through a defined procedure. These three points now read less like new regulation and more like an obvious baseline. That is exactly where it gets interesting. Once disclosure becomes the default, what does the next round of regulation aim at?
 
-![California State Capitol — the legislature that passed both SB 243 and AB 489](./image/img-01-california-capitol.jpg)
+![California State Capitol — the legislature that passed both SB 243 and AB 489](../ko/image/img-01-california-capitol.jpg)
 *▲ The California State Capitol in Sacramento, where both the companion-chatbot disclosure law SB 243 and the credential-impersonation ban AB 489 were enacted. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:California_Capitol,_Sacramento,_California.jpg)*
 
 ## From Disclose to Do Not Impersonate

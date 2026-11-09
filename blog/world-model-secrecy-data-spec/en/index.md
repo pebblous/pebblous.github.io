@@ -40,7 +40,7 @@ Sources: company announcements and press coverage. Individual sources are linked
 
 Brandom wrote in the [story](https://techcrunch.com/2026/09/20/world-model-companies-are-keeping-a-lot-of-secrets/) about moderating the world model panel at the All In conference, an event unrelated to the podcast of the same name. The story names AMI Labs and World Labs as the two large players in the field, high on buzz and funding and fairly far down the list on any effort to earn revenue.
 
-![Yann LeCun, founder of AMI Labs, speaking at a podium](./image/img-01-yann-lecun.jpg)
+![Yann LeCun, founder of AMI Labs, speaking at a podium](../ko/image/img-01-yann-lecun.jpg)
 *▲ Yann LeCun left Meta to found AMI Labs in Paris in December 2025 | Photo: Jérémy Barande (CC BY-SA 2.0), [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Yann_LeCun_-_2018_(cropped).jpg)*
 
 The story describes the core of a world model as handling spatial intelligence automatically. Its simplest form is a map drawn so that the world can be moved through, like the model that drives a self-driving car. And the same approach that gets a car through traffic can also carry a box across a room for a humanoid robot. So the available directions run wide, from robotics to controllable video to harder forms of autonomous driving.
@@ -63,7 +63,7 @@ One more thing sits on top of that. The phrase "world model" is itself still bro
 
 World Labs, for its part, has said a fair amount. On June 3, 2026 the company published a [taxonomy](https://drfeifei.substack.com/p/a-functional-taxonomy-of-world-models) that splits the term three ways. A renderer "outputs observations in the form of pixels meant for human eyes." A simulator "outputs state: a geometrically, physically or dynamically faithful representation of the world that humans and computer programs can both compute on and interact with." A planner "outputs actions." Of the three, the piece judged that "the simulator gets the least public attention, and is the most consequential of the three." Data comes up too. Three-dimensional data with explicit geometry, material properties and physical annotations is "orders of magnitude scarcer than the internet video that renderers train on," the piece noted.
 
-![Cover illustration for World Labs' taxonomy post, showing a 2D picture from a renderer beside a 3D world a simulator computes on](./image/img-02-world-labs-taxonomy.jpg)
+![Cover illustration for World Labs' taxonomy post, showing a 2D picture from a renderer beside a 3D world a simulator computes on](../ko/image/img-02-world-labs-taxonomy.jpg)
 *▲ Cover art for World Labs' June 3, 2026 taxonomy post — a 2D picture from a renderer set beside the 3D world a simulator computes on | Source: [World Labs (Substack)](https://drfeifei.substack.com/p/a-functional-taxonomy-of-world-models)*
 
 So even the shortage has been published. That still does not answer the question the company making the data is holding. What is scarce has been named, and how accurate that data has to be on which task before it earns its price remains open. A list arrived, not an assignment.
@@ -75,7 +75,7 @@ So even the shortage has been published. That still does not answer the question
 
 Brandom met Alex de Vigan, chief executive of Physicl, in a hallway at the same conference. Physicl is a French company that left stealth at NVIDIA GTC in March 2026, launched by members of the Nfinite team, who had handled 3D data for retail. At the starting line it [announced](https://www.prnewswire.com/news-releases/physicl-launches-the-data-infrastructure-layer-for-physical-ai-at-nvidia-gtc-302715165.html) a library of millions of 3D assets and environments ready to drop into a simulator, and pointed at three areas: robotics, world models, and models that handle images and language together. The same announcement lists Meta, DeepMind, World Labs and Getty Images among the teams the platform already supports. On [its own site](https://www.physicl.ai/) the company describes how those assets are built: raw inputs become physics-tagged 3D with "geometry cleaned, materials resolved, friction, mass, and collision properties derived automatically."
 
-![Example of a simulation-ready 3D indoor scene built by Physicl](./image/img-03-physicl-3d-scene.jpg)
+![Example of a simulation-ready 3D indoor scene built by Physicl](../ko/image/img-03-physicl-3d-scene.jpg)
 *▲ An example of the simulation-ready 3D scenes Physicl builds — geometry, materials and physics properties are tagged together | Source: [physicl.ai](https://www.physicl.ai/)*
 
 The founding logic de Vigan set down in the announcement is clear. "Every major advance in AI has required a new data layer," and for physical AI the missing layer is "structured, spatially consistent, physics-aware data that models can actually learn from." A condition rides along at the end of that sentence. Existing is not enough; the form has to be one a model can take in.

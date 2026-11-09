@@ -44,7 +44,7 @@ Psychologist Raluca Rilla was reading through survey responses when an awkward s
 
 Why does this happen? On crowdsourcing platforms like Amazon Mechanical Turk or Prolific, every response carries a small payment, and the faster and more you answer, the more you earn. For a respondent, feeding the question to an AI and copying the answer becomes the rational move. The people collecting the data believe they have bought human thinking, but what arrives is, increasingly, a machine's sentences.
 
-![Cross-section of the 18th-century Mechanical Turk chess automaton (1789) — the machine appeared to play chess autonomously, but concealed a human operator inside. Amazon Mechanical Turk takes its name from this device.](./image/img-01-mechanical-turk.jpg)
+![Cross-section of the 18th-century Mechanical Turk chess automaton (1789) — the machine appeared to play chess autonomously, but concealed a human operator inside. Amazon Mechanical Turk takes its name from this device.](../ko/image/img-01-mechanical-turk.jpg)
 *▲ The Mechanical Turk (1789): a machine that appeared intelligent but hid a human inside. Amazon Mechanical Turk takes its name from it. Now the reversal plays out — survey responses that appear human increasingly hide AI inside. | Source: [Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:Racknitz_-_The_Turk_3.jpg)*
 
 > [!callout]
@@ -54,7 +54,7 @@ Why does this happen? On crowdsourcing platforms like Amazon Mechanical Turk or 
 
 A respondent secretly using AI is still unintentional contamination. The thornier case is the researcher who deliberately casts AI as the respondent. Psychologist Malte Elson warns that a researcher can assign an AI model parameters like age, education, and political leaning and conjure an entire group of respondents to order. These are "silicon samples" — synthetic, AI-generated respondents. It is generating data rather than collecting it, and because the parameters can be tuned until the desired result appears, Elson described the practice as "indistinguishable from fraud."
 
-![Transformer architecture diagram — stacked encoder and decoder layers generating text predictions. This encoder-decoder design is the foundation of the large language models (LLMs) used to create silicon samples.](./image/img-02-transformer-architecture.png)
+![Transformer architecture diagram — stacked encoder and decoder layers generating text predictions. This encoder-decoder design is the foundation of the large language models (LLMs) used to create silicon samples.](../ko/image/img-02-transformer-architecture.png)
 *▲ The Transformer architecture: stacked encoder-decoder layers with multi-head attention. This design underlies the large language models (LLMs) a researcher can configure with demographic parameters to manufacture an entire synthetic respondent pool. | Source: [Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Transformer,_stacked_layers_and_sublayers.png)*
 
 The pace of producing knowledge has accelerated too. Political scientist David Lazer demonstrated feeding real survey data into an AI to complete a 28-page paper in a single hour. At one business journal, submissions rose 42% after ChatGPT appeared, and as of February 2026 roughly a third of submitted abstracts were largely AI-written. Into a flow of knowledge that once began with human responses and accrued through human review, machines are now breaking in at both ends at once.
@@ -70,7 +70,7 @@ This episode adds a question of a different grain: who, or what, produced this v
 
 And this is not the social sciences' problem alone. Consumer reviews, user feedback, healthcare surveys, market research — any data gathered on the premise of a human voice faces the same risk. So responses actually written by real people, that is, human-origin data, grow scarcer, and as they grow scarcer their value climbs. In an age when anyone can churn out plausible sentences endlessly, the traces a person leaves by hand become a rare resource.
 
-![DIKW Pyramid — four-layer hierarchy of Data, Information, Knowledge, and Wisdom. When data authenticity wavers at the base, every layer above it becomes unstable.](./image/img-03-dikw-pyramid.svg)
+![DIKW Pyramid — four-layer hierarchy of Data, Information, Knowledge, and Wisdom. When data authenticity wavers at the base, every layer above it becomes unstable.](../ko/image/img-03-dikw-pyramid.svg)
 *▲ The DIKW Pyramid: Data → Information → Knowledge → Wisdom. When authenticity at the data layer is compromised, the entire pyramid becomes unstable. | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:DIKW_Pyramid.svg)*
 
 > [!callout]
@@ -80,7 +80,7 @@ And this is not the social sciences' problem alone. Consumer reviews, user feedb
 
 Fortunately, no one is standing still. Researchers are already building a few lines of defense. The most direct is the honeypot question — an item that a person naturally ignores but an AI follows literally, planted in the survey to filter out the responses that take the bait. The aim is to verify authenticity at the moment of collection, not after the responses are in.
 
-![Cybersecurity honeypot diagram — a decoy server designed to detect and log scanning attacks. The same principle, applied to surveys, uses a planted question to filter out AI-generated responses.](./image/img-04-honeypot-diagram.jpg)
+![Cybersecurity honeypot diagram — a decoy server designed to detect and log scanning attacks. The same principle, applied to surveys, uses a planted question to filter out AI-generated responses.](../ko/image/img-04-honeypot-diagram.jpg)
 *▲ A cybersecurity honeypot: a decoy server that lures and logs intruders. The survey honeypot borrows the same logic — plant a question that a human naturally skips but an AI follows literally, and use the responses to filter out non-human answers. | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Honeypot_diagram.jpg)*
 
 There is also a way to look not only at what a response says but at how it was made. Behavioral metadata — how long an answer took, the pattern of typing versus pasting — offers clues that separate a human response from a copied machine one. Go a step further, and provenance itself, the record of where the data came from and through which channels and methods it was collected, rises to become a quality metric. Data whose origin is unknown is now hard to trust.

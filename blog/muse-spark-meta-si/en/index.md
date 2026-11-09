@@ -26,7 +26,7 @@ The story starts in June 2025. Meta acquired a 49% stake in Scale AI for $14.3 b
 
 Wang set up **Meta Superintelligence Labs (MSL)** as a team separate from the existing Llama group. Under the codename "Avocado," the project discarded the Llama architecture entirely and built a new model from the ground up over nine months. The result, unveiled on April 8, 2026, is Muse Spark.
 
-![Meta Muse Spark official announcement — the first AI model from Meta Superintelligence Labs](./image/img-01-muse-spark-meta.png)
+![Meta Muse Spark official announcement — the first AI model from Meta Superintelligence Labs](../ko/image/img-01-muse-spark-meta.png)
 *▲ Meta Muse Spark — A native multimodal reasoning model built from scratch in 9 months by MSL | Source: Meta AI Blog (2026)*
 
 ### 1.1 Native Multimodal, Three Reasoning Modes
@@ -58,7 +58,7 @@ Benchmarks never tell the whole story. But they are useful for reading where a m
 
 On the AA Intelligence Index v4, Muse Spark scored **52**. GPT-5.4 and Gemini 3.1 Pro each scored 57; Claude Opus 4.6 came in at 53. By overall ranking, Muse Spark sits in fourth place — a challenger position.
 
-![Muse Spark benchmark comparison chart — AA Intelligence Index v4 scores for GPT-5.4, Gemini 3.1 Pro, Claude Opus 4.6, and Muse Spark](./image/img-02-benchmark-comparison.png)
+![Muse Spark benchmark comparison chart — AA Intelligence Index v4 scores for GPT-5.4, Gemini 3.1 Pro, Claude Opus 4.6, and Muse Spark](../ko/image/img-02-benchmark-comparison.png)
 *▲ AA Intelligence Index v4 comparison — Muse Spark ranks 4th overall at 52, but domain-specific gaps tell a more nuanced story | Source: Artificial Analysis (2026)*
 
 Looking only at that number, though, misses the bigger picture. Llama 4 Maverick sat at 18. A **34-point gain in nine months** is an improvement rate no other frontier lab has matched over the same period. When Meta calls Muse Spark "the first step on the scaling ladder," it is not hyperbole.
@@ -98,7 +98,7 @@ A 16-point gap on Terminal-Bench and a 34-point gap on ARC-AGI-2 are hard to ign
 
 Of Muse Spark's three reasoning modes, Contemplating deserves the most attention. This is not simply "thinking longer." It is a new paradigm in which **multiple agents collaborate in parallel inside the model itself**.
 
-![Muse Spark Contemplating mode diagram — parallel sub-agents reasoning collaboratively inside a single model](./image/img-03-contemplating-mode.png)
+![Muse Spark Contemplating mode diagram — parallel sub-agents reasoning collaboratively inside a single model](../ko/image/img-03-contemplating-mode.png)
 *▲ Contemplating mode — Parallel sub-agents explore the same problem simultaneously, then merge results into one answer | Source: Meta AI Blog (2026)*
 
 ### 3.1 From External Orchestration to Built-In Agents
@@ -126,7 +126,7 @@ If this direction spreads, complex multi-step tasks — data analysis, quality e
 
 The axis of AI competition is shifting. Through 2024, the central question was "who builds the best model?" In 2026, the question is different: **"who reaches the most users?"**
 
-![Meta platform distribution map — reaching 2 billion+ users through WhatsApp, Instagram, Facebook, Messenger, and Ray-Ban glasses](./image/img-04-meta-distribution.png)
+![Meta platform distribution map — reaching 2 billion+ users through WhatsApp, Instagram, Facebook, Messenger, and Ray-Ban glasses](../ko/image/img-04-meta-distribution.png)
 *▲ Meta's AI distribution channels — Muse Spark reaches 2 billion+ users within weeks of launch | Source: Meta Newsroom (2026)*
 
 ### 4.1 Five Channels, Two Billion Users
@@ -158,7 +158,7 @@ Meta's 2026 AI-related capital expenditure stands at **$115 billion to $135 bill
 
 Llama was a symbol of AI democratization. An open-source frontier model lowered the barrier to entry for researchers and startups worldwide, and Meta stood at the center of that movement. Muse Spark, however, is fully closed — no code, no weights. What happened?
 
-![Alexandr Wang — Scale AI founder and Meta's first Chief AI Officer](./image/img-05-alexandr-wang.png)
+![Alexandr Wang — Scale AI founder and Meta's first Chief AI Officer](../ko/image/img-05-alexandr-wang.png)
 *▲ Alexandr Wang — The Chief AI Officer leading MSL and reshaping Meta's AI strategy | Source: Meta Newsroom (2026)*
 
 ### 5.1 The DeepSeek Wake-Up Call

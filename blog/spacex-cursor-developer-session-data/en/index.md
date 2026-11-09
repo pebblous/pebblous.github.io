@@ -42,7 +42,7 @@ Sources: [TechCrunch (Aug. 15, 2026)](https://techcrunch.com/2026/08/15/spacex-o
 
 The company behind Cursor is Anysphere. When SpaceX entered a model-training partnership with Cursor in April, it also took the right to buy the company for $60 billion. The terms of that arrangement were either to acquire or, failing that, to hand over about $10 billion. On June 16, days after its Nasdaq listing, SpaceX announced the definitive agreement, and the regulatory record shows the deal taking effect on August 14.
 
-![Screenshot of the Cursor AI coding editor showing a code panel next to a chat-style agent panel, illustrating a developer session](./image/img-01-cursor-editor.png)
+![Screenshot of the Cursor AI coding editor showing a code panel next to a chat-style agent panel, illustrating a developer session](../ko/image/img-01-cursor-editor.png)
 *▲ Anysphere, the company SpaceX bought, builds this editor | Source: [Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Cursor_Screenshot.png)*
 
 What that $10 billion consisted of says something about the deal before anything else does. The terms SpaceX set out in its IPO filings were a termination fee of $1.5 billion plus $8.5 billion in computing resources. Most of what SpaceX would have owed Cursor if it walked away was not cash but calculation. Between these two companies, compute was already working as a means of payment.

@@ -42,7 +42,7 @@ Rarely can an event be condensed into a single sentence. **On May 6, 2026, Canad
 
 The reader's opening note summarized it precisely: "Canadian regulators confirmed that ChatGPT training violates PIPEDA. The first major national ruling on AI training data collection practices — global regulatory ripples expected." This report takes that line at face value and then unwinds, slowly, the four commissioners, the five violations, and the four ways the decision diverged.
 
-![The Centre Block of the Canadian Parliament in Ottawa — the city where the federal Office of the Privacy Commissioner (OPC) is based](./image/img-01-centre-block-ottawa.jpg)
+![The Centre Block of the Canadian Parliament in Ottawa — the city where the federal Office of the Privacy Commissioner (OPC) is based](../ko/image/img-01-centre-block-ottawa.jpg)
 *▲ The Centre Block of the Canadian Parliament in Ottawa — home city of the federal Office of the Privacy Commissioner (OPC). PIPEDA Findings #2026-002 was released here. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Centre_Block,_Ottawa.jpg)*
 
 ### 1.1. Four Commissioners, One Decision Document
@@ -90,7 +90,7 @@ Federal Commissioner Dufresne, by contrast, leaned on the possibility of cure: _
 
 The findings confirm five violations. Read separately, each is a clean statutory breach. Read together, they form **a chain** — overcollection feeds the absence of consent, the absence of consent feeds inaccuracy, inaccuracy makes rights unenforceable, and the chain closes with an accountability gap. The decision treats them as a single chain because it set out to cut that chain in one stroke.
 
-![OpenAI ChatGPT logo — the product investigated under PIPEDA Findings #2026-002](./image/img-02-chatgpt-logo.svg)
+![OpenAI ChatGPT logo — the product investigated under PIPEDA Findings #2026-002](../ko/image/img-02-chatgpt-logo.svg)
 *▲ Official OpenAI ChatGPT logo — the product at the center of Canada's three-year joint investigation and the five-violation finding. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ChatGPT-Logo.svg)*
 
 | # | Violation | PIPEDA Principle | Plain reading |
@@ -141,7 +141,7 @@ Source: PIPEDA Findings #2026-002 main text, OPC News Release (May 6, 2026), MLT
 
 Canadian law firm MLT Aikins put the legal root of the split precisely: _"provincial statutes are more specific and explicit than PIPEDA regarding consent."_ The provincial laws (BC PIPA, Alberta PIPA) are more specific and explicit than federal PIPEDA on consent. Both provinces in particular require **prospective (ex ante) consent** in express terms. The timing requirement — consent before processing — is written into the statute.
 
-![British Columbia Parliament Buildings in Victoria — home city of the BC Office of the Information and Privacy Commissioner, where the 'cannot be obtained after the fact' line was issued](./image/img-03-bc-parliament-victoria.jpg)
+![British Columbia Parliament Buildings in Victoria — home city of the BC Office of the Information and Privacy Commissioner, where the 'cannot be obtained after the fact' line was issued](../ko/image/img-03-bc-parliament-victoria.jpg)
 *▲ The British Columbia Parliament Buildings in Victoria — home city of the BC Office of the Information and Privacy Commissioner. Michael Harvey's "ChatGPT, by design, cannot be compliant" was issued from here. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:British_Columbia_Parliament_-_Victoria.jpg)*
 
 Read against that timing requirement, OpenAI's remediation plan is, in essence, an attempt at **ex post consent**. A picture of post-hoc opt-out channels, post-hoc correction and deletion procedures, and post-hoc transparency reports for data that has already been trained on. BC and Alberta concluded that the entire picture cannot coexist with their provincial frameworks. The word "after" itself is what disqualifies the consent.
@@ -210,7 +210,7 @@ The €15M that Italy's Garante imposed on OpenAI on December 20, 2024, matters 
 
 €15M is well below the GDPR cap (€20M or 4% of turnover). But the meaning is clear — **confirmation that GDPR can in fact apply to a learning-style LLM**. With the EU AI Act's high-risk regime activating on August 2, 2026, the AI Act's €35M / 7% ceiling stacks on top of GDPR's. The era of two statutes applying in parallel begins in earnest.
 
-![The Berlaymont building in Brussels — headquarters of the European Commission and the policy origin of both GDPR and the AI Act](./image/img-04-berlaymont-brussels.jpg)
+![The Berlaymont building in Brussels — headquarters of the European Commission and the policy origin of both GDPR and the AI Act](../ko/image/img-04-berlaymont-brussels.jpg)
 *▲ The Berlaymont building in Brussels — headquarters of the European Commission. The policy origin of GDPR (2018) and the AI Act (2024), now on the eve of full high-risk implementation on August 2, 2026. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Berlaymont,_Brussels.jpg)*
 
 ### 4.4. Korea's Position — Two Laws, Two Clocks

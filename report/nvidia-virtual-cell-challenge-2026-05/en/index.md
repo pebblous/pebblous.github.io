@@ -43,7 +43,7 @@ The Tufts Center for the Study of Drug Development pegs the average cost to deve
 
 It's worth disentangling two domains that get conflated. Protein structure prediction (the AlphaFold family) asks _"what 3D shape does this sequence fold into?"_ — a static problem. The virtual cell asks _"how does gene expression change when this cell is perturbed?"_ — a dynamic problem whose input is not a molecule but a **cell state**. That distinction colors every interpretation of the challenge results.
 
-![AlphaFold 2 network architecture and prediction accuracy — input sequence flows through Evoformer and Structure module to produce a 3D protein structure](./image/img-01-alphafold-architecture.png)
+![AlphaFold 2 network architecture and prediction accuracy — input sequence flows through Evoformer and Structure module to produce a 3D protein structure](../ko/image/img-01-alphafold-architecture.png)
 *▲ AlphaFold 2's architecture and accuracy vs. experiment. Once the _static_ 3D-structure problem was effectively solved, the field's gaze turned to the next dimension — the _dynamic_ state of the cell. | Source: [Wikimedia Commons (Jumper et al., Nature 2021)](https://commons.wikimedia.org/wiki/File:AlphaFold_2.png)*
 
 ## BioMap Took First — but the Most-Talked-About Solution Came from Elsewhere
@@ -54,7 +54,7 @@ In June 2025, Arc Institute published a launch commentary in _Cell_ (Roohani et 
 
 Two facts often get conflated in coverage. **The overall winner is BioMap Research**'s BM_xTVC team. BioMap, Hong Kong–headquartered, operates what it describes as its 100B-parameter-plus **xTrimo foundation model**. But the most-discussed solution wasn't BioMap's — it was **TransPert**, from the joint University of Chicago–Dartmouth–HKU "Outlier" team, which placed at the top of the PDS leaderboard. A commentary by Liu et al. (_arXiv_ 2511.16954, accepted to the ICLR 2026 Workshop) makes clear that TransPert is built around classical statistics — _Wilcoxon test + pseudo-bulk profiles + distance-metric calibration_ — with a methods paper forthcoming. Two teams, two solutions, two different stories. Conflating them obscures the lesson.
 
-![Virtual Cell Challenge 2025 official results graphic — 1st Team BM_xTVC, 2nd Team XLearning Lab, 3rd Team Outlier, Generalist Prize Team Altos Labs](./image/img-02-vcc-winners.png)
+![Virtual Cell Challenge 2025 official results graphic — 1st Team BM_xTVC, 2nd Team XLearning Lab, 3rd Team Outlier, Generalist Prize Team Altos Labs](../ko/image/img-02-vcc-winners.png)
 *▲ Arc Institute's official 2025 results card. TransPert is the solution from third-place Team Outlier — a different team from first-place BM_xTVC. Sponsors: NVIDIA, 10x Genomics, Ultima Genomics. | Source: [Arc Institute · Virtual Cell Challenge 2025 Wrap-Up](https://arcinstitute.org/news/virtual-cell-challenge-2025-wrap-up)*
 
 | Team / Solution | Affiliation | Core Approach | Result |
@@ -69,7 +69,7 @@ Sources: Arc Institute Virtual Cell Challenge 2025 Wrap-Up · Liu et al., arXiv 
 
 Midway through judging, Arc Institute realized the MAE metric was being gamed in ways it hadn't intended — some teams optimized for predicting mean expression, lowering MAE while losing PDS and DES. Goodarzi's framing: _"MAE was no longer influencing optimization."_ Before announcing winners, Arc spun up a separate **Generalist Prize**, a fresh round purely on generalization, which Altos Labs's flow-matching model took. The episode also crystallized something larger — Arc had quietly become the standards-setting body for the field. A single private nonprofit defined the dataset, the metrics, and the baseline model all in one stack.
 
-![The nine-member Altos Labs team that won the Generalist Prize at the Virtual Cell Challenge 2025](./image/img-03-generalist-prize.png)
+![The nine-member Altos Labs team that won the Generalist Prize at the Virtual Cell Challenge 2025](../ko/image/img-03-generalist-prize.png)
 *▲ Generalist Prize winner Team Altos Labs — their flow-matching generative model "go-with-the-flow" topped the generalization round. The decisive asset was ~7M proprietary, hand-curated cells. | Source: [Arc Institute · Virtual Cell Challenge 2025 Wrap-Up](https://arcinstitute.org/news/virtual-cell-challenge-2025-wrap-up)*
 
 ### 2.3. The Quote That Sets the Thesis
@@ -120,7 +120,7 @@ The most-overlooked fact of the challenge is that the infrastructure asset that 
 
 What Arc operationalized for the challenge was less a dataset than a **wet-lab → single-cell measurement → QC → split-and-publish** pipeline. 10x Genomics GEM-X Flex and Ultima Genomics UG 100 wafer sequencing standardized measurement. The 300 CRISPRi perturbations were curated to balance strong and weak perturbation signals deliberately. PDS / DES / MAE metric definitions and the STATE baseline model all came out of the same organization. _This is the first time a private nonprofit — not the NIH — defined the evaluation rules for single-cell perturbation modeling._
 
-![Arc Institute STATE baseline model architecture — unperturbed cell population flows through State Embedding (SE), State Transition (ST), and Decoder to produce the predicted perturbed cell population](./image/img-04-arc-state-model.png)
+![Arc Institute STATE baseline model architecture — unperturbed cell population flows through State Embedding (SE), State Transition (ST), and Decoder to produce the predicted perturbed cell population](../ko/image/img-04-arc-state-model.png)
 *▲ Arc Institute's STATE model — an unperturbed cell population is fed a perturbation signal, then passed through State Embedding, State Transition, and a Decoder to predict the perturbed cell distribution. It served as the challenge baseline and the de facto starting point for evaluation standards. | Source: [Arc Institute · STATE: First Virtual Cell Model](https://arcinstitute.org/news/virtual-cell-model-state)*
 
 ### 4.2. The Data Ceiling Is Rising Fast
@@ -137,7 +137,7 @@ The challenge dataset is only a starting point. Quantitative evidence is accumul
 
 The hardware tier is consolidating too. NVIDIA's **Evo 2**, co-announced with Arc Institute (7B + 40B parameters, 9.3T nucleotides, 2,000+ H100 GPUs in training, 1M-token context — _Nature_, DOI 10.1038/s41586-026-10176-5), is the clearest signal that NVIDIA has repositioned from compute vendor to a _vertically integrated company bundling domain partnerships, platforms, and H100 infrastructure together_. The **$1B AI Co-Innovation Lab with Eli Lilly announced at JPM Healthcare 2026** sits in the same arc.
 
-![NVIDIA Evo 2 — visualization of DNA double helix, RNA structure, and protein surface modeled jointly](./image/img-05-nvidia-evo2.jpg)
+![NVIDIA Evo 2 — visualization of DNA double helix, RNA structure, and protein surface modeled jointly](../ko/image/img-05-nvidia-evo2.jpg)
 *▲ NVIDIA × Arc Institute's Evo 2 — DNA, RNA, and proteins handled jointly inside a single model. Training on 9.3T nucleotides with 2,000+ H100 GPUs marks NVIDIA's repositioning from compute vendor to a domain-vertical platform. | Source: [NVIDIA Blog · Evo 2 Biomolecular AI](https://blogs.nvidia.com/blog/evo-2-biomolecular-ai/)*
 
 The Pebblous thesis from industrial AI — _"the real competitive moat is the data and simulation-integration layer beneath the model, not the model itself"_ — operates with the same shape in biology. Where Pebblous integrates wet measurement (factory sensors, robot telemetry) with synthetic simulation in industrial AI, Arc Institute integrates wet-lab measurement with computation. The architecture is isomorphic.

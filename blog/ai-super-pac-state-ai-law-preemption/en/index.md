@@ -42,7 +42,7 @@ Four numbers capture the shape of this fight at a glance. The industry lost 99 t
 
 What the AI industry wants has long been clear: one national framework instead of fifty different state rules, and federal preemption that overrides state law with that framework. In 2025 this demand actually reached the threshold of legislation. A preemption clause that would block state AI regulation for several years was written into the budget reconciliation bill. The result was a rout. The Senate deleted the clause by a vote of 99 to 1 before the bill was signed. That is how strong the bipartisan opposition was.
 
-![United States Capitol — where the Senate stripped the state AI law preemption clause by a 99-to-1 vote](./image/img-01-us-capitol.jpg)
+![United States Capitol — where the Senate stripped the state AI law preemption clause by a 99-to-1 vote](../ko/image/img-01-us-capitol.jpg)
 *▲ The Senate deleted the state AI law preemption clause from the reconciliation bill by a vote of 99 to 1 | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Capitol_Building_of_the_United_States_20240601.jpg)*
 
 The fight that seemed to be over in Congress, however, comes back in through a different door. Having lost the vote, the industry has started aiming at the people who cast those votes — the congressional candidates themselves. The vehicle is the super PAC. Instead of giving money directly to candidates, they build independent-expenditure groups that support candidates friendly to preemption and attack those who oppose it. House Majority Leader Steve Scalise said state laws "hurt innovation" and that preemption "will be the foundation of whatever we do," while Democrat Ted Lieu noted there is bipartisan opposition to "preemption with no alternative in its place." The industry is trying to route around this deadlock inside Congress with money from outside it.
@@ -56,7 +56,7 @@ And this money is no longer sitting in pledges — it is already moving. By the 
 
 At the center of the money is Leading the Future. Launched in January 2026, this super PAC is roughly $125 million by announced size, with about $70 million in cash on hand at the end of the first quarter. Its major backers include OpenAI president Greg Brockman ($25 million), venture firm a16z ($25 million), Palantir co-founder Joe Lonsdale, and Silicon Valley investor Ron Conway. A second pillar is Public First Action, a nonprofit seeded by Anthropic (about $20 million), and a third is Innovation Council Action, a Republican-leaning group led by Trump adviser David Sacks that has pledged to raise $100 million.
 
-![OpenAI president Greg Brockman — a major backer who put $25 million into Leading the Future](./image/img-02-greg-brockman.jpg)
+![OpenAI president Greg Brockman — a major backer who put $25 million into Leading the Future](../ko/image/img-02-greg-brockman.jpg)
 *▲ OpenAI president Greg Brockman is one of the major backers behind Leading the Future's $25 million commitment | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Disrupt_SF_TechCrunch_Disrupt_San_Francisco_2019_-_Day_2_(48838200316)_(cropped).jpg)*
 
 The numbers shift depending on how you count them. The watchdog Public Citizen tallied Big Tech and AI super PAC spending recorded in FEC filings at $60 million, which is the amount actually spent and reported. By announced and fundraising figures, however, the two largest AI PACs combine to more than $200 million. Meta's $65 million pledge to a state-level PAC and Anthropic's $20 million pledge have not yet appeared in FEC filings. So rather than lumping everything into one total, it is better to read these figures by asking whether each is an announced amount, funds raised, or reported spending.
@@ -74,7 +74,7 @@ What preemption seeks to neutralize is not abstract "state regulation" but a con
 
 The laws on the data axis are ones Pebblous has already covered. California's AB 2013 requires generative AI developers to publish a summary of their training data — its sources, types, copyright status, whether it includes personal information, and whether synthetic data was used. Illinois SB315 mandates third-party audits for frontier models, and Colorado's AI Act requires transparency for high-risk automated decision systems. All three laws touch the same question: can anyone outside a company find out what data a model was built on?
 
-![California State Capitol — where AB 2013 mandated disclosure of training-data sources](./image/img-03-california-capitol.jpg)
+![California State Capitol — where AB 2013 mandated disclosure of training-data sources](../ko/image/img-03-california-capitol.jpg)
 *▲ California's AB 2013 requires generative AI developers to disclose the sources, types, and copyright status of their training data | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:California_State_Capitol_during_blue_hour-3982.jpg)*
 
 So the jurisdictional dispute of "does federal preemption win, or do state laws hold?" becomes an entirely different sentence when translated into the language of people who work with data. It becomes: does the obligation to disclose the sources of training data survive? When Pebblous earlier covered [the Great American AI Act's three-year preemption draft](../../great-american-ai-act-preemption/en/), the first target that draft named explicitly was AB 2013. This money war is an attempt to take aim at that same target again, this time from outside Congress.
@@ -86,7 +86,7 @@ So the jurisdictional dispute of "does federal preemption win, or do state laws 
 
 How this money actually moves is compressed into a single Democratic primary in New York's 12th District. The figure at the center is state assemblyman Alex Bores, the legislator who introduced New York's AI safety law, the RAISE Act. When the person who wrote the regulation tried to move up to Congress, super PAC money from both sides poured onto him at once.
 
-![New York state assemblyman Alex Bores — RAISE Act sponsor targeted by super PAC money from both sides](./image/img-04-alex-bores.jpg)
+![New York state assemblyman Alex Bores — RAISE Act sponsor targeted by super PAC money from both sides](../ko/image/img-04-alex-bores.jpg)
 *▲ New York state assemblyman Alex Bores sponsored the RAISE Act and was targeted by super PAC money from both sides at once | Source: [New York State Assembly / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:AlexBoresAssemblyHeadshot.jpg)*
 
 On one side, the Jobs and Democracy PAC under Public First Action spent $2.3 million to help Bores. At the same time, on the other side, Think Big under Leading the Future deployed $3.3 million on attack ads to defeat him. What is interesting is the content of the attack ads: they barely mentioned AI regulation at all. In other words, the money took aim not at a particular policy but at a particular person. Defeating this legislator was the goal first, and the reason never surfaced on the face of the ads.

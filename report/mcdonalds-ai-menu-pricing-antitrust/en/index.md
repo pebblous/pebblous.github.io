@@ -43,7 +43,7 @@ Two days later, on October 1, McDonald's posted a document titled "Separating Fa
 
 The next day, October 2, a consumer class action was filed in the Northern District of Illinois. It is **Thomas v. McDonald's USA, LLC**, No. 1:26-cv-12149, and it names two defendants, McDonald's USA and McDonald's Corporation. The body runs to 132 numbered paragraphs and pleads four counts: two under Section 1 of the Sherman Act (price fixing and information exchange), one under the Illinois Antitrust Act, and one under the Illinois Consumer Fraud and Deceptive Business Practices Act. The plaintiff demands a jury trial.
 
-![The federal courthouse in Chicago where the consumer class action was filed in the Northern District of Illinois](./image/img-01-courthouse.jpg)
+![The federal courthouse in Chicago where the consumer class action was filed in the Northern District of Illinois](../ko/image/img-01-courthouse.jpg)
 *▲ The federal building in Chicago housing the Northern District of Illinois, where the complaint was filed | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Dirksen_United_States_Courthouse,_Chicago_Loop,_Chicago,_Illinois_(11004376983).jpg)*
 
 The scale is worth putting down first. Per the FY2025 annual report McDonald's filed with the SEC, there are 13,706 U.S. restaurants, and 95% of them are owned and operated by separate legal entities rather than by the parent. That is how many recipients one engine sends recommendations to. Because horizontal collusion is something that happens only among competitors, that 95% is the starting condition of the suit.

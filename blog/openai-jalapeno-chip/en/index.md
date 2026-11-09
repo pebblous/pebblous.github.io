@@ -38,7 +38,7 @@ Four numbers form the spine of this announcement. Cost ($8.4B) says why the chip
 <!-- stat-card -->
 **~50%** — Inference cost reduction target — OpenAI's own claim, based on pre-production samples
 
-![OpenAI CEO Sam Altman (left) and Broadcom CEO Hock Tan holding the Jalapeño Inference Processor semiconductor wafer](./image/img-01-jalapeno-press.jpg)
+![OpenAI CEO Sam Altman (left) and Broadcom CEO Hock Tan holding the Jalapeño Inference Processor semiconductor wafer](../ko/image/img-01-jalapeno-press.jpg)
 *▲ OpenAI CEO Sam Altman (left) and Broadcom CEO Hock Tan with the Jalapeño Inference Processor wafer | Source: [TechCrunch](https://techcrunch.com/2026/06/24/openai-unveils-its-first-custom-chip-built-by-broadcom/)*
 
 ## An $8.4 Billion Bill
@@ -49,7 +49,7 @@ The problem is the margin on those GPUs. Nvidia's high-end accelerators are repo
 
 Other companies have walked this path first. Google designs its own TPUs, and Amazon its own Trainium and Inferentia, running their workloads on their own silicon. Owning the chip lets a company control its cost per inference and stay free of an outside supplier's schedule and pricing. OpenAI's Jalapeño is its first step into that current.
 
-![Google TPU v4 AI accelerator board — the custom AI inference chip precedent that OpenAI's Jalapeño follows](./image/img-02-tpu-v4.png)
+![Google TPU v4 AI accelerator board — the custom AI inference chip precedent that OpenAI's Jalapeño follows](../ko/image/img-02-tpu-v4.png)
 *▲ Google's TPU v4 board — the custom AI accelerator precedent that big tech walked first. OpenAI's Jalapeño is its first step into that current | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:TPU_v4.png) (CC BY 4.0)*
 
 ## A First Chip in Nine Months
@@ -58,7 +58,7 @@ Jalapeño is a large ASIC designed purely for inference. Broadcom handled the de
 
 The most unusual part is the speed of development. From a blank design to tape-out, a large ASIC usually takes a year and a half to two years. OpenAI says it finished the process in nine months and described it as the shortest development cycle in the history of high-performance semiconductors. The secret behind that speed leads straight into the heart of this piece.
 
-![Google TPU 3.0 AI accelerator board — an inference-dedicated accelerator with systolic array architecture similar to Jalapeño](./image/img-03-tpu3-die.jpg)
+![Google TPU 3.0 AI accelerator board — an inference-dedicated accelerator with systolic array architecture similar to Jalapeño](../ko/image/img-03-tpu3-die.jpg)
 *▲ Google TPU 3.0 board — a systolic-array inference accelerator with liquid cooling. Jalapeño adopts a similar architecture paired with HBM3/4 memory modules | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Tensor_Processing_Unit_3.0.jpg)*
 
 The person who led the design is Richard Ho, OpenAI's head of hardware. He was a key contributor to Google's early TPU work, and that experience of quickly building inference accelerators carried over directly. The deployment timeline runs to a small-scale prototype in late 2026, mass production in 2027, and full operation in the first half of 2028 — and Microsoft is reported to have agreed to buy 40% of the initial production.

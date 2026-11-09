@@ -24,7 +24,7 @@ _A new paper binds Māori research data sovereignty to findability, governance, 
 
 What this paper takes on is not the principles that Māori data sovereignty (MDSov) has already established. It is how those principles are supposed to operate inside the institutions that actually collect and store the data. It comes from Paul T. Brown and Te Taka Keegan at the University of Waikato, Kiri West and Hana Rapata at the University of Auckland, and Maree Sheehan at Te Wānanga o Aotearoa. Universities and crown research institutes have gathered data about Māori for a long time, the authors write, generally without much consideration of how that data should be handled, managed, and used, or how the benefits of the knowledge generated flow back to the communities.
 
-![University of Waikato campus, home institution of two of the paper's co-authors](./image/img-01-university-of-waikato.jpg)
+![University of Waikato campus, home institution of two of the paper's co-authors](../ko/image/img-01-university-of-waikato.jpg)
 *▲ The University of Waikato (Hamilton) campus, home institution of two of the paper's co-authors | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:University_of_Waikato_village_green.jpg)*
 
 The authors start from the position that research is not neutral. Western research methods and methodologies have often been extractive toward Indigenous communities, and while the datafication of the world has made research more efficient, those same systems continue to structurally exclude Indigenous peoples. Policies upholding Indigenous rights to the Māori research data that universities collect are scarce, and the paper presents itself as an attempt to fill that ideological and policy gap.

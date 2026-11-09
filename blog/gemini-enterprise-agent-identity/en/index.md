@@ -20,7 +20,7 @@ _Agents no longer borrow a human_
 
 > Yet the answer stops halfway. "Who" and "which tool is this agent entitled to call" are firmly locked, but which rows and columns of the data that tool returns the agent is entitled to see still falls to the underlying data source. How far that lock reaches, and where the gap still opens — that is the boundary the pages ahead trace.
 
-![The four pillars of Google's Gemini Enterprise Agent Platform — Build, Scale, Govern, Optimize](./image/img-01-platform-pillars.jpg)
+![The four pillars of Google's Gemini Enterprise Agent Platform — Build, Scale, Govern, Optimize](../ko/image/img-01-platform-pillars.jpg)
 *▲ Agent Identity sits under the Govern pillar | Source: [Google Cloud Blog](https://cloud.google.com/blog/products/ai-machine-learning/introducing-gemini-enterprise-agent-platform)*
 
 Four numbers capture both the scale and the boundary of the announcement: the breadth of models the platform reaches, the short lifespan of the certificate that backs the ID, the time it took a competitor to ship the same answer, and the control layer still left to the underlying data source.
@@ -71,7 +71,7 @@ The second is delegated access. When an agent acts on a user's behalf, it uses n
 
 On top of this come the Agent Registry, which gathers approved agents, tools, and skills in one place; Agent Threat Detection, which catches reverse shells and malicious IP connections in real time; and Agent Anomaly Detection, which flags abnormal reasoning using statistical models together with an LLM judge. Taken together, "who" (identity) and "which tool is this agent entitled to call" (the tool gate) are firmly locked. To this point, it is clear progress on the audit question Pebblous has been posing.
 
-![Govern pillar architecture of the Gemini Enterprise Agent Platform — Agent Gateway, Agent Identity, Agent Registry, Agent Anomaly Detection, Model Armor, Agent Policy, Agent Security, Agent Compliance](./image/img-02-govern-architecture.jpg)
+![Govern pillar architecture of the Gemini Enterprise Agent Platform — Agent Gateway, Agent Identity, Agent Registry, Agent Anomaly Detection, Model Armor, Agent Policy, Agent Security, Agent Compliance](../ko/image/img-02-govern-architecture.jpg)
 *▲ Agent Gateway, Agent Identity, Agent Registry, and Agent Anomaly Detection sit side by side under Govern | Source: [Google Cloud Blog](https://cloud.google.com/blog/products/ai-machine-learning/introducing-gemini-enterprise-agent-platform)*
 
 > [!callout]
@@ -85,7 +85,7 @@ The phrase "the industry's first commercial answer" should be used with care. Go
 - •**Auth0 Auth for GenAI** — developer preview in May 2026. It treats MCP and autonomous agents as first-class identities and integrates with LangChain, LlamaIndex, the Vercel AI SDK, and more.
 - •**WorkOS** — positions itself as a lightweight alternative to Okta and detects non-human identities with a dedicated tool.
 
-![Okta for AI Agents admin console — importing an AI agent and assigning owners](./image/img-03-okta-ai-agent-governance.png)
+![Okta for AI Agents admin console — importing an AI agent and assigning owners](../ko/image/img-03-okta-ai-agent-governance.png)
 *▲ An Okta admin importing an AI agent and assigning its owners | Source: [Okta Blog](https://www.okta.com/blog/ai/okta-for-ai-agents-general-availability/)*
 
 That the direction overlaps is itself a signal. The Cloud Security Alliance (CSA) diagnosed the gap in non-human identity governance as coming not from a lack of technology but from no one deciding where responsibility sits. Indeed, CSA put at nine in ten the organizations that lack a reliable way to govern what an agent does in production. That several vendors reached for identity first in the same month means the gap has become a hands-on problem that can no longer be deferred. So it is more accurate to read this announcement not as "a problem Google solved alone" but as "the flagship case of a problem the industry began answering all at once."

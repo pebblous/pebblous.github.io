@@ -42,7 +42,7 @@ All four figures below come from the company itself. The automation share is a n
 
 Twin1 AI was founded in 2025 and has teams in San Mateo and London. In its August 20 announcement the company disclosed its launch from stealth and a $20 million seed at once. Bessemer Venture Partners, Tribeca Venture Partners and Aramco Ventures co-led the round, with participation from EJF Ventures, Lakestar, Notion Capital and others. Among the four co-founders, CEO Lewis Liu built and sold Eigen Technologies, an AI company that worked on financial and legal documents, and several investors who backed Eigen came back into this round.
 
-![Twin1 AI's $20 million seed round announcement card listing co-leads Bessemer, Tribeca Venture Partners and Aramco Ventures alongside participating investors](./image/img-01-twin1-seed-investors.png)
+![Twin1 AI's $20 million seed round announcement card listing co-leads Bessemer, Tribeca Venture Partners and Aramco Ventures alongside participating investors](../ko/image/img-01-twin1-seed-investors.png)
 *▲ Twin1 AI's investor thank-you card for its $20 million seed round | Source: [Twin1 AI newsroom](https://twin1.ai/news/twin1-ai-raises-20-million-seed-round)*
 
 The more important part of the announcement is not the amount but the deployment history. The company says it has been deployed with partners across legal, financial services and energy for over a year. The customers named are the law firms Linklaters, Orrick and Dechert, plus Customers Bank and the energy company Aegis Energy. Stealth here did not mean there was no product. It meant the name was not out yet.
@@ -57,7 +57,7 @@ An interview Liu gave the same day to the legal technology outlet Artificial Law
 
 The material a twin learns from is email, meetings, documents and the workplace systems a company runs on. The place it operates is not a separate app either, but the tools where people already work. Slack, Microsoft Teams, Outlook, Gmail, Google Drive and SharePoint are listed as connections.
 
-![Twin1 product mockup showing a Slack sidebar where a colleague's twin appears in the direct-message list next to the person themselves](./image/img-02-twin1-slack-network.png)
+![Twin1 product mockup showing a Slack sidebar where a colleague's twin appears in the direct-message list next to the person themselves](../ko/image/img-02-twin1-slack-network.png)
 *▲ A Twin1 twin shows up inside tools people already use, like Slack | Source: [Twin1 AI website](https://twin1.ai)*
 
 The company FAQ is more direct about what the twin learns. It says a twin "learns the language, tone and communication patterns in my own private knowledge base and uses that context to draft responses in my style, including adapting how I communicate with different people." The learning target does not stop at work product. It reaches the way a person works.

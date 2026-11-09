@@ -40,7 +40,7 @@ Sources: Schwab's third-quarter results release, and reporting by [American Bank
 
 Charles Schwab is a large U.S. brokerage. It holds tens of millions of accounts in which ordinary people buy and sell stocks and keep retirement money, and at the end of September the cash sitting in those accounts waiting to be invested came to $492.8 billion. On October 15, on the call for its third-quarter results, chief executive Rick Wurster set out one rule about those accounts.
 
-![Charles Schwab logo signage at the entrance of its Manhattan office](./image/img-01-schwab-office.jpg)
+![Charles Schwab logo signage at the entrance of its Manhattan office](../ko/image/img-01-schwab-office.jpg)
 *▲ Charles Schwab's New York office entrance | Source: [Wikimedia Commons (Ajay Suresh, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Charles_Schwab_Corporation_(55283756063).jpg)*
 
 His sentence carried a clear condition. Schwab wants to deliver AI to clients in a safe and secure way, he said, and there is one way he does not think is safe: "just an agent coming to our site and trying to log in on behalf of a client. We are not going to allow that." That is where the line falls: on the way in, not on AI itself. The route Schwab closes is the one where a client hands an ID and a password to an outside program and that program works the screen as though it were a person.

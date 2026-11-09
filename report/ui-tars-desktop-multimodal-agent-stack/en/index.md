@@ -45,7 +45,7 @@ The raw material isn't a single modality. It's a synchronized four-modal sequenc
 
 This paradigm shift connects directly to Pebblous's adjacent work. [Our hermes-agent report](/report/hermes-agent-data-quality-risk/en/) dissected the mechanics of self-reinforcing contamination in agent self-training loops. [Meta's "AI is eating software" declaration](/blog/neural-computers-meta/en/) framed the broader paradigm — the screen becomes the interface. UI-TARS sits at their intersection: the largest open experiment in treating screens as training data.
 
-![ByteDance UI-TARS official slogan: An Open-Source Multimodal AI Agent Stack](./image/img-01-ui-tars-hero.png)
+![ByteDance UI-TARS official slogan: An Open-Source Multimodal AI Agent Stack](../ko/image/img-01-ui-tars-hero.png)
 *▲ The slogan ByteDance placed at the top of the UI-TARS-desktop repository — "An Open-Source Multimodal AI Agent Stack." | Source: [bytedance/UI-TARS-desktop](https://github.com/bytedance/UI-TARS-desktop)*
 
 ## UI-TARS Architecture — The Five Layers of the Multimodal Stack
@@ -60,7 +60,7 @@ At the base sits the TARS VLM: a dual-resolution vision encoder (high/low), a te
 
 The second layer handles System-2 reasoning. It decomposes a task into smaller steps, reflects at each milestone, and reroutes when an attempt fails. This is the third of the four innovation axes outlined in the original UI-TARS paper. Kahneman's dual-system framework has effectively been crowned the canonical scaffolding for multimodal action models.
 
-![Agent TARS CLI v0.1.12-beta startup screen — Multimodal AI Agent server ready](./image/img-02-agent-tars-cli.png)
+![Agent TARS CLI v0.1.12-beta startup screen — Multimodal AI Agent server ready](../ko/image/img-02-agent-tars-cli.png)
 *▲ The Agent TARS CLI on startup. Spinning up a full multimodal AI agent server in a single command captures what an open-source, full-stack release feels like in practice. | Source: [bytedance/UI-TARS-desktop](https://github.com/bytedance/UI-TARS-desktop)*
 
 ### 2.3. Desktop/Browser UI Layer — Hands and Eyes
@@ -97,7 +97,7 @@ The GUI agent space has split into five camps: ByteDance (UI-TARS), Anthropic (C
 
 The OSWorld curve is steep. The best score in April 2024 was 12.24%. UI-TARS reached 24.6% in January 2025 (50 steps), UI-TARS-1.5 hit 42.5% in April 2025 (100 steps), UI-TARS-2 landed at 47.5% in September 2025, and Holo3-35B reported 82.6% in April 2026 — past the 72.36% human baseline in roughly eighteen months. But these numbers come from **different models, different step counts, different points in time**. Direct comparison is hazardous. Any citation should carry "version + step count + timestamp." As [our benchmark trust report](/report/ai-agent-benchmark-trust/en/) argued, scores deserve more skepticism, not less, as the field heats up.
 
-![UI-TARS-2 multimodal trace solving the Hex game inside an All-in-One GUI Sandbox — click, scroll, type, terminal, API](./image/img-03-ui-tars-2-benchmark.png)
+![UI-TARS-2 multimodal trace solving the Hex game inside an All-in-One GUI Sandbox — click, scroll, type, terminal, API](../ko/image/img-03-ui-tars-2-benchmark.png)
 *▲ A single multimodal trace from UI-TARS-2 — when told to "play the Hex game and try to score more," the agent searches the web, parses pages, executes game actions, and writes HTML to summarize its experience, all inside one loop. The All-in-One GUI Sandbox unifies desktop, mobile, browser, and game environments. | Source: [arXiv:2509.02544 (UI-TARS-2 Technical Report)](https://arxiv.org/abs/2509.02544)*
 
 ### 3.2. What "Open vs Closed" Actually Means
@@ -108,7 +108,7 @@ On the surface, UI-TARS's edge is the triple of open source, multi-platform, and
 
 An agent's behavior log moves through five stages: **collection → refinement → validation → storage → retraining**. Each stage breeds modality-specific quality defects, and a defect in one modality cascades into another. A low-resolution screenshot blurs UI element recognition; blurred recognition misplaces click coordinates; misplaced clicks drive the next screen state somewhere the agent never intended. Break that chain and traces become training data; fail to break it, and traces become poison.
 
-![Multimodal LLM inference pipeline — vision input and text input flow through vision model and tokenizer, fuse in the LLM, and decode into output](./image/img-04-mllm-hallucination.png)
+![Multimodal LLM inference pipeline — vision input and text input flow through vision model and tokenizer, fuse in the LLM, and decode into output](../ko/image/img-04-mllm-hallucination.png)
 *▲ The standard multimodal LLM inference pipeline. Vision and text inputs each pass through their own encoder/tokenizer before fusing inside the LLM — a defect in any one modality cascades at the fusion step. UI-TARS behavior logs follow exactly this structure. | Source: [arXiv:2404.18930 (Bai et al., 2024)](https://arxiv.org/abs/2404.18930)*
 
 This is exactly the surface DataClinic was designed to diagnose. Each modality has its own characteristic defect, its own failure mechanism, and a corresponding diagnostic axis:
@@ -151,7 +151,7 @@ Place UI-TARS next to a robot VLA (Vision-Language-Action) model and the two str
 
 The VLA lineup moved in lockstep over the same window. [RT-2](https://arxiv.org/abs/2307.15818) (Google DeepMind, July 2023, the original VLA) → [OpenVLA](https://arxiv.org/abs/2406.09246) (Stanford + Berkeley, June 2024, 7B open weights) → [π0](https://arxiv.org/abs/2410.24164) (Physical Intelligence, October 2024, flow matching) → [GR00T N1](https://arxiv.org/abs/2503.14734) (NVIDIA, March 2025, dual-system humanoid) → [Gemini Robotics](https://arxiv.org/abs/2503.20020) (Google + Apptronik, March 2025). The digital line (UI-TARS) and the physical line (VLA) converged on the same dual-system scaffolding, the same multimodal fusion, the same action-token pattern.
 
-![π0 VLA model data flow — robot datasets and natural-language commands feed a vision-language backbone with an action expert generating continuous 50Hz motor actions](./image/img-05-pi0-vla.png)
+![π0 VLA model data flow — robot datasets and natural-language commands feed a vision-language backbone with an action expert generating continuous 50Hz motor actions](../ko/image/img-05-pi0-vla.png)
 *▲ π0's VLA data flow (Physical Intelligence). Camera input and natural language enter a vision-language backbone; an action expert generates continuous motor torques via flow matching. The pattern is structurally identical to how UI-TARS generates mouse and keyboard tokens on a screen. | Source: [arXiv:2410.24164 (π0, Physical Intelligence)](https://arxiv.org/abs/2410.24164)*
 
 ### 5.1. The Mirror Image: Open vs Closed

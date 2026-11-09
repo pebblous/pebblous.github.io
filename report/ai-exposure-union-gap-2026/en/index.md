@@ -112,7 +112,7 @@ The same data also gives a signal in the opposite direction. Computer & math's t
 
 It is no accident that protection clusters in the upper left of the map. U.S. unions have historically taken root only in particular places. Organizing concentrated in the public sector, education, public safety, transportation, and manufacturing, while tech, finance, and clerical white-collar work stood outside it from the start. Education's 35.9% and public safety's 34.1% representation rates are high not because those occupations are especially resistant to AI, but because they had already built a bargaining structure in the pre-AI era.
 
-![Chicago Teachers Union rally in 2019 — education has had an organized bargaining structure since before AI](./image/img-03-teachers-union-rally.jpg)
+![Chicago Teachers Union rally in 2019 — education has had an organized bargaining structure since before AI](../ko/image/img-03-teachers-union-rally.jpg)
 *▲ A 2019 Chicago Teachers Union (CTU) rally. Education's high representation rate (35.9%) reflects a bargaining structure already built in the pre-AI era, not any special resistance to AI. | Source: [Wikimedia Commons (Charles Edward Miller, CC BY-SA 2.0)](https://commons.wikimedia.org/wiki/File:Chicago_Teachers_Union_Rally_10-14-19_3703_(48905846123).jpg)*
 
 ### 3.1. Top-5 exposed groups at 6.3% vs. top-3 protected groups at 28.6%
@@ -153,14 +153,14 @@ This absence is a felt reality before it is a statistic. In a Pew Research surve
 
 High exposure can still be governed when there is a table. The actors' and voice performers' union [SAG-AFTRA secured the scope, consent, and compensation for AI use in a collective-bargaining agreement](/blog/sag-aftra-ai-consent-collective-bargaining/en/). Dealing with assets extraordinarily exposed to AI replication (voice and face), it nonetheless nailed down "when and how they may be replicated" in contract language, through an organized bargaining structure. The problem is that this channel does not exist for most highly exposed white-collar occupations. Given the same exposure, SAG-AFTRA negotiates while unorganized data and clerical occupations are notified.
 
-![SAG-AFTRA actors' and voice performers' union picket line in New York, 2023](./image/img-01-sag-aftra-picket.jpg)
+![SAG-AFTRA actors' and voice performers' union picket line in New York, 2023](../ko/image/img-01-sag-aftra-picket.jpg)
 *▲ A 2023 SAG-AFTRA strike picket. Even while handling assets extraordinarily exposed to AI replication — voice and face — an organized bargaining structure let the union lock down the terms of AI use in contract language. | Source: [Wikimedia Commons (Phil Roeder, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:SAG-AFTRA_Picket_(53084605016).jpg)*
 
 ### 4.2. California EO N-6-26 — the first sentence aimed at the union's vacant seat
 
 On May 21, 2026, California Governor Gavin Newsom signed Executive Order N-6-26. Per K&L Gates' analysis, the order imposes no immediate obligations; it is a study-and-review directive that assigns phased tasks to several state agencies. Among them, the Labor and Workforce Development Agency (LWDA) is directed to review "how collective bargaining addresses AI in organized workplaces." It is, at present, almost the only line of text that engages head-on with this report's "no bargaining table" frame.
 
-![California State Capitol building in Sacramento — where Executive Order N-6-26 was signed](./image/img-02-ca-capitol.jpg)
+![California State Capitol building in Sacramento — where Executive Order N-6-26 was signed](../ko/image/img-02-ca-capitol.jpg)
 *▲ The California State Capitol in Sacramento. Executive Order N-6-26, signed here on May 21, 2026, is the first line of text aimed at the seat unions left vacant. | Source: [Wikimedia Commons (Tony Webster, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:The_California_State_Capitol_Building,_Sacramento_(32884057540).jpg)*
 
 2026.05.21Gov. Newsom signs EO N-6-26. No immediate obligations; a study-and-review directive.

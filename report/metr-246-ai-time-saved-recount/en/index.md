@@ -39,7 +39,7 @@ Frank Gilbreth, the efficiency engineer of the early twentieth century, buttoned
 "I can save forty-four seconds, but I wasted two minutes this morning putting this bandage on my throat."  
 Frank Gilbreth, in _Cheaper by the Dozen_ (1948). The paper opens its first section with this story.
 
-![Frank Gilbreth timing motion on a factory floor, early twentieth-century time-and-motion study](./image/img-01-gilbreth.jpg)
+![Frank Gilbreth timing motion on a factory floor, early twentieth-century time-and-motion study](../ko/image/img-01-gilbreth.jpg)
 *▲ Frank Gilbreth (center, bow tie) timing motion on a factory floor — what he counted was never seconds alone, it was bandages | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Frank_Bunker_Gilbreth_ca1916.jpg)*
 
 Three years of research into how much faster AI makes work fit inside that one scene. There is a tool that speeds up the visible part of a job, a cost that turns up somewhere else, and a small sample. And Gilbreth had one thing the recent literature often lacks. **He counted the bandages.** That is where the paper's title, _Counting the Bandages_, comes from.

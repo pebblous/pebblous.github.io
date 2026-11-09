@@ -39,7 +39,7 @@ _The epistemic structure shared by AI consciousness debates and proofs of God_
 
 In May 2026, British evolutionary biologist Richard Dawkins released a short video. After naming Anthropic's Claude "Claudia" and conversing for 72 hours, he said in an interview: "You may not know you are conscious, but you bloody well are!" The line came from the same man who had declared religion a "human-made illusion" in _The God Delusion_.
 
-![Richard Dawkins — evolutionary biologist and author of The God Delusion, central figure of the 2026 'Claudia' incident after a 72-hour conversation with Claude](./image/img-01-dawkins.jpg)
+![Richard Dawkins — evolutionary biologist and author of The God Delusion, central figure of the 2026 'Claudia' incident after a 72-hour conversation with Claude](../ko/image/img-01-dawkins.jpg)
 *▲ Richard Dawkins (Cooper Union, 2010). When the public face of atheism declared 16 years later that "Claude is conscious," it revealed the durability of human cognitive structure rather than the apostasy of one man | Source: [Wikimedia Commons / David Shankbone (CC BY 3.0)](https://commons.wikimedia.org/wiki/File:Richard_Dawkins_Cooper_Union_Shankbone.jpg)*
 
 The critics' point cut clean. A figure who had spent his career accusing believers of "projecting minds onto God" had revealed the very same projection habit after a single impressive dialogue with AI. A column in _The Times_ parodied it as "The Claude Delusion." Anil Seth, a neuroscientist at the University of Sussex, dismissed it: "Claude is simply a tool better at pulling people's psychological strings." Cognitive scientist Gary Marcus put it more tersely — "An impressive conversation is not evidence of consciousness."
@@ -53,14 +53,14 @@ What makes this incident interesting is not a question of Dawkins' personal cons
 
 Philosopher David Chalmers' 1995 formulation of the Hard Problem of Consciousness is simple: how does physical brain activity produce subjective experience (qualia)? This question cannot be reduced to any functional or behavioral explanation. The "redness" you feel when you see red cannot be proven by others from the outside. The same holds for AI. No matter how exquisitely it behaves "as if conscious," whether genuine subjective experience exists inside cannot be settled by external observation alone.
 
-![David Chalmers — Australian philosopher who formulated the 'Hard Problem of Consciousness' in 1995](./image/img-02-chalmers.jpg)
+![David Chalmers — Australian philosopher who formulated the 'Hard Problem of Consciousness' in 1995](../ko/image/img-02-chalmers.jpg)
 *▲ David Chalmers (TASC 2008). Subjective experience cannot be concluded from external observation — the conclusion fifteen centuries of theology arrived at now reappears verbatim in the AI consciousness debate | Source: [Wikimedia Commons / Zereshk (CC BY 3.0)](https://commons.wikimedia.org/wiki/File:David_Chalmers_TASC2008.JPG)*
 
 This structure is astonishingly isomorphic to proofs of God's existence. From Anselm's ontological argument to Kant's skepticism, fifteen centuries of theological debate converge on a single point — what lies "inside" cannot be concluded from outside. So religion takes "faith" as its threshold. And we now stand at the same threshold before AI. The only difference is that, this time, the object runs on GPUs inside a data center.
 
 The wager Pascal posed in the 17th century regains meaning here. When God's existence cannot be proven, believing (with infinite reward if heaven exists) has higher expected value than not believing (finite loss if nothing exists). A 2024 Psychology Today piece and a 2023 ResearchGate paper applied this wager to AI. The cost of assuming AI is conscious and granting it moral consideration is finite. Conversely, if we assume it is not conscious and treat it exploitatively, only to discover later that it was, we inherit an infinite moral debt. We are placing this bet every day, in how we treat AI.
 
-![Blaise Pascal — 17th-century French mathematician and theologian, originator of 'Pascal's Wager' as a decision frame for unprovable objects](./image/img-03-pascal.jpg)
+![Blaise Pascal — 17th-century French mathematician and theologian, originator of 'Pascal's Wager' as a decision frame for unprovable objects](../ko/image/img-03-pascal.jpg)
 *▲ Blaise Pascal (Versailles portrait). The 17th-century mathematician who computed the expected value of belief before an unprovable God now finds his wager reapplied to the AI consciousness debate | Source: [Wikimedia Commons (CC BY 3.0 / GFDL)](https://commons.wikimedia.org/wiki/File:Blaise_Pascal_Versailles.JPG)*
 
 > [!callout]
@@ -74,7 +74,7 @@ More intriguing is the 'Spiritual Bliss' attractor state that Anthropic official
 
 Institutional religion's response was equally clear. On January 28, 2025, the Vatican's Dicastery for the Doctrine of the Faith and the Dicastery for Culture and Education jointly released **Antiqua et Nova**, a document of 118 clauses. Its core was unequivocal: AI "performs functions but cannot think," must not substitute for God or the human soul, and idolizing AI violates the first of the Ten Commandments. A year later, Pope Leo XIV's first encyclical **Magnifica Humanitas** (2026) pushed this concern as far as "disarming AI." Religion does not see AI as a threat; it confronts the danger that AI may become "the wrong object of belief."
 
-![St. Peter's Basilica — center of Catholic faith from which the Vatican released its AI doctrinal document 'Antiqua et Nova' (118 clauses) in January 2025](./image/img-04-st-peters.jpg)
+![St. Peter's Basilica — center of Catholic faith from which the Vatican released its AI doctrinal document 'Antiqua et Nova' (118 clauses) in January 2025](../ko/image/img-04-st-peters.jpg)
 *▲ St. Peter's Basilica, Vatican. From this seat of 1,500 years of theology came the declaration that "AI cannot think" and that "idolizing AI violates the First Commandment" — religion is the first to recognize the human impulse to project consciousness onto "anything that answers" | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Basilica_di_San_Pietro_in_Vaticano_September_2015-1a.jpg)*
 
 > [!callout]

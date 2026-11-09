@@ -32,7 +32,7 @@ _Beyond labels, all the way to human review and source protection — the data-a
 <!-- stat-card -->
 **3,500+** — U.S. newspapers closed since 2005 — Newsroom staff down ~2/3 in a decade
 
-![The New York Times newsroom in 1942 — copy editors reviewing wire dispatches at the telegraph desk](./image/img-01-nyt-newsroom-1942.jpg)
+![The New York Times newsroom in 1942 — copy editors reviewing wire dispatches at the telegraph desk](../ko/image/img-01-nyt-newsroom-1942.jpg)
 *▲ The New York Times newsroom, 1942 — copy editors review wire dispatches. Eight decades later, New York State makes human review a legal requirement in the AI era. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Newsroom_of_the_New_York_Times_newspaper._8d22685v.jpg) (Marjory Collins / U.S. Farm Security Administration, 1942 — Public Domain)*
 
 ## Three Duties That Go Past the Label

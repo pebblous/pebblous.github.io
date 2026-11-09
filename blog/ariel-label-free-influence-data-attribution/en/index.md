@@ -40,7 +40,7 @@ Source: Grens et al., [arXiv:2608.23458](https://arxiv.org/abs/2608.23458) (2026
 
 Ariel is the European Space Agency's M4 medium-class space telescope, due to launch in 2031. It will leave from French Guiana aboard an Ariane 6, settle into a halo orbit around the Sun-Earth L2 point, and take spectra of the atmospheres of roughly 1,000 exoplanets. ESA calls this a chemical census. Its launch mass is 1,400 kg, its collecting area 0.64 m², and it carries two instruments.
 
-![Artist's impression of ESA's Ariel exoplanet spectroscopy telescope, showing its deployed reflector, instrument bay, and solar panels](./image/img-01-ariel-spacecraft.jpg)
+![Artist's impression of ESA's Ariel exoplanet spectroscopy telescope, showing its deployed reflector, instrument bay, and solar panels](../ko/image/img-01-ariel-spacecraft.jpg)
 *▲ Artist's impression of Ariel | Source: [ESA, CC BY-SA 3.0 IGO](https://commons.wikimedia.org/wiki/File:Ariel_ESA_(cropped).jpg)*
 
 The observing principle is transit. While a planet passes in front of its host star, part of the starlight filters through the planetary atmosphere and leaves wavelength-specific molecular signatures behind. What Ariel receives is a time series of brightness variation per wavelength, and machine learning enters at the stage where the atmospheric transmission spectrum is recovered from that. The paper places this role as a complement to the classical retrieval pipeline rather than a replacement for it. Machine learning is also used on the side that infers atmospheric properties from spectra, but the task this work addresses is predicting transmission spectra directly from light curve data. In Ariel's data processing terms, that is the step from L2 to L3.

@@ -20,7 +20,7 @@ _Google sends the build without cyber safety limits to its own teams and to secu
 
 > Sections 1 through 4 stay with what the Google post, the Fairwind page and the coverage of both actually say. Section 5 rereads the same material through the eyes of someone who works with data, and that rereading belongs to this article.
 
-![Google's official Gemini 4 Argon announcement key art](./image/img-01-gemini-4-argon-keyart.png)
+![Google's official Gemini 4 Argon announcement key art](../ko/image/img-01-gemini-4-argon-keyart.png)
 *▲ Gemini 4 Argon, announced by Google on September 30, 2026 | Source: [Google Blog](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/)*
 
 ### Key figures
@@ -60,7 +60,7 @@ Collinear has published what the test measures. It hands over whole open-source 
 
 ▲ Headline results carried in the Google announcement. On Gray Swan IPI, which measures resistance to prompt injection, the post claims the lead without giving a number. Sources: Google Gemini 4 Argon announcement (2026-09-30); SecurityWeek.
 
-![CWE-bench v1 leaderboard bar chart — Gemini 4 Argon tied for first at 68% with GPT-6 Astra and Grok 4.7](./image/img-02-cwe-bench-leaderboard.webp)
+![CWE-bench v1 leaderboard bar chart — Gemini 4 Argon tied for first at 68% with GPT-6 Astra and Grok 4.7](../ko/image/img-02-cwe-bench-leaderboard.webp)
 *▲ The CWE-bench v1 leaderboard. The small label under each bar names the agent harness that model ran on (Antigravity, opencode, Codex, Claude Code) | Source: [Google Blog](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/)*
 
 Scrolling the leaderboard to the bottom shows that 68% is the most generous reading available. [Collinear's public leaderboard](https://cwe-bench.com/) keeps a separate column for the agent tooling each model ran on, and the Argon row carries Antigravity, Google's own harness. Under the standard that allows four attempts and counts one success, Argon reaches 75% and falls behind Grok 4.7 at 81%. Its judge-panel score of 62% is the lowest among the four models at the top. Its cost of $6.63 per run is the highest on the board.
@@ -77,7 +77,7 @@ The announcement puts it this way: trusted defenders and Google's internal teams
 
 Who may apply, and what an approved organization has to honor, sits on the program page. Reading it, nobody would call the document loose.
 
-![Google's official Fairwind Program introduction card](./image/img-03-fairwind-program.webp)
+![Google's official Fairwind Program introduction card](../ko/image/img-03-fairwind-program.webp)
 *▲ The Fairwind program, launched by Google on September 2, 2026 | Source: [Google Blog](https://blog.google/innovation-and-ai/technology/safety-security/fairwind-program/)*
 
 | Item | What the page says |

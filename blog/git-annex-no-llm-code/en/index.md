@@ -36,7 +36,7 @@ _A 100-hour dependency audit cost git-annex future language upgrades_
 
 git-annex is a mature open-source project, nearly 20 years old, that manages large files with git. What developer Joey Hess did over the past month was not build a new feature. It was to trace back through every piece of code his project relies on, by hand, hunting for where LLM-written code had slipped in. He wrote that this took him close to 100 hours.
 
-![Official Git logo — the version control system git-annex builds its large-file management on top of](./image/img-01-git-logo.svg)
+![Official Git logo — the version control system git-annex builds its large-file management on top of](../ko/image/img-01-git-logo.svg)
 *▲ git-annex layers large-file history management on top of Git | Source: [Official Git logo, Jason Long (CC BY 3.0)](https://commons.wikimedia.org/wiki/File:Git-logo.svg)*
 
 - •**A 1,489-line commit message.** A single change of more than 10,000 lines landed in a 26,000-line codebase, and the commit message describing it ballooned to a barely readable 1,489 lines. What changed, and why, actually grew murkier inside the message.
@@ -60,7 +60,7 @@ What matters is what this flag **does not guarantee**. First, it is not the defa
 
 Even if git-annex itself writes not a single line of LLM code, the problem rises up from below. What the audit revealed is that several sub-dependencies have already begun to include LLM-generated code. The packages the official documentation named, and when, are specific.
 
-![Official Haskell programming language logo — GHC, ram, persistent, yesod, and Cabal, most of the contaminated sub-dependencies, belong to this ecosystem](./image/img-02-haskell-logo.svg)
+![Official Haskell programming language logo — GHC, ram, persistent, yesod, and Cabal, most of the contaminated sub-dependencies, belong to this ecosystem](../ko/image/img-02-haskell-logo.svg)
 *▲ Most of the confirmed contaminated sub-dependencies belong to the Haskell ecosystem | Source: [Official Haskell logo (Public Domain)](https://commons.wikimedia.org/wiki/File:Haskell-Logo.svg)*
 
 - •**GHC** — from 9.15 (git-annex supports only up to 9.6.6)

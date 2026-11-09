@@ -20,7 +20,7 @@ _ASEAN_
 
 > For people who handle data, that difference is more than legal vocabulary. Into a habit of reading regulation as a list of "don'ts," Malaysia inserts a different sentence: "this is your asset." The moment the provenance and rights around training data gain legal standing, the work of organizing and tracking that data stops being a cost and becomes asset management. The moment you read regulation as a signal of asset-making rather than a cost, the center of gravity of data work shifts with it.
 
-![Malaysia's Dewan Rakyat chamber — the lower house of parliament where the AI governance bill will be debated](./image/img-01-parliament.jpg)
+![Malaysia's Dewan Rakyat chamber — the lower house of parliament where the AI governance bill will be debated](../ko/image/img-01-parliament.jpg)
 *▲ Malaysia's Dewan Rakyat (lower house of parliament) chamber — where the AI governance bill will be debated | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Dewan_Rakyat,_Parliament_of_Malaysia_(symmetrical_composition).jpg)*
 
 ### Key Numbers
@@ -47,7 +47,7 @@ At the center of the bill sits an idea that fits in a single sentence: the data 
 
 The input question is familiar. Who holds the rights to the works a model learned from, and was that use legitimate? It is the very point that copyright disputes over generative AI are fighting out around the world. The output question is relatively new. Who owns the copyright to the writing, pictures, and music an AI produces? The Malaysian bill puts both in its sights at once, with enforcement designed to fall to the Intellectual Property Corporation of Malaysia (MyIPO). It leans on the existing Copyright Act 1987 as its base, with the new law supplementing it in the AI context.
 
-![Prime Minister Anwar Ibrahim of Malaysia — cited the bill's dual IP structure directly during parliamentary questions in February 2026](./image/img-02-anwar-ibrahim.jpg)
+![Prime Minister Anwar Ibrahim of Malaysia — cited the bill's dual IP structure directly during parliamentary questions in February 2026](../ko/image/img-02-anwar-ibrahim.jpg)
 *▲ Prime Minister Anwar Ibrahim of Malaysia (2024) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Anwar_Ibrahim_(2024-05-23).jpg) / Cabinet Secretariat of Japan*
 
 IP is not the only thing the bill addresses, of course. It also brings an AI risk-classification framework, full-lifecycle oversight from development through deployment and monitoring, and mandatory incident reporting. The picture is meant to cover the whole AI ecosystem, data centers included. Even so, the mark that sets this bill apart from other regulation is the dual IP structure. Clauses for managing risk exist in other countries too, but the attempt to define both inputs and outputs in the language of property rights is uncommon.
@@ -59,7 +59,7 @@ IP is not the only thing the bill addresses, of course. It also brings an AI ris
 
 "Southeast Asia's first" is a phrase to use carefully. The country that passed a binding AI law earliest is Vietnam. It finalized its law in December 2025, began phasing it in from March 2026, and bundled in amendments to its intellectual-property and cybersecurity laws as well. Singapore takes a different road. Instead of compelling through law, it builds trust through voluntary frameworks like AI Verify, and in January 2026 it became the first in the world to release a governance framework for agentic AI.
 
-![Map of ASEAN member states — Malaysia, Vietnam, Singapore and other Southeast Asian countries each pursuing different AI regulatory approaches](./image/img-03-asean-map.png)
+![Map of ASEAN member states — Malaysia, Vietnam, Singapore and other Southeast Asian countries each pursuing different AI regulatory approaches](../ko/image/img-03-asean-map.png)
 *▲ ASEAN member states (colors indicate year of accession) — Malaysia, Vietnam, and Singapore each take a distinct AI regulatory strategy | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Map_of_ASEAN_member_states.svg)*
 
 So Malaysia's "first" has to be stated more narrowly and precisely than Vietnam's. It means the first case where dedicated AI-governance legislation puts IP protection for both training-data inputs and AI outputs at the center of its frame. Vietnam included IP amendments too, but did not make them the law's headline. Malaysia raises IP not as a side branch but as a pillar. Even within Southeast Asia, the emphasis differs.
@@ -77,7 +77,7 @@ If the bill passes, where does the weight of day-to-day data work move? The most
 
 Change follows on the output side as well. Once the copyright ownership of AI-generated work is spelled out, you have to settle in advance, within contracts and workflows, who holds the rights to those results. At the same time, the position of those who supply data shifts. When rights attach clearly to the data used in training, the bargaining power of whoever holds that data rises. Data gets a price when it becomes something to trade, and to be priced, its ownership has to be clear. Making that ownership clear is exactly what the bill sets out to do.
 
-![Petronas Twin Towers in Kuala Lumpur — Malaysia targets becoming an AI-driven nation by 2030 and allocated RM2 billion to domestic AI infrastructure](./image/img-04-petronas-kl.jpg)
+![Petronas Twin Towers in Kuala Lumpur — Malaysia targets becoming an AI-driven nation by 2030 and allocated RM2 billion to domestic AI infrastructure](../ko/image/img-04-petronas-kl.jpg)
 *▲ Petronas Twin Towers, Kuala Lumpur — Malaysia has allocated RM2 billion to sovereign AI infrastructure and aims to be an AI-driven nation by 2030 | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_Petronas_Twin_Towers_in_Kuala_Lumpur_(Malaysia).JPG)*
 
 Here the familiar equation "regulation equals prohibition" begins to wobble. Read regulation only as a list of burdens, and this bill looks like one more constraint. Yet regulation that establishes ownership is also regulation that creates assets. The structure resembles how land became a tradable asset once title registration appeared. The more the owner of data is fixed by law, the more an unsorted heap of data gains room to turn into a sorted data asset. Malaysia's choice leans toward using regulation as a tool for creating data value.

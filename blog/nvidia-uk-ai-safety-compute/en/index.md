@@ -44,7 +44,7 @@ What NVIDIA promised is $250 million worth of accelerated computing over five ye
 
 The release also says what it is for. The research splits three ways: secure agents, open-model security and real-world threat mitigation. For the environment that research runs in, it lists secure sandboxes, reproducible research and safety assessment benchmarks, and it says the work will draw on NVIDIA OpenShell and NVIDIA Sentry. OpenShell is open, secure runtime software; Sentry is a reference design for continuous in-silicon monitoring of agents. One company is supplying both the environment the experiments run in and the instrument that watches them, and that is a point section 3 comes back to.
 
-![Logo wall of partner companies in NVIDIA's Open Agent Safety Platform, including Anthropic, AWS, Cisco and Hugging Face](./image/img-01-open-agent-safety-platform.png)
+![Logo wall of partner companies in NVIDIA's Open Agent Safety Platform, including Anthropic, AWS, Cisco and Hugging Face](../ko/image/img-01-open-agent-safety-platform.png)
 *▲ Partner list for NVIDIA's Open Agent Safety Platform, home to the OpenShell and Sentry tools named in the release | Source: [NVIDIA Newsroom](https://nvidianews.nvidia.com/news/nvidia-commits-250-million-to-advance-uk-agentic-safety-and-security-research-over-the-next-five-years)*
 
 Three places are named as recipients. BOLD, the British Open-ended Learning and Discovery lab led by Oxford, is rethinking how AI learns and acts alongside people. SOFAIR, the Science of Fundamental AI Research lab led by UCL, is after open-source AI architectures that run on widely available hardware. Imperial College London takes safety engineering and robotics. The first two are national AI labs established in June 2026 with up to £60 million over six years from EPSRC, part of UK Research and Innovation. Jakob Foerster directs BOLD and David Barber directs SOFAIR.
@@ -69,7 +69,7 @@ For the same headline amount, though, cash and compute behave differently. With 
 
 No supplier has been picked, but the shortlist is already narrow. Among registered NVIDIA Cloud Partners, the ones operating at scale in the UK are Nscale and CoreWeave. NVIDIA put £500 million of equity into Nscale in September 2025, with Jensen Huang saying the company "could be a national champion" in UK AI infrastructure, and in the same week it announced, together with Nscale, CoreWeave and Microsoft, up to £11 billion of UK data centre investment and the deployment of 120,000 Blackwell Ultra GPUs.
 
-![Map graphic of the UK and Ireland used in NVIDIA's announcement of its UK AI infrastructure investment](./image/img-02-uk-ai-infrastructure.jpg)
+![Map graphic of the UK and Ireland used in NVIDIA's announcement of its UK AI infrastructure investment](../ko/image/img-02-uk-ai-infrastructure.jpg)
 *▲ Image from NVIDIA's September 2025 announcement of its UK AI infrastructure build-out alongside its equity stake in Nscale | Source: [NVIDIA Newsroom](https://nvidianews.nvidia.com/news/nvidia-and-united-kingdom-build-nations-ai-infrastructure-and-ecosystem-to-fuel-innovation-economic-growth-and-jobs)*
 
 The shareholding did not end with that one cheque. NVIDIA joined Nscale's $1.1 billion Series B and then its $2 billion Series C in March 2026, a round that valued Nscale at $14.6 billion. In September, a month before this safety announcement, Nscale filed publicly for a New York Stock Exchange listing seeking up to $3 billion. On the share register of one candidate to host this compute, the donor's name keeps appearing.

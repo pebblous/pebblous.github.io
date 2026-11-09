@@ -46,7 +46,7 @@ Employer-side surveys have their own texture. [HR Dive](https://www.hrdive.com/n
 
 More striking is the optimism the same managers hold. In this research, 94% of HR leaders said AI will create new entry-level roles within five years, and 96% expected the junior role to shift toward managing and supervising AI. The hand moving budget to AI now and the mouth promising to reopen junior roles later coexist inside a single organization.
 
-![College graduates in caps and gowns gathered at a commencement ceremony — the young jobseekers at the center of the debate over whether AI is cutting entry-level hiring](./image/img-01-college-graduation.jpg)
+![College graduates in caps and gowns gathered at a commencement ceremony — the young jobseekers at the center of the debate over whether AI is cutting entry-level hiring](../ko/image/img-01-college-graduation.jpg)
 *▲ A commencement ceremony packed with new graduates. Employer budgets are shifting toward AI, but survey data shows hiring plans themselves have not shrunk nearly as much | Source: [Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:College_graduate_students.jpg)*
 
 And in the same research, 65% said they plan to hire the same number of new graduates as last year, or more, this year. Budget is shifting to AI, but the hiring door has not closed. What's more, companies' biggest complaint about new hires was not AI but the fundamentals. Work ethic, basic document comprehension, and professional email writing came up more often than AI. Even the employer voice sits at a distance from the simple story that "AI is eliminating entry-level jobs."
@@ -57,7 +57,7 @@ Up to this point everything is survey data, that is, about what people feel and 
 
 Since generative AI spread in earnest in late 2022, employment of 22-to-25-year-old early-career workers in the most AI-exposed jobs fell by a relative 13 to 16%. Among software developers alone, the drop reaches about 20%. By contrast, employment of senior workers in the same jobs, and of workers in jobs with low AI exposure, stayed stable. The adjustment came through hiring less, not through cutting wages. Fear had simply run ahead, but it was not without grounds.
 
-![Stanford University's Gates Computer Science Building — home to the Stanford Digital Economy Lab, whose payroll-data study underlies this section](./image/img-02-stanford-cs-building.jpg)
+![Stanford University's Gates Computer Science Building — home to the Stanford Digital Economy Lab, whose payroll-data study underlies this section](../ko/image/img-02-stanford-cs-building.jpg)
 *▲ Stanford's Gates Computer Science Building. The "Canaries in the Coal Mine" study cited above comes from the Stanford Digital Economy Lab's analysis of ADP payroll data | Source: [Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:StanfordGatesCS.jpg)*
 
 > [!callout]

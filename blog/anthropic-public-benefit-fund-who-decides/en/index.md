@@ -52,7 +52,7 @@ The timing of the announcement reads alongside the numbers. At an investor day h
 
 CNBC quoted Lise Buyer, an adviser on public offerings, describing the timing as good for burnishing a reputation at a moment when scrutiny of AI has intensified. Buyer also attached a condition, saying the fund would be worth viewing favorably if it goes toward retraining or re-employment. Judgment, in other words, waits on the use. Chief executive Dario Amodei himself presented the announcement as an answer to the crisis of trust the industry has run into.
 
-![Title image from Anthropic's public benefit fund announcement, an empty frame placed beside a painting of a flower field](./image/img-01-public-benefit-fund-announcement.jpg)
+![Title image from Anthropic's public benefit fund announcement, an empty frame placed beside a painting of a flower field](../ko/image/img-01-public-benefit-fund-announcement.jpg)
 *▲ The title image Anthropic posted with "Investing in the public benefit" | Source: [Anthropic](https://www.anthropic.com/news/public-benefit-fund)*
 
 ## The Uses Are Written, the Recipients Are Blank

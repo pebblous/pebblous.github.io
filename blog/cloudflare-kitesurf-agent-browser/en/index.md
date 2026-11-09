@@ -40,7 +40,7 @@ Source: [Cloudflare engineering blog](https://blog.cloudflare.com/kitesurf/), me
 
 How quickly that last number piled up is laid out in a chart the company published alongside the announcement.
 
-![Cloudflare's published chart showing Web Platform Tests passing climb from zero to 215,000 over Kitesurf's 12-week build](./image/img-01-wpt-progress.png)
+![Cloudflare's published chart showing Web Platform Tests passing climb from zero to 215,000 over Kitesurf's 12-week build](../ko/image/img-01-wpt-progress.png)
 *▲ Passing tests climbed to 215,000 over the 12-week build | Source: [Cloudflare engineering blog](https://blog.cloudflare.com/kitesurf/)*
 
 ## What Did They Strip Out, and What Did It Cost?

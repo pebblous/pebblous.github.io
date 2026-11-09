@@ -20,7 +20,7 @@ _An 18-point opinion from the State Council General Office, published October 23
 
 > Sections 1 through 3 follow the wording of the document, together with the list of base cities and the occupational standard issued earlier by the National Data Administration and the Ministry of Human Resources and Social Security, and an industry report from CAICT. Section 4, which turns this layout into a question for the buyer of data, is this article's reading and is not in the document.
 
-![Xinhuamen, the gate of the Zhongnanhai compound that houses the State Council General Office and other central government offices](./image/img-01-xinhuamen-gate.jpg)
+![Xinhuamen, the gate of the Zhongnanhai compound that houses the State Council General Office and other central government offices](../ko/image/img-01-xinhuamen-gate.jpg)
 *▲ Xinhuamen, the gate of the Zhongnanhai compound. The State Council General Office that issued this opinion sits inside it | Source: [Prcmise, Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Xinhuamen_Beijing.jpg)*
 
 ### Key numbers
@@ -50,7 +50,7 @@ The "AI Plus" initiative named at the head of that quotation refers to a separat
 
 Documents that place data labeling in particular regions are not new. On May 24, 2024, the National Data Administration announced at the Seventh Digital China Summit the seven cities that would carry the task of building data labeling bases: Chengdu in Sichuan, Shenyang in Liaoning, Hefei in Anhui, Changsha in Hunan, Haikou in Hainan, Baoding in Hebei, and Datong in Shanxi. Four of them — Chengdu, Hefei, Changsha and Datong — lie in the central and western regions. The stated criteria for choosing the cities included industrial foundation, strengths in human resources and digital-economy potential, alongside coordinated regional development. That December the National Development and Reform Commission, the National Data Administration, the Ministry of Finance and the Ministry of Human Resources and Social Security issued "Implementation Opinions on Promoting the High-Quality Development of the Data Labeling Industry," which set a target of more than 20% compound annual growth for the industry through 2027.
 
-![Map of China's four economic regions — east (blue), the Rise of Central China Plan (green), China Western Development (purple), and the Northeast Area Revitalization Plan (striped)](./image/img-02-china-regions-map.svg)
+![Map of China's four economic regions — east (blue), the Rise of Central China Plan (green), China Western Development (purple), and the Northeast Area Revitalization Plan (striped)](../ko/image/img-02-china-regions-map.svg)
 *▲ China's four economic regions (east, central, northeast, west). This opinion's east/central-west division of labor sits on top of that framework | Source: [Quintucket, Wikimedia Commons (CC0)](https://commons.wikimedia.org/wiki/File:China_Economic_Sector.svg)*
 
 So the thing this document writes down for the first time is not the regional placement of labeling. Two things are new. A division of labor that hands the east and the central and western regions different layers now sits inside a single sentence, and that sentence appears in an employment document rather than an industrial development one. The December 2024 implementation opinions never use the phrase "central and western."

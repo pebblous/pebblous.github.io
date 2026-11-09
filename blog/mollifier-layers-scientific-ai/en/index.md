@@ -53,12 +53,12 @@ Differentiation measures rates of change, and noise is change that jitters at a 
 
 The solution came not from a new technique but from old mathematics. In the 1940s, the mathematician Kurt Otto Friedrichs devised a tool called the mollifier to work with PDE theory. Just as the word "mollify" means to soften, a mollifier softens functions that are sharp and rough.
 
-![Kurt Otto Friedrichs (c. 1950) — mathematician who devised the mollifier in the 1940s](./image/img-03-friedrichs-portrait.jpg)
+![Kurt Otto Friedrichs (c. 1950) — mathematician who devised the mollifier in the 1940s](../ko/image/img-03-friedrichs-portrait.jpg)
 *▲ Kurt Otto Friedrichs (c. 1950) — the mathematician who devised the mollifier for PDE theory in the 1940s | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kurt-Friedrichs-abt-1950-O.jpg) (Public Domain)*
 
 The way it works is convolution. It replaces a point of a function not with that point alone but with a weighted average of its neighbors. A spike gets pressed down by the values on either side; a dip gets pulled up by what surrounds it. Finely jittering components like noise cancel one another out in this averaging and disappear. The crucial part is that this smoothing preserves the function's mathematical properties — its continuity and differentiability.
 
-![2D mollifier bump function — a smooth function with finite support that acts as the convolution kernel](./image/img-04-mollifier-animation.gif)
+![2D mollifier bump function — a smooth function with finite support that acts as the convolution kernel](../ko/image/img-04-mollifier-animation.gif)
 *▲ The mollifier bump function — smooth, zero outside a finite region, serving as the convolution kernel | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Mollifier_movie.gif) (Public Domain, Oleg Alexandrov)*
 
 In the era when Friedrichs built this tool there were no neural networks and no automatic differentiation. What he set out to solve was a problem in pure PDE theory. Yet 80 years later, scientific AI — which needs to take high-order derivatives stably from noisy data — turned out to need exactly the same property: smooth the data before differentiating, without wrecking the structure of the equation to be solved. The answer had already been written down in the 1940s.
@@ -85,7 +85,7 @@ Mollifier Layer
 
 The design brings three benefits together. First, it is architecture-agnostic. It attaches to the output layer of any neural network, with no need to alter the existing model structure. Second, it is light: the added compute is negligible. Third, it is robust to noise, working stably even on data pulled fresh out of the lab with jitter in it.
 
-![Mollifier Layer architecture — autodiff limitations and PhiML+Mollifier integrated design](./image/img-01-mollifier-architecture.png)
+![Mollifier Layer architecture — autodiff limitations and PhiML+Mollifier integrated design](../ko/image/img-01-mollifier-architecture.png)
 *▲ Mollifier Layer architecture — (a) time and error explosion in conventional autodiff, (b) Laplacian actual vs. predicted, (d) PhiML with the mollifier integrated at the output | Source: [Bhartari et al., arXiv:2505.11682](https://arxiv.org/abs/2505.11682)*
 
 > [!callout]
@@ -95,7 +95,7 @@ The design brings three benefits together. First, it is architecture-agnostic. I
 
 Validation proceeded by climbing the orders. Across PDE benchmarks from first to fourth order — Langevin dynamics, heat diffusion, reaction-diffusion systems and more — the model with a Mollifier Layer lifted three metrics together. Accuracy in recovering hidden parameters rose, the memory that high-order derivatives demanded fell, and training sped up as the recursive-derivative stack thinned out.
 
-![Langevin dynamics inverse problem benchmark — Mollified PINN vs conventional PINN parameter inference](./image/img-02-benchmark-langevin.png)
+![Langevin dynamics inverse problem benchmark — Mollified PINN vs conventional PINN parameter inference](../ko/image/img-02-benchmark-langevin.png)
 *▲ Langevin dynamics inverse problem — the Mollified PINN (green) converges faster and recovers parameters stably under noise, where the conventional PINN (blue) diverges | Source: [Bhartari et al., arXiv:2505.11682](https://arxiv.org/abs/2505.11682)*
 
 Normally, getting one of the three means giving up another. Push accuracy up and memory and time go up too; make it lighter and accuracy drops. The reason the Mollifier Layer sidesteps this familiar trade-off is simple: it eliminates the root of the problem, the noise amplification itself. Remove the cause instead of patching the symptoms one by one, and all three metrics resolve at once.

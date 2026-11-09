@@ -20,7 +20,7 @@ _SAP agreed on 6 October to buy TechWolf, a Ghent company that infers employee s
 
 > Sections 1 through 3 are facts published by SAP and TechWolf, along with the coverage that quotes them. One passage steps past that. Section 3's account of where the strength and the hazard of this design both come from is in no announcement. Section 4 separates what the public record confirms from what it does not, and Section 5 is this article's reading of those facts through the eyes of people who work with data.
 
-![SAP headquarters building in Walldorf, Germany](./image/img-01-sap-walldorf-hq.jpg)
+![SAP headquarters building in Walldorf, Germany](../ko/image/img-01-sap-walldorf-hq.jpg)
 *▲ SAP's headquarters in Walldorf, Germany, where the acquisition was announced | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:SAP_AG_Headquarter_1200.jpg) (amadeusm, Public Domain)*
 
 ### Key Figures
@@ -51,7 +51,7 @@ TechWolf was founded in 2018 and has more than 120 employees. It has raised over
 
 The operating plan after the deal is in the announcement as well. TechWolf stays an independent entity under co-founder Andreas De Neve, keeping its Ghent headquarters and its London and New York offices, and the platform remains available to SAP and non-SAP customers alike. On people, the letter is more specific. Co-founder and CTO Jeroen Van Hautte is relocating to San Francisco to open another office, and the third co-founder, Mikaël Wornoo, is leaving the company. On SAP's side, the release describes TechWolf as the expected intelligent core of the SuccessFactors portfolio. This is not the pattern of swallowing a company and dissolving it into a product. It leaves the model and the research team where they are and has SAP's own product line call that model.
 
-![Graslei waterfront in Ghent, Belgium, home to TechWolf's headquarters](./image/img-02-ghent-graslei.jpg)
+![Graslei waterfront in Ghent, Belgium, home to TechWolf's headquarters](../ko/image/img-02-ghent-graslei.jpg)
 *▲ The Graslei in Ghent, Belgium, where TechWolf is keeping its headquarters | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Graslei_Ghent.jpg) (Martinvl, CC BY-SA 4.0)*
 
 The release names eight customers: HSBC, Atlas Copco Group, GSK, Ericsson, AMD, MetLife, PayPal and Booking.com. Banking and pharmaceuticals, telecom equipment and semiconductors, insurance and a travel platform, all of them employing tens of thousands of people. The market for this product is exactly that: the larger the headcount and the more tangled the roles, the less anyone can count by hand what skills a company holds.
@@ -134,7 +134,7 @@ The awkward part is the inference itself. The Court of Justice of the European U
 
 The EU AI Act is more direct. Point 4 of Annex III puts AI used in employment and the management of workers in the high-risk category, and subparagraph (b) covers allocating tasks based on individual behaviour or personal traits, and monitoring and evaluating performance and behaviour. A structure that infers skills from work activity and uses them as input to deployment decisions is the shape that provision is aimed at. As noted above, TechWolf itself placed its solution under that provision.
 
-![The Berlaymont building in Brussels, headquarters of the European Commission, with EU flags](./image/img-03-berlaymont-eu-ai-act.jpg)
+![The Berlaymont building in Brussels, headquarters of the European Commission, with EU flags](../ko/image/img-03-berlaymont-eu-ai-act.jpg)
 *▲ The Berlaymont building in Brussels, seat of the European Commission, which oversees the EU AI Act's high-risk provisions | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Berlaymont_building_2022.jpg) (Sarra Benyaich / S'ARTIST PHOTOGRAPHY, CC BY 2.0)*
 
 Classification as high-risk brings obligations with it. Article 26(7) requires employers to inform workers' representatives and the affected workers before putting a high-risk system to use at work. Article 86 gives a person the right to a clear and meaningful explanation of the role of the AI system in a decision and of the main elements of that decision, where the decision is taken on the basis of output from an Annex III high-risk system and produces legal effects or similarly significantly affects them. This is where the row in the table that held only a principle, the one asking whether the evidence for a skill is shown, could turn from a promise into a duty.
@@ -149,7 +149,7 @@ What can be brought forward voluntarily and what cannot are two different things
 
 In Korea the door onto this question opens a little differently. The Framework Act on Artificial Intelligence, in force since January 2026, defines high-impact AI and names as one of its domains judgments or evaluations that significantly affect an individual's rights and obligations, such as hiring and loan screening. A recruiting AI that filters applicants falls inside that sentence. Inferring the skills of people already employed and using them as input to deployment and reskilling, however, does not line up exactly with the shape the provision spells out. An amendment bill adding job placement, work assignment and personnel management of workers to the high-impact scope has been introduced in the National Assembly, as reported, and the introduction itself marks the spot as empty in the current text.
 
-![The National Assembly Building of South Korea in Seoul](./image/img-04-korea-national-assembly.jpg)
+![The National Assembly Building of South Korea in Seoul](../ko/image/img-04-korea-national-assembly.jpg)
 *▲ South Korea's National Assembly, where an amendment widening the AI Framework Act's high-impact scope has been proposed | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:National_Assembly_(Parliament)_Building_in_Seoul_Korea.jpg) (Joongwon Lee, SKKU DOA, CC BY-SA 4.0)*
 
 Held against the EU, which put the management of workers into Annex III point 4(b) separately, the difference is plain. A Korean company adopting a product like TechWolf's can draw a line saying it will not be used in hiring and leave itself room outside the current provision. That does not change the character of the judgments the product makes about people. In the stretch where the boxes of the rules and the shape of the technology do not match, what gets recorded ends up being decided by whoever adopts the system.

@@ -39,7 +39,7 @@ The case goes back to November 2021 in Chandler, Arizona. Two drivers collided n
 
 There were two trials. The first conviction was thrown out after it emerged that prosecutors had not turned over text messages from Pelkey's phone to the defense, and at the second trial Horcasitas was convicted of manslaughter and endangerment. In May 2025, Judge Todd Lang of Maricopa County Superior Court imposed ten years and six months.
 
-![Exterior of the Maricopa County Superior Court building in Phoenix, Arizona, with 'Superior Court Maricopa County' engraved on the facade](./image/img-01-maricopa-superior-court.jpg)
+![Exterior of the Maricopa County Superior Court building in Phoenix, Arizona, with 'Superior Court Maricopa County' engraved on the facade](../ko/image/img-01-maricopa-superior-court.jpg)
 *▲ Maricopa County Superior Court in Phoenix, where Judge Todd Lang imposed the ten-year, six-month sentence. | Source: [Wikimedia Commons (CC0)](https://commons.wikimedia.org/wiki/File:Maricopa_County_Superior_Court_South_Court_Tower_October_6_2013_Phoenix_Arizona_2112x2816_Street_Level.JPG)*
 
 A year and four months later, on September 30, 2026, the Arizona Court of Appeals, Division One, vacated that sentence. The case number is 1 CA-CR 25-0191. The manslaughter conviction was left untouched, and only the sentence was lifted out and returned to Maricopa County Superior Court. What put Horcasitas back in front of a sentencing judge was a single video played in the courtroom.
