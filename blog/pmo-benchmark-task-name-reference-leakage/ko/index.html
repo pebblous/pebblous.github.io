@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMO 분자 최적화 벤치마크 — LLM 에이전트 점수와 데이터 누수, 싼 점검 2가지 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="버펄로대·MBZUAI 연구진이 10월 30일 공개한 논문에서, 분자 최적화 벤치마크 PMO의 과제 이름과 참조 화합물을 가리자 LLM 에이전트의 합산 AUC가 3분의 1 아래인 4.85로 떨어졌다. 표준 조건에서는 14.44였고, LLM을 부르지 않는 결정론적 검색만으로 12.16이 나온다.">
+    <meta name="keywords" content="PMO, 분자 최적화 벤치마크, 데이터 누수, LLM 에이전트, 신약 개발 AI, 벤치마크 설계, 참조 화합물, 무작위 걷기 베이스라인, AutoDock Vina, AI-Ready Data, 평가 데이터">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="PMO">
+    <meta name="pb-search-keyword-forms" content="PMO|Practical Molecular Optimization|분자 최적화 벤치마크">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="신약 분자 찾기 시험 PMO, AI는 푼 걸까 베낀 걸까?">
+    <meta property="og:description" content="LLM을 한 번도 부르지 않고 받은 참조 분자를 되돌려 주기만 하는 절차가 12.16을 받는다. 모든 정보를 본 에이전트가 받은 14.44의 84%다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="과제 이름 노출 여부와 참조 화합물 노출 여부를 두 축으로 놓은 2×2 격자. 네 칸에 합산 AUC 14.44, 13.98, 6.07, 4.85가 적혀 있다">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-11-10">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="신약 분자 찾기 시험 PMO, AI는 푼 걸까 베낀 걸까?">
+    <meta name="twitter:description" content="과제 이름을 가려도 성적은 거의 그대로다. 참조 분자를 가리면 무너진다. 두 축을 갈라 보면 에이전트가 무엇으로 점수를 벌었는지가 드러난다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/ko/image/index.png">
+    <meta name="twitter:image:alt" content="과제 이름 노출 여부와 참조 화합물 노출 여부를 두 축으로 놓은 2×2 격자. 네 칸에 합산 AUC 14.44, 13.98, 6.07, 4.85가 적혀 있다">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261110"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261110">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261110">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261110">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#what-pmo-measures" class="block pl-4 themeable-toc-link transition-colors duration-200">1. PMO는 무엇을 재는가</a></li>
+                    <li><a href="#blinding" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 두 가지를 가리면 성적이 3분의 1로 내려간다</a></li>
+                    <li><a href="#retrieval-only" class="block pl-4 themeable-toc-link transition-colors duration-200">3. LLM을 한 번도 부르지 않고 성적의 84%를 가져간다</a></li>
+                    <li><a href="#positive-control" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 최적화 자체는 작동한다, 다만 다른 시험대도 허술하다</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 페블러스가 이 장면을 주목하는 이유</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            신약 후보 분자를 적은 횟수로 찾아낸다던 AI 에이전트의 성적 상당 부분이 시험지에 적혀 있던 힌트에서 나왔다. 버펄로대와 MBZUAI 연구진이 10월 30일 arXiv에 올린 논문의 결론이다. 분자 최적화 벤치마크 PMO에서 과제 이름과 참조 화합물을 프롬프트에서 지우자, GPT-4o 미니로 돌린 에이전트의 합산 AUC는 4.85로 주저앉았다. 둘을 모두 보여준 표준 조건에서는 14.44였다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            더 눈에 띄는 쪽은 LLM을 한 번도 부르지 않는 베이스라인이다. 받은 참조 화합물을 그대로 제출하고 거기에 원자 하나를 바꾼 변형을 정해진 순서대로 내놓기만 하는 절차가 12.16을 받았다. 힌트를 모두 본 에이전트의 14.44에 견주면 84%다. 그렇다고 이 논문이 LLM 무용론을 펴는 것은 아니다. 참조 화합물을 쓰지 않는 개체군 기반 에이전트는 같은 호출 예산에서 고전 강화학습 기법 REINVENT를 넘어섰다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            1절부터 4절까지는 논문이 보고한 실험 설계와 수치를 따라간다. 같은 구멍이 기업 안의 평가 데이터에도 열려 있다고 보는 5절은 이 글의 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: Qin 외, <a href="https://arxiv.org/abs/2611.08522" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">What Are LLM Agents Actually Learning on Low-Budget Molecular Optimization Benchmarks?</a>, arXiv:2611.08522(2026-10-30)</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        아래 첫 칸의 두 숫자는 같은 에이전트가 같은 과제를 푼 성적이고, 둘을 가른 것은 프롬프트에 무엇이 적혀 있었는지뿐이다. 둘째 칸은 그 정보만 있으면 LLM이 없어도 된다는 것을 보여주고, 셋째 칸은 시험지에 힌트가 얼마나 적혀 있었는지를 말한다. 넷째 칸은 논문이 이 전부를 확인하는 데 쓴 돈이다.
+                    </p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">14.44 → 4.85</p>
+                            <p class="text-sm themeable-text-secondary mt-1">가리기 전후의 합산 AUC</p>
+                            <p class="text-xs themeable-muted mt-1">PMO 23개 과제를 오라클 호출 50회로 푼 성적이다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">12.16</p>
+                            <p class="text-sm themeable-text-secondary mt-1">LLM을 쓰지 않은 검색 전용 점수</p>
+                            <p class="text-xs themeable-muted mt-1">모든 정보를 본 에이전트가 받은 14.44의 84%다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">23개 중 14개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">이름에 약·표적이 드러난 과제</p>
+                            <p class="text-xs themeable-muted mt-1">과제 식별자 자체가 무엇을 찾는 시험인지 말해 준다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.63달러</p>
+                            <p class="text-sm themeable-text-secondary mt-1">실험 전체에 든 API 비용</p>
+                            <p class="text-xs themeable-muted mt-1">버린 예비 실험까지 포함한 금액이다. 따라 하는 데 장비가 필요 없다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="what-pmo-measures" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">PMO는 무엇을 재는가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        PMO(Practical Molecular Optimization)는 신약 후보 분자를 찾는 알고리즘을 한자리에서 비교하려고 2022년에 만들어진 공통 시험대다. 23개 과제가 하나의 오라클 인터페이스로 묶여 있다. 오라클은 분자 하나를 받아 점수 하나를 돌려주는 채점기다. 과제에 따라 특정 약물과 얼마나 닮았는지, 특정 표적 단백질에 얼마나 잘 붙을 것 같은지가 그 점수에 담긴다. 응시자는 분자를 제출하고 점수를 받아 다음 분자를 고치는 일을 반복한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 시험은 호출 횟수를 묶어 둔다. 실제 신약 개발에서는 분자 하나를 평가하는 일 자체가 비싸기 때문에, 몇 번 물어보고 좋은 답에 닿는지가 알고리즘의 가치를 가른다. 그래서 오라클을 50번만 부를 수 있게 하고, 그동안 최고 점수가 올라가는 곡선 아래 면적을 잰 다음 23개 과제의 값을 모두 더한다. 빨리 좋은 분자에 닿을수록 합이 커진다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        최근 이 시험에서 LLM 에이전트가 고전 알고리즘을 크게 앞섰다는 보고가 이어졌다. 이번 논문이 서두에 꼽은 것은 SEISMO다. 클로드 오푸스 4.5를 쓰는 워크플로이고, 2026년 8월 v3 기준으로 50회 호출에서 합산 AUC 18.12를 보고했다. 2017년에 나온 강화학습 기법 REINVENT가 같은 예산에서 받는 7.06의 두 배를 훌쩍 넘는 수치다. 1,000회 호출 설정에서 15.42를 보고한 연구도 함께 인용돼 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 이 시험지에는 응시자가 읽을 수 있는 글자가 적지 않다. 23개 과제 가운데 14개는 과제 식별자 안에 약 이름이나 표적 이름이 그대로 들어 있다. celecoxib_rediscovery처럼 찾아야 할 약 이름이 과제 이름에 박혀 있거나, drd2와 jnk3처럼 표적 단백질의 약칭이 그대로 과제 이름인 식이다. 사전학습 때 인터넷의 화학 문헌을 읽은 모델이라면 그 이름만으로 정답에 가까운 분자를 떠올릴 수 있다. 표준 프롬프트는 거기에 오라클 설명과 참조 화합물까지 함께 보여준다. 참조 화합물은 그 과제가 닮기를 바라는 본보기 분자이고, 유사도를 재는 과제에서는 사실상 정답 근처의 좌표다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            SEISMO 쪽도 이 문제를 모르지 않았다. 같은 v3 보고서가 과제 설명을 모두 지운 완전 익명 조건에서는 8.50으로 내려간다는 수치를 스스로 적어 두었다. 이번 논문은 그 한 줄을 출발점으로 삼아, 가려야 할 것이 이름인지 참조 분자인지를 끝까지 갈라 본 셈이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="blinding" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">두 가지를 가리면 성적이 3분의 1로 내려간다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진은 자기 에이전트를 하나 세워 표준 조건을 그대로 재현했다. GPT-4o 미니를 쓰고, 과제 이름과 오라클 설명과 참조 화합물을 모두 프롬프트에 넣은 상태에서 합산 AUC 14.44가 나왔다. 앞 절의 18.12와는 모델도 구조도 다르다. 아래 네 숫자는 전부 이 에이전트 하나를 두고 조건만 바꿔 가며 잰 값이다. 바꾼 축은 둘이다. 과제 이름과 설명을 보여주느냐, 참조 화합물을 보여주느냐다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 400" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="두 가지 정보의 노출 여부를 가로축과 세로축으로 놓은 2×2 격자 도식. 가로축은 과제 이름을 보여주는지 가리는지이고, 세로축은 참조 분자를 보여주는지 가리는지다. 왼쪽 위 칸은 둘 다 보여준 표준 조건으로 합산 AUC 14.44, 오른쪽 위 칸은 이름만 가린 조건으로 13.98, 왼쪽 아래 칸은 참조 분자만 가린 조건으로 6.07, 오른쪽 아래 칸은 둘 다 가린 완전 익명 조건으로 4.85다. 가로 방향 이동은 0.46점과 1.22점만 깎고, 세로 방향 이동은 8.37점과 9.13점을 깎는다. 아래 설명에는 성적을 움직이는 축은 이름이 아니라 참조 분자라고 적혀 있다.">
+                            <defs>
+                                <marker id="pmo-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L7,3 L0,6 Z" fill="var(--text-muted,#6B7280)"/>
+                                </marker>
+                            </defs>
+
+                            <text x="350" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">무엇을 가렸을 때 점수가 움직이는가</text>
+
+                            <!-- 열 머리 -->
+                            <text x="270" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">과제 이름 보임</text>
+                            <text x="520" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">과제 이름 가림</text>
+
+                            <!-- 행 머리 -->
+                            <text x="95" y="135" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">참조 분자</text>
+                            <text x="95" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">보임</text>
+                            <text x="95" y="270" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">참조 분자</text>
+                            <text x="95" y="288" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">가림</text>
+
+                            <!-- 칸 1: 표준 -->
+                            <rect x="185" y="100" width="170" height="80" rx="10" fill="#F86825" fill-opacity="0.14" stroke="#F86825" stroke-width="1.2"/>
+                            <text x="270" y="138" text-anchor="middle" font-size="24" font-weight="700" fill="#F86825">14.44</text>
+                            <text x="270" y="162" text-anchor="middle" font-size="11" fill="var(--text-secondary,#4B5563)">표준 프롬프트</text>
+
+                            <!-- 칸 3: 이름만 가림 -->
+                            <rect x="435" y="100" width="170" height="80" rx="10" fill="#F86825" fill-opacity="0.14" stroke="#F86825" stroke-width="1.2"/>
+                            <text x="520" y="138" text-anchor="middle" font-size="24" font-weight="700" fill="#F86825">13.98</text>
+                            <text x="520" y="162" text-anchor="middle" font-size="11" fill="var(--text-secondary,#4B5563)">가짜 과제 번호만 제시</text>
+
+                            <!-- 칸 2: 참조만 가림 -->
+                            <rect x="185" y="235" width="170" height="80" rx="10" fill="var(--text-muted,#6B7280)" fill-opacity="0.12" stroke="var(--text-muted,#6B7280)" stroke-width="1"/>
+                            <text x="270" y="273" text-anchor="middle" font-size="24" font-weight="700" fill="var(--text-secondary,#4B5563)">6.07</text>
+                            <text x="270" y="297" text-anchor="middle" font-size="11" fill="var(--text-muted,#6B7280)">이름은 보이고 본보기 없음</text>
+
+                            <!-- 칸 4: 완전 익명 -->
+                            <rect x="435" y="235" width="170" height="80" rx="10" fill="var(--text-muted,#6B7280)" fill-opacity="0.12" stroke="var(--text-muted,#6B7280)" stroke-width="1"/>
+                            <text x="520" y="273" text-anchor="middle" font-size="24" font-weight="700" fill="var(--text-secondary,#4B5563)">4.85</text>
+                            <text x="520" y="297" text-anchor="middle" font-size="11" fill="var(--text-muted,#6B7280)">완전 익명, 점수만 돌려받음</text>
+
+                            <!-- 가로 이동 -->
+                            <line x1="360" y1="145" x2="428" y2="145" stroke="var(--text-muted,#6B7280)" stroke-width="1.2" marker-end="url(#pmo-arrow)"/>
+                            <text x="394" y="132" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary,#4B5563)">-0.46</text>
+                            <line x1="360" y1="280" x2="428" y2="280" stroke="var(--text-muted,#6B7280)" stroke-width="1.2" marker-end="url(#pmo-arrow)"/>
+                            <text x="394" y="267" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary,#4B5563)">-1.22</text>
+
+                            <!-- 세로 이동 -->
+                            <line x1="270" y1="185" x2="270" y2="229" stroke="#F86825" stroke-width="1.6" marker-end="url(#pmo-arrow)"/>
+                            <text x="284" y="212" text-anchor="start" font-size="12" font-weight="700" fill="#F86825">-8.37</text>
+                            <line x1="520" y1="185" x2="520" y2="229" stroke="#F86825" stroke-width="1.6" marker-end="url(#pmo-arrow)"/>
+                            <text x="534" y="212" text-anchor="start" font-size="12" font-weight="700" fill="#F86825">-9.13</text>
+
+                            <!-- 아래 설명 -->
+                            <rect x="95" y="338" width="510" height="44" rx="10" fill="var(--text-muted,#6B7280)" fill-opacity="0.1" stroke="var(--text-muted,#6B7280)" stroke-width="0.8"/>
+                            <text x="350" y="356" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#4B5563)">가로로 움직여도 점수는 거의 그대로다</text>
+                            <text x="350" y="373" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary,#4B5563)">성적을 떨어뜨리는 축은 이름이 아니라 참조 분자다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식. 논문 표 2의 네 조건을 하나의 평면에 올려 그렸다. 숫자는 PMO 23개 과제를 50회 호출로 푼 합산 AUC이고, 화살표의 값은 네 숫자를 뺀 차다. | 출처: <a href="https://arxiv.org/html/2611.08522" target="_blank" rel="noopener" class="underline">arXiv:2611.08522</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 축을 갈라 보면 비대칭이 분명하다. 과제 이름과 설명을 가짜 번호로 바꿔치기해도 점수는 14.44에서 13.98로 0.46밖에 내려가지 않고, 참조 화합물이 없는 상태에서 이름까지 지워도 1.22가 더 빠질 뿐이다. 반대로 참조 화합물을 치우면 8.37과 9.13이 한꺼번에 날아간다. 평균을 내면 참조 화합물이 8.75점을, 과제 이름이 0.84점을 가져간다. "이름을 가리자 성적이 무너졌다"는 한 줄 요약은 절반만 맞는다. 성적을 떠받친 쪽은 본보기 분자였다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진은 그 사이에 한 조건을 더 끼워 넣었다. 참조 화합물 자체는 숨기고 "숨겨진 참조와의 ECFP4 타니모토 유사도를 최대화하라"처럼 오라클의 형태만 알려주는 조건이다. 무엇을 최적화하는 문제인지는 알지만 목표물이 무엇인지는 모르는 상태다. 점수는 5.39였고, 완전 익명 조건의 4.85보다 0.54 높다. 문제의 꼴을 아는 것만으로 벌 수 있는 점수가 그 정도라는 뜻이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 번 재서 나온 수치가 아니다. 23개 과제 전체를 2×2로 돌린 데 더해, 대표 과제 8개를 시드 3개로 반복했다. 표준 조건이 완전 익명 조건을 앞선 과제는 8개 가운데 8개였고, 부호 검정 단측 p값은 0.0039였다. 평균 낙폭은 3.78점으로 68% 감소에 해당한다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="retrieval-only" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">LLM을 한 번도 부르지 않고 성적의 84%를 가져간다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        참조 화합물이 점수의 대부분을 설명한다면, 그 참조 화합물만 들고 LLM 없이 시험을 치면 몇 점이 나올까. 연구진의 검색 전용 베이스라인은 그 물음에 답하려고 만든 장치다. 동작은 세 단계로 끝난다. 먼저 프롬프트에 들어 있던 참조 화합물을 그대로 제출한다. 다음으로 미리 정해 둔 씨앗 분자를 다섯 개까지 제출한다. 그다음부터는 지금까지 가장 점수가 높았던 분자에 RDKit으로 원자 하나를 바꾼 변형을 만들어 정해진 순서대로 내보낸다. LLM 호출은 0회이고, 같은 입력에는 언제나 같은 제출 순서가 나온다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 절차가 받은 점수가 12.16이다. 표준 조건에서 50회를 다 쓴 에이전트의 14.44 가운데 84%에 해당한다. 모델도, 추론도, 계획도 없이 받은 정보를 되돌려 주는 것만으로 점수의 대부분을 채운 셈이다. 에이전트가 50번의 호출 동안 한 일 가운데 점수로 환산되는 몫은 나머지 16%에 가깝다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 절차가 에이전트 가까이 올라선 데는 까닭이 있다. 연구진이 세운 에이전트도 마지막 다듬기 단계에서 LLM 제안이 형식에 어긋나거나 앞서 낸 것과 겹치면, 남은 호출을 원자 하나를 더하는 결정론적 변형으로 메운다. 검색 전용 베이스라인이 하는 일이 에이전트 안에도 이미 한 조각 들어 있다. 게다가 23개 과제 가운데 일곱 개는 참조 화합물과 씨앗 분자를 제출한 시점에 AUC가 0.98 근처에 닿는다. 과제별 AUC는 50회 동안의 최고 점수 곡선을 사다리꼴로 적분해 50으로 나눈 값이라 천장이 49/50, 곧 0.98이다. 그 일곱 과제는 첫 몇 번의 제출로 이미 천장에 올라서 있어서 남은 호출로 더 올릴 자리가 없다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 숫자가 말하는 것은 모델의 능력이 아니라 시험의 구조다. 참조 화합물을 제출하는 행위에 점수가 붙도록 설계된 과제에서는, 그 분자를 손에 쥔 응시자라면 누구나 높은 점수를 받는다. 벤치마크는 그것을 탐색의 성과와 구분하지 않는다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="positive-control" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">최적화 자체는 작동한다, 다만 다른 시험대도 허술하다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문은 양성 대조군을 하나 세워 균형을 잡는다. MolLEO-v4는 개체군 기반 유전 알고리즘에 LLM 변이 연산자와 구조화된 메모리, 적응적 계획을 붙인 에이전트인데, 참조 화합물을 끌어다 쓰지 않는다. 이 에이전트가 50회 호출에서 7.39를 받아 REINVENT의 7.06을 넘었고, 100회로 예산을 늘리면 10.24까지 올라간다. 정보 누출을 걷어내도 의미 있는 최적화는 가능하다는 뜻이다. 이 논문의 주장은 LLM이 쓸모없다는 쪽이 아니라, 지금의 시험이 실력과 정보 접근을 구분하지 못한다는 쪽이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>아무것도 배우지 않는 절차가 에이전트를 이긴다</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 번째 트랙은 PMO보다 어려워 보이는 설정이다. ProteinLeadOpt-50은 의학적으로 중요한 단백질 표적 10종에 시작 분자를 5개씩 붙여 50쌍을 만들고, 쌍마다 오라클 호출 30회를 준다. 채점은 AutoDock Vina 도킹 점수의 개선분에 약물다움 지표(QED)를 0.5 가중으로 더하고, 시작 분자에서 너무 멀어지면 감점하는 복합 점수다. 여기에 연구진은 학습이라 부를 것이 하나도 없는 베이스라인을 세웠다. 방향족 고리의 수소 자리 하나를 골라 F, Cl, Br, CF3, OMe, Me, OH, NH2 여덟 개 중 하나를 무작위로 붙이는 고정 규칙, 곧 무작위 걷기다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        아래 표는 그 무작위 걷기를 LLM 에이전트, 유전 알고리즘 GraphGA, GPT에 그냥 물어보는 방식과 같은 50쌍 위에서 맞대 본 결과다. 네 행 모두 시드를 하나로 맞춘 비교이고, 시드를 늘려 평균 낸 값은 표 아래 문단에 따로 적는다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-toc-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">방법</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">도킹 개선(kcal/mol)</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">성공률</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">복합 점수</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-toc-border align-top">
+                                    <td class="py-3 pr-4 font-semibold">무작위 걷기</td>
+                                    <td class="py-3 pr-4">-0.98</td>
+                                    <td class="py-3 pr-4">0.60</td>
+                                    <td class="py-3">0.58</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border align-top">
+                                    <td class="py-3 pr-4 font-semibold">GraphGA</td>
+                                    <td class="py-3 pr-4">-0.84</td>
+                                    <td class="py-3 pr-4">0.40</td>
+                                    <td class="py-3">0.57</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border align-top">
+                                    <td class="py-3 pr-4 font-semibold">LLM 에이전트</td>
+                                    <td class="py-3 pr-4">-0.81</td>
+                                    <td class="py-3 pr-4">0.36</td>
+                                    <td class="py-3">0.55</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border align-top">
+                                    <td class="py-3 pr-4 font-semibold">GPT 직접 프롬프트</td>
+                                    <td class="py-3 pr-4">-0.36</td>
+                                    <td class="py-3 pr-4">0.24</td>
+                                    <td class="py-3">0.51</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3 text-center">▲ 논문 표 4 가운데 시드를 하나로 맞춘 네 행. 50쌍 전체를 호출 30회로 푼 집계값이다. | 출처: <a href="https://arxiv.org/html/2611.08522" target="_blank" rel="noopener" class="underline">arXiv:2611.08522</a></p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        도킹 점수는 낮을수록 잘 붙는다는 뜻이라, 도킹 개선 열은 음수가 클수록 좋다. 아무 전략 없이 치환기를 붙이기만 한 절차가 수치 세 칸 모두에서 맨 위에 있다. 50쌍 가운데 33쌍에서 무작위 걷기가 LLM 에이전트를 이겼고, 시드를 세 개로 늘려 평균을 내면 도킹 개선은 -1.11±0.04, 복합 점수는 0.636±0.008로 오히려 올라간다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이유는 채점기 쪽에 있다. 방향족 자리에 염소나 브롬, CF3 하나를 붙이면 Vina 점수가 보통 0.5에서 1.5 kcal/mol 내려간다. 골격은 그대로라 유사도 감점도 피해 간다. 30회라는 짧은 예산과 이 복합 점수의 조합이 국소적인 치환을 체계적으로 보상하도록 돼 있어서, 특별한 전략 없이도 상당한 점수가 쌓인다. PMO의 문제가 시험지에 적힌 힌트였다면 이쪽의 문제는 채점 방식 자체의 단순함이다. 같은 병이 다른 증상으로 나타난 자리에 가깝다. 논문은 이 결과가 AutoDock Vina와 복합 점수, 30회 예산이라는 조합에 한정된 이야기라고 못 박고, 더 가려내는 평가를 하려면 FEP나 Boltz-2 같은 더 강한 채점기와 표적 선택성 조건, 뼈대를 바꾸도록 요구하는 새로움 기준이 필요하다고 적는다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 이 장면을 주목하는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 내놓은 처방은 더 좋은 모델이 아니라 더 정직한 측정이다. 두 가지인데, 둘 다 추가 학습이나 특별한 장비 없이 기존 코드에 조건 몇 개를 얹으면 끝난다. 이 확인 전체에 든 API 비용이 0.63달러였다는 사실이 그 점을 뒷받침한다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>검색 안전 프로토콜</strong>: 결과를 낼 때 표준 프롬프트, 오라클 형태만 알려주는 조건, 완전 익명 조건 세 수치를 나란히 보고한다. 세 칸을 함께 두면 분자 정체성으로 번 점수와 문제의 꼴로 번 점수, 그리고 순수한 피드백 최적화로 번 점수가 저절로 갈린다. 참조 화합물을 그대로 보여주는 설정이라면 LLM 없이 받은 검색 전용 점수도 같은 자리에 적으라고 논문은 덧붙인다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>무작위 걷기 바닥선</strong>: 도킹 기반 과제에서는 같은 시작 분자와 같은 호출 예산으로 아무 전략 없는 변형을 돌려 그 점수를 함께 싣는다. 이 바닥선을 넘지 못하면 에이전트가 무언가를 배웠다는 주장 자체가 성립하지 않는다. 도킹 개선과 성공률, 복합 점수에 더해 QED와 유사도, 뼈대 보존율까지 나란히 싣고 어떤 치환기를 어느 자리에 붙일 수 있게 했는지도 밝혀 두면, 다른 연구가 같은 바닥선을 다시 세울 수 있다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기업이 쓰는 평가 데이터도 사정이 다르지 않다. 모델을 고르거나 성능 개선을 보고할 때 근거가 되는 숫자는 평가셋이 만든 것인데, 그 평가셋에 어떤 정보가 함께 실려 있는지는 좀처럼 따로 기록되지 않는다. 항목 이름이 정답을 암시하거나, 프롬프트에 붙은 예시가 정답 근처에 있거나, 공개 데이터에서 가져온 문항이 모델의 사전학습에 이미 들어가 있는 경우가 모두 같은 자리에 해당한다. 이런 누수가 실제로 점수를 얼마나 끌어올리는지는 <a href="/blog/agentic-data-science-silent-failures/ko/" class="text-orange-500 hover:text-orange-400 underline">분석을 대신해 주는 AI는 데이터 누수가 있을수록 성적이 좋다</a>에서도 다뤘고, 시험지 자체가 망가진 경우는 <a href="/blog/anomaly-benchmark-identical-rows/ko/" class="text-orange-500 hover:text-orange-400 underline">이상 징후 찾는 AI의 시험지, 같은 줄에 정답이 둘</a>에서 짚었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이번 논문의 두 점검을 조직의 평가 데이터로 옮기면 질문 세 개가 된다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">평가 항목의 이름과 설명을 지워도 같은 점수가 나오는가. 이름만 가린 조건은 코드 한 줄이면 만들 수 있고, 점수가 그대로라면 적어도 이름은 힌트가 아니었다는 증거가 남는다.</li>
+                        <li class="themeable-text leading-relaxed">프롬프트에 함께 넣는 예시가 정답에서 얼마나 떨어져 있는가. 본보기를 빼고 다시 재 본 수치가 없다면, 지금 보고 있는 성능에는 본보기가 기여한 몫이 섞여 있다.</li>
+                        <li class="themeable-text leading-relaxed">아무것도 학습하지 않는 절차가 이 평가셋에서 몇 점을 받는가. 그 바닥선이 없으면 모델이 올린 점수가 어디서부터 올라간 것인지 말할 수 없다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 질문 모두 모델을 묻지 않고 평가셋을 묻는다. AI-Ready Data라는 말이 가리키는 자리도 여기다. 데이터 옆에 그 값이 어떤 조건에서 생겼는지가 나란히 적혀 있어야, 그 데이터로 잰 점수가 무엇을 증명하는지도 말할 수 있다.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            이 논문이 비판한 쪽도 숫자를 숨기지는 않았다. SEISMO는 완전 익명 조건의 8.50을 스스로 보고해 두었고, 이번 연구는 그 수치를 받아 어느 정보가 점수를 떠받쳤는지까지 밝혔다. 자기 성과의 바닥선을 함께 적어 두는 관행이 있었기에 가능했던 검증이다. 다음에 확인할 것은 PMO를 쓰는 후속 논문들이 세 조건을 나란히 싣기 시작하는지다.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        여기까지 읽어 주셔서 감사하다. 논문 전문은 <a href="https://arxiv.org/abs/2611.08522" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv:2611.08522</a>에서 볼 수 있다. 쓰고 있는 평가셋에서 이름이나 예시를 가려 본 적이 있다면, 그때 점수가 얼마나 움직였는지 들려주시면 좋겠다.
+                    </p>
+                </section>
+
+                <!-- 참고문헌 -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Qin, J., Luo, Z., Chen, C., &amp; Xu, Z. (2026). &ldquo;<a href="https://arxiv.org/abs/2611.08522" target="_blank" rel="noopener">What Are LLM Agents Actually Learning on Low-Budget Molecular Optimization Benchmarks?</a>&rdquo; arXiv:2611.08522.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Krüger, F. P., Hunklinger, A., Wolny, A., Adler, T. J., Tetko, I., &amp; Villalba, S. D. (2026). &ldquo;<a href="https://arxiv.org/abs/2602.00663" target="_blank" rel="noopener">SEISMO: Explanation-Aware, Trajectory-Conditioned LLM Agents for Sample-Efficient Molecular Optimisation</a>&rdquo;. arXiv:2602.00663.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Gao, W., Fu, T., Sun, J., &amp; Coley, C. W. (2022). &ldquo;<a href="https://arxiv.org/abs/2206.12411" target="_blank" rel="noopener">Sample Efficiency Matters: A Benchmark for Practical Molecular Optimization</a>&rdquo;. NeurIPS 2022 Datasets and Benchmarks Track.</span></li>
+                    </ul>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261110"></script>
+    <script src="/scripts/citation-download.js?v=20261110" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-11-09T20:33:43.431Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-09T20:49:51.496Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1794256423431-hxans2",
+                "version": "0.1.0",
+                "sha": "052a2a95afa30d7970808c86a8f2efabf743c560",
+                "builtAt": "2026-10-24T13:53:43.526Z"
+              },
+              "recordedAt": "2026-11-09T21:52:28.386Z"
+            },
+            mainTitle: "신약 분자 찾기 시험 PMO, AI는 푼 걸까 베낀 걸까?",
+            subtitle: "AI에게 주던 문제 이름과 본보기 분자를 지우면 분자 찾기 성적의 3분의 2가 사라진다 — 버펄로대·MBZUAI 논문",
+            pageTitle: "PMO 분자 최적화 벤치마크 — LLM 에이전트 점수와 데이터 누수, 싼 점검 2가지 | 페블러스",
+            category: "tech",
+            publishDate: "2026-11-10",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/pmo-benchmark-task-name-reference-leakage/ko/",
+            tags: ["PMO", "분자 최적화 벤치마크", "데이터 누수", "LLM 에이전트", "신약 개발", "벤치마크 설계", "AI-Ready Data", "평가 데이터"],
+            faqs: [
+                {
+                    question: "PMO는 어떤 시험인가?",
+                    answer: "신약 후보 분자를 찾는 알고리즘을 한자리에서 비교하려고 2022년에 만들어진 공통 시험대다. 23개 과제가 하나의 오라클 인터페이스로 묶여 있고, 오라클은 분자를 받아 점수를 돌려주는 채점기다. 오라클 호출을 50번으로 묶어 둔 상태에서 최고 점수가 올라가는 곡선 아래 면적을 재고 23개 과제를 더해 합산 AUC를 만든다."
+                },
+                {
+                    question: "이번 논문은 무엇을 가렸나?",
+                    answer: "두 가지다. 하나는 과제 이름과 오라클 설명이고, 다른 하나는 참조 화합물이다. 참조 화합물은 그 과제가 닮기를 바라는 본보기 분자다. 둘의 노출 여부를 2×2로 조합해 같은 에이전트를 네 조건에서 돌렸고, 23개 과제 전체에 적용했다."
+                },
+                {
+                    question: "성적은 얼마나 떨어졌나?",
+                    answer: "표준 조건의 합산 AUC 14.44가 둘 다 가린 완전 익명 조건에서 4.85로 내려갔다. 3분의 1 아래다. 대표 과제 8개를 시드 3개로 반복했을 때 표준 조건이 완전 익명 조건을 앞선 경우가 8개 모두였고, 부호 검정 단측 p값은 0.0039, 평균 낙폭은 3.78점으로 68% 감소였다."
+                },
+                {
+                    question: "과제 이름과 참조 화합물 중 어느 쪽이 더 크게 작용하나?",
+                    answer: "참조 화합물 쪽이 압도적이다. 과제 이름과 설명을 가짜 번호로 바꿔도 점수는 1.22를 넘게 내려가지 않지만, 참조 화합물을 치우면 8.37과 9.13이 한꺼번에 빠진다. 평균으로 보면 참조 화합물이 8.75점, 과제 이름이 0.84점을 책임진다."
+                },
+                {
+                    question: "LLM을 쓰지 않는 베이스라인은 어떻게 동작하나?",
+                    answer: "프롬프트에 들어 있던 참조 화합물을 그대로 제출하고, 미리 정해 둔 씨앗 분자를 다섯 개까지 제출한 뒤, 가장 점수가 높았던 분자에 RDKit으로 원자 하나를 바꾼 변형을 정해진 순서대로 내보낸다. LLM 호출은 0회이고 같은 입력에는 같은 결과가 나온다. 이 절차가 12.16을 받아 표준 조건 에이전트의 84%를 기록했다."
+                },
+                {
+                    question: "그러면 LLM 에이전트는 쓸모가 없다는 뜻인가?",
+                    answer: "그런 결론은 아니다. 논문은 양성 대조군으로 MolLEO-v4를 세웠다. 참조 화합물을 끌어다 쓰지 않는 개체군 기반 에이전트인데, 50회 호출에서 7.39를 받아 고전 기법 REINVENT의 7.06을 넘었고 100회에서는 10.24까지 올라갔다. 문제는 모델이 아니라 실력과 정보 접근을 구분하지 못하는 측정 방식이다."
+                },
+                {
+                    question: "단백질 도킹 실험에서는 무슨 일이 있었나?",
+                    answer: "표적 10종에 시작 분자 5개씩을 붙인 50쌍에 호출 30회를 준 ProteinLeadOpt-50에서, 방향족 수소 자리에 치환기 여덟 개 중 하나를 무작위로 붙이기만 하는 절차가 LLM 에이전트와 GraphGA를 모두 앞섰다. 50쌍 가운데 33쌍에서 LLM 에이전트를 이겼다. AutoDock Vina 복합 점수와 짧은 예산의 조합이 국소적인 치환을 체계적으로 보상하기 때문이다."
+                },
+                {
+                    question: "논문이 제안한 두 가지 점검은 무엇인가?",
+                    answer: "첫째는 검색 안전 프로토콜이다. 표준 프롬프트, 오라클 형태만 알려주는 조건, 완전 익명 조건의 세 수치를 함께 보고해 분자 정체성과 문제의 꼴, 순수 피드백 최적화가 각각 기여한 몫을 갈라 보이라는 것이다. 둘째는 도킹 기반 과제에 무작위 걷기 바닥선을 함께 싣는 것이다."
+                },
+                {
+                    question: "같은 점검을 우리 조직의 평가셋에도 적용할 수 있나?",
+                    answer: "적용할 수 있다. 평가 항목의 이름과 설명을 지우고 다시 재 보기, 프롬프트에 붙는 예시를 빼고 다시 재 보기, 아무것도 학습하지 않는 절차의 점수를 바닥선으로 남기기 세 가지다. 이번 논문의 API 비용은 모두 합해 0.63달러였다."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
