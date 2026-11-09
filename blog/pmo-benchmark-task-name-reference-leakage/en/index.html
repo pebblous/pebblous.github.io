@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMO Benchmark: LLM Agent Scores and Data Leakage | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="Hiding the task name and reference compound on PMO drops an LLM agent's summed AUC from 14.44 to 4.85. A retrieval-only baseline with no LLM scores 12.16.">
+    <meta name="keywords" content="PMO, molecular optimization benchmark, data leakage, LLM agent, AI drug discovery, benchmark design, reference compound, random walk baseline, AutoDock Vina, AI-Ready Data, evaluation data">
+
+    <!-- Main search keyword -->
+    <meta name="pb-search-keyword" content="PMO">
+    <meta name="pb-search-keyword-forms" content="PMO|Practical Molecular Optimization">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="On the PMO Drug Molecule Test, Does the AI Discover or Look Up?">
+    <meta property="og:description" content="A procedure that never calls an LLM and only hands back the reference molecule it was given reaches 12.16. The agent that saw everything reached 14.44.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="A two-by-two grid with task name exposure on one axis and reference compound exposure on the other, holding the summed AUC values 14.44, 13.98, 6.07 and 4.85">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-11-10">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="On the PMO Drug Molecule Test, Does the AI Discover or Look Up?">
+    <meta name="twitter:description" content="Hiding the task name barely moves the score. Hiding the reference molecule collapses it. Splitting the two axes shows where the agent's points came from.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/pmo-benchmark-task-name-reference-leakage/en/image/index.png">
+    <meta name="twitter:image:alt" content="A two-by-two grid with task name exposure on one axis and reference compound exposure on the other, holding the summed AUC values 14.44, 13.98, 6.07 and 4.85">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261110"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261110">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261110">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261110">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#what-pmo-measures" class="block pl-4 themeable-toc-link transition-colors duration-200">1. What the PMO Test Measures</a></li>
+                    <li><a href="#blinding" class="block pl-4 themeable-toc-link transition-colors duration-200">2. With Both Hidden, the Score Falls to a Third</a></li>
+                    <li><a href="#retrieval-only" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Scoring 84 Percent Without Calling an LLM Once</a></li>
+                    <li><a href="#positive-control" class="block pl-4 themeable-toc-link transition-colors duration-200">4. The Optimization Works, but the Other Test Bed Is Loose Too</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Why Pebblous Is Watching This Paper</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            A new paper argues that much of what AI agents score when they claim to find drug candidate molecules in very few tries comes from hints printed on the exam paper itself. Researchers at the University at Buffalo and MBZUAI posted it to arXiv on October 30. On PMO, a molecular optimization benchmark, erasing the task name and the reference compound from the prompt pushed the summed AUC of their GPT-4o mini agent down to 4.85. With both shown, the same agent scored 14.44.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The sharper number belongs to a baseline that never calls an LLM at all. A procedure that submits the reference compound it was handed and then works through single-atom variants in a fixed order scored 12.16, or 84% of the 14.44 the agent earned with every piece of information in front of it. None of this adds up to a case against LLMs. A population-based agent that never pulls in the reference compound beat REINVENT, the classic reinforcement learning method, at the same call budget.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Sections 1 through 4 follow the experimental design and the numbers the paper reports. Section 5, which reads the same opening into the evaluation data companies keep in house, is this article's own interpretation.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Numbers</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: Qin et al., <a href="https://arxiv.org/abs/2611.08522" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">What Are LLM Agents Actually Learning on Low-Budget Molecular Optimization Benchmarks?</a>, arXiv:2611.08522 (October 30, 2026)</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The first two numbers below are one agent solving one set of tasks, and all that separates them is what the prompt said. The third shows that with the same information in hand an LLM becomes optional, and the fourth is what the whole check cost.
+                    </p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">14.44 → 4.85</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Summed AUC before and after blinding</p>
+                            <p class="text-xs themeable-muted mt-1">23 PMO tasks solved on a budget of 50 oracle calls</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">12.16</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Retrieval-only score with no LLM</p>
+                            <p class="text-xs themeable-muted mt-1">84 percent of the fully informed agent's 14.44</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">14 of 23</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Tasks naming a drug or a target</p>
+                            <p class="text-xs themeable-muted mt-1">The identifier itself says what the test is looking for</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">$0.63</p>
+                            <p class="text-sm themeable-text-secondary mt-1">API cost of the whole experiment</p>
+                            <p class="text-xs themeable-muted mt-1">Ledger total including discarded smoke tests. No special hardware to copy it</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="what-pmo-measures" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">What the PMO Test Measures</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        PMO, short for Practical Molecular Optimization, is a shared test bed built in 2022 so that algorithms searching for drug candidate molecules could be compared side by side. Twenty-three tasks run through a single oracle interface. The oracle is a scorer that takes one molecule and returns one number, and depending on the task it reports how closely the molecule resembles a particular drug or how well it is likely to bind to a particular target protein. A contestant submits a molecule, reads the score, and edits the next molecule accordingly.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What makes the test distinctive is the cap on how often you may ask. In real drug discovery, evaluating a single molecule is itself expensive, so the value of an algorithm turns on how few questions it needs before it lands on something good. The oracle may therefore be called only 50 times, and the area under the curve of the running best score is measured and summed across the 23 tasks. The faster a method reaches a good molecule, the larger the sum.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Reports of LLM agents far outrunning classical algorithms on this test have been arriving steadily. The one the paper names first is SEISMO, a workflow built on Claude Opus 4.5, which reported a summed AUC of 18.12 at 50 calls in its August 2026 v3. REINVENT, a reinforcement learning method from 2017, earns 7.06 on the same budget, so the gap is more than double. Work reporting 15.42 under a 1,000-call setting is cited alongside it.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The exam paper, however, carries quite a lot of readable text. Fourteen of the 23 tasks spell out a drug name or a target name inside the task identifier itself. Sometimes the drug to be found is written out in full, as in celecoxib_rediscovery; sometimes the abbreviation for the target protein is the whole identifier, as with drd2 and jnk3. A model that read the chemical literature on the open web during pretraining can summon a near-correct molecule from that name alone. The standard prompt then adds the oracle description and the reference compound on top. The reference compound is the exemplar molecule the task wants you to resemble, which on a similarity task amounts to coordinates next to the answer.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The SEISMO side was not blind to this. The same v3 report wrote down its own number for a fully anonymous condition with every task description stripped out, where the score drops to 8.50. The new paper takes that one line as its starting point and pushes it until the name and the reference molecule come apart.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="blinding" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">With Both Hidden, the Score Falls to a Third</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The researchers stood up an agent of their own and reproduced the standard condition exactly. Running GPT-4o mini with the task name, the oracle description and the reference compound all in the prompt, they measured a summed AUC of 14.44. The 18.12 in the previous section came from a different model and a different architecture; every one of the four numbers that follow is this single agent, measured again with the conditions switched. Two things were switched: whether the task name and description appear, and whether the reference compound appears.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 400" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="A two-by-two grid with the exposure of two kinds of information on the horizontal and vertical axes. The horizontal axis is whether the task name is shown or hidden, and the vertical axis is whether the reference molecule is shown or hidden. The top left cell is the standard condition with both shown, at summed AUC 14.44. The top right cell hides only the name, at 13.98. The bottom left cell hides only the reference molecule, at 6.07. The bottom right cell is the fully anonymous condition with both hidden, at 4.85. Moving horizontally costs 0.46 and 1.22 points, while moving vertically costs 8.37 and 9.13 points. The note underneath says the axis that sinks the score is the reference molecule rather than the name.">
+                            <defs>
+                                <marker id="pmo-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                                    <path d="M0,0 L7,3 L0,6 Z" fill="var(--text-muted,#6B7280)"/>
+                                </marker>
+                            </defs>
+
+                            <text x="350" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">Which blind actually moves the score</text>
+
+                            <!-- Column heads -->
+                            <text x="270" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">Task name shown</text>
+                            <text x="520" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">Task name hidden</text>
+
+                            <!-- Row heads -->
+                            <text x="95" y="135" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">Reference</text>
+                            <text x="95" y="153" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">shown</text>
+                            <text x="95" y="270" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">Reference</text>
+                            <text x="95" y="288" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-secondary,#4B5563)">hidden</text>
+
+                            <!-- Cell 1: standard -->
+                            <rect x="185" y="100" width="170" height="80" rx="10" fill="#F86825" fill-opacity="0.14" stroke="#F86825" stroke-width="1.2"/>
+                            <text x="270" y="138" text-anchor="middle" font-size="24" font-weight="700" fill="#F86825">14.44</text>
+                            <text x="270" y="162" text-anchor="middle" font-size="11" fill="var(--text-secondary,#4B5563)">Standard prompt</text>
+
+                            <!-- Cell 3: name hidden -->
+                            <rect x="435" y="100" width="170" height="80" rx="10" fill="#F86825" fill-opacity="0.14" stroke="#F86825" stroke-width="1.2"/>
+                            <text x="520" y="138" text-anchor="middle" font-size="24" font-weight="700" fill="#F86825">13.98</text>
+                            <text x="520" y="162" text-anchor="middle" font-size="11" fill="var(--text-secondary,#4B5563)">Fake task number only</text>
+
+                            <!-- Cell 2: reference hidden -->
+                            <rect x="185" y="235" width="170" height="80" rx="10" fill="var(--text-muted,#6B7280)" fill-opacity="0.12" stroke="var(--text-muted,#6B7280)" stroke-width="1"/>
+                            <text x="270" y="273" text-anchor="middle" font-size="24" font-weight="700" fill="var(--text-secondary,#4B5563)">6.07</text>
+                            <text x="270" y="297" text-anchor="middle" font-size="11" fill="var(--text-muted,#6B7280)">Name visible, no exemplar</text>
+
+                            <!-- Cell 4: fully anonymous -->
+                            <rect x="435" y="235" width="170" height="80" rx="10" fill="var(--text-muted,#6B7280)" fill-opacity="0.12" stroke="var(--text-muted,#6B7280)" stroke-width="1"/>
+                            <text x="520" y="273" text-anchor="middle" font-size="24" font-weight="700" fill="var(--text-secondary,#4B5563)">4.85</text>
+                            <text x="520" y="297" text-anchor="middle" font-size="11" fill="var(--text-muted,#6B7280)">Fully anonymous, score only</text>
+
+                            <!-- Horizontal moves -->
+                            <line x1="360" y1="145" x2="428" y2="145" stroke="var(--text-muted,#6B7280)" stroke-width="1.2" marker-end="url(#pmo-arrow)"/>
+                            <text x="394" y="132" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary,#4B5563)">-0.46</text>
+                            <line x1="360" y1="280" x2="428" y2="280" stroke="var(--text-muted,#6B7280)" stroke-width="1.2" marker-end="url(#pmo-arrow)"/>
+                            <text x="394" y="267" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary,#4B5563)">-1.22</text>
+
+                            <!-- Vertical moves -->
+                            <line x1="270" y1="185" x2="270" y2="229" stroke="#F86825" stroke-width="1.6" marker-end="url(#pmo-arrow)"/>
+                            <text x="284" y="212" text-anchor="start" font-size="12" font-weight="700" fill="#F86825">-8.37</text>
+                            <line x1="520" y1="185" x2="520" y2="229" stroke="#F86825" stroke-width="1.6" marker-end="url(#pmo-arrow)"/>
+                            <text x="534" y="212" text-anchor="start" font-size="12" font-weight="700" fill="#F86825">-9.13</text>
+
+                            <!-- Note -->
+                            <rect x="95" y="338" width="510" height="44" rx="10" fill="var(--text-muted,#6B7280)" fill-opacity="0.1" stroke="var(--text-muted,#6B7280)" stroke-width="0.8"/>
+                            <text x="350" y="356" text-anchor="middle" font-size="11.5" fill="var(--text-secondary,#4B5563)">Left to right, the score barely changes</text>
+                            <text x="350" y="373" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary,#4B5563)">What sinks the score is the reference molecule, not the name</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Pebblous original diagram. The four conditions in Table 2 of the paper, drawn onto a single plane. The numbers are summed AUC over the 23 PMO tasks at 50 oracle calls, and the arrow values are the differences between those four numbers. | Source: <a href="https://arxiv.org/html/2611.08522" target="_blank" rel="noopener" class="underline">arXiv:2611.08522</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Once the two axes are split, the asymmetry is plain. Swapping the task name and description for a fake number takes the score from 14.44 down to 13.98, a loss of 0.46, and erasing the name when the reference compound is already gone costs a further 1.22. Removing the reference compound, on the other hand, wipes out 8.37 and 9.13 points at once. Averaged out, the reference compound accounts for 8.75 points and the task name for 0.84. The summary that travels fastest, that the score collapsed once the names were hidden, is half right. What was holding the score up was the exemplar molecule rather than the name.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The researchers slipped one more condition in between. Here the reference compound itself is withheld and only the shape of the oracle is disclosed, along the lines of maximize ECFP4 Tanimoto similarity to a hidden reference. That corresponds to knowing what kind of problem is being optimized without knowing what the target is, and it scored 5.39, which is 0.54 above the fully anonymous 4.85. Knowing the form of the problem is worth about that much.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        None of this rests on a single run. On top of the 2x2 across all 23 tasks, eight representative tasks were repeated with three seeds. The standard condition beat the fully anonymous one on eight of the eight, with a one-sided sign test p-value of 0.0039. The average drop was 3.78 points, a 68% reduction.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="retrieval-only" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Scoring 84 Percent Without Calling an LLM Once</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        If the reference compound explains most of the score, how many points would the reference compound alone collect with no LLM anywhere in the loop? The retrieval-only baseline is the device built to answer that. It finishes in three steps. First it submits the reference compound that came in the prompt. Then it submits up to five predetermined seed molecules. From there it takes whichever molecule has scored highest so far, uses RDKit to change one atom, and sends the variants out in a fixed order. LLM calls: zero. The same input always produces the same sequence of submissions.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That procedure scored 12.16. Set against the 14.44 the agent reached with every field filled in and the same 50 calls, that is 84%. With no model, no reasoning and no planning, simply handing back what it was given filled four fifths of the report card. Whatever the agent did across its 50 calls, the part of it that converts into points comes to roughly the remaining 16%.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is a reason the procedure climbs so close to the agent. In its final refinement phase, the researchers' own agent fills leftover oracle budget with deterministic one-atom additions whenever the LLM returns proposals that are malformed or duplicate earlier ones. A piece of what the retrieval-only baseline does is therefore already built into the agent. Beyond that, seven of the 23 tasks reach roughly 0.98 AUC the moment the reference compound and the seed molecules go in. Because per-task AUC is the trapezoidal area over the 50 running-best points divided by 50, its ceiling is 49/50, which is 0.98. Those seven tasks are already at the ceiling, and the remaining calls have nowhere to lift them.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            What these numbers describe is the structure of the test rather than the ability of the model. On a task designed so that submitting the reference compound earns points, anyone holding that molecule scores well. The benchmark does not separate that from the work of searching.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="positive-control" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Optimization Works, but the Other Test Bed Is Loose Too</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper sets up a positive control to keep the balance. MolLEO-v4 is a population-based genetic algorithm carrying an LLM batch-mutation operator, structured memory and adaptive planning, and it never pulls in a reference compound. That agent took 7.39 at 50 calls, past REINVENT's 7.06, and climbs to 10.24 when the budget is raised to 100. Strip out the leaked information and meaningful optimization remains possible. The claim here is not that LLMs are useless but that today's measurement cannot tell skill apart from access to information.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>A Procedure That Learns Nothing Outscores the Agent</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The second track is a setting that looks harder than PMO. ProteinLeadOpt-50 attaches five starting molecules to each of 10 medically important protein targets for 50 pairs, and gives each pair 30 oracle calls. Scoring is a composite: the improvement in the AutoDock Vina docking score, plus a drug-likeness measure (QED) at a weight of 0.5, minus a penalty for drifting too far from the starting molecule. Against that, the researchers stood up a baseline with nothing in it worth calling learning. The policy picks one aromatic hydrogen position and attaches one of eight groups at random, drawn from F, Cl, Br, CF3, OMe, Me, OH and NH2. A fixed rule, in other words a random walk.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The table below puts that random walk up against an LLM agent, the genetic algorithm GraphGA, and plain prompting of GPT, over the same 50 pairs. All four rows are the matched single-seed comparison, and the figures from running more seeds and averaging appear in the paragraph after the table.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-toc-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Method</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Docking change (kcal/mol)</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">Success rate</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">Composite score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-toc-border align-top">
+                                    <td class="py-3 pr-4 font-semibold">Random walk</td>
+                                    <td class="py-3 pr-4">-0.98</td>
+                                    <td class="py-3 pr-4">0.60</td>
+                                    <td class="py-3">0.58</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border align-top">
+                                    <td class="py-3 pr-4 font-semibold">GraphGA</td>
+                                    <td class="py-3 pr-4">-0.84</td>
+                                    <td class="py-3 pr-4">0.40</td>
+                                    <td class="py-3">0.57</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border align-top">
+                                    <td class="py-3 pr-4 font-semibold">LLM agent</td>
+                                    <td class="py-3 pr-4">-0.81</td>
+                                    <td class="py-3 pr-4">0.36</td>
+                                    <td class="py-3">0.55</td>
+                                </tr>
+                                <tr class="border-b themeable-toc-border align-top">
+                                    <td class="py-3 pr-4 font-semibold">Direct GPT prompting</td>
+                                    <td class="py-3 pr-4">-0.36</td>
+                                    <td class="py-3 pr-4">0.24</td>
+                                    <td class="py-3">0.51</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-3 text-center">▲ The four matched single-seed rows of Table 4 in the paper. Aggregate values over all 50 pairs at 30 calls. | Source: <a href="https://arxiv.org/html/2611.08522" target="_blank" rel="noopener" class="underline">arXiv:2611.08522</a></p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A lower docking score means tighter binding, so in the first column a larger negative number is better. The procedure that attaches substituents with no strategy at all sits at the top of all three columns. Random walk beat the LLM agent on 33 of the 50 pairs, and averaging over three seeds moves its numbers up rather than down, to a docking change of -1.11±0.04 and a composite score of 0.636±0.008.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The reason lies with the scorer. Hang a chlorine, a bromine or a CF3 on an aromatic position and the Vina score typically falls by 0.5 to 1.5 kcal/mol. The scaffold stays put, so the similarity penalty is avoided too. A 30-call budget combined with this composite score systematically rewards local substitution, and points accumulate without any particular strategy. Where PMO's problem was the hints written on the exam paper, the problem here is the plainness of the scoring itself, which looks like the same illness presenting a different symptom. The paper pins this result to the specific combination of AutoDock Vina, the composite score and the 30-call budget, and writes that an evaluation with more discriminating power would need a stronger scorer such as FEP or Boltz-2, target selectivity conditions, and novelty criteria that demand a change of scaffold.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Is Watching This Paper</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What the paper prescribes is not a better model but a more honest measurement. There are two prescriptions, and neither needs extra training or special equipment, only a few conditions laid on top of existing code. The $0.63 that the whole check cost in API fees is the evidence for that.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>A retrieval-safe protocol</strong>: when results are published, report three numbers side by side, for the standard prompt, for the condition that discloses only the oracle form, and for the fully anonymous condition. Placing the three cells together separates the points earned from molecular identity, the points earned from the shape of the problem, and the points earned from pure feedback optimization. Where the setup shows the reference compound outright, the paper adds that the retrieval-only score obtained without an LLM belongs in the same place.</li>
+                        <li class="themeable-text leading-relaxed"><strong>A random-walk floor</strong>: on docking-based tasks, run a strategy-free variant with the same starting molecules and the same call budget, and publish that score alongside. An agent that cannot clear this floor has no standing to claim it learned anything. Reporting docking change, success rate and composite score together with QED, similarity and scaffold preservation, and stating which substituents were allowed at which positions, lets another group rebuild the same floor.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The evaluation data companies work with is in no better shape. The numbers that justify picking a model or reporting an improvement are produced by an evaluation set, yet what else rides along inside that set is seldom written down anywhere. An item name that hints at the answer, an example attached to the prompt that sits near the answer, a question pulled from public data that already went into the model's pretraining, all land in the same place. How much leakage of this kind actually lifts a score came up in <a href="/blog/agentic-data-science-silent-failures/en/" class="text-orange-500 hover:text-orange-400 underline">Data Leakage: The Flaw That Makes an AI's Analysis Score Higher</a>, and the case of a broken exam paper was covered in <a href="/blog/anomaly-benchmark-identical-rows/en/" class="text-orange-500 hover:text-orange-400 underline">On the AI Exam, the Same Row Carries Two Different Answers</a>.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Carried over to an organization's own evaluation data, the two checks in this paper turn into three questions.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">Does the score hold when the names and descriptions of the evaluation items are erased? A name-blinded condition takes about one line of code, and if the score stays put you have evidence that the names at least were not hints.</li>
+                        <li class="themeable-text leading-relaxed">How far from the answer are the examples bundled into the prompt? Without a measurement taken after removing the exemplar, the performance on the table has the exemplar's contribution mixed into it.</li>
+                        <li class="themeable-text leading-relaxed">What does a procedure that learns nothing score on this evaluation set? Without that floor there is no way to say where the model's score started climbing from.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        All three ask about the evaluation set rather than the model. That is also the place the phrase AI-Ready Data points at. Only when the conditions a value was produced under stand next to the data itself does a score measured on that data come with an account of what it proves.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            The side being criticized here did not hide its numbers either. SEISMO reported its own 8.50 under the fully anonymous condition, and this study pushed on that one line until it could separate which information had been holding the score up. The verification was possible because the practice of publishing the floor alongside your own result already existed. What to watch next is whether the papers that keep using PMO start printing the three conditions together.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-8">
+                        Thank you for reading this far. The full paper is at <a href="https://arxiv.org/abs/2611.08522" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv:2611.08522</a>. If you have ever blinded a name or removed an example from an evaluation set you use, we would be glad to hear how far the score moved.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261110"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "On the PMO Drug Molecule Test, Does the AI Discover or Look Up?",
+            subtitle: "Hiding the task name and the reference molecule drops an LLM agent's PMO score from 14.44 to 4.85 — University at Buffalo and MBZUAI",
+            pageTitle: "PMO Benchmark: LLM Agent Scores and Data Leakage | Pebblous",
+            category: "tech",
+            publishDate: "2026-11-10",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/pmo-benchmark-task-name-reference-leakage/en/",
+            tags: ["PMO", "molecular optimization benchmark", "data leakage", "LLM agent", "drug discovery", "benchmark design", "AI-Ready Data", "evaluation data"],
+            faqs: [
+                {
+                    question: "What kind of test is PMO?",
+                    answer: "A shared test bed built in 2022 for comparing algorithms that search for drug candidate molecules. Twenty-three tasks sit behind one oracle interface, where the oracle takes a molecule and returns a score. With oracle calls capped at 50, the area under the curve of the running best score is measured and summed across the 23 tasks into a summed AUC."
+                },
+                {
+                    question: "What did the new paper hide?",
+                    answer: "Two things. One is the task name together with the oracle description, the other is the reference compound, the exemplar molecule a task wants the answer to resemble. The researchers combined the presence of each into a 2x2 and ran the same agent under all four conditions across all 23 tasks."
+                },
+                {
+                    question: "How far did the score fall?",
+                    answer: "From a summed AUC of 14.44 under the standard condition to 4.85 once both were hidden, which is below a third. Repeating eight representative tasks with three seeds, the standard condition came out ahead on all eight, the one-sided sign test gave p = 0.0039, and the average drop was 3.78 points, a 68% reduction."
+                },
+                {
+                    question: "Which matters more, the task name or the reference compound?",
+                    answer: "The reference compound, by a wide margin. Replacing the name and description with a fake number costs between 0.46 and 1.22 points, while removing the reference compound costs between 8.37 and 9.13. On average the reference compound accounts for 8.75 points and the task name for 0.84."
+                },
+                {
+                    question: "How does the baseline without an LLM work?",
+                    answer: "It submits the reference compound from the prompt, then up to five predetermined seed molecules, then variants made by using RDKit to change one atom on whichever molecule scored highest, sent out in a fixed order. There are zero LLM calls and the same input gives the same result. The procedure scored 12.16, or 84% of the agent under the standard condition."
+                },
+                {
+                    question: "Does that mean LLM agents are useless?",
+                    answer: "No. The paper runs MolLEO-v4 as a positive control, a population-based agent that never pulls in a reference compound. It took 7.39 at 50 calls, past the 7.06 of the classical method REINVENT, and reached 10.24 at 100 calls. The problem is not the model but a measurement that cannot separate skill from access to information."
+                },
+                {
+                    question: "What happened in the protein docking experiment?",
+                    answer: "On ProteinLeadOpt-50, which gives 30 calls to each of 50 pairs built from 10 targets and five starting molecules apiece, a procedure that only attaches one of eight groups at random to an aromatic hydrogen position came out ahead of both the LLM agent and GraphGA. It beat the LLM agent on 33 of the 50 pairs, because an AutoDock Vina composite score combined with a short budget systematically rewards local substitution."
+                },
+                {
+                    question: "What are the two checks the paper proposes?",
+                    answer: "The first is a retrieval-safe protocol: report the standard prompt, the condition that discloses only the oracle form, and the fully anonymous condition together, so that molecular identity, the shape of the problem and pure feedback optimization each show their own contribution. The second is to publish a random-walk floor alongside results on docking-based tasks."
+                },
+                {
+                    question: "Can the same checks be applied to our own evaluation set?",
+                    answer: "They can. Erase the names and descriptions of the evaluation items and measure again, remove the examples attached to the prompt and measure again, and keep the score of a procedure that learns nothing as a floor. As a cost reference, the API bill for every experiment in this paper came to $0.63."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
