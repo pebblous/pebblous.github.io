@@ -46,7 +46,7 @@ The scale of the hardware that went into training is in the announcement as well
 
 The scorecard came with it. On SWE-Bench Verified, which measures whether a model can repair real code, Beam scored 80.9, against 77.6 for Inkling and 70.7 for Nemotron 3 Ultra in the same table. On Terminal-Bench v2.1, which watches whether a model can carry a terminal task through to the end, it scored 80.1, a little under the 81.0 posted by Z.ai's GLM-5.2. The sentence Reflection put at the front is not about rank but about efficiency: the claim is that Beam matches GLM-5.2 on hard reasoning work while spending three to four times less inference compute.
 
-![Chart from Reflection AI's own announcement showing Beam's reasoning efficiency — score versus estimated generation FLOPs across the DeepSWE v1.1, HLE and Terminal Bench 2.1 benchmarks](./image/img-01-reasoning-effort-chart.png)
+![Chart from Reflection AI's own announcement showing Beam's reasoning efficiency — score versus estimated generation FLOPs across the DeepSWE v1.1, HLE and Terminal Bench 2.1 benchmarks](../ko/image/img-01-reasoning-effort-chart.png)
 *▲ The chart behind Reflection's "three to four times less inference compute" claim — all three benchmarks are Reflection's own measurements. Source: [Reflection AI, "Introducing Beam" (2026-10-05)](https://reflection.ai/blog/introducing-beam).*
 
 > [!callout]
@@ -76,7 +76,7 @@ This distinction is not about Beam in particular. Publishing the finished parame
 
 A real case makes the distance between the two easy to see. OLMo 3, released by the Allen Institute for AI in November 2025, came with its pretraining dataset Dolma 3 as well as its weights. That is roughly six trillion tokens, published alongside documentation of the data mix, the training code, and the intermediate checkpoints saved along the way. With the data, the code and the checkpoints all in hand, it becomes possible to trace a sentence the model produced back to the training documents behind it. What Beam releases does not support that tracing.
 
-![Screenshot of OLMo 3's OlmoTrace feature. Selecting a span of model output surfaces 20 matching training documents that share the exact text](./image/img-02-olmotrace-screenshot.png)
+![Screenshot of OLMo 3's OlmoTrace feature. Selecting a span of model output surfaces 20 matching training documents that share the exact text](../ko/image/img-02-olmotrace-screenshot.png)
 *▲ OlmoTrace — OLMo 3 can trace a span of its own output back to the training documents it came from. Beam's dataset stays closed, so that kind of tracing is not possible. Source: [Ai2, "Olmo 3" (2025-11-20)](https://allenai.org/blog/olmo3).*
 
 | Scope of release | What the recipient can do | What stays out of reach |

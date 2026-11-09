@@ -72,7 +72,7 @@ Read "48 vs. 54" as a single line and Nemotron simply looks beaten. Unfold the i
 
 All individual figures are vendor-stated (NVIDIA / Moonshot), third-party reproduction pending. Source: Nemotron 3 Ultra Technical Report Table 10, Kimi K2.6 model card.
 
-![Nemotron 3 Ultra vs Kimi K2.6 benchmark accuracy and throughput comparison — Kimi leads in agentic and coding tasks, Nemotron NVFP4 dominates in RULER long-context and throughput](./image/img-01-benchmark-comparison.png)
+![Nemotron 3 Ultra vs Kimi K2.6 benchmark accuracy and throughput comparison — Kimi leads in agentic and coding tasks, Nemotron NVFP4 dominates in RULER long-context and throughput](../ko/image/img-01-benchmark-comparison.png)
 *▲ Benchmark accuracy (left) and throughput (right) — Kimi K2.6 leads on Terminal-Bench and SWE-Bench agentic/coding tasks; Nemotron 3 Ultra NVFP4 dominates on RULER @1M long-context and throughput (5.8 tok/s/GPU). | Source: [NVIDIA Research](https://research.nvidia.com/labs/nemotron/Nemotron-3-Ultra/)*
 
 > [!callout]
@@ -105,7 +105,7 @@ LatentMoE hybrid composition (simplified from Table 1 of the technical report). 
 
 The payoff of this design is throughput. NVIDIA reports throughput at 5.9× GLM-5.1, 4.8× Kimi K2.6, and 1.6× Qwen-3.5 against comparable open models. But that "5×" is NVIDIA's own measurement, which is worth flagging. The independent house Artificial Analysis clocked output speed at about 181 tok/s, roughly 3× the comparison-group median (around 60 tok/s). The honest reading is up to 5× by the vendor's numbers, about 3× by independent measurement. Either way, the fact that a model of this weight is fast doesn't change.
 
-![Artificial Analysis Intelligence Index vs Output Speed scatter plot — Nemotron 3 Ultra occupies the 'most attractive quadrant' with highest throughput among comparable open-weight models](./image/img-02-intelligence-speed.png)
+![Artificial Analysis Intelligence Index vs Output Speed scatter plot — Nemotron 3 Ultra occupies the 'most attractive quadrant' with highest throughput among comparable open-weight models](../ko/image/img-02-intelligence-speed.png)
 *▲ Artificial Analysis Intelligence Index × Output Speed scatter — Nemotron 3 Ultra sits alone in the "most attractive quadrant" (high speed, mid intelligence). Kimi K2.6 (~54 intelligence) sits upper-left; Nemotron reaches 300+ tok/s on the right. | Source: [NVIDIA Research](https://research.nvidia.com/labs/nemotron/Nemotron-3-Ultra/)*
 
 The efficiency paradox
@@ -149,7 +149,7 @@ Still, not everyone views this license favorably. Red Hat's open-source legal le
 
 Deployment resource estimates. Source: NVIDIA NIM deployment guide, vLLM blog, independent tester (dredyson), Spheron (2026-06).
 
-![NVIDIA H100 Tensor Core GPU card — the GPU used in the recommended 8×H100 server configuration for deploying Nemotron 3 Ultra](./image/img-03-h100-gpu.png)
+![NVIDIA H100 Tensor Core GPU card — the GPU used in the recommended 8×H100 server configuration for deploying Nemotron 3 Ultra](../ko/image/img-03-h100-gpu.png)
 *▲ NVIDIA H100 Tensor Core GPU — recommended deployment hardware for Nemotron 3 Ultra (NVFP4: 8×H100 or 4×B200). | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/Category:NVIDIA_H100) / 极客湾 Geekerwan (CC-BY-SA)*
 
 The serving stack was ready from launch day. vLLM supports it day-0 (v0.22.0), and the launch command for the most common NVFP4, 8×H100 configuration is concise.
@@ -188,7 +188,7 @@ Translate data quality into measurable language and you arrive at data-quality d
 
 Korea has already become a stage for the Nemotron ecosystem, a useful case for any market weighing sovereign AI. The first Nemotron Developer Days were held in Seoul on April 21–22, 2026, and a panel on a homegrown Korean foundation model, co-hosted by the Ministry of Science and ICT, drew four consortia: SK Telecom, Upstage, Elice Group, and Motif Technologies. Nemotron 3 Ultra lists Korean among its natively supported languages. Amid the momentum of sovereign AI and data sovereignty, serving open weights on your own infrastructure is becoming an increasingly real strategy.
 
-![NVIDIA Nemotron 3 Ultra announcement — Jensen Huang presenting the agentic AI multi-agent network vision with interconnected AI agents](./image/img-04-nemotron-announcement.png)
+![NVIDIA Nemotron 3 Ultra announcement — Jensen Huang presenting the agentic AI multi-agent network vision with interconnected AI agents](../ko/image/img-04-nemotron-announcement.png)
 *▲ NVIDIA Nemotron 3 Ultra announcement — Jensen Huang presenting the agentic AI multi-agent network vision. The first Nemotron Developer Days were held in Seoul, April 2026. | Source: [NVIDIA Developer Blog](https://developer.nvidia.com/blog/nvidia-nemotron-3-ultra-powers-faster-more-efficient-reasoning-for-long-running-agents/)*
 
 So the decisions a company faces when building its own agent on open weights like Nemotron come in three layers. The sections of this report turn directly into a checklist.

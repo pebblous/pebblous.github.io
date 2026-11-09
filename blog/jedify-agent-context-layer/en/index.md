@@ -65,7 +65,7 @@ Jedify says it connects a company's knowledge sources via API to build a multidi
 
 For an agent, the payoff is twofold: access to accurate business context cuts hallucinations, and receiving only the refined slice it needs cuts token waste. The table below lays out where RAG and context architecture diverge.
 
-![Property graph diagram showing nodes (Alice, Bob, Chess group) connected by labeled edges with timestamps and properties — the same structural model a context graph uses to map enterprise entities and their relationships](./image/img-02-context-graph.png)
+![Property graph diagram showing nodes (Alice, Bob, Chess group) connected by labeled edges with timestamps and properties — the same structural model a context graph uses to map enterprise entities and their relationships](../ko/image/img-02-context-graph.png)
 *▲ A property graph: nodes represent entities, edges represent relationships, and both carry typed properties. Jedify's context graph applies this same structure to customers, products, permissions, and business rules — across structured and unstructured sources simultaneously. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:GraphDatabase_PropertyGraph.svg) (CC BY-SA 3.0)*
 
 | Dimension | RAG (retrieval-augmented) | Context architecture |

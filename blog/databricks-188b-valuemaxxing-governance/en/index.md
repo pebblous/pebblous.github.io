@@ -20,7 +20,7 @@ _After Together AI and Peregrine, capital keeps pricing the layer that governs d
 
 > So the question narrows to three. What did this round actually price? What pattern is now visible, with capital having picked the data layer again after Together AI and Peregrine? And what does that governance genuinely measure, and what can it still not?
 
-![Databricks logo, a stacked-layer icon](./image/img-01-databricks-logo.png)
+![Databricks logo, a stacked-layer icon](../ko/image/img-01-databricks-logo.png)
 *▲ The Databricks logo. Its stacked-layer mark echoes, almost by coincidence, the "data layer" this round priced | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Databricks_Logo.png) (CC BY-SA 4.0, Agrawroh)*
 
 ### Key Figures

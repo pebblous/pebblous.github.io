@@ -40,7 +40,7 @@ Source: [The Robot Report](https://www.therobotreport.com/softbank-agrees-to-acq
 
 The RAI Institute is a research organization Hyundai Motor Group set up separately in 2022 while it was taking Boston Dynamics in. Marc Raibert founded it. He started Boston Dynamics in 1992 and stepped down as its CEO in January 2020, then built an organization that does research only, apart from the work of making products. Hyundai Motor Group put more than $400 million in as founding investment. That money has already been spent, The Robot Report said.
 
-![Marc Raibert, founder of the RAI Institute, speaking at a conference](./image/img-01-marc-raibert.jpg)
+![Marc Raibert, founder of the RAI Institute, speaking at a conference](../ko/image/img-01-marc-raibert.jpg)
 *▲ Marc Raibert, who founded the RAI Institute, speaking at TechCrunch Disrupt in 2023. He started Boston Dynamics in 1992 and stepped down as CEO in 2020 before founding RAI in 2022. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Marc_Raibert_-_Empowering_the_Future_(cropped).jpg)*
 
 No formal announcement has come. RAI said it had nothing to share at present and SoftBank did not respond. The accounting left a mark instead. In its first-half 2026 financial report Hyundai Motor Group classified its 47.5 percent RAI stake as an asset held for sale. The selling side has already drawn that line in its own books. Neither party has disclosed the price, and the estimates circulating on some Korean channels carry no primary source.

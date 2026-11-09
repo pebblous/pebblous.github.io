@@ -20,7 +20,7 @@ _Arena raised $200 million at a $3.1 billion valuation, and the votes its users 
 
 > The facts and figures carried in this article come from TechCrunch reporting, from the announcement Arena published itself, from coverage of the Llama 4 episode, from the paper "The Leaderboard Illusion", and from the official response Arena gave that paper. The move in sections 4 and 5 toward who votes and what neutrality rests on belongs to no party in the story. It is this article's reading.
 
-![Official image Arena published announcing its Series B funding round](./image/img-01-arena-series-b-announcement.png)
+![Official image Arena published announcing its Series B funding round](../ko/image/img-01-arena-series-b-announcement.png)
 *▲ The official image Arena posted alongside its 8 October 2026 Series B announcement | Source: [Arena Blog](https://arena.ai/blog/series-b)*
 
 ### Key numbers

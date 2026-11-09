@@ -40,7 +40,7 @@ Even as deep learning conquered images and language, tree-based models held thei
 
 The trouble is that this approach devours human time endlessly. Training a new model means first reshaping the data into something the model can digest — filling missing values, standardizing categories, reconciling code values that each department defines differently. Several surveys converge on the same number: data scientists spend about 60% of their working hours cleaning and organizing data, and if you widen the lens to all of data preparation, that share reaches 80%. Modeling is the tip of the iceberg; most of the mass below the surface is data work.
 
-![Normalized classification accuracy vs. number of hyperparameter search iterations — XGBoost and GradientBoostingTree consistently outperform neural networks including FT Transformer, Resnet, and MLP on tabular data](./image/img-01-gbdt-vs-deeplearning.jpg)
+![Normalized classification accuracy vs. number of hyperparameter search iterations — XGBoost and GradientBoostingTree consistently outperform neural networks including FT Transformer, Resnet, and MLP on tabular data](../ko/image/img-01-gbdt-vs-deeplearning.jpg)
 *▲ Normalized classification accuracy vs. hyperparameter search iterations — XGBoost and GradientBoostingTree consistently outperform FT Transformer, Resnet, and MLP on 15 numerical tabular datasets. | Source: [Grinsztajn et al., NeurIPS 2022 (arXiv:2207.08815)](https://arxiv.org/abs/2207.08815)*
 
 > [!callout]
@@ -54,7 +54,7 @@ Ordinary machine learning, handed a dataset, readjusts the model's weights to fi
 
 The heart of this architecture is that attention operates across both rows (samples) and columns (features). The model weighs, at the same time, how each data row resembles the others and how each feature contributes to the outcome. It is fundamentally different from GBDT's cycle of retraining and tuning for every new dataset. A model built once and laid directly over the table — a foundation model in the true sense — has entered the structured-data domain for the first time.
 
-![TabPFN v2 mechanism — input table and labels converted to a Tabular Context, then Self-Attention applied across both rows (samples) and columns (features), producing predictions in a single forward pass](./image/img-02-tabpfn-architecture.png)
+![TabPFN v2 mechanism — input table and labels converted to a Tabular Context, then Self-Attention applied across both rows (samples) and columns (features), producing predictions in a single forward pass](../ko/image/img-02-tabpfn-architecture.png)
 *▲ TabPFN v2 mechanism — the input table (Feature Tokenizer) is converted to a Tabular Context; Self-Attention operates across both rows (samples) and columns (features), delivering predictions in a single forward pass. | Source: ["A Closer Look at TabPFN v2" (arXiv:2502.17361)](https://arxiv.org/abs/2502.17361)*
 
 This model did not handle large data from the start. Over four years it rapidly scaled up the table sizes it could process. The table below traces that evolution from v1 to TabPFN-3.
@@ -82,7 +82,7 @@ Move to large data and the story changes. One comparative study noted that on la
 | Large tables | Up to 40,000× latency for a 0.8% gain — diminishing returns on cost |
 | Academic evaluation | SOTA across hundreds of independent studies; 1,000+ citations, 3M+ downloads |
 
-![TabArena-Lite classification benchmark Elo scores — TabPFN-2.5 ranks highest among 18 models including XGBoost, CatBoost, and TabPFNv2; dashed line marks the 4-hour tuned AutoGluon ensemble baseline](./image/img-03-tabpfn-benchmark-elo.png)
+![TabArena-Lite classification benchmark Elo scores — TabPFN-2.5 ranks highest among 18 models including XGBoost, CatBoost, and TabPFNv2; dashed line marks the 4-hour tuned AutoGluon ensemble baseline](../ko/image/img-03-tabpfn-benchmark-elo.png)
 *▲ TabArena-Lite classification benchmark Elo scores — TabPFN-2.5 ranks highest among 18 models including XGBoost, CatBoost, and TabPFNv2 (dashed line: 4-hour tuned AutoGluon ensemble baseline). | Source: [Prior Labs TabPFN-2.5 Technical Report (arXiv:2511.08667)](https://arxiv.org/abs/2511.08667)*
 
 One phrasing needs correcting. Coverage of the acquisition often rendered it as "ranked first across hundreds of benchmarks," but SAP's official press release actually said TabPFN was "evaluated as state-of-the-art in hundreds of independent academic studies." That evaluation is not vague rhetoric; it is backed by adoption metrics. The TabPFN family has logged over 1,000 academic citations and more than 3 million cumulative downloads, taking hold quickly in research. The "first place" on a standard leaderboard, though, is specific to one benchmark — TabArena, with 51 datasets. And because TabArena's creators include people from the same lab, a possible self-evaluation bias is also flagged. The performance is genuinely impressive, but the citation should be precise.
@@ -93,7 +93,7 @@ The first thing to set straight is the number that gets garbled most often. What
 
 Several intentions stand out in SAP's design. First, Prior Labs will keep operating independently after the acquisition — a choice to preserve the talent and pace of frontier research rather than absorb it into an internal org. Its advisory board includes deep-learning luminaries Yann LeCun and Bernhard Schölkopf. Second, on the same day SAP also acquired the data lakehouse company Dremio. Securing the model layer (Prior Labs) and the data layer (Dremio) at once is a comprehensive data-platform strategy.
 
-![TabPFN-2.5 TabArena benchmark performance — model Elo scores across all datasets, with the dashed line marking the 4-hour tuned AutoGluon ensemble baseline that TabPFN-2.5 exceeds on most datasets](./image/img-04-tabpfn-vs-ensemble.png)
+![TabPFN-2.5 TabArena benchmark performance — model Elo scores across all datasets, with the dashed line marking the 4-hour tuned AutoGluon ensemble baseline that TabPFN-2.5 exceeds on most datasets](../ko/image/img-04-tabpfn-vs-ensemble.png)
 *▲ TabPFN-2.5 TabArena benchmark — surpassing the 4-hour tuned AutoGluon ensemble baseline (dashed line) on most datasets, providing the performance foundation behind SAP's €1B+ commitment. | Source: [Prior Labs TabPFN-2.5 Technical Report (arXiv:2511.08667)](https://arxiv.org/abs/2511.08667)*
 
 ### Why would an ERP vendor buy a foundation model?

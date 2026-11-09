@@ -38,7 +38,7 @@ The sequence Morrison laid out is both simple and strange. First, identify the b
 
 Morrison summed up the goal this way: a manufacturer building a vehicle should be able to know for certain whether or not it meets the requirements. Right now there is no shared yardstick for what a car must pass to be considered safe. The Trump administration set a timetable to finish building that yardstick before the current term ends in January 2029, and the House backed it up by introducing the SELF DRIVE Act of 2026, which codifies NHTSA's authority over autonomous vehicles and directs the agency to develop new safety standards.
 
-![Official logo of the U.S. National Highway Traffic Safety Administration (NHTSA)](./image/img-01-nhtsa-logo.png)
+![Official logo of the U.S. National Highway Traffic Safety Administration (NHTSA)](../ko/image/img-01-nhtsa-logo.png)
 *▲ NHTSA, the agency that announced the behavioral competency test for self-driving cars | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:US-NHTSA-Logo.svg)*
 
 > [!callout]
@@ -50,7 +50,7 @@ This rulemaking did not come out of nowhere. Behind it sits a run of real crashe
 
 The problem continued after the recall. In Austin, more than 20 cases of a car ignoring a school-bus stop-arm were logged during the school year even after the software fix, and a local broadcaster confirmed footage of at least 24 violations. In January 2026, a Waymo vehicle struck a child near a school, prompting a formal NTSB investigation. On top of that came a sixth recall in June 2026, of roughly 3,900 vehicles pulled back over a defect that sent them through highway construction zones without slowing down.
 
-![A Waymo Jaguar I-Pace self-driving car operating driverless in San Francisco](./image/img-02-waymo-jaguar-ipace.jpg)
+![A Waymo Jaguar I-Pace self-driving car operating driverless in San Francisco](../ko/image/img-02-waymo-jaguar-ipace.jpg)
 *▲ A Waymo vehicle (Jaguar I-Pace) running the fifth-generation software behind the recalls | Source: [Wikimedia Commons (Dllu, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Waymo_Jaguar_I-Pace_in_San_Francisco_2023_dllu.jpg)*
 
 Emergency vehicles are another recurring scene. Morrison was blunt: someone arriving at an emergency does not bring along a spare crew to move a car out of the way, and a robotaxi blocking a fire truck or ambulance is not acceptable. NHTSA has flagged a separate meeting with the industry on precisely this issue.
@@ -62,7 +62,7 @@ Emergency vehicles are another recurring scene. Morrison was blunt: someone arri
 
 In the same announcement, Morrison also previewed a move in the opposite direction: stripping away old rules written on the assumption of a human driver. The prime examples are a manual brake pedal, which presupposes a driver's seat no human will ever occupy, and the rear-view mirror. If you ask whether a vehicle no human will operate needs a mirror, he said, the common-sense answer is no. In early July he also said the agency would consider scrapping steering-wheel and manual-control requirements for driverless vehicles, but that is still only a signal, not a formal process that has begun.
 
-![A Zoox robotaxi designed without a steering wheel or rear-view mirror](./image/img-03-zoox-robotaxi.jpg)
+![A Zoox robotaxi designed without a steering wheel or rear-view mirror](../ko/image/img-03-zoox-robotaxi.jpg)
 *▲ Zoox's steering-wheel-free robotaxi, cleared for paid rides in July 2026 — a preview of where human-operation rules are headed | Source: [Wikimedia Commons (9yz, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Zoox_Autonomous_Robotaxi_-_San_Francisco_May_2025_(1).jpg)*
 
 The two moves point in opposite directions, but they are really one strategy: clear out the rules that assume a human will drive, and newly test what the robot actually does and does not do well. When the space once occupied by parts specifications empties out, what fills it is a test that verifies behavioral capability. The form of regulation moves from hardware specification to capability assessment.
@@ -79,7 +79,7 @@ NHTSA has its own prior work here. Its 2018 report on a framework of testable ca
 
 The United States is not the only one walking this road. On June 24, 2026, the UN Economic Commission for Europe (UNECE) adopted the first global regulatory framework for fully autonomous driving systems. Backed by major markets including Canada, China, the EU, Japan, the UK, and the US, it set a standard that autonomous performance must be at least as good as a competent human driver, along with obligations to build a test environment under a supervised safety-management system, to record driving data, and to report performance continuously after deployment. Where UNECE has already erected the skeleton of a test environment and continuous monitoring, the US is only now beginning a public discussion of what behavioral competency even is. A step behind, but moving on its own track sized to its domestic industry.
 
-![Palais des Nations in Geneva, home of the UN Economic Commission for Europe (UNECE)](./image/img-04-unece-geneva.jpg)
+![Palais des Nations in Geneva, home of the UN Economic Commission for Europe (UNECE)](../ko/image/img-04-unece-geneva.jpg)
 *▲ The Palais des Nations in Geneva, home of the UNECE, which adopted the first global framework for fully autonomous driving | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Palais_des_Nations_Unies_Gen%C3%A8ve.jpg)*
 
 > [!callout]

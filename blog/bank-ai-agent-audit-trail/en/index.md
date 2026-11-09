@@ -46,7 +46,7 @@ Yet when a bank hands such judgments to a machine, the first question a supervis
 
 This round, led by Goldman Sachs Alternatives (the firm's growth-capital arm), also drew Tiger Global, Index Ventures, Balderton Capital, Y Combinator, and Dig Ventures, bringing Taktile's total raised to $184M. The size itself is not especially large within the 2026 flow of AI investment into regulated industries. What is worth noting is the identity of the investor. Goldman is not a place that puts money into venture experiments; it is a party that knows better than most what regulated financial infrastructure demands.
 
-![Goldman Sachs headquarters at 200 West Street in New York — the growth-capital arm that led Taktile's Series C](./image/img-01-goldman-sachs-hq.jpg)
+![Goldman Sachs headquarters at 200 West Street in New York — the growth-capital arm that led Taktile's Series C](../ko/image/img-01-goldman-sachs-hq.jpg)
 *▲ Goldman Sachs headquarters, 200 West Street, New York. Its growth-capital arm led Taktile's Series C | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Goldman_Sachs_200_West_Street.JPG)*
 
 Most of the coverage of the Taktile investment carried the same caveat: LLMs are hard to make explain why they reached a judgment, and no bank has yet automated a regulatory process end to end. That caveat is usually read as caution — "so it's still too early." But turn the same sentence over and it reads differently. Precisely because explanation is hard and full automation does not yet exist, the money flowing in today is aimed not at an accurate model but at the workflow that binds each judgment into a form submittable to an audit.
@@ -62,7 +62,7 @@ There is a paradoxical reason traceability became a de facto standard: the regul
 
 The problem is that in the field the two do not separate cleanly. When a fraud decision at the onboarding stage leads to a rejected account opening or a credit decision, the AML monitoring that started outside the high-risk boundary gets pulled back inside it. When a single agent handles both credit decisions and fraud judgments, it is not clear which rule set applies. Even the effective date of the high-risk obligations is described inconsistently across sources, somewhere between August 2, 2026 and December 2027. Here we treat August 2 as the reference deadline, while noting that whether the delay discussions around the Digital Omnibus are settled or merely proposed still differs from source to source.
 
-![EU member state flags in front of the European Parliament in Brussels — the EU AI Act Annex III splits credit scoring as high-risk while excluding fraud detection](./image/img-02-eu-parliament-flags.jpg)
+![EU member state flags in front of the European Parliament in Brussels — the EU AI Act Annex III splits credit scoring as high-risk while excluding fraud detection](../ko/image/img-02-eu-parliament-flags.jpg)
 *▲ EU member state flags outside the European Parliament, Brussels. Annex III of the EU AI Act names credit scoring as high-risk while explicitly excluding fraud detection | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:14_EU_Member_Flags_in_front_of_European_Parliament_in_Brussels.jpg)*
 
 ### 3.1. The US Took an Entirely Different Path
@@ -71,7 +71,7 @@ On April 17, 2026, the Federal Reserve, OCC, and FDIC wholesale replaced SR 11-7
 
 As a result, bank boards and model risk teams are left to build their own agentic-AI governance with no framework to reference. The EU drew an awkward line between credit and fraud; the US pushed agentic AI out of scope entirely. Neither jurisdiction gives a clear rule that says "do it this way." The way practitioners fill that vacuum themselves is by leaving an auditable record on every judgment. When you do not know how the rules will land, the safest preparation is to make sure you can walk anything back — whatever you are later asked to show.
 
-![The Marriner S. Eccles Federal Reserve Board Building in Washington, D.C. — SR 26-2 replaced SR 11-7 and placed generative and agentic AI outside its scope](./image/img-03-federal-reserve-eccles.jpg)
+![The Marriner S. Eccles Federal Reserve Board Building in Washington, D.C. — SR 26-2 replaced SR 11-7 and placed generative and agentic AI outside its scope](../ko/image/img-03-federal-reserve-eccles.jpg)
 *▲ The Eccles Building, Federal Reserve headquarters in Washington, D.C. The Fed, OCC, and FDIC replaced SR 11-7 with SR 26-2 in April 2026 | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Marriner_S._Eccles_Federal_Reserve_Board_Building.jpg)*
 
 ## Explainability Alone Won't Pass an Audit

@@ -47,7 +47,7 @@ Its strengths were not uniform, though. The model pulled clearly ahead on genera
 > [!callout]
 > The most interesting part is the real emergency-department study. At a large tertiary hospital in Boston, human experts' second opinions and the AI's second opinions were compared blind on randomly selected patients. Here the model was on par with or slightly ahead of attending physicians — and its edge was sharpest at the point with the **least information, the early triage stage**. Once enough information had accumulated, as at the time of admission, the gap disappeared.
 
-![A physician and medical staff reviewing a patient case together at a table in a clinical consultation](./image/img-01-clinical-consultation.jpg)
+![A physician and medical staff reviewing a patient case together at a table in a clinical consultation](../ko/image/img-01-clinical-consultation.jpg)
 *▲ Clinical consultation — the type of reasoning the study was designed to evaluate | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:CP25_Leukemia_Patient_Consultation_(9123625).jpg) (Public Domain)*
 
 ## The Model Saw Text, Not a Patient
@@ -58,7 +58,7 @@ So 89% is not a score against "clinical reality" but against **clinical reality 
 
 The researchers did not hide this. The paper explicitly states the limitation of its text-only design. Performing a physical exam or directly reading an X-ray, CT, or MRI was outside the scope of the evaluation. Rodman warned against "misreading lab results as evidence of the safety and efficacy of treating real patients," and co-first author Peter Brodeur added that "even when the model gets the top diagnosis right, it can recommend unnecessary tests that put patients at risk," insisting that humans must remain the ultimate baseline for performance and safety.
 
-![A clinician holding a stethoscope — the kind of raw sensory signal that never reaches the text the model processes](./image/img-02-stethoscope-doctor.jpg)
+![A clinician holding a stethoscope — the kind of raw sensory signal that never reaches the text the model processes](../ko/image/img-02-stethoscope-doctor.jpg)
 *▲ A stethoscope is a prime example of a raw signal that never enters the text-only input the model receives | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Young_female_doctor_showing_stethoscope_closeup.jpg)*
 
 > [!callout]
@@ -92,7 +92,7 @@ Press one step further and a familiar question appears. Between the 89% on bench
 
 Winning on a benchmark is winning in an environment where the input is already in a form favorable to the model — refined into text. In the field, the step of turning multimodal raw signals into a clinically meaningful representation is itself part of diagnosis. Yet the benchmark outsources exactly that conversion step to a human transcriber. The model starts from clean, already-converted text, while the physician performs the conversion and judges at the same time.
 
-![A chest X-ray — visual imaging data that in the EHR becomes a single text line such as 'opacity in lower lung field'](./image/img-03-chest-xray.png)
+![A chest X-ray — visual imaging data that in the EHR becomes a single text line such as 'opacity in lower lung field'](../ko/image/img-03-chest-xray.png)
 *▲ A chest X-ray — in the electronic health record, this becomes a single sentence. That conversion is the step the benchmark "outsources" | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Chest_Xray_PA_3-8-2010.png) (Public Domain)*
 
 Several supporting findings back this diagnosis. Adding images to a multimodal LLM raises accuracy (from 70.8% to 84.5% in one study), but the model does not benefit from visual information as much as humans do; it tends to overweight text relative to visual cues. **Nature Medicine** flagged the "licensing exam fallacy" — that a high board-exam score is not the same as real-world diagnostic ability. On real patient data, LLMs had significantly lower diagnostic accuracy than physicians, failed to order needed tests, and were sensitive to the order of tests.
@@ -108,7 +108,7 @@ This story is not specific to medicine. The same structure recurs everywhere mod
 
 In practice the questions are concrete. Does the data we feed the model contain the field's raw signals without loss, or is it a refined version that passed through someone's summary? Which modality dropped out entirely during that refinement? If there is a modality gap between the evaluation set and the operating environment, that gap should be closed not by scaling the model up but by reworking the data representation.
 
-![AI clinical pathway diagram showing age, risk factors, symptoms, and additional data flowing through AI into symptom assessment, care navigation, and EHR integration](./image/img-04-ai-clinical-pathway.png)
+![AI clinical pathway diagram showing age, risk factors, symptoms, and additional data flowing through AI into symptom assessment, care navigation, and EHR integration](../ko/image/img-04-ai-clinical-pathway.png)
 *▲ Connecting multimodal inputs (age, risk factors, symptoms, additional data) into an AI clinical pathway — a design example of what AI-Ready Data bridging looks like | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:How_Ada_Health_Works.png) — Ada Health (CC BY-SA 4.0)*
 
 This is the essence of AI-Ready Data: moving the field's multimodal reality into a representation a model can use, with as little loss as possible. o1-preview's 89% was a score awarded at the spot where that conversion was already finished. Who performs the conversion, and how, is the stage of the next competition.

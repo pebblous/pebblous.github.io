@@ -42,7 +42,7 @@ Sources: [Amazon's official announcement](https://www.aboutamazon.com/news/devic
 
 Amazon acquired Bee, an AI wearable startup, in 2025. The Bee Frontier and the Bee Eclipse unveiled on 15 October are the first products since that deal. Both do the same job. They listen to the talk going on around you through the day and hand it back as summaries and to-do lists. What differs is where they sit on the body.
 
-![Official Amazon product photo showing the Bee Frontier wristband in three colors (Lavender, Sage, Onyx) alongside the Bee Eclipse phone attachment in four colors (Pink, Gold, Silver, Black)](./image/img-01-bee-devices.jpg)
+![Official Amazon product photo showing the Bee Frontier wristband in three colors (Lavender, Sage, Onyx) alongside the Bee Eclipse phone attachment in four colors (Pink, Gold, Silver, Black)](../ko/image/img-01-bee-devices.jpg)
 *▲ Bee Frontier (wristband, Lavender/Sage/Onyx) and Bee Eclipse (phone attachment, Pink/Gold/Silver/Black) | Source: [Amazon official announcement](https://www.aboutamazon.com/news/devices/amazon-personal-ai-bee-frontier-bee-eclipse)*
 
 The Bee Frontier is a $74.99 device you wear on the wrist or clip to your clothes. It comes in Onyx, Lavender and Sage, and carries an IP67 water resistance rating. The battery runs up to 7 days and charges over USB-C. Two microphones filter out noise, and the only things on the outside are a single button and an LED that tells you whether the device is on. It is on sale now.

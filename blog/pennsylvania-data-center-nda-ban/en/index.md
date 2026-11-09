@@ -42,7 +42,7 @@ Sources: [Pennsylvania Governor's Office](https://www.pa.gov/governor/newsroom/2
 
 Executive Order 2026-05, signed in Harrisburg on August 18, is titled as a measure protecting Pennsylvania consumers from data center impacts. Its center of gravity is a change to how the state Department of Environmental Protection reviews permits. Review now proceeds only if a developer has made a legally binding commitment to the Governor's Responsible Infrastructure Development requirements, known as GRID, and has received local approval.
 
-![Pennsylvania State Capitol in Harrisburg, where Executive Order 2026-05 was signed](./image/img-01-pa-capitol.jpg)
+![Pennsylvania State Capitol in Harrisburg, where Executive Order 2026-05 was signed](../ko/image/img-01-pa-capitol.jpg)
 *▲ The Pennsylvania State Capitol in Harrisburg, where Executive Order 2026-05 was signed | Source: [Wikimedia Commons (Kumar Appaiah, CC BY-SA 2.0)](https://commons.wikimedia.org/wiki/File:Pennsylvania_State_Capitol_East_Side.jpg)*
 
 GRID asks for four things. Developers must pay the full cost of new electricity generation, transmission, distribution, and other infrastructure needed to power their project without shifting costs to Pennsylvania households and businesses. They must commit to open, transparent engagement with local residents and leaders, including public meetings and notification early enough in the process to allow meaningful public input on major design decisions. They must hire and train local workers and enter into meaningful community benefit agreements that invest in schools, infrastructure, and long-term economic development. And they must meet the highest standards for environmental protection, including strict water conservation requirements.
@@ -86,7 +86,7 @@ State Representative Joe Ciresi, a Democrat from the same area, picked a differe
 
 In Virginia, someone counted the practice first. Eric Bonds, a sociology professor at the University of Mary Washington, and student Viktor Newby filed records requests with every Virginia locality they could identify that had an existing, approved, or proposed data center. Of 31 localities, 25 had nondisclosure agreements. The two added a caveat that the number may run low. One county reported that its officials had signed an agreement with a large technology firm but had not kept a copy to produce for a records request. Where no document is retained, the records request stops there.
 
-![Aerial view of a data center cluster in Ashburn, Loudoun County, Virginia](./image/img-02-ashburn-datacenters.jpg)
+![Aerial view of a data center cluster in Ashburn, Loudoun County, Virginia](../ko/image/img-02-ashburn-datacenters.jpg)
 *▲ Data centers in Ashburn, Loudoun County, Virginia — one of 25 of 31 localities found to hold nondisclosure agreements | Source: [Wikimedia Commons (Theodore Christopher, CC0)](https://commons.wikimedia.org/wiki/File:Data_centers_in_Ashburn.jpg)*
 
 In Louisiana, the signer was the governor himself. Documents obtained through a public records request by the Gulf States Newsroom show that Governor Jeff Landry personally executed a Mutual Non-Disclosure Agreement on April 23, 2024, on behalf of the Office of the Governor. The counterparty was Laidley LLC, the data center subsidiary of Meta Platforms. Alongside proposed terms, pricing, and financial information, the agreement states that "Confidential Information also includes the existence of this Agreement and the fact or nature of the discussions between the parties." Disclosures required by law are allowed, but only if the receiving party makes commercially reasonable efforts to limit them and seeks a protective order to block them. More than a hundred state employees have signed nondisclosure agreements with the governor's office. Cuillier, quoted earlier, reviewed this document and said the requirement to limit legally required disclosure "turns public record laws on their head." Of the clause protecting the agreement's own existence, he said it "is even more reprehensible" and "seeks to hide the fact that it is hiding information from the public."
@@ -100,7 +100,7 @@ Who uses how much power and water, and who pays for it, is a familiar argument b
 
 Operators must submit energy and water information to DEP, and the line items are spelled out: total energy consumption and total natural gas consumption for the previous calendar year, the estimated average amount of energy usage per hour during the data center's peak, total water consumption for the previous calendar year along with the maximum day demand, and any measures taken to protect the environment and the public from polluted water or air.
 
-![A data center facility subject to annual energy and water use reporting](./image/img-03-microsoft-dc.jpg)
+![A data center facility subject to annual energy and water use reporting](../ko/image/img-03-microsoft-dc.jpg)
 *▲ A data center facility of the kind now subject to the order's reporting requirements (Middenmeer, the Netherlands) | Source: [Wikimedia Commons (Hay Kranen, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Microsoft_Data_Center_Middenmeer,_the_Netherlands_-_1.jpg)*
 
 A separate measure sits next to it. The Shapiro administration built a publicly accessible map of every proposed project that has engaged with DEP. Residents can track where each permit stands, and the map is updated as new proposals surface. The Department of Community and Economic Development will release best practices for municipalities on zoning standards and community benefit agreements. Where terms used to vary from one township to the next, a common template moves in.
@@ -126,7 +126,7 @@ The case for too little rests on the fact that this is not a moratorium. Megan M
 
 Stacey Garrity, the Republican state Treasurer running against Shapiro, was sharper. Her campaign called the action gaslighting and said Shapiro "was the biggest data center cheerleader in the nation." Garrity's own position has moved as well. She welcomed the June 2025 announcement at the time and now calls for a pause on all data center development.
 
-![Pennsylvania Governor Josh Shapiro, criticized from both directions over the order](./image/img-04-shapiro.jpg)
+![Pennsylvania Governor Josh Shapiro, criticized from both directions over the order](../ko/image/img-04-shapiro.jpg)
 *▲ Governor Josh Shapiro, criticized from both directions over Executive Order 2026-05 | Source: [Wikimedia Commons (Maryland GovPics, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Josh_Shapiro_December_2025.jpg)*
 
 The case for too much comes from industry. Diorio of the Data Center Coalition called a blanket prohibition a slippery slope and proposed adjustments such as limiting how long agreements run or narrowing the topics they cover. The idea is to protect genuinely confidential material while being more upfront, as he put it, about having decided to move forward with a process.
@@ -137,7 +137,7 @@ The measure has a structural limit as well. GRID was originally offered as a vol
 
 Korea is at the opposite point in the cycle. On June 29, 2026, Bae Kyung-hoon, Deputy Prime Minister and Minister of Science and ICT, announced a plan to invest 550 trillion won in 8.4 gigawatts of AI data centers by 2029. SK takes 5 gigawatts, GS 2.4, and Naver 1, with a longer arc reaching 18.4 gigawatts and 1,000 trillion won by 2035. Siting steers away from the capital region toward Ulsan, Donghae, Sejong, and other provincial locations.
 
-![Bae Kyung-hoon, Deputy Prime Minister and Minister of Science and ICT, who announced Korea's 8.4-gigawatt, 550-trillion-won AI data center plan](./image/img-05-bae-kyunghoon.png)
+![Bae Kyung-hoon, Deputy Prime Minister and Minister of Science and ICT, who announced Korea's 8.4-gigawatt, 550-trillion-won AI data center plan](../ko/image/img-05-bae-kyunghoon.png)
 *▲ Bae Kyung-hoon, Deputy Prime Minister and Minister of Science and ICT, who announced the 8.4-gigawatt, 550-trillion-won AI data center plan | Source: [Wikimedia Commons (CHOSUN IMAGE VISION, CC BY 3.0)](https://commons.wikimedia.org/wiki/File:Bae_Kyung-hoon%27s_Portrait_(2025.7).png)*
 
 The legislative calendar is set as well. The Special Act on the Promotion of the AI Data Center Industry passed the National Assembly on May 7, 2026, was promulgated on June 9, and takes effect on March 10, 2027. The Ministry of Science and ICT convened a research group for the subordinate decrees and held its kickoff meeting on June 18. The enabling decree is being written as we speak.

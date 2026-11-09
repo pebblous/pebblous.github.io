@@ -42,7 +42,7 @@ Sources: [ICO press release (8 October 2026)](https://ico.org.uk/about-the-ico/m
 
 The ICO is the UK's data protection regulator. Its full name is the Information Commissioner's Office, and it can investigate and penalise any organisation that handles personal data in Britain. For two years it looked separately at the largest foundation model developers operating in the country, and on 8 October it published what came of that.
 
-![Official logo of the UK's Information Commissioner's Office (ICO)](./image/img-01-ico-logo.svg)
+![Official logo of the UK's Information Commissioner's Office (ICO)](../ko/image/img-01-ico-logo.svg)
 *▲ The official logo of the UK's Information Commissioner's Office (ICO), the country's data protection regulator since 1984. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Information_Commissioner%27s_Office_logo.svg)*
 
 The programme itself dates from 2025, when the ICO set up a dedicated foundation model policy and supervision programme under its AI and Biometrics Strategy. The criteria for picking who went into it are in the press release too: likelihood of non-compliance, UK market share, and use of higher-risk training datasets. This was not a list drawn up after something went wrong. It was drawn up in advance, around the places where the regulator expected things to go wrong.
@@ -59,7 +59,7 @@ The supervision programme started with eleven developers. One sentence in the pr
 
 What that investigation covers was announced separately on 3 February 2026. Two legal entities are named, X Internet Unlimited Company and X.AI LLC. At issue are reports that people's personal data was used to generate sexualised imagery without their consent, including cases involving children. William Malcolm, the ICO's Executive Director for Regulatory Risk and Innovation, said that the reports about Grok "raise deeply troubling questions about how people's personal data has been used to generate intimate or sexualised images without their knowledge or consent." As of 8 October, that investigation had not concluded.
 
-![Logo of Grok, the AI chatbot made by Elon Musk's xAI](./image/img-02-grok-logo.png)
+![Logo of Grok, the AI chatbot made by Elon Musk's xAI](../ko/image/img-02-grok-logo.png)
 *▲ The ICO opened a formal investigation into Grok and paused its engagement with X.AI, leaving ten developers in the supervision programme. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Logo_Grok_AI_(xAI)_2025.png)*
 
 The line about paused engagement tells you the character of this announcement. The ten were in engagement, not under investigation, which is why what came out of it was a set of commitments and no penalties. When a matter gets heavy enough the track changes, and the company drops out of the list of ten and into an investigation instead. Having an open conversation with a regulator and being investigated by one are legally very different positions, and crossing from the first to the second takes a single line in a press release.

@@ -42,7 +42,7 @@ Source: compiled directly from the [enrolled text of AB 1883](https://leginfo.le
 
 AB 1883 adds a new Part 5.8 to Division 2 of the Labor Code and puts four sections inside it, numbered 1580 through 1583. The whole thing runs to a few pages, and the prohibition itself is two lines of Section 1581(a).
 
-![Exterior of the California State Capitol building, where AB 1883 passed the legislature](./image/img-01-california-capitol.jpg)
+![Exterior of the California State Capitol building, where AB 1883 passed the legislature](../ko/image/img-01-california-capitol.jpg)
 *▲ The California State Capitol in Sacramento, where AB 1883 cleared its final vote on August 30 | Source: [Wikimedia Commons (Asilvero, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:California_State_Capitol_Building_-_Full_Front_Facade.jpg)*
 
 "(a) An employer shall not use a workplace surveillance tool that uses artificial intelligence on employees for either of the following: (1) Recognizing, or making inferences or predictions about, an individual's emotional state. (2) Collecting neural data."

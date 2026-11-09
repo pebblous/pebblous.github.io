@@ -42,14 +42,14 @@ An ordinary neural network settles the strength of its wiring by learning. Data 
 
 A connectome suits this arrangement unusually well. The table recording which cell connects to which is already the adjacency matrix of a circuit. The researchers' preprocessing amounted to scaling the matrix so that its spectral radius came to 1, the minimum adjustment that keeps a circuit from either blowing up or dying away at once. Then they seated it in the slot normally filled by a recurrent network known as an echo state network.
 
-![Network graph of C. elegans neurons drawn as nodes and connecting edges](./image/img-02-brain-network.jpg)
+![Network graph of C. elegans neurons drawn as nodes and connecting edges](../ko/image/img-02-brain-network.jpg)
 *▲ A node-and-edge visualization of C. elegans neural connectivity. Not the actual map used in this paper — a reference image showing how a connectome becomes a circuit's adjacency matrix | Source: [Wikimedia Commons (Mentatseb, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:C.elegans-brain-network.jpg)*
 
 The maps they used were released by Witvliet and colleagues in 2021. Eight genetically identical C. elegans were separated by developmental stage and swept with an electron microscope, covering four larval points just after hatching (L1.1 through L1.4), then L2, L3, and two adults. One map holds 180 brain neurons plus body-wall muscles, glia, and two canal-associated neurons. It is a reconstruction of the head-end brain rather than a map containing all 302 nerve cells, so the circuit reaches only that far as well.
 
 This material is distinctive in that each individual was measured three separate ways. One method counts how many synapses join a pair of cells. One measures how large the junctions of those synapses are. One works out how much area the two cells actually touch across. The first two yield maps in which signals have a direction; the last yields a map without one. Applying all three at every developmental point produced 22 maps in total. One adult has no data from the synapse size or physical contact methods, which leaves seven rather than eight for each of those.
 
-![Multiple C. elegans nematodes seen under a light microscope](./image/img-01-celegans-microscope.jpg)
+![Multiple C. elegans nematodes seen under a light microscope](../ko/image/img-01-celegans-microscope.jpg)
 *▲ C. elegans, roughly 1 millimeter long. Not the individuals used in the paper, but the same species | Source: [Wikimedia Commons (Gannu03, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Caenorhabditis_elegans_under_a_light_microscope_02.jpg)*
 
 Where signals enter and leave the circuit followed biology too. Inputs were picked from among the sensory neurons, outputs from among the body-wall muscles, which transposes the path by which a worm senses the outside and moves its body. Checking whether that choice helps requires other choices to compare it against, so the researchers ran five configurations with the input and output positions varied. The first two kept the biological division between sensory cells and muscle; the remaining three dropped that division and took 30, 50, and 80 percent of each group as inputs and outputs.

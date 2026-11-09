@@ -41,7 +41,7 @@ Remarkably, the 'future challenges' Gartner outlined were things Pebblous had al
 
 ## 4. The Leap to Data Greenhouse
 
-![Data Greenhouse System Architecture — Autonomous Data Quality with Human-in-the-Loop](./image/data-greenhouse-architecture.png)
+![Data Greenhouse System Architecture — Autonomous Data Quality with Human-in-the-Loop](../ko/image/data-greenhouse-architecture.png)
 *▲ Data Greenhouse System Architecture — Five-layer structure: Governance, Observation, Orchestration, Action, and Platform Adapter layers*
 
 ### 4.1 Core Concept: Autonomous Cycle Loop

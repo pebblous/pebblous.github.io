@@ -44,5 +44,5 @@ Satellite imagery of Earth is already public in more volume than anyone can use.
 
 What OlmoEarth v1.3 changes is that earlier step. The institute pushed a year of observation from Sentinel-1, which images with radar, and from Sentinel-2 and Landsat, which split light into many bands, through the model first, and pulled out a set of 128 numbers for each 10-meter square. A bundle of numbers like that is called an embedding. It is closer to a fingerprint the model has written down for that spot: color, texture and the way the place shifts with the seasons are all pressed in together. No person can read it, but for machines comparing one place against another it is far easier to handle than the original imagery.
 
-![OlmoEarth 1.3 logo image showing the Earth broken into 10-meter pixel squares, each colored to represent an embedding value](./image/img-01-olmoearth-globe.png)
+![OlmoEarth 1.3 logo image showing the Earth broken into 10-meter pixel squares, each colored to represent an embedding value](../ko/image/img-01-olmoearth-globe.png)
 *▲ The idea of turning the whole planet into numbers, one 10-meter square at a time, carried straight into the logo | Source: [Ai2 announcement](https://allenai.org/blog/olmoearth-v1-3)*

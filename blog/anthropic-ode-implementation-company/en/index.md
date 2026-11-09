@@ -42,7 +42,7 @@ The funding structure shows the size of the wager. Of the $1.5 billion total, An
 
 Ode's operating principle is "Claude-first": use Anthropic's technology where possible, and bring in competing models when necessary. It runs about 100 engineers today. It is not a company that sells a model, but one that sells the hands that make that model work inside someone else's organization.
 
-![Ode with Anthropic official brand image — press release lead image for the AI implementation company founded by Anthropic, Blackstone, and Hellman & Friedman](./image/img-01-ode-anthropic-brand.png)
+![Ode with Anthropic official brand image — press release lead image for the AI implementation company founded by Anthropic, Blackstone, and Hellman & Friedman](../ko/image/img-01-ode-anthropic-brand.png)
 *▲ Lead image from the Ode with Anthropic launch press release | Source: [Ode Official Press](https://www.ode.com/press/anthropic-blackstone-and-hellman-friedman-introduce-ode-with-anthropic-an-enterprise-ai-services-firm)*
 
 ## The Model Is a Programming-Language Choice
@@ -67,7 +67,7 @@ The important point is that the labs do not call this bottleneck "data." The wor
 
 "Implementation" is a smooth word, but open it up and most of what is inside is data work. Describing its own deployment organization, AWS said that when a project ends, the customer is left self-sufficient with "a knowledge graph, runbooks, and trained staff." Put those three into the language of data, and it reads like this: a map that ties scattered in-house data together by relationship, a lineage that records where the data came from and how it was transformed, and people who can read and handle it.
 
-![AWS Forward Deployed Engineers investment announcement official image — 'Our experts, on your side. AWS Forward Deployed Engineers help your team build AI solutions'](./image/img-02-aws-fde-hero.jpg)
+![AWS Forward Deployed Engineers investment announcement official image — 'Our experts, on your side. AWS Forward Deployed Engineers help your team build AI solutions'](../ko/image/img-02-aws-fde-hero.jpg)
 *▲ Official image from AWS's announcement of its $1 billion Forward Deployed Engineering investment | Source: [About Amazon](https://www.aboutamazon.com/news/aws/aws-1-billion-forward-deployed-ai-engineers)*
 
 Here is where the labs stop talking. They never called it "data," but the reason they have to station high-cost engineers on site for half a year at a time is that each company's data is not standardized, its lineage and quality vary, and automation will not take hold. A large share of what an implementation engineer does over those months is, in the end, data cleaning, lineage documentation, and quality-rule building. An FDE's price tag is therefore also a market price for the data-readiness debt a company has piled up.

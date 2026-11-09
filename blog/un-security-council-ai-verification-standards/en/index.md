@@ -44,7 +44,7 @@ The format was a high-level briefing. The item was listed as artificial intellig
 
 No document survived the meeting. Neither a resolution nor a presidential statement was adopted. A briefing in the Council is not where decisions get made; it is where members put their positions on the record, and no voting procedure attaches to it. The only thing produced that afternoon, then, was a transcript of what was said. That connects to everything below, because a record is precisely what this meeting was asking for.
 
-![Interior of the UN Security Council chamber — the horseshoe table and briefer's seat](./image/img-01-un-security-council-chamber.jpg)
+![Interior of the UN Security Council chamber — the horseshoe table and briefer's seat](../ko/image/img-01-un-security-council-chamber.jpg)
 *▲ The Security Council chamber at UN Headquarters in New York — the September 23 briefing was held in this same room | Source: [Wikimedia Commons (James D. Forrester, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:United_Nations_Headquarters_-_Security_Council_chamber,_angled_view.jpg)*
 
 ## Every Request Came Down to Verify and Notify

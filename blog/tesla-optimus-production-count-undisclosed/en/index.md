@@ -42,12 +42,12 @@ Sources: [TechCrunch](https://techcrunch.com/2026/10/21/tesla-stars-optimus-robo
 
 On October 21, 2026 Tesla put out its third-quarter business update with one sentence in it. Optimus production has started on the high-volume line at Fremont, and what comes off that line is the first robot Tesla will call production quality. It also means that nothing built before it earns the label.
 
-![Optimus robot on display at a Tesla showroom, showing its white torso and dark exposed joints](./image/img-01-optimus-showroom.jpg)
+![Optimus robot on display at a Tesla showroom, showing its white torso and dark exposed joints](../ko/image/img-01-optimus-showroom.jpg)
 *▲ Optimus on display at a Tesla showroom (November 2025) | Sikander Iqbal, CC BY-SA 4.0, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Optimus_bot_at_Tesla_showroom_-_20251118_-_01.jpg)*
 
 What gave up the floor space was the Model S and the Model X. Musk announced the end of both at the fourth-quarter earnings call on January 28, 2026, and the last cars left the line in the second quarter of 2026. The two debuted in 2012 and 2015 and sold about 750,000 between them. According to a time-lapse Tesla's manufacturing account posted on July 10, tearing that assembly line out took 46 days. Concrete trenches come up, robotic equipment goes out, rebar goes down on a new floor.
 
-![Model S body welding line at the Fremont factory, with red robotic arms assembling a chassis](./image/img-02-fremont-model-s-line.jpg)
+![Model S body welding line at the Fremont factory, with red robotic arms assembling a chassis](../ko/image/img-02-fremont-model-s-line.jpg)
 *▲ The Model S body line at Fremont (2012) — the Optimus line now occupies this same floor space | Steve Jurvetson, CC BY 2.0, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Tesla_Motors_Assembly_Line_(6858583426).jpg)*
 
 What the announcement did not say can be counted off a list. Tesla North named five items the announcement leaves unconfirmed: the production rate, the number built so far, the price, when customers can buy one, and which generation of Optimus Fremont is building. In the factory status table the California row reads 'Early Ramp' and the Texas row, where the second line will go, reads 'Construction.' The stage has a name. The number of units coming out of that stage does not.

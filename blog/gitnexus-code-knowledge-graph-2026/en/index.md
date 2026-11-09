@@ -49,7 +49,7 @@ The technical pipeline breaks down into five steps:
 - 4**Storage**: The resulting graph is stored in LadybugDB, GitNexus's proprietary graph database format.
 - 5**Querying**: A Graph RAG agent navigates the graph to provide structural context to AI agents. When connected as an MCP server, Claude Code or Cursor can query the graph directly as a tool.
 
-![Abstract Syntax Tree (AST) example — the hierarchical tree structure Tree-sitter generates by parsing source code](./image/img-01-ast-tree-sitter.svg)
+![Abstract Syntax Tree (AST) example — the hierarchical tree structure Tree-sitter generates by parsing source code](../ko/image/img-01-ast-tree-sitter.svg)
 *▲ Abstract Syntax Tree (AST) — the hierarchical structure Tree-sitter produces from source code, which GitNexus then converts into graph nodes and edges | Source: [Wikimedia Commons (CC BY-SA)](https://commons.wikimedia.org/wiki/File:Abstract_syntax_tree_for_Euclidean_algorithm.svg)*
 
 GitNexus offers two usage modes:
@@ -73,7 +73,7 @@ GitNexus offers two usage modes:
 
 ## Graph RAG vs. Standard RAG — Why Structure Matters
 
-![Graph RAG vs standard RAG architecture diagram — structural differences between graph-based knowledge retrieval and vector similarity search](./image/img-02-graph-rag-vs-rag.svg)
+![Graph RAG vs standard RAG architecture diagram — structural differences between graph-based knowledge retrieval and vector similarity search](../ko/image/img-02-graph-rag-vs-rag.svg)
 *▲ Graph RAG architecture — how graph traversal differs from vector similarity search, the core distinction GitNexus exploits | Source: [Wikimedia Commons (CC BY-SA)](https://commons.wikimedia.org/wiki/File:GraphRAG.svg)*
 
 There are two fundamentally different ways to give AI assistants access to a codebase. The difference isn't just technical — it's a question of how you think about what code actually is.
@@ -99,7 +99,7 @@ Graph RAG treats code structure itself as data. In GitNexus's graph, nodes are c
 >
 > **Graph RAG (GitNexus)**: Traces the actual call chain: `login()` → `validateToken()` → `checkPermissions()` → `loadUserProfile()`. Includes which module each function lives in, which classes it inherits from, and which exceptions it may throw.
 
-![Property graph database model — nodes and edges representing entities and their relationships](./image/img-03-graph-database.svg)
+![Property graph database model — nodes and edges representing entities and their relationships](../ko/image/img-03-graph-database.svg)
 *▲ Property Graph model — LadybugDB (GitNexus's embedded graph store) uses the same node-edge structure to represent code entities and their relationships | Source: [Wikimedia Commons (CC BY-SA)](https://commons.wikimedia.org/wiki/File:GraphDatabase_PropertyGraph.svg)*
 
 > A side-by-side comparison of the two approaches:
@@ -140,7 +140,7 @@ Where GitNexus genuinely shines:
 
 ## MCP Integration — How AI Agents Understand Code Is Changing
 
-![Model Context Protocol (MCP) component diagram — how AI clients connect to MCP servers and local resources](./image/img-05-mcp-diagram.svg)
+![Model Context Protocol (MCP) component diagram — how AI clients connect to MCP servers and local resources](../ko/image/img-05-mcp-diagram.svg)
 *▲ Model Context Protocol (MCP) component architecture — GitNexus acts as the MCP server, exposing the code knowledge graph as tools to Claude Code and Cursor | Source: [Wikimedia Commons (CC BY-SA)](https://commons.wikimedia.org/wiki/File:Model_Context_Protocol_Component_diagram.svg)*
 
 What makes GitNexus more than a code visualization tool is that it can operate as an **MCP (Model Context Protocol) server**. MCP is Anthropic's open standard protocol that lets AI agents (Claude Code, Cursor, etc.) call external tools in a consistent way.
@@ -172,7 +172,7 @@ For each of these questions, GitNexus returns only the relevant nodes and edges 
 
 ## Pebblous Perspective — Data Pipelines Need the Same Approach
 
-![Knowledge graph visualization — a large-scale network of nodes and relationships representing structured knowledge](./image/img-04-knowledge-graph.svg)
+![Knowledge graph visualization — a large-scale network of nodes and relationships representing structured knowledge](../ko/image/img-04-knowledge-graph.svg)
 *▲ Knowledge graph structure — the same node-edge network pattern GitNexus uses to map code, applied here to represent domain knowledge | Source: [Wikimedia Commons (CC BY-SA)](https://commons.wikimedia.org/wiki/File:Biomedical_Knowledge_Graph_in_Wikidata.svg)*
 
 GitNexus is a story about code — but the exact same problem exists in the data world that Pebblous operates in. This becomes clearest when you look at the AI training data pipelines that **DataClinic** handles.

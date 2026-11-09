@@ -36,10 +36,10 @@ _A bill in the US Senate bans six dangerous AI abilities, but never says what wo
 
 The bill is titled the Ban Artificial Superintelligence Act of 2026. Senator Bernie Sanders and Representative Greg Casar filed it on September 23, 2026, and the text runs to 19 pages across 16 sections. The substance is short. Stand up a new executive department called the Department of Artificial Intelligence, halt AI development above a certain scale until that department is on its feet, and prohibit superintelligence with no end date. That is the whole of it.
 
-![Official photo of Senator Bernie Sanders](./image/img-01-sanders-official-photo.jpg)
+![Official photo of Senator Bernie Sanders](../ko/image/img-01-sanders-official-photo.jpg)
 *▲ Sponsor Sen. Bernie Sanders (I-VT) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Bernie_Sanders_(cropped).jpg)*
 
-![Official photo of Representative Greg Casar](./image/img-02-casar-official-photo.jpg)
+![Official photo of Representative Greg Casar](../ko/image/img-02-casar-official-photo.jpg)
 *▲ House companion sponsor Rep. Greg Casar (D-TX) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Rep._Greg_Casar_-_118th_Congress.jpg)*
 
 What is prohibited sits in the definitions at Section 3. In most statutes the definitions section is the dull part. Not here. The scope of the ban is decided there, and every penalty, forfeiture, and destruction order downstream hangs on those few lines. So this article starts with the definitions.

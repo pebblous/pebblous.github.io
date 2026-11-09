@@ -104,7 +104,7 @@ This is an inherent characteristic of face imagery. Skin tones drive high Red ch
                         while dark backgrounds and hair regions concentrate near Blue channel 0.
                         In the mid-brightness range, Red is relatively flat, while Blue and Green skew toward lower values.
 
-![RGB pixel histogram — Red 255 clipping, Blue 0 spike](image/pixel-histogram.png)
+![RGB pixel histogram — Red 255 clipping, Blue 0 spike](../ko/image/pixel-histogram.png)
 *Pixel histogram: Red channel clipping at 255 (skin tones) and Blue channel spike at 0 (dark backgrounds) reveal the dataset's face-image signature.*
 
 ### Mean Images — The Subtle Difference Between Fake and Real
@@ -135,7 +135,7 @@ In the density contour chart, the data forms a single triangular / teardrop-shap
                         Contour lines stack concentrically around a clear density center,
                         with density gradually decreasing toward the periphery — a classic unimodal structure.
 
-![L2 density contour — single triangular/teardrop cluster](image/density-contour-l2.png)
+![L2 density contour — single triangular/teardrop cluster](../ko/image/density-contour-l2.png)
 *L2 density contour: all 191,857 images form a single triangular cluster. No Fake/Real separation.*
 
 ### Density Distribution — What the Right Tail Means
@@ -145,7 +145,7 @@ The density histogram shows a slightly right-skewed unimodal distribution.
                         The long right tail indicates that particularly "typical" face photographs carry high density values,
                         and this skew is the reason the distribution grade came in as "Moderate."
 
-![L2 density histogram — unimodal, peak at 0.11-0.12](image/density-histogram-l2.png)
+![L2 density histogram — unimodal, peak at 0.11-0.12](../ko/image/density-histogram-l2.png)
 *L2 density histogram: slightly right-skewed unimodal distribution. Peak at 0.11–0.12.*
 
 ### Fake vs Real Density Comparison
@@ -155,7 +155,7 @@ In the density box chart, the boxes for Fake (median ~0.119) and Real (median ~0
                         far wider than Fake's 0.393.
                         This indicates that particularly "typical" faces cluster at high density and belong exclusively to Real.
 
-![L2 density box chart — Fake vs Real comparison, Real's wider upper range](image/density-box-l2.png)
+![L2 density box chart — Fake vs Real comparison, Real's wider upper range](../ko/image/density-box-l2.png)
 *L2 density box chart: medians are similar, but Real's maximum density (0.575) far exceeds Fake's (0.393).*
 
 > [!callout]
@@ -181,7 +181,7 @@ This dual-lobe structure suggests that L3's domain optimization has captured som
                         The two lobes are not fully separated, but an **internal structural differentiation** that was invisible in L2 has now emerged.
                         Viewing the same data through a different lens reveals a different shape — and that is the value of multi-level diagnosis.
 
-![L3 density contour — heart shape with dual-lobe structure](image/density-contour-l3.png)
+![L3 density contour — heart shape with dual-lobe structure](../ko/image/density-contour-l3.png)
 *L3 density contour: the triangle (L2) transforms into a heart shape. Domain optimization reveals internal structure.*
 
 L2
@@ -209,7 +209,7 @@ The L3 density histogram is noticeably more symmetric than L2's.
                         As the right tail shortens, the distribution grade rises from "Moderate" to **"Good"** —
                         a sign that domain optimization has spread the data more uniformly.
 
-![L3 density histogram — peak at 0.48-0.50, more symmetric than L2](image/density-histogram-l3.png)
+![L3 density histogram — peak at 0.48-0.50, more symmetric than L2](../ko/image/density-histogram-l3.png)
 *L3 density histogram: more symmetric and stable than L2. Distribution grade "Good."*
 
 ### Fake vs Real at L3
@@ -220,7 +220,7 @@ In the L3 density box chart, the gap between Fake (median ~0.51) and Real (media
                         **confirming even more strongly than L2 that a high-density core group exists within Real.**
                         All L3 high-density outliers are also exclusively Real.
 
-![L3 density box chart — Real's whisker range notably wider than Fake](image/density-box-l3.png)
+![L3 density box chart — Real's whisker range notably wider than Fake](../ko/image/density-box-l3.png)
 *L3 density box chart: Real's max density (1.83) notably exceeds Fake's (1.58). The L2 pattern is amplified at L3.*
 
 ## Representative Samples — What the Model Is Most and Least Confident About

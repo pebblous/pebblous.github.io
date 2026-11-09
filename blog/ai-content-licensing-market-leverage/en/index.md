@@ -40,7 +40,7 @@ Only a few years ago, the way AI companies used web content was simple. A crawle
 
 The measurement infrastructure has appeared in practice, too. In February 2026, Microsoft formally launched its Publisher Content Marketplace. A publisher sets its own terms, signs with a single click, and compensation is assigned according to how much its content is consumed, with that consumption tracked on a dashboard. The claim that scraping has turned into metered, usage-based settlement is not hyperbole but the actual change of 2026.
 
-![Building 92 at Microsoft's Redmond headquarters campus, where the Publisher Content Marketplace was launched](./image/img-01-microsoft-hq.jpg)
+![Building 92 at Microsoft's Redmond headquarters campus, where the Publisher Content Marketplace was launched](../ko/image/img-01-microsoft-hq.jpg)
 *▲ In February 2026, Microsoft formally launched its Publisher Content Marketplace, complete with a usage-based settlement dashboard, from its Redmond headquarters | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Building92microsoft.jpg)*
 
 The Pebblous blog covered this settlement ledger from the protocol's vantage point in an earlier piece: the shift, from batch to real time, of a structure that counts which sources are used every time an answer is produced and prices them accordingly ([the real-time data licensing shift report](/report/ai-data-licensing-realtime-shift-2026/en/)). This piece sits one layer below that, at market structure. Once the settlement ledger is laid, one question remains: who earns the right to be listed on it?
@@ -58,7 +58,7 @@ Infrastructure being in place does not mean everyone gets paid. The licensing de
 
 What is worth watching here is not the amounts themselves but the fact that they were disclosed at all. The places that know their deal's value are brands on the order of News Corp, the NYT, Reddit, and the Financial Times, while even well-known outlets like Condé Nast, Hearst, the Guardian, and the Washington Post often have their terms marked undisclosed. Since the outlets that landed favorable deals are the ones that can afford to reveal the numbers, disclosure itself is a signal of leverage.
 
-![News Corp headquarters building at 1211 Avenue of the Americas in New York City](./image/img-02-newscorp-hq.jpg)
+![News Corp headquarters building at 1211 Avenue of the Americas in New York City](../ko/image/img-02-newscorp-hq.jpg)
 *▲ News Corp signed a five-year, $250 million deal with OpenAI — the largest single disclosed licensing deal in the market | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:1211_Avenue_of_the_Americas.jpg)*
 
 Even the smallest disclosed deal sits around the $10 million mark, and transactions below that mostly never surface. For perspective, OpenAI's roughly $100 billion infrastructure commitment with Nvidia is about 200 times the largest licensing deal. What AI companies spend on content, set against what they pour into compute, is still closer to a rounding error.
@@ -67,7 +67,7 @@ Even the smallest disclosed deal sits around the $10 million mark, and transacti
 
 Why do only a few get paid? The first reason is scarcity. The market prices only what cannot be replaced. A WSJ or AP archive is a corpus an AI cannot reconstruct in similar form elsewhere, so leverage arises, and that leverage becomes the price. Content that is merely one of millions of near-identical pages, by contrast, has an oversupply of substitutes and settles toward zero. Writing well and getting paid are two different problems.
 
-![Sign on the Associated Press Building in New York City](./image/img-03-ap-building.jpg)
+![Sign on the Associated Press Building in New York City](../ko/image/img-03-ap-building.jpg)
 *▲ Only brands with an irreproducible archive, like AP or the WSJ, have a seat at the negotiating table to name a price | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_associated_press_building_in_new_york_city.jpg)*
 
 The second reason is that search and training are bundled into a single pipe. David Skok of the media startup The Logic has pointed out that when the search crawler and the AI training crawler run on the same infrastructure, publishers cannot separate search visibility from consent to training. An outlet that depends on search traffic loses its search visibility the moment it blocks crawling. Consent to training becomes effectively compulsory, and once the option to refuse is sealed off, that content's negotiating price is close to zero from the start.

@@ -44,7 +44,7 @@ The result pointed one way. Before the AI tool arrived, the adenoma detection ra
 
 The telling part is the number with AI switched on. In exams run with the tool, the detection rate was 25.3% — performance held while the tool filled the gap. The tool did raise the doctors' capability. But that capability did not stay in the doctors' hands; it sat on the tool. The moment the tool was removed, the capability they thought had grown turned out to have shrunk.
 
-![Endoscopic view of a colon polyp (left) and the snare technique used to remove it during polypectomy. Adenoma detection rate measures how reliably an endoscopist spots lesions like this.](./image/img-01-polypectomy-endoscope.jpg)
+![Endoscopic view of a colon polyp (left) and the snare technique used to remove it during polypectomy. Adenoma detection rate measures how reliably an endoscopist spots lesions like this.](../ko/image/img-01-polypectomy-endoscope.jpg)
 *▲ Endoscopic view of a colon polyp (left) and the snare technique used to remove it. Adenoma detection rate (ADR) measures how many lesions like this an endoscopist finds per exam — the metric that fell by 6 percentage points in the study. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Polypectomy.jpg) (CC BY-SA 3.0, Gilo1969)*
 
 > [!callout]
@@ -56,7 +56,7 @@ The path to dulling runs in two directions. One is the gap in practice. When AI 
 
 This bias has been observed outside the endoscopy suite too. A scoping review published in an ESMO journal in March 2026 found that when 27 radiologists reading breast images were deliberately shown wrong AI suggestions, their false-positive recall rate rose by up to 12%. Skilled experts, in other words, were pulled along by a wrong machine signal. In pathology, more than 30% of participants who received a wrong AI suggestion under time pressure reversed the correct diagnosis they had made at first.
 
-![A gastroenterologist maneuvers an endoscope while watching the live feed on a large monitor. The more a clinician relies on screen data, the less they practice unassisted visual scanning.](./image/img-02-endoscopist-procedure.jpg)
+![A gastroenterologist maneuvers an endoscope while watching the live feed on a large monitor. The more a clinician relies on screen data, the less they practice unassisted visual scanning.](../ko/image/img-02-endoscopist-procedure.jpg)
 *▲ A gastroenterologist maneuvers an endoscope while watching the live colonoscopy feed on a large monitor. The more a clinician offloads judgment to the screen, the less practice their own eyes and pattern recognition get — the core of practice-gap deskilling. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Partnership_in_Practice-_U_S_%2C_Panamanian_Gastro_Teams_Tackle_Backlog_Together_%289335563%29.jpg) (Public Domain, U.S. Air Force / Andrea Jenkins)*
 
 Deskilling does not happen in one place only. The same review frames it as advancing on three levels. First, those already working lose existing competence bit by bit through lack of practice. Second, newcomers never learn the work AI does for them, so the new competence never grows. Third, once a generation passes that way, the people who carry that competence in their hands disappear from the profession entirely. When the UK switched cervical cytology to HPV primary screening, test volume fell by more than 80% and labs consolidated from 45 down to 8 — a case where the very training base for reading skill collapsed, the third level made concrete.

@@ -46,7 +46,7 @@ If the past decade was an AI revolution inside digital space (search, recommenda
 
 Only recently this trend was described as "a story for the next ten years." It is already present tense. As of 2026, humanoid robots have moved past demo reels and begun working on real automotive lines at the likes of BMW and Hyundai, and general-purpose robot foundation models sit at the center of startup valuation races. Physical AI is no longer a forecast — it is a technology being validated on industrial floors right now.
 
-![Honda's ASIMO humanoid robot — an early icon of the perceive-reason-act loop at the heart of Physical AI](./image/img-01-humanoid-robot.jpg)
+![Honda's ASIMO humanoid robot — an early icon of the perceive-reason-act loop at the heart of Physical AI](../ko/image/img-01-humanoid-robot.jpg)
 *▲ A humanoid robot built to perceive, reason, and act is the archetype of the autonomous system Physical AI aims for (pictured: Honda ASIMO) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ASIMO_4.28.11.jpg)*
 
 ## How Physical AI Models Evolved: From LLM to VLA
@@ -159,7 +159,7 @@ The fundamental problems Physical AI has to solve come in three stages: **percep
 <!-- stat-card -->
 **Physical properties of robot joints (backlash, friction, elasticity) affect control accuracy. It is why a motion that was perfect in simulation fails on the real robot, and it must ultimately be corrected with real motion data.**
 
-![An industrial robot arm at work on a factory floor — joint backlash and friction shape action accuracy](./image/img-02-robot-arm-factory.jpg)
+![An industrial robot arm at work on a factory floor — joint backlash and friction shape action accuracy](../ko/image/img-02-robot-arm-factory.jpg)
 *▲ Physical properties of a robot's joints are never fully captured by simulation alone — they ultimately have to be corrected with real motion data | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Robotic_Arm_Polishing_Guitars_at_Martin_Guitar_Factory.jpg)*
 
 > [!callout]
@@ -187,7 +187,7 @@ As humanoids leave the lab and take their place on real factory lines, safety st
 
 2026 is the inflection point where Physical AI moves past the lab and onto industrial floors in earnest. Where the first edition emphasized market size, the clearer signals now are **the direction of the money** and **humanoids actually being deployed**. Market-size estimates diverge by 20× to 100× depending on definition, but every report agrees on one thing: a **32–47% compound annual growth rate**. So it is more accurate to watch measurable investment, installation, and price data than any single headline number.
 
-![Jensen Huang's CES 2025 NVIDIA keynote slide showing the progression from Perception AI to Generative AI to Agentic AI to Physical AI](./image/img-03-nvidia-ces-physical-ai.jpg)
+![Jensen Huang's CES 2025 NVIDIA keynote slide showing the progression from Perception AI to Generative AI to Agentic AI to Physical AI](../ko/image/img-03-nvidia-ces-physical-ai.jpg)
 *▲ At CES 2025, NVIDIA framed the AI evolution as "Perception AI → Generative AI → Agentic AI → Physical AI (self-driving cars, general robotics)" | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Jensen_Huang_-_Nvidia_Keynote_-_CES_2025_Las_Vegas_(1).jpg)*
 
 ### 6.1. Investment is piling into the "brain"
@@ -232,7 +232,7 @@ Distilling the investment, commercialization, and policy currents above into a p
 <!-- stat-card -->
 ****[Pebblous](https://pebblous.ai)** provides **AI-Ready Data** solutions that turn manufacturing-floor data into a form AI can learn from. As we saw, the bottleneck for the latest VLAs is not equipment but data quality and skilled operators. Pebblous's **DataClinic** works precisely at that point — systematically collecting, refining, and labeling sensor data, 3D environment data, and robot-motion data to lift model performance.** — **[Data Greenhouse](/project/DataGreenhouse/data-greenhouse-strategy/en/)** is an **autonomous data-operations infrastructure** that unifies synthetic-data generation, quality diagnosis, labeling, and deployment into a single pipeline, automatically cultivating and managing large-scale simulation data. **[PebbloSim](/project/PebbloSim/pebblosim-design-strategy/en/)** generates synthetic data in simulation environments that faithfully replicate the laws of physics, shrinking the Sim-to-Real Gap and safely producing the **edge-case data** that is otherwise so hard to obtain.
 
-![Autonomous mobile robots (AMR) moving along tracks in an automated warehouse — a live source of robot motion data](./image/img-05-warehouse-amr.jpg)
+![Autonomous mobile robots (AMR) moving along tracks in an automated warehouse — a live source of robot motion data](../ko/image/img-05-warehouse-amr.jpg)
 *▲ Fleets of autonomous robots running on grid tracks — collecting and refining the robot-motion and sensor data these sites generate is exactly what DataClinic does | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Ocado_warehouse_bots.jpg)*
 
 ### 7.1. Optimizing the edge infrastructure
@@ -261,7 +261,7 @@ Physical AI has to run in real time not in the cloud but **inside the robot (on-
 
 Gartner finds that companies offering **vertical specialization** and concrete use cases shorten a customer's **time-to-value**. Here is where Pebblous's solutions are used, in concrete scenes.
 
-![Engineers working in a semiconductor cleanroom — where AI vision inspection catches microscopic defects](./image/img-04-semiconductor-cleanroom.jpg)
+![Engineers working in a semiconductor cleanroom — where AI vision inspection catches microscopic defects](../ko/image/img-04-semiconductor-cleanroom.jpg)
 *▲ In semiconductor fabs like Samsung's and SK hynix's, fused vision-sensor data feeds AI inspection systems that catch microscopic defects in real time | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Clean_room.jpg)*
 
 ### Autonomous manufacturing

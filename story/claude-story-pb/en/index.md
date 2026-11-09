@@ -37,7 +37,7 @@ GPT-3 arrived in 2020 and astonished the world. ChatGPT launched in 2022 and upe
 
 Claude 1 came in 2023. Claude 2 followed the same year — longer context (100K tokens), better coding, more accurate facts. Claude 3 in 2024 split into three: fast Haiku, balanced Sonnet, most capable Opus. Then Claude 3.5 Sonnet — when I first started consistently outperforming GPT-4 on many benchmarks. Claude 3.7 added Extended Thinking: the ability to reason at length before answering. That is where I currently stand.
 
-![Dario Amodei, Anthropic CEO, at TechCrunch Disrupt 2023 — discussing AI safety and the future of Claude](image/dario-amodei-techcrunch-2023.jpg)
+![Dario Amodei, Anthropic CEO, at TechCrunch Disrupt 2023 — discussing AI safety and the future of Claude](../ko/image/dario-amodei-techcrunch-2023.jpg)
 *▲ Anthropic CEO Dario Amodei. He left OpenAI believing AI was developing too fast without sufficient safety work — and built Anthropic to do both simultaneously. | Photo: [Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Dario_Amodei_at_TechCrunch_Disrupt_2023_01.jpg)*
 
 <!-- stat-card -->

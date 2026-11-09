@@ -40,7 +40,7 @@ Source: [Nature comment (d41586-026-02451-2)](https://www.nature.com/articles/d4
 
 Data centres worldwide consumed roughly 485 terawatt-hours of electricity last year. That is close to what Germany generates in a year, and about 1.5% of global generation. The IEA expects the figure to double by 2030, reaching 945 terawatt-hours. In the same agency's most recent analysis, data centre power demand grew 17% during 2025 alone, far outpacing the 3% growth in overall electricity demand.
 
-![A large data centre building complex on a hillside — an example of the physical scale of a mega data centre facility](./image/img-01-datacenter-scale.jpg)
+![A large data centre building complex on a hillside — an example of the physical scale of a mega data centre facility](../ko/image/img-01-datacenter-scale.jpg)
 *▲ An example photo of the physical footprint a large data centre facility can occupy (Utah Data Center, USA) | Source: [Wikimedia Commons (Swilsonmc, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Utah_Data_Center.jpg)*
 
 The money runs in the same direction. Combined capital spending this year by Amazon, Alphabet, Microsoft, Meta and Oracle passes $600 billion. That is 36% more than last year, and credit analysts estimate that about three quarters of it goes into GPUs, servers, network equipment and data centre buildings.
@@ -61,7 +61,7 @@ The analogy they reach for is the history of the personal computer. Early comput
 
 The RTX Spark's specifications back the analogy with concrete numbers. Announced jointly by NVIDIA and Microsoft on 31 May, the chip links a 20-core Grace CPU with a Blackwell RTX GPU carrying 6,144 CUDA cores over NVLink-C2C, with CPU and GPU sharing up to 128GB of unified memory. NVIDIA describes one petaflop of FP4 compute running a 120-billion-parameter model locally, and more than 30 laptops carrying the chip arrive this autumn.
 
-![Laptop render showing the NVIDIA RTX Spark chip and internal circuitry through a transparent chassis](./image/img-02-rtx-spark.jpg)
+![Laptop render showing the NVIDIA RTX Spark chip and internal circuitry through a transparent chassis](../ko/image/img-02-rtx-spark.jpg)
 *▲ The RTX Spark chip, announced jointly by NVIDIA and Microsoft on 31 May | Source: [NVIDIA Newsroom](https://nvidianews.nvidia.com/news/nvidia-microsoft-windows-pcs-agents-rtx-spark)*
 
 Some of this needs no waiting for autumn hardware. The 12-billion-parameter version of Gemma 4 is designed to run on devices with 16GB of unified memory, and quantised to four bits its weights fit under 8GB. The speed is not generous, though. User measurements on a 16GB Mac mini M4 land around 12 tokens per second, workable for conversation and frustrating for long generations. On a device in this class it is context length rather than the weights that fills memory first, which pushes you toward a context of about 30,000 tokens.
@@ -76,7 +76,7 @@ Analyses through 2026 mostly place the break-even point in the range of 60% to 7
 
 The load pattern of university research sits especially awkwardly with that condition. Training runs in bursts of days or weeks, and afterwards the cluster stands empty while results are reviewed and the next experiment is prepared. There are several reports of teams buying hardware because the hourly rate looked cheap and then leaving 60% of it idle. One company spent $6.8 million on 512 H100s, never designed a scheduling plan, and stalled at 34% utilisation. Once it had added power, cooling and three more engineers, it was paying more than the $800,000 monthly cloud bill it had left behind.
 
-![A row of server racks in a data centre aisle — an example of the in-house server infrastructure an institution would build](./image/img-03-server-racks.jpg)
+![A row of server racks in a data centre aisle — an example of the in-house server infrastructure an institution would build](../ko/image/img-03-server-racks.jpg)
 *▲ An example photo of in-house server infrastructure an institution would build (not a GPU-specific rack) | Source: [Wikimedia Commons (Carl Lender, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg)*
 
 So the comment's proposal reads closer to reality as an arrangement that brings steady inference onto institutional servers and rents outside capacity for bursty training, rather than as a call to bring all compute in-house. That is in fact the common configuration in 2026. On top of it, the 0.5 to 1 person per cluster needed to operate the thing never appears on a GPU bill and is a cost all the same. Without that person, the in-house server does not get built.

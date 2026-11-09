@@ -40,7 +40,7 @@ The promise of self-evolving agents is seductive. Without humans labeling data p
 
 The paper "Rethinking Continual Experience Internalization for Self-Evolving LLM Agents," released in June 2026, puts exactly that expectation to the test. The researchers ran the experience transfer not once but several times, across multiple iterations. The result was the opposite of intuition. Far from accumulating, performance under existing methods was shaved away with each additional round. In one setting, web-reasoning accuracy slumped from 23.2% on the first iteration to 8.5% on the third.
 
-![Performance degradation across iterations 1→2→3 on WebWalkerQA, GAIA, and BrowseComp-ZH — progressive capability collapse under iterative on-policy context distillation](./image/img-01-capability-collapse.png)
+![Performance degradation across iterations 1→2→3 on WebWalkerQA, GAIA, and BrowseComp-ZH — progressive capability collapse under iterative on-policy context distillation](../ko/image/img-01-capability-collapse.png)
 *▲ Performance decline across 3 iterations — existing on-policy methods show consistent degradation across all three benchmarks | Source: [Chen et al., arXiv:2606.04703](https://arxiv.org/abs/2606.04703)*
 
 The researchers named this phenomenon progressive capability collapse. It is not a one-off bug but a regression that grows out of the structure of iterative learning itself. It resembles a person trying to learn by copying someone else's diary down as if it were their own experience. The first few pages may help, but pile up nothing but borrowed records and the grain of your own judgment blurs until you lose track of which thoughts are even yours. That is precisely what happened when a self-evolving agent repeated learning on its own experience alone.
@@ -56,7 +56,7 @@ One is instance-level experience: a record that preserves the specifics of a par
 
 The difference shows up plainly in the numbers. When the researchers analyzed the two kinds of experience, 84.0% of principle-level items contained strategic statements that could be carried straight into the next problem. Only 3.7% of instance-level items did. No matter how precisely you memorize the details of one specific event, they are nearly useless for the different event you meet next. Instance experience raises the score in the short term but crumbles as iterations stack up; principle experience survived stably even across multiple iterations.
 
-![Instance-level vs principle-level experience compared across iterations — principle-level stays stable while instance-level collapses sharply by the third iteration](./image/img-02-experience-granularity.png)
+![Instance-level vs principle-level experience compared across iterations — principle-level stays stable while instance-level collapses sharply by the third iteration](../ko/image/img-02-experience-granularity.png)
 *▲ Experience granularity effect — Instance-level experience declines with each iteration while Principle-level remains stable | Source: [Chen et al., arXiv:2606.04703](https://arxiv.org/abs/2606.04703)*
 
 > [!callout]
@@ -70,7 +70,7 @@ Global injection lays a fixed bundle of experience over the entire problem-solvi
 
 Step-wise injection is different. A separate selector reads the current intermediate state and hands over only the experience that fits that moment. It is like reaching each stage of the surgery and opening only the chapter that corresponds to that stage. The result this difference produced was dramatic. In models trained through the third iteration, global injection answered far too early, falling into premature termination in 63.82% of cases. Under the same conditions, step-wise injection's premature-termination rate was 0%. In benchmark scores the gap opened to +8.0 points on WebWalkerQA and +5.9 points on GAIA.
 
-![Step-wise vs global injection performance across iterations — step-wise injection stays stable while global injection collapses sharply](./image/img-03-injection-pattern.png)
+![Step-wise vs global injection performance across iterations — step-wise injection stays stable while global injection collapses sharply](../ko/image/img-03-injection-pattern.png)
 *▲ Injection pattern effect — Step-wise injection holds steady across iterations while Global injection continues to decline | Source: [Chen et al., arXiv:2606.04703](https://arxiv.org/abs/2606.04703)*
 
 > [!callout]
@@ -84,7 +84,7 @@ In the on-policy regime, the teacher layers corrections on top of solutions the 
 
 The off-policy regime reverses the order. The teacher builds a complete solution from start to finish, and rejection sampling filters out only the successful trajectories to hand to the student. The student receives as its textbook not its own mistaken footsteps but a path that is consistently good from beginning to end. Because rejection sampling acts as a quality filter, what the student learns is only verified successes. This regime held steady, showing consistent performance even across multiple iterations.
 
-![On-policy vs off-policy internalization regime compared across multiple models and benchmarks — off-policy consistently maintains stable performance](./image/img-04-internalization-regime.png)
+![On-policy vs off-policy internalization regime compared across multiple models and benchmarks — off-policy consistently maintains stable performance](../ko/image/img-04-internalization-regime.png)
 *▲ Internalization regime comparison — off-policy outperforms on-policy consistently across all models and benchmarks | Source: [Chen et al., arXiv:2606.04703](https://arxiv.org/abs/2606.04703)*
 
 > [!callout]
@@ -96,7 +96,7 @@ With all three traps named, the cure follows naturally. The "simple but robust r
 
 The experiment's curves tell whether the recipe works. An agent trained with step-wise off-policy distillation on experience generated by a strong teacher model started at 30.6% on WebWalkerQA and 29.8% on GAIA in the first iteration, and rose to 33.1% and 33.3% respectively by the third. A collapsing curve turned into an improving one, a sharp contrast with the settings that leaned on global injection or self-generated experience, which sank as far as 8.5% over the same number of iterations.
 
-![Self-evolution performance under the final recipe — internalized experience keeps improving across iterations 1 through 3 on WebWalkerQA, GAIA, and BrowseComp-ZH](./image/img-05-final-performance.png)
+![Self-evolution performance under the final recipe — internalized experience keeps improving across iterations 1 through 3 on WebWalkerQA, GAIA, and BrowseComp-ZH](../ko/image/img-05-final-performance.png)
 *▲ Final recipe self-evolution performance — principle-level internalized experience shows steady gains across iterations 1→3 | Source: [Chen et al., arXiv:2606.04703](https://arxiv.org/abs/2606.04703)*
 
 ### 5.1. The Wider Landscape Around AI That Learns Alone

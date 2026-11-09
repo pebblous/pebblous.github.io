@@ -69,7 +69,7 @@ What that permission means in practice is something the policy illustrates on it
 
 The feature's name is Personal Intelligence. It opened in January to paying AI Pro and Ultra subscribers and widened in March to the whole of the United States, free users included. It connects Gmail, Calendar, Drive, Google Photos, YouTube watch history and Search to Gemini and to AI Mode in Search so that answers can be personalized. The default is off, so the user has to opt in; leave it off and the October 16 exception never applies. Put another way, this revision is not something that happened to every Gmail user. A line has been drawn between the people who opted in and the people who did not.
 
-![Google's official Personal Intelligence announcement image — Gmail, Google Photos, YouTube and Search icons connected around a person](./image/img-01-personal-intelligence-keyart.png)
+![Google's official Personal Intelligence announcement image — Gmail, Google Photos, YouTube and Search icons connected around a person](../ko/image/img-01-personal-intelligence-keyart.png)
 *▲ Personal Intelligence, announced by Google on January 14, 2026 — once the user opts in, Gmail, Photos, YouTube and Search open to the Gemini side | Source: [Google Blog](https://blog.google/innovation-and-ai/products/gemini-app/personal-intelligence/)*
 
 > [!callout]

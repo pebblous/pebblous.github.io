@@ -40,12 +40,12 @@ mating rate
 
 The study was led by Aaron Sandel of UT Austin and John Mitani of the University of Michigan. Thirty years of demographics, 24 years of social network data (one-hour focal follows of individual males, conducted 2-3 months annually), and 10 years of GPS tracking — these three pillars of data gave the research its weight. The Leiden algorithm was used to compute cluster structure each year, and three independent statistical methods all pointed to the same inflection point.
 
-![Alpha male chimpanzee in Uganda's Kibale National Park — the tropical rainforest habitat of the Ngogo community](./image/img-01-kibale-chimp.jpg)
+![Alpha male chimpanzee in Uganda's Kibale National Park — the tropical rainforest habitat of the Ngogo community](../ko/image/img-01-kibale-chimp.jpg)
 *▲ Alpha male chimpanzee in Kibale National Park — habitat of the Ngogo community | Source: [Wikimedia Commons (Giles Laurent, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:013_Alpha_male_chimpanzee_at_Kibale_forest_National_Park_Photo_by_Giles_Laurent.jpg)*
 
 Before the fission, the community operated as a typical fission-fusion society. Individuals moved freely between two clusters: Central and Western. Of infants born between 2004 and 2014, 44% had parents from different clusters. Each year, 29% of individuals switched clusters. Boundaries were fluid, and relationships crossed between the two groups.
 
-![Before the split — Basie (Central) embraces Western males before facing an outside group](./image/img-04-embrace-before-split.jpg)
+![Before the split — Basie (Central) embraces Western males before facing an outside group](../ko/image/img-04-embrace-before-split.jpg)
 *▲ Before the split (pre-2015) — Central's Basie embraces Western males before confronting an outside group. They would later become each other's enemies. | Photo: Aaron Sandel, UT Austin*
 
 ## Timeline of Collapse
@@ -84,7 +84,7 @@ Paradoxically, **the numerically smaller Western group (76-83 individuals) unila
 
 Sandel described the fieldwork: **"I felt like a war correspondent. Once I'd written up my notes, that's when the emotions hit me."** Mitani was more direct: **"I've known many of them for their entire lives. And now I'm watching them kill each other."**
 
-![2019 — Western males attack Central's Basie in a coordinated group assault. Basie died from this attack.](./image/img-05-attack-basie.jpg)
+![2019 — Western males attack Central's Basie in a coordinated group assault. Basie died from this attack.](../ko/image/img-05-attack-basie.jpg)
 *▲ 2019 — Western males attack Central's Basie. Basie died from this assault. 53-year-old BF stayed by Basie's side until the end. | Photo: Aaron Sandel, UT Austin*
 
 ## Bridge Individuals: The Invisible Safety Pins
@@ -95,10 +95,10 @@ Certain individuals maintained strong social bonds with both clusters. They medi
 
 In 2014, five adult males and one female died within approximately one month. The cause was likely a **respiratory illness**. In 2017, a second respiratory epidemic killed **25 more individuals**, further hardening the boundaries between groups. Disease didn't directly cause the fission, but by removing the network's critical connectors, it created the structural conditions for collapse.
 
-![Social network visualization — node connectivity and cluster separation. When bridge individuals disappear, the network splits into two isolated components](./image/img-03-network-viz.png)
+![Social network visualization — node connectivity and cluster separation. When bridge individuals disappear, the network splits into two isolated components](../ko/image/img-03-network-viz.png)
 *▲ Network visualization — when inter-cluster connections (bridges) break, the network becomes isolated components | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Network_Visualization.png)*
 
-![Morton (Central) and Garrison (Western) — once sitting side by side, later enemies after the fission](./image/img-06-morton-garrison.jpg)
+![Morton (Central) and Garrison (Western) — once sitting side by side, later enemies after the fission](../ko/image/img-06-morton-garrison.jpg)
 *▲ Morton (Central, left) and Garrison (Western, right) — sitting together before the split. After fission, they became members of opposing groups. | Photo: John Mitani, University of Michigan*
 
 In 2014, these bridges disappeared all at once. At that moment, the network became structurally two separate components. On the surface it was still one community, but it had already passed the point of no return.

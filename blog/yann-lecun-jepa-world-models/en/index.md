@@ -29,7 +29,7 @@ Three years later, he revised the metaphor. "Unsupervised learning" sounded too 
 > [!callout]
 > LeCun's core insight is this: humans process hundreds of thousands of visual frames every day, yet receive labeled feedback only rarely. A baby does not need the label "this is gravity" to understand gravity. Repeatedly watching objects fall is enough. Self-supervised learning is the attempt to replicate this process in machines.
 
-![Yann LeCun — pioneer of deep learning and self-supervised learning, 2018 lecture at École Polytechnique](./image/img-01-lecun-2018.jpg)
+![Yann LeCun — pioneer of deep learning and self-supervised learning, 2018 lecture at École Polytechnique](../ko/image/img-01-lecun-2018.jpg)
 *▲ Yann LeCun at École Polytechnique, 2018 | Source: [Wikimedia Commons (CC BY-SA 2.0)](https://commons.wikimedia.org/wiki/File:Yann_LeCun_-_2018_(cropped).jpg)*
 
 ## The Blurry Future -- Structural Limits of Generative AI
@@ -88,7 +88,7 @@ VICReg decomposed collapse prevention into three explicit regularization terms. 
 
 DINO (Caron et al., 2021) used self-distillation. The teacher network is an exponential moving average (EMA) of the student, and the student learns to match the teacher's output. Within this simple framework, a striking phenomenon emerged: the attention maps of Vision Transformers (ViT) **spontaneously developed semantic segmentation boundaries**. Nobody taught the model "this is a cat and that is background," yet it learned those boundaries on its own.
 
-![DINO self-distillation architecture — student and teacher network training structure](./image/img-02-dino-self-distillation.png)
+![DINO self-distillation architecture — student and teacher network training structure](../ko/image/img-02-dino-self-distillation.png)
 *▲ DINO: student learns by following the EMA teacher (self-distillation) | Source: [Caron et al., arXiv 2104.14294](https://arxiv.org/abs/2104.14294)*
 
 > [!callout]
@@ -102,7 +102,7 @@ The architecture has three core components. The **Context Encoder** encodes the 
 
 The critical insight is that the Predictor predicts **representations**, not pixels. It predicts "what the masked portion means," not "what it looks like." This structurally bypasses the "blurry average" problem of generative models.
 
-![I-JEPA architecture — Context Encoder, Predictor, and Target Encoder structure](./image/img-03-ijepa-architecture.png)
+![I-JEPA architecture — Context Encoder, Predictor, and Target Encoder structure](../ko/image/img-03-ijepa-architecture.png)
 *▲ I-JEPA: predicting representations (not pixels) of masked image patches | Source: [Assran et al., arXiv 2301.08243](https://arxiv.org/abs/2301.08243)*
 
 The architecture has evolved rapidly.
@@ -132,7 +132,7 @@ JEPA is a key building block of a larger vision. In his 2022 paper "A Path Towar
 
 "World model" might sound abstract. But the experimental results from V-JEPA 2-AC (Action-Conditioned) demonstrate this is already concrete technology.
 
-![V-JEPA 2 training overview — self-supervised learning via video masking and representation prediction](./image/img-04-vjepa2-overview.png)
+![V-JEPA 2 training overview — self-supervised learning via video masking and representation prediction](../ko/image/img-04-vjepa2-overview.png)
 *▲ V-JEPA 2: video representation prediction — 1.2B params, SSv2 77.3% SOTA | Source: [Bardes et al., arXiv 2506.09985](https://arxiv.org/abs/2506.09985)*
 
 ### V-JEPA 2-AC Key Results
@@ -172,7 +172,7 @@ Meta is pouring enormous resources into this direction. In 2025, it reorganized 
 
 But there is no guarantee this bet will pay off. The criticisms of JEPA are specific, and some are fundamental.
 
-![V-JEPA 2-AC action-conditioned world model — zero-shot robot arm control achieving 80% success](./image/img-05-vjepa2-ac-robot.png)
+![V-JEPA 2-AC action-conditioned world model — zero-shot robot arm control achieving 80% success](../ko/image/img-05-vjepa2-ac-robot.png)
 *▲ V-JEPA 2-AC: action-conditioned world model achieves 80% cup-moving success (vs Octo 15%) | Source: [Bardes et al., arXiv 2506.09985](https://arxiv.org/abs/2506.09985)*
 
 ### 7.1. Five Key Criticisms

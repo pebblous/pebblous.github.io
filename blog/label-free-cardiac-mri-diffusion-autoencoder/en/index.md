@@ -42,7 +42,7 @@ The standard recipe for medical imaging AI has long been a single one. Gather da
 
 This study inverted that recipe. It took cardiac MRIs from 71,021 participants sitting in the UK Biobank and fed them, without a single line of labeling, straight into a 3D diffusion autoencoder. The data are four-chamber long-axis CINE images, that is, time-series 3D volumes captured while the heart beats. No one told the model "this one is 55% ejection fraction" or "this one shows a wall-motion abnormality."
 
-![Example four-chamber long-axis cardiac MRI CINE frame showing the heart's chambers](./image/img-01-4chamber-cine-mri.png)
+![Example four-chamber long-axis cardiac MRI CINE frame showing the heart's chambers](../ko/image/img-01-4chamber-cine-mri.png)
 *▲ An example frame from a four-chamber long-axis cardiac MRI CINE sequence (not an actual scan from this study) | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:4CH_cine_infarct.gif)*
 
 Metrics like ejection fraction are convenient, but they come at a cost. The moment you compress the heart's complex motion and shape into a few numbers, any signal that does not fit those few numbers is discarded. A subtle pattern that people have not yet named has no label, so it never becomes a target for learning in the first place. The researchers' question was simple. What happens if you give the model only the raw imagery, before any human summary, and let it summarize the heart itself?
@@ -77,7 +77,7 @@ The result was 89 significant common variants (P < 2.3×10⁻⁹). After conditi
 
 A concrete case shows how sturdy this bridge is. Two different latent phenotypes (Z49_S1, Z82_S1) were jointly associated with the **SOX5 locus** (lead variant rs4963772). That variant has been reported repeatedly in past GWAS of blood pressure, ECG traits, and atrial fibrillation. An axis the model built without labels independently landed on the same spot as already-known cardiac biology. Z82_S1 was also associated with type 2 diabetes (β = 0.26, P = 3.74×10⁻¹⁸) and atrial fibrillation (β = -0.17, P = 8.47×10⁻¹⁰).
 
-![Example Manhattan plot from a GWAS, showing statistical significance of genetic variants by chromosome](./image/img-02-gwas-manhattan-plot.jpg)
+![Example Manhattan plot from a GWAS, showing statistical significance of genetic variants by chromosome](../ko/image/img-02-gwas-manhattan-plot.jpg)
 *▲ An example Manhattan plot summarizing GWAS results (from a different GWAS, not this study's actual plot) — x-axis: chromosome, y-axis: −log₁₀(P-value) | Source: [Hu et al., Nature Communications (2016), Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Manhattan_plot_of_the_GWAS_of_self-reporting_of_being_a_morning_person.jpg)*
 
 > [!callout]
@@ -89,7 +89,7 @@ Had it stopped at finding loci, this would have stayed an academic discovery. Th
 
 For some cardiac conditions, this score separated individuals with high cumulative risk by up to 26-fold. That means the risk gap between the top and bottom score groups opened that wide. It is a magnitude that could offer a lead for early screening. A pipeline that began without labels reached individual-level risk prediction by way of gene discovery, making it a rare demonstration of self-supervised learning carried through to clinical usefulness.
 
-![Diagram of polygenic risk score (PRS) distribution and its age-related predictive ability](./image/img-03-prs-distribution.png)
+![Diagram of polygenic risk score (PRS) distribution and its age-related predictive ability](../ko/image/img-03-prs-distribution.png)
 *▲ Polygenic risk score (PRS) concept diagram — left: score distribution for cases vs. controls, right: risk gap by age between high- and low-score groups (a general illustration, not this study's actual figures) | Source: [Wand et al., Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:PRS_Illustration.png)*
 
 That said, before generalizing this 26-fold figure, look at the conditions. The UK Biobank is a cohort weighted toward middle-aged, European-ancestry participants. There is no guarantee that the same magnitude of stratification would reproduce in other age groups or other ancestral populations. The population portability of PRS is a known limitation across genetics, and this study is no exception. The size of a number has to be read alongside the data it came from.

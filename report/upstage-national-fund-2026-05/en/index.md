@@ -93,7 +93,7 @@ Upstage holds Korean-language SOTA on KMMLU, Hae-Rae, and Ko-IFEval, with strong
 
 Upstage runs a B2B-first model: Intel, U.S. insurance carriers, and an AWS Bedrock listing form the revenue base. Single-GPU efficiency is the differentiator against API-first OpenAI/Anthropic deployments — material for enterprises that want on-prem or sovereign-cloud inference. Valuation sits at roughly $940M (KRW 1.3T), making Upstage Korea's first generative-AI unicorn, with an IPO process publicly underway ([thebell IPO interview, in Korean](https://www.thebell.co.kr/free/content/ArticleView.asp?key=202511130847254200108072)). For a public-fund deal, recoverability matters: a working B2B revenue line and a credible exit path are what brought KDB and the private syndicate into the round.
 
-![Upstage logo — Korean LLM venture and sole recipient of the $400M National Growth Fund direct investment](./image/img-01-upstage-logo.svg)
+![Upstage logo — Korean LLM venture and sole recipient of the $400M National Growth Fund direct investment](../ko/image/img-01-upstage-logo.svg)
 *▲ Upstage — Korea's first generative-AI unicorn and the single recipient of the $400M direct investment | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Upstage_Logo_Purple.svg)*
 
 ### 2.4. Policy — Provenance Becomes a Formal Variable
@@ -137,7 +137,7 @@ The table summarizes how the major sovereign-AI programs allocate capital. Korea
 
 ********************
 
-![EuroHPC Joint Undertaking (HPC JU) logo — EU's infrastructure-first sovereign-AI track funded at roughly $2B](./image/img-02-eurohpc-logo.svg)
+![EuroHPC Joint Undertaking (HPC JU) logo — EU's infrastructure-first sovereign-AI track funded at roughly $2B](../ko/image/img-02-eurohpc-logo.svg)
 *▲ EuroHPC JU — the EU's infrastructure-first sovereign-AI track (~$2B). One of the reference frames against which Korea's model-plus-infrastructure double bet should be read | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:HPC_JU_logo_RGB.svg)*
 
 ### 3.2. Korea's Two Axes — Model and Infrastructure
@@ -192,7 +192,7 @@ The government's announcement names four uses for the round: (1) the next Solar 
 
 Germany's Aleph Alpha was once positioned as Europe's OpenAI, with cumulative funding above $500M. In 2024 the company stepped back from frontier model development and pivoted to industrial AI. In April 2026, Cohere absorbed Aleph Alpha at a $20B Cohere valuation, effectively closing Europe's standalone-frontier-LLM track in Germany ([CNBC, April 24, 2026](https://www.cnbc.com/2026/04/24/cohere-aleph-alpha-germany-ai-europe-expansion.html)). $500M was not enough — and that is a useful baseline for thinking about Korea's $400M. The answer isn't more capital alone; it is doing more with the same capital. The variable that determines that ratio is data quality.
 
-![Aleph Alpha logo — Germany's sovereign-AI cautionary tale, where $500M+ in cumulative funding was not enough to sustain a frontier-model program](./image/img-03-aleph-alpha-logo.svg)
+![Aleph Alpha logo — Germany's sovereign-AI cautionary tale, where $500M+ in cumulative funding was not enough to sustain a frontier-model program](../ko/image/img-03-aleph-alpha-logo.svg)
 *▲ Aleph Alpha — the German case where $500M+ of accumulated capital still proved insufficient. A reference point that has to sit alongside Korea's $400M before the capital math is judged | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Logo_Aleph_Alpha.svg)*
 
 ## The Unsolved Variable — Inside the Korean Corpus
@@ -225,7 +225,7 @@ Korean
 
 0.82%
 
-![Common Crawl logo — global web index that produced the 0.823% Korean and 41.02% English language share statistic](./image/img-04-common-crawl-logo.svg)
+![Common Crawl logo — global web index that produced the 0.823% Korean and 41.02% English language share statistic](../ko/image/img-04-common-crawl-logo.svg)
 *▲ Common Crawl — the global web index where the CC-MAIN-2026-17 snapshot measured Korean at 0.823% (English at 41.02%). Together with FineWeb 2's 17th-by-bytes ranking, it is the starting line for any data-sovereignty argument | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Common_Crawl_logo.svg)*
 
 ### 5.2. Licensing — Modu Corpus, AI Hub, No BookCorpus Equivalent
@@ -242,7 +242,7 @@ The 2024–2025 literature converges on a single conclusion: **at fixed compute,
 - **Nemotron-4 340B** (arXiv:2406.11704, NVIDIA): More than 98% of alignment data is synthetic — synthetic data has moved from supplement to load-bearing infrastructure.
 - **Chinchilla** (arXiv:2203.15556, 2022): The foundational result that training tokens per parameter dominates model performance.
 
-![DCLM-Baseline outperforming LLaMA-2, MAP-Neo, Falcon, and DeepSeek peers at equal compute on Core score and MMLU 5-shot accuracy](./image/img-05-dclm-figure.png)
+![DCLM-Baseline outperforming LLaMA-2, MAP-Neo, Falcon, and DeepSeek peers at equal compute on Core score and MMLU 5-shot accuracy](../ko/image/img-05-dclm-figure.png)
 *▲ DCLM-Baseline beats comparable LLaMA-2, MAP-Neo, Falcon, and DeepSeek runs at the same total training FLOPs. The single-axis difference in data curation translates into ~40% compute saved and ~6.6 MMLU points — the canonical chart for the data-quality-beats-model-size consensus | Source: [DataComp-LM (arXiv:2406.11794, 2024)](https://arxiv.org/abs/2406.11794)*
 
 One sentence from the Phi-3 paper compresses the era: _"Scaling laws assume a fixed data source. This assumption is now significantly disrupted by the existence of frontier-level LLMs themselves."_ The training distribution is no longer fixed — frontier models now generate the data that trains the next generation. For a quantity-constrained language like Korean, this is opportunity, not threat: synthetic data is the lever that breaks the volume ceiling.

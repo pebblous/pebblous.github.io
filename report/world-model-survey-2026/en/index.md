@@ -44,7 +44,7 @@ The idea itself is not new. Back in 1971, psychology had already established the
 
 Here a key distinction appears. To "understand" the world and to "predict" the next scene aim at the same goal by different means. Understanding is the work of building an internal representation of how the world operates; prediction is the work of drawing what comes next, either on top of that representation or without one at all. This is why the survey can place a multimodal model like GPT-4 and a video generator like Sora under the same "world model" umbrella while still drawing a firm line between them.
 
-![A survey diagram of the three layers of world knowledge a world model learns — global physical world, local physical world, and human society](./image/img-01-world-knowledge.png)
+![A survey diagram of the three layers of world knowledge a world model learns — global physical world, local physical world, and human society](../ko/image/img-01-world-knowledge.png)
 *▲ The "world knowledge" a model learns is layered: common sense, global physics, local physics, and human society | Source: [Ding et al. (2024), ACM CSUR (arXiv:2411.14499), Fig.](https://arxiv.org/abs/2411.14499)*
 
 > [!callout]
@@ -64,7 +64,7 @@ The second path does not stop at representing a static state; it "models dynamic
 
 The tension between the two paths is not a mere engineering choice but a clash of philosophies. The Sora and Genie camp holds that "if you can render the world realistically enough, that rendering _is_ knowing the world." The V-JEPA camp counters that "rendering pixels accurately and understanding the world are two different things," and chooses instead to capture the invisible abstraction in a latent space. Two camps that share a word but head toward different destinations — that disagreement makes for the most interesting debate around world models.
 
-![A survey taxonomy diagram of the two world-model paths — implicit representation for understanding and generation for predicting the future, branching into physical, virtual, and social applications](./image/img-02-two-paths-taxonomy.png)
+![A survey taxonomy diagram of the two world-model paths — implicit representation for understanding and generation for predicting the future, branching into physical, virtual, and social applications](../ko/image/img-02-two-paths-taxonomy.png)
 *▲ The survey's core axis: implicit representation of the external world (understanding) vs future prediction (generation, simulation), with physical, virtual, and social applications below | Source: [Ding et al. (2024), ACM CSUR (arXiv:2411.14499), Fig.](https://arxiv.org/abs/2411.14499)*
 
 > [!callout]
@@ -88,7 +88,7 @@ With the two axes from the previous section in hand, the model landscape becomes
 
 One thing to watch as you read the map: models that walk both paths at once, like V-JEPA 2, are becoming more common. They first build a representation for understanding, then predict the future and even plan on top of it. Rather than two roads that diverge forever, the two paths show a tendency to meet again at a single point. That convergence is one of the defining traits of world model research in 2025.
 
-![A survey timeline laying out leading world-model research from World Models in 2018 to Sora and Genie in 2024, as a flow across model-based RL, self-supervised learning, video generation, embodied environments, and applications](./image/img-03-model-landscape.png)
+![A survey timeline laying out leading world-model research from World Models in 2018 to Sora and Genie in 2024, as a flow across model-based RL, self-supervised learning, video generation, embodied environments, and applications](../ko/image/img-03-model-landscape.png)
 *▲ The world-model research landscape along a timeline — from model-based RL and self-supervised learning to video generation, embodied environments, and applications | Source: [Ding et al. (2024), ACM CSUR (arXiv:2411.14499), Fig.](https://arxiv.org/abs/2411.14499)*
 
 If you want to compare this landscape in more detail, a good companion is [Three World Models for Next-Generation AI](/project/World%20Model/world-model-comparison/en/), which lines up the Hawkins, LeCun, and Schmidhuber approaches across seven axes. For the historical context of representation learning, [The Man Who Threw Away Pixels](/blog/yann-lecun-jepa-world-models/en/) goes deeper still.
@@ -105,21 +105,21 @@ The most intuitive application is games. A world model generates the playable en
 
 In autonomous driving, prediction is tied directly to safety. A world model realistically predicts and generates the driving scenes about to unfold, and is used for policy learning, simulation, and safety validation. Wayve's GAIA-1 is the leading case: it tokenizes inputs and then generates the next scene. Its core value is that dangerous scenarios can be replayed countless times in simulation without ever being faced on a real road.
 
-![A diagram of an autonomous-driving world model pipeline, running from camera perception through latent-space representation to planning, prediction, and simulation, then to occupancy grids and point clouds](./image/img-04-autonomous-driving.png)
+![A diagram of an autonomous-driving world model pipeline, running from camera perception through latent-space representation to planning, prediction, and simulation, then to occupancy grids and point clouds](../ko/image/img-04-autonomous-driving.png)
 *▲ Autonomous-driving world model: camera perception → latent-space representation → planning, prediction, simulation → occupancy grids and point clouds | Source: [Ding et al. (2024), ACM CSUR (arXiv:2411.14499), Fig.](https://arxiv.org/abs/2411.14499)*
 
 ### 4.3. Robotics — Embodied Intelligence
 
 For a robot, a world model is the ability to "imagine the consequences of an action in advance." Before grasping, it pictures whether its hand will slip; before pushing, whether the object will topple — and then it plans. DayDreamer, which learns a world model directly on a physical robot, and V-JEPA 2-AC, which achieves zero-shot control from only a small amount of robot footage, point in this direction. The biggest hurdle is closing the gap between simulation and reality (sim-to-real).
 
-![A diagram of the world model as an embodied environment where robots and agents act and learn, with virtual simulation environments subdivided into indoor, outdoor, and dynamic settings](./image/img-05-embodied-environment.png)
+![A diagram of the world model as an embodied environment where robots and agents act and learn, with virtual simulation environments subdivided into indoor, outdoor, and dynamic settings](../ko/image/img-05-embodied-environment.png)
 *▲ The world model as an embodied environment — indoor, outdoor, and dynamic virtual spaces where robots and agents act and learn | Source: [Ding et al. (2024), ACM CSUR (arXiv:2411.14499), Fig.](https://arxiv.org/abs/2411.14499)*
 
 ### 4.4. Social Simulation — The Fourth Axis
 
 This is where the survey parts ways with other summaries. Yong Li's group at Tsinghua treats not only the physical world but also social dynamics as a target for world models. Drawing on agent-based modeling and Theory of Mind, this line simulates human interactions and social phenomena. The view that the world is not only physics but also the space between people widens the scope of world models by a notch.
 
-![A diagram of the world model as social simulacra, where agents endowed with belief, memory, and cognition interact with the environment and one another to reproduce social phenomena](./image/img-06-social-simulacra.png)
+![A diagram of the world model as social simulacra, where agents endowed with belief, memory, and cognition interact with the environment and one another to reproduce social phenomena](../ko/image/img-06-social-simulacra.png)
 *▲ The world model as social simulacra — agents with belief, memory, and cognition interact with their environment and each other to model society | Source: [Ding et al. (2024), ACM CSUR (arXiv:2411.14499), Fig.](https://arxiv.org/abs/2411.14499)*
 
 One more note. Pure video generation models such as Sora and Cosmos belong directly to the second path's "world model as video generation," rather than being tied to a single domain like driving or games. Add controllability and they touch game intelligence; specialize them to driving scenes and they touch autonomous driving. Video generation is closer to a common engine that cuts across applications. Why world models are discussed as the step beyond VLM and VLA is something we cover in more detail in [Eyes, but No World](/project/AgenticAI/world-model-rise/en/).

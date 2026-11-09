@@ -42,7 +42,7 @@ Source: [TechCrunch (2026-10-05)](https://techcrunch.com/2026/10/05/openai-launc
 
 OpenAI opened a new advertising format in ChatGPT on October 5, 2026. A user asks for a picture, and beside the screen where the result arrives sits an ad carrying an image, a one-line headline and a "Learn more" button. In OpenAI's description, the slot shows product inspiration, how a product is used, or the experiences a service makes possible.
 
-![A ChatGPT image generation screen with a 'Fresh ideas for dinner' ad, marked Ad, sitting below the generated result](./image/img-01-chatgpt-visual-ad-format.jpg)
+![A ChatGPT image generation screen with a 'Fresh ideas for dinner' ad, marked Ad, sitting below the generated result](../ko/image/img-01-chatgpt-visual-ad-format.jpg)
 *▲ ChatGPT's new visual ad format — it sits below the result screen, separate from the generated image | Source: [TechCrunch, Image Credits: OpenAI](https://techcrunch.com/2026/10/05/openai-launches-visual-ads-that-appear-alongside-image-generation-results/)*
 
 Position is the core of the post. Ads will be "clearly labeled, and remain separate from the image being created." No brand mark gets mixed into the generated picture, and no answer changes because of an ad. That is the line OpenAI drew.

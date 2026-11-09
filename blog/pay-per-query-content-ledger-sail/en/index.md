@@ -44,7 +44,7 @@ Until now, a publisher had roughly two ways to hand content to AI and get paid. 
 
 The other way is litigation. The NYT sued OpenAI, CNN sued Perplexity, and in the training-data suits Anthropic offered a settlement of roughly $1.5 billion. That settlement was then rejected in 2026 by Judge Martinez-Olguin, on the grounds that "the basis for calculating payments is insufficient." Winning a suit, or even reaching a settlement, did nothing to answer who gets paid how much, and on what basis. The court effectively confirmed that the unit-of-settlement problem is still unsolved.
 
-![The New York Times headquarters — symbolizing NYT's copyright lawsuit against OpenAI](./image/img-01-nyt-lawsuit.jpg)
+![The New York Times headquarters — symbolizing NYT's copyright lawsuit against OpenAI](../ko/image/img-01-nyt-lawsuit.jpg)
 *▲ The NYT sued OpenAI over copyright, but winning a lawsuit still leaves no formula for who gets paid how much | Source: [Wikimedia Commons (CC BY 4.0, Jdforrester)](https://commons.wikimedia.org/wiki/File:The_New_York_Times_Building_at_sunset,_2021-09-30.jpg)*
 
 The third path SAIL proposes is to drop that unit of settlement from the contract down to the query. Sundial CEO Kirk McDonald describes the framework as an alternative to "one-off license negotiation" and to "litigation," emphasizing a collaborative approach over a "David-and-Goliath" dynamic. The idea is that instead of a single contract, the ledger records which sources each AI answer drew on and how much, and that ledger becomes the basis for payment.
@@ -56,7 +56,7 @@ The third path SAIL proposes is to drop that unit of settlement from the contrac
 
 SAIL is the combination of three axes. The AI licensing platform Next Net (CEO Franklin Rios) runs the content-intelligence pipeline, the media publisher Sundial supplies the actual content, and NVIDIA provides the compute. NVIDIA's role is infrastructure, not an equity stake. The explanation is that Next Net's pipeline runs semantic scoring, vector search, and GPU-accelerated inference on top of NeMo, RAPIDS, and NIM microservices to enable "rights-managed retrieval at scale."
 
-![NVIDIA GPU hardware — the compute infrastructure behind SAIL's vector search and GPU-accelerated inference](./image/img-02-nvidia-h100.png)
+![NVIDIA GPU hardware — the compute infrastructure behind SAIL's vector search and GPU-accelerated inference](../ko/image/img-02-nvidia-h100.png)
 *▲ NVIDIA backs SAIL's semantic scoring and vector search with GPU compute, not an equity stake | Source: [Wikimedia Commons (CC BY 3.0, 极客湾Geekerwan)](https://commons.wikimedia.org/wiki/File:NVIDIA_H100_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_021.png)*
 
 The heart of how it works is "tracking per query." Each time an AI system references publisher content while composing an answer, that usage is recorded, and the SAIL ledger accumulates this history by appending to it. What the publisher receives is a **source file**. It is a document of record showing which pieces of content a given AI response was built from. It is the material that proves the premise of settlement: what was used, and how much.
@@ -91,7 +91,7 @@ SAIL is not the only attempt at "per-query settlement." At least half a dozen ad
 
 A few pressures converged to concentrate demand for settlement infrastructure in the summer of 2026. On the regulatory side, the EU AI Act adds weight. Article 10, which imposes a duty to document data provenance for high-risk systems, is due to take effect in August 2026, and general-purpose AI model providers must disclose a summary of training data using the European Commission's standard template. In the U.S., too, the Copyright Office's Part 3 report, issued in May 2025, took a skeptical view of a sweeping fair-use defense and signaled the need for a compulsory-licensing framework.
 
-![European Parliament hemicycle in Strasbourg — the EU AI Act's regulatory pressure to document data provenance](./image/img-03-eu-ai-act.jpg)
+![European Parliament hemicycle in Strasbourg — the EU AI Act's regulatory pressure to document data provenance](../ko/image/img-03-eu-ai-act.jpg)
 *▲ EU AI Act Article 10 imposes a data-provenance documentation duty on high-risk systems, effective August 2026 | Source: [Wikimedia Commons (CC BY-SA 3.0, Diliff)](https://commons.wikimedia.org/wiki/File:European_Parliament_Strasbourg_Hemicycle_-_Diliff.jpg)*
 
 The technical and market pressure is more direct. When Cloudflare switched to blocking crawlers by default in July 2025, the "free lane for scraping" narrowed. Around that shift, licensing deals jumped from 10 to 22. As the free-grab route closed, demand for paid-usage infrastructure grew immediately.

@@ -42,7 +42,7 @@ So what changed? Crawlers are splitting from a single mass into tracks defined b
 
 Put simply: the big river of training keeps flowing, while two new channels — search and agents — are being cut fast right beside it. This is fragmentation, not migration. Why does the distinction matter? Because a defense tool built for the days when you only had to dam one river cannot block the channels that have since appeared. The moment a data owner lumps all crawlers together, they lose sight of the track growing fastest.
 
-![Illustration of AI crawler bots each performing a different task — search, training, and writing — across the web](./image/img-01-crawler-bots-illustration.png)
+![Illustration of AI crawler bots each performing a different task — search, training, and writing — across the web](../ko/image/img-01-crawler-bots-illustration.png)
 *▲ Bots once lumped together as "crawlers" now each do a different job — search, training, agent fetching | Source: [Cloudflare Blog](https://blog.cloudflare.com/content-independence-day-ai-options/)*
 
 > [!callout]
@@ -56,14 +56,14 @@ Anthropic likewise runs a training crawler, ClaudeBot, apart from its search cra
 
 Infrastructure providers have begun to recognize this complexity too. As of July 1, 2026, Cloudflare forces AI crawlers into three categories — Training, Search, and Agent — and shows them to administrators that way. The judgment is that a single "AI bot" switch can no longer capture reality. Bundle crawlers of different purposes into one box, and what you want to block ends up tied to what you want to leave open.
 
-![Cloudflare's AI bot control panel split into three categories: Search, Training, and Agent](./image/img-02-cloudflare-three-category-control.png)
+![Cloudflare's AI bot control panel split into three categories: Search, Training, and Agent](../ko/image/img-02-cloudflare-three-category-control.png)
 *▲ Cloudflare's purpose-based AI bot controls, introduced July 1, 2026 — Search, Training, and Agent switched independently | Source: [Cloudflare Blog](https://blog.cloudflare.com/content-independence-day-ai-options/)*
 
 ## The Traffic robots.txt Can't Stop
 
 This is the heart of the problem. The 30-year-old Robots Exclusion Standard (robots.txt) is a gentlemen's agreement designed for the era of training crawlers. In front of real-time agent requests, that agreement holds up poorly. When dataimpulse analyzed logs in June 2026, 39.5% of sites that had declared a GPTBot block in robots.txt were in fact still serving pages to GPTBot. Having written a rule and having that rule obeyed turned out to be two separate things.
 
-![Older single-switch bot control screen relying on a block toggle and robots.txt instructions](./image/img-03-cloudflare-old-single-toggle.png)
+![Older single-switch bot control screen relying on a block toggle and robots.txt instructions](../ko/image/img-03-cloudflare-old-single-toggle.png)
 *▲ The old control screen — a block toggle plus robots.txt instructions, with no distinction by purpose | Source: [Cloudflare Blog](https://blog.cloudflare.com/content-independence-day-ai-options/)*
 
 Some have formalized the exception. Perplexity has stated that it does not follow robots.txt when it fetches a URL a user pasted in directly. The logic goes: opening a page on behalf of a user who explicitly asked for it is not crawling but acting as the user's proxy. Right or wrong, the practical result is a gray zone that robots.txt does not cover.
@@ -79,7 +79,7 @@ Because blocking doesn't work, the first move was to put a price on access. Clou
 
 That is why declarative standards are emerging: agents.txt, which aims to replace or supplement robots.txt, and proposals like Agent-Intent that carry the intent of a request in the header. The shared idea is to move past the allow/block binary and have a crawler state what it intends to do — train, search, cite, transact — and grant conditional access accordingly. It's an attempt to capture at the protocol layer the granularity of purpose that robots.txt cannot express.
 
-![Cloudflare BotBase database screening and classifying bots by behavior type such as agent, search, and data collection](./image/img-04-cloudflare-botbase.png)
+![Cloudflare BotBase database screening and classifying bots by behavior type such as agent, search, and data collection](../ko/image/img-04-cloudflare-botbase.png)
 *▲ Cloudflare BotBase screens and registers bots by behavior type — pushing purpose-based classification into infrastructure | Source: [Cloudflare Blog](https://blog.cloudflare.com/content-independence-day-ai-options/)*
 
 Standards take time to settle. Before they do, here is what a data owner can check right now.

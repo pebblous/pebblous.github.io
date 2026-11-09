@@ -36,10 +36,10 @@ _A Google DeepMind researcher uses Einstein_
 
 We are taught that science works like this: you observe the world, gather data, find the rule, and the rule becomes a theory. A ladder running straight from observation up to theory. Einstein thought that picture was wrong. In 1952 he sketched, by hand, what he took to be the real shape of science in a letter to Maurice Solovine, his longtime friend and philosophical sparring partner. It was not a ladder but a cycle, and the cycle had one gap that no logic could close.
 
-![Portrait photograph of Albert Einstein](./image/img-01-einstein.jpg)
+![Portrait photograph of Albert Einstein](../ko/image/img-01-einstein.jpg)
 *▲ Albert Einstein. The diagram he sketched in his 1952 letter to Solovine is this piece's starting point. | Source: [Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:Albert_Einstein_Head_cleaned.jpg)*
 
 The diagram has three levels. At the bottom sits the layer of sensory experience (E, _Erlebnisse_), the world we actually live through and measure. At the top sit the axioms (A, _Axiome_), the founding assumptions that hold a theory up. From the axioms you deduce various propositions (S) and then test those propositions back against experience below. The trouble is the first arrow, the one climbing from experience up to the axioms. Einstein labeled it “J” and insisted it was an **intuitive leap (a leap, _ein Sprung_)**, that between experience and axioms “there is no logical path.” No matter how much observation you pile up, an axiom does not fall out of it on its own. Someone has to jump.
 
-![Einstein's original hand-drawn E-J-A discovery diagram from his 1952 letter to Solovine](./image/img-02-solovine-diagram.jpg)
+![Einstein's original hand-drawn E-J-A discovery diagram from his 1952 letter to Solovine](../ko/image/img-02-solovine-diagram.jpg)
 *▲ Einstein's actual hand-drawn sketch from his 1952 letter to Solovine. The SVG below reconstructs the same sketch in today's visual language. | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Scheme_of_Einstein_theory_construction.jpg)*

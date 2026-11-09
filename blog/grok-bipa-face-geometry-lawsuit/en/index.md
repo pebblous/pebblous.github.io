@@ -44,7 +44,7 @@ Cesar Padilla, a Grok user living in Illinois, did nothing unusual. A selfie wen
 
 On October 7, 2026 the class action went to the U.S. District Court for the Northern District of Illinois. The complaint describes Grok as having worked "by automatically locating and scanning plaintiff's face, and by extracting geometric data relating to the contours of plaintiff's face and the proportions of, and spatial relationships among, facial landmarks."
 
-![The Dirksen Federal Building in Chicago, home to the U.S. District Court for the Northern District of Illinois](./image/img-01-dirksen-federal-courthouse.jpg)
+![The Dirksen Federal Building in Chicago, home to the U.S. District Court for the Northern District of Illinois](../ko/image/img-01-dirksen-federal-courthouse.jpg)
 *▲ The Dirksen Federal Building in Chicago, where Padilla's complaint was filed in the U.S. District Court for the Northern District of Illinois | Source: [Wikimedia Commons (Ken Lund, CC BY-SA 2.0)](https://commons.wikimedia.org/wiki/File:Dirksen_United_States_Courthouse,_Chicago_Loop,_Chicago,_Illinois_(11004376983).jpg)*
 
 One more allegation sits next to that one. The numbers pulled out this way get tied to the user's account, and no public document says when they are deleted. Measuring a face and attaching the result to an account stand as two separate acts in the pleading, and the second runs straight into the retention and destruction clause.

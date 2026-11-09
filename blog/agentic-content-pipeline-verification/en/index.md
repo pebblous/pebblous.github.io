@@ -40,7 +40,7 @@ Speed jumps dramatically. HubSpot reports that content teams adopting AI publish
 
 MIT Sloan captures the core risk in one sentence: **"LLMs are optimized for plausibility, not accuracy."** Plausible sentences cite plausible sources and ship at a plausible cadence — until you notice no one actually checked whether any of it was true. The most dangerous failure of an autonomous pipeline is not the system stopping. It is the system continuing to produce the wrong thing at full speed.
 
-![A printed manuscript covered in red-pen edits — the kind of line-by-line content verification autonomous pipelines compress and risk eliminating](./image/img-01-copyedited-manuscript.jpg)
+![A printed manuscript covered in red-pen edits — the kind of line-by-line content verification autonomous pipelines compress and risk eliminating](../ko/image/img-01-copyedited-manuscript.jpg)
 *▲ Content verification in the manual-copyediting era — autonomous pipelines compress this step and risk erasing it altogether | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Example_of_copyedited_manuscript.jpg)*
 
 > [!callout]
@@ -69,7 +69,7 @@ The outline is correct, but logic breaks between sections and the conclusion con
 
 No single tool defends against all three failure modes. You need three layers, each with a different trade-off between speed, cost, and accuracy. The guiding principle is simple: **cheap and fast first, expensive and precise later.** Applying every check to every piece of content blows up cost. Routing only Tier-1 passers into Tier 2, and only low-confidence Tier-2 passers into Tier 3, can cut total verification cost by 80–90%.
 
-![The Swiss Cheese model — hazards reach loss only when the holes (weaknesses) in successive defensive layers happen to align](./image/img-02-swiss-cheese-model.png)
+![The Swiss Cheese model — hazards reach loss only when the holes (weaknesses) in successive defensive layers happen to align](../ko/image/img-02-swiss-cheese-model.png)
 *▲ The Swiss Cheese model — every single check has holes; only deterministic, semantic, and human review stacked together prevent failures from passing all the way through | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Swiss_cheese_model_of_accident_causation_with_additional_labels.png)*
 
 ### 3.1. Tier 1 — Deterministic Verifiers
@@ -126,7 +126,7 @@ A related concept worth borrowing: the **governance agent** — an AI that watch
 
 Gartner forecasts that by 2028, explainable AI (XAI) will account for 50% of LLM observability investment. The same firm also predicts that more than 40% of agentic AI initiatives will be scrapped by 2027. The two forecasts look contradictory but point at the same fact: autonomous systems deployed without verification and observability fail to earn trust and disappear.
 
-![Bar chart of AI governance principles cited across 200 global ethics guidelines — Transparency/Explainability/Auditability ranks first](./image/img-03-ai-governance-principles.jpg)
+![Bar chart of AI governance principles cited across 200 global ethics guidelines — Transparency/Explainability/Auditability ranks first](../ko/image/img-03-ai-governance-principles.jpg)
 *▲ Across 200 worldwide AI ethics guidelines, the most cited principle is "Transparency / Explainability / Auditability" (165 mentions) — verification logs are one of the few mechanisms that satisfy all three at once | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Number_of_times_an_aggregated_AI_governance_principle_was_cited_in_200_AI_ethics_guidelines_worldwide.jpg)*
 
 The EU AI Act imposes transparency obligations on generative AI content. Users must be informed when content is AI-generated, and decision processes must remain explainable. Verification logs stop being mere debugging artifacts and become legal evidence. Autonomous content with no recorded trail of which checks passed at which stage will carry progressively heavier liability in a regulated environment.

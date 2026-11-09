@@ -20,7 +20,7 @@ _SPUR, the coalition behind the BBC, the Guardian and the FT, published version 
 
 > Sections 1 through 3 are facts written in the full specification and in the coalition's announcement. Section 4 is this article's reading of those facts from the side that buys and sells data.
 
-![SPUR coalition logo — publisher-led standard for reporting AI content usage](./image/img-01-spur-coalition-logo.png)
+![SPUR coalition logo — publisher-led standard for reporting AI content usage](../ko/image/img-01-spur-coalition-logo.png)
 *▲ Logo of SPUR, the coalition of publishers including the BBC, the Guardian and AP | Source: [SPUR Coalition](https://www.spurcoalition.org/updates)*
 
 ### Key Figures
@@ -90,7 +90,7 @@ One field was taken back out. The draft carried `ip_hash` on edge and origin rec
 
 How far the document has been worked over is written into the repository as numbers. 171 test fixtures, 15 validated examples and 59 mutation checks run on every change request. Public comment was open from June 12 to July 24 and left 29 discussion threads on the specification and 3 on the profile, along with 5 change requests, with a recorded disposition on every thread. The release is stamped September 2 on GitHub, and the coalition announced it on October 2.
 
-![SPUR-Coalition/telemetry GitHub repository — where the Content Telemetry specification, JSON schema and conformance tests are published](./image/img-02-telemetry-spec-repo.png)
+![SPUR-Coalition/telemetry GitHub repository — where the Content Telemetry specification, JSON schema and conformance tests are published](../ko/image/img-02-telemetry-spec-repo.png)
 *▲ The repository holding the full specification, JSON schema and conformance tests | Source: [github.com/SPUR-Coalition/telemetry](https://github.com/SPUR-Coalition/telemetry)*
 
 ## The Records That Set the Price Are Written by Whoever Would Pay
@@ -107,7 +107,7 @@ The repository writes this structure down as an open problem, in its own words. 
 
 The layer that decides whether anyone kept to it lives in a different document altogether. Conformance marks and certification grades belong to a separate profile repository rather than to core. Its one grade, Compliant, carries four requirements: emission that conforms to the specification, event-level delivery without batching, real-time delivery as events occur, and delivery to a publisher-designated endpoint. Sampling is allowed only where separately agreed with the publisher. The profile's own status, though, is still Preview 0.2, and it says of itself that requirements may change before it reaches 1.0. The document that measures is at 1.0, while the one that makes anyone follow it is still standing short of that.
 
-![SPUR-Coalition/telemetry-profile GitHub repository — defines the Compliant certification grade and conformance mark, still at Preview 0.2](./image/img-03-telemetry-profile-repo.png)
+![SPUR-Coalition/telemetry-profile GitHub repository — defines the Compliant certification grade and conformance mark, still at Preview 0.2](../ko/image/img-03-telemetry-profile-repo.png)
 *▲ The certification repository, kept separate from core — still Preview 0.2 | Source: [github.com/SPUR-Coalition/telemetry-profile](https://github.com/SPUR-Coalition/telemetry-profile)*
 
 What remains is an answer from the companies that use the content. Along with the announcement SPUR invited OpenAI, Anthropic, Google, Meta and Microsoft onto an invitation-only AI licensing advisory board. It is aiming at around twenty members, a first meeting was set for October, and a technical committee covering audit and verification holds its first meeting on October 15. Co-founder David Buttle described the board as a way to ensure "both sides of the equation have a seat at the table and can work together." Nowhere in the announcement is there an AI company that has committed to adopting it. Google said only that it "frequently engages with SPUR and other associations on a variety of topics," and the rest did not respond. Technical lead Alex Springer put it shorter: "By no means did OpenAI come and comment on our standard. They are aware of it."

@@ -20,7 +20,7 @@ _Anthropic held its line on autonomous weapons and mass surveillance, and the ri
 
 > Six months passed between the day the label went on and the day it was voided, and the replacement work the defense supply chain carried out in that window does not come back with the ruling. That is why a single risk entry on a vendor scorecard is worth asking about. A separate suit in Washington, D.C. is still open.
 
-![Anthropic CEO Dario Amodei — held the line on refusing autonomous weapons and mass surveillance uses for Claude](./image/img-01-dario-amodei.jpg)
+![Anthropic CEO Dario Amodei — held the line on refusing autonomous weapons and mass surveillance uses for Claude](../ko/image/img-01-dario-amodei.jpg)
 *▲ Dario Amodei, Anthropic CEO — refused the Pentagon's demand to remove the guardrails | Source: [Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Dario_Amodei_at_TechCrunch_Disrupt_2023_01.jpg)*
 
 ### Key figures
@@ -43,7 +43,7 @@ Source: [TechCrunch](https://techcrunch.com/2026/08/28/anthropic-gets-its-first-
 
 Judge Rita Lin found that Defense Secretary Pete Hegseth's labeling of Anthropic as a risk to national security signified unlawful retaliation in violation of the First Amendment. In the same ruling she called the decision arbitrary and capricious, and said Anthropic had been denied the due process the Fifth Amendment requires. That is three distinct legal defects in one action.
 
-![Phillip Burton Federal Building and United States Courthouse — the San Francisco building housing the U.S. District Court for the Northern District of California](./image/img-02-federal-courthouse.jpg)
+![Phillip Burton Federal Building and United States Courthouse — the San Francisco building housing the U.S. District Court for the Northern District of California](../ko/image/img-02-federal-courthouse.jpg)
 *▲ Phillip Burton Federal Building and United States Courthouse, San Francisco — home to the U.S. District Court for the Northern District of California | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Phillip_Burton_Federal_Building.jpg)*
 
 The motive the judge found was not security. Her ruling says the government's "words and deeds confirm that the challenged actions were based on a desire to make a public example out of Anthropic for its 'arrogance' in criticizing the government." She did not leave the word security alone either. "The empty invocation of national security is not a blank check to punish and retaliate against government critics," she wrote.

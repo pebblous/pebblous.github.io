@@ -47,7 +47,7 @@ That richness comes at a cost, the paper writes. A single field is covered by do
 
 Eight fields, 65 square degrees in total. The six SWIRE fields (ELAIS-S1, XMM-LSS, CDFS, Lockman Hole, ELAIS-N1, ELAIS-N2), plus the Boötes field of the Spitzer Deep, Wide-Field Survey and the Spitzer Extragalactic First Look Survey (XFLS). The paper gives two grounds for that selection: the depth and breadth of the ancillary coverage, and the continuing prominence of these fields in Herschel, radio, Euclid and Rubin survey programs.
 
-![Composite image of a SWIRE field combining Spitzer IRAC infrared (green, red) with Isaac Newton Telescope visible light (blue)](./image/img-01-swire-galaxies.jpg)
+![Composite image of a SWIRE field combining Spitzer IRAC infrared (green, red) with Isaac Newton Telescope visible light (blue)](../ko/image/img-01-swire-galaxies.jpg)
 *▲ An actual multi-wavelength composite of a SWIRE field — green and red are Spitzer IRAC infrared, blue is visible light from the Isaac Newton Telescope. This is exactly what it looks like when the same sky is shot by different instruments | Source: [NASA/JPL-Caltech/C. Lonsdale (Caltech/IPAC) and the SWIRE Team](https://www.spitzer.caltech.edu/images/2375-sig05-019-A-SWIRE-Picture-is-Worth-Billions-of-Years)*
 
 ## How Close Is Close Enough to Be One Object?

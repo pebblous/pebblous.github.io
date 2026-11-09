@@ -40,14 +40,14 @@ Source: Xie, Xu, Zhang, Chen, Cui, ["Making Euclid VIS Imaging AI-Ready"](https:
 
 Euclid is a space telescope the European Space Agency launched in 2023. It sweeps broadly across the sky photographing galaxies in order to measure the expansion of the universe and the distribution of dark matter, and what its visible-light camera has already recorded runs far past what one person could look through. The material in this paper is Euclid's first public release, Quick Data Release 1, together with the Galaxy Zoo Euclid morphology catalogue built from the classifications of volunteers. That catalogue lists 380,111 unique objects.
 
-![Artist's impression of the Euclid space telescope launched by the European Space Agency in 2023, with a galaxy cluster in the background](./image/img-01-euclid-spacecraft.jpg)
+![Artist's impression of the Euclid space telescope launched by the European Space Agency in 2023, with a galaxy cluster in the background](../ko/image/img-01-euclid-spacecraft.jpg)
 *▲ The telescope behind the images this paper processed: an artist's impression of Euclid | Source: [ESA/C. Carreau, CC BY-SA 3.0 IGO](https://commons.wikimedia.org/wiki/File:Euclid_ESA376594.jpg)*
 
 The morphology values in the catalogue were not written in by hand, galaxy by galaxy. They are probabilities produced by Zoobot, a model trained on the responses volunteers left behind, and what this paper used as ground truth is the subset of those probabilities that a confidence threshold kept.
 
 Of that catalogue the team released 365,513 rows. Removing the 9 rows with duplicate object identifiers leaves 365,504 objects that line up with the catalogue. For each one they took the released 128×128 pixel cutout, converted it to 224×224, and attached the 384 numbers drawn from the same picture alongside it. The National Astronomical Data Center hosts the data for download, and the processing code is public under the MIT license.
 
-![Euclid's view of part of the Perseus cluster, showing spiral and elliptical galaxies together in one frame](./image/img-02-euclid-perseus-cluster.jpg)
+![Euclid's view of part of the Perseus cluster, showing spiral and elliptical galaxies together in one frame](../ko/image/img-02-euclid-perseus-cluster.jpg)
 *▲ Euclid's view of part of the Perseus cluster. 365,513 pictures like this one went into a single format | Source: [ESA/Euclid/Euclid Consortium/NASA, image processing by J.-C. Cuillandre (CEA Paris-Saclay), G. Anselmi, CC BY-SA 3.0 IGO](https://commons.wikimedia.org/wiki/File:Euclid%E2%80%99s_view_of_Perseus_-_zoom_2_ESA25172046.jpg)*
 
 The work was handled by a cutout service running inside the National Astronomical Data Center. It gathers requests into batches, hands them out to parallel workers, and stores results under a key made of the coordinates, the cutout size, the instrument, the file type and the band. When the same request arrives again, the stored copy is served instead of being recomputed. The more often a dataset is requested repeatedly, the more that structure pays for itself.

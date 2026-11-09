@@ -49,7 +49,7 @@ The laws Section 4 names are not new. 18 U.S.C. § 1028 (identity fraud), § 103
 
 The wording is restrained, but its symbolism is not small. Until now, "the accountability of AI agents" was a topic of academic and industry debate. This order lifts that debate into a criminal enforcement priority in a presidentially signed document. It deliberately leaves out regulatory machinery like mandatory licensing or pre-clearance, choosing voluntary frameworks instead — yet on criminal enforcement, it speaks in plain language. This is the moment AI agents first entered the field of vision of federal criminal law.
 
-![The White House north facade — where the executive order naming AI agent intrusion as a federal criminal enforcement priority was signed on June 2, 2026](./image/img-01-white-house.jpg)
+![The White House north facade — where the executive order naming AI agent intrusion as a federal criminal enforcement priority was signed on June 2, 2026](../ko/image/img-01-white-house.jpg)
 *▲ The White House north facade. On June 2, 2026, the executive order that first placed "AI agents" in a federal criminal enforcement context was signed here. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:White_House_Washington_DC.jpg) (CC BY 3.0)*
 
 ## Who Is 'the Person Using AI'?

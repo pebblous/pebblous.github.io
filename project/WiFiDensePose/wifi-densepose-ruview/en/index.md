@@ -30,7 +30,7 @@ $0~8Cost Per Zone (Using Existing WiFi)
 
 810×Faster Than Python
 
-![DensePose From WiFi overview — antenna setup, CSI signal patterns, DensePose estimation results](./image/img-01-overview.png)
+![DensePose From WiFi overview — antenna setup, CSI signal patterns, DensePose estimation results](../ko/image/img-01-overview.png)
 *▲ WiFi antenna setup (top), CSI amplitude/phase signals (middle), DensePose estimation results (bottom) | Source: [arXiv:2301.00250](https://arxiv.org/abs/2301.00250)*
 
 ## 1. The Origin — CMU's Bold Challenge
@@ -47,7 +47,7 @@ The research team placed two standard WiFi routers (3 antennas each, 6 total) fa
 
 The results were stunning. Compared to existing camera-based pose estimation systems, the WiFi-based system achieved **comparable AP (Average Precision) scores**. The same performance held in pitch-dark rooms, through walls, and regardless of clothing.
 
-![DensePose From WiFi experimental setup — TX/RX antenna placement and 3x3 MIMO link configuration](./image/img-02-layout.png)
+![DensePose From WiFi experimental setup — TX/RX antenna placement and 3x3 MIMO link configuration](../ko/image/img-02-layout.png)
 *▲ CMU research team's experimental setup — TX/RX antenna placement | Source: [arXiv:2301.00250](https://arxiv.org/abs/2301.00250)*
 
 ## 2. How It Works — From CSI to Pose
@@ -113,7 +113,7 @@ Not all CSI frames are created equal. RuView's coherence gate evaluates each fra
 
 The preprocessed CSI feature matrix is fed into a **graph transformer**. Cross-attention layers learn the correlations between each subcarrier and ultimately output 17 COCO body keypoint coordinates and a DensePose UV coordinate map. For vital sign extraction, it analyzes the spectrogram of the BVP filter output to calculate respiration (6~30 BPM) and heart rate (40~120 BPM).
 
-![Domain Translation network architecture — converting WiFi CSI phase/amplitude encoders to image domain](./image/img-03-architecture.png)
+![Domain Translation network architecture — converting WiFi CSI phase/amplitude encoders to image domain](../ko/image/img-03-architecture.png)
 *▲ Domain Translation network — encoder-decoder architecture converting WiFi CSI (phase + amplitude) to image domain | Source: [arXiv:2301.00250](https://arxiv.org/abs/2301.00250)*
 
 ## 3. Core Capabilities — 17 Keypoints and Beyond
@@ -140,7 +140,7 @@ The 17 keypoints extracted by RuView follow the same COCO dataset standard. WiFi
 
 🦶 L/R Ankle
 
-![DensePose From WiFi results comparison — Camera GT vs WiFi CSI-based pose estimation](./image/img-05-results.png)
+![DensePose From WiFi results comparison — Camera GT vs WiFi CSI-based pose estimation](../ko/image/img-05-results.png)
 *▲ Camera-based GT (left) vs WiFi CSI-based DensePose estimation results (right) | Source: [arXiv:2301.00250](https://arxiv.org/abs/2301.00250)*
 
 ### Real-Time Vital Sign Detection
@@ -201,7 +201,7 @@ Disaster Response & Search-Rescue
 
 Detecting survivor breathing in collapsed building debris. WiFi signals penetrate concrete walls. Vital sign detection of survivors beyond 5m regardless of smoke or darkness.
 
-![WiFi-DensePose RCNN pipeline — full flow feeding Domain Translation output into DensePose R-CNN](./image/img-04-pipeline.png)
+![WiFi-DensePose RCNN pipeline — full flow feeding Domain Translation output into DensePose R-CNN](../ko/image/img-04-pipeline.png)
 *▲ WiFi-DensePose R-CNN — pipeline estimating human body surface UV coordinates from translated images | Source: [arXiv:2301.00250](https://arxiv.org/abs/2301.00250)*
 
 ## 5. Comparison with Cameras — Complement, Not Replacement

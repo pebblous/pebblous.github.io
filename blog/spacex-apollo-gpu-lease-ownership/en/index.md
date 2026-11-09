@@ -48,7 +48,7 @@ The equipment comes in batches, and each batch carries its own lease schedule. E
 
 Terms that remain unsettled sit in the filing as well. The fixed rate on the lease will be determined at pricing, it says, and nothing further. Which chips are coming is not in the body of the filing either. The name of Nvidia's next-generation platform, Vera Rubin, came from the press release Apollo issued the same day, and SpaceX said the equipment goes to its terrestrial compute buildout.
 
-![Nvidia's next-generation Vera Rubin platform chips and rack configuration](./image/img-01-vera-rubin-platform.jpg)
+![Nvidia's next-generation Vera Rubin platform chips and rack configuration](../ko/image/img-01-vera-rubin-platform.jpg)
 *▲ Nvidia's next-generation Vera Rubin platform, the equipment coming to SpaceX under this lease | Source: [NVIDIA Newsroom](https://nvidianews.nvidia.com/news/nvidia-vera-rubin-platform)*
 
 Apollo is not the only party putting up money. The financing commitment was led by Apollo and Goldman Sachs, with Goldman Sachs serving as sole structuring agent. Funds managed by BlackRock and Goldman Sachs Asset Management, along with accounts advised by KKR, came in as anchors. The entity standing in the lessor's position, buying the equipment and leasing it out, is managed by Apollo, but several institutions stand behind it.
@@ -67,7 +67,7 @@ Take the first piece on its own and the conclusion is plain. Paying 5% a quarter
 
 And still the party holding the equipment is not SpaceX. The structure the filing and the press release both describe is that an Apollo-managed entity acquires the equipment and leases it to SpaceX. The one paying the full price and the one owning it are not the same.
 
-![The Solow Building in New York, headquarters of Apollo Global Management](./image/img-02-apollo-hq-solow-building.jpg)
+![The Solow Building in New York, headquarters of Apollo Global Management](../ko/image/img-02-apollo-hq-solow-building.jpg)
 *▲ The lessor buying the equipment and leasing it to SpaceX — Apollo Global Management's headquarters, the Solow Building in New York | Source: [Wikimedia Commons (King of Hearts, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Solow_Building_New_York_August_2012.jpg)*
 
 > [!callout]

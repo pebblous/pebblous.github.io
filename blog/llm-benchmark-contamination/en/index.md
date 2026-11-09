@@ -38,7 +38,7 @@ Benchmarks are the LLM industry's shared exam paper. MMLU holds multiple-choice 
 
 So the model reads the exam before it ever sits for it. Not just the questions, but the answers too, end up inside the training data. Even when the score comes back high, there is no way to tell whether it reflects reasoning or the memory of an item already seen. The simple fact that the model had the paper in hand is enough to shake the meaning of the number.
 
-![Timeline of LLM benchmark evolution from 2021 to 2025: static benchmarks like MMLU and HumanEval gave way to dynamic ones like LiveBench and DyCodeEval](./image/img-01-benchmark-progress.png)
+![Timeline of LLM benchmark evolution from 2021 to 2025: static benchmarks like MMLU and HumanEval gave way to dynamic ones like LiveBench and DyCodeEval](../ko/image/img-01-benchmark-progress.png)
 *▲ The LLM benchmark landscape 2021–2025: static benchmarks (MMLU, GSM8K) dominated early; dynamic benchmarks (LiveBench, DyCodeEval) emerged in response to growing contamination concerns. | Source: [arXiv 2502.17521](https://arxiv.org/abs/2502.17521)*
 
 Model makers know this. To deal with it, they run filters that strip out passages overlapping with benchmarks. GPT-3 cut anything matching 13 consecutive words (a 13-gram), and GPT-4 raised the bar to 40-grams. But filters only fire when the text matches exactly. Reword a sentence slightly, translate it into another language, or reshape a table, and the same problem becomes a different string that slips past the filter. Contamination is not removed; it survives by changing form.
@@ -65,7 +65,7 @@ Even the same contamination varies sharply by benchmark and by model. The table 
 | Mistral / GSM8K | 13pt drop on clean mirror | Contamination-resistance research |
 | MMLU (with ITD) | 22.9% of inflation removed | Inference-Time Decontamination |
 
-![Bar chart comparing LLM benchmark contamination rates in December 2020 vs October 2023 — MMLU jumped from 9% to 29.4% in three years](./image/img-02-contamination-timeline.png)
+![Bar chart comparing LLM benchmark contamination rates in December 2020 vs October 2023 — MMLU jumped from 9% to 29.4% in three years](../ko/image/img-02-contamination-timeline.png)
 *▲ Contamination rates compared between December 2020 and October 2023. MMLU tripled from 9% to 29.4% in three years; C-EVAL shows a similar trajectory. | Source: [arXiv 2605.19999](https://arxiv.org/html/2605.19999v1)*
 
 ## A Data Problem, Not a Model Problem
@@ -91,14 +91,14 @@ LiveBench draws fresh questions each month from the latest math competitions, ne
 
 Microsoft's MMLU-CF keeps the test set private and offers only grading. With the questions never released to the web, there is nothing for a crawler to collect. At the same difficulty, scores come out lower than on the public version — and GPT-4o's 73.4% on this private test is closer to the more honest coordinate left once contamination is stripped away.
 
-![Comparison showing an LLM producing identical answer choices on the original MMLU (memorization) versus different choices on the contamination-free MMLU-CF (genuine reasoning)](./image/img-04-mmlu-cf-leakage.png)
+![Comparison showing an LLM producing identical answer choices on the original MMLU (memorization) versus different choices on the contamination-free MMLU-CF (genuine reasoning)](../ko/image/img-04-mmlu-cf-leakage.png)
 *▲ (Top) On original MMLU, the LLM echoes the exact same answer choices as the training data — evidence of memorization. (Bottom) On MMLU-CF, questions are rephrased so the model cannot recall memorized answers. | Source: [MMLU-CF arXiv 2412.15194](https://arxiv.org/abs/2412.15194)*
 
 ### 4.3. Contamination-resistant distribution — release it in a form the model can't read
 
 The third is more fundamental: distribute the benchmark in a form a human can use for grading but a model cannot use for training. One research group proposed encoding questions into a form such as a KV cache, so that even if they are crawled as plaintext, the training pipeline cannot swallow them directly. Instead of hiding the exam, the idea is to make it unmemorizable even when it leaks.
 
-![Contamination-Resistant Deployment (CRD) pipeline: benchmark is projected into latent space by anchor models, distributed via Hugging Face, then translated back by the evaluated model at inference time](./image/img-03-crd-framework.png)
+![Contamination-Resistant Deployment (CRD) pipeline: benchmark is projected into latent space by anchor models, distributed via Hugging Face, then translated back by the evaluated model at inference time](../ko/image/img-03-crd-framework.png)
 *▲ Contamination-Resistant Deployment (CRD) pipeline. The benchmark is projected into a latent space and distributed; only a model that learns the inverse translation (Discovery) can perform inference — making raw crawling useless for training. | Source: [arXiv 2605.19999](https://arxiv.org/html/2605.19999v1)*
 
 - •**What they share** — none of the three touch the model. What they change is the procedure for creating and distributing evaluation data.

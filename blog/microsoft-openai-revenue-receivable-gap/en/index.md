@@ -42,7 +42,7 @@ Sources: [TechCrunch](https://techcrunch.com/2026/10/28/microsoft-recorded-10-bi
 
 On October 28 Microsoft reported results for the quarter ended September 30. Revenue of $92.3 billion made it a tenth consecutive record quarter, with Microsoft Cloud at $63.9 billion and Azure at $33.2 billion. The record is what became the headline, but inside the quarterly report submitted the same day sat a line that had not been visible on a quarterly basis until now. It says Microsoft recognized $10 billion in revenue this quarter from its commercial dealings with OpenAI. What it collects under the heading of revenue share is included there.
 
-![Microsoft logo — the company that disclosed OpenAI-related revenue and receivable balances in its October 28 quarterly report](./image/img-01-microsoft-logo.svg)
+![Microsoft logo — the company that disclosed OpenAI-related revenue and receivable balances in its October 28 quarterly report](../ko/image/img-01-microsoft-logo.svg)
 *▲ Microsoft. The company that wrote the OpenAI-related revenue and receivable figures covered here into its October 28 quarterly report | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Microsoft_logo.svg)*
 
 Against $92.3 billion, $10 billion works out to a share of about 11%. The party that produced that ratio, though, was not the company. On the earnings call Gabriela Borges of Goldman Sachs summed it up and asked back whether OpenAI accounted for 11% of revenue in the quarter, and Satya Nadella, the chief executive, declined to take the ratio up. He answered instead that customers mix several models and train their own as well. It is worth remembering whose mouth the widely quoted 11% came out of.

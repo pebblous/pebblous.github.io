@@ -76,7 +76,7 @@ Apr 2026
 
 Joins Linux Foundation. Google, Microsoft, AWS, Stripe, Visa, Mastercard, KakaoPay and 20+ companies sign on as founding members.
 
-![x402 Protocol joins Linux Foundation — announcement with Google, AWS, Microsoft, Stripe, Visa, Mastercard, KakaoPay as founding members](./image/img-02-linux-foundation.png)
+![x402 Protocol joins Linux Foundation — announcement with Google, AWS, Microsoft, Stripe, Visa, Mastercard, KakaoPay as founding members](../ko/image/img-02-linux-foundation.png)
 *▲ April 2, 2026: x402 joins the Linux Foundation with 20+ industry partners | Source: [Linux Foundation](https://www.linuxfoundation.org/press/linux-foundation-launches-x402-foundation-to-standardize-ai-agent-payment-protocols)*
 
 ## How It Actually Works — Protocol Anatomy
@@ -112,7 +112,7 @@ Content-Type: application/json
 <!-- stat-card -->
 **⑤** — Server → Client: 200 OK + resource — After settlement confirmation, the server returns the requested data. The entire flow completes in seconds.
 
-![x402 official sequence diagram — 4-party flow between Client, Server, Facilitator, and Blockchain](./image/img-01-x402-flow.png)
+![x402 official sequence diagram — 4-party flow between Client, Server, Facilitator, and Blockchain](../ko/image/img-01-x402-flow.png)
 *▲ x402 official sequence diagram — 4-party flow: Client, Server, Facilitator, Blockchain. Settlement completes without human intervention | Source: [Coinbase/x402 GitHub](https://github.com/coinbase/x402)*
 
 ### 2.2 One Line of Code to Add a Paywall

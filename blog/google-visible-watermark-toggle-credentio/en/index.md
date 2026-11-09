@@ -50,7 +50,7 @@ The request came from users first. Gizmodo, citing Android Authority, reported t
 
 That is exactly where the criticism lands. Engadget pointed out that the visible watermark existed in the first place to give people a fast way to recognize AI content, and that this decision weakens the purpose Google set for itself. The two remaining layers still support verification, but only after someone thinks to ask a chatbot or upload a file to a checking tool. Between seeing a mark and looking one up sits that much friction.
 
-![Chat interface in the Gemini app showing an uploaded photo and the prompt 'Is this generated with AI?'](./image/img-01-verify-prompt.webp)
+![Chat interface in the Gemini app showing an uploaded photo and the prompt 'Is this generated with AI?'](../ko/image/img-01-verify-prompt.webp)
 *▲ With the visible mark gone, verification means uploading the file and asking | Source: [Google Blog](https://blog.google/innovation-and-ai/products/identifying-ai-generated-media-online/)*
 
 ## The Pixel Signal Survives, the Metadata Gets Stripped

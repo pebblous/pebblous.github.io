@@ -47,7 +47,7 @@ The Great American AI Act draft released on June 4 sets out to change that. It i
 > [!callout]
 > What changes is a single phrase: from "we built it safely" to "an independent body confirmed it is safe." It is the same principle by which a public company's financial statements are vouched for not by the company, but by an outside auditor.
 
-![U.S. Capitol building west front — the Great American AI Act discussion draft was released here on June 4, 2026](./image/img-01-us-capitol.jpg)
+![U.S. Capitol building west front — the Great American AI Act discussion draft was released here on June 4, 2026](../ko/image/img-01-us-capitol.jpg)
 *▲ U.S. Capitol, west front. The GAAIA discussion draft was released here on June 4, 2026. | Source: [Wikimedia Commons (PD)](https://commons.wikimedia.org/wiki/File:United_States_Capitol_-_west_front.jpg)*
 
 ## What GAAIA Really Invents Is a Licensed AI Auditor

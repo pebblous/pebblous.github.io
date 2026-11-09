@@ -44,7 +44,7 @@ Until now, an AI agent could recommend a product and even fill your cart. The fi
 
 The pool of people who can use this is not small. In its Q1 2026 results, Robinhood reported more than 800,000 Gold cardholders (some outlets put the figure around 700,000 at launch). That is how many wallets autonomous payment can reach in one step — even if the rollout starts small, the potential scale is anything but experimental.
 
-![Robinhood logo — the fintech that shipped the first consumer credit card delegating payment to an AI agent](./image/img-01-robinhood-logo.png)
+![Robinhood logo — the fintech that shipped the first consumer credit card delegating payment to an AI agent](../ko/image/img-01-robinhood-logo.png)
 *▲ Robinhood is the first large consumer financial firm to hand the final "pay" button to an AI agent | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Robinhood_(company)_logo.svg)*
 
 To avoid muddling the picture, it helps to separate fact, inference, and what's still undisclosed. Start with the **confirmed facts**. The launch date is May 27, 2026, and the audience is Gold cardholders. It runs on Robinhood Banking's MCP infrastructure, and the agent never receives the real card number — only a separately issued virtual one. That virtual card can be deleted at any time, and the agent's authority is limited to viewing that card's spending and settings. MCP-compatible agents such as Claude, ChatGPT, Codex, and Cursor are all supported.
@@ -60,7 +60,7 @@ Robinhood wasn't moving alone. The card networks had been laying token infrastru
 
 The payoff from tokenization shows up in the numbers. Visa token transactions carry roughly 40% lower fraud and about 5 percentage points higher authorization rates. Mastercard estimates that applying tokenization lifts cardholder spend by 3–6 percentage points. The technical foundation for paying without ever exposing the real card number is, in other words, complete. The agent no longer needs to touch the card number at all.
 
-![Visa, Mastercard, and American Express cards — the card networks that laid token infrastructure for AI agents](./image/img-02-card-networks.jpg)
+![Visa, Mastercard, and American Express cards — the card networks that laid token infrastructure for AI agents](../ko/image/img-02-card-networks.jpg)
 *▲ Mastercard Agent Pay and Visa Intelligent Commerce — the card networks already laid the token rails for agents | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Three_credit_cards-_Visa,_Mastercard_and_American_Express_(close-up_on_logos).jpg)*
 
 And this is exactly where the problem splits. Tokens solved "who is paying" and "is the card number leaking." But "is the decision about what to buy, and at what price, correct" lives outside the token. Even when a merchant verifies a trusted agent's signature, if that agent tries to pay on a wrong price or a stale balance, the tokenized transaction goes through all the same. A flawless security layer still produces a "plausible but wrong" payment if the data feeding the decision is corrupted.
@@ -111,7 +111,7 @@ There isn't one road to agentic payments. Two are being paved at once. On one si
 
 The members of the protocol camp are subjects this blog has covered in their own right. There's [x402](/blog/x402-protocol-ai-payment-2026/en/), which revives HTTP 402 micropayments; [stablecoins](/blog/stablecoin-data-ai-agent-economy-2026/en/), which settle payments in on-chain USDC; and [Google AP2](/blog/google-ap2-agent-payment-protocol-2025/ko/), which proves an agent's payment authority through mandate-based authentication. OpenAI's Agentic Commerce Protocol belongs to the same open camp.
 
-![USD Coin (USDC) logo — the stablecoin that settles payments on-chain, the protocol camp's signature rail](./image/img-03-usdc-stablecoin.png)
+![USD Coin (USDC) logo — the stablecoin that settles payments on-chain, the protocol camp's signature rail](../ko/image/img-03-usdc-stablecoin.png)
 *▲ Stablecoins settling payments in on-chain USDC are the protocol camp's signature rail toward open standards | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:USD_Coin_logo_(cropped).png)*
 
 The two camps do the same job but differ at three points of data governance: where identity is verified, where limits are enforced, and where the audit trail is kept.

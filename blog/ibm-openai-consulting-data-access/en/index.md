@@ -42,7 +42,7 @@ Sources: [TechCrunch (2026-08-13)](https://techcrunch.com/2026/08/13/ibm-partner
 
 On August 13, IBM said it will deliver OpenAI's models and tools to enterprise clients through its global consulting business. Financial terms were not disclosed. One item, in the announcement and in the reporting around it, does carry a figure. Mike Healy, managing partner at IBM Consulting, said the company will "train and certify tens of thousands of consultants" over the coming months, primarily by retraining employees IBM already has rather than hiring new ones.
 
-![Official IBM and OpenAI partnership logo lockup](./image/img-01-ibm-openai-lockup.png)
+![Official IBM and OpenAI partnership logo lockup](../ko/image/img-01-ibm-openai-lockup.png)
 *▲ The IBM–OpenAI partnership announced on August 13, 2026 | Source: [IBM Newsroom](https://newsroom.ibm.com/2026-08-13-ibm-partners-with-openai-to-accelerate-secure-ai-deployment-for-enterprises-across-core-operations)*
 
 The curriculum covers Codex, the API, cybersecurity, and consulting solution certifications. On top of that, IBM said it will field dedicated teams trained through the OpenAI Partner Network to work directly with clients in heavily regulated settings with complex workflows. The collaboration also moves IBM into OpenAI's elite partner tier, a group that already includes Accenture, BCG, Capgemini, and McKinsey.
@@ -70,7 +70,7 @@ Compiled from the IBM Newsroom press release of August 13, 2026, and TechCrunch'
 
 IBM Consulting Advantage is the internal delivery platform consultants use when they run a client engagement. AI agents, industry-specific assets, and cybersecurity capabilities sit in it together. Forrester counts 130,000 IBM consultants on the platform and reads the deal as making IBM both OpenAI's first customer and its enterprise-scale proving ground. The test bed covers a wide range of business functions rather than software development alone.
 
-![IBM Consulting collaborative workspace where consultants run client engagements](./image/img-02-ibm-consulting-workspace.jpg)
+![IBM Consulting collaborative workspace where consultants run client engagements](../ko/image/img-02-ibm-consulting-workspace.jpg)
 *▲ IBM Consulting Advantage, the delivery platform 130,000 IBM consultants use | Source: [IBM Consulting](https://www.ibm.com/consulting/advantage)*
 
 The press release also says what the platform takes as input. IBM wrote that the capabilities within IBM Consulting Advantage "can analyze operating procedures and workflows to identify inefficiencies" and go on to redesign work in finance, procurement, customer operations, and HR. Redesigning a workflow requires reading the current one first. What gets read there is not published documentation but the record of how that organization has actually been doing its work.
@@ -89,7 +89,7 @@ The August announcement carries no access clause, but there is still something t
 
 The design IBM described then is the concrete evidence behind this article's angle. The security harness that connects a client's application environment to the AI runs on IBM Consulting Advantage, operates inside the client environment, accesses code repositories on a read-only basis, and executes within bounded limits. The configuration exists to run exposure analysis at scale without widening the attack surface. Mark Hughes, global managing partner for cybersecurity services at IBM Consulting, framed it around attackers already operating at machine speed and defenders needing the same advantage under the security and control enterprises require.
 
-![Security imagery representing IBM and OpenAI's cyber defense collaboration](./image/img-03-ibm-openai-cyber-defense.jpg)
+![Security imagery representing IBM and OpenAI's cyber defense collaboration](../ko/image/img-03-ibm-openai-cyber-defense.jpg)
 *▲ The application security service IBM and OpenAI launched on June 22, 2026 — read-only, bounded execution was the design principle then | Source: [IBM Newsroom](https://newsroom.ibm.com/2026-06-22-ibm-and-openai-bring-frontier-ai-to-cyber-defense-helping-enterprises-keep-pace-with-machine-speed-threats)*
 
 What entered the client in the June service, then, was not the model itself. An approved partner held the model access and read code within a defined scope inside the client's environment. That design is what the August deal extends into finance, procurement, customer operations, and HR.
@@ -103,7 +103,7 @@ The August release does not skip this territory entirely. One of the partnership
 
 IBM has held the integrator position, combining multiple models around its own Granite family and the watsonx platform. This deal does not vacate that position. Ten months ago, on October 7, 2025, IBM struck a strategic partnership with Anthropic and put Claude into its software and a new development tool. Granite, Claude, and GPT now sit in the same drawer.
 
-![Official IBM and Anthropic partnership logo lockup](./image/img-04-ibm-anthropic-lockup.png)
+![Official IBM and Anthropic partnership logo lockup](../ko/image/img-04-ibm-anthropic-lockup.png)
 *▲ IBM and Anthropic's partnership, announced October 7, 2025 — Claude was already in IBM's drawer before OpenAI | Source: [IBM Newsroom](https://newsroom.ibm.com/2025-10-07-2025-ibm-and-anthropic-partner-to-advance-enterprise-software-development-with-proven-security-and-governance)*
 
 Forrester singled out one trait of this alliance: "IBM is a product company first and service provider second." The relationship with OpenAI does not stop at the consulting organization; it reaches products such as Red Hat and watsonx Orchestrate. Forrester's read is that IBM is currently the only firm able to place a model inside enterprise workflows and secure it in that position. For the organization adopting it, that sentence is both a proof of capability and a notice that one company's products and people are coming in together, all the way inside the workflow.

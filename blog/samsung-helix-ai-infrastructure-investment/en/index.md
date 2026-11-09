@@ -40,7 +40,7 @@ Sources: [Samsung Newsroom release](https://news.samsung.com/global/samsung-to-i
 
 Samsung Electronics, Samsung C&T, Samsung SDS, Samsung SDI, Samsung Life Insurance, Samsung Fire & Marine Insurance. Six companies in six different lines of business announced on September 29, 2026 that they are putting money into the same place on the same day. The recipient is Helix alone and the amount comes to $1 billion. Samsung Electronics covers $500 million and the remaining five divide the other $500 million.
 
-![Samsung Town headquarters complex in Seocho, Seoul — home to the corporate offices of the Samsung affiliates behind this investment](./image/img-01-samsung-headquarters.jpg)
+![Samsung Town headquarters complex in Seocho, Seoul — home to the corporate offices of the Samsung affiliates behind this investment](../ko/image/img-01-samsung-headquarters.jpg)
 *▲ Samsung Town in Seocho, Seoul. Samsung Electronics, Samsung C&T, Samsung SDS, Samsung SDI, Samsung Life Insurance and Samsung Fire & Marine Insurance are all affiliated through this corporate group. | Source: [Wikimedia Commons (Oskar Alexanderson, CC BY-SA 2.0)](https://commons.wikimedia.org/wiki/File:Samsung_headquarters.jpg)*
 
 An investment that several affiliates join is not unusual in itself. What stands out in this announcement is that the release also writes down what each contributor will do. The Samsung Newsroom release states, one line each, what Samsung Electronics' two divisions, Samsung C&T, Samsung SDS and Samsung SDI will supply. Of the six, only Samsung Life Insurance and Samsung Fire & Marine Insurance appear on the investor list without a stated role.
