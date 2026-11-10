@@ -168,4 +168,4 @@ imgL = Table[ f [imagination, Param->p, Author->"Joo-Haeng Lee"], {p, paramL}]
 
 ### 📄 원문 PDF 다운로드
 
-[⬇한국어Korean v0.8.pdf](../Code%20Painting%20-%20Daejeon%20Biennale%202020%20Korean%20v0.8.pdf)[⬇EnglishEnglish v0.8.pdf](../Code%20Painting%20-%20Daejeon%20Biennale%202020%20English%20v0.8.pdf)
+[⬇한국어Korean v0.8.pdf](/media/DAL/code-painting-essay/Code%20Painting%20-%20Daejeon%20Biennale%202020%20Korean%20v0.8.pdf)[⬇EnglishEnglish v0.8.pdf](/media/DAL/code-painting-essay/Code%20Painting%20-%20Daejeon%20Biennale%202020%20English%20v0.8.pdf)
