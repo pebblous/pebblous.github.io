@@ -248,4 +248,4 @@ A phased market entry strategy to capture the global mobility market based on Hy
 #### Pebblous Investment Proposal (Legacy)
 
 <!-- stat-card -->
-**Download the PDF version of the investment proposal.** — [View PDF](/project/IR/source/PBLS IR v21.4 Kor Public.pdf)
+**Download the PDF version of the investment proposal.** — [View PDF](/media/IR/source/PBLS IR v21.4 Kor Public.pdf)

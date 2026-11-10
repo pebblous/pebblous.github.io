@@ -289,4 +289,4 @@ _Physical AI 데이터 그린하우스 전략_
 #### 페블러스 투자제안서 (기존버전)
 
 <!-- stat-card -->
-**투자 제안서 PDF 버전을 다운로드하실 수 있습니다.** — [PDF 보기](/project/IR/source/PBLS IR v21.4 Kor Public.pdf)
+**투자 제안서 PDF 버전을 다운로드하실 수 있습니다.** — [PDF 보기](/media/IR/source/PBLS IR v21.4 Kor Public.pdf)
