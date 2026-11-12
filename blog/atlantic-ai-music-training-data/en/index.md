@@ -44,7 +44,7 @@ The Atlantic's Alex Reisner tracked down four public datasets floating around th
 
 What makes the tool remarkable is the gap it fills. The companies that built AI music models have never disclosed what they trained on. So artists, courts, and regulators alike had no way to answer the question "was my music used?" The Atlantic analyzed datasets that had been posted to academic repositories and brought that answer back in searchable form. Because the provenance documents weren't where they should have been, someone rebuilt them from the outside.
 
-![Shelves of reel-to-reel tape recordings in a music archive vault — the physical analog antecedent of the millions of songs now circulating in AI training datasets](./image/img-01-music-archive-vault.jpg)
+![Shelves of reel-to-reel tape recordings in a music archive vault — the physical analog antecedent of the millions of songs now circulating in AI training datasets](../ko/image/img-01-music-archive-vault.jpg)
 *▲ Reel-to-reel tape shelves in a music archive vault. AI training datasets sit on the digital continuation of this analog lineage — but without the labeling | Source: [Alan Burdette, Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Archives_of_Traditional_Music_Vault.jpg)*
 
 > [!callout]

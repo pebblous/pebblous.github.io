@@ -42,7 +42,7 @@ Four figures compress the backdrop to this round: the size of the Series B, the 
 
 Start with the deal. DataBahn was founded in Dallas in 2024. This $40 million Series B was led by Insight Partners, with participation from Forgepoint Capital, GTM Capital, and S3 Ventures. It follows a $17 million Series A led by Forgepoint in June 2025, bringing total funding to $59 million. The company says it will use the money to expand R&D and to broaden a customer base that has so far clustered among Fortune 100-scale enterprises, reaching down into the mid-market.
 
-![DataBahn official company logo](./image/img-01-databahn-logo.jpg)
+![DataBahn official company logo](../ko/image/img-01-databahn-logo.jpg)
 *▲ DataBahn, which raised $40 million in a Series B | Source: [PR Newswire](https://www.prnewswire.com/news-releases/databahn-raises-40-million-series-b-led-by-insight-partners-to-accelerate-innovation-across-the-agentic-data-control-plane-302838690.html)*
 
 What DataBahn does fits in one sentence. It sits between the 600-plus sources that generate logs, events, and metrics and the tools that consume them, and it ingests, normalizes, and routes that data. Information the destination does not need gets stripped out along the way. The company calls this position an "agentic data control plane," and it sells its neutrality—any source, any destination, any model, tied to no particular vendor—as the pitch.

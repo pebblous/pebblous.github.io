@@ -46,7 +46,7 @@ The most contested part of the draft is the preemption clause. It would bar stat
 
 In return for preemption, the federal government layers on its own discipline. The targets are the small set of developers that exceed $500 million in annual revenue and build frontier models — those trained on 10²⁶ or more compute operations. They would have to hire an Independent Verification Organization (IVO) certified by CAISI, the institute under NIST, file a compliance audit every six months, and report serious safety incidents within 15 days and imminent risks within 24 hours. Breaches carry fines of up to $1 million a day. A two-person startup, an open-weight developer, or an independent researcher all sit below this threshold.
 
-![The U.S. Capitol, west front — where the bipartisan Great American AI Act discussion draft was introduced](./image/img-01-us-capitol.jpg)
+![The U.S. Capitol, west front — where the bipartisan Great American AI Act discussion draft was introduced](../ko/image/img-01-us-capitol.jpg)
 *▲ The U.S. Capitol, west front — where the bipartisan Great American AI Act draft was introduced | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:United_States_Capitol_-_west_front.jpg) (Public Domain, Architect of the Capitol)*
 
 > [!callout]
@@ -56,7 +56,7 @@ In return for preemption, the federal government layers on its own discipline. T
 
 The federal bill does not leave its preemption targets abstract; it names specific state laws. At the top of that list is California's AB 2013. Mentioned alongside it are parts of SB 942's content-watermarking requirements and the frontier-AI safety laws of California, New York, and Illinois. Of these, AB 2013 carries the most weight from a data point of view.
 
-![The California State Capitol in Sacramento — where AB 2013, the training-data disclosure law, was enacted](./image/img-02-california-state-capitol.jpg)
+![The California State Capitol in Sacramento — where AB 2013, the training-data disclosure law, was enacted](../ko/image/img-02-california-state-capitol.jpg)
 *▲ California State Capitol, Sacramento — where AB 2013 mandating AI training-data disclosure was enacted | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_California_State_Capitol_Building,_Sacramento_(32884057540).jpg) (CC BY 2.0, Tony Webster)*
 
 AB 2013 requires companies that build generative AI to publish a summary of their training data. It is not a vague one-liner but a fairly specific list: the sources and owners of the data, how the data supports the model's purpose, the number of data points, their types and characteristics, copyright, patent, and trademark status, purchase or license information, whether personal or aggregated consumer information is included, any cleaning and processing, the collection period and first date of use, and whether synthetic data was generated and used. Only systems for security, aviation, and national security are exempt.
@@ -70,7 +70,7 @@ This duty was originally set to take effect on January 1, 2026. It was a rare tr
 
 The whole weight of the bill rests on one line separating "development" from "deployment." Development is the pre-release stage — training, fine-tuning, testing, and designing a model. Deployment is what comes after the model is out in the world — implementing, providing, and using it. The federal government takes the front half and leaves the back half to the states. It looks clean, but in practice the line is blurry.
 
-![An AI chip and server-rack infrastructure — the technology at the center of the development-vs-deployment boundary dispute](./image/img-03-ai-machine-learning.jpg)
+![An AI chip and server-rack infrastructure — the technology at the center of the development-vs-deployment boundary dispute](../ko/image/img-03-ai-machine-learning.jpg)
 *▲ AI chip and data-center infrastructure — the technology at the heart of the 'develop vs. deploy' dispute | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Artificial_Intelligence_%26_AI_%26_Machine_Learning.jpg) (CC BY 2.0, Mike MacKenzie)*
 
 Co-sponsor Trahan herself conceded that this boundary is "genuinely difficult to implement in legislative text." An analysis by the Future of Privacy Forum (FPF) points to the same spot: many state AI laws do not cleanly separate development from deployment, instead imposing duties that span both stages. Training-data disclosure sits right on this boundary. Gathering and cleaning data is development, but publishing a summary of it is closer to a disclosure act that happens after the model ships.
@@ -84,7 +84,7 @@ So the legal dispute over "development vs. deployment," translated into the lang
 
 In place of the state disclosure duty it freezes, the federal government fills the gap with audit. The picture AB 2013 drew was simple: a developer publishes a training-data summary, and anyone can read it. The picture the federal bill proposes is different. A certified Independent Verification Organization goes inside the company, audits it every six months, and reports the results to CAISI. For the same data, one path is disclosure open to the public; the other is an audit open only to a vetted third party.
 
-![The Jaguar supercomputer at Oak Ridge National Laboratory — illustrating the scale of compute required for frontier AI model training subject to federal audit duty](./image/img-04-supercomputer.jpg)
+![The Jaguar supercomputer at Oak Ridge National Laboratory — illustrating the scale of compute required for frontier AI model training subject to federal audit duty](../ko/image/img-04-supercomputer.jpg)
 *▲ Jaguar supercomputer, Oak Ridge National Laboratory (224,000 cores) — the compute scale associated with the federal audit duty ($500M revenue + 10²⁶ operations threshold) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Jaguar_Supercomputer_(4100439871).jpg) (CC BY 2.0, Oak Ridge National Laboratory)*
 
 The two models build trust in different ways. Disclosure puts information out in the open so anyone can verify it. Audit delegates verification to a qualified body and asks you to trust the result. In terms of depth, an audit can reach further into the data; in terms of reach, disclosure travels far wider. Under the federal bill, the public's line of sight into training data actually narrows. That is part of why groups like NetChoice view aggressive audits and data sharing as a trade-secret risk.

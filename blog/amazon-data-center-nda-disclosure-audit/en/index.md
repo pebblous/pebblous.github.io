@@ -20,7 +20,7 @@ _Amazon_
 
 > Sections 1 and 2, along with the first half of section 3, are facts recorded in the announcement, in disclosure filings, and in news reporting. The second half of section 3 and all of section 4 are this article's reading of those facts through the eyes of someone who works with data.
 
-![An Amazon data center technician walking between server racks, with yellow network cabling running overhead](./image/img-02-datacenter-technician.jpg)
+![An Amazon data center technician walking between server racks, with yellow network cabling running overhead](../ko/image/img-02-datacenter-technician.jpg)
 *▲ Inside the kind of data center Amazon has pledged to publish annual power and water figures for | Source: [Amazon](https://www.aboutamazon.com/news/company-news/amazon-data-centers-built-together)*
 
 ### Key Numbers
@@ -45,7 +45,7 @@ Sources: [Indiana Economic Development Corporation disclosure, reported by 13New
 
 One sentence in the Friday post stands at the head of the announcement. "We no longer use non-disclosure agreements with the government entities we work with on our projects." It refers to the contracting practice that companies and local governments have followed when siting data centers. Residents commonly learned which company was arriving, how much electricity and water it would draw, and how much tax it would skip only after construction had started. The sentence names government entities as the counterparty. Agreements with private parties, landowners or developers among them, sit outside it.
 
-![Official portrait photo of AWS CEO Matt Garman](./image/img-01-matt-garman.jpg)
+![Official portrait photo of AWS CEO Matt Garman](../ko/image/img-01-matt-garman.jpg)
 *▲ AWS CEO Matt Garman, who published the announcement on Amazon's official blog on October 2 | Source: [Amazon](https://www.aboutamazon.com/news/company-news/amazon-data-centers-built-together)*
 
 Built Together arrived alongside that sentence. The plan commits more than $1 billion over five years to the communities where data centers sit, and the spending falls into three branches. In education and job training, Amazon says it will connect more than 300,000 people to free degree programs within five years. It runs three dedicated training centers today and is building six more, and it plans to add sixteen on top of that for a total of twenty-five, teaching 100,000 people a year by 2028. In energy and water, it says it will upgrade the efficiency of more than 300 schools and public buildings and more than 30,000 homes, cutting monthly power bills by 20 to 40%, or roughly $700 per household per year. The third branch is a fund the community itself directs, running into the millions of dollars annually in each region that hosts a data center.

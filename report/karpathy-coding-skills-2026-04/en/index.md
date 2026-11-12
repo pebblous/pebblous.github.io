@@ -39,7 +39,7 @@ Each of Karpathy's four warnings maps to a concrete contamination path in data p
 <!-- stat-card -->
 **"They really like to overcomplicate code and APIs, bloat abstractions, and implement a bloated construction over 1000 lines when 100 would do."** — — Andrej Karpathy, 2026-01-26
 
-![Andrej Karpathy speaking at a conference — AI researcher who personally experienced and warned against the four structural failures of LLM coding agents](./image/img-01-karpathy-portrait.png)
+![Andrej Karpathy speaking at a conference — AI researcher who personally experienced and warned against the four structural failures of LLM coding agents](../ko/image/img-01-karpathy-portrait.png)
 *▲ Andrej Karpathy — Co-founder of OpenAI, former Tesla AI Director. Publicly warned about structural LLM coding agent failures in January 2026 | Source: [Wikimedia Commons (CC BY 3.0)](https://commons.wikimedia.org/wiki/File:Andrej_Karpathy,_OpenAI.png)*
 
 As Karpathy himself acknowledged, agents "implement a bloated construction over 1,000 lines when 100 would do." This over-complication pattern is not merely a messy-code problem. When unnecessary abstraction layers accumulate in pipeline code, memory usage spikes and batch job OOMs cause data loss. arXiv 2512.07497 concluded that "model scale alone cannot predict agentic robustness."
@@ -67,7 +67,7 @@ CLAUDE.md is specific to Anthropic's Claude Code, but the approach has already s
 | AGENTS.md | Universal (14+ platforms) | Linux Foundation | De facto standard, 60,000+ projects |
 | .cursor/rules | Cursor | Anysphere | Local rules file, IDE integration |
 
-![andrej-karpathy-skills GitHub repository — 96.8k stars, 9.4k forks. An agent behavior-correction repository built around a single CLAUDE.md file](./image/img-02-karpathy-skills-github.png)
+![andrej-karpathy-skills GitHub repository — 96.8k stars, 9.4k forks. An agent behavior-correction repository built around a single CLAUDE.md file](../ko/image/img-02-karpathy-skills-github.png)
 *▲ forrestchang/andrej-karpathy-skills — 96.8k stars, 9.4k forks as of April 2026 | Source: [GitHub](https://github.com/forrestchang/andrej-karpathy-skills)*
 
 arXiv 2511.10271 highlights "the instability of prompt-based non-functional quality optimization," arguing for persistent behavior correction rather than one-off prompts. CLAUDE.md is the simplest possible implementation of this persistent context — and the starting point for a new paradigm called "context engineering."
@@ -90,7 +90,7 @@ The accumulated evidence leaves no doubt: the quality risk of agentic coding is 
 <!-- stat-card -->
 **45%** — Security test failures — Veracode 2025
 
-![Lightrun State of AI-Powered Engineering 2026 report — 43% of AI-generated code requires production debugging](./image/img-03-lightrun-report-2026.png)
+![Lightrun State of AI-Powered Engineering 2026 report — 43% of AI-generated code requires production debugging](../ko/image/img-03-lightrun-report-2026.png)
 *▲ Lightrun "State of AI-Powered Engineering 2026" — Survey of 200 SREs/DevOps engineers. Key data source for AI-generated code quality risk | Source: [Lightrun](https://lightrun.com/ebooks/state-of-ai-powered-engineering-2026/)*
 
 According to Lightrun 2026 (200 SRE/DevOps respondents), 43% of AI-generated code requires production debugging, and **88% redeploy 2–3 times per single fix**. Cortex 2026 reported a **30% increase in change failure rate** after agent adoption. CodeRabbit's analysis of 470 PRs found AI code has 1.7x the issue rate of human code, with **security vulnerabilities 2.74x higher**.
@@ -109,7 +109,7 @@ CLAUDE.md serves as the first line of defense (code gate), correcting agent beha
 
 After defects that slip past the code gate contaminate data, a second layer of defense at the data level (data gate) becomes necessary. DataClinic is the post-hoc diagnostic engine positioned to fill this role.
 
-![ETH Zurich arXiv 2602.11988 — Evaluating AGENTS.md: research verifying whether context files genuinely help coding agents](./image/img-04-arxiv-2602-11988.png)
+![ETH Zurich arXiv 2602.11988 — Evaluating AGENTS.md: research verifying whether context files genuinely help coding agents](../ko/image/img-04-arxiv-2602-11988.png)
 *▲ ETH Zurich arXiv 2602.11988 — "Evaluating AGENTS.md". The first large-scale empirical study of context file effectiveness using SWE-bench | Source: [arXiv](https://arxiv.org/abs/2602.11988)*
 
 ## Limits and Open Questions

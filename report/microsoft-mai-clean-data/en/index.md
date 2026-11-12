@@ -92,7 +92,7 @@ Major LLMs' dependence on Common Crawl (including derivatives). Even "refined" o
 
 Note the trap in the word "refined." Datasets like FineWeb (15 trillion tokens), RedPajama2 (20 trillion tokens), and Dolma are all promoted as "clean" data that has passed heavy filtering and deduplication. But before refinement, the source is, without exception, Common Crawl. No amount of processing changes where the data came from. Clean processing does not amount to clean lineage.
 
-![Training accuracy comparison between WARC-extracted data (blue) and standard WET files (orange) from Common Crawl — WARC extraction consistently outperforms WET](./image/img-01-fineweb-cc-training.png)
+![Training accuracy comparison between WARC-extracted data (blue) and standard WET files (orange) from Common Crawl — WARC extraction consistently outperforms WET](../ko/image/img-01-fineweb-cc-training.png)
 *▲ How you extract from Common Crawl matters — direct WARC extraction (blue) consistently outperforms standard WET files (orange) in downstream model performance. FineWeb, RedPajama, Dolma and similar "refined" datasets all trace back to Common Crawl as their source. | Source: [Penedo et al., FineWeb (arXiv:2406.17557)](https://arxiv.org/abs/2406.17557)*
 
 ### 2.2. Provenance vs. lineage: telling two words apart
@@ -106,7 +106,7 @@ To prove that data is "clean," you must record two things: provenance and lineag
 
 To prove "clean," both provenance and lineage must be on record. Either one alone is not enough.
 
-![W3C PROV standard data provenance model diagram showing Entity, Activity, and Agent nodes with wasDerivedFrom, wasGeneratedBy, used, and wasAttributedTo relationships](./image/img-02-prov-w3c-model.png)
+![W3C PROV standard data provenance model diagram showing Entity, Activity, and Agent nodes with wasDerivedFrom, wasGeneratedBy, used, and wasAttributedTo relationships](../ko/image/img-02-prov-w3c-model.png)
 *▲ The W3C PROV standard defines the structural backbone for recording data provenance: Entity (data object), Activity (processing step), Agent (responsible party). The wasDerivedFrom, wasGeneratedBy, and used relationships capture both provenance and lineage in a verifiable graph. | Source: [W3C PROV-DM Primer (W3C Note, 2013)](https://www.w3.org/TR/prov-primer/)*
 
 > [!callout]
@@ -124,7 +124,7 @@ Training-data detection accuracy of the state-of-the-art Active Reconstruction t
 
 The best technique presented at ICLR 2025 reaches AUROC 81.3% — meaning it misses close to one in five. A more decisive verdict comes from the title of a paper published the same year: "Membership Inference Attacks Cannot Prove that a Model Was Trained On Your Data." Post-hoc inference is evidence of possibility, not proof that would stand in court.
 
-![ROC curves for membership inference attacks across model sizes from 10M to 1018M parameters — AUC values range from 0.547 to 0.699, demonstrating that MIA is insufficient for legal proof](./image/img-03-mia-roc-curve.png)
+![ROC curves for membership inference attacks across model sizes from 10M to 1018M parameters — AUC values range from 0.547 to 0.699, demonstrating that MIA is insufficient for legal proof](../ko/image/img-03-mia-roc-curve.png)
 *▲ Membership inference attack ROC curves by model size (10M to 1018M parameters). AUC values cluster between 0.55 and 0.70 — only marginally better than chance — illustrating why post-hoc detection cannot serve as legal proof of training data membership. | Source: [Zhang et al., arXiv:2505.18773](https://arxiv.org/abs/2505.18773)*
 
 Here the conclusion flips. If proving cleanliness after the fact is technically hard, then lineage must be recorded at the very moment data enters the pipeline. Proof is not something you dig up later; it is something you plant at the start. The tools to make that shift already exist, and there are several.
@@ -144,7 +144,7 @@ Recording origin and processing history together from the moment data is collect
 
 Design-time proof tools. Datasheets (Gebru et al.), Data Cards (Pushkarna et al.), data watermarking (Wei et al. ACL 2024, STAMP), C2PA v2.3 (6,000+ company coalition).
 
-![STAMP data watermarking framework diagram — Stage 1 creates public and private key watermarked paraphrase copies of documents, Stage 2 applies a Paired T-Test to the target LLM to statistically verify training data membership](./image/img-04-stamp-watermarking.png)
+![STAMP data watermarking framework diagram — Stage 1 creates public and private key watermarked paraphrase copies of documents, Stage 2 applies a Paired T-Test to the target LLM to statistically verify training data membership](../ko/image/img-04-stamp-watermarking.png)
 *▲ STAMP's two-stage watermarking approach: Stage 1 generates watermarked paraphrases using public and private keys (public version released, private versions kept secret); Stage 2 applies a statistical test to the target model to verify training data membership. The proof is planted before training — not excavated afterward. | Source: [Rastogi et al., STAMP (arXiv:2504.13416)](https://arxiv.org/abs/2504.13416)*
 
 No single tool is a cure-all, though. Data watermarking only works if the signal is planted before training, so it cannot be applied retroactively to data already collected. C2PA, likewise, holds only on the premise that metadata is preserved; if content is transcoded and the metadata is stripped, the chain of proof breaks. They are best understood not as a single solution but as overlapping safeguards that distribute provability across the entire data lifecycle.

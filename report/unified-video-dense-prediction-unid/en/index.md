@@ -32,7 +32,7 @@ _Unified scene understanding from disjoint, incomplete labels, as shown by UniD 
 <!-- stat-card -->
 **37.8 → 58.4** — Semantic segmentation mIoU (specialist 64.1) — Drops right after unification, recovers with a lightweight correction but stays below the specialist — an honest asymmetry (Table 5)
 
-![UniD's eight dense predictions from a single input video: monocular depth, surface normal, reflectance (albedo), shading, boundary, human part segmentation, semantic segmentation, and material segmentation](./image/img-01-unid-teaser.jpg)
+![UniD's eight dense predictions from a single input video: monocular depth, surface normal, reflectance (albedo), shading, boundary, human part segmentation, semantic segmentation, and material segmentation](../ko/image/img-01-unid-teaser.jpg)
 *▲ What the eight geometry, appearance, and semantics labels above actually look like — UniD's own output from a single input video. That these eight frames never naturally coexist in one dataset is the fragmentation problem this report is about. Source: [UniD project page](https://unid-video.github.io/) (Sun et al., arXiv:2607.21592)*
 
 ## What No Single Dataset Can Hold

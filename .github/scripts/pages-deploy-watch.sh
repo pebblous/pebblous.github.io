@@ -7,17 +7,21 @@
 #   none        최신 런 진행 중이거나 성공 — 성공이면 열린 알림 이슈를 닫는다
 #   skip-stale  실패 런의 커밋이 지금 main 머리가 아님 — 옛 내용 배포 금지, 새 런을 기다린다
 #   rerun       실패 런이 main 머리이고 시도 횟수가 MAX_ATTEMPTS 미만 — 다시 돌린다
-#   notify      MAX_ATTEMPTS 를 다 썼거나 재실행이 거부됨 — 알림 이슈를 열거나 댓글
-#   notified    같은 런·같은 시도로 이미 알림 — 아무것도 안 함
+#   rebuild     MAX_ATTEMPTS 를 다 썼거나 재실행이 거부됨, 이 머리 커밋의 새 빌드 요청이 MAX_REBUILDS 미만
+#               — 알림 이슈에 적고 새 빌드를 요청한다("다시 실행"은 같은 업로드물을 다시 쓰지만
+#               새 빌드는 업로드물을 새로 만든다 — 2026-11-10 사고는 새 빌드 세 번째 시도에서 복구)
+#   notify      새 빌드 요청도 MAX_REBUILDS 를 다 썼거나 요청이 거부됨 — 알림만(사람이 봐야 함)
+#   notified    같은 런·같은 시도로 이미 알림 — 아무것도 안 함(새 빌드도 두 번 요청하지 않는다)
 # 환경변수: REPO(필수) · DRY_RUN=1(바꾸지 않음) · RUN_ID(특정 런 판단)
-#           FAKE_HEAD · FAKE_ATTEMPT · FAKE_CONCLUSION(로컬 시험용, DRY_RUN 일 때만)
-#           MAX_ATTEMPTS(기본 3) · ASSIGNEE(알림 이슈 담당)
+#           FAKE_HEAD · FAKE_ATTEMPT · FAKE_CONCLUSION · FAKE_HEAD_RUNS(로컬 시험용, DRY_RUN 일 때만)
+#           MAX_ATTEMPTS(기본 3) · MAX_REBUILDS(기본 3) · ASSIGNEE(알림 이슈 담당)
 #           WAIT_SECS(기본 0) — 최신 런이 진행 중이면 끝날 때까지 이만큼 기다린 뒤 판단
 set -euo pipefail
 
 : "${REPO:?REPO 필요}"
 DRY_RUN="${DRY_RUN:-0}"
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-3}"
+MAX_REBUILDS="${MAX_REBUILDS:-3}"
 ASSIGNEE="${ASSIGNEE:-}"
 TITLE_KEY="pages-deploy-watch"
 FIELDS=databaseId,status,conclusion,headSha,attempt,createdAt,url
@@ -57,6 +61,7 @@ open_issue() {
 
 act() { if [ "$DRY_RUN" = "1" ]; then echo "(dry-run) $*"; else "$@"; fi; }
 
+# 알림 이슈에 적는다. 이미 같은 런·같은 시도로 적었으면 1 을 돌려준다(ACTION=notified).
 notify() {
   local reason="$1" marker="marker: run=$id attempt=$attempt" num body
   num=$(open_issue)
@@ -69,7 +74,7 @@ notify() {
 $marker"
   if [ -n "$num" ]; then
     if gh issue view "$num" -R "$REPO" --json body,comments --jq '[.body, .comments[].body] | join("\n")' | grep -qF "$marker"; then
-      echo "ACTION=notified"; return
+      echo "같은 런·같은 시도로 이미 알림"; return 1
     fi
     act gh issue comment "$num" -R "$REPO" --body "$body"
   else
@@ -77,7 +82,34 @@ $marker"
     [ -n "$ASSIGNEE" ] && args+=(--assignee "$ASSIGNEE")
     act gh "${args[@]}"
   fi
-  echo "ACTION=notify"
+}
+
+# 시도를 다 썼을 때: 이 머리 커밋으로 만든 Pages 런 수(첫 빌드 1 + 새 빌드 요청 수)를 보고
+# 새 빌드를 더 요청하거나 알림만 한다.
+exhausted() {
+  local why="$1" runs rebuilds
+  if [ "$DRY_RUN" = "1" ] && [ -n "${FAKE_HEAD_RUNS:-}" ]; then
+    runs="$FAKE_HEAD_RUNS"
+  else
+    runs=$(gh run list -R "$REPO" -w pages-build-deployment -L 50 --json headSha \
+      --jq "[.[] | select(.headSha == \"$sha\")] | length")
+  fi
+  rebuilds=$(( runs > 0 ? runs - 1 : 0 ))
+  echo "이 커밋의 Pages 런 ${runs}개(새 빌드 요청 ${rebuilds}회 · 한도 ${MAX_REBUILDS})"
+  if [ "$rebuilds" -ge "$MAX_REBUILDS" ]; then
+    notify "$why · 새 빌드 요청 ${rebuilds}회도 다 씀 — 사람이 봐야 함" || { echo "ACTION=notified"; exit 0; }
+    echo "ACTION=notify"; exit 0
+  fi
+  notify "$why · 새 빌드를 요청함 $((rebuilds+1))/${MAX_REBUILDS}" || { echo "ACTION=notified"; exit 0; }
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "(dry-run) gh api -X POST repos/$REPO/pages/builds"; echo "ACTION=rebuild"; exit 0
+  fi
+  if gh api -X POST "repos/$REPO/pages/builds" --jq .status; then
+    echo "ACTION=rebuild"; exit 0
+  fi
+  local num; num=$(open_issue)
+  [ -n "$num" ] && gh issue comment "$num" -R "$REPO" --body "새 빌드 요청이 거부됨(권한 또는 API 오류) — 사람이 봐야 함. 런: $url"
+  echo "ACTION=notify"; exit 0
 }
 
 if [ "$status" != "completed" ] && [ "$DRY_RUN" != "1" -o -z "${FAKE_CONCLUSION:-}" ]; then
@@ -106,7 +138,7 @@ if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
   if gh run rerun "$id" -R "$REPO" --failed || gh run rerun "$id" -R "$REPO"; then
     echo "ACTION=rerun"; exit 0
   fi
-  notify "자동 재실행이 거부됨(권한 또는 API 오류)"; exit 0
+  exhausted "자동 재실행이 거부됨(권한 또는 API 오류)"
 fi
 
-notify "자동 재시도 $((MAX_ATTEMPTS-1))회 뒤에도 실패"
+exhausted "자동 재시도 $((MAX_ATTEMPTS-1))회 뒤에도 실패"

@@ -42,7 +42,7 @@ Sources: [Scientific American](https://www.scientificamerican.com/article/mathem
 
 In May 2026, OpenAI announced that an AI had disproved an 80-year-old mathematical conjecture. The target was an old Erdős conjecture concerning unit distances among points in the plane. The news that a machine had cracked a problem mathematicians had wrestled with for decades was striking in itself. The trouble was how to make sense of it.
 
-![Paul Erdős portrait — his 80-year-old unit-distance conjecture became the spark for the Leiden Declaration](./image/img-01-erdos.jpg)
+![Paul Erdős portrait — his 80-year-old unit-distance conjecture became the spark for the Leiden Declaration](../ko/image/img-01-erdos.jpg)
 *▲ Paul Erdős (1913–1996), Hungarian mathematician. His planar unit-distance conjecture faced an AI challenge 80 years later. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Erdos_head_budapest_fall_1992.jpg) (CC BY 3.0)*
 
 The announcement came as a press release, not a journal paper. The model used was proprietary and never disclosed; there was no way to check the method, the training data, or the compute. In mathematics, a proof does not end with a correct conclusion. It is only a proof if anyone can follow the reasoning and confirm why the conclusion holds. Here the path to follow was blocked from the start. The community's reaction was natural: how are we supposed to trust this result?

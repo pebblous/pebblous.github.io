@@ -20,7 +20,7 @@ _AI now writes 42% of committed code, and Blacksmith_
 
 > This shift on the code side has the same shape as what people working with data went through first. What follows reads Blacksmith's Series B alongside that research, and alongside the cases where the grading side turned out to be the thing that was wrong. Buying a verification tool and setting a verification standard are two different jobs, and the value accrues to the second one.
 
-![Blacksmith company logo](./image/img-01-blacksmith-logo.jpg)
+![Blacksmith company logo](../ko/image/img-01-blacksmith-logo.jpg)
 *▲ Blacksmith, the AI code validation startup whose valuation rose ninefold in eleven months | Source: [TechCrunch](https://techcrunch.com/2026/08/12/blacksmiths-valuation-jumps-10x-to-550m-as-ai-coding-fuels-software-validation/)*
 
 ### The Numbers
@@ -45,7 +45,7 @@ Sources: [TechCrunch (2026-08-12)](https://techcrunch.com/2026/08/12/blacksmiths
 
 Blacksmith was founded in 2024, and Y Combinator has been an investor since early on. The product has two arms. One is a CI cloud that runs tests and builds. The other is Codesmith, an agent that automatically fixes failing code checks. Neither sits where code gets produced. Both sit where produced code gets judged.
 
-![Blacksmith CI dashboard showing per-repo failure rate and P99 job duration](./image/img-02-ci-dashboard-failure-rate.png)
+![Blacksmith CI dashboard showing per-repo failure rate and P99 job duration](../ko/image/img-02-ci-dashboard-failure-rate.png)
 *▲ What Blacksmith actually sells: a CI dashboard measuring judgment throughput, not code | Source: [Blacksmith](https://www.blacksmith.sh)*
 
 This Series B is $45 million, led by Peak XV Partners with GV and Y Combinator participating. Total funding now stands at $58.5 million. The valuation rose from $60 million at the September 2025 Series A to $550 million. It took less than eleven months.
@@ -62,7 +62,7 @@ As Cursor, OpenAI's Codex, and Claude Code spread, the amount of change one pers
 
 The reason checking slips is in the same survey. Some 61% of respondents said AI often produces code that looks right but cannot be trusted. Another 38% said reviewing AI-written code takes more effort than reviewing human-written code, against 27% who said the opposite. The skill respondents named as most important in the AI era was the ability to review and verify AI-generated code.
 
-![Blacksmith bot automatically commenting on a pull request with failed tests — Failures Found, summary of 4 successful and 1 failed workflow](./image/img-03-pr-bot-failure-comment.png)
+![Blacksmith bot automatically commenting on a pull request with failed tests — Failures Found, summary of 4 successful and 1 failed workflow](../ko/image/img-03-pr-bot-failure-comment.png)
 *▲ A bot flags on the pull request what a rushed human review might miss | Source: [Blacksmith](https://www.blacksmith.sh)*
 
 Academic work points the same way. The Verification Horizon, posted to arXiv in June 2026, argues that a long-standing premise in computer science has flipped for coding agents: that verifying a solution is easier than finding one. Verification has become the harder problem as models have grown stronger. The authors examine four kinds of verification, from test verifiers and rubric verifiers to user verification and automated agent verification, and write that no fixed reward function can stay valid for long as the capability of the policy keeps growing.

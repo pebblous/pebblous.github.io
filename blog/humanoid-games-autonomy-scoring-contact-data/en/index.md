@@ -40,7 +40,7 @@ Sources: [Nature News (27 Aug 2026)](https://www.nature.com/articles/d41586-026-
 
 Tiangong Ultra, built by X-Humanoid in Beijing, took the 100-metre gold in 8.64 seconds, Nature reported, almost a full second inside Usain Bolt's 9.58-second world record from 2009. When the same robot won the same event at last year's inaugural games, the time was 21.5 seconds. Human sprinters needed a century to take roughly one second off the 100 metres. This event's robot record fell by more than twelve seconds in twelve months.
 
-![Usain Bolt sprinting at the 2009 Berlin World Championships, where he set the 9.58-second 100-metre world record](./image/img-01-bolt-berlin-2009.jpg)
+![Usain Bolt sprinting at the 2009 Berlin World Championships, where he set the 9.58-second 100-metre world record](../ko/image/img-01-bolt-berlin-2009.jpg)
 *▲ The human 100-metre record has held at 9.58 seconds for 17 years. The robot record fell from 21.5 to 8.64 seconds in one year. | Source: [Erik van Leeuwen, Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Usain_Bolt_16082009_Berlin.JPG)*
 
 On speed alone that looks like a finished achievement. The track told a different story. Organizers laid thick stopping mats several metres past the finish line because some sprinting robots could not decelerate safely. ZME Science reports that Tiangong Ultra, in a round before the final, clocked 8.86 seconds and then hurtled into one of those mats, collapsed, and briefly caught fire around its torso. In another semifinal a competing robot came apart while running. Earlier races ended with robots tumbling, colliding or being carried away, one of them broken apart at the waist. The gold-medal 8.64 seconds came the following day, in the large-group final that closed the games.

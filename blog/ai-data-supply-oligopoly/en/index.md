@@ -40,7 +40,7 @@ Training an AI model takes data that people have cleaned and scored. Labeled ans
 
 The problem is the distribution inside that number. More than 75% of revenue sits with four companies: Scale AI, Surge AI, Mercor, and Handshake. On the surface it looks like a market of 50-plus competitors, but the vendors a buyer can actually choose at scale come down to four. The backyard selling picks may look wide, yet the forges making usable picks have narrowed to four.
 
-![Gold Rush mining operation on the American River near Sacramento, circa 1852 — dozens of miners crowded onto one riverbank with picks and sluicing equipment](./image/img-01-gold-rush-mining.jpg)
+![Gold Rush mining operation on the American River near Sacramento, circa 1852 — dozens of miners crowded onto one riverbank with picks and sluicing equipment](../ko/image/img-01-gold-rush-mining.jpg)
 *▲ The forges making the picks narrowed before the gold diggers did — a Gold Rush mining operation on the American River near Sacramento, circa 1852 | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Mining_on_the_American_River_near_Sacramento,_circa_1852.jpg)*
 
 The four took different roads, but they arrived in the same place. The table below summarizes where each stands today.
@@ -60,7 +60,7 @@ This market's center of gravity is shifting right now. It used to be that static
 
 An RL environment is an interactive sandbox that mimics real software. An agent attempts a task inside it, an expert-written rubric evaluates the result, and that reward signal trains the model in turn. It is far more labor-intensive and expensive than simply attaching an answer. Anthropic is reported to be weighing spending more than $1 billion a year on RL environments alone, working with more than a dozen vendors.
 
-![CERN data center server racks — the compute infrastructure behind training runs that consume RL-environment data](./image/img-02-cern-datacenter.jpg)
+![CERN data center server racks — the compute infrastructure behind training runs that consume RL-environment data](../ko/image/img-02-cern-datacenter.jpg)
 *▲ What costs money isn't the software — it's the people who write the rubrics and evaluate the results | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Cern_datacenter.jpg)*
 
 When a new layer opens, you might expect the board to be reshuffled. In practice, the opposite happened. The very four firms that led in labeling extended straight into RL environments. In early 2026 Handshake acquired Cleanlab, a quality-verification and error-detection startup, lifting itself one rung up the value chain from labeling into evaluation and quality assurance. Mercor and Surge are moving the same way. Rather than dismantling the oligopoly, the new layer has the existing four each climbing one rung higher and re-establishing their grip.
@@ -73,7 +73,7 @@ Challengers do exist. Mechanize focuses on a small number of sophisticated RL en
 
 What happens when supply concentrates in a few hands? This is not an abstract worry; it actually played out once in June 2025. When Meta bought a 49% stake in Scale AI for $14.3 billion, the labs that had been Scale's major customers pulled out one after another.
 
-![Official portrait of Alexandr Wang, Scale AI's founder, who moved to Meta as Chief AI Officer](./image/img-03-alexandr-wang-meta.jpg)
+![Official portrait of Alexandr Wang, Scale AI's founder, who moved to Meta as Chief AI Officer](../ko/image/img-03-alexandr-wang-meta.jpg)
 *▲ Scale AI founder Alexandr Wang moved to Meta as Chief AI Officer following Meta's stake acquisition | Source: [Meta Platforms, Inc. / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Alexandr_Wang,_Chief_A.I._Officer,_Meta.jpg)*
 
 Google scaled back Scale spending it had planned at around $200 million a year, OpenAI formally ended the partnership, and Microsoft also trimmed the relationship. The reason was singular: neutrality and data-leakage concerns that a rival, Meta, might gain even indirect access to their training pipelines. Infrastructure that had once been nearly invisible suddenly carried competitive implications because of a single equity deal. Facing the customer exodus, Scale laid off 200 people and cut 500 contractors, then pivoted toward defense and government contracts to shore up its position.

@@ -46,7 +46,7 @@ That stepping around has a name of its own. The Artificial Intelligence Policy A
 
 Eligible patients are Utah residents aged 18 and over, and the condition runs from mild to moderate acne. Age and identity are screened by the payment company Stripe's identity verification service, which matches a government-issued photo ID against a selfie, and Utah residency is confirmed through phone location data and the shipping address. A patient answers an intake questionnaire in the app for ten to fifteen minutes and photographs their face, and the AI scores the severity. Above 3.5 on a five-point scale a physician looks at the case before any prescription, and at 4.0 or above the patient is sent to an in-person dermatologist. For a patient who passes, one topical drug is selected from a pre-approved list and the prescription goes to a pharmacy. The pharmacy has to be told that an AI issued it.
 
-![Nolla Health's app scoring acne, pigmentation and other skin metrics after a face photo](./image/img-01-ai-skin-score.webp)
+![Nolla Health's app scoring acne, pigmentation and other skin metrics after a face photo](../ko/image/img-01-ai-skin-score.webp)
 *▲ The AI scoring screen after intake and a face photo (Nolla Derm app) | Source: [Apple App Store](https://apps.apple.com/us/app/nolla-derm-acne-ai-skincare/id6741805934)*
 
 The space outside that list is wide. Every oral drug is out, and isotretinoin, used for severe acne, is out as well. Anyone pregnant, planning a pregnancy or breastfeeding, anyone immunocompromised, anyone with severe kidney or liver disease, and anyone with a prior reaction to a drug on the list has the process halted on the spot. That also applies when identity verification fails or the patient lives outside Utah. The agreement calls these conditions hard stops. One of the criteria for advancing a stage is zero missed hard stops.
@@ -95,7 +95,7 @@ The real test for AI in healthcare isn't how smart it is. It's whether someone o
 
 Fadul is also part of the physician team overseeing the pilot. The company's chief medical adviser occupies a seat that performs the human review the agreement requires. Apply his sentence to the place he stands in, and only one candidate is left for the "someone other than the company."
 
-![Nolla Health Medical Advisory Board members Omar Badri, Zaid Fadul and Michael Mina](./image/img-02-medical-advisory-board.jpg)
+![Nolla Health Medical Advisory Board members Omar Badri, Zaid Fadul and Michael Mina](../ko/image/img-02-medical-advisory-board.jpg)
 *▲ Nolla Health's Medical Advisory Board. Center: Zaid Fadul, who sits on the physician team overseeing this pilot | Source: [PR Newswire](https://www.prnewswire.com/news-releases/nolla-health-expands-medical-advisory-board-and-clinical-leadership-to-help-shape-the-future-of-ai-powered-healthcare-302851984.html)*
 
 The agreement names that someone, and it is the state AI office. It can end the agreement whenever it chooses. The question left is not authority but input. What would the office have to see before it decides to stop? Where would that data come from?
@@ -106,7 +106,7 @@ The agreement names that someone, and it is the state AI office. It can end the 
 
 The agreement writes reporting duties fairly tightly. Nolla Health files a report with the state AI office by the 15th of each month. It carries the number of cases handled, prescriptions by drug, the clinician agreement rate, reasons for escalation to a human, and patient demographics. Adverse events have to be reported separately within 24 hours. A missed drug allergy, a contraindication let through, a drug interaction or dosing error, a skipped lab test or physician referral are all defined as reportable safety events.
 
-![The Utah State Capitol, where the 2024 Artificial Intelligence Policy Act (SB 149) that created the Office of Artificial Intelligence Policy and the Learning Lab was passed](./image/img-03-utah-capitol.jpg)
+![The Utah State Capitol, where the 2024 Artificial Intelligence Policy Act (SB 149) that created the Office of Artificial Intelligence Policy and the Learning Lab was passed](../ko/image/img-03-utah-capitol.jpg)
 *▲ The Utah State Capitol. The 2024 Artificial Intelligence Policy Act (SB 149) that created the Office of Artificial Intelligence Policy and the Learning Lab was passed here | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Utah_State_Capitol_Building_in_2022.jpg) (CC BY-SA 4.0, GyozaDumpling)*
 
 What the outside sees is coarser. The public gets a de-identified summary each quarter, and individual-level data goes, de-identified, to an external auditor vetted by the state. The detailed monthly report stops at the office. So once the share a human reads drops to 10% in Stage 3, the first instrument that senses what happens in the remaining 90% is the company's own monthly self-report. The external auditor clause shores that structure up, but who the auditor is, how often they look and what they publish is not yet known.

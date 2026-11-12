@@ -44,7 +44,7 @@ Source: [Hao, Xu, Li, Evans (2026), _Nature_ 649, pp. 1237–1243](https://www.n
 
 There are four authors. **Qianyue Hao, Fengli Xu, Yong Li** (Tsinghua University), and the corresponding author **James A. Evans** (University of Chicago Knowledge Lab). Evans is a professor of sociology at Chicago and an external professor at the Santa Fe Institute, and he runs the meta-science research center known as Knowledge Lab. His lab has been working on one proposition for 11 years since its 2015 paper "Tradition and Innovation in Scientists' Research Strategies" in _American Sociological Review_: when individuals each act rationally, collective knowledge can actually narrow. This paper is where that 11-year project lands.
 
-![University of Chicago campus panorama — home of James Evans and Knowledge Lab](./image/img-01-uchicago-knowledge-lab.jpg)
+![University of Chicago campus panorama — home of James Evans and Knowledge Lab](../ko/image/img-01-uchicago-knowledge-lab.jpg)
 *▲ University of Chicago campus — home of Evans Knowledge Lab, where the eleven-year "narrowing of science" thesis has been tracked. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:University_of_Chicago_campus_panorama_(2011).jpg)*
 
 ### 1.1. Method — an F1 = 0.875 Classifier Across 23 Years
@@ -90,7 +90,7 @@ Reading this paper next to an earlier Evans Lab work changes the weight. Lingfei
 
 Overlay the 2026 finding onto that 2019 thesis. AI tools let a small team, even a single researcher, produce at the output scale of a large team. On the surface, an era of "small teams disrupting more" should have arrived. What we observe is the opposite. AI-using small teams head for the rich-data, popular topics, where the citation magnets are, and get pulled in. **Rather than AI accelerating small teams' disruptive potential, small teams cling more tightly to automation in place of disruption.** The abstract's last line, _"AI tools appear to automate established fields rather than explore new ones,"_ supports the reading.
 
-![Tsinghua University main building — home of co-authors Hao, Xu, and Li](./image/img-02-tsinghua-coauthors.jpg)
+![Tsinghua University main building — home of co-authors Hao, Xu, and Li](../ko/image/img-02-tsinghua-coauthors.jpg)
 *▲ Tsinghua University main building — home of co-authors Qianyue Hao, Fengli Xu, and Yong Li. The 41.3M-paper analysis was possible because the co-authorship infrastructure bridges two campuses, Chicago and Beijing. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Main_building_of_Tsinghua_University_(20190709103617).jpg)*
 
 > [!callout]
@@ -133,7 +133,7 @@ Evans 2026's real core lives in one quotation. _"Data availability appears to be
 
 Sociology of science has an old joke. A drunk loses his keys and searches only under a streetlight. Asked why, he answers, "because the light is here." The **streetlight effect** names the bias of searching only where measurement is easy. Julian Hoelzemann quantified the effect in NBER Working Paper 32401 (2024), "The Streetlight Effect in Data-Driven Exploration." In the AI era, the metaphor crossed into a measurable size, and that size is exactly the −4.63% and −22% Evans 2026 reports.
 
-![A streetlight at night — the streetlight effect metaphor: search happens where it is bright, and the dark is left untouched](./image/img-03-streetlight-effect.jpg)
+![A streetlight at night — the streetlight effect metaphor: search happens where it is bright, and the dark is left untouched](../ko/image/img-03-streetlight-effect.jpg)
 *▲ Only the area under the lamp is lit. The key that might be in the dark will never be found — exactly the structure of the data-rich / data-poor polarization in AI for Science. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Streetlight_at_night.jpg)*
 
 The streetlight effect runs through four reinforcing channels.
@@ -201,7 +201,7 @@ If [AlphaFold 2](https://www.nature.com/articles/s41586-021-03819-2) showed acce
 
 In other words, breakthroughs in data-poor territory are possible, but the cost far exceeds the cost of simply using AI in data-rich fields. Academic labs without DeepMind-scale infrastructure cannot easily walk the same path. The structural pressure toward data-rich concentration remains. Borrowing Kuhn's old term **paradigm shift**, in the AI era the paradigm-shift cycle is likely to accelerate in some data-rich fields and slow down in data-poor ones. The flow of time between fields becomes asymmetric.
 
-![AlphaFold-predicted protein 3D structure — a visual exemplar of AI for Science](./image/img-04-alphafold-protein.png)
+![AlphaFold-predicted protein 3D structure — a visual exemplar of AI for Science](../ko/image/img-04-alphafold-protein.png)
 *▲ A protein 3D structure (C17orf58 / UPF0450) predicted by AlphaFold. The image symbolizes AI for Science acceleration in the data-rich life sciences — the same acceleration does not occur in data-poor fields. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:C17orf58_protein_(UPF0450)_structure_with_AlphaFold.png)*
 
 > [!callout]
@@ -272,7 +272,7 @@ Korea's AI4Science policy is fast and ambitious. The piece that is missing is a 
 
 The biggest variable is the **InnoCORE postdoc program** across four science-and-technology institutes, supporting 400 researchers at KRW 90M (~$62K) per year, with KAIST alone hosting 200. Where those 400 researchers flow over the next five to ten years will shape Korean science. If the six fields stay all data-rich and the 400 cluster in the same place, the Korean version of the −4.63% and −22% that Evans 2026 measured in the United States is likely to show up here as well.
 
-![IBS–KAIST campus building — a key site for Korea's AI4Science policy and the InnoCORE postdoc program](./image/img-05-kaist-innocore.jpg)
+![IBS–KAIST campus building — a key site for Korea's AI4Science policy and the InnoCORE postdoc program](../ko/image/img-05-kaist-innocore.jpg)
 *▲ KAIST campus (IBS–KAIST building) — of the 400 InnoCORE postdocs across four institutes, 200 start from this campus alone. Whether the pull toward the six data-rich fields produces a Korean version of -4.63% / -22% is the question for the next five to ten years. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:IBS%E2%80%93KAIST_Campus_Building.jpg)*
 
 On the industry side, LG AI Research's **EXAONE Discovery** is the peak case. An AI system that screens 40 million substances per day, the Korean apex of new-materials and new-drug discovery automation. That EXAONE Discovery sits at the peak of data-rich-field automation is reason to applaud. At the same time, the infrastructure for data-poor regions that this automation cannot reach is the open question: whose responsibility is it, and who will build it? That place remains unfilled. Pebblous can stand in it.

@@ -46,7 +46,7 @@ The constraint bites hardest on observations that stare deep at the same patch o
 
 So why is there room to compress at all? Interferometric data has a structural quirk. A large share of the measured visibilities is dominated by noise, because the signal from any one bright, localised patch of sky is spread thinly across every baseline, frequency and time sample. On top of that the radio sky is intrinsically sparse, and the brightness temperature of astronomical sources usually runs far below the receiver noise temperature. Volume and information content do not track each other, and that mismatch is the opening.
 
-![Photo of the SKA-Mid radio telescope dish with MeerKAT telescope dishes in the background in the Karoo desert, South Africa](./image/img-01-meerkat-ska.jpg)
+![Photo of the SKA-Mid radio telescope dish with MeerKAT telescope dishes in the background in the Karoo desert, South Africa](../ko/image/img-01-meerkat-ska.jpg)
 *▲ The SKA-Mid dish (front) and the MeerKAT array (back) in the Karoo, South Africa. The MHONGOOSE survey used in this study was observed with MeerKAT | Source: [SKAO, Wikimedia Commons (CC BY 3.0)](https://commons.wikimedia.org/wiki/File:SKA-Mid_dish_with_MeerKAT_telescope_dishes_in_background.jpg)*
 
 ## One Dataset, Two Ways of Cutting It Down
@@ -55,7 +55,7 @@ The data on the test bench comes from the MHONGOOSE survey. It is a deep neutral
 
 Out of it this work picked NGC 1566, one radio-bright spiral galaxy. It also watched J0422–5455, a much weaker source that happens to fall inside the same frequency coverage. The baseline is the result of traditional processing with no compression, and the question for every other method is how closely it reproduces that baseline.
 
-![Astrophotograph of the spiral galaxy NGC 1566, the target galaxy this compression study tested](./image/img-03-ngc1566.jpg)
+![Astrophotograph of the spiral galaxy NGC 1566, the target galaxy this compression study tested](../ko/image/img-03-ngc1566.jpg)
 *▲ The spiral galaxy NGC 1566 (the Spanish Dancer), the brighter of the two targets used in this compression comparison | Source: [DECam/CTIO/NOIRLab/NSF/AURA, Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:NGC1566_-_Noirlab2208a.jpg)*
 
 Establishing the baseline was not simple either. The researchers first ran the same data through the imaging software the MHONGOOSE team had used and through the software they intended to use, and lined the two up. The two tools define Stokes I differently, which left a factor of two between the values, and even after correcting for that a 1% gap in noise and a 10% gap in pixel flux remained. What was left is put down to the different imaging modes, and turning on matching settings reduced the gap without removing it. Measuring a 0.7% difference between methods means keeping a 10% difference between tools out of the comparison. So rather than comparing against the already published images, they took a fresh traditional run made with the same tool as their baseline.

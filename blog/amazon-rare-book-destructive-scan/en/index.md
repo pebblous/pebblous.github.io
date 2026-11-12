@@ -44,7 +44,7 @@ The story began with talk among booksellers. Someone was buying rare books in bu
 
 It stopped at an Amazon facility in Las Vegas. 404 Media identifies the facility as VGT3 and writes that this is where Amazon scans books for AI training data. TechCrunch reported that the operation marks itself with a picture of a dinosaur holding a book in its claws. Amazon buying books in bulk, scanning them for AI training, and destroying them along the way had not been reported before.
 
-![Large warehouse exterior wall with an Amazon logo — the type of Amazon fulfillment facility that VGT3 belongs to](./image/img-01-amazon-fc.jpg)
+![Large warehouse exterior wall with an Amazon logo — the type of Amazon fulfillment facility that VGT3 belongs to](../ko/image/img-01-amazon-fc.jpg)
 *▲ An Amazon fulfillment facility exterior (illustrative photo, not the actual VGT3 building) | Source: [Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Amazon_Fulfillment_Center_Warehouse_in_Thornton,_Denver,_Colorado_(DEN3)_(55253052895).jpg)*
 
 One tracker proved exactly one thing: where the book went. That one thing changes the character of everything else in the argument. Most of the discussion about where training data comes from has been about web crawling, licensing deals, and online routes such as shadow libraries. This time trucks, a warehouse, and a cutting machine enter the picture. When data acquisition becomes a physical process, it gains a step that cannot be undone.

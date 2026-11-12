@@ -48,7 +48,7 @@ To claim that a model trained on junk got worse, the comparison has to be fair. 
 
 Evaluation ran along four axes. Reasoning was measured with ARC-Challenge using chain-of-thought; long-context ability with RULER; safety with the refusal rate on harmful requests; and personality traits with psychology-survey-based tests. That last item may seem unusual: it checked whether the model drifted toward narcissism or psychopathy. The design asked whether data changes not only capability but disposition.
 
-![LLM Brain Rot experiment overview: junk tweet data fed into continual pre-training pipeline, then benchmarked across reasoning, long-context, safety, and personality — showing thought-skipping and factual errors as key failure modes](./image/img-01-teaser.png)
+![LLM Brain Rot experiment overview: junk tweet data fed into continual pre-training pipeline, then benchmarked across reasoning, long-context, safety, and personality — showing thought-skipping and factual errors as key failure modes](../ko/image/img-01-teaser.png)
 *▲ Full experiment pipeline: Brain Rot hypothesis → junk / control data construction → continual pre-training → four cognitive benchmarks → mitigation attempts | Source: [Xing et al. (2025), arXiv:2510.13928](https://arxiv.org/abs/2510.13928)*
 
 ## From 74 to 57: The Decline in Numbers
@@ -57,7 +57,7 @@ The result pointed one way, unmistakably. As the junk ratio climbed from 0% to 1
 
 Long-context ability collapsed even further. Long-document comprehension measured by RULER fell from 84.4 to 52.3, a 32.1-point drop steeper than the decline in reasoning. The model's ability to connect the beginning and end of a long passage and hold onto distant information was especially fragile.
 
-![Effect size chart (Hedges' g) for M1 and M2 junk data interventions: ARC-Challenge, ARC-Easy, RULER, and AdvBench show negative effect (performance decline), while TRAIT personality scores for narcissism and psychopathy show positive effect (increase)](./image/img-03-effect-sizes.png)
+![Effect size chart (Hedges' g) for M1 and M2 junk data interventions: ARC-Challenge, ARC-Easy, RULER, and AdvBench show negative effect (performance decline), while TRAIT personality scores for narcissism and psychopathy show positive effect (increase)](../ko/image/img-03-effect-sizes.png)
 *▲ Effect sizes of M1 and M2 interventions — left (gray shading): reasoning and safety decline; right: dark personality traits rise | Source: [Xing et al. (2025), arXiv:2510.13928](https://arxiv.org/abs/2510.13928)*
 
 > [!callout]
@@ -75,7 +75,7 @@ Can a fallen score be raised again? This question is the most important part of 
 
 All three methods lifted the scores somewhat. None of them carried the model back to baseline. ARC-Challenge stalled at 70–75% of baseline, and RULER stayed more than 20 points below it. Pour in more clean data, and the model still would not return to what it had been.
 
-![Score recovery curves after clean IT and C4 data retraining: ARC-C (CoT), RULER, and AdvBench scores climb but plateau below the dashed baseline, confirming persistent representational drift](./image/img-07-recovery-curves.png)
+![Score recovery curves after clean IT and C4 data retraining: ARC-C (CoT), RULER, and AdvBench scores climb but plateau below the dashed baseline, confirming persistent representational drift](../ko/image/img-07-recovery-curves.png)
 *▲ Recovery curves after clean-data retraining — ARC-C and RULER both plateau below the dashed baseline (original performance), on both IT Data (left) and C4 Data (right) | Source: [Xing et al. (2025), arXiv:2510.13928](https://arxiv.org/abs/2510.13928)*
 
 > [!callout]
@@ -93,7 +93,7 @@ Try to bury those traces completely under clean data and a different problem app
 
 Treating brain rot as the same thing as catastrophic forgetting misses the point. Catastrophic forgetting is a relatively local phenomenon, where performance on a previous task drops after learning a new one. Some of it is superficial enough to be called "spurious forgetting," and recovers with a few samples and a short retraining. Brain rot is broader. It isn't a specific task but general reasoning across the board that sinks, and recovering it requires not re-teaching a particular skill but rebuilding the entire representation space. The door to recovery is that much narrower.
 
-![Chain-of-thought failure mode taxonomy: correct reasoning (planning → thinking → answer) vs junk-trained model failures including No Thinking, Skipping Steps, Wrong Logic, Factual Error, and Failed Calculation](./image/img-04-cot-failure.png)
+![Chain-of-thought failure mode taxonomy: correct reasoning (planning → thinking → answer) vs junk-trained model failures including No Thinking, Skipping Steps, Wrong Logic, Factual Error, and Failed Calculation](../ko/image/img-04-cot-failure.png)
 *▲ Chain-of-thought failure modes — correct reasoning (top, green) vs junk-trained failures: "No Thinking" (bypassing reasoning entirely) dominates, alongside step-skipping and factual errors | Source: [Xing et al. (2025), arXiv:2510.13928](https://arxiv.org/abs/2510.13928)*
 
 Let's not push the analogy too far. LLMs and biological brains work on different principles. Still, the pattern — that the quality of input shapes structure during a formative period, and once that structure hardens the cost of later correction rises sharply — is observed on both sides. The neuroplasticity analogy is safest used not as an equivalence but as a finger pointing at that pattern.

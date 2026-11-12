@@ -44,7 +44,7 @@ Some entries in that catalog have nothing in the sky behind them. A clump of noi
 
 The field this paper recounted is GOODS-N, as the VLA imaged it at 10 gigahertz. The VLA is a radio telescope made of 27 dish antennas laid out across the New Mexico desert, and its full name is the Karl G. Jansky Very Large Array. The antennas can be drawn closer together or pushed farther apart, and the wider the spread, the smaller the detail it can separate. The image the team worked from combines 380 hours across the A, B and C configurations at a resolution of 0.22 arcseconds. One arcsecond is a degree divided by 3,600, so 0.22 arcseconds is about a fifth of that.
 
-![VLA (Karl G. Jansky Very Large Array) dish antennas lined up in the New Mexico desert](./image/img-01-vla-antenna-array.jpg)
+![VLA (Karl G. Jansky Very Large Array) dish antennas lined up in the New Mexico desert](../ko/image/img-01-vla-antenna-array.jpg)
 *▲ VLA dish antennas lined up in the New Mexico desert. The spacing between antennas is widened or narrowed to change configuration | Source: [Mihaisiscanu, Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Karl_G._Jansky_Very_Large_Array.jpg)*
 
 The patch itself is small. A single pointing sees only a narrow field, so 17 of them were overlapped to cover 297 square arcminutes, which leaves the sensitivity nearly flat across the middle. That area is less than half the sky a full moon covers. Staring at so small a patch for 380 hours produced this image, and the catalog drawn from it is what the fake-counting runs on.

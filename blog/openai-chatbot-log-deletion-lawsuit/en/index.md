@@ -46,7 +46,7 @@ Lead counsel for the plaintiffs, Ian Crosby, argues that "for over two years, Op
 
 The motion defines its own character bluntly: "This is a case about copying. There is no question that it happened." The infringement itself, in the plaintiffs' framing, is not in dispute; what is in dispute is whether the data that would confirm it still exists. The reason the center of gravity has shifted from the copyright merits to discovery is already contained in that sentence.
 
-![Exterior of the Daniel Patrick Moynihan United States Courthouse, home of the Southern District of New York where the sanctions motion was filed](./image/img-01-sdny-courthouse.jpg)
+![Exterior of the Daniel Patrick Moynihan United States Courthouse, home of the Southern District of New York where the sanctions motion was filed](../ko/image/img-01-sdny-courthouse.jpg)
 *▲ The Daniel Patrick Moynihan U.S. Courthouse, home to the Southern District of New York (SDNY) where the sanctions motion was filed | Source: [Wikimedia Commons (Jim.henderson, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Moynihan_US_courthouse_from_Madison_St_jeh.jpg)*
 
 > [!callout]
@@ -60,7 +60,7 @@ In November 2025, Judge Ona Wang ordered production of a 20-million-record sampl
 
 From there the timeline runs as follows. In late September 2025, the indefinite preservation obligation for consumer ChatGPT and API data ended, returning to the standard 30-day auto-deletion policy. In December 2025 OpenAI produced the 20-million-record sample, but the redactions were so extensive the court deemed it "unusable." Before the question of infringement could even be argued, whether the evidence that would prove it still existed became the first thing at issue.
 
-![The New York Times headquarters building at dusk, Manhattan](./image/img-02-nyt-building.jpg)
+![The New York Times headquarters building at dusk, Manhattan](../ko/image/img-02-nyt-building.jpg)
 *▲ The Manhattan headquarters of The New York Times, one of the lead plaintiff publishers in this case | Source: [Wikimedia Commons (Jdforrester, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:The_New_York_Times_Building_at_sunset,_2021-09-30.jpg)*
 
 > [!callout]
@@ -74,7 +74,7 @@ The reason this is a problem is simple. A representation that it cannot search, 
 
 OpenAI disputes this. A spokesperson said that as "the Times' case weakens and they abandon their claims, they continue trying to invade the privacy of people with nothing to do with this case and are making claims that are demonstrably false." On the preservation order itself, the company had earlier characterized it as an overbroad demand that "fundamentally conflicts with the privacy commitments we have made to our users." One side reads the same deletion as guarding privacy, the other as destroying evidence. That clash of framings is the crux of the case.
 
-![OpenAI logo](./image/img-03-openai-logo.svg)
+![OpenAI logo](../ko/image/img-03-openai-logo.svg)
 *▲ OpenAI, the party at the center of the concealment and destruction-of-evidence claims | Source: [OpenAI (Public domain)](https://openai.com/brand/)*
 
 > [!callout]

@@ -50,7 +50,7 @@ Two of the places where fake and real usually drift apart were closed off in adv
 
 The first target the authors fed in as real data was WASP-39b. They used the JWST NIRSpec PRISM spectrum published in 2023, and of its 52 bins the 47 actually covered went into the fit statistic. What the estimator returned was a nearly cold, flat atmosphere. Two numbers summarize the outcome. The effective sample size of the importance sampling fell to 1, and the best-fit χ²/N came out at 301. An effective sample size of 1 means that out of thousands of draws, essentially one is usable; a χ²/N of 301 means observation and model are hundreds of times apart. This was the same estimator that had been perfectly healthy on synthetic spectra.
 
-![JWST NIRSpec transmission spectrum of WASP-39b. The x-axis is wavelength in microns, the y-axis is the amount of starlight blocked, with a clear carbon-dioxide bump near 4.3 microns](./image/img-01-wasp39b-co2-spectrum.jpg)
+![JWST NIRSpec transmission spectrum of WASP-39b. The x-axis is wavelength in microns, the y-axis is the amount of starlight blocked, with a clear carbon-dioxide bump near 4.3 microns](../ko/image/img-01-wasp39b-co2-spectrum.jpg)
 *▲ The real JWST NIRSpec transmission spectrum of WASP-39b. The y-axis — the amount of starlight blocked — is exactly the "baseline plus atmospheric bump" depth this article is about | Credit: [NASA, ESA, CSA, L. Hustak (STScI)](https://commons.wikimedia.org/wiki/File:Hot_Gas_Giant_Exoplanet_WASP-39_b_(NIRSpec_Transmission_Spectrum)_(weic2213b).jpeg)*
 
 ## They Suspected the Physics Model First

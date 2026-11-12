@@ -52,7 +52,7 @@ The first signal to inspect is the honesty of the data. Do the image files open?
 
 Northcutt's 2021 analysis from the Cornell AI Lab was striking. About 6% of the ImageNet validation set was mislabeled — a dataset the academic community had used as a benchmark for over a decade. The assumption that "scale will compensate for noise" is at its most dangerous exactly when this signal is weak. The model accepts wrong labels as truth, and any accuracy figure built on top of them becomes a number disconnected from reality.
 
-![Grid of MNIST handwritten-digit samples (0-9), illustrating a labeled image dataset](./image/img-01-mnist-examples.png)
+![Grid of MNIST handwritten-digit samples (0-9), illustrating a labeled image dataset](../ko/image/img-01-mnist-examples.png)
 *▲ Per-class samples from MNIST, the canonical handwritten-digit dataset. Even labels that look unambiguous to humans can be wrong for roughly 6% of an entire validation set (Northcutt et al., 2021). | Source: [Wikimedia Commons — Josef Steppan (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:MnistExamples.png)*
 
 Another pattern recurs across the 134 datasets DataClinic has diagnosed. A missing-value rate that scores "good" overall can still be a hidden failure when the gaps concentrate in a single class. If Class A has 0% missing and Class B has 30%, the model effectively never learns Class B. Averages hide the truth.
@@ -66,7 +66,7 @@ The second signal reveals itself in the simplest chart possible. Image counts pe
 
 Of the 134 datasets DataClinic has diagnosed, 15 (11.2%) had class imbalance ratios exceeding 100×. The most extreme case was OpenImages, where the smallest class contained 3 images and the largest 220,154 — a 70,000× gap. A model trained on such a dataset might report 95% accuracy, but most of that 95% comes from the majority classes, while the minority classes are effectively ignored.
 
-![Long-tail distribution curve illustrating how a few majority classes dominate while many minority classes share the long tail](./image/img-02-long-tail.svg)
+![Long-tail distribution curve illustrating how a few majority classes dominate while many minority classes share the long tail](../ko/image/img-02-long-tail.svg)
 *▲ The classic long-tail distribution. A few head classes carry abundant samples while the tail classes — collectively large — receive too few samples for the model to actually learn them. | Source: [Wikimedia Commons — Hay Kranen (Public Domain)](https://commons.wikimedia.org/wiki/File:Long_tail.svg)*
 
 On unbalanced data, accuracy becomes a tool for hiding the truth. Without F1-score, precision-recall curves, and per-class evaluation, you cannot know what the model actually does. The deeper problem sits earlier in the workflow: many teams never plot the class distribution at all. The chart that takes a single line of code stays unplotted, and the model quietly learns an invisible bias.
@@ -89,7 +89,7 @@ ImageNet provides the more sobering case. A massive dataset with over 1.43 milli
 
 With the fourth signal, the inspection leaves the world of pixels and enters the world of embeddings. DataClinic's L2 stage projects every image into a general-purpose embedding space (Wolfram, 1280-dim) and analyzes density and cluster structure inside it. `L2_geometry` and `L2_distribution` measure this domain, mapped to ISO 5259-2 Similarity (Sim-ML-1/2/3) and Representativeness (Rep-ML-1).
 
-![t-SNE embedding of MNIST in 2D, with classes forming distinct clusters in feature space](./image/img-03-tsne-mnist.png)
+![t-SNE embedding of MNIST in 2D, with classes forming distinct clusters in feature space](../ko/image/img-03-tsne-mnist.png)
 *▲ MNIST projected to 2D via t-SNE. Each color is a digit class; inter-cluster distance and density are exactly the signals DataClinic reads — but on a 1280-dim Wolfram embedding rather than raw pixels. | Source: [Wikimedia Commons — Kyle McDonald (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:T-SNE_Embedding_of_MNIST.png)*
 
 The first problem visible in feature space is near-duplicates. Different crops of the same image, or subtly modified copies, cluster unnaturally tight at a single point, and the model spends training cycles re-learning them. Stanford and MIT researchers (Recht et al., 2019) revealed that ImageNet's train and validation sets contain data leakage — raising direct questions about the reliability of model performance numbers measured on that dataset.
@@ -105,7 +105,7 @@ The fifth signal surfaces last and matters most. How clearly are class boundarie
 
 Places365 demonstrates what this signal really means. At the surface (L1) the classes were evenly distributed and pixel diversity looked solid. But the L2 analysis revealed **61 classes** overlapping in feature space. "Library" and "office," "beach" and "coastline" are categories humans themselves confuse — and that ambiguity passes straight to the model as a training signal.
 
-![Side-by-side PCA and t-SNE projections of the same dataset, showing how class separability differs by dimensionality-reduction method](./image/img-04-tsne-pca.png)
+![Side-by-side PCA and t-SNE projections of the same dataset, showing how class separability differs by dimensionality-reduction method](../ko/image/img-04-tsne-pca.png)
 *▲ PCA (left) vs t-SNE (right) projections of the same data. Whether classes appear interleaved or distinctly clustered is the visual signature of separability — the same plane on which Places365's 61 overlapping classes and Deepfake's Fake/Real mixture become legible. | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:T-SNE_and_PCA.png)*
 
 A more dramatic case is the Deepfake face dataset (Report #169). With over 190,000 images and an L1 total score of 91, the dataset looked excellent on the surface. The L2 analysis told a different story: Fake and Real images were almost entirely interleaved in feature space. The fundamental difficulty of deepfake detection was visible at the data layer. The L3 stage compresses the 1280-dim embedding into lower dimensions through domain-specific models, measuring separability with even more precision.

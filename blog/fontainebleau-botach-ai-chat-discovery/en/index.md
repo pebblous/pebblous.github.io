@@ -42,7 +42,7 @@ Sources: [Volokh Conspiracy](https://reason.com/volokh/2026/10/19/the-ai-data-wi
 
 It began in the lobby of the Fontainebleau in Miami Beach in December 2024. A guest and Rabbi Shmuley Boteach fell into an argument about the war in Gaza. Boteach, who calls himself America's Rabbi, has 1.2 million social media followers. Over the following weeks he publicly accused the hotel and its staff of tolerating antisemitism, and the company that owns the hotel sued him for defamation and tortious interference in the Southern District of Florida. The case number is 1:25-cv-20251.
 
-![Exterior of the Fontainebleau hotel on Collins Avenue in Miami Beach, the site of the lobby argument that led to the lawsuit](./image/img-01-fontainebleau-exterior.jpg)
+![Exterior of the Fontainebleau hotel on Collins Avenue in Miami Beach, the site of the lobby argument that led to the lawsuit](../ko/image/img-01-fontainebleau-exterior.jpg)
 *▲ The Fontainebleau hotel in Miami Beach, where the lobby argument took place in December 2024 | Source: [Wikimedia Commons (Ebyabe, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Miami_Beach_FL_Fontainebleau01.jpg)*
 
 The case went badly for the defendant. In September 2025 the district judge denied his motion to dismiss, so the suit went forward, and in February 2026 the magistrate judge imposed sanctions. His answer and defenses were struck, his counterclaims were dismissed with prejudice, and liability was entered for the plaintiff. That leaves a single question for the trial set for February 2027. How much the hotel collects.
@@ -68,7 +68,7 @@ This is where chatbot records occupy a place of their own. A social media post i
 
 One decision from the same autumn reads as the exact opposite. In a case against the Las Vegas police department (Villanueva v. Las Vegas Metropolitan Police Department, 2:24-cv-00125), it emerged that Tom Melton, an expert witness for the defense, had used ChatGPT while writing his report and had not disclosed it. The magistrate judge ordered him to produce the entire ChatGPT log, running to roughly 40 pages.
 
-![The Lloyd D. George Federal Courthouse in Las Vegas, home of the federal district court that heard the Villanueva ChatGPT-log dispute](./image/img-02-nevada-courthouse.jpg)
+![The Lloyd D. George Federal Courthouse in Las Vegas, home of the federal district court that heard the Villanueva ChatGPT-log dispute](../ko/image/img-02-nevada-courthouse.jpg)
 *▲ The Lloyd D. George Federal Courthouse in Las Vegas, home to the District of Nevada court that decided Villanueva | Source: [Wikimedia Commons (U.S. DOJ, Public Domain)](https://commons.wikimedia.org/wiki/File:Lasvegascourthouse.jpg)*
 
 On September 29 Judge Anne Traum reversed that order, holding that the part requiring everything was clearly erroneous or contrary to law. She split the log in two instead. Facts and data the expert consulted in forming his opinion, such as AI-generated case summaries, are disclosable. The other side has to be able to test that basis, and in particular to check whether fabricated citations found their way in. The expert's own questions and prompts, by contrast, she treated as protected.

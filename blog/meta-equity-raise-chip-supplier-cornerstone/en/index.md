@@ -44,7 +44,7 @@ The filing Meta made on October 26 had two slots. First, about $35 billion raise
 
 The next day the first slot grew. Orders came to more than five times the stock on offer, so Meta raised $22.5 billion to $25 billion, and the price was set at $625 a share. The preferred depositary shares sell at $50 each, 250 million of them. Add the two and you get $37.5 billion; add the $60 billion of at-market sales and you get the $97.5 billion total of the plan.
 
-![Meta Platforms logo — the company that filed the $97.5 billion equity raise with the SEC on October 26](./image/img-01-meta-logo.svg)
+![Meta Platforms logo — the company that filed the $97.5 billion equity raise with the SEC on October 26](../ko/image/img-01-meta-logo.svg)
 *▲ Meta Platforms, the company behind the $97.5 billion equity raise this article covers | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Meta_Platforms_Inc._logo.svg)*
 
 The structure printed next to the figure deserves as much attention as the figure. On the common stock side, Meta is not issuing shares and selling them today. According to the filing, it is entering forward sale agreements with Morgan Stanley and Goldman Sachs. Meta picks the day it hands over the shares and collects the money, any time up to November 19, 2027, and settles at the offering price less the underwriting discount. Which is to say that the day $25 billion reaches Meta's account has not been fixed yet.
@@ -69,7 +69,7 @@ How large a place that $4 billion holds in the order book can be estimated. With
 
 What the three have in common sets the character of the list. Every chip and system going into Meta's AI facilities comes from one of these three.
 
-![Nvidia logo — the cornerstone investor that disclosed the largest amount, $3 billion](./image/img-02-nvidia-logo.svg)
+![Nvidia logo — the cornerstone investor that disclosed the largest amount, $3 billion](../ko/image/img-02-nvidia-logo.svg)
 *▲ Nvidia. It supplies Meta with AI GPUs, CPUs, and networking, and disclosed $3 billion as a cornerstone investor in this offering | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nvidia_logo.svg)*
 
 | Company | Amount into the offering | Supply relationship with Meta |

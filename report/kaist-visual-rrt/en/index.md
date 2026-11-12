@@ -42,7 +42,7 @@ If you have never questioned the input specification of robot motion planning, t
 
 The existing pipeline had stabilized around "observation → policy → coordinate output." During training, the robot saw camera observations and produced actions, but the goal those actions reached for was always a coordinate. A human operator wrote that coordinate by hand, and scenes synthesized in simulation were eventually reduced to coordinates before they entered training. Visual-RRT puts an image, not a coordinate, in the goal slot at inference time. In that moment, an assumption that had been quietly built in — that the representation of training data and the representation of inference input must match — comes to the surface.
 
-![Concept diagram comparing RRT, visual-gradient-only optimization, and Visual-RRT path search, with planning progression over time](./image/img-01-vrrt-teaser.png)
+![Concept diagram comparing RRT, visual-gradient-only optimization, and Visual-RRT path search, with planning progression over time](../ko/image/img-01-vrrt-teaser.png)
 *▲ (a) RRT — random tree from coordinate goal, (b) Visual gradient-only optimization — local minima trap, (c) Visual-RRT — gradient of visual loss combined with tree expansion, (d) Planning progression over time. | Source: [KAIST SGVR Lab — Visual-RRT project page](https://sgvr.kaist.ac.kr/Visual-RRT/)*
 
 ### 1.1. From Observation Data to Goal Images — Expanding the Simulator's Role
@@ -86,7 +86,7 @@ Visual-RRT showed up after all three currents had stabilized. On top of a differ
 
 Two mechanisms make Visual-RRT work: a frontier-based explore-exploit strategy and inertial gradient tree expansion. On the surface they look like two modules bolted onto an RRT skeleton. The ablation table tells a different story. The two modules are not add-ons. They behave like a multiplication. Strip one out, and the other loses its meaning too.
 
-![Overview of the Visual-RRT algorithm — frontier-based explore-exploit strategy and inertial gradient tree expansion combined into one tree](./image/img-03-vrrt-overview.png)
+![Overview of the Visual-RRT algorithm — frontier-based explore-exploit strategy and inertial gradient tree expansion combined into one tree](../ko/image/img-03-vrrt-overview.png)
 *▲ Visual-RRT overview: frontier-based random sampling (Exploration) and visual-gradient frontier steering (Exploitation) operate multiplicatively within a single tree. | Source: [Lee et al., Visual-RRT (CVPR 2026 Highlight), Fig. 2](https://arxiv.org/abs/2604.16388)*
 
 ### 3.1. Frontier Sampling — Prioritize the Visually Promising
@@ -101,7 +101,7 @@ Inertial gradient tree expansion lets each tree node inherit the gradient state 
 
 How tightly the two mechanisms are coupled shows up most clearly in the ablation table. Turn frontier sampling off and the method effectively stops working. Lower the inertial β₁ and the success rate falls to less than half. The "79.8% with both" result is closer to a product of two components than to a sum.
 
-![Visual-RRT ablation curves — success rate as a function of exploration ratio and frontier-based sampling ratio](./image/img-02-ablation-plots.png)
+![Visual-RRT ablation curves — success rate as a function of exploration ratio and frontier-based sampling ratio](../ko/image/img-02-ablation-plots.png)
 *▲ (a) Exploration ratio η and (b) Frontier-based sampling ratio versus success rate — performance collapses when either ratio is pushed to an extreme. | Source: [Lee et al., Visual-RRT, Fig. 7](https://arxiv.org/abs/2604.16388)*
 
 | Configuration | UR5e success rate | Reading |
@@ -128,7 +128,7 @@ As the configuration-space distance between start and goal grows, gradient-based
 
 Whether the same gap survives the move into the real world is its own validation problem. The authors took an actual Fetch robot and showed that a single goal image produces a collision-free path that the robot executes. On the Panda-3CAM-Azure real RGB-D dataset, the average joint error against a learning-based pose regressor came in at 0.083 rad — about 4.75°. Two facts are worth holding together: this is not a simulation-only result, and a training-free method outperformed a learning-based comparison. A small sim-to-real gap also suggests the same algorithm can be lifted into the KPIs of synthetic-data evaluation.
 
-![Real-world deployment on a Fetch robot — collision-free path generated and executed from a single goal image](./image/img-05-fetch-realworld.png)
+![Real-world deployment on a Fetch robot — collision-free path generated and executed from a single goal image](../ko/image/img-05-fetch-realworld.png)
 *▲ Real-world Fetch deployment: (top) collision-free execution from start to goal image, (bottom) temporal visualization of Exploration and Exploitation samples. | Source: [Lee et al., Visual-RRT, Fig. 4](https://arxiv.org/abs/2604.16388)*
 
 > [!callout]
@@ -138,7 +138,7 @@ Whether the same gap survives the move into the real world is its own validation
 
 Place Visual-RRT on a 24-month timeline and the current it sits at the end of becomes visible. Right after 3D Gaussian Splatting was published at SIGGRAPH 2023, differentiable rendering shed its graphics-tool jacket and migrated into robotics as an input representation. In a little over two years, Dr.Robot, Prof.Robot, GS-Planner, Splat-Nav, and Visual-RRT lined up one after another.
 
-![Qualitative path comparison among Dr.Robot, Prof.Robot, and Visual-RRT across Franka, UR5e, and Fetch scenarios](./image/img-04-qualitative-results.png)
+![Qualitative path comparison among Dr.Robot, Prof.Robot, and Visual-RRT across Franka, UR5e, and Fetch scenarios](../ko/image/img-04-qualitative-results.png)
 *▲ Qualitative trajectories from Dr.Robot, Prof.Robot, and Visual-RRT: which method reaches the goal pose without collision when given only an image of the target. | Source: [Lee et al., Visual-RRT, Fig. 3](https://arxiv.org/abs/2604.16388)*
 
 | Date | Work | Venue | Contribution |

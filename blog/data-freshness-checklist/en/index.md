@@ -36,7 +36,7 @@ _A 7-Point Data Freshness Checklist for AI-Ready Data_
 
 A carton of milk has a printed expiration date. Data does not. So many teams treat a feature computed yesterday and a feature computed a minute ago with the same confidence. The trouble is that some data spoils faster than milk. In fraud detection, a feature like "number of transactions in the last 15 minutes" that carries an hour-old value is no longer about the last 15 minutes at all. Data that has lost its freshness looks structurally intact while its meaning has drained away.
 
-![Manufacturing (MFD) and expiration (EXP) dates printed on a product label — the sell-by date that data lacks](./image/img-01-expiration-date.jpg)
+![Manufacturing (MFD) and expiration (EXP) dates printed on a product label — the sell-by date that data lacks](../ko/image/img-01-expiration-date.jpg)
 *▲ Food carries a manufacturing date and an expiration date; data carries neither. Freshness is a value we have to define ourselves. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Expiration_dates_of_food_products_in_Israel_02.jpg)*
 
 Start by separating two concepts. Latency is how long a query takes to respond. Freshness is the gap between the moment an event actually happened and the moment that event was reflected in the system as data. The two are independent. A dashboard that responds in 50ms may be drawing a snapshot from two hours ago, and a query that takes three seconds to return may reflect an event from one second ago. The fact that something is fast is no guarantee at all that its data is new.
@@ -52,7 +52,7 @@ The most dangerous thing about stale data is that the model does not know it is 
 
 When a fraud detection model looks at "transaction frequency over the last 15 minutes" and that feature arrives an hour late, the model mistakes an anomalous spike for the usual pattern. In a recommendation system, if you keep recommending a product the user just bought half an hour later, the freshness gap becomes a user-experience gap directly. In inventory optimization, a stock count refreshed by last night's batch cannot predict this afternoon's stockout. In all three cases the model itself is fine; what broke was the time of the input.
 
-![A real-time payment terminal showing a transaction confirmation screen — the freshness of the recent-transaction features a fraud model depends on](./image/img-02-payment-terminal.jpg)
+![A real-time payment terminal showing a transaction confirmation screen — the freshness of the recent-transaction features a fraud model depends on](../ko/image/img-02-payment-terminal.jpg)
 *▲ The instant a terminal approves a transaction, a feature like "transaction frequency over the last 15 minutes" changes by the second. An hour-late input makes the model read a spike as the usual pattern. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%E3%83%9D%E3%83%BC%E3%82%BF%E3%83%96%E3%83%AB%E3%81%AA%E3%82%AD%E3%83%A3%E3%83%83%E3%82%B7%E3%83%A5%E3%83%AC%E3%82%B9%E6%B1%BA%E6%B8%88%E7%AB%AF%E6%9C%AB_Portable_cashless_payment_device.jpg)*
 
 Accumulated at business scale, this quiet failure turns into numbers. Gartner has projected that 60% of AI projects not supported by AI-Ready data will be abandoned by 2026, and in IBM's 2025 study 43% of COOs named data quality as their top priority. Freshness is the least-measured dimension within that data quality. The accuracy report shows 95% computed on yesterday's data, but no one asks whether that 95% still holds today.
@@ -66,7 +66,7 @@ Traditional ML models lived in an environment relatively forgiving of freshness.
 
 The numbers make the difference plain. If an agent makes a decision once a second while a feature refreshes only once an hour, then all 3,600 decisions made during that hour rest on the same stale context. The first decision and the 3,600th see the same world, while the real world has kept moving the entire time. Hourly refresh — a cadence that used to be perfectly adequate — becomes a 3,600x amplified risk in an agent environment.
 
-![An analog stopwatch measuring to a tenth of a second — agent decision frequency and data freshness (Age of Information)](./image/img-03-stopwatch.jpg)
+![An analog stopwatch measuring to a tenth of a second — agent decision frequency and data freshness (Age of Information)](../ko/image/img-03-stopwatch.jpg)
 *▲ As decision frequency drops to seconds, acceptable staleness drops with it. Age of Information is the clock that answers "this feature — how many minutes old is it right now?" | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Stoppuhr_hanhart.jpg)*
 
 The more fundamental difference is the nature of the outcome. When a recommendation model is wrong, the user glances at a product they do not care about and moves on. When an agent is wrong, it processes the wrong ticket, approves the wrong transaction, and routes a shipment to the wrong address. An agent does not merely output a wrong answer; it executes a wrong action. That is why, in domains where agents act — fraud detection, real-time bidding, autonomous operations — sub-second freshness is no longer a luxury but a baseline requirement.
@@ -137,7 +137,7 @@ When a scheduled batch fails to run, the data quietly freezes at yesterday's val
 
 Freshness is one of the five dimensions of data observability. Only when you watch it on one screen together with volume, schema, distribution, and lineage can you trace "why did freshness drop?" Monitoring that looks at freshness in isolation does not lead to root-cause analysis.
 
-![A data observability dashboard gathering throughput, response time, and status-code distribution on one screen — freshness watched alongside the other dimensions](./image/img-04-monitoring-dashboard.jpg)
+![A data observability dashboard gathering throughput, response time, and status-code distribution on one screen — freshness watched alongside the other dimensions](../ko/image/img-04-monitoring-dashboard.jpg)
 *▲ An observability dashboard gathering throughput, average response time, and status-code distribution on one screen. Freshness leads to root-cause analysis only when watched this way — next to volume, schema, distribution, and lineage. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Grafana_Dashboard_(2017).jpg)*
 
 > [!callout]

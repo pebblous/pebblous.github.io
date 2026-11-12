@@ -54,7 +54,7 @@ Numbers like this pull you toward looking for whoever went on a spree. Rippling'
 
 The response ran on two tracks. One was negotiation. Spending caps went on each tool the company used, including Cursor, OpenAI, and Anthropic. The other was plumbing. An AI gateway now routes requests to cheaper models depending on the nature of the work. Options such as GLM 5.2, roughly 85% cheaper than frontier models with comparable results, became a destination for that routing.
 
-![Rippling AI Spend Console dashboard showing monthly AI spend by vendor (OpenAI, Cursor, Anthropic) as a bar chart alongside a scatter plot of AI spend versus PR change-requested rate](./image/img-01-ai-spend-by-vendor.png)
+![Rippling AI Spend Console dashboard showing monthly AI spend by vendor (OpenAI, Cursor, Anthropic) as a bar chart alongside a scatter plot of AI spend versus PR change-requested rate](../ko/image/img-01-ai-spend-by-vendor.png)
 *▲ The AI Spend Console dashboard. Monthly spend by vendor (OpenAI, Cursor, Anthropic) sits next to a scatter plot of AI spend versus PR rework-request rate. | Source: [Rippling](https://www.rippling.com/blog/introducing-ai-spend-console)*
 
 The effect showed up in unit price rather than in volume. July's internal usage came back to 600 billion tokens, close to the March peak that had triggered the warning, while the cost ran at 37% of April's token spend. The projection for token spend against R&D payroll came down from 40% to 10-15%. MacInnis's explanation is short. It is because they now route to more efficient models. It is not the result of telling employees to use less AI.
@@ -67,7 +67,7 @@ Rippling turned the internal tool it used during all of this into a product call
 
 The AI Scorecard the company published views a single employee through five metrics worth 47.5 points in total. Adoption and usage measure how often and how deeply someone works with the tools, while productivity and cycle time measure what came out of that use. The final efficiency metric ties output and spend into a single ratio.
 
-![Rippling AI Scorecard by-employee report screen listing rank, total_score, adoption_score, usage_score, productivity_score, cycle_time_score, and efficiency_score columns per employee](./image/img-02-ai-scorecard-employee.png)
+![Rippling AI Scorecard by-employee report screen listing rank, total_score, adoption_score, usage_score, productivity_score, cycle_time_score, and efficiency_score columns per employee](../ko/image/img-02-ai-scorecard-employee.png)
 *▲ The AI Scorecard's by-employee report screen. The five metrics in the table below are what actually gets computed into this ranking. | Source: [Rippling](https://www.rippling.com/blog/introducing-ai-spend-console)*
 
 | Metric | Points | What it looks at |

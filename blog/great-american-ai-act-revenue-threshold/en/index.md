@@ -38,7 +38,7 @@ The threshold that sorts regulated entities is expressed as a different number i
 
 The GAAIA draft, released jointly in June 2026 by Representatives Jay Obernolte (R-California) and Lori Trahan (D-Massachusetts), is laid out clause by clause in [Tech Policy Press's explainer](https://www.techpolicy.press/unpacking-the-great-american-artificial-intelligence-act-of-2026/). Two things get cited often: that it is bipartisan, and that it sits against a backdrop where 65% of Americans say the government is doing too little to regulate AI (77% of Democrats, 53% of Republicans). That it is not yet law but a **discussion draft**, a text put out to gather feedback, is a premise this piece keeps throughout.
 
-![The United States Capitol — where the Great American AI Act draft was introduced in the House](./image/img-01-us-capitol.jpg)
+![The United States Capitol — where the Great American AI Act draft was introduced in the House](../ko/image/img-01-us-capitol.jpg)
 *▲ The United States Capitol. The GAAIA draft was released here by a bipartisan pair of House members | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:2023_United_States_Capitol_118th_Congress,_sunrise.jpg)*
 
 The draft covers a lot of ground, spanning frontier governance, labor, cybersecurity, and R&D. The Pebblous blog has already covered each of those branches. This piece focuses on a prior question that sits above all of them: **exactly who does this law apply to?** Before the draft imposes any rule, the first thing it does is draw a line between what it will and will not regulate. That line is revenue.
@@ -53,7 +53,7 @@ The reach of the rules is narrow too. What the draft targets is **development**,
 
 The duties placed on the few who cross this threshold fall into three: they must disclose model information, undergo third-party audits, and report serious safety incidents. A whistleblower-protection clause is attached to that. How the audit is carried out was covered in [an earlier piece, by analogy to the financial-audit model](/blog/gaaia-ivo-ai-audit-license/en/): a certified, independent verification organization (IVO) sits in and verifies. What matters here is that the audit becomes a duty "only for developers above $500 million in revenue." Build the same frontier model below the revenue line, and you sit outside this duty.
 
-![A large-scale data center that trains frontier models — the physical scale behind a large frontier developer](./image/img-02-google-datacenter.jpg)
+![A large-scale data center that trains frontier models — the physical scale behind a large frontier developer](../ko/image/img-02-google-datacenter.jpg)
 *▲ A large-scale data center used to train frontier models, the real scale behind the "large frontier developer" GAAIA targets | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Google_Datacenter_-_The_Dalles,_Oregon_(17832143871).jpg)*
 
 ## Each country reads a different column
@@ -77,7 +77,7 @@ The draft itself does not state why revenue, of all things. From here on, this i
 
 That advantage sharpens against the EU's compute threshold. Training FLOPs is a precise indicator that measures a model's capability directly, but the value is mostly known only to the developer itself. In practice the EU AI Act requires a developer that crosses the threshold to self-notify within two weeks, after which the Commission runs a separate confirmation step. It is a structure that leans on the company's own report or bolts on a verification stage. Revenue reduces that reliance on self-reporting. View regulatory design as a data pipeline, and the US has picked "a field with low collection and verification cost" as its first-stage filter.
 
-![The European Parliament building — where the EU AI Act's compute threshold was deliberated](./image/img-03-eu-parliament.jpg)
+![The European Parliament building — where the EU AI Act's compute threshold was deliberated](../ko/image/img-03-eu-parliament.jpg)
 *▲ The European Parliament in Brussels. The EU AI Act sorts regulated entities by training compute (FLOPs), not revenue | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:European_Parliament_building_Brussels_1.jpg)*
 
 > [!callout]
@@ -89,7 +89,7 @@ No indicator escapes this mismatch entirely. Compute reflects less of the risk f
 
 The same draft carries a second data clause that pairs with the revenue threshold. It directs the Census Bureau and the Bureau of Labor Statistics (BLS) to add AI-use and AI-adoption questions to federal surveys. The purpose, ahead of any regulation or ban, is simply "to count." The specifics of this clause, measuring AI's effect on the labor market through national statistics, were covered in [an earlier story](/story/great-american-ai-act/en/).
 
-![US Census Bureau headquarters — the agency the draft directs to add AI-use and adoption questions to federal surveys](./image/img-04-census-bureau.jpg)
+![US Census Bureau headquarters — the agency the draft directs to add AI-use and adoption questions to federal surveys](../ko/image/img-04-census-bureau.jpg)
 *▲ Census Bureau headquarters in Suitland, Maryland. The GAAIA draft directs this agency to add AI-use and adoption questions | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Census_Bureau_headquarters,_Suitland,_Maryland,_2007.jpg)*
 
 The problem of sorting the regulated entity and the problem of measuring AI's spread look different, but from a data perspective they are two sides of one problem. Both approximate a continuous phenomenon, whether a developer's scale or the degree of AI's spread, as a discrete signal that administrators can handle. One line of revenue, one survey question. Pick the wrong column to read, and both fail. Just as the revenue test misses a frontier developer with no revenue, a statistics question over- or under-measures spread depending on how "AI use" is defined.

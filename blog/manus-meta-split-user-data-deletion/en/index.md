@@ -42,7 +42,7 @@ Sources: [TechCrunch (8 October 2026)](https://techcrunch.com/2026/10/08/chinas-
 
 Manus is a general-purpose AI agent that made its name in 2025 on the strength of a single public demo. Give it a goal and it aims to search the web, write code, draft documents and hand back a finished result. It now covers coding tools and design and video generation as well, and this year's releases include Manus 2.0 and Cue, a separate app that gives an agent its own email address, phone number and wallet so it can move on its own. The parent company is Butterfly Effect, which relocated staff to Singapore in mid-2025.
 
-![Official Manus logo](./image/img-01-manus-logo.png)
+![Official Manus logo](../ko/image/img-01-manus-logo.png)
 *▲ Official Manus logo | Source: [Manus Brand Assets](https://manus.im/brand)*
 
 On 8 October the company said in a WeChat post that it had raised more than $500 million. Boyu Capital and IDG Capital led the round, and existing investors Tencent, HSG (formerly Sequoia China) and ZhenFund joined. Chinese capital accounts for nearly the whole list. The announcement went out through Chinese social media rather than an English press release, and that detail points the same way the money does.

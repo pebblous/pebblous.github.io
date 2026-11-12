@@ -36,7 +36,7 @@ _He floated Human Reserved jobs for up to 40% of work and a tax on AI tokens, wi
 
 The first line runs through the work itself. Gates believes that as AI and robots improve, we will set aside certain things for only people to do, and he wrote that he has started calling that domain Human Reserved. He explained the name as well. He likes the phrase because it makes him think of nature reserves, places where we could put buildings and roads but choose not to because the loss would be too great.
 
-![Bill Gates during a 2018 visit to the U.S. Department of Health and Human Services](./image/img-01-bill-gates-portrait.jpg)
+![Bill Gates during a 2018 visit to the U.S. Department of Health and Human Services](../ko/image/img-01-bill-gates-portrait.jpg)
 *▲ Bill Gates at the U.S. Department of Health and Human Services, March 2018 | Source: [Wikimedia Commons (U.S. HHS, Public Domain)](https://commons.wikimedia.org/wiki/File:Bill_Gates_2018.jpg)*
 
 The idea starts somewhere personal. Gates's father died of Alzheimer's in 2020, and in the later stages of the illness he was cared for day and night by paid caregivers. He could not always tell them when he was hungry, Gates wrote, but they always knew. Of that team Gates wrote, "Something in the care they gave my dad was irreplaceably human. No robot could or should have done it."
@@ -67,7 +67,7 @@ For the last of the four questions he did sketch an answer in the interview. Whe
 
 One document has already moved the same questions into statutory language. Three weeks before the essay, on August 6, 2026, Rep. Greg Casar (D-TX-35) introduced H.R. 10044, the AI Tax and Work Protection Act, with Reps. Valerie Foushee (D-NC-4) and Sara Jacobs (D-CA-51) as original cosponsors. On August 20, Rep. Ro Khanna (D-CA-17), whose district covers much of Silicon Valley, signed on as a third. The bill was referred to the Education and Workforce Committee and the Ways and Means Committee, and introduction is as far as it has gone. There is no Congressional Research Service summary and no Congressional Budget Office score yet, so the text itself is the only source.
 
-![The United States Capitol, where H.R. 10044 was introduced](./image/img-02-us-capitol.jpg)
+![The United States Capitol, where H.R. 10044 was introduced](../ko/image/img-02-us-capitol.jpg)
 *▲ The U.S. Capitol, where H.R. 10044 was introduced | Source: [Wikimedia Commons (David Maiolo, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:United_States_Capitol_Building.jpg)*
 
 The bill adds a new §4491 to the Internal Revenue Code, imposing an excise tax on foundation models. The amount owed is the greater of two figures. One is the fair market value of the tokens the taxpayer processed in covered transactions during the year, multiplied by the applicable token percentage. The other is what the taxpayer received in exchange for AI services plus the fair market value of covered transactions with related parties, multiplied by the applicable transaction percentage. Neither percentage is fixed. When U-4 unemployment is 5% or below, the token rate is 2% and the transaction rate is 3%. Above 5%, each rises by the amount of the excess; above 7%, by twice the excess over 5%. The 50% Gates named in an interview and the 2% written into the bill are two settings of the same dial.

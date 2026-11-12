@@ -40,7 +40,7 @@ Sources: Politico's September 24, 2026 report and the coverage that followed it 
 
 What Sophia Cai and Joseph Bambridge of Politico reported on September 24 fits in a sentence. The White House Office of the National Cyber Director made a request to OpenAI and Anthropic: before a newly built model goes to the UK AI Security Institute, let the U.S. government review it.
 
-![The South Portico of the White House in Washington, D.C.](./image/img-01-white-house.jpg)
+![The South Portico of the White House in Washington, D.C.](../ko/image/img-01-white-house.jpg)
 *▲ The request came from the White House Office of the National Cyber Director | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_White_House_South_Portico.jpg)*
 
 A senior administration official, speaking to Politico on condition of anonymity, said the White House wants the U.S. to review the models and make sure American systems are secure before those models are shared with U.S. partners. The reason the official gave came down to one line.
@@ -76,7 +76,7 @@ In that case the timing is the harder part: when it became known, and to whom. O
 
 Politico reported the request two days after President Trump told the UN General Assembly that the United States "totally rejects any attempt to construct a globalist scheme to control" artificial intelligence. That is hard to read as a working-level judgment by one agency.
 
-![Interior view of the United Nations General Assembly Hall in New York](./image/img-03-un-general-assembly.jpg)
+![Interior view of the United Nations General Assembly Hall in New York](../ko/image/img-03-un-general-assembly.jpg)
 *▲ President Trump's remarks came two days before the request was reported, at the UN General Assembly | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:United_Nations_General_Assembly_Hall_(3).jpg)*
 
 ### 2.1. What Glasswing Was Built For
@@ -101,7 +101,7 @@ What Britain said at the UN that same week belongs beside it. Prime Minister And
 
 The practice of the two countries splitting pre-release evaluation between them settled in after the 2023 AI Safety Summit at Bletchley Park. It was a voluntary arrangement, not a treaty. Companies agreed to show their models early, governments agreed in return not to hold up release, and the whole thing rested on mutual goodwill. A structure like that changes the day one side changes its mind. The episode exposed what that cooperation had been standing on all along.
 
-![Bletchley Park mansion in the UK, site of the 2023 AI Safety Summit](./image/img-02-bletchley-park.jpg)
+![Bletchley Park mansion in the UK, site of the 2023 AI Safety Summit](../ko/image/img-02-bletchley-park.jpg)
 *▲ The practice of splitting pre-release evaluation settled in here, at Bletchley Park, in 2023 | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Bletchley_Park_Mansion.jpg)*
 
 A voice pointing the other way came from one of the companies that received the request. That same week OpenAI said CAISI should lead work on international standards for monitoring AI progress and safety, working with other national safety institutes including the UK's AISI.

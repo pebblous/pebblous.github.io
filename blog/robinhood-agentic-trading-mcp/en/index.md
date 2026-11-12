@@ -46,7 +46,7 @@ This was not a sudden leap. Robinhood released its analysis-and-insight tool, Co
 
 The point is simple: AI buys stocks in your place, and swipes the card in your place. The user throws out an intent in natural language — "buy those sneakers if the price drops below a certain line," or "cut the volatility in this portfolio" — and the agent handles the rest. The reason this is an inflection point is that AI, until now, lived in the seat of an advisor that tells you what you might do. Now it goes past advice and pulls the trigger.
 
-![Robinhood Agentic Account UI — AI agent analyzing stocks and placing a buy order autonomously](./image/img-01-agentic-trading.png)
+![Robinhood Agentic Account UI — AI agent analyzing stocks and placing a buy order autonomously](../ko/image/img-01-agentic-trading.png)
 *▲ Robinhood Agentic Account UI. Left: an AI agent (Fin's Agent) analyzing market signals and reviewing a trade. Right: the isolated agentic account showing balance, activity feed, and a one-tap disconnect button. | Source: [Robinhood Newsroom](https://robinhood.com/us/en/newsroom/robinhood-is-now-open-to-agents/)*
 
 > [!callout]

@@ -46,7 +46,7 @@ Real-time / attribution licensing deals by year (count). 2026 is projected. Sour
 
 Two forces drove this shift. The first was supply being cut off. When Cloudflare began blocking AI crawlers by default in July 2025, the lane that had been free to scrape narrowed. By Rob Kelly's count, 10 licensing deals had been reported before Cloudflare's block; 22 were reported after it. The causal line — scraping closes, demand moves to formal licenses — shows up in the numbers.
 
-![Cloudflare logo — its July 2025 default AI crawler block triggered a doubling of formal licensing deals](./image/img-01-cloudflare.svg)
+![Cloudflare logo — its July 2025 default AI crawler block triggered a doubling of formal licensing deals](../ko/image/img-01-cloudflare.svg)
 *▲ Cloudflare started blocking AI crawlers by default in July 2025. Disclosed licensing deals rose from 10 to 22 in the period that followed | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Cloudflare_Logo.svg)*
 
 The second was revenue being cut off. As AI search summarizes answers on the page, the clicks that used to flow to publishers collapsed. Media and the Machine estimates that AI summaries have cut website click-throughs by roughly 80%. With the model that turned traffic into ad revenue breaking down, licensing the content directly became all but the only alternative left. In Digiday, media strategist Paul Bannister put it this way: publishers "took the check, but realized that money wasn't going to save their business in five years." The recognition that a one-time advance is not enough turned into a demand for recurring revenue.
@@ -79,14 +79,14 @@ The April 2025 deal between The Washington Post and OpenAI is the template for t
 
 Rather than selling its past posts, Reddit subscribes buyers to a live, continually refreshed stream of posts via API. The data-API contracts are estimated at roughly $60M a year for Google and $70M a year for OpenAI. Together they put Reddit's AI licensing revenue near $130M a year — about 10% of total revenue. Because it sells a structured real-time feed rather than a plain training dump, Reddit is the supplier that shows the buy-to-rent turn most clearly.
 
-![Reddit logo — sells a live, continually refreshed API stream to Google and OpenAI for an estimated $130M/year](./image/img-02-reddit.svg)
+![Reddit logo — sells a live, continually refreshed API stream to Google and OpenAI for an estimated $130M/year](../ko/image/img-02-reddit.svg)
 *▲ Reddit sells a structured real-time API stream rather than a past archive — the clearest example of the buy-to-rent turn | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Reddit_logo.svg)*
 
 ### Case 3. Wikimedia — Standing Access to 6.5 Billion Documents
 
 In January 2026, Wikimedia announced the Wikimedia Enterprise partnership, joined by Amazon, Meta, Microsoft, Perplexity, and Mistral. The core of it is selling "high-volume, high-speed access designed for AI" as a formal product, in place of free scraping. According to [TechCrunch](https://techcrunch.com/2026/01/15/wikimedia-foundation-announces-new-ai-partnerships-with-amazon-meta-microsoft-perplexity-and-others/), Wikimedia said in April 2025 that bot traffic had driven multimedia bandwidth up 50% while human visits fell 8%. They reordered a chaotically scraped flow into structured, paid, real-time access. The market has started attaching a premium to a refined, structured flow.
 
-![Wikimedia logo — January 2026 Wikimedia Enterprise partnerships with Amazon, Meta, Microsoft, Perplexity, and Mistral converted chaotic bot scraping into structured paid real-time access](./image/img-03-wikimedia.svg)
+![Wikimedia logo — January 2026 Wikimedia Enterprise partnerships with Amazon, Meta, Microsoft, Perplexity, and Mistral converted chaotic bot scraping into structured paid real-time access](../ko/image/img-03-wikimedia.svg)
 *▲ Wikimedia Foundation formalized AI partnerships with Amazon, Meta, Microsoft, Perplexity, and Mistral in January 2026 — converting chaotic bot traffic into structured, paid real-time access | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Wikimedia-logo.svg)*
 
 ### What Sells for the Most Tells You the Value of the Flow
@@ -95,7 +95,7 @@ The three cases are not exceptions; they are the whole market in miniature. When
 
 The buy side is concentrated too. OpenAI leads with 24 disclosed deals — double the second tier (Microsoft and Meta, at roughly 12 each). It reads as a play to lock up access to fresh content earlier and in greater volume than rivals. If these were archives you buy once and forget, there would be little reason for one company to sweep up deals this aggressively. Because it is access that keeps refreshing, who grabs the flow first becomes a competitive question.
 
-![OpenAI logo — leads disclosed AI licensing deals with 24, double the second-tier group of Microsoft and Meta](./image/img-04-openai.svg)
+![OpenAI logo — leads disclosed AI licensing deals with 24, double the second-tier group of Microsoft and Meta](../ko/image/img-04-openai.svg)
 *▲ OpenAI leads disclosed AI licensing with 24 deals — double Microsoft and Meta's ~12 each. A strategy to pre-empt rivals on continually refreshed real-time access | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:OpenAI_Logo.svg)*
 
 ## From Asset to Flow: Redefining the Economics of Data
@@ -137,7 +137,7 @@ When deals turn into flows, the pipelines that handle that data change with them
 
 How data quality works in the two structures is fundamentally different.
 
-![Apache Kafka architecture diagram — distributed event-streaming platform, the de facto infrastructure standard for real-time data pipelines](./image/img-05-kafka.svg)
+![Apache Kafka architecture diagram — distributed event-streaming platform, the de facto infrastructure standard for real-time data pipelines](../ko/image/img-05-kafka.svg)
 *▲ Apache Kafka — the distributed event-streaming platform that replaced batch ETL as the standard infrastructure for real-time data supply | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Apache_Kafka_logo.svg)*
 
 #### Batch ETL — One-Time Training

@@ -42,7 +42,7 @@ Source: [ZDNet Korea (2026-09-30)](https://zdnet.co.kr/view/?no=20260930174541) 
 
 SAS published the report on September 30 under the title Data and AI Impact Report: The New Economics of Trust. This is the second annual edition, and it draws on research insights from the market research firm IDC. Respondents number 2,699 across 28 countries. Each of them knows or influences decisions about their own company's data and AI work, and banking, insurance, life sciences and the public sector sit at the centre of the sample.
 
-![Cover of the SAS report 'Data and AI Impact Report: The New Economics of Trust' — insights supported by IDC, September 2026](./image/img-01-report-cover.jpg)
+![Cover of the SAS report 'Data and AI Impact Report: The New Economics of Trust' — insights supported by IDC, September 2026](../ko/image/img-01-report-cover.jpg)
 *▲ Cover of the SAS-IDC report this article reads | Source: [SAS official page](https://www.sas.com/en_us/gc/data-and-ai-impact-report.html)*
 
 What the survey calls a trust gap is a subtraction between two scores. One side asks how far a company believes in the AI it runs, which the report labels perceived trust. The other asks how much of that AI the company actually manages, which it labels management capability. Capability is built from five items scored out of 100: data quality and governance, model governance and oversight, explainability and fairness, responsible AI policy, and audit and accountability.
@@ -96,7 +96,7 @@ Both figures come from the same respondent pool, but they measure different thin
 
 The global responses say what occupies that empty space. Among users surveyed, 97.2% override an AI recommendation rather than following it as given, at least in some cases. The reason they point to is that the system fails to show why it reached that judgement. Worldwide, only 17.5% of organisations have a data foundation fully built to the standard agentic AI demands, and the report attributes weaker outcomes to that shortfall.
 
-![Bar chart from the SAS-IDC survey comparing organisations across five data infrastructure maturity stages (Ad Hoc to Optimized) in 2025 versus 2026. The Optimized stage rose from 10.2% to 17.5%](./image/img-02-data-maturity-chart.jpg)
+![Bar chart from the SAS-IDC survey comparing organisations across five data infrastructure maturity stages (Ad Hoc to Optimized) in 2025 versus 2026. The Optimized stage rose from 10.2% to 17.5%](../ko/image/img-02-data-maturity-chart.jpg)
 *▲ Share of organisations worldwide at each data infrastructure maturity stage (2025 vs 2026) — only 17.5% reach the top "Optimized" stage | Source: SAS, ["Data and AI Impact Report: The New Economics of Trust"](https://www.sas.com/en_us/gc/data-and-ai-impact-report.html) (2026)*
 
 Foundations and mandates move together, which the same survey also records. Organisations with an optimised data foundation were six times more likely to have mandatory controls on data quality and explainability. Whether rules came first and pulled the foundation along, or the foundation made the rules possible, cannot be settled with this figure. It does make Korea's 1.9% hard to read as a problem of rules alone.
@@ -116,7 +116,7 @@ Anyone who has handled data will recognise this ordering. Rules and approval rou
 
 Some places have grabbed the other end first. Singapore chose to [build trust as a system of evidence rather than a declaration](/report/singapore-ai-trust-infrastructure-2026/en/), stringing policy, infrastructure and verification into one line. Seoul, picking its 100 high-value datasets, put [the work of fixing data so AI can use it straight away](/blog/seoul-ai-ready-data-top100/en/) into the stage before release. Neither case added supervisory rules; both repaired the material being supervised.
 
-![Seoul City Hall — the glass-curved new building beside the older structure](./image/img-03-seoul-city-hall.jpg)
+![Seoul City Hall — the glass-curved new building beside the older structure](../ko/image/img-03-seoul-city-hall.jpg)
 *▲ Seoul City Hall, which reviewed the "AI High-Value Dataset Top 100" selection — the city put the work of making data usable by AI into the stage before release | Source: [eToday](https://www.etoday.co.kr/news/view/2622216)*
 
 Pebblous keeps repeating one line whenever AI-Ready Data comes up. Where the data underneath has not been verified, even oversight is not verification. You can find out who approved a model and still be unable to retrace what grounded its answer, because the record was never kept on the material side. When 42.6% of companies run agentic AI and 1.9% apply quality control to every project, the materials for retracing are not yet inside the company.

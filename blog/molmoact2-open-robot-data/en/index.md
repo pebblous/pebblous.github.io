@@ -56,7 +56,7 @@ Lay the openness of the major models side by side and you can see at a glance wh
 
 NVIDIA GR00T is the textbook case. It is reported to have trained on EgoScale, a vast dataset on the order of 20,000 hours, yet that data was never released publicly. You can get the model, but the ingredients that shaped it stay out of reach. Academic efforts like OpenVLA and Octo set a precedent by opening their data too, but among recent models carrying commercial weight, a case that opened the data in full had until now been missing.
 
-![MolmoAct 2 model family overview — three variants OMPaL (bimanual), SO100/101 (general), and Think (enhanced reasoning) and their roles](./image/img-01-overview.png)
+![MolmoAct 2 model family overview — three variants OMPaL (bimanual), SO100/101 (general), and Think (enhanced reasoning) and their roles](../ko/image/img-01-overview.png)
 *▲ The MolmoAct 2 model family — from open-source robot data to real-world deployment | Source: [Gu et al., arXiv:2605.02881, Ai2](https://arxiv.org/abs/2605.02881)*
 
 > [!callout]
@@ -66,14 +66,14 @@ NVIDIA GR00T is the textbook case. It is reported to have trained on EgoScale, a
 
 The heart of the dataset MolmoAct 2 released is 720 hours of bimanual manipulation demonstrations. Bimanual manipulation refers to tasks where two arms must move together, each aware of the other. Folding clothes, untangling cables, clearing a dining table, packaging medication — easy for a person, tricky for a robot. Because one arm has to move in precise time with the other while it holds something, no amount of single-arm data teaches this coordination.
 
-![MolmoAct 2 BimanualYAM dataset — real bimanual robot manipulation tasks including packing containers, cleaning plates, scanning groceries, and storing clothes](./image/img-02-bimanual-data.png)
+![MolmoAct 2 BimanualYAM dataset — real bimanual robot manipulation tasks including packing containers, cleaning plates, scanning groceries, and storing clothes](../ko/image/img-02-bimanual-data.png)
 *▲ Real bimanual robot tasks in the BimanualYAM dataset | Source: [Gu et al., arXiv:2605.02881, Ai2](https://arxiv.org/abs/2605.02881)*
 
 That is why bimanual manipulation has always been bottlenecked by a lack of data. MolmoAct 2's dataset captures 34,500 real robot demonstrations across more than 28 everyday tasks, making it more than 30 times larger than the first generation's 22-hour set. It is not simply a matter of volume: it released, free to anyone, a kind of data that had been hard to obtain even for a price.
 
 The volume of data showed up as performance. On simulated household tasks the MolmoAct 2 family recorded a 20.6% success rate, nearly double π0.5's 10.3%, and even when moved to a real Franka arm it reached an average 87.1% with no per-task fine-tuning. Moving an apple to a plate scored 100%; picking up a red cube, 93.3%. In third-party evaluation it took first place on 7 of 8 bimanual tasks, beating OpenVLA, π0.5, and X-VLA alike.
 
-![RoboEval benchmark performance — MolmoAct leading GR00T N1.5, X-VLA, and π0.5-DROID across most tasks, taking first place on 7 of 8 bimanual tasks](./image/img-03-roboeval.png)
+![RoboEval benchmark performance — MolmoAct leading GR00T N1.5, X-VLA, and π0.5-DROID across most tasks, taking first place on 7 of 8 bimanual tasks](../ko/image/img-03-roboeval.png)
 *▲ RoboEval benchmark — MolmoAct (purple) outperforms competing models across most tasks | Source: [Gu et al., arXiv:2605.02881, Ai2](https://arxiv.org/abs/2605.02881)*
 
 Speed improved alongside it. Where the first generation took 6,700 milliseconds to decide on a single action, MolmoAct 2 does the same in 180. That is a 37-fold speedup, and it clears a threshold a robot has to pass to move in real time. The finished model was integrated straight into Hugging Face's LeRobot and downloaded more than 400,000 times within weeks of release.
@@ -86,7 +86,7 @@ For a for-profit company, training data is the most expensive asset there is. Ga
 
 Ai2 sits in a position free from that calculation. As a nonprofit research institute, it has little incentive to guard data commercially; if anything, transparency and reproducibility are closer to its reason for existing. Open the data, and other researchers can rebuild the same results to verify them, find the weaknesses, and fix them in a better direction. This is not a cost but the fulfillment of a mission.
 
-![Ai2 BimanualYAM data collection setup — three Intel RealSense cameras and dual robot arms showing the physical cost of robot data collection](./image/img-04-datacollect.png)
+![Ai2 BimanualYAM data collection setup — three Intel RealSense cameras and dual robot arms showing the physical cost of robot data collection](../ko/image/img-04-datacollect.png)
 *▲ BimanualYAM data collection rig — the physical infrastructure behind 720 hours of robot data | Source: [Gu et al., arXiv:2605.02881, Ai2](https://arxiv.org/abs/2605.02881)*
 
 Opening training data carries a particular value: it exposes not only the successes but the failures. Where a model gets stuck, and which tasks were short on data, are left plainly in the data itself. Someone who received only the weights can merely guess at why a model went wrong; someone who received the data too can trace the cause and address it. Reproducibility is improvability, and improvability is the speed of the ecosystem.

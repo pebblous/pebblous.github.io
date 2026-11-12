@@ -36,7 +36,7 @@ _Twenty-nine datasets built with public money by five elite teams, opened item b
 
 Korea's Sovereign AI Foundation Model project picked five domestic consortia, called [elite teams in the ministry's own English](https://www.msit.go.kr/eng/bbs/view.do?sCode=eng&mId=4&mPid=2&bbsSeqNo=42&nttSeqNo=1292), gave them public money to build large home-grown models, and thins the field at each stage evaluation. The data that the Ministry of Science and ICT and NIA opened on 27 August 2026 is what those five teams produced **in the course of the first stage evaluation**. By the day of the announcement, two of the five had already left the programme.
 
-![Official press release page: Ministry of Science and ICT announces the opening of 29 Sovereign AI Foundation Model training datasets](./image/img-01-korea-kr-press-release.png)
+![Official press release page: Ministry of Science and ICT announces the opening of 29 Sovereign AI Foundation Model training datasets](../ko/image/img-01-korea-kr-press-release.png)
 *▲ The press release this article starts from | Source: [Korea Policy Briefing](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156775729)*
 
 Seoul Economic Daily reported that NAVER Cloud and NC AI were cut at a later stage evaluation and that their data still fell under the mandatory opening requirement. The press release itself does not say this anywhere in its body. Confirming it is easy enough all the same. Both teams appear in the annex table of the release and in the portal listing, exactly as the surviving teams do. **Twelve** of the 22 registered datasets belong to those two teams, and they account for **83.6%** of the volume opened. The output of the side that lost the competition does not disappear; it stays at the counter.
@@ -68,7 +68,7 @@ On the same 27 August, the government also decided to bring forward the opening 
 
 The announcement said 29. Open the portal and count, and you get 22. Querying AI Hub's Sovereign AI Model Data menu on 29 August 2026 returned 22 registered datasets, serial numbers 71890 through 71913. That is the listing on day two of the opening. Where did the other seven go?
 
-![AI Hub Sovereign AI Model Data listing page — elite-team filters and dataset cards](./image/img-02-aihub-list-portal.png)
+![AI Hub Sovereign AI Model Data listing page — elite-team filters and dataset cards](../ko/image/img-02-aihub-list-portal.png)
 *▲ Open the portal, and 22 datasets are what is actually registered | Source: [AI Hub Sovereign AI Model Data](https://aihub.or.kr/aihubdata/wblextrldata/list.do?currMenu=520&topMenu=100)*
 
 The answer was in an attachment. Annex 1 to the ministry's press release, titled "Status of data construction and use by elite team, and the opening plan," is a table of five columns: **team · dataset name · format · volume opened · size**. Count the rows and you get exactly 29. Count the distinct dataset names written inside them and you get exactly 22. The government's unit is a row, a dataset sliced into video, text, speech or image; the portal's unit is the dataset itself.

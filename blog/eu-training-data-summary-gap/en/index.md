@@ -40,7 +40,7 @@ The line going around about August 2 — "now you have to disclose your training
 
 What changed on August 2, 2026 is exactly those powers. From that day the AI Office can request documents from providers, evaluate models, order corrective action, restrict or recall products from the market, and levy fines. The ceiling is the greater of €15M or 3% of worldwide turnover (Article 101). So "the grace period is over" means the grace on enforcement ended, not the grace on the obligation. The rules were already there a year ago; now they have teeth.
 
-![The Berlaymont building in Brussels, headquarters of the European Commission, the body the AI Office belongs to](./image/img-01-berlaymont.jpg)
+![The Berlaymont building in Brussels, headquarters of the European Commission, the body the AI Office belongs to](../ko/image/img-01-berlaymont.jpg)
 *▲ The Berlaymont building in Brussels, headquarters of the European Commission — the AI Office is a body within it | Source: [Acediscovery, Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Berlaymont_EU_Building-Brussels.jpg)*
 
 That distinction shapes a practical judgment. The arrival of enforcement power itself was already covered in [our report last July](https://blog.pebblous.ai/report/eu-ai-act-august-2026-deadline-reality/en/). So this piece does not repeat "what switches on August 2." With the enforcement tools now in hand, it looks instead at what those tools will be aimed at — the state the already-published summaries are actually in.
@@ -51,7 +51,7 @@ The article asks for a "sufficiently detailed summary." On its face the phrase r
 
 The template asks roughly for the following: the modality of the data (text, image, audio, and so on), the scale (size bands), languages, collection period, identifiers for the main public datasets used, the specifications and purpose of web crawlers, whether commercially licensed data was used, and how text-and-data-mining opt-outs were honored. Nor is it a write-once document. It must be refreshed every six months, or sooner if there is a material change such as further training.
 
-![The AI Office's official Article 53(1)(d) training-data summary template — a checkbox form for modality and scale](./image/img-02-template-annex.jpg)
+![The AI Office's official Article 53(1)(d) training-data summary template — a checkbox form for modality and scale](../ko/image/img-02-template-annex.jpg)
 *▲ The actual Article 53(1)(d) template (Annex) the AI Office published on July 24, 2025 — a checkbox form for modality and scale | Source: [European Commission, C(2025) 8311 final](https://digital-strategy.ec.europa.eu/en/library/explanatory-notice-and-template-public-summary-training-content-general-purpose-ai-models)*
 
 > [!callout]
@@ -80,7 +80,7 @@ The meaningful differences come from elsewhere: whether user data was used for t
 
 A story that could have ended as impressionistic critique was backed with numbers by academic work: a paper from Trinity College Dublin (ADAPT Centre) and the Mozilla Foundation, presented at the 2026 ACM FAccT conference. The authors adapted best practices in software-documentation quality control to build an evaluation framework for measuring the quality of Article 53(1)(d) summaries. It was designed to be usable both by a developer drafting a summary and by the Commission judging "good-faith compliance."
 
-![First page of the Trinity College Dublin–Mozilla Foundation paper assessing Article 53(1)(d) training-data summary quality](./image/img-03-facct-paper.jpg)
+![First page of the Trinity College Dublin–Mozilla Foundation paper assessing Article 53(1)(d) training-data summary quality](../ko/image/img-03-facct-paper.jpg)
 *▲ Blankvoort, Pandit & Gahntz, "Quality Assessment of Public Summary of Training Content for GPAI models" (ACM FAccT 2026) | Source: [arXiv:2603.13270](https://arxiv.org/abs/2603.13270)*
 
 This framework is not an abstract rubric; it actually separates pass from fail. Of five summaries reviewed in the early disclosure period, Microsoft's Phi-model summary did not clear the bar, while Hugging Face's SmolLM family passed. Recall from Section 3 that Phi was classified among those that "filled in the template," and the point sharpens: filling in the boxes and having those boxes clear a quality bar are two different things. The fact that a form was completed guarantees nothing on its own.

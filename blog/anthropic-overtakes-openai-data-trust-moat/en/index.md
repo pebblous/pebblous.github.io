@@ -42,7 +42,7 @@ Four numbers show the weight of this reversal at a glance. The two companies' va
 
 In late May 2026, Anthropic closed a new funding round of about $65 billion, setting its valuation at $965 billion. The round was led by Altimeter, GreenOaks, Dragoneer, and Sequoia, and that valuation made Anthropic the most expensive AI startup in the world. The point of comparison is OpenAI, whose last funding round valued it at $852 billion. Anthropic crossed that number for the first time.
 
-![Dario Amodei, CEO and co-founder of Anthropic, speaking at TechCrunch Disrupt 2023](./image/img-01-dario-amodei.jpg)
+![Dario Amodei, CEO and co-founder of Anthropic, speaking at TechCrunch Disrupt 2023](../ko/image/img-01-dario-amodei.jpg)
 *▲ Dario Amodei, Anthropic co-founder and CEO, at TechCrunch Disrupt 2023 | Source: [Kimberly White / Getty Images for TechCrunch, CC BY 2.0, via Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Dario_Amodei_at_TechCrunch_Disrupt_2023_04.jpg)*
 
 The common reading is "they built a better model, so they got more valuable." But that explanation doesn't fit this event well. On model-performance benchmarks the two companies trade places back and forth, and the name the general public knows better is still ChatGPT. Anthropic's consumer user base is estimated at around 5% of ChatGPT's. On user count alone, it isn't a contest.
@@ -60,7 +60,7 @@ Why this difference translates into valuation becomes clear when you look at the
 
 So even the same dollar of revenue gets priced differently. Revenue that is all but certain to still be there next year earns a higher multiple. Anthropic's growth engine, Claude Code, shows this structure plainly. Launched in May 2025, the tool reached an annualized $2.5 billion in revenue by February 2026, with more than half of it coming from enterprise. Eight of the Fortune 10 are Anthropic enterprise customers, and Anthropic's share of enterprise spend jumped from 10% in early 2025 to more than 65% by February 2026.
 
-![Claude Code interface showing agentic code editing — multi-file edits, terminal execution, and real-time diffs](./image/img-02-claude-code.jpg)
+![Claude Code interface showing agentic code editing — multi-file edits, terminal execution, and real-time diffs](../ko/image/img-02-claude-code.jpg)
 *▲ Anthropic's Claude Code interface — an agentic coding system that edits files, runs tests, and pushes commits autonomously | Source: [Anthropic](https://www.anthropic.com/product/claude-code)*
 
 The shift in the customer base shows this expansion sits on a broad, thick foundation rather than one or two large enterprise deals. Two years ago, fewer than 1,000 companies used Anthropic's tools; now the number is more than 300,000. A company that comes in once grows its usage by adding teams, and new companies keep stacking on top. Stickiness comes not from a single customer who never leaves, but from customers who never leave growing fast — compounding.
@@ -74,7 +74,7 @@ So we have to go one level deeper. Enterprise revenue is sticky, true — but wh
 
 Anthropic answered that question with product. It doesn't use customer data for model training, lets customers set data-retention periods, and publishes how data is handled through its Trust Center. On top of that, it integrates with 28 security and compliance platforms — including Cloudflare, CrowdStrike, Okta, Palo Alto, Microsoft Purview, Wiz, and Zscaler — and its Compliance API makes conversations and activity logs auditable in existing SIEM systems. It also carries SOC 2 Type II certification, AES-256 encryption for data at rest, TLS 1.2 or higher in transit, and HIPAA and BAA support.
 
-![Anthropic Claude security product illustration — a laptop with a keyhole icon representing enterprise data security](./image/img-03-claude-security.jpg)
+![Anthropic Claude security product illustration — a laptop with a keyhole icon representing enterprise data security](../ko/image/img-03-claude-security.jpg)
 *▲ Anthropic's Claude Security product concept — securing enterprise data is the prerequisite for AI adoption at scale | Source: [Anthropic](https://www.anthropic.com/product/security)*
 
 That these capabilities are a deciding factor in adoption, not abstract reassurance, is confirmed in customers' own words. Palo Alto Networks, which deployed Claude to 2,500 developers, noted that "Anthropic discusses security in every meeting — and for us, a top security company, that means a lot." GitLab found Claude stood out in its "ability to suppress unstable or deceptive behavior." What buyers in regulated industries look at is not benchmark rank but auditability. Anthropic made that auditability a default feature rather than an add-on, and so unblocked adoption.
@@ -88,7 +88,7 @@ Pull the pieces together and three facts line up. Anthropic's valuation passed O
 
 The cost structure makes the reading sharper. OpenAI projects annual training costs of $125 billion through 2030, while Anthropic projects roughly $30 billion — nearly a fourfold difference. Anthropic spends four times less and still led on revenue. That isn't a result you can explain through a race of pouring more compute into the model to push performance up. It signals that the point of differentiation has moved from a model's absolute performance to "can you trust that model with your data?"
 
-![Anthropic engineer using Claude for internal engineering work — enterprise AI adoption in practice](./image/img-04-claude-enterprise.jpg)
+![Anthropic engineer using Claude for internal engineering work — enterprise AI adoption in practice](../ko/image/img-04-claude-enterprise.jpg)
 *▲ "How Anthropic uses Claude in Engineering" — internal enterprise deployment as a model of AI adoption beyond raw compute | Source: [Anthropic](https://www.anthropic.com/product/enterprise)*
 
 This edge isn't permanent, of course. Anthropic is in a legal dispute with the U.S. government, and the Pentagon designated Anthropic a supply-chain risk, warning of a revenue threat in the billions. A moat built on trust can also be shaken by a question of trust. Yet even the character of that risk tells the same story: what sustains this company's value, and what threatens it, are both ultimately questions of data and trust.

@@ -44,14 +44,14 @@ That ₩16 trillion is about half of the National Growth Fund's ₩30 trillion s
 
 How the money actually moves is shown by the first project. The expansion of LS Cable & System's extra-high-voltage subsea cable plant in Donghae was the first approval. Of a total investment of ₩160 billion, the National Growth Fund supplies ₩80 billion as a 10-year low-rate loan. In form, it is a loan for expanding manufacturing facilities.
 
-![Large cable reels and a worker at a subsea power cable manufacturing plant](./image/img-01-cable-factory.jpg)
+![Large cable reels and a worker at a subsea power cable manufacturing plant](../ko/image/img-01-cable-factory.jpg)
 *▲ A subsea high-voltage cable plant (illustrative image, not LS Cable's Donghae plant) | Source: [Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Secretary_of_State_for_Energy_Security_and_Net_Zero,_Ed_Miliband,_visits_JDR_Cables_(54976707522).jpg)*
 
 ## The $1 Trillion Picture Behind It
 
 The ₩16 trillion is not an end in itself but the first disbursement of a far larger plan. On June 29, President Lee Jae-myung unveiled a "triple-axis strategy" linking semiconductors, physical AI, and AI data centers, and signaled roughly ₩1,350 trillion (over $1 trillion) in investment over ten years. This policy financing is the move that begins turning the physical AI axis of that strategy within the capital markets first.
 
-![Exterior of a semiconductor foundry fab, one axis of the triple-axis strategy](./image/img-02-semiconductor-fab.jpg)
+![Exterior of a semiconductor foundry fab, one axis of the triple-axis strategy](../ko/image/img-02-semiconductor-fab.jpg)
 *▲ A semiconductor foundry fab (illustrative image, the semiconductor axis of the triple-axis strategy) | Source: [Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:TSMC_Fab_6_front_May_2025.jpg)*
 
 On the same day, the Ministry of Science and ICT released a "Strategy for Securing Core Physical AI Competitiveness." Its goals: become the world's number one in physical AI and number three in AI robotics by 2030, and raise the domestic humanoid robot market share from 1% to 20%. The policy declared scale and direction at once.
@@ -65,7 +65,7 @@ The roster of participating companies makes clear what the money turns into. In 
 
 What runs through the list is physical assets. Factory expansion, production-line automation, semiconductor fabs, robot bodies: what the budget buys is mostly equipment you can touch. Nowhere in the policy documents or the participating companies' announcements does a separate line item stand out for collecting data, labeling it, or accumulating field logs.
 
-![An industrial robot arm at work on a factory automation line](./image/img-03-robot-arm-factory.jpg)
+![An industrial robot arm at work on a factory automation line](../ko/image/img-03-robot-arm-factory.jpg)
 *▲ An industrial robot arm on a factory automation line (illustrative image) | Source: [Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Robotic_Arm_Polishing_Guitars_at_Martin_Guitar_Factory.jpg)*
 
 This is where the question forks. The straight news covered "how much to whom." Yet for those facilities to actually work, for a robot arm to grip a part precisely and adjust the process on its own, there has to be data that trains those motions. In the budget, the hardware is visible but the data is hard to find.
@@ -76,7 +76,7 @@ Digital AI and physical AI differ in the very nature of their training data. Lar
 
 Physical AI is the opposite. Physical data such as the contact force when a robot grips an object, the moment of a slip, the torque on a joint, or the vibration of a factory floor is generated only at the instant real contact happens. It is not piled up anywhere on the web in advance, and it cannot be scraped by a crawler. To create it, a sensor-equipped machine has to actually move in the field.
 
-![Close-up of a five-fingered robotic hand capable of tactile sensing](./image/img-04-tactile-gripper.jpg)
+![Close-up of a five-fingered robotic hand capable of tactile sensing](../ko/image/img-04-tactile-gripper.jpg)
 *▲ A five-finger tactile-sensing robotic hand (illustrative image, Schunk SVH) | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Servo-electric_5-Finger_gripping_hand_-_Schunk_SVH.JPG)*
 
 In an earlier article, ["The Tactile Data Humanoid Capital Skipped,"](https://blog.pebblous.ai/blog/humanoid-capital-tactile-data/en/) Pebblous traced the structure in which private venture capital pours into robot hardware and foundation models while flowing to physical data such as touch at hundreds of times a smaller rate. In fact, while the German robotics firm Neura Robotics raised $1.4 billion in a single Series C round, the pre-seed funding of a startup dedicated to tactile sensing came to just $1.75 million. This policy financing extends that observation into the realm of public capital. After private capital, is government capital, too, tilting toward hardware and models while data still stands at the back of the line?
@@ -87,7 +87,7 @@ Made concrete, the question forks in two. First, do the companies receiving poli
 
 Second, is there a share for the government to build separate data infrastructure? Public datasets, robot testbeds, and standardized systems for collecting field logs are hard for any single company to build alone, and even when built, they tend to stay locked inside that company. If a hardware subsidy attaches to individual equipment, data infrastructure is closer to a foundation common to the whole industry.
 
-![A row of server racks inside a data center, illustrating shared data infrastructure](./image/img-05-data-center.jpg)
+![A row of server racks inside a data center, illustrating shared data infrastructure](../ko/image/img-05-data-center.jpg)
 *▲ Server racks inside a data center (illustrative image, shared industry data infrastructure) | Source: [Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg)*
 
 It is not yet time to settle the conclusion. But for a goal like "humanoid market share from 1% to 20%" to be realized, the answer to where the data that actually moves those robots will come from has to be written somewhere in the budget. If the ₩16 trillion was the first chapter of raising hardware, the data to train those machines is the share the next chapter has to cover.

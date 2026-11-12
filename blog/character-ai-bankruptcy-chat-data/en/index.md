@@ -20,7 +20,7 @@ _In a first-day filing the company wrote that it does not treat its roughly 163 
 
 > The facts and figures in this article come from PPC Land's analysis of the court filings, from reporting by TechCrunch and CBS News, and from the press release and the notice the company issued itself. Section 4, which turns the question toward companies that hold data, is nobody's claim but this article's reading.
 
-![Character.AI official wordmark logo](./image/img-01-character-ai-logo.svg)
+![Character.AI official wordmark logo](../ko/image/img-01-character-ai-logo.svg)
 *▲ Character.AI, the subject of this Chapter 11 filing | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Character.ai_2023_vector_logo.svg) (provided by character.ai)*
 
 ### Key numbers
@@ -54,7 +54,7 @@ The leading bidder is Disney. Disney Worldwide Services offered $20 million, and
 
 Disney is not putting up money alone. The press release the company issued on the day of the filing sets out the stalking horse terms as "$20 million and Disney's provision of transition services using former Company employees it has hired." Those transition services, the release says, "will help the Company safely operate using its platform for a limited period of time and support its sale process." The people Disney hired away earlier now come back, on Disney's side of the ledger, to help keep the platform running until the sale closes.
 
-![The Walt Disney Company logo](./image/img-02-disney-logo.svg)
+![The Walt Disney Company logo](../ko/image/img-02-disney-logo.svg)
 *▲ Disney, asked to be named the stalking horse bidder | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:The_Walt_Disney_Company_2024.svg)*
 
 That Disney is here at all marks a turn within a single year. In September 2025, Disney sent Character.AI a cease-and-desist letter over its copyrighted characters being posted on the platform without permission. In September 2026, Disney announced that it had hired Karandeep Anand, the former chief executive of Character.AI, as the first chief technology officer in its history; he started on October 2. The scale of the staff movement appears in several analyses citing the wage-related motion. As of September 30 the company had roughly 86 full-time employees, of whom 66 had already accepted Disney's offers of employment before the bankruptcy filing, and 56 of those had submitted their resignations. Eighteen full-time employees remained on the filing date. The name at the top of the filings' list of 20 largest unsecured creditors is Google, with a trade payable of $4,148,944.

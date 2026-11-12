@@ -76,7 +76,7 @@ Two live U.S. lawsuits show two different strategies for attacking AI hiring. **
 
 **Kistler v. Eightfold AI** opens a different door. Its core is not a claim that the algorithm was biased, but that its very existence was hidden. The allegation is that it scraped the personal data of more than a billion people, scored applicants from 0 to 5, and filtered out low scorers before any human looked. The plaintiff frames it as a consumer-protection violation — that the system effectively produced a "consumer report" without the disclosure that the Fair Credit Reporting Act requires. Rather than the heavy burden of proving bias, it takes the lighter route of showing the process was never disclosed.
 
-![Gavel in a U.S. courtroom, where Mobley v. Workday and Kistler v. Eightfold AI are being litigated](./image/img-01-us-courthouse.jpg)
+![Gavel in a U.S. courtroom, where Mobley v. Workday and Kistler v. Eightfold AI are being litigated](../ko/image/img-01-us-courthouse.jpg)
 *▲ Lawsuits over AI hiring algorithms are working through U.S. courts on two different theories: bias and undisclosed screening | Source: [Wikimedia Commons (Joe Gratz, CC0)](https://commons.wikimedia.org/wiki/File:Courtroom_One_Gavel_-_Flickr_-_Joe_Gratz.jpg)*
 
 > [!callout]
@@ -100,7 +100,7 @@ United States · Michigan MiDAS
 
 By mechanically splitting quarterly income across 13 weeks to detect unemployment-benefit fraud, it wrongly flagged roughly 48,000 people in 2013 alone. A 2024 class-action settlement awarded plaintiffs US$20 million.
 
-![A Centrelink branch office in Australia, where Robodebt's automated debt notices were issued](./image/img-02-centrelink-australia.jpg)
+![A Centrelink branch office in Australia, where Robodebt's automated debt notices were issued](../ko/image/img-02-centrelink-australia.jpg)
 *▲ A branch of Centrelink, Australia's welfare agency. Automated debt calculations reached recipients through counters like this one | Source: [Wikimedia Commons (Bidgee, CC BY 3.0)](https://commons.wikimedia.org/wiki/File:Wagga_Wagga_Centrelink_Office.jpg)*
 
 Korea's crisis-household detection AI treats these cases as cautionary lessons. At a welfare seminar in July 2026, the point was stressed that even where AI screens for households in crisis, the final judgment is kept with a human who goes through initial and in-depth counseling and a site visit — and Robodebt was named explicitly as the lesson to avoid. There is also ongoing discussion of building a model that explains, in natural language, the grounds for selecting a given household.
@@ -112,7 +112,7 @@ Korea's crisis-household detection AI treats these cases as cautionary lessons. 
 
 Even in the cases where a right does clear the threshold and fire, if the rollout of the infrastructure it leans on is delayed, the right stays on paper. The EU has just created exactly that situation. On 7 May 2026 the Council, Parliament, and Commission reached provisional agreement on the "Digital Omnibus," the first amendment since the AI Act's adoption, and pushed the application of Annex III high-risk AI obligations — which include hiring and welfare-eligibility determinations — from 2 August 2026 to 2 December 2027, a 16-month delay.
 
-![The European Parliament building in Brussels, where the EU AI Act amendment was negotiated](./image/img-03-eu-parliament-brussels.jpg)
+![The European Parliament building in Brussels, where the EU AI Act amendment was negotiated](../ko/image/img-03-eu-parliament-brussels.jpg)
 *▲ The European Parliament building in Brussels. The "Digital Omnibus" agreed here in May 2026 pushed back high-risk AI obligations by 16 months | Source: [Wikimedia Commons (Steven Lek, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:European_Parliament_building_Brussels_1.jpg)*
 
 The weight of this delay does not lie in a schedule simply slipping. The Article 86 right to explanation functions in practice only when deployer obligations such as risk management, logging, and human oversight are operating. An explanation is possible only if a record remains of what a decision was based on. That those obligations are deferred until December 2027 means the floor the individual's right to question would stand on gets laid that much later. At the very moment the right was written into law, the clock that supports it was pushed back 16 months.
@@ -127,7 +127,7 @@ Here the place of data provenance shifts. Until now, provenance was an after-the
 
 The right to explanation over hiring and welfare decisions moves that question one square over. Provenance is also the infrastructure that lets you answer when the individual who received the decision asks why. Unless you record, at the moment of decision, which data made this person's score by which path, and which factors actually influenced that judgment, no amount of later asking can reconstruct it. Just as a right evaporates before the single sentence "it was not fully automated," an explanation evaporates before the fact that no record was kept.
 
-![Rows of server racks inside a data center, representing the infrastructure needed to record decision-time data](./image/img-04-data-center-server.jpg)
+![Rows of server racks inside a data center, representing the infrastructure needed to record decision-time data](../ko/image/img-04-data-center-server.jpg)
 *▲ Reconstructing the features, weights, and thresholds behind a past decision requires infrastructure that captured them at the moment the decision was made | Source: [Wikimedia Commons (Carl Lender, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg)*
 
 > [!callout]

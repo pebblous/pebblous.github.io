@@ -40,7 +40,7 @@ Source: [Yadav et al., arXiv:2610.10986 (2026-10-07)](https://arxiv.org/abs/2610
 
 Vera C. Rubin Observatory began LSST, a ten-year survey of the sky, on the night of 29 June 2026. It records about 10 terabytes a night, some 30 petabytes over the decade, and returns to the same patch of sky close to 800 times so that what changes can be separated from what does not. Before the survey proper, the observatory released a rehearsal. That release is Data Preview 1. It holds six-band images of seven fields, about 15 square degrees in all, taken with the commissioning camera from late October 2024 to early January 2025.
 
-![Vera C. Rubin Observatory and the Simonyi Survey Telescope dome atop Cerro Pachón, Chile](./image/img-01-rubin-telescope.jpg)
+![Vera C. Rubin Observatory and the Simonyi Survey Telescope dome atop Cerro Pachón, Chile](../ko/image/img-01-rubin-telescope.jpg)
 *▲ Vera C. Rubin Observatory atop Cerro Pachón, Chile. The Data Preview 1 data this paper analyzes was taken with the commissioning camera, not the Simonyi Survey Telescope's main camera shown here | Source: [Rubin Observatory/NOIRLab/AURA/NSF/J.Fuentes, CC BY 4.0](https://commons.wikimedia.org/wiki/File:A_Cloudy_Day_for_Rubin_(Rubin_dome_jfuentes-CC).jpg)*
 
 The paper works with the two deepest of those fields. ECDFS and EDFS reach r-band magnitudes of 26.0 and 25.5. DeepDISC was run on them. The model finds an object, traces its outline and decides whether it is a star or a galaxy, all in one inference pass, which is a different shape from a pipeline that runs detection, deblending and classification in sequence. Its backbone is a Swin-B vision transformer, 86.8 million parameters in the backbone and 139 million in total.

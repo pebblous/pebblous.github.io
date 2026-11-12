@@ -40,7 +40,7 @@ Sources: Google, [Project Suncatcher: the facts](https://blog.google/innovation-
 
 The post Google published on September 24 says a short thing. The first prototype satellite of Project Suncatcher goes up next week. The vehicle is a Falcon 9, and it leaves Vandenberg tucked into SpaceX's Transporter-18 rideshare, the kind of flight that carries small satellites for many customers at once. The target is a dawn-dusk sun-synchronous orbit. That orbit follows the line between day and night around the Earth, so from the satellite's point of view the sun barely sets.
 
-![A SpaceX Falcon 9 rocket lifting off from Vandenberg Space Force Base](./image/img-01-falcon9-vandenberg-launch.jpg)
+![A SpaceX Falcon 9 rocket lifting off from Vandenberg Space Force Base](../ko/image/img-01-falcon9-vandenberg-launch.jpg)
 *▲ A Falcon 9 lifting off from Vandenberg (2019 Iridium-8 mission, illustrative photo) | Source: [U.S. Air Force / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:SpaceX_Flacon_9_Iridium-8_Launches_from_Vandenberg_(5024378).jpg)*
 
 It helps to keep apart what Google stated itself and what the reporting filled in. The official post records that the mission was developed in partnership with Planet, and that "future designs of our satellites will each carry dozens of TPU chips while orbiting the Earth in clusters." The name of the satellite is not in that post, and neither is the number of chips flying this time. That the craft is about the size of a refrigerator, holds four TPUs and is called MVP came from reporting in the days before launch. Those four are described as roughly one data center server's worth of compute.
@@ -66,7 +66,7 @@ It still pays to read exactly what the number points at. Eight times is a quanti
 
 Orbit does not hand out the power for free either. A ground plant pays in land and a grid connection; an orbital one pays in launch mass. Adding a square meter of solar panel means lifting a square meter on a rocket, and that mass is the base of the per-kilogram arithmetic further down. It is also why shedding batteries counts for so much. In orbit, mass is another name for cost.
 
-![Diagram of a satellite in sun-synchronous orbit crossing local time zones around the Earth](./image/img-02-sun-synchronous-orbit.svg)
+![Diagram of a satellite in sun-synchronous orbit crossing local time zones around the Earth](../ko/image/img-02-sun-synchronous-orbit.svg)
 *▲ General sun-synchronous orbit diagram — the example shown crosses at 10:30/22:30 local time, a different node time than the dawn-dusk (06:00/18:00) orbit Google's satellite uses | Source: [Menozzil14, Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Sun-Synchronous_Orbit_with_LST_Zones.svg)*
 
 ## More Time Cooling Than Computing

@@ -42,7 +42,7 @@ Source: [Anthropic S-1](https://www.sec.gov/Archives/edgar/data/0002130357/00016
 
 An S-1 is the registration statement a company files with the Securities and Exchange Commission when it means to go public. It is where revenue and costs, governance and risk factors are set down in one place before an investor asks. The document Anthropic filed on October 26 names Nasdaq and the ticker ANT, and it carries the numbers for January through June of this year.
 
-![U.S. Securities and Exchange Commission headquarters building in Washington, D.C. — where Anthropic filed its S-1 registration statement](./image/img-01-sec-headquarters.jpg)
+![U.S. Securities and Exchange Commission headquarters building in Washington, D.C. — where Anthropic filed its S-1 registration statement](../ko/image/img-01-sec-headquarters.jpg)
 *▲ This is the building an S-1 goes to — SEC headquarters in Washington, D.C. (reference image) | Source: [AgnosticPreachersKid / Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:U.S._Securities_and_Exchange_Commission_headquarters.JPG)*
 
 Revenue was $16.286 billion. The same six months last year brought $1.163 billion, so the figure grew fourteenfold. Set beside the $4.6 billion the company took in across the whole of last year, half a year sold more than three times what all of last year did.

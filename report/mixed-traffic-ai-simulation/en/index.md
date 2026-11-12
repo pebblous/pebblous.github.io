@@ -35,7 +35,7 @@ Mixed traffic simulation must tackle three interlocking dimensions simultaneousl
 - •**Environment-Level**: Road geometry, traffic signals, weather, and other variables — particularly atypical environments like Korean urban roads, where motorcycles and scooters mix freely, are chronically underrepresented in global datasets.
 - •**Cognition-Physics**: The intersection of human cognitive judgment (bounded rationality) and physical laws — AI cannot fully capture the intuitive, context-dependent decisions that human drivers make moment to moment.
 
-![Waymo self-driving car navigating a road alongside pedestrians in Mountain View, California — a real-world example of mixed traffic](./image/img-01-waymo-mixed-traffic.jpg)
+![Waymo self-driving car navigating a road alongside pedestrians in Mountain View, California — a real-world example of mixed traffic](../ko/image/img-01-waymo-mixed-traffic.jpg)
 *▲ A Waymo autonomous vehicle shares the road with pedestrians — the mixed traffic reality that simulators must learn to replicate | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Waymo_self-driving_car_side_view.gk.jpg) (CC BY-SA 4.0, Grendelkhan)*
 
 ### 1.2 Nine Core Challenges
@@ -60,7 +60,7 @@ Of these nine challenges, the first two — the Evaluation Crisis and the Causal
 
 There is a moment when "great simulation performance" rings hollow. The most illustrative example: a planner that tops the leaderboard on the nuPlan benchmark (1,282 hours across 4 cities) performs only modestly in real-world road tests. The reason lies in the evaluation methodology itself.
 
-![Autonomous driving simulation architecture: Onboard loop (Perception → Planner) vs Offboard loop (Simulation feeding back into the Planner) — the core closed-loop evaluation structure](./image/img-05-sim-loop-architecture.png)
+![Autonomous driving simulation architecture: Onboard loop (Perception → Planner) vs Offboard loop (Simulation feeding back into the Planner) — the core closed-loop evaluation structure](../ko/image/img-05-sim-loop-architecture.png)
 *▲ Onboard vs Offboard simulation loop — in closed-loop evaluation, the simulator feeds synthetic perception outputs back to the planner, creating a continuous interaction cycle that mirrors real-world driving | Source: [Montali et al., Waymo Open Sim Agents Challenge, arXiv:2305.12032](https://arxiv.org/abs/2305.12032)*
 
 ### 2.1 Open-Loop vs. Closed-Loop: Same Data, Different Reality
@@ -77,10 +77,10 @@ Most simulation evaluations still use open-loop methods — measuring the distan
 
 Open-loop evaluation assumes the ego vehicle's actions have no effect on the surrounding environment. In reality, when your car brakes, the car behind reacts — and that reaction shapes your next decision. Ignoring this interdependency means that even the most sophisticated prediction model will behave differently on real roads.
 
-![Cruise Automation Chevrolet Bolt EV equipped with multiple Velodyne LIDAR sensors for autonomous driving testing in San Francisco](./image/img-02-cruise-lidar-sensors.jpg)
+![Cruise Automation Chevrolet Bolt EV equipped with multiple Velodyne LIDAR sensors for autonomous driving testing in San Francisco](../ko/image/img-02-cruise-lidar-sensors.jpg)
 *▲ A Cruise AV bristling with LIDAR sensors — the physical reality that simulation must faithfully replicate to close the Sim-to-Real gap | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Cruise_Automation_Bolt_EV_third_generation_in_San_Francisco.jpg) (CC BY-SA 4.0, Dllu)*
 
-![NAVSIM benchmark: real camera view with simulated trajectory predictions compared against human driving — showing ADE (Average Displacement Error) scores for different planning approaches](./image/img-06-navsim-trajectory.png)
+![NAVSIM benchmark: real camera view with simulated trajectory predictions compared against human driving — showing ADE (Average Displacement Error) scores for different planning approaches](../ko/image/img-06-navsim-trajectory.png)
 *▲ NAVSIM benchmark: real-world camera view with simulated trajectory predictions — the gap between human driving (ADE 0.0) and AI predictions reveals why open-loop metrics alone are insufficient | Source: [Dauner et al., NAVSIM, arXiv:2406.15349](https://arxiv.org/abs/2406.15349)*
 
 ### 2.2 The Causality Gap: A Deeper Problem
@@ -135,10 +135,10 @@ Applied Intuition reached a $15B valuation in its June 2025 Series F. ARR hit $4
 
 Yet underneath this growth, Applied Intuition's core value proposition remains "more scenarios." Data quality diagnostics — asking whether the generated scenarios are actually realistic — is not on their product roadmap. That is Pebblous's opening. For a detailed analysis of Applied Intuition's technical architecture and positioning gaps, see the [Applied Intuition Deep Dive](/project/BizReport/applied-intuition-analysis-01/ko/).
 
-![Waymo Jaguar I-Pace autonomous vehicle on public roads in West Miami, Florida, April 2026](./image/img-03-waymo-west-miami.jpg)
+![Waymo Jaguar I-Pace autonomous vehicle on public roads in West Miami, Florida, April 2026](../ko/image/img-03-waymo-west-miami.jpg)
 *▲ Waymo's latest AV fleet operating on public roads in Miami (2026) — simulation volume alone did not prevent real-world deployment challenges | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Waymo_Self_Driving_Car_in_West_Miami.jpg) (CC BY 4.0, Phillip Pessar)*
 
-![nuScenes Prediction Challenge: multi-modal trajectory prediction visualization on a real urban intersection — colored trajectory fans show probability distributions for vehicle future motion](./image/img-07-nuscenes-prediction.png)
+![nuScenes Prediction Challenge: multi-modal trajectory prediction visualization on a real urban intersection — colored trajectory fans show probability distributions for vehicle future motion](../ko/image/img-07-nuscenes-prediction.png)
 *▲ nuScenes Prediction Challenge — multi-modal trajectory forecasting on real urban scenes. The colored fans represent probability distributions over possible future paths, the foundation of closed-loop simulation evaluation | Source: [nuScenes (Motional)](https://www.nuscenes.org/prediction)*
 
 ### 4.2 Academic Standards: nuPlan and World Models
@@ -181,7 +181,7 @@ The experience built in mixed traffic simulation scales across the entire Physic
 | Medium-Term | 2027 | Evidence automation SaaS, API integration | EU AI Act expansion |
 | Long-Term | 2028+ | Expand across all Physical AI domains | DoD autonomy budget growth |
 
-![ST Engineering Taurus multi-role unmanned ground vehicle exhibited at the 2026 Singapore Airshow — representing the defense sector's growing demand for autonomous system simulation](./image/img-04-taurus-ugv.jpg)
+![ST Engineering Taurus multi-role unmanned ground vehicle exhibited at the 2026 Singapore Airshow — representing the defense sector's growing demand for autonomous system simulation](../ko/image/img-04-taurus-ugv.jpg)
 *▲ ST Engineering Taurus UGV at Singapore Airshow 2026 — defense autonomous systems face the same simulation reliability challenges as civilian AVs | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ST_Engineering_Taurus_-_Singapore_Airshow_2026.jpg) (CC BY-SA 4.0)*
 
 > [!callout]

@@ -39,7 +39,7 @@ Three numbers compress the weight and the direction of this case. One is the siz
 
 On July 10, 2026, publishers Hachette Book Group, Cengage Learning and Elsevier, together with novelist Scott Turow, filed a class action against Google. What stands out is where they filed. Not the Northern District of California, which had handed down a run of AI-friendly rulings, but the Southern District of New York (SDNY). It reads as a venue choice aimed at a different outcome on different precedent terrain.
 
-![Thurgood Marshall United States Courthouse, home of the Southern District of New York — where publishers sued Google](./image/img-01-sdny-courthouse.jpg)
+![Thurgood Marshall United States Courthouse, home of the Southern District of New York — where publishers sued Google](../ko/image/img-01-sdny-courthouse.jpg)
 *▲ The Thurgood Marshall United States Courthouse in Manhattan, home of the Southern District of New York. Publishers picked this court over the AI-friendly Northern District of California. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Thurgood_Marshall_United_States_Courthouse_002.jpg) (CC BY-SA 4.0, Kidfly182)*
 
 The complaint runs along two tracks. The first is unauthorized training. Books were supplied to Google Books, Play Books and Scholar for the limited purpose of search and snippet display — and the plaintiffs say Google pulled those full texts straight into Gemini's training. The second track is where the real center of gravity sits. It alleges that Google deliberately stripped copyright management information (CMI) — details like book titles and author names — erasing the clues to which books went into training. The plaintiffs frame this as a violation of DMCA (Digital Millennium Copyright Act) §1202(b).
@@ -61,7 +61,7 @@ This is not the first time a source-removal claim has reached a courtroom. In Ka
 
 Discovery revealed that Meta had trained Llama on the pirated dataset LibGen and had deliberately removed copyright information in the process. In March 2025, the court let the source-removal claim survive the motion-to-dismiss stage, finding room to read the removal as intended to conceal infringement. So far, this favored the plaintiffs.
 
-![Meta Platforms headquarters entrance, Menlo Park, California — the defendant in Kadrey v. Meta](./image/img-02-meta-hq.jpg)
+![Meta Platforms headquarters entrance, Menlo Park, California — the defendant in Kadrey v. Meta](../ko/image/img-02-meta-hq.jpg)
 *▲ Meta Platforms headquarters, Menlo Park, California. Meta became the defendant in Kadrey v. Meta over allegations it stripped copyright information from the data used to train Llama. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Meta_Platforms_Headquarters_Menlo_Park_California.jpg) (CC0, LPS.1)*
 
 The reversal came at summary judgment in June 2025. The court ultimately rejected the claim, and the structure of its reasoning is the crux. If the training itself is fair use — not infringement — then removing copyright information for the sake of that training cannot be said to have "facilitated infringement." For source removal to stand as an independent violation, the removal must have aided an actual infringement; but since the underlying act was not infringement, the removal claim could not stand either. The court did not weigh whether erasing the source was right or wrong; it tethered the claim's fate wholesale to the fair-use ruling.
@@ -88,7 +88,7 @@ Once the source is erased, there is no way to separate the claim "we used it law
 
 The signal this case sends to data practitioners does not require waiting for a verdict. If, at the point of assembling a training dataset, there is no provenance-tracking system that preserves each item's source, license and copyright information, then you later end up unable to prove — or rebut — "why and how this data was used." A model trained after its sources were erased becomes an unauditable asset, independent of whether the copyright suit is won or lost.
 
-![Data center server racks — the infrastructure that needs a training-data provenance pipeline](./image/img-03-datacenter-servers.jpg)
+![Data center server racks — the infrastructure that needs a training-data provenance pipeline](../ko/image/img-03-datacenter-servers.jpg)
 *▲ Server racks in a data center used to store AI training data. Without a provenance-tracking system preserving source, license and copyright information from the assembly stage, you later can't prove or rebut how the data was used. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:BalticServers_data_center.jpg) (CC BY-SA 3.0, BalticServers.com)*
 
 Provenance management does not have to be seen only as a copyright-risk response. Tracking the source and integrity of training data is also a baseline condition for a model's reliability and reproducibility. Only when you can reconstruct which data went in can you explain why a model answers the way it does and single out the data behind a problem. Provenance marks are not regulatory paperwork; they are part of data quality.

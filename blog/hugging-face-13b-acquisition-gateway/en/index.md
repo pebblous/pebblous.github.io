@@ -42,7 +42,7 @@ Sources: [TechCrunch](https://techcrunch.com/2026/08/24/hugging-face-reportedly-
 
 What is actually on the record is thinner than the headline suggests. Hugging Face has been approached at a valuation of $13 billion or more. It is not clear who the talks are with. No deal has been reached. The line about the company talking to banks to help evaluate bids is where the reporting ends.
 
-![Hugging Face homepage magnified through a loupe, showing the huggingface.co address bar and logo](./image/img-01-hf-homepage.jpg)
+![Hugging Face homepage magnified through a loupe, showing the huggingface.co address bar and logo](../ko/image/img-01-hf-homepage.jpg)
 *▲ The spot now drawing a $13B+ sale offer | Source: [Jernej Furman, CC BY 2.0, Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Homepage_of_HUGGING_FACE_Website_magnified_on_logo_with_magnifying_glass_(53146954891).jpg)*
 
 The company's own signals do not point one way either. Delangue said on a recent episode of the TechCrunch Equity podcast that Hugging Face is close to profitability and has only recently started to touch the money it raised three years ago, adding that the startup is thinking about how to optimise for "long-term sustainability of the company rather than short-term profits or fundraising maximization." On the community, he put it this way: "We're building a platform for the community, and they're trusting us with sharing their data and their models on the platform, so we have a long-term responsibility to them."

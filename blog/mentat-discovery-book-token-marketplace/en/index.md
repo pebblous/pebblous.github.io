@@ -42,7 +42,7 @@ Source: Mentat's launch announcement and coverage by [AI Times](https://www.aiti
 
 What an AI company does on Mentat Discovery comes in three steps. It searches licensed books by field and category. It reads off the screen how many tokens that bundle holds and roughly what it would cost. It then picks a mode of use and moves to a contract. The modes split in two: taking the books as a dataset file for training a model, or taking them through an API that lets an AI consult the text and show the source as it answers. Mentat labels the two Training Dataset and Citation API.
 
-![Mentat Discovery Corpus Builder screen showing token count and estimated price for a bundle of books by field](./image/img-01-discovery-screenshot.png)
+![Mentat Discovery Corpus Builder screen showing token count and estimated price for a bundle of books by field](../ko/image/img-01-discovery-screenshot.png)
 *▲ Mentat Discovery's Corpus Builder screen — bundle token count (48 million passages), data volume and estimated price range on one screen | Source: [AI Times](https://www.aitimes.com/news/articleView.html?idxno=216215)*
 
 That third step is not a stamp pressed on the screen. A buyer who has checked size and cost requests the detailed catalog, and the contract discussion starts from there. The books are grouped by what is inside them rather than by publisher or year of publication, so a buyer narrows down from whichever field they came for.
@@ -55,7 +55,7 @@ Byung Wook Jeon, CEO of Mentat, at the launch announcement of October 13, 2026, 
 
 Mentat was founded in July 2025. Jeon came to it from leading the digital business team at the publisher Changbi and from new business at Kakao Entertainment, and has said the company started from the view that a Korean publisher negotiating alone has little leverage against a global AI company. Mentat raised pre-seed funding from Antler Korea and was selected for TIPS, the startup program run by Korea's Ministry of SMEs and Startups. In August 2026 the company disclosed an AI licensing contract with a global big tech firm, and the cumulative contract value given at that point was about 10 billion won across some 50 participating publishers. The figure given at this launch, two months later, is more than 90 publishers under contract.
 
-![Byung Wook Jeon, CEO of Mentat, profile photo](./image/img-02-ceo-portrait.jpg)
+![Byung Wook Jeon, CEO of Mentat, profile photo](../ko/image/img-02-ceo-portrait.jpg)
 *▲ Byung Wook Jeon, CEO of Mentat | Source: [Mentat](https://mentat.so/about/)*
 
 The stake an individual publisher puts on this marketplace is not small either. Jpub, a specialist IT publisher, agreed to supply about 100 titles of technical and computing books as training and citation data and to be paid according to use. One field's specialist list went up as a single bundle.

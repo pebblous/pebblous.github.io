@@ -43,7 +43,7 @@ Deep learning has automated parts of this process, but the fundamental structure
 > [!callout]
 > The real bottleneck of Earth observation is not a lack of data but a lack of analytical capacity. Satellites already see plenty. The problem is that not enough systems can read what they see. Agentic AI can bridge this structural gap because it transcends the limits of any single model, composing multiple models and converting a user's natural-language intent into an executable analysis pipeline.
 
-![DOTA satellite imagery dataset: 18 object classes including large vehicles, swimming pools, helicopters, ships, soccer fields, baseball diamonds, airports, and roundabouts — real objects detected from aerial and satellite images](./image/img-05-dota-classes-grid.avif)
+![DOTA satellite imagery dataset: 18 object classes including large vehicles, swimming pools, helicopters, ships, soccer fields, baseball diamonds, airports, and roundabouts — real objects detected from aerial and satellite images](../ko/image/img-05-dota-classes-grid.avif)
 *▲ DOTA-v2.0 dataset: 18 classes of real satellite imagery — vehicles, ships, aircraft, stadiums, airports, and more across 1,793,658 annotated instances | Source: [Ultralytics DOTA-v2.0 Docs](https://docs.ultralytics.com/datasets/obb/dota-v2/)*
 
 ### 1.3 Limits of the Conventional Approach
@@ -69,7 +69,7 @@ YOLOv1 (2015) proved the very concept of real-time object detection. While the d
 
 YOLOv8 (2023, Ultralytics) adopted an anchor-free design, eliminating the manual step of configuring anchor boxes. By decoupling the classification and regression heads it also boosted detection accuracy. YOLOv8 positioned itself as a "general-purpose vision engine" by offering detection, segmentation, pose estimation, and classification within a single framework.
 
-![YOLO26 architecture pipeline: input preprocessing, backbone feature extraction, multi-scale feature maps, lightweight fusion neck, NMS-free prediction, STAL label assignment, MuSGD optimizer, quantized deployment](./image/img-01-yolo26-architecture.png)
+![YOLO26 architecture pipeline: input preprocessing, backbone feature extraction, multi-scale feature maps, lightweight fusion neck, NMS-free prediction, STAL label assignment, MuSGD optimizer, quantized deployment](../ko/image/img-01-yolo26-architecture.png)
 *▲ Full YOLO26 architecture pipeline -- NMS-free inference, STAL small-target label assignment, and MuSGD optimizer are the key innovations | Source: [Sapkota et al., arXiv:2509.25164](https://arxiv.org/abs/2509.25164)*
 
 ### 2.2 YOLO11 and YOLO26: The NMS-Free Era
@@ -82,7 +82,7 @@ YOLO26 brings three core innovations.
 - •Area Attention: Applying attention over an entire image scales quadratically with the pixel count. YOLO26 partitions the image into regions and computes attention within each, preserving the representational power of Transformers while keeping computation manageable. For high-resolution satellite imagery, this design makes a practical difference.
 - •Edge optimization: The YOLO26n (nano) model achieves 40.6 mAP on COCO with just 2.4 M parameters. That is higher accuracy with fewer parameters than YOLO11n (2.6 M params, 39.5 mAP). This level of efficiency is directly applicable to on-board satellite computing and drone edge processing.
 
-![YOLO26 four key innovations: (a) Distribution Focal Loss removal, (b) end-to-end NMS-free inference, (c) ProgLoss progressive loss balancing + STAL small-target label assignment, (d) MuSGD stable convergence optimizer](./image/img-02-yolo26-innovations.png)
+![YOLO26 four key innovations: (a) Distribution Focal Loss removal, (b) end-to-end NMS-free inference, (c) ProgLoss progressive loss balancing + STAL small-target label assignment, (d) MuSGD stable convergence optimizer](../ko/image/img-02-yolo26-innovations.png)
 *▲ YOLO26's four architecture innovations -- (a) DFL removal simplifies the detection head, (b) NMS-free end-to-end inference, (c) ProgLoss + STAL for small objects, (d) MuSGD for stable convergence | Source: [Sapkota et al., arXiv:2509.25164](https://arxiv.org/abs/2509.25164)*
 
 ### 2.3 YOLO on Satellite Imagery: Wins and Challenges
@@ -91,7 +91,7 @@ YOLO variants are already widely deployed for satellite object detection. On the
 
 Satellite imagery, however, differs fundamentally from natural images. Objects can be extremely small (a building may be just 10 x 10 pixels), oriented bounding boxes (OBB) are often required, and object density within a single image can range from hundreds to tens of thousands. Additional domain-specific demands include multispectral band utilization and temporal change detection -- neither of which exists in standard natural-image object detection.
 
-![Oriented bounding box (OBB) detection on satellite port imagery from the DOTA dataset: ships (green) and vehicles (purple) detected with precise orientation information](./image/img-06-dota-obb-detection.avif)
+![Oriented bounding box (OBB) detection on satellite port imagery from the DOTA dataset: ships (green) and vehicles (purple) detected with precise orientation information](../ko/image/img-06-dota-obb-detection.avif)
 *▲ Oriented bounding box (OBB) detection on satellite port imagery — ships, vehicles, and other objects detected with precise rotation angles. Standard horizontal boxes cannot capture the true boundaries of arbitrarily oriented objects in satellite views | Source: [Ultralytics DOTA-v2.0](https://docs.ultralytics.com/datasets/obb/dota-v2/)*
 
 > [!callout]
@@ -109,7 +109,7 @@ Comparing YOLO-family model performance on COCO val2017 makes YOLO26's parameter
 
 YOLO26n simultaneously achieves the highest accuracy (40.6 mAP) and the fastest speed (1.30 ms) with the fewest parameters (2.4 M). This Pareto optimum delivers practical advantages for both edge deployment and serverless inference.
 
-![Ultralytics YOLO model performance comparison chart: COCO mAP50-95 vs T4 TensorRT FP16 latency. YOLO26 sets a new Pareto frontier across all model sizes](./image/img-03-yolo-performance.png)
+![Ultralytics YOLO model performance comparison chart: COCO mAP50-95 vs T4 TensorRT FP16 latency. YOLO26 sets a new Pareto frontier across all model sizes](../ko/image/img-03-yolo-performance.png)
 *▲ Full YOLO family performance comparison -- YOLO26 (blue line) sets a new accuracy-speed Pareto frontier across all model sizes | Source: [Ultralytics](https://github.com/ultralytics/assets)*
 
 ## LangGraph Orchestrates YOLO
@@ -176,7 +176,7 @@ Between 2023 and 2025, a wave of EO-specific foundation models emerged. IBM/NASA
 
 Foundation models benefit from domain-specific pre-training, enabling strong downstream task performance with limited labeled data. Most, however, remain in the research phase and lag behind the YOLO family in production-grade inference speed, cost efficiency, and real-time processing capability.
 
-![YOLO26 vs RT-DETR/DEIM performance comparison: COCO mAP50-95 vs T4 TensorRT FP16 latency. YOLO26 outperforms the RT-DETR family at every model size](./image/img-04-yolo26-vs-rtdetr.png)
+![YOLO26 vs RT-DETR/DEIM performance comparison: COCO mAP50-95 vs T4 TensorRT FP16 latency. YOLO26 outperforms the RT-DETR family at every model size](../ko/image/img-04-yolo26-vs-rtdetr.png)
 *▲ YOLO26 vs Transformer-based detectors (RT-DETR, DEIM) -- at the same latency, YOLO26 consistently achieves higher mAP | Source: [Sapkota et al., arXiv:2509.25164](https://arxiv.org/abs/2509.25164)*
 
 ### 4.4 Market Size and Outlook

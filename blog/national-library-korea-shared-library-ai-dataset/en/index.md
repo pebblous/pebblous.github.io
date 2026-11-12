@@ -42,7 +42,7 @@ The announcement the National Library of Korea made on September 17 says a short
 
 Four strands of material went in. Modern magazines from the 1930s and 1940s, government publications and school textbooks from the 1940s through the 1960s, material the National Library of Korea published itself, and open access scholarly articles whose rights holders permitted use in AI training. Break the text down by resource type on the Shared Library's own screens and two more categories appear alongside those, monographs and serials. The modern magazines, the serials and the open access articles are split by article rather than by volume.
 
-![Front view of the National Library of Korea main building](./image/img-01-nlk-building.jpg)
+![Front view of the National Library of Korea main building](../ko/image/img-01-nlk-building.jpg)
 *▲ The National Library of Korea, which opened this AI training data release | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:190902_%EA%B5%AD%EB%A6%BD%EC%A4%91%EC%95%99%EB%8F%84%EC%84%9C%EA%B4%80_%EB%B3%B8%EA%B4%80_%EC%A0%84%EA%B2%BD002.jpg)*
 
 How many items sit in each strand is something the resource type filter on the search page states outright. The order in which the announcement introduced the material and the order of actual volume are not the same.

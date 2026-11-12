@@ -57,7 +57,7 @@ The heaviest cell in this timeline is "about seven months." During that span, 14
 > [!callout]
 > The PIPC's conclusion compresses into a single sentence. **"This incident was not caused by sophisticated hacking, but by the absence of basic safeguards and a failure of management."** What makes that sentence important is not the assigning of blame. If the cause was not a flashy zero-day but a lapse in fundamentals — keys, destruction, logs, consent — then the same risk lies latent in any organization, regardless of size or industry.
 
-![Open padlock overlaid on a stream of leaked numeric data — conceptual image of a personal information breach](./image/img-01-data-breach-concept.jpg)
+![Open padlock overlaid on a stream of leaked numeric data — conceptual image of a personal information breach](../ko/image/img-01-data-breach-concept.jpg)
 *▲ Personal data breach concept: an unlocked padlock amid flowing data | Source: [Blogtrepreneur via Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Data_Security_Breach_(29723649810).jpg)*
 
 ## The Violations the PIPC Named, in Engineering Terms
@@ -79,7 +79,7 @@ Coupang's token authentication granted access on the strength of a digital-signa
 
 An authentication signing key is a secret on the order of a master key. The canonical practice comes down to four points. First, forbid plaintext exposure and store it in an HSM or KMS, decrypting only at the moment of use. Second, separate read permissions to enforce least privilege. Third, run scheduled rotation and event-driven rotation together. Fourth, revoke it immediately on departure or role change. Drop any one of these, and "the one person who knows the key" can open everything. NIST SP 800-57 and the OWASP Secrets Management Cheat Sheet codify the same principles, and plaintext or hardcoded credentials are classified among the most dangerous weaknesses as CWE-321 and CWE-798.
 
-![nCipher nShield F3 Hardware Security Module (HSM) — a PCIe card that securely stores signing keys inside tamper-resistant hardware](./image/img-02-hsm-hardware.jpg)
+![nCipher nShield F3 Hardware Security Module (HSM) — a PCIe card that securely stores signing keys inside tamper-resistant hardware](../ko/image/img-02-hsm-hardware.jpg)
 *▲ nCipher nShield F3 Hardware Security Module (HSM) — a dedicated device that stores cryptographic credentials without plaintext exposure, decrypting only at the moment of use | Source: [Alexander Klink via Wikimedia Commons (CC BY 3.0)](https://commons.wikimedia.org/wiki/File:NCipher_nShield_F3_Hardware_Security_Module.jpg)*
 
 ### 2.2. Access Control: 44 Million Screams Went Unheard
@@ -88,7 +88,7 @@ During the attack, traffic to personal-data pages spiked far above normal. The m
 
 A token must not be validated on its signature alone. Even when the signature is valid, an existence-and-validity check should reject a member number that does not actually exist. On top of that, rate limiting, anomaly detection (UEBA), thresholds for abnormal traffic with automatic blocking, and a loop that runs continuously from detection through analysis to response all need to be in place. NIST SP 800-207 (zero trust) and SP 800-92 (log management) are the standards for this design; improper signature verification maps to CWE-347, and abuse of valid accounts to MITRE ATT&CK T1078. 148 million is a number that any threshold should have caught.
 
-![UniToken USB authentication devices and OTP generators — hardware 2FA tokens that strengthen token-based authentication](./image/img-03-auth-tokens.jpg)
+![UniToken USB authentication devices and OTP generators — hardware 2FA tokens that strengthen token-based authentication](../ko/image/img-03-auth-tokens.jpg)
 *▲ Hardware authentication tokens (OTP) — a signature alone is not enough; member existence and validity checks, plus multi-factor authentication, must accompany it | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Authentication_devices.jpg)*
 
 ### 2.3. Breach Notification: The Clock Starts With the Incident
@@ -165,7 +165,7 @@ Now we turn the incident into a checklist. The six areas below are not for one p
 
 Industry statistics point the same way. According to IBM's Cost of a Data Breach report, breaches involving stolen credentials take an average of 292 days to detect and contain. Coupang's roughly seven months (about 210 days) of non-detection is, statistically, closer to "not abnormal" than otherwise — which is to say that non-detection of credential breaches is a universal blind spot. GitGuardian's research found that many secrets, once leaked, remained valid long afterward. Missing key rotation is not one company's aberration; it's the whole industry's habit.
 
-![Bar chart of data breaches by cause — hacking and malware lead at ~2,600 incidents, followed by unintended disclosure and physical loss](./image/img-04-breach-causes.png)
+![Bar chart of data breaches by cause — hacking and malware lead at ~2,600 incidents, followed by unintended disclosure and physical loss](../ko/image/img-04-breach-causes.png)
 *▲ Data breaches by cause (PrivacyRights.Org, 2021) — Hacking/Malware (~2,600) dominates, followed by Unintended Disclosure (~1,800) and Physical Loss (~1,750). Insider threats (~600) are far from negligible | Source: [PrivacyRights.Org / Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:Data_breaches_by_cause.png)*
 
 ## In Front of the Mirror: To Everyone Who Handles Data

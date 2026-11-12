@@ -46,7 +46,7 @@ Stated precisely, the README makes four claims. First, ten million documents sto
 
 One source point deserves to be clear. The algorithm turbovec implements, TurboQuant, is not the author's own invention — it is a paper from Google researchers. **arXiv:2504.19874, "TurboQuant: Online Vector Quantization with Near-optimal Distortion Rate"**, by Amir Zandieh, Majid Daliri, Majid Hadian, and Vahab Mirrokni, was posted on April 28, 2025. The affiliations are reported as Google Research, Google DeepMind, and NYU, but the abstract itself carries no affiliation line, so this rests on secondary sources. An ICLR 2026 acceptance is likewise reported by multiple outlets, though the arXiv page does not state a venue. In short, turbovec is "an open-source implementation of a Google algorithm," and the paper's existence and mechanism are solid ground.
 
-![A t-SNE projection of sentences and words turned into embedding vectors onto two dimensions — semantically similar items cluster together](./image/img-01-word-embeddings-tsne.png)
+![A t-SNE projection of sentences and words turned into embedding vectors onto two dimensions — semantically similar items cluster together](../ko/image/img-01-word-embeddings-tsne.png)
 *▲ Embeddings turn documents into high-dimensional vectors. The closer two items are in meaning, the closer they sit in vector space — these are exactly the vectors turbovec compresses. | Source: [Wikimedia Commons (Siobhán Grayson, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:T-SNE_visualisation_of_word_embeddings_generated_using_19th_century_literature.png)*
 
 > [!callout]
@@ -60,7 +60,7 @@ To understand turbovec, look at the method, not the ratio. The same 16× compres
 
 First, **normalize**. The vector's length (its norm) is peeled off and stored separately as a single float, leaving only the unit direction vector. Second, **random rotation**. Every vector is multiplied by the same random orthogonal matrix. After this, each rotated coordinate follows a Beta distribution, and as the dimension grows it converges to an N(0, 1/d) Gaussian. The paper puts it this way: rotating the input vectors at random induces a concentrated Beta distribution on the coordinates. This is the heart of being data-oblivious — whatever the input is, after rotation the distribution converges to a predictable shape.
 
-![A multivariate normal (Gaussian) surface — the known shape that randomly rotated vector coordinates converge to in high dimensions](./image/img-02-multivariate-gaussian.png)
+![A multivariate normal (Gaussian) surface — the known shape that randomly rotated vector coordinates converge to in high dimensions](../ko/image/img-02-multivariate-gaussian.png)
 *▲ This is where the magic of random rotation lives. Any input, once rotated, sees its coordinate distribution converge to a Gaussian like this one — and because the distribution is known in advance, the quantization boundaries can be computed from math instead of from data. | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Multivariate_Gaussian.png)*
 
 Third, **coordinate-wise scalar quantization (Lloyd–Max)**. Because the distribution is already known, the optimal quantization boundaries and centroids for each coordinate are precomputed from math rather than from the data. In the paper's phrasing, they are computed once, from mathematics rather than from data. Fourth, **bit-packing**. Coordinates are rounded to 2 bits (4 buckets) or 4 bits (16 buckets) and packed together. The README notes that it borrows RaBitQ's (arXiv:2405.12497) length re-normalization here — RaBitQ is prior work in the same lineage, a "rotation-plus-quantization with a theoretical error bound."
@@ -95,25 +95,25 @@ Where does 31GB come from? Multiply ten million 768-dimensional fp32 embeddings.
 
 So "31GB" is accurate **only when you assume 768-dimensional fp32**. The README does not name the dimension, so this is an estimate reverse-derived by arithmetic. At an OpenAI ada-002-class 1536 dimensions, the same ten million vectors come to 61GB, and 31GB is wrong. The 4GB target splits the same way along dimension and bit-width. At 768 dimensions, 4GB is about 4.17 bits per coordinate (roughly 7.4×, i.e. 4-bit compression); at 1536 dimensions, 4GB is about 2.08 bits per coordinate (roughly 15×, i.e. 2-bit compression). The README's single-vector example ("6,144 bytes → 384 bytes = 16×", "→ 768 bytes = 8×") is pure bit-arithmetic, so it is true by definition, not a benchmark.
 
-![Index size and compression ratio by bit-width — a 1536-dimensional fp32 vector of 6,144 bytes shrinks to 384 bytes at 2-bit, a 16× reduction](./image/turbovec-compression.svg)
+![Index size and compression ratio by bit-width — a 1536-dimensional fp32 vector of 6,144 bytes shrinks to 384 bytes at 2-bit, a 16× reduction](../ko/image/turbovec-compression.svg)
 *▲ Compression — a 1536-dimensional fp32 vector of 6,144 bytes shrinks to 384 bytes at 2-bit, a 16× reduction. The ratio is the same bit-arithmetic for any quantizer; the real question is how much recall survives that compression. | Source: [turbovec README](https://github.com/RyanCodrai/turbovec) (100K vectors, k=64, author's own benchmark)*
 
 ### 3.2. Speed vs FAISS — "always faster" is false
 
 The speed claim is the one to handle most carefully. The README's "12–20% faster on ARM, parity or better on x86" comes from the author's own measurement at 100K vectors, 1K queries, k=64, median of 5 runs, on an Apple M3 Max and an Intel Sapphire Rapids. That much is broadly true. But in the same README the author writes plainly that **the 2-bit multithreaded configurations (d=1536, d=3072) run 2–4% slower than FAISS**. So the social-media-style claim that "search speed always matches or beats FAISS" is **false in some configurations**. Stated precisely: "faster in most configurations, but FAISS wins in some 2-bit multithreaded ones."
 
-![Multithreaded search speed comparison on Apple M3 Max (ARM) — TurboQuant beats FAISS FastScan by 12–20% across every configuration](./image/turbovec-arm_speed_mt.svg)
+![Multithreaded search speed comparison on Apple M3 Max (ARM) — TurboQuant beats FAISS FastScan by 12–20% across every configuration](../ko/image/turbovec-arm_speed_mt.svg)
 *▲ ARM (M3 Max) multithreaded speed — TurboQuant beats FAISS FastScan by 12–20% across every configuration. | Source: [turbovec README](https://github.com/RyanCodrai/turbovec) (100K vectors, k=64, author's own benchmark)*
 
-![Single-threaded search speed comparison on Intel Sapphire Rapids (x86) — 4-bit configurations win by 1–6% and 2-bit single-threaded is within about 1%](./image/turbovec-x86_speed_st.svg)
+![Single-threaded search speed comparison on Intel Sapphire Rapids (x86) — 4-bit configurations win by 1–6% and 2-bit single-threaded is within about 1%](../ko/image/turbovec-x86_speed_st.svg)
 *▲ x86 (Sapphire Rapids) single-threaded speed — 4-bit wins every time by 1–6%, and 2-bit single-threaded is within about 1%. The only 2–4% slower cases are the 2-bit multithreaded configs, which are not shown here. | Source: [turbovec README](https://github.com/RyanCodrai/turbovec) (100K vectors, k=64, author's own benchmark)*
 
 Recall is likewise an author measurement. The author reports beating FAISS by 0.4–3.4 points on R@1 at OpenAI d=1536 and d=3072, while also publishing the unfavorable result that at a low-dimensional GloVe d=200 in 2-bit it trails FAISS by 1.2 points. Leaving an unfavorable number in the README is an honest touch that adds credibility. The comparison baseline is FAISS IndexPQ (LUT256, nbits=8), which the author states is stronger than the paper's own custom baseline.
 
-![Recall curve over increasing k at d=1536 — TurboQuant (2-bit and 4-bit) beats FAISS at R@1, and both converge to 1.0 from k=4 onward](./image/turbovec-recall_d1536.svg)
+![Recall curve over increasing k at d=1536 — TurboQuant (2-bit and 4-bit) beats FAISS at R@1, and both converge to 1.0 from k=4 onward](../ko/image/turbovec-recall_d1536.svg)
 *▲ Recall at d=1536 — TurboQuant beats FAISS by 0.4–3.4 points at R@1, and both converge to 1.0 from k=4 (the win case). | Source: [turbovec README](https://github.com/RyanCodrai/turbovec) (100K vectors, k=64, author's own benchmark)*
 
-![Recall curve at low-dimensional GloVe d=200 — 2-bit TurboQuant trails FAISS by 1.2 points at R@1, with the gap closing from k≈16](./image/turbovec-recall_glove.svg)
+![Recall curve at low-dimensional GloVe d=200 — 2-bit TurboQuant trails FAISS by 1.2 points at R@1, with the gap closing from k≈16](../ko/image/turbovec-recall_glove.svg)
 *▲ Recall at GloVe d=200 — the harder low-dimensional regime. 4-bit wins by 0.3 points at R@1, but 2-bit trails by 1.2 points (the loss the author honestly published). The gap closes from k≈16. | Source: [turbovec README](https://github.com/RyanCodrai/turbovec) (100K vectors, k=64, author's own benchmark)*
 
 ### 3.3. Claim-by-claim grade table
@@ -138,7 +138,7 @@ Here is the verification so far in one table. Even among "facts," the things tha
 
 If the compression ratio is nothing to brag about, why did this library collect six thousand stars? The answer lies in the cost structure of RAG (retrieval-augmented generation). A RAG system turns documents into embedding vectors, holds them in memory, and finds the nearest vectors for every incoming query. As the corpus grows, this vector index becomes a bottleneck that swallows memory whole. Holding ten million documents as 768-dimensional fp32 is 31GB — a scale that starts to exceed a single server's RAM.
 
-![A data center server rack packed with hard drives and network cables — the physical cost of the memory a vector index occupies](./image/img-04-data-center-rack.jpg)
+![A data center server rack packed with hard drives and network cables — the physical cost of the memory a vector index occupies](../ko/image/img-04-data-center-rack.jpg)
 *▲ The number 31GB is not an abstraction but a bill. The larger the corpus, the more RAM and the pricier the instance a vector index demands. Compression means putting the same index on a smaller server. | Source: [Wikimedia Commons (Public domain)](https://commons.wikimedia.org/wiki/File:EFTA00002518_-_Server_rack_with_multiple_hard_drives_and_network_cables_connected_in_a_data_center_environment.jpg)*
 
 Shrinking memory unlocks two things. First, the same index fits on a smaller, cheaper instance — at 8× compression, 31GB becomes 4GB, so the index can sit on a low-RAM server or alongside a single GPU. Second, quantized vectors scan faster under SIMD — reading fewer bytes eases the memory bandwidth bottleneck. Compression is not merely "saving capacity"; it is a lever that touches both search speed and infrastructure cost at once.

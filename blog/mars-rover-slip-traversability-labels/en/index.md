@@ -42,7 +42,7 @@ Communication between Earth and Mars is slow and expensive. Nobody can sit at a 
 
 The trouble is that elevation does not tell the whole story. On a stretch of sand ripples that looks flat and free of obstacles, the wheels turn and the vehicle covers less than half of what it was told to cover. Terrain that appears geometrically traversable, the paper writes, may produce substantial wheel slip, unexpected vehicle motion, or unfavorable interactions with the rover's mobility system. For a planetary vehicle the stakes are unusual. If it gets stuck, nobody is coming to pull it out.
 
-![Wheel track left by Perseverance climbing a sandy Martian slope toward the crater rim, Sol 1326 navigation camera image](./image/img-01-slippery-terrain-sol1326.jpg)
+![Wheel track left by Perseverance climbing a sandy Martian slope toward the crater rim, Sol 1326 navigation camera image](../ko/image/img-01-slippery-terrain-sol1326.jpg)
 *▲ Captured by Perseverance's navigation cameras on Nov. 11, 2024 (Sol 1326), climbing toward the crater rim. The wheel track trailing behind runs across a 10-degree average slope of sand | Source: [NASA/JPL-Caltech, PIA26479](https://images.nasa.gov/details/PIA26479)*
 
 The obvious fix is to teach a model which ground is actually dangerous, and that is where the labels run out. Manual labeling of terrain according to rover mobility, the paper notes, is impractical. You cannot gather driving footage and parcel it out to annotators the way terrestrial self-driving programs do, and in any case nobody has ever set foot on the terrain in question.

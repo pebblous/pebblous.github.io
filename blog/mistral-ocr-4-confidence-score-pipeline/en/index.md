@@ -47,7 +47,7 @@ Where OCR 4 parts ways with existing tools is not the accuracy number. It is the
 
 The raw performance does not lag either. It took the overall top spot on OlmOCRBench with 85.20 and posted 93.07 on OmniDocBench, and in an independent-evaluator preference comparison across more than 600 documents and over 12 languages it showed a 72% win rate. It supports 170 languages across 10 language families. The fact that performance does not collapse on low-resource languages the way it does for competing tools matters especially to organizations handling multilingual documents.
 
-![Mistral OCR 4 win rate vs competitors — 82.3% vs AWS Textract, 74.5% vs Azure, 70% vs Gemini 3.1 Pro, 66.4% vs GPT 5.5 Pro](./image/img-01-model-win-rate.webp)
+![Mistral OCR 4 win rate vs competitors — 82.3% vs AWS Textract, 74.5% vs Azure, 70% vs Gemini 3.1 Pro, 66.4% vs GPT 5.5 Pro](../ko/image/img-01-model-win-rate.webp)
 *▲ In independent-evaluator preference comparisons, OCR 4 recorded 66–82% win rates against major competing models | Source: [Mistral AI](https://mistral.ai/news/ocr-4/)*
 
 The crux is the move from "reading" to "understanding as structure." A job that used to pull out characters alone has become one that also outputs what the document looks like, what each piece is, and how trustworthy it is. That difference flows into data quality and RAG over the next two sections.

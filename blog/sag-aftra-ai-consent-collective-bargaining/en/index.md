@@ -40,7 +40,7 @@ The story starts with an actor who doesn't exist. In the summer of 2025, a Briti
 
 Actors responded immediately. Emily Blunt called the situation frightening and pleaded with agencies not to go down that road, while others urged the guild to boycott any agent who signed such a deal. SAG-AFTRA issued a formal statement of its own: Tilly Norwood is not an actor but the output of a computer program trained on the work of countless professional performers without permission or compensation, and it solves no problem — it only creates one, putting actors out of work with stolen performances.
 
-![A Writers Guild member holds a picket sign reading 'A.I.'s not taking your dumb notes!' during the 2023 Hollywood strikes](./image/img-01-ai-protest-sign-2023.jpg)
+![A Writers Guild member holds a picket sign reading 'A.I.'s not taking your dumb notes!' during the 2023 Hollywood strikes](../ko/image/img-01-ai-protest-sign-2023.jpg)
 *▲ An AI-themed picket sign from the 2023 Hollywood strikes. Actors' and writers' unions put AI on the labor agenda well before the Tilly Norwood episode | Source: [Wikimedia Commons (David James Henry, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:AI_Protest_Sign_2023_WGA_Strike.jpg)*
 
 > [!callout]
@@ -52,7 +52,7 @@ The deal reached in early May 2026 was ratified with 91.42% voting in favor. It 
 
 A studio that wants to use this exception has to clear three steps. It first notifies SAG-AFTRA, then sits down at the bargaining table to prove that its use of a synthetic performer qualifies as that "significant additional value." If no agreement is reached, the union can move to arbitration and seek damages, and those damages are not capped at what a human actor would have earned for the performance. The union believes the combination of this language and the arbitration clause will push synthetic-performer use into the realm of the truly exceptional.
 
-![Union members march with 'SAG-AFTRA ON STRIKE!' picket signs in Manhattan, New York, in 2023](./image/img-02-sagaftra-picket-nyc.jpg)
+![Union members march with 'SAG-AFTRA ON STRIKE!' picket signs in Manhattan, New York, in 2023](../ko/image/img-02-sagaftra-picket-nyc.jpg)
 *▲ SAG-AFTRA members picketing in New York during the 2023 strike. The organized membership behind marches like this is what let the 2026 contract force notice, bargaining, and arbitration | Source: [Wikimedia Commons (Phil Roeder, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:SAG-AFTRA_Picket_(53084039977).jpg)*
 
 This is hard to read as a one-off experiment. SAG-AFTRA had already attached consent and disclosure requirements to digital-replica use in its 2025 video-game agreement, and in that year's broadcast agreement it pre-agreed to automatically inherit whatever AI language emerged from these TV and theatrical talks. By carrying the same clause from one contract to the next, this notice-bargain-arbitrate process looks less like a single victory than a standard hardening as it moves across sectors.
@@ -65,7 +65,7 @@ As tight as the process looks, there is a large hole inside it. The first thing 
 
 Erik Passoja, a former co-chair of SAG-AFTRA's emerging-technology committee, put his finger on this point. Asked who judges that value, he answered: studio lawyers. A clause meant to set a standard effectively handed the content of that standard to the other side. The process of notice and bargaining remains, but when the substance the process is meant to contest is empty, it tends to get filled against whoever has less bargaining power.
 
-![Exterior of SAG-AFTRA's headquarters building on Wilshire Boulevard in Los Angeles](./image/img-03-sagaftra-hq-building.jpg)
+![Exterior of SAG-AFTRA's headquarters building on Wilshire Boulevard in Los Angeles](../ko/image/img-03-sagaftra-hq-building.jpg)
 *▲ SAG-AFTRA headquarters in Los Angeles. The real power to fill the gap in "significant additional value" comes not from contract text but from the balance of power off the bargaining table | Source: [Wikimedia Commons (Shaunti Griffin, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:SAG-AFTRA-Building-New-Logo_-_Photo_by_Socialbilitty.jpg)*
 
 The bigger hole is in third-party licensing. When a studio hands an actor's performance to another company to use for AI training or reuse, the studio's only obligations are written notice and a meeting to discuss it. In Passoja's framing, with no consent and no compensation floor, the union gets a meeting. A notice-bargain-arbitrate apparatus now covers first-line replacement, but the moment the data changes hands, that apparatus loses much of its force.
@@ -79,7 +79,7 @@ SAG-AFTRA's case may look exceptional, but using union contracts as a line of de
 
 There is evidence these mechanisms actually get enforced. At one news outlet, unionized staff challenged the rollout of an AI reporting tool through arbitration, and the tool was withdrawn. A contract clause didn't stay a declaration on paper; it rolled back a tool. When consent over training data moves from the grand stage of litigation to a quiet clause in a contract, that clause gains an enforceable form.
 
-![SAG-AFTRA and Writers Guild members march together outside Sunset Gower Studios in Los Angeles during the 2023 strikes](./image/img-04-strike-la-2023.jpg)
+![SAG-AFTRA and Writers Guild members march together outside Sunset Gower Studios in Los Angeles during the 2023 strikes](../ko/image/img-04-strike-la-2023.jpg)
 *▲ SAG-AFTRA and WGA members marching together in Los Angeles, 2023. Organized actors and writers built the power to be notified and to bargain by taking to the street like this — a line 88.8% of U.S. workers have no way to join | Source: [Wikimedia Commons (Benoît Prieur, CC0)](https://commons.wikimedia.org/wiki/File:Striking_Actors_and_Writers_in_LA_(July_2023).jpg)*
 
 The problem is how many people can reach that line of defense. By the U.S. Bureau of Labor Statistics' 2025 count, union membership was 10.0%, and the collective-bargaining representation rate, including non-members covered, was 11.2%. Flip it over and roughly 88.8% of U.S. workers sit outside the umbrella of collective bargaining. The gap widens by sector: public-sector representation runs at 32.9% while the private sector sits at just 5.9%, and the private sector is exactly where AI is being adopted fastest.

@@ -48,7 +48,7 @@ The calculation became possible because of something else. Segev, Ofek, Shvartzv
 
 The last sentence of the abstract states the goal. Combining photometric and astrometric searches, he sets out a practical program for identifying isolated black holes inside the KMTNet database and measuring their masses and distances.
 
-![Long-exposure night photo of star trails circling above a KMTNet observatory dome, symbolizing a decade of accumulated observing records](./image/img-01-nightsky-archive-dome.jpg)
+![Long-exposure night photo of star trails circling above a KMTNet observatory dome, symbolizing a decade of accumulated observing records](../ko/image/img-01-nightsky-archive-dome.jpg)
 *▲ What feeds this calculation is not a new observation but ten years of records already sitting in storage | Source: [KASI KMTNet](https://kmtnet.kasi.re.kr/kmtnet-eng/)*
 
 ## One Isolated Black Hole in 25 Years
@@ -65,7 +65,7 @@ For an isolated lens the situation is different. That structure shrinks to a sin
 
 So other routes opened up. One is to track the tiny shift in the background star's position directly with a high-resolution telescope such as the Hubble Space Telescope. That is how OGLE-2011-BLG-0462 was confirmed. The lens was unusually nearby at about 1.5 kiloparsecs and the black hole was not exceptionally massive at around 8 solar masses, conditions that made the parallax relatively large at 0.095, and even so that single parallax took considerable effort to measure accurately, while the astrometric time series had to run a full decade. The other route is to resolve the two images directly with an interferometer, proposed in 2001, after which it took 25 years for the instruments to become sensitive enough to reach the faint sources involved.
 
-![Illustration of an isolated black hole bending background starlight into a distorted ring, the only confirmed case, OGLE-2011-BLG-0462, identified in 2022 through astrometric microlensing](./image/img-02-isolated-black-hole-illustration.jpg)
+![Illustration of an isolated black hole bending background starlight into a distorted ring, the only confirmed case, OGLE-2011-BLG-0462, identified in 2022 through astrometric microlensing](../ko/image/img-02-isolated-black-hole-illustration.jpg)
 *▲ An isolated black hole warping background starlight (illustration). Hubble astrometry confirmed the only settled case, OGLE-2011-BLG-0462 | Credit: NASA, ESA, Kailash Sahu (STScI); Image Processing: Joseph DePasquale (STScI), Source: [NASA Science](https://science.nasa.gov/missions/hubble/hubble-determines-mass-of-isolated-black-hole-roaming-our-milky-way-galaxy/)*
 
 ## Ten Years from a Planet-Hunting Telescope
@@ -74,7 +74,7 @@ KMTNet was not built to weigh black holes. The goal of the project, which the Ko
 
 The three-continent layout follows from that goal. Three identical 1.6-metre telescopes sit at three southern sites with widely separated longitudes. The first went in at CTIO in Chile in May 2014, the second at SAAO in South Africa in August, the third at SSO in Australia in November. When it is daytime at one site it is night at another, so the bulge at the centre of the Galaxy can be watched around the clock. Each camera covers two degrees by two degrees, four square degrees in one exposure, and the bulge season runs from 20 February to 22 October, about 46% of the total observing time.
 
-![Map of the KMTNet network of 1.6-metre telescopes at three southern-hemisphere sites: CTIO in Chile, SAAO in South Africa, and SSO in Australia](./image/img-03-kmtnet-three-sites.jpg)
+![Map of the KMTNet network of 1.6-metre telescopes at three southern-hemisphere sites: CTIO in Chile, SAAO in South Africa, and SSO in Australia](../ko/image/img-03-kmtnet-three-sites.jpg)
 *▲ Identical telescopes at three southern sites let KMTNet watch the bulge around the clock | Source: [KASI KMTNet](https://kmtnet.kasi.re.kr/kmtnet-eng/)*
 
 This is the record the Segev team went to work on. Their approach was not to examine events one at a time. It was to build astrometric time series for a large ensemble of stars at once, so that black hole candidates could be searched for independently of the light curves. Running their algorithm on the data from CTIO in Chile, they obtained a scatter of 10 milliarcseconds for a substantial fraction of stars at I = 18 magnitude in KMT field BLG17, which is relatively uncrowded.

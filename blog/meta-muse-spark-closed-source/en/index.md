@@ -46,7 +46,7 @@ Muse Spark was built by Meta Superintelligence Labs. The lab is led by Alexandr 
 
 Its performance is hard to compare with the open-weights era. On the Artificial Analysis Index, which aggregates model performance, Muse Spark scored 52. That is nearly triple the 18 of Llama 4 Maverick, the previous open-weights model, putting it on the same front line as Claude Opus 4.6 (53) and Gemini 3.1 Pro (57). But the decisive difference is not the score — it is the access model. Muse Spark releases neither weights nor architecture. It exists only behind the Meta AI app and a private API preview.
 
-![Meta Platforms headquarters in Menlo Park, California — home base of Meta Superintelligence Labs, which released Muse Spark in April 2026](./image/img-01-meta-hq.jpg)
+![Meta Platforms headquarters in Menlo Park, California — home base of Meta Superintelligence Labs, which released Muse Spark in April 2026](../ko/image/img-01-meta-hq.jpg)
 *▲ Meta Platforms headquarters in Menlo Park, California. In April 2026, Meta Superintelligence Labs — housed under this parent company — launched Muse Spark, Meta's first closed-weight AI model. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Meta_Platforms_Headquarters_Menlo_Park_California.jpg) (CC BY-SA 4.0)*
 
 > [!callout]
@@ -60,7 +60,7 @@ Meta and those around it explain the turn from open to closed along two broad li
 
 DeepSeek built its reasoning models by distilling them on top of the Llama 3.1 and 3.3 architectures. DeepSeek-R1-Distill-Llama-70B is based on Llama-3.3-70B-Instruct, and the 8B version on Llama 3.1-8B. The investment firm Stifel judged that this distillation appears to violate Meta's license terms. In effect, the fruit of the ecosystem Meta grew through openness was carried off by Chinese labs that contributed nothing to it. As of late 2025, Chinese models such as DeepSeek and Alibaba Qwen accounted for 41% of Hugging Face downloads, and the default of open weights had quietly shifted to Qwen 3.5 and DeepSeek.
 
-![DeepSeek logo — the Chinese AI lab that distilled reasoning models from Llama architecture, capturing 41% of Hugging Face downloads by late 2025](./image/img-02-deepseek-logo.svg)
+![DeepSeek logo — the Chinese AI lab that distilled reasoning models from Llama architecture, capturing 41% of Hugging Face downloads by late 2025](../ko/image/img-02-deepseek-logo.svg)
 *▲ DeepSeek logo. By distilling reasoning models from Llama 3.1 and 3.3 architectures, DeepSeek helped Chinese open models account for 41% of Hugging Face downloads by late 2025. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:DeepSeek_logo.svg)*
 
 ### 2.2. Safety — weights, once released, cannot be recalled
@@ -84,7 +84,7 @@ The safety problem is the same. Releasing weights is dangerous because it is irr
 
 Closing the model also hides the training data. But another force begins to operate over it: the EU AI Act. From August 2, 2025, every general-purpose AI (GPAI) provider must publish a "sufficiently detailed" summary of its training data. And on August 2, 2026, the EU AI Office gains full enforcement powers, including investigation, assessment, and penalties. The timing is striking — the summer of the very year Meta closed its model.
 
-![Campaign at the European Parliament in Strasbourg calling for a strong EU AI Act — BACK A STRONG AI ACT sign held up at the EU Parliament building](./image/img-03-eu-ai-act-parliament.jpg)
+![Campaign at the European Parliament in Strasbourg calling for a strong EU AI Act — BACK A STRONG AI ACT sign held up at the EU Parliament building](../ko/image/img-03-eu-ai-act-parliament.jpg)
 *▲ Campaign at the European Parliament in Strasbourg calling for a strong AI Act. Full enforcement powers for the EU AI Act's training-data disclosure duty come into effect on August 2, 2026. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:EKO_-_AI_ACT_-_Strasbourg_Parliament.jpg) (CC BY 2.0, EKO)*
 
 ### 4.1. Closing the door does not let you dodge it
@@ -114,7 +114,7 @@ The pivot to Muse Spark is a decision to move Meta's moat. In the past, Meta's d
 - •Open-source AI leadership — the default moves to Qwen and DeepSeek
 - •External transparency of training data — a retreat in verifiability
 
-![Aerial view of the Facebook (now Meta) campus in Menlo Park, California, 2019 — symbolizing the scale of Meta's data touchpoints underpinning its new closed-model moat](./image/img-04-meta-campus-aerial.jpg)
+![Aerial view of the Facebook (now Meta) campus in Menlo Park, California, 2019 — symbolizing the scale of Meta's data touchpoints underpinning its new closed-model moat](../ko/image/img-04-meta-campus-aerial.jpg)
 *▲ Aerial view of the Facebook (now Meta) campus in Menlo Park, California, 2019. Meta is building its new moat on 3 billion users and real-time data touchpoints such as its Ray-Ban glasses. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Aerial_view_of_Facebook_campus_in_Menlo_Park,_September_2019.JPG) (CC BY-SA 3.0, Coolcaesar)*
 
 The new moat is not the openness of weights but control over data and safety. Meta holds three billion users and real-time data touchpoints such as its Ray-Ban glasses, and Muse Spark can run that data at roughly 2.7 times the token efficiency of Claude Opus 4.6. The structure favors whoever holds control. Yet that control turns straight into obligation before the EU AI Act. To say you control what was learned is to say you bear the responsibility of explaining what was learned.

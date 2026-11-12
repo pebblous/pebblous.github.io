@@ -42,7 +42,7 @@ The reason unit price and bill move in opposite directions is simple. The bill i
 
 The difference in scale comes not from estimates but from measurements. Agent workflows spend 5 to 30 times more tokens than a simple chatbot. It is not unusual for a single session to burn hundreds of thousands of tokens. Even if the unit price drops by more than half, when usage jumps fivefold, tenfold, thirtyfold, the bill grows as a matter of course. This is the point where a budget that only watched the price tag falls apart.
 
-![Jevons Paradox: when the price falls by half with elastic demand, quantity demanded more than doubles — total spending rises](./image/img-05-jevons-paradox.png)
+![Jevons Paradox: when the price falls by half with elastic demand, quantity demanded more than doubles — total spending rises](../ko/image/img-05-jevons-paradox.png)
 *▲ Jevons Paradox: when efficiency halves the cost, elastic demand more than doubles the quantity consumed — total spending rises. The same dynamic governs the AI token market. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:JevonsParadoxA.png)*
 
 > [!callout]
@@ -52,7 +52,7 @@ The difference in scale comes not from estimates but from measurements. Agent wo
 
 The first reason agents spend so many tokens is that the model has no memory. A model remembers nothing between one call and the next. So every time an agent moves to the next step, it reloads the entire conversation so far, the files it has read, and intermediate results back into the input. The longer the loop runs, the more each step's input snowballs. The input to the fifth step contains all four preceding steps over again.
 
-![GenAI Agent architecture: a prompt flows through Preprocessing → LLM → Postprocessing, cross-connected to Data, Tools, and Other models at each step](./image/img-01-genai-agent.png)
+![GenAI Agent architecture: a prompt flows through Preprocessing → LLM → Postprocessing, cross-connected to Data, Tools, and Other models at each step](../ko/image/img-01-genai-agent.png)
 *▲ GenAI Agent architecture: a single prompt passes through a Preprocessing → LLM → Postprocessing loop, cross-connected to data, tools, and other models at every step. The longer the loop, the more the entire context is re-sent on each pass. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:GenAI_Agent.png)*
 
 EY's analysis shows how this structure lands on cost with a single pair of numbers. One interaction with a simple 2023-era chatbot ran about $0.04. One interaction with a 2026-era agent orchestration runs about $1.20 — the same "one" interaction, 30 times over. The user feels they asked a single question, but behind that, the model is running dozens of internal calls, re-sending the full context every time.
@@ -65,7 +65,7 @@ Everything so far is "baseline cost" — the share you have to accept once you c
 
 Why do retries happen? When the model fails to produce output of the quality it needs on the first pass. If the output doesn't fit the required format, doesn't pass validation, or is too ambiguous for the next step to consume, the agent tries the same task again. The trouble is that this retry is not a lightweight move. Because the model has no memory, every retry means feeding the entire context in again from scratch. The cost of one more pass rivals the cost of the first. Stack that once, twice, ten times, and you reach 50×.
 
-![Feedback loop diagram: Inputs pass through a processor (P) to Outputs, with a Feedback path that cycles back to the input](./image/img-03-feedback-loop.svg)
+![Feedback loop diagram: Inputs pass through a processor (P) to Outputs, with a Feedback path that cycles back to the input](../ko/image/img-03-feedback-loop.svg)
 *▲ The feedback (retry) loop: when output fails to meet the standard, the feedback path sends everything back to the start. An agent's retry re-sends the entire context each time, stacking tokens up to 50×. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:General_Feedback_Loop.svg)*
 
 The key question here is "why can't the model get it right the first time?" In many cases it is not because the model itself falls short. It is because the input it received is ambiguous, has missing values, and mixes in conflicting information, so the model is not sure what it is supposed to do. The model tries to fill that uncertainty on its own, and tries again. Every token it burns in that process gets printed on the bill.
@@ -77,7 +77,7 @@ The key question here is "why can't the model get it right the first time?" In m
 
 A straight line runs between input data quality and the token bill. The more ambiguous or gap-riddled the input, the greater the model's uncertainty; the greater the uncertainty, the more retries and re-planning; the more retries, the more tokens pile up in multiples. Conversely, when the input is clean, the model passes on the first try. Same task, same model, same unit price — and yet the bill spreads out by tens of times depending on input quality.
 
-![Structured data pipeline: data flows from entry through parsing, processing, quality validation, and publish stages — each stage enforces quality standards](./image/img-04-data-pipeline.jpg)
+![Structured data pipeline: data flows from entry through parsing, processing, quality validation, and publish stages — each stage enforces quality standards](../ko/image/img-04-data-pipeline.jpg)
 *▲ Structured data pipeline with staged quality control: the earlier quality standards are enforced in the pipeline, the fewer retry tokens the model needs to patch bad inputs. Data quality is a pipeline design problem — and a billing problem. | Source: [NEON / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:NEON_Observational_Sampling_Data_Pipeline.jpg)*
 
 Why this relationship matters is that it lets us put a clear number on the return of data-quality investment for the first time. The value of cleaning data has long been explained in fuzzy, hard-to-measure terms — "accuracy goes up," "trust accrues." Run it through the retry loop, though, and that value converts straight into token savings. Refine one batch of input so retries drop from ten to two, and that much comes off next month's bill.

@@ -40,7 +40,7 @@ The cost of scattered data compounds over time. One longitudinal study reported 
 
 The paradox lies in the scale of investment. In 2026, Korea's government R&D budget reached a record KRW 35.3 trillion (about USD 24 billion), up 19.3% from the year before. R&D investment as a share of GDP stands at 4.96%, second among OECD members. That much public money produces data, yet the mechanism to gather those outputs systematically and put them back to use had been missing. The Research Data Act takes aim at precisely this gap.
 
-![Research data lifecycle circular diagram — six stages: Collection, Description, Storage, Processing and analysis, Archiving, Making data available](./image/img-01-data-lifecycle.png)
+![Research data lifecycle circular diagram — six stages: Collection, Description, Storage, Processing and analysis, Archiving, Making data available](../ko/image/img-01-data-lifecycle.png)
 *▲ Research data lifecycle — six stages from collection through description, storage, processing, archiving, and making data available. Each stage must be systematically designed for data to be reusable in follow-on research and AI pipelines. | Source: [Wikimedia Commons (CC BY)](https://commons.wikimedia.org/wiki/File:Data_management_-_The_Passport_For_Open_Science_10.png)*
 
 > [!callout]
@@ -54,7 +54,7 @@ The frame of the new law can be read as three pillars. What each pillar means li
 
 The research institution that carries out a national R&D project holds the rights to the research data it produces and bears the obligation to manage it systematically. A procedure for drafting and submitting a Data Management Plan (DMP) enters at the project stage. This is not a device for offloading administrative burden onto a single researcher; it is a design in which the institution and the state jointly preserve the data a researcher creates, and put standards and procedures in place so the next researcher can trust and reuse it. From the researcher's side, it becomes possible to anticipate, in advance, how far the data must be preserved, submitted, and disclosed once a project ends.
 
-![Open Science integration into research project lifecycle — stages from proposal writing through project submission, start, ongoing phase, and project end with DMP tasks](./image/img-02-open-science-dmp.png)
+![Open Science integration into research project lifecycle — stages from proposal writing through project submission, start, ongoing phase, and project end with DMP tasks](../ko/image/img-02-open-science-dmp.png)
 *▲ Open Science integrated into the project lifecycle — from proposal writing to project end, each stage carries DMP updates, data sharing obligations, and open-access repository tasks. This is the structure EU Horizon Europe mandates. | Source: [Wikimedia Commons, GTSO-Couperin 2020 (CC BY)](https://commons.wikimedia.org/wiki/File:Open_Science_into_projects.png)*
 
 ### 2.2. Openness becomes the rule, protection the exception
@@ -82,7 +82,7 @@ Through "Horizon Europe," which invests roughly €95.5 billion from 2021 to 202
 
 Setting the three regions side by side, across governance, budget, and core principle, reveals where Korea's law stands.
 
-![FAIR data principles icons — Findable with magnifying glass, Accessible with touch hand, Interoperable with gears, Reusable with recycling arrows](./image/img-03-fair-principles.jpg)
+![FAIR data principles icons — Findable with magnifying glass, Accessible with touch hand, Interoperable with gears, Reusable with recycling arrows](../ko/image/img-03-fair-principles.jpg)
 *▲ FAIR principles — Findable, Accessible, Interoperable, Reusable. Proposed by Wilkinson et al. in 2016, they have become the common language of virtually every research-data policy in the world today. | Source: [Wikimedia Commons (CC0)](https://commons.wikimedia.org/wiki/File:FAIR_data_principles.jpg)*
 
 | Dimension | Korea Research Data Act | US Genesis Mission | EU Horizon Europe · EOSC |
@@ -149,7 +149,7 @@ So what does it take for research data, once disclosed, to reach an AI-Ready sta
 - ✓**Format interoperability** — standard formats readable across systems, not locked into a single tool
 - ✓**Quality validation** — checking for missing values, outliers, and inconsistencies, and recording the results alongside the data
 
-![Research data flow diagram — Gathering from experiments and published data, through Analysis, Visualisation, to Sharing via secure transfer or open access, then archive storage](./image/img-04-research-data-flow.png)
+![Research data flow diagram — Gathering from experiments and published data, through Analysis, Visualisation, to Sharing via secure transfer or open access, then archive storage](../ko/image/img-04-research-data-flow.png)
 *▲ Research data flow — from gathering through analysis and visualisation, then shared via secure transfer or open access, and preserved in archive storage. For data to be AI-Ready, metadata and quality validation must accumulate at each stage. | Source: [Wikimedia Commons (CC BY-SA)](https://commons.wikimedia.org/wiki/File:Data_lifecycle.svg)*
 
 Looking again at where Korea stands, the task is clear. DataON counts roughly 6.5 million entries, but they are concentrated in a single institution, and domestic digital archives average a FAIR score in the low 50s. In one field, a study reported that only 1% of disclosed data was directly machine-learning-readable (this is a single-domain case and hard to generalize across all fields). The quantitative foundation is in place; the signal is that the last layer on the way to AI-Ready has yet to be filled.
