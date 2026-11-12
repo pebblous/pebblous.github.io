@@ -44,7 +44,7 @@ The European AI in Science Summit ran in Dublin on October 15, 2026, organized j
 
 What is on offer differs in kind from one organization to the next. Some open compute. Some release models. One publisher gives access to material and software licenses it had been holding. The same word, pledge, covers all of them, yet what a researcher actually ends up holding is not the same thing twice.
 
-![Gefion, the Novo Nordisk Foundation's AI-dedicated supercomputer, at its activation ceremony with NVIDIA CEO Jensen Huang and Denmark's King Frederik X](./image/img-01-gefion-supercomputer.jpg)
+![Gefion, the Novo Nordisk Foundation's AI-dedicated supercomputer, at its activation ceremony with NVIDIA CEO Jensen Huang and Denmark's King Frederik X](../ko/image/img-01-gefion-supercomputer.jpg)
 *▲ The computational capacity behind the Novo Nordisk Foundation's pledge: Gefion, an AI-dedicated supercomputer | Source: [Novo Nordisk Foundation](https://novonordiskfonden.dk/en/news/denmarks-first-ai-supercomputer-is-now-operational/)*
 
 | Pledging organization | What it is offering |
@@ -69,7 +69,7 @@ RAISE is short for Resource for AI Science in Europe. It is the centerpiece of t
 
 This design is presented as the instrument that delivers the CERN for AI that Ursula von der Leyen promised during her re-election campaign in July 2024. It is not a facility gathered on one site, though. Europe chose instead to connect existing infrastructure wherever it sits, with thematic networks of excellence and a central secretariat tying them together.
 
-![Inside the tunnel of CERN's Large Hadron Collider — the single-site facility behind the 'CERN for AI' metaphor](./image/img-02-cern-lhc-tunnel.jpg)
+![Inside the tunnel of CERN's Large Hadron Collider — the single-site facility behind the 'CERN for AI' metaphor](../ko/image/img-02-cern-lhc-tunnel.jpg)
 *▲ The original behind the "CERN for AI" that RAISE claims to deliver — the real CERN is a single-site facility, which is exactly what RAISE's distributed design is not | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Inside_the_CERN_LHC_tunnel.jpg)*
 
 Public money is already attached. By the Commission's own guidance, €33 million was allocated under the Horizon Europe 2025 work programme and €107 million under the 2026–2027 work programme. The pilot launched earlier, in Copenhagen on November 3 and 4, 2025. So the Dublin announcement is not public budget swapped out for corporate money. It is a layer of private in-kind contribution laid over a public program that was already running.

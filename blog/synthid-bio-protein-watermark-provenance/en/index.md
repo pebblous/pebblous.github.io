@@ -42,7 +42,7 @@ Sources: [Google DeepMind's official announcement (2026-09-30)](https://deepmind
 
 Google's SynthID began with images in 2023 and has widened into text and audio since. The shape has not changed: mix a signal into the output that no eye or ear catches, and let whoever holds the matching key check later whether that signal is there. SynthID Bio, out on September 30, carries the same idea over to proteins. Carrying it across opened two separate layers where the mark could sit.
 
-![Conceptual render of blue protein structures passing through a transparent checkpoint scanner, representing SynthID Bio](./image/img-01-watermark-checkpoint.jpg)
+![Conceptual render of blue protein structures passing through a transparent checkpoint scanner, representing SynthID Bio](../ko/image/img-01-watermark-checkpoint.jpg)
 *▲ The picture SynthID Bio is drawing: an AI-designed protein passing through a checkpoint that confirms its origin | Source: [Google DeepMind](https://deepmind.google/blog/introducing-synthid-bio/)*
 
 ### 1.1. Placed at the moment an amino acid is chosen
@@ -69,7 +69,7 @@ The comparison went past design files. The binders were actually synthesized and
 
 The structure side scores a similar shape. By the reporting on the Nature paper, the loss in structure prediction accuracy came in under 1%, and the mark was read back with over 99% accuracy even when the sequence changed slightly or noise entered the data. The bar for calling it is a 0.1% false positive rate. That means the figures were measured with the rate of wrongly declaring an unmarked design marked held to one in a thousand, and in work like this, whether that bar is stated at all is what decides what a number means.
 
-![Violin plot comparing binding affinity distributions of non-watermarked (orange) versus watermarked (blue) designs across three targets: PD-L1, SARS-CoV-2 spike RBD, and VEGF-A](./image/img-02-binding-affinity-chart.svg)
+![Violin plot comparing binding affinity distributions of non-watermarked (orange) versus watermarked (blue) designs across three targets: PD-L1, SARS-CoV-2 spike RBD, and VEGF-A](../ko/image/img-02-binding-affinity-chart.svg)
 *▲ Binding affinity (Kd) distributions overlap with and without the mark, across all three targets | Source: [Google DeepMind](https://deepmind.google/blog/introducing-synthid-bio/)*
 
 > [!callout]

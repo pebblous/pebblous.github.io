@@ -44,7 +44,7 @@ Range of counts for data centers in Pennsylvania
 
 Seven counters, as of July–September 2026
 
-![Rows of server racks inside a data center](./image/img-04-datacenter-racks.jpg)
+![Rows of server racks inside a data center](../ko/image/img-04-datacenter-racks.jpg)
 *▲ What the argument is about — server racks inside a data center. | Source: [Wikimedia Commons (Carl Lender, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg)*
 
 ## Same Season, Same Country, Answers from Forty-Nine to Seventy-Five

@@ -24,7 +24,7 @@ _In April 2021, two ETRI researchers named their company and, before any product
 
 Pebblous is a deep-tech startup founded in November 2021 by Lee Joo-haeng and Lee Jung-won, two researchers who came out of ETRI (the Electronics and Telecommunications Research Institute). The two had been longtime colleagues, working together on projects since 2013, and they decided to start a company that April. Right after settling on the company name, the first thing they wrote was the founding declaration below, the Pebblous Manifesto.
 
-![ETRI (Electronics and Telecommunications Research Institute) headquarters building in Daejeon, where Pebblous's two founders worked for 23 and 19 years](./image/img-01-etri-building.jpg)
+![ETRI (Electronics and Telecommunications Research Institute) headquarters building in Daejeon, where Pebblous's two founders worked for 23 and 19 years](../ko/image/img-01-etri-building.jpg)
 *▲ ETRI headquarters — where the two founders worked together before deciding to start the company in 2021 | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ETRI-1,_Korea.jpg)*
 
 According to a founding profile carried in the webzine of the Society of CAD/CAM Engineers of Korea, this manifesto was not a look-back written once the business was established, but the first act of founding the company. The founders call it "a piece of writing that was like a heart," and say they never once wavered from it across the years that followed. Even the phrase the company now leads with, "the sincerity of data," came out of writing this manifesto.

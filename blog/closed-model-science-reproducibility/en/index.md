@@ -44,7 +44,7 @@ The [ChatGPT for Academic Researchers](https://openai.com/index/chatgpt-for-acad
 
 Performance figures came attached to the announcement: numbers showing the latest models substantially outpacing the previous generation on demanding math and genomics benchmarks. Those figures, however, were measured and published by the maker of the model, and have not been re-verified on each lab's own data and pipelines. [Coverage](https://siliconangle.com/2026/07/29/openai-opens-new-chatgpt-academic-researchers-program-100000-scientists/) likewise focused mostly on scale and specs. It was a story about how many people get how good a tool.
 
-![OpenAI's San Francisco headquarters — where the ChatGPT for Academic Researchers program was announced](./image/img-01-openai-hq.jpg)
+![OpenAI's San Francisco headquarters — where the ChatGPT for Academic Researchers program was announced](../ko/image/img-01-openai-hq.jpg)
 *▲ OpenAI's San Francisco headquarters, where the free-access program for 100,000 scientists was announced | Source: [Wikimedia Commons (Coolcaesar, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:1515_Third_Street.jpg)*
 
 ## Open Access, Closed Internals
@@ -53,7 +53,7 @@ What was opened for free is "access," not "internals." The model weights and tra
 
 For a researcher this is not a mere inconvenience. [Reporting](https://www.axios.com/2026/07/29/openai-academics-research-chatgpt-sol) pointed out that the program does not address the central concern of AI researchers who need to inspect model behavior independently. If you do not know what a model learned, you cannot trace the bias in a result; if you cannot see the internals, you cannot verify why a given output appeared. Science is the work of asking "on what basis did we reach this conclusion," yet a large part of that basis stays hidden behind the API.
 
-![An opened aircraft flight recorder — the internals of a device labeled 'DO NOT OPEN' exposed for inspection](./image/img-02-closed-blackbox.jpg)
+![An opened aircraft flight recorder — the internals of a device labeled 'DO NOT OPEN' exposed for inspection](../ko/image/img-02-closed-blackbox.jpg)
 *▲ In aviation accident investigations, even a "black box" marked DO NOT OPEN eventually gets opened for verification. An AI model's black box does not | Source: [Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:Black_box.aeroplane.JPG)*
 
 > [!callout]
@@ -65,7 +65,7 @@ The real problem with closed models is that the API is a moving target. A Stanfo
 
 Nor is this an isolated incident. In an analysis of a [longitudinal dataset](https://arxiv.org/abs/2209.08443) observing 63 commercial machine-learning APIs over time, the predictions of a majority of them — well over half — changed materially over time. Getting a different answer today than yesterday to the same input is not rare in commercial AI services.
 
-![A data center aisle lined with server racks — symbolizing the infrastructure behind an API where a model can be swapped or updated quietly](./image/img-03-datacenter-drift.jpg)
+![A data center aisle lined with server racks — symbolizing the infrastructure behind an API where a model can be swapped or updated quietly](../ko/image/img-03-datacenter-drift.jpg)
 *▲ Models are served from behind servers like these. The same-named API can have a different model running behind it without notice (illustrative image) | Source: [Wikimedia Commons (CC BY-SA 2.0)](https://commons.wikimedia.org/wiki/File:Virginia_Tech_-_data_center.jpg)*
 
 The closest example is GPT-4o in April 2025. OpenAI updated the model without a change log up front, and within days its overly flattering responses drew notice, so the company ultimately rolled that update back. It was a change confirmed only after users noticed it first. The episode showed publicly that a quiet update really can produce an observable change in behavior.
@@ -85,7 +85,7 @@ There are not zero signs that reproducibility is improving. In one large-scale a
 
 It is not a complete fix, but there is a minimum condition for protecting reproducibility. Use a time-pinned model snapshot, and record the exact model version, evaluation date, and access time in the paper's methods. It is the work of attaching a record that can prove what you ran your experiment with. Policy is moving in this direction too. The EU AI Act obliges providers of general-purpose AI models to publish a summary of training data, and the enforcement powers behind it become active in August 2026. What matters is that even if open-weight models are exempted from some obligations, the training-data summary still remains.
 
-![Entrance sign of the Berlaymont building, European Commission headquarters in Brussels — the body overseeing the EU AI Act](./image/img-04-eu-ai-act.jpg)
+![Entrance sign of the Berlaymont building, European Commission headquarters in Brussels — the body overseeing the EU AI Act](../ko/image/img-04-eu-ai-act.jpg)
 *▲ The Berlaymont building, European Commission headquarters in Brussels — the body overseeing the EU AI Act's training-data disclosure requirement | Source: [Wikimedia Commons (Ank Kumar, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:European_Commission_headquarters,_The_Berlaymont_Building,_Brussels,_Belgium_(_Ank_Kumar,_Infosys_Limited_).jpg)*
 
 Boiled down to one line, these conditions converge on a single question: can you prove "what this result was made of"? Which version of which model, trained on what, produced that output when and under what conditions. This is the provenance of data and models. Reproducibility is, in the end, another name for provenance. A result whose sources and history cannot be traced struggles to become verifiable knowledge, however impressive it may be.

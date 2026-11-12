@@ -52,14 +52,14 @@ The respondents' backgrounds were all over the map: a physician in Brazil, a fie
 
 Mengchao Liao, in Beijing, said he would keep primary data collection, field observation, and face-to-face interviews for himself. His reason: this is work that calls for empathy, on-the-spot improvisation in the field, and skilled in-person communication. An algorithm cannot set foot on the actual ground and draw up genuine primary material, and so this part, at least, was the line he would never delegate.
 
-![A field biologist recording observations by hand outdoors](./image/img-01-field-notes.jpg)
+![A field biologist recording observations by hand outdoors](../ko/image/img-01-field-notes.jpg)
 *▲ Direct field observation and note-taking produces primary data no algorithm can generate | Source: [Wikimedia Commons (Public Domain, U.S. Fish and Wildlife Service)](https://commons.wikimedia.org/wiki/File:Service_biologist_Sue_Cameron_making_field_notes_(8191308778).jpg)*
 
 ### 2.2. The writing and peer review that train thinking
 
 Anna Hodshire, in Colorado, said she has no intention of handing writing and peer review to a chatbot. The act of writing itself exposes the places she does not yet understand; reviewing others' papers is where critical thinking gets sharpened; even a tedious email is practice that keeps her communication skills alive. It was a choice to protect not the output but the thinking that happens inside her while she does the work.
 
-![A person handwriting notes beside an open laptop](./image/img-02-writing-notebook.jpg)
+![A person handwriting notes beside an open laptop](../ko/image/img-02-writing-notebook.jpg)
 *▲ Writing by hand exposes the places a person does not yet understand | Source: [Wikimedia Commons (CC BY 2.0, Shixart1985)](https://commons.wikimedia.org/wiki/File:Person_writing_in_a_notebook_while_sitting_at_a_desk.jpg)*
 
 ### 2.3. The experiment design that comes from curiosity
@@ -68,7 +68,7 @@ Müleyke Özçakmak, who studies AI and consciousness in Istanbul, found the mos
 
 The same instinct runs through the other replies. One deep-sea scientist named the thrill of inspiration and discovery, and the creativity of designing an experiment, as what they could never quite give up. Henrique Falcetto de Barros, a physician in Brazil, conceded that for a patient's benefit a doctor should hand over what AI does better, yet hoped not to surrender the human touch, curiosity-driven research, and the joy of building something together.
 
-![A researcher running a hands-on laboratory experiment](./image/img-03-lab-experiment.jpg)
+![A researcher running a hands-on laboratory experiment](../ko/image/img-03-lab-experiment.jpg)
 *▲ Curiosity-driven experiment design produces new observations from questions no one has yet asked | Source: [Wikimedia Commons (CC BY 2.0, National Eye Institute)](https://commons.wikimedia.org/wiki/File:Laboratory_scientist_conducts_an_experiment_with_a_Rotary_evaporator.jpg)*
 
 > [!callout]
@@ -89,7 +89,7 @@ Here the two lists overlap. What homogenization eats away first is personal styl
 
 The evidence that "I won't hand it over" is calculation rather than sentiment is filled in by a third body of research: early measurements showing that handing work over really does cost you something. According to the deskilling studies Nature assembled, in a survey of U.S. healthcare workers 70% of nurses and 77% of physicians worried about losing competence to over-reliance on AI. That is a signal that the concern is not confined to one profession but has spread across the field.
 
-![A clinician reviewing multi-screen patient data — deskilling and over-reliance on AI in healthcare](./image/img-04-telemedicine.jpg)
+![A clinician reviewing multi-screen patient data — deskilling and over-reliance on AI in healthcare](../ko/image/img-04-telemedicine.jpg)
 *▲ In clinical settings, 70% of nurses and 77% of physicians worried about losing competence to over-reliance on AI | Source: [Wikimedia Commons (CC BY-SA 2.0, Intel Free Press)](https://commons.wikimedia.org/wiki/File:Telemedicine_Consult.jpg)*
 
 There are measurements that go beyond worry. Anthropic gave 52 software engineers a basic coding task, allowed all of them web search and documentation, but let only half use an AI assistant, in a randomized controlled trial. It was a way of examining, under controlled conditions, what dulls as the price of convenience. Kevin Crowston, at Syracuse University, said that simply being aware of the phenomenon prompts people to reflect on which skills to keep and which to leave to AI. Yuichi Mori, at the University of Oslo, was more cautious: confirmatory studies are still needed, but AI users must recognize the risk of skill loss, and because there is no established remedy for deskilling yet, it will be one of the hottest research topics of the coming decade.

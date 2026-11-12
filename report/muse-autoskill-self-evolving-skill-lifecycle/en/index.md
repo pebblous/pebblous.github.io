@@ -65,7 +65,7 @@ None of the five stages is itself new. Creation was Voyager's territory; Memory 
 
 Stretched out in a line, the five stages tell the life of an asset. **It is born (Creation), accumulates experience (Memory), is organized in a library (Management), gets a health check (Evaluation), and is rewritten when needed (Refinement).** Not unlike how a person grows into a profession — first you learn, then you practice, then you share with colleagues, then you get evaluated, then you come back as a better version of yourself. The MUSE paper draws all five into a single picture.
 
-![MUSE-Autoskill five-stage lifecycle framework — Skill Creation, Skill Management, Memory Mechanism, and Self-Evolution & Correction form a closed loop around the central agent](./image/img-01-muse-framework-overview.png)
+![MUSE-Autoskill five-stage lifecycle framework — Skill Creation, Skill Management, Memory Mechanism, and Self-Evolution & Correction form a closed loop around the central agent](../ko/image/img-01-muse-framework-overview.png)
 *▲ The MUSE-Autoskill frame — Creation · Management · Memory · Self-Evolution closing into a single five-stage lifecycle inside one agent. | Source: [Lin et al., MUSE-Autoskill, arXiv:2605.27366, Figure 1](https://arxiv.org/abs/2605.27366)*
 
 The cards below give you the five stages at a glance — how they interlock inside a single skill.
@@ -103,7 +103,7 @@ How does a skill come into being? MUSE's Creation stage did not arrive out of no
 
 [Voyager (arXiv:2305.16291)](/report/voyager-lifelong-agent-2023/en/), published by NVIDIA and Caltech in 2023, was the first system to build an **ever-growing skill library** on top of GPT-4. Inside Minecraft, the agent autonomously crafted tools, registered them in a library, and reused them on the next task. That was the academic prototype of skills-as-assets. But Voyager's library was a one-way street — **append-only**. A skill, once registered, stayed there without any update, evaluation, or retirement procedure.
 
-![Voyager Minecraft agent system diagram — three modules (Automatic Curriculum, Iterative Prompting Mechanism, Skill Library) jointly building a self-accumulating asset of skills](./image/img-02-voyager-skill-library.png)
+![Voyager Minecraft agent system diagram — three modules (Automatic Curriculum, Iterative Prompting Mechanism, Skill Library) jointly building a self-accumulating asset of skills](../ko/image/img-02-voyager-skill-library.png)
 *▲ Voyager — the academic prototype. Automatic Curriculum poses tasks, Iterative Prompting writes procedures, Skill Library accumulates the assets. | Source: [Wang et al., Voyager, arXiv:2305.16291, Figure 1](https://arxiv.org/abs/2305.16291)*
 
 ### 3.2. Hermes Agent — The First Industrial Implementation
@@ -151,7 +151,7 @@ Direct academic numbers on skill-level memory are still v1-thin, but adjacent in
 
 The paper itself shows what actually accumulates inside a single skill through a concrete breakdown of the SKILL.md package — **median 326 lines of SKILL.md body, ~9% scripts, ~9% unit tests, 0% references**. A quantitative snapshot of what it takes to turn a procedure into an asset.
 
-![MUSE-Autoskill skill package composition — (A) SKILL.md file size distribution; (B) component share inside skill packages: SKILL.md only 69%/91%, scripts 23%/9%, tests 0%/9%, references 12%/0%](./image/img-03-muse-skill-content.png)
+![MUSE-Autoskill skill package composition — (A) SKILL.md file size distribution; (B) component share inside skill packages: SKILL.md only 69%/91%, scripts 23%/9%, tests 0%/9%, references 12%/0%](../ko/image/img-03-muse-skill-content.png)
 *▲ MUSE skill package breakdown — (A) SKILL.md size distribution (human-curated median 146 lines vs MUSE-generated 326 lines), (B) component composition. The decisive difference is unit tests showing up at 9%. | Source: [Lin et al., MUSE-Autoskill, arXiv:2605.27366, Figure 5](https://arxiv.org/abs/2605.27366)*
 
 > [!callout]
@@ -181,7 +181,7 @@ Once Evaluation signals accumulate, Refinement kicks in. Structural defects caug
 
 The MUSE paper compresses the effect of this evaluation + refinement coupling into a single chart. Reward (quality) holds steady, while latency and tokens drop — **lifecycle-managed skills come out cheaper, faster, and more accurate**.
 
-![MUSE-Autoskill reward-efficiency comparison — (A) Reward vs Latency, (B) Reward vs Tokens. MUSE-Autoskill lifts reward by +11.0pp vs Hermes while cutting latency by 273s and tokens by 85K](./image/img-04-muse-reward-comparison.png)
+![MUSE-Autoskill reward-efficiency comparison — (A) Reward vs Latency, (B) Reward vs Tokens. MUSE-Autoskill lifts reward by +11.0pp vs Hermes while cutting latency by 273s and tokens by 85K](../ko/image/img-04-muse-reward-comparison.png)
 *▲ MUSE quantitative results — across "without skills / with human skills / with MUSE-generated skills," lifecycle-managed skills raise reward by +11.0pp while simultaneously cutting latency and tokens. | Source: [Lin et al., MUSE-Autoskill, arXiv:2605.27366, Figure 4](https://arxiv.org/abs/2605.27366)*
 
 Why does the industry need this lifecycle right now? One set of numbers makes the urgency vivid. The three figures below are not unrelated statistics — they trace a single picture: **the field is collapsing, more than half of those collapses point to missing evaluation, and adding even one memory layer nearly doubles recovery.** McKinsey diagnoses, LangChain responds.
@@ -220,7 +220,7 @@ Running through the series, you can watch the level of abstraction climb one run
 
 Tech has historically absorbed new paradigms through "operations" categories. DevOps (2007), MLOps (2017), LLMOps (2023). Around 2024, **AgentOps** stabilized — a four-way market in Mem0 (GitHub 48,000+ stars, Series A $24M, exclusive partnership with AWS Agent SDK), Letta, Zep, and LangMem. Anthropic's _Agent Skills Open Standard_ (December 2025), adopted simultaneously by Claude, OpenAI Codex, and Gemini CLI, was the decisive signal that the category had landed.
 
-![DevOps toolchain in 8 stages — Plan, Code, Build, Test, Release, Deploy, Operate, Monitor — the closed-loop prototype of an operations category that SkillOps now extends into behavior assets](./image/img-05-devops-toolchain.svg)
+![DevOps toolchain in 8 stages — Plan, Code, Build, Test, Release, Deploy, Operate, Monitor — the closed-loop prototype of an operations category that SkillOps now extends into behavior assets](../ko/image/img-05-devops-toolchain.svg)
 *▲ The DevOps toolchain prototype — Plan · Code · Build · Test · Release · Deploy · Operate · Monitor, in a closed loop. SkillOps inherits this lineage and adds "lifecycle of a skill asset" on top. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Devops-toolchain.svg), CC BY-SA 4.0*
 
 From the spring of 2026, a new sub-segment is now taking shape on top of it — **SkillOps**. SkillOpt and MUSE have drawn the academic blueprint; the industrial tooling has yet to standardize. And alongside it sits an even larger empty space — **MemoryOps**. Once skill-level memory matures, the lifecycle management of memory itself (creation, diagnosis, deletion, transfer) will likely break off as its own category.

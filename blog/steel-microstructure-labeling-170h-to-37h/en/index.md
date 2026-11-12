@@ -20,7 +20,7 @@ _In AI training data, the most expensive thing isn_
 
 > So why is the remaining 22% still human work? That question is the sharpest point of this article. The answer is not "because the machine isn't precise enough" but "because judgment is required there."
 
-![Stainless steel (A961) microstructure under optical microscopy after chemical etching — grain boundaries and phase-distinguishing brightness differences](./image/img-01-steel-microstructure.jpg)
+![Stainless steel (A961) microstructure under optical microscopy after chemical etching — grain boundaries and phase-distinguishing brightness differences](../ko/image/img-01-steel-microstructure.jpg)
 *▲ Stainless steel (A961) microstructure under optical microscopy after chemical etching. Dark lines are grain boundaries; brightness differences between regions identify phases. Pixel-labeling these irregular boundaries is what annotation means. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Microstructure_of_a_stainless_steel.jpg) (CC BY 4.0)*
 
 ### Key Figures

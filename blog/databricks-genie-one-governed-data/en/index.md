@@ -46,14 +46,14 @@ The trouble is that a business's real context doesn't live in a pile of document
 
 Databricks CEO Ali Ghodsi named the problem plainly at the launch: "Most enterprise AI today is guessing with false confidence. For the business, that's not good enough." The starting point for Genie One wasn't building one more chatbot — it was moving the basis of an answer from document fragments to governed data.
 
-![Databricks Genie One natural language interface — 'How can I help you?' prompt with quick-action buttons for data analysis, document drafting, scheduling, and more](./image/img-01-genie-one-overview.png)
+![Databricks Genie One natural language interface — 'How can I help you?' prompt with quick-action buttons for data analysis, document drafting, scheduling, and more](../ko/image/img-01-genie-one-overview.png)
 *▲ Genie One's natural-language interface. Marketing, finance, and sales teams can query internal data directly without writing code. | Source: [Databricks Blog](https://www.databricks.com/blog/introducing-genie-one-genie-ontology-and-genie-agents)*
 
 ## Asking the Data Directly
 
 The engine that actually makes that shift from document fragments to data possible is Genie Ontology. It automatically extracts business context from a company's tables, queries, dashboards, and pipelines, plus some 50 connected apps like Google Drive, Jira, and Slack, then weaves it into a living knowledge graph. The agent uses that graph as a guide to query governed data in Unity Catalog directly with SQL. Instead of inferring from document chunks, it asks the source data itself.
 
-![Databricks Data+AI Summit 2026 official announcement — Genie One, Genie Ontology, Genie Agents](./image/img-02-genie-one-og.png)
+![Databricks Data+AI Summit 2026 official announcement — Genie One, Genie Ontology, Genie Agents](../ko/image/img-02-genie-one-og.png)
 *▲ The three products launched at the June 2026 Data+AI Summit: Genie One (the coworker), Genie Ontology (the context layer), and Genie Agents (the agent builder). | Source: [Databricks Newsroom](https://www.databricks.com/company/newsroom/press-releases/databricks-launches-genie-one-all-new-agentic-coworker-every-team)*
 
 Inside a single company, even the definition of "active customer" exists in conflicting versions scattered across teams. Genie Ontology decides which one to trust automatically, through a mechanism called OntoRank. Where Google's PageRank scored the authority of web pages by their links, OntoRank assigns authority to data definitions by combining the trustworthiness of the person or system that created them, how often they're referenced, their connection to Unity Catalog-certified assets, and how current they are. As Databricks engineer Ken Wong put it, "PageRank only had to rank web pages, but OntoRank has to rank different types of data."
@@ -75,7 +75,7 @@ In practice that difference comes back as token cost and trust. Because every an
 
 Databricks tested the agents on 28 questions drawn from real enterprise data-analysis work. Genie One got 84.5% right on the first try. On the same questions, the best general-purpose coding agent hit 52.4%, and the weakest came in at 25% — which roughly overlaps with the industry average for naive, context-free Text-to-SQL. And Genie pushed accuracy up while staying about twice as fast as its strongest competitor, meaning it didn't trade accuracy for speed.
 
-![Databricks Genie One accuracy and latency benchmark — Genie w/ Ontology 84.5% vs coding agents 52.4% and 25%](./image/img-03-benchmark-chart.png)
+![Databricks Genie One accuracy and latency benchmark — Genie w/ Ontology 84.5% vs coding agents 52.4% and 25%](../ko/image/img-03-benchmark-chart.png)
 *▲ 28-question enterprise benchmark. Genie w/ Ontology: 84.5%, leading coding agent: 52.4%, weakest: 25%. The accuracy lead comes with no latency penalty — Genie runs 2× faster than its strongest competitor. | Source: [Databricks Blog](https://www.databricks.com/blog/introducing-genie-one-genie-ontology-and-genie-agents) (internal benchmark)*
 
 Let's be clear about one thing. These figures are an internal benchmark — Databricks measuring its own product in its own environment. There's no third-party verification yet. But the direction the numbers point is interesting. By Databricks' account, the baseline before applying the ontology's data context sat around 50%, and once the context was layered in, it rose to 84.5%. They didn't change the model. They organized the data, and accuracy jumped.

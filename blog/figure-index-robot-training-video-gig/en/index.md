@@ -46,7 +46,7 @@ Buying the data came first. By the company's account, vendors could not hit the 
 
 The tasks run from cooking, cleaning, and laundry at home to work inside logistics centers, restaurants, factories, and offices. The announcement says tasks as obscure as cleaning kitty litter, changing oil, and busing restaurant tables have come in, and that the company welcomes the diversity. One sentence in the closing paragraph sums up the direction of the business. Index is laying the groundwork for ordering robots as a service, and today a person comes to clean your house while eventually a robot will do everything for you.
 
-![A Figure Creator wearing a head-mounted recording device while doing household chores, capturing first-person video](./image/img-01-capture-gear.jpg)
+![A Figure Creator wearing a head-mounted recording device while doing household chores, capturing first-person video](../ko/image/img-01-capture-gear.jpg)
 *▲ Approved Creators use a recording device Figure sends them, not just the app, to film a day of work | Source: [Figure, Index page](https://www.figure.ai/index-app)*
 
 ## Thirty-Five Minutes Arrive Every Second

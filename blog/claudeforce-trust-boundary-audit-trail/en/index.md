@@ -42,7 +42,7 @@ Sources: [Salesforce press release](https://www.salesforce.com/news/press-releas
 
 The press release bundles three integrations. First, Salesforce in Claude, a plugin carrying 37 prebuilt sales skills that let sellers reason over live revenue context, automate pipeline updates and take governed action from inside Claude. Second, Claude inside Salesforce, where it serves as a reasoning model for the Atlas Reasoning Engine, powers Agentforce Vibes and Agentforce Coworker by default, and is selectable in Agent Builder. Third, Slack, where Claude becomes the default model, powers Slackbot, augments team decisions through Claude Tag, and joins Slack Code as a founding partner.
 
-![Official Claudeforce campaign image released by Salesforce and Anthropic, showing the Salesforce logo, the Claudeforce wordmark and Anthropic's asterisk logo arranged together](./image/img-01-claudeforce-announcement.png)
+![Official Claudeforce campaign image released by Salesforce and Anthropic, showing the Salesforce logo, the Claudeforce wordmark and Anthropic's asterisk logo arranged together](../ko/image/img-01-claudeforce-announcement.png)
 *▲ Official Claudeforce campaign image released by Salesforce and Anthropic | Source: [Salesforce Newsroom](https://www.salesforce.com/news/press-releases/2026/08/26/salesforce-and-anthropic-announce-claudeforce/)*
 
 Salesforce is not the first large vendor to make Claude a default. TheNextWeb makes that point first, then argues that what stands out here is the breadth, covering the reasoning engine, the agent builder and the messaging product in one go. The same piece notes that the Agentforce-side integrations were already live on the day of the announcement.
@@ -65,7 +65,7 @@ The numbers make the decision look less sudden. Salesforce expects to spend arou
 
 Dario Amodei, Anthropic's CEO and co-founder, said: "Through this partnership, companies can point Claude at the customer information and business context that they've been building in Salesforce for decades, and use it to actually run and grow their businesses." TheNextWeb read that as framing from the data side. The model is not migrating anywhere; it is being pointed at data that already exists.
 
-![Dario Amodei, co-founder and CEO of Anthropic](./image/img-03-amodei.jpg)
+![Dario Amodei, co-founder and CEO of Anthropic](../ko/image/img-03-amodei.jpg)
 *▲ Marc Benioff, Chair and CEO of Salesforce (left), and Dario Amodei, co-founder and CEO of Anthropic (right) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Marc_Benioff,_2024_(cropped).jpg), [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Dario_Amodei_at_TechCrunch_Disrupt_2023_01_(cropped_2).jpg)*
 
 The risk that remains comes from the same article. Making a supplier's model the default across your product line, and your product a feature of theirs, is a deep bet on that supplier remaining a partner. It is also a question Salesforce staff had already been asking about the Claude Tag in Slack.

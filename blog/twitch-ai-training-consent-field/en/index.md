@@ -42,7 +42,7 @@ Sources: [TechCrunch (2026-08-12)](https://techcrunch.com/2026/08/12/amazon-will
 
 Near the bottom of the account settings page, under security and privacy, sits a new setting named "Training for Generative AI." It lives in account settings rather than the Creator Dashboard, so a streamer preparing to go live never runs into it. Its scope covers streams, VODs, clips, stream chat, and photos and text posted to a channel. Audio from a stream may be used to refine the speech recognition model behind captions, and the company has said that what comes out of training does not stay inside Twitch but may be used in other Amazon services.
 
-![Twitch and Amazon logos — Twitch content feeding generative AI training across Amazon](./image/img-01-twitch-amazon-logo.jpg)
+![Twitch and Amazon logos — Twitch content feeding generative AI training across Amazon](../ko/image/img-01-twitch-amazon-logo.jpg)
 *▲ Twitch is an Amazon subsidiary. The new setting is an opt-out for using Twitch content in generative AI training across Amazon, not just inside Twitch. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Twitch_and_Amazon_logo.jpg) (Public domain)*
 
 There was no announcement post. The change arrived as a documentation update and a live stream. Close to 3,000 viewers joined that stream, hosted by community lead Mary Kish and Minton, and most of the comments were against it. Asked why the setting was not opt-in, Minton answered this.
@@ -81,7 +81,7 @@ There was no announcement post. The change arrived as a documentation update and
 
 > That pulling training data back out of a model is expensive is widely known. Methods for selecting and erasing what has dissolved into the weights are not yet reliable, and the sure route is retraining without that data. The obstacle in this case sits earlier than that. Even with the will to retrain, if there is no per-content record of which broadcast entered which training run, there is no way to decide what to take out.
 
-![Amazon Spheres in Seattle — the missing per-content consent record that precedes retraining cost](./image/img-02-amazon-spheres.jpg)
+![Amazon Spheres in Seattle — the missing per-content consent record that precedes retraining cost](../ko/image/img-02-amazon-spheres.jpg)
 *▲ The Spheres at Amazon's Seattle headquarters. Separate from how expensive retraining is, without a record of which content entered which training run there is no way to even decide what to take out. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Amazon_spheres_W.jpg) (CC BY-SA 4.0)*
 
 > The chief product officer saying he does not know the usage history of his own company's content shows that state plainly. The answer reads less like withheld information than like there being nowhere to look it up. The switch in account settings holds one thing, whether this account is permitting right now. Change the value and the previous one is gone, along with any trace of when it changed. Consent in this shape is enough for checking the present state and does nothing for asking whether past processing was legitimate.
@@ -99,7 +99,7 @@ There was no announcement post. The change arrived as a documentation update and
 
 The same word, opt-out, can point at very different objects. Comparing what Meta did in Europe makes the difference clear. Meta gave notice that it would use European users' public posts for AI training and accepted objections until May 27, 2025. A consumer group's request for an injunction to stop it was dismissed by the Higher Regional Court of Cologne on May 23, 2025. The court worked through the three steps of the legitimate interests clause in Article 6(1)(f) of the GDPR: whether an interest exists, whether the processing is necessary, and whether it balances against user rights.
 
-![Higher Regional Court of Cologne building — the court that dismissed the injunction against Meta's AI training](./image/img-03-oberlandesgericht-koeln.jpg)
+![Higher Regional Court of Cologne building — the court that dismissed the injunction against Meta's AI training](../ko/image/img-03-oberlandesgericht-koeln.jpg)
 *▲ The Higher Regional Court of Cologne. On May 23, 2025, it dismissed an injunction seeking to stop Meta from training AI on European users' public posts. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:2023_Oberlandesgericht_K%C3%B6ln_(3).jpg) (CC BY-SA 4.0)*
 
 Reading that decision as permission to train would be a mistake. It came at the injunction stage, not as a ruling on the merits, and the court attached conditions of its own: the legitimate interest has to be specified concretely enough, and no less intrusive alternative may exist. A day earlier, on May 22, the Irish Data Protection Commission approved the plan subject to stronger transparency, an easily accessible objection form, and a compliance report by October. The Hamburg supervisory authority is still signaling that it will litigate as far as the Court of Justice of the European Union.
@@ -112,7 +112,7 @@ There is a case pointing the other way too. China now requires AI companion serv
 
 On a platform where millions of creators upload content by the second, keeping consent as a record needs no new principle. Adding a few fields to what the data pipeline already does is enough. If a single piece of content arrives at ingestion carrying its source, timestamp, owner, consent state, and retention class, every question that follows turns into a query.
 
-![Data center server rack — the pipeline infrastructure where per-content consent fields would be added](./image/img-04-data-center-rack.jpg)
+![Data center server rack — the pipeline infrastructure where per-content consent fields would be added](../ko/image/img-04-data-center-rack.jpg)
 *▲ A data center server rack. Keeping consent as a field is not new infrastructure. It is a few more values added to a collection pipeline that already exists. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Rear_of_rack_at_NERSC_data_center_-_closeup.jpg) (CC0)*
 
 - Tagging at collection: write the owner's consent state and the version of the terms it rested on into the same record as the content identifier. Attached later, the state at that moment cannot be reconstructed.

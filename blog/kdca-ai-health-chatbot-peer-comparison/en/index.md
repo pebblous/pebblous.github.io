@@ -44,7 +44,7 @@ KDCA and the Ministry of Science and ICT said on October 28 that the AI health c
 
 From the user's side there are two things to do. One is to answer a short questionnaire on basic body measurements such as height and weight along with daily habits; the other is simply to ask whatever you want to know. Answer the first and back comes where your health sits against a peer group of similar sex and age, together with risk readings for high blood pressure, diabetes, dyslipidemia and obesity, shown as a health traffic light and a graph. The second is a round-the-clock counseling function that takes everyday questions about sleep, exercise and diet.
 
-![Main screen of KDCA's AI health assistant chatbot service, showing the 'Check my health and lifestyle habits' button and a health-information search bar](./image/img-01-chatbot-main-screen.png)
+![Main screen of KDCA's AI health assistant chatbot service, showing the 'Check my health and lifestyle habits' button and a health-information search bar](../ko/image/img-01-chatbot-main-screen.png)
 *▲ Main screen of the AI health assistant chatbot service | Source: [Electronic Times (etnews)](https://www.etnews.com/20261028000321) (image courtesy of KDCA)*
 
 What the two agencies put forward as grounds for trusting it is where the data comes from and how it was checked. They wrote that the service uses authoritative health data vetted by an advisory panel of medical and AI experts, and that it applies encryption in line with national security rules. They wrote down a limit as well. The health report and the counseling the chatbot produces are reference information meant to help with health management, and they do not stand in for a doctor's diagnosis or treatment.

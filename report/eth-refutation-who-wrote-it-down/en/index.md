@@ -84,7 +84,7 @@ He writes down that he has not checked, and then writes his judgment. That order
 
 Open the two papers side by side and the first thing that catches is the author field. The OpenAI paper gives the company name, **OpenAI**. The Anthropic paper gives **CLAUDE / ANTHROPIC**. Neither carries a human name, and that much they share; what differs is what each put in the vacated slot. One put a company there. The other put a model.
 
-![Title pages of the OpenAI paper (author field: OPENAI) and the Anthropic paper (author field: CLAUDE ANTHROPIC) captured side by side](./image/img-01-cover-authorship.png)
+![Title pages of the OpenAI paper (author field: OPENAI) and the Anthropic paper (author field: CLAUDE ANTHROPIC) captured side by side](../ko/image/img-01-cover-authorship.png)
 *▲ Direct capture of both title pages. Each author field names a company or a model, not a person | Source: [github.com/openai/math](https://github.com/openai/math), [github.com/anthropics/formal-math](https://github.com/anthropics/formal-math/tree/main/eth)*
 
 The difference does not stop at the cover. This article converted both papers to text and counted words directly. Across all 67 pages of the OpenAI paper, `Lean`, `Claude`, `Anthropic` and `token` never appear, nor does any word meaning acknowledgment, nor the discovery date of October 16. Every count is zero. Anyone reading only this paper has no way to learn who made the result, when, or with what. That story lives only in the company announcement and the repository's README.
@@ -184,7 +184,7 @@ Second is the 20-page exposition Ryan O'Donnell of Carnegie Mellon released on O
 
 Four attributions sit inside one footnote: one notice about using a model, three thanks to people. The person who supplied the idea, the person who pointed to another result, the person he worked through notation with. And all four are written in the same sentence shape, in a row. Of everything published so far this is the **only case that puts a model and people in the same place in the same form**. O'Donnell gave the model notice no special handling, and did not bury it either. He simply put it on the same line as the other help.
 
-![The asterisk footnote on page 1 of O'Donnell's exposition, showing the LLM-interaction notice written in the same sentence form as the thanks to named people](./image/img-02-odonnell-footnote.png)
+![The asterisk footnote on page 1 of O'Donnell's exposition, showing the LLM-interaction notice written in the same sentence form as the thanks to named people](../ko/image/img-02-odonnell-footnote.png)
 *▲ The footnote the title-page asterisk points to. The model notice and three thanks to people share one line | Source: R. O'Donnell, [Some exposition of "The Exponential Time Hypothesis Is False"](#references), 2026-10-29*
 
 Third is not a paper but a GitHub issue. On October 28 a user going by TSavo opened issue #36 on the Anthropic repository. It runs four short paragraphs and contains nearly everything this article is about. The second paragraph is the notice, the third is what the writer could not verify, and it closes by declining to ask for anything.

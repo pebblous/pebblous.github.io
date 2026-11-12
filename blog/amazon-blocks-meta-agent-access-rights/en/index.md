@@ -40,7 +40,7 @@ Sources: [TechCrunch](https://techcrunch.com/2026/09/21/metas-ai-agent-has-been-
 
 Muse is the personal AI agent Meta released on September 8. Tell it what you want in a chat and it sorts your mail, fills in forms, looks up travel, orders things. A week after launch it became the number one free app in Apple's U.S. App Store, ahead of ChatGPT. Payment runs through Stripe's Link. At the million-plus merchants that accept Link it charges a stored payment method directly; at other shops it issues a single-use virtual card good only for the approved amount. Either way the user taps to approve the total in the chat window.
 
-![App icon and logo for Muse, Meta's personal AI agent](./image/img-01-muse-app.jpg)
+![App icon and logo for Muse, Meta's personal AI agent](../ko/image/img-01-muse-app.jpg)
 *▲ Muse, Meta's personal AI agent | Source: [Meta AI](https://ai.meta.com/muse/)*
 
 On the night of Sunday, September 20, that flow stopped at Amazon. Ask Muse to buy something on Amazon and a warning came back instead of an order. An Amazon spokesperson gave three grounds: Meta had not told Amazon in advance that Muse would reach its store, the agent moved through the site without identifying itself as an agent, and it appeared to capture and store customer credentials, which the company said could create privacy and security risks. Amazon added that Muse can reach a customer's account pages and order history and complete transactions, none of which Amazon knew about or consented to.
@@ -64,7 +64,7 @@ In November 2025, Amazon sued Perplexity. The complaint said Comet, Perplexity's
 
 On August 4 the Ninth Circuit vacated that order. The reasoning was short and hard to get around. If the agent runs on the user's machine at the user's instruction, then the party "accessing" the computer under that statute is the user, not the company that built the agent. Going into your own account is not unauthorized access. That closed the anti-hacking route in practice. The court did not, however, foreclose claims built on contracts and terms of service.
 
-![Main entrance of the James R. Browning U.S. Court of Appeals Building, home of the Ninth Circuit](./image/img-02-ninth-circuit-courthouse.jpg)
+![Main entrance of the James R. Browning U.S. Court of Appeals Building, home of the Ninth Circuit](../ko/image/img-02-ninth-circuit-courthouse.jpg)
 *▲ The James R. Browning U.S. Court of Appeals Building in San Francisco, seat of the Ninth Circuit | Source: [Wikimedia Commons (Library of Congress)](https://commons.wikimedia.org/wiki/File:Primary_entrance,_James_R._Browning_U.S._Court_of_Appeals_Building,_San_Francisco,_California_LCCN2010719389.tif)*
 
 Amazon asked the court to look again and was denied a rehearing on September 10. The anti-hacking argument was finished for good ten days before the block. The customer terms were updated within that window as well. The Conditions of Use that Amazon.com serves today carries a last-updated date of August 14, ten days after the appeal was decided.

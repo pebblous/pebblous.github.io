@@ -42,7 +42,7 @@ Sources: [TechCrunch (2026-10-03)](https://techcrunch.com/2026/10/03/openai-safe
 
 David Robinson led transparency work on OpenAI's safety team. In his own words the job came down to two things. He led the drafting of the rulebook now in force, and he oversaw the writing of the safety reports attached to 12 frontier model launches. That rulebook is the internal standard OpenAI reaches for when it judges whether one of its models is too dangerous to release without extra safeguards, and the version published in April 2025 is the one in use. He noted that three and a half years put him among the longest-tenured employees at the company.
 
-![OpenAI's Mission Bay office building at 1515 Third Street in San Francisco](./image/img-01-openai-mission-bay-office.jpg)
+![OpenAI's Mission Bay office building at 1515 Third Street in San Francisco](../ko/image/img-01-openai-mission-bay-office.jpg)
 *▲ OpenAI's Mission Bay office in San Francisco, where Robinson spent three and a half years. | Source: [Wikimedia Commons (Coolcaesar, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:1515_Third_Street.jpg)*
 
 Robinson left in the last week of September. Business Insider reported the departure first, on Friday, October 2, and an OpenAI spokesperson confirmed it. His essay ran in The Atlantic the next day, Saturday, October 3. It opens with "I resigned this week from OpenAI." He also disclosed that he had hired a public relations firm, adding that the decision to speak out was his alone.
@@ -80,7 +80,7 @@ Readers usually take the redundancy from that comparison and stop there. Look at
 
 What matters here is not the size of the number but when the number gets made. One in ten thousand is not a count taken after running reactors for ten thousand years. It is a probability calculated by writing down every component that can fail and every path those failures travel, and that calculation has to be finished before the plant starts up. This industry, in other words, is built so that evidence about safety exists without an accident having to supply it.
 
-![Cooling towers at the Susquehanna nuclear power plant, an example of an industry that calculates failure probability before operation](./image/img-02-susquehanna-cooling-towers.jpg)
+![Cooling towers at the Susquehanna nuclear power plant, an example of an industry that calculates failure probability before operation](../ko/image/img-02-susquehanna-cooling-towers.jpg)
 *▲ Cooling towers at the Susquehanna Steam Electric Station. A nuclear power plant is one of the two places the essay held up as a model for frontier labs. | Source: [Wikimedia Commons (Jakec, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Bell_Bend_Nuclear_Power_Plant_cooling_towers_from_the_north.JPG)*
 
 Academic work has already tried to move the same structure into AI. "Affirmative safety," a 2024 paper, proposes requiring whoever builds or deploys high-risk AI to submit advance grounds for believing the risk sits below an acceptable level. The paper groups the evidence into four strands: model behavior, model internals, the training process, and the organization's information security, safety culture and incident response. Its core move is to place the burden of proof on the builder rather than the regulator.

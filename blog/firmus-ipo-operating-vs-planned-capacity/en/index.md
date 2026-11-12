@@ -44,7 +44,7 @@ Firmus builds the data centers used for AI training and rents out the compute in
 
 The company was due to list on the Australian Securities Exchange on October 23. At A$11 a share it would have raised about A$7 billion and opened with a market value of A$44 billion, and on that path it would have been the biggest new listing on the Australian market since Telstra in 1997. The offer was abandoned on October 9, two weeks before the listing date.
 
-![Entrance of the Australian Securities Exchange (ASX) Exchange Centre in Sydney](./image/img-01-asx-exchange-centre.jpg)
+![Entrance of the Australian Securities Exchange (ASX) Exchange Centre in Sydney](../ko/image/img-01-asx-exchange-centre.jpg)
 *▲ The ASX Exchange Centre in Sydney — the exchange Firmus was due to list on | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Sydney_Exchange_Centre_Entrance.jpg)*
 
 The way it came apart is written into the price. Demand fell short, advisers looked at cutting the price to A$8.25 a share, and on the Guardian's account a figure as low as A$5.50 was discussed. The board said that proceeding on these terms would not reflect the company's capability and long-term growth prospects, cited market volatility, and said it would look to private markets for funding instead.
@@ -59,7 +59,7 @@ One analysis reached for something to measure the valuation against. Lochlan Hol
 
 The announcement Firmus put out gives the whole picture. The company holds seven AI factories across four countries. The two operating today are in Australia and Singapore, and the remaining five are in development, targeted to go live within the next 24 months. The same announcement said contracted capacity across customers had passed 900MW.
 
-![Aerial rendering of the Firmus AI Factory campus under construction in Batam, Indonesia](./image/img-02-firmus-batam-campus.jpg)
+![Aerial rendering of the Firmus AI Factory campus under construction in Batam, Indonesia](../ko/image/img-02-firmus-batam-campus.jpg)
 *▲ Rendering of the Firmus AI Factory campus in Batam, Indonesia — one of the five sites still in development | Source: [Firmus Newsroom](https://firmus.co/newsroom/firmus-to-build-170-000-gpu-ai-factor-y-campus-with-nvidia-for-global-ai-natives)*
 
 Laid side by side, those two sentences leave a gap. 900MW is a number written on contracts, not a number for sites with power flowing through them. Forbes Australia, working from the offer documents, broke it down as 46MW operating, 865MW in development, and 3.2GW once planned capacity and growth rights are added in. The 46MW running today is a little over a twentieth of the 900MW under contract.

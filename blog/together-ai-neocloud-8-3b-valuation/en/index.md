@@ -40,7 +40,7 @@ The Series C announced on July 1, 2026 stands out first for its size: $800 milli
 
 The founder is Vipul Ved Prakash, who once sold the social-search startup Topsy to Apple for more than $200 million. Stanford professor Percy Liang is among the co-founders. As of the most recent quarter, annualized bookings had passed $1.15 billion, and buzzy AI startups such as Cursor and Cognition are on the customer list. Backed by its investors, the company also laid out a plan to secure 500 megawatts of compute over the next five years. That it counts its data centers in units of electricity tells you exactly what kind of thing is happening here.
 
-![Nvidia H100 GPU modules — the hardware neoclouds rent out by the hour](./image/img-01-h100-gpu.jpg)
+![Nvidia H100 GPU modules — the hardware neoclouds rent out by the hour](../ko/image/img-01-h100-gpu.jpg)
 *▲ Nvidia H100 GPU modules — the core resource neoclouds like Together AI rent out by the hour | Source: [Wikimedia Commons (Geekerwan, CC BY 3.0)](https://commons.wikimedia.org/wiki/File:NVIDIA_H100_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_023.png)*
 
 > [!callout]
@@ -67,7 +67,7 @@ The competitive picture is unforgiving. CoreWeave, the market leader, operates 3
 
 The industry calls the present moment a "3-to-5-year window before the hyperscalers catch up." Once Amazon, Google, and Microsoft move into GPU rental in earnest, the neocloud premium thins out. It is the rush to lock in scale before that happens that has produced the current scene: capital being poured into data centers and power. Unlike the era when software startups grew on code, these companies grow on concrete, power grids, and cooling systems. That is why the capital is being absorbed less like software and more like physical construction.
 
-![Data center server racks housing GPU clusters — the physical reality of neocloud competition](./image/img-02-datacenter-racks.jpg)
+![Data center server racks housing GPU clusters — the physical reality of neocloud competition](../ko/image/img-02-datacenter-racks.jpg)
 *▲ Data center server racks housing AI compute — neocloud competition ultimately comes down to a race to build | Source: [Wikimedia Commons (Carl Lender, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg)*
 
 > [!callout]

@@ -32,7 +32,7 @@ In the same quarter, an independent reproducibility study published at ACM Finte
 
 60K stars and an underperformance against buy-and-hold are not contradictions. The first is social validation that **"this pattern is worth examining"**; the second is the absence of performance validation that **"this pattern actually generates alpha."** Separating the two is the only way the conversation about industrial transferability becomes possible.
 
-![TradingAgents multi-agent financial trading framework — five-tier twelve-agent topology with four Analysts (market, social, news, fundamentals), Bull/Bear Research team, Trader, Risk Management team, and Fund Manager leading to Execution](./image/img-01-tradingagents-framework.png)
+![TradingAgents multi-agent financial trading framework — five-tier twelve-agent topology with four Analysts (market, social, news, fundamentals), Bull/Bear Research team, Trader, Risk Management team, and Fund Manager leading to Execution](../ko/image/img-01-tradingagents-framework.png)
 *▲ TradingAgents overall framework — five-tier twelve-agent topology (Analysts → Researchers → Trader → Risk → Manager) | Source: [arXiv:2412.20138 (Tauric Research)](https://arxiv.org/abs/2412.20138)*
 
 ### 1.2. Du et al. 2023's Ceiling and B05's New Warning

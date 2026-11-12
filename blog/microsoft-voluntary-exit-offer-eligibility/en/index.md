@@ -42,7 +42,7 @@ Source: [CNBC](https://www.cnbc.com/2026/10/26/microsoft-msft-voluntary-buyouts.
 
 On Monday, October 26, an email carrying individual terms arrived in the inboxes of a slice of Microsoft's workforce. The company's name for it is the Voluntary Exit Offer. Where a layoff is the company telling you to go, this one leaves the decision with the person who receives it. Nothing in the announcement says that declining carries a penalty.
 
-![Microsoft headquarters campus entrance with logo sign in Redmond, Washington](./image/img-01-microsoft-redmond-hq.jpg)
+![Microsoft headquarters campus entrance with logo sign in Redmond, Washington](../ko/image/img-01-microsoft-redmond-hq.jpg)
 *▲ Microsoft's Redmond headquarters campus, where the voluntary exit offer originated | Source: [Wikimedia Commons (Coolcaesar, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Building92microsoft.jpg)*
 
 The offer went to four countries: the United States, Canada, India and the United Kingdom. About 60,000 people are eligible, roughly 27% of the 223,000 employees on the books as of June 30. More than one person in four received the same email. The eligibility line is internal level 70 and below, which some reports rendered as vice president level and below.

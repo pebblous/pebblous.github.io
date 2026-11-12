@@ -44,7 +44,7 @@ Two class actions arrived at the Cook County courthouse on October 9, 2026. Mitc
 
 How the two plaintiffs met a robot is ordinary enough. Breidinger placed one grocery order through DoorDash on September 29, 2025, and a Coco robot brought it. Schain ordered through Uber Eats three times and a Serve robot came each time, most recently on October 4, 2026. Neither of them chose robot delivery. The delivery app assigned a robot on its own, and the only way to get the order was to walk up to the robot and open the lid.
 
-![A Coco Robotics delivery robot parked on a sidewalk, with the COCO logo on its front panel](./image/img-01-coco-delivery-robot.jpg)
+![A Coco Robotics delivery robot parked on a sidewalk, with the COCO logo on its front panel](../ko/image/img-01-coco-delivery-robot.jpg)
 *▲ A Coco Robotics delivery robot. A customer walks up and opens the lid on top to retrieve the order | Source: [Wikimedia Commons (Mx. Granger, CC0)](https://commons.wikimedia.org/wiki/File:Coco_delivery_robot_1.jpg)*
 
 The claims rest on the Illinois Biometric Information Privacy Act, passed in 2008. A company that scans face or hand geometry to collect a biometric identifier has to give written notice of the collection, its purpose and the retention period, and it has to obtain written consent from the person. How the data is stored and shared falls under the statute as well. Damages run to $1,000 for a negligent violation and $5,000 for an intentional or reckless one. Meta paid $650 million to settle under this statute, which is why the name alone puts American companies on edge.
@@ -55,7 +55,7 @@ The scene the complaints describe is specific. During the few seconds in which a
 
 LiDAR fires an infrared laser and times the return to work out the distance to an object. Autonomous driving has used the device for years, and on a sidewalk robot it is the eye that tells a curb, a person and a utility pole apart. The output is not a photograph but hundreds of thousands of distance measurements, which is to say a point cloud. When the sensor runs in front of a human face, that point cloud holds the three-dimensional spacing between the features of the face. The complaints are aimed at exactly that spacing.
 
-![A Serve Robotics delivery robot with a cylindrical camera and sensor module mounted on top](./image/img-02-serve-delivery-robot.jpg)
+![A Serve Robotics delivery robot with a cylindrical camera and sensor module mounted on top](../ko/image/img-02-serve-delivery-robot.jpg)
 *▲ A Serve Robotics delivery robot. The cylindrical module on top houses the camera, LiDAR and other driving sensors | Source: [Wikimedia Commons (The Squirrel Game, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Serve_Robotics_Food_Delivery_Robot.jpg)*
 
 After the claim about collection comes the claim about use. According to the Coco complaint, the company shares the data its robots gather with OpenAI for AI training. The Serve complaint says the company licensed video and LiDAR data to third parties so they could train models of their own. One alleges a handover and the other alleges a loan, but both describe data gathered while driving ending up somewhere that has nothing to do with driving.

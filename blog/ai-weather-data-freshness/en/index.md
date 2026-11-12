@@ -38,7 +38,7 @@ In the world of weather forecasting, ECMWF has long been the name closest to the
 
 In a global benchmark spanning January through March 2026, WeatherMesh-6's record was unambiguous. On 2-meter surface temperature, WM-6's forecast 4.5 days out was as accurate as ECMWF IFS one day out. Its ensemble root-mean-square error (RMSE) ran up to 38% below IFS, and against ECMWF's own AI model AIFS it led at every lead time out to 15 days. Its three-day forecast of wind speed at 100 meters was 7–11% more accurate than AIFS.
 
-![Scorecard comparing RMSE of WeatherMesh against ECMWF HRES and AIFS by variable and lead time — bluer means WeatherMesh is more accurate](./image/img-01-scorecard.png)
+![Scorecard comparing RMSE of WeatherMesh against ECMWF HRES and AIFS by variable and lead time — bluer means WeatherMesh is more accurate](../ko/image/img-01-scorecard.png)
 *▲ WeatherMesh's RMSE advantage over ECMWF HRES and AIFS (blue favors WeatherMesh). It leads across nearly every variable and lead time. | Source: [WeatherMesh-3, arXiv:2503.22235](https://arxiv.org/abs/2503.22235)*
 
 > [!callout]
@@ -48,7 +48,7 @@ In a global benchmark spanning January through March 2026, WeatherMesh-6's recor
 
 It is tempting to explain the reversal as "a smarter model." But place the models side by side and that explanation wobbles. WeatherMesh uses a SWIN-family vision transformer. Google DeepMind's GraphCast, Huawei's Pangu-Weather, and ECMWF's AIFS all share the same era of deep-learning structures — transformers or graph neural networks. At the level of broad architecture, they resemble one another.
 
-![Diagram of WeatherMesh's encoder–latent space–decoder structure and SWIN/NATTEN attention windows](./image/img-02-architecture.png)
+![Diagram of WeatherMesh's encoder–latent space–decoder structure and SWIN/NATTEN attention windows](../ko/image/img-02-architecture.png)
 *▲ WeatherMesh's encoder–latent space–decoder structure and SWIN-family attention. It shares its broad architecture with contemporary weather AIs. | Source: [WeatherMesh-3, arXiv:2503.22235](https://arxiv.org/abs/2503.22235)*
 
 Scale doesn't explain WeatherMesh's edge either. With about one billion parameters, WeatherMesh is small not only next to trillion-parameter language models but next to its rival weather models too. Its earlier version, WM-3, achieved better performance with 15 times less compute than GraphCast and more than 10 times less than Pangu-Weather. In other words, it didn't win by being bigger.
@@ -77,7 +77,7 @@ The table below sets the two approaches side by side on the data dimension. The 
 
 Founder John Dean sums up the strategy in a sentence: "I personally don't understand the business model of being an AI weather company without a dataset advantage." He goes further, saying that even if you removed ECMWF's initial conditions and forecast from its own data alone, the model would still do quite well. It is a declaration that the moat is the data, not the model.
 
-![WeatherMesh data flow fusing multiple observation analyses in latent space and continuously refreshing forecasts through a recurrent loop](./image/img-03-realtime.png)
+![WeatherMesh data flow fusing multiple observation analyses in latent space and continuously refreshing forecasts through a recurrent loop](../ko/image/img-03-realtime.png)
 *▲ Fusing multiple observation sources in latent space and refreshing forecasts continuously through a recurrent loop (↻). Refresh rate and freshness are decided here. | Source: [WeatherMesh-3, arXiv:2503.22235](https://arxiv.org/abs/2503.22235)*
 
 > [!callout]
@@ -87,7 +87,7 @@ Founder John Dean sums up the strategy in a sentence: "I personally don't unders
 
 Fresh data doesn't just appear. WindBorne makes its data and carries it itself. The company keeps roughly 400 weather balloons launched from 15 sites worldwide constantly aloft, and feeds those observations straight into the model — without passing through the intermediate products of agencies like ECMWF or NOAA. It removed, from the start, the latency and information loss introduced at every intermediate layer. WindBorne's head of AI explains that the decision to ingest its own balloon observations directly into the model, rather than leaning on ECMWF's dataset, was — after a year of model tuning — the turning point that lifted performance a full step. The leap came from changing the path data takes in, not from a better algorithm.
 
-![A meteorologist filling a weather observation balloon with helium — a symbol of WindBorne's direct-observation strategy](./image/img-04-balloon.jpg)
+![A meteorologist filling a weather observation balloon with helium — a symbol of WindBorne's direct-observation strategy](../ko/image/img-04-balloon.jpg)
 *▲ Preparing a weather balloon launch. WindBorne feeds observations from roughly 400 balloons worldwide straight into the model, bypassing intermediate agencies. | Source: [NASA / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:NASA_Meteorologists_Launch_Weather_Balloon_Before_Research_Flight_(AFRC2018-0287-284).jpg)*
 
 The data is varied, too. WeatherMesh-6 integrates 11 different observation types: microwave imagers, high-resolution infrared sounders, geostationary satellite imagery, radar composites, and the company's own balloon observations. Because one source can fill in when another is empty, dependence on any single source is low. To learn new observation types efficiently, it also encodes only the difference between an observation and the existing forecast value, rather than feeding the raw observation in.

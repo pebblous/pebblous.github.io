@@ -38,7 +38,7 @@ The gap between fear and reality is wide. Across multiple polls, roughly 75% of 
 
 Dissecting the causes of job cuts tells the same story. Gartner estimates that only about 1% of the layoffs to date are directly attributable to AI-driven productivity gains. The rest come from familiar causes — over-hiring corrections, high interest rates, an economic slowdown. Oxford Economics sums it up: firms "do not appear to be replacing workers with AI at any meaningful scale."
 
-![KUKA industrial robot arms automate bread palletizing at a German bakery — automation has reshaped factory floors for decades yet its measured employment impact consistently defies the alarm](./image/img-01-factory-automation-robot-palletizing.jpg)
+![KUKA industrial robot arms automate bread palletizing at a German bakery — automation has reshaped factory floors for decades yet its measured employment impact consistently defies the alarm](../ko/image/img-01-factory-automation-robot-palletizing.jpg)
 *▲ KUKA industrial robot arms automate bread palletizing at a German bakery. Automation has reshaped factory floors for decades — yet its measured impact on employment consistently defies the alarm | Source: [Wikimedia Commons (PD)](https://commons.wikimedia.org/wiki/File:Factory_Automation_Robotics_Palettizing_Bread.jpg)*
 
 So the first distinction matters. "The forecast was wrong" and "it hasn't arrived yet" are entirely different claims. Most credible diagnoses point to the latter. Layoffs are absent not because AI is incapable, but because that capability hasn't yet flowed inside organizations. What that bottleneck is — that's where this piece begins.
@@ -60,7 +60,7 @@ The author negates, one by one, the four candidates commonly credited with prote
 | Bargaining power | Private-sector union membership is below 6%. The more exposed the role, the weaker the organizing. |
 | What remains: organizational friction | Adoption lag, implementation hurdles, the time-gap to deployment on the ground. The only effective shield. |
 
-![The 2022 AFL-CIO Convention in Philadelphia — America's largest union federation yet private-sector membership has fallen below 6%, leaving most AI-exposed workers without collective bargaining coverage](./image/img-02-afl-cio-convention-2022.jpg)
+![The 2022 AFL-CIO Convention in Philadelphia — America's largest union federation yet private-sector membership has fallen below 6%, leaving most AI-exposed workers without collective bargaining coverage](../ko/image/img-02-afl-cio-convention-2022.jpg)
 *▲ The 2022 AFL-CIO Convention in Philadelphia. America's largest union federation — yet private-sector union membership has since fallen below 6%, leaving most workers, especially those in AI-exposed roles, without collective bargaining coverage | Source: [Wikimedia Commons (PD)](https://commons.wikimedia.org/wiki/File:2022_AFL-CIO_Convention_(52151114321).jpg)*
 
 The last row is the crux. Cross out the four, and one reason remains: the sluggishness it takes an organization to actually put new technology to work. Brookings defines this as adoption lag, internal implementation hurdles, and the delay between when a technology becomes usable and when it's deployed on the ground — and stresses that it amounts only to a "temporary reprieve."

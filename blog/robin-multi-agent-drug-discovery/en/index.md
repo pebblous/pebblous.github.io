@@ -38,7 +38,7 @@ Robin is not a single model but a system of three agents with distinct roles. **
 
 The research started from a single phrase. Given the topic "dry age-related macular degeneration," Robin read and synthesized more than 500 papers in 30 minutes. From there it settled on strengthening phagocytosis in retinal pigment epithelium (RPE) cells as a treatment strategy, and designed the flow cytometry assay to measure that effect. It then narrowed a screening list down to 30 compounds and, as results came in, re-interpreted them to form the next hypothesis, running the cycle on its own.
 
-![Three-step phagocytosis diagram: ligand-coated particles bind to phagocyte surface receptors, triggering activation and cellular uptake — the mechanism Robin targeted in RPE cells](./image/img-01-phagocytosis-steps.png)
+![Three-step phagocytosis diagram: ligand-coated particles bind to phagocyte surface receptors, triggering activation and cellular uptake — the mechanism Robin targeted in RPE cells](../ko/image/img-01-phagocytosis-steps.png)
 *▲ Three-step phagocytosis mechanism — the biological basis for Robin's strategy of boosting RPE cell phagocytosis to clear retinal waste | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Phagocytosis_in_three_steps.svg)*
 
 What stands out is exactly where the human dropped out. AI took on the entire "intellectual" part of research: hypothesis generation, experimental design, result interpretation. FutureHouse reports that the work took 2.5 months from planning to manuscript submission, and estimates that, compared with conventional methods, it cut researcher time by roughly 200x. The result was published in **Nature** in 2026, and FutureHouse released it at the same time as an [official announcement](https://www.futurehouse.org/research-announcements/demonstrating-end-to-end-scientific-discovery-with-robin-a-multi-agent-system).
@@ -47,7 +47,7 @@ What stands out is exactly where the human dropped out. AI took on the entire "i
 
 Dry age-related macular degeneration is a leading cause of irreversible blindness in developed countries. In the United States alone, 1.5 million people are in a vision-threatening state and 600,000 are legally blind, with the patient population expected to triple by 2050. Yet effective treatment options are scarce. One axis of the disease is retinal cells failing to clear waste, which then accumulates, so Robin set its strategy on raising that waste clearance, the phagocytosis of RPE cells.
 
-![Dry AMD retinal structure illustration showing photoreceptor loss, RPE cells, drusen deposits, and capillary loss — the pathology Robin was targeting](./image/img-02-dry-amd-illustration.jpg)
+![Dry AMD retinal structure illustration showing photoreceptor loss, RPE cells, drusen deposits, and capillary loss — the pathology Robin was targeting](../ko/image/img-02-dry-amd-illustration.jpg)
 *▲ Dry AMD retinal pathology — drusen accumulate beneath RPE cells while photoreceptors deteriorate, causing progressive vision loss | Source: [National Eye Institute / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Illustration_of_Dry_AMD_(48608255362).jpg)*
 
 After narrowing 30 candidates, the drug Robin ultimately named was **ripasudil**. Ripasudil inhibits Rho-associated kinase (ROCK) and is already approved and in use as a glaucoma treatment in Japan. This is the first time it has been proposed as a candidate for dry AMD. Because it is a repurposing approach (linking an already-marketed, safety-tested drug to a new indication), it is also well positioned to move straight into follow-up experiments.
@@ -60,7 +60,7 @@ Behind the headline is a limit the same paper records honestly. Finch, the agent
 
 Look at where the gap came from and you find a scene familiar to any data professional. To turn flow cytometry results into a number like a fold-change, you first have to set the baseline for which cells count as "having phagocytosed." With the same raw data, shifting that threshold even slightly swings the fold-change considerably. The place where AI and humans split into 7.5x and 1.75x is exactly here. Who sets the rule for converting data into a number, and how, governed the size of the conclusion.
 
-![Flow cytometer instrument illustration — the analytical tool used by Robin's Finch agent to measure phagocytosis effect, where AI and human interpretations diverged from 7.5x to 1.75x](./image/img-03-flow-cytometer.png)
+![Flow cytometer instrument illustration — the analytical tool used by Robin's Finch agent to measure phagocytosis effect, where AI and human interpretations diverged from 7.5x to 1.75x](../ko/image/img-03-flow-cytometer.png)
 *▲ Flow Cytometer — the instrument used by Finch agent to measure phagocytosis. The 7.5x vs. 1.75x divergence arose from different gating thresholds applied to the same raw data | Source: [NIH BioArt / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Flow_Cytometer_(NIH_BioArt_160).png)*
 
 > [!callout]

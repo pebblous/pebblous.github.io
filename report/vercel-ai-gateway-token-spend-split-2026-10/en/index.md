@@ -36,7 +36,7 @@ _In Vercel_
 
 Vercel bundles the traffic crossing its AI Gateway into a monthly production index. The gateway is an intermediary layer that gathers models from many companies behind one entry point, and every call crossing it records both a token count and an estimated cost. The September edition, published on 15 October, is where this report starts. Open-weight models handled 71.5% of the tokens, and they took 23% of the spend.
 
-![Guillermo Rauch, co-founder and CEO of Vercel](./image/img-01-guillermo-rauch.jpg)
+![Guillermo Rauch, co-founder and CEO of Vercel](../ko/image/img-01-guillermo-rauch.jpg)
 *▲ Guillermo Rauch, co-founder and CEO of Vercel, the company behind the monthly AI Gateway production index this report works from. | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Guillermo_Rauch_photo.jpg)*
 
 Both numbers describe a single stream of traffic, but they count different things in it. Token share counts volume: how many tokens a model read and wrote. Spend share counts value: how much money that processing attracted. Prices differ by model, so there is no reason for the two to agree, and in September they stood more than three times apart. A share quoted without naming its axis never says which of the two it means.
@@ -105,7 +105,7 @@ The swapping cycle is short. During September, 48.0% of teams changed the model 
 
 Vercel AI Gateway Production Index, October 2026 edition. The switching rates count only teams that used at least 10 million paid tokens in both months, and "used most" is measured by paid token count.
 
-![Data center server racks, representing the gateway infrastructure layer that routes calls to AI models from many companies](./image/img-02-gateway-server-racks.jpg)
+![Data center server racks, representing the gateway infrastructure layer that routes calls to AI models from many companies](../ko/image/img-02-gateway-server-racks.jpg)
 *▲ The part that gets swapped out like an interchangeable component is the model. The server infrastructure it plugs into stays put. | Source: [NOIRLab, Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:NOIRLab_HQ_Server_Racks_(6V6A0395-CC).jpg)*
 
 How fast new models arrive is part of the same picture. Vercel tracked separately how quickly models launched in September reached people's hands. Reach is the share of paying teams that called the model at least once, and spend share is the share of total paid gateway spend that model took during the 14 days after launch. That both columns use a 14-day window matters. Mix them with monthly figures and the same model ends up with two different numbers.
@@ -142,7 +142,7 @@ A falling share reads as a loss for Anthropic until you notice that the index al
 
 Vercel AI Gateway Production Index, October 2026 edition.
 
-![Dario Amodei, co-founder and CEO of Anthropic](./image/img-03-dario-amodei.jpg)
+![Dario Amodei, co-founder and CEO of Anthropic](../ko/image/img-03-dario-amodei.jpg)
 *▲ Dario Amodei, co-founder and CEO of Anthropic. The spend share that fell in September belongs to the Opus line, not to Anthropic as a loser. | Source: [Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Dario_Amodei_in_2023_(cropped).jpg)*
 
 ### 4.1. The Same Shape Passed Through in July
@@ -166,7 +166,7 @@ Google's record in that edition shows the movement has no single direction. Sinc
 
 The division of labor seen so far has one more axis. The company that builds a model and the company that runs it for money are not the same. Once weights are published, anyone can put that model on a server and charge per call. The September record splits the money at exactly that point and sorts it by lab.
 
-![NVIDIA H100 GPU, the compute hardware that a hosting provider actually runs when it serves an open-weight model for a per-call fee](./image/img-04-nvidia-h100.jpg)
+![NVIDIA H100 GPU, the compute hardware that a hosting provider actually runs when it serves an open-weight model for a per-call fee](../ko/image/img-04-nvidia-h100.jpg)
 *▲ Open weights are free to download, but the hardware that serves them is not. Whoever hosts the model still keeps a cut. | Source: [Geekerwan, Wikimedia Commons (CC BY 3.0)](https://commons.wikimedia.org/wiki/File:NVIDIA_H100_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_001.png)*
 
 Setting the two axes side by side for each lab gives the following. Here too the left column and the right column are different metrics with different denominators, so the table is read across and never summed down.

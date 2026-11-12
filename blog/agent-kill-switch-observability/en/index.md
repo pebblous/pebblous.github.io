@@ -46,7 +46,7 @@ This divergence is not the picture from a single survey. The Agentic AI Institut
 
 The numbers point to one thing. Deployment speed is outrunning control. And the place where that gap shows up most sharply is a deeply practical question: can you stop this agent right now?
 
-![A red emergency stop button mounted on industrial equipment, symbolizing a physical kill switch](./image/img-01-emergency-stop-button.jpg)
+![A red emergency stop button mounted on industrial equipment, symbolizing a physical kill switch](../ko/image/img-01-emergency-stop-button.jpg)
 *▲ Agentic AI has no physical button like this industrial emergency stop, but it faces the same question — can you stop this, right now? | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Emergency_stop_button.jpg)*
 
 ## It's Not That They Can't Stop — They Can't See

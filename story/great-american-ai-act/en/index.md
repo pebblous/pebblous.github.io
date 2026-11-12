@@ -48,7 +48,7 @@ What stands out is that the pause comes with an expiration date stamped on it. T
 
 The opposition takes aim at exactly this point. Brad Carson of Americans for Responsible Innovation called the preemption a "generational mistake." The worry is that the floor of AI accountability that states have been building gets converted into a ceiling set by Washington. Parts of the labor movement, including the AFL-CIO, and advocacy groups such as Public Citizen are also critical of the preemption clause. On the other side, industry groups like the Business Software Alliance and the Information Technology Industry Council (ITIC) backed the draft, arguing one consolidated rulebook beats one fractured into 50.
 
-![United States Capitol — where the Great American AI Act draft was introduced](./image/img-01-us-capitol.jpg)
+![United States Capitol — where the Great American AI Act draft was introduced](../ko/image/img-01-us-capitol.jpg)
 *▲ United States Capitol | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:US_Capitol_west_side.JPG)*
 
 > [!callout]
@@ -60,7 +60,7 @@ Overshadowed by the preemption fight, the draft's Title II carries a clause of a
 
 The thickest strand is an overhaul of the federal statistical system. The BLS and the Census Bureau must rework their existing surveys to capture AI adoption and the employment changes it brings. The Secretary of Labor designates at least 15 AI-sensitive occupations, refreshes the list every two years, and publishes an annual employment outlook for them. A program that tracks how jobs flow in and out of each occupation runs alongside.
 
-![Map of the United States with all 50 state names — the nationwide scope of federal AI labor market measurement](./image/img-02-us-map-states.png)
+![Map of the United States with all 50 state names — the nationwide scope of federal AI labor market measurement](../ko/image/img-02-us-map-states.png)
 *▲ All 50 U.S. states — the scope across which BLS and Census Bureau surveys will be revised to capture AI adoption and employment shifts | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Map_of_USA_with_state_names.svg)*
 
 There is also a device for measuring the measurement tools themselves. The draft sets up a prize competition to develop benchmarks that gauge, in a reproducible way, which tasks AI can automate. The attempt is to answer "can AI replace this work?" with a number rather than a hunch. Add to that the AI workforce research hub, to be established inside the Department of Labor within 90 days, which produces scenario planning and policy insight.
@@ -83,7 +83,7 @@ How this clause behaves in practice has already faced one trial run. New York St
 
 Still, the case for the clause rests on numbers and public sentiment. By the Challenger, Gray & Christmas tally, 108,000 job cuts were announced in January 2026 alone — up 118% from a year earlier. In a June 2026 survey of 500 U.S. adults, 87% said "a layoff decision recommended by AI should be reviewed by a human manager." When you cannot count what is happening, it is hard to answer that anxiety with policy.
 
-![Representative Lori Trahan (D-MA) — co-sponsor of the Great American AI Act](./image/img-03-lori-trahan.jpg)
+![Representative Lori Trahan (D-MA) — co-sponsor of the Great American AI Act](../ko/image/img-03-lori-trahan.jpg)
 *▲ Representative Lori Trahan (D-MA) — co-sponsor of the GAAIA alongside Rep. Obernolte | Source: [U.S. Congress Bioguide](https://bioguide.congress.gov/bioguide/photo/T/T000482.jpg)*
 
 > [!callout]

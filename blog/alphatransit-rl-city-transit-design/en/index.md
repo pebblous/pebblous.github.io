@@ -54,7 +54,7 @@ What AlphaTransit does, in one sentence: **on the road-network graph, it extends
 
 The agent's brain is two neural networks. The **policy network** takes the current state (routes drawn so far + road network + demand) and outputs a probability distribution over "which edge should the route extend to next." The **value network** takes the same state and estimates "from here, how good will the final design likely be." Both networks share inputs — road graph, OD demand, existing route geometry — but their outputs differ: one is the next move, the other is the future score.
 
-![AlphaTransit policy-value network architecture — node features go through a shared GATv2 backbone with Jumping Knowledge aggregation, then split into an actor head producing node probabilities and a critic head producing the state value](./image/img-02-policy-value-network.png)
+![AlphaTransit policy-value network architecture — node features go through a shared GATv2 backbone with Jumping Knowledge aggregation, then split into an actor head producing node probabilities and a critic head producing the state value](../ko/image/img-02-policy-value-network.png)
 *▲ AlphaTransit's policy-value network: a shared graph-attention backbone feeds an actor head (next-edge probabilities, MCTS priors) and a critic head (state value, MCTS leaf estimates). | Source: [Poudel, Swaminathan & Li (2026), Figure 3 — arXiv:2605.28730](https://arxiv.org/html/2605.28730v1)*
 
 ### 2.2. MCTS — decision-time lookahead

@@ -44,5 +44,5 @@ Antimicrobial resistance is a threat that grows quietly. Peptide antibiotics lik
 
 The starting point is unusual in itself. In earlier work, this team mined the ancient proteomes of extinct creatures such as the mammoth and the ground sloth as a quarry for antibiotic candidates. ApexGO takes ten of those recovered antimicrobial peptides as templates and lets the AI edit their amino-acid sequences little by little to produce better candidates. The results showed up on two levels. In the test tube, 85% of the AI-designed peptides stopped bacterial growth, and 72% were more potent than the original templates.
 
-![Woolly mammoth skeleton at the Smithsonian, one of the extinct animals ApexGO mined antimicrobial peptide templates from](./image/img-01-mammoth-skeleton.jpg)
+![Woolly mammoth skeleton at the Smithsonian, one of the extinct animals ApexGO mined antimicrobial peptide templates from](../ko/image/img-01-mammoth-skeleton.jpg)
 *▲ Woolly mammoth skeleton at the Smithsonian National Museum of Natural History — one of the extinct animals ApexGO's template peptides were mined from | Source: [Wikimedia Commons (Kevin Burkett, CC BY-SA 2.0)](https://commons.wikimedia.org/wiki/File:Smithsonian_woolly_mammoth.jpg)*

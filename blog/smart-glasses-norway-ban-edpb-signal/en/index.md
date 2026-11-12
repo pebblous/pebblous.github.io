@@ -54,7 +54,7 @@ The reason the minister gave for the ban was not what the technology can do but 
 
 Torgeir Micaelsen, Norwegian Minister of Digitalisation and Public Governance, press release of October 5, 2026, in the English rendering carried by wire coverage. The Norwegian original reads "Jeg er urolig for at det introduseres ny, kraftig teknologi der folk risikerer å bli fotografert, filmet eller tatt lydopptak av uten at de vet det."
 
-![Torgeir Micaelsen, Norway's Minister of Digitalisation and Public Governance](./image/img-01-micaelsen-portrait.jpg)
+![Torgeir Micaelsen, Norway's Minister of Digitalisation and Public Governance](../ko/image/img-01-micaelsen-portrait.jpg)
 *▲ Torgeir Micaelsen, Norway's Minister of Digitalisation and Public Governance (photographed 2012) | Source: [Arbeiderpartiet, Wikimedia Commons (CC BY-SA 2.0)](https://commons.wikimedia.org/wiki/File:Torgeir_Micaelsen_-_Arbeiderpartiet.jpg)*
 
 What the government put forward is a list of places sorted into three groups. Places people pass through in daily life, places children go in particular, and places where privacy matters in a special way. The third group takes in hospitals and clinics, and it also takes in swimming pools and gyms, which have changing rooms and showers.
@@ -79,7 +79,7 @@ The place the European Data Protection Board picked is the design of the device.
 
 Anu Talus, Chair of the European Data Protection Board, press release accompanying the statement of October 13, 2026
 
-![Anu Talus, Chair of the European Data Protection Board](./image/img-02-talus-portrait.jpg)
+![Anu Talus, Chair of the European Data Protection Board](../ko/image/img-02-talus-portrait.jpg)
 *▲ Anu Talus, Chair of the European Data Protection Board (March 2025, during a visit to the European Commission) | Source: [European Commission Audiovisual Service, Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Anu_Talus_(P-066170-00-01)_(cropped).jpg)*
 
 Why the device side was chosen is set out in chapter 2 of the statement. Smart glasses can be hard to tell apart from ordinary eyewear, which allows a near invisible collection and storage of personal data, and some carry advanced microphones that pick up background conversations the wearer is not part of. One more sentence was added: used together with facial or voice recognition systems, these devices raise unprecedented questions about societal choices and pose a high risk to rights and freedoms in public spaces. The Board took this to be a problem that good manners on the part of the wearer cannot reach.
@@ -103,7 +103,7 @@ Who carries the duty is the other axis of this statement. The Board holds that t
 
 An assessment of the products on the market today sits in the statement. The current state of the art in indicators, the Board wrote, leaves many non-users unaware that their data is being processed. Meta's Ray-Ban smart glasses, widely counted as the best selling product in this category, had their safeguards widened in July 2026 on the second-generation model, so that the camera stops when the capture indicator is tampered with and not only when it is covered with tape or a finger. That indicator is white, exactly the color the Board's footnote picked out as liable to be mistaken for something else.
 
-![Second-generation Meta Ray-Ban smart glasses with a camera and recording indicator built into the frame corners](./image/img-03-rayban-meta-gen2.jpg)
+![Second-generation Meta Ray-Ban smart glasses with a camera and recording indicator built into the frame corners](../ko/image/img-03-rayban-meta-gen2.jpg)
 *▲ Second-generation Meta Ray-Ban smart glasses — the camera and recording indicator sit in the frame corners | Source: [ItzANormalFioko, Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Rayban_x_Meta_glasses_Generazione_2_con_lenti_Polaroid,_wayfarer.jpg)*
 
 ## Two Answers That Agree on the Places, Not on Who Knows Them

@@ -40,7 +40,7 @@ Source: [CNBC · PitchBook (2026-06-01)](https://www.cnbc.com/2026/06/01/ai-star
 
 The word "unicorn" once carried the romance of rarity. A private startup valued above $1 billion was, by itself, a symbol of success. Yet the data from 2026 paints a different picture. PitchBook counts as many as 857 U.S. unicorns, but nearly half of them, roughly 428, have not raised a single dollar of new capital in more than three years. Their valuations live on paper while no cash comes in; they are, in effect, companies at a standstill.
 
-![SVB and Kleiner Perkins signage on Sand Hill Road in Menlo Park — the heart of venture capital](./image/img-01-sand-hill-vc.jpg)
+![SVB and Kleiner Perkins signage on Sand Hill Road in Menlo Park — the heart of venture capital](../ko/image/img-01-sand-hill-vc.jpg)
 *▲ Sand Hill Road in Menlo Park, long the center of venture capital. The capital that once looked safest moved the fastest. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:SVB_Kleiner_Perkins_Menlo_Park_April_2023.jpg)*
 
 Among them, more than 220 have dropped below the $1 billion line. The industry calls them "fallen unicorns." How far they fell depended on when they last raised. Firms that caught the last train in 2021, when money was most abundant, lost 68% of their value on average; those from 2022 fell 52%. The more richly they were priced, the further they dropped.
@@ -92,7 +92,7 @@ The first door is the down round, raising money at a lower valuation than before
 
 The second door is the IPO. What the public market wants to see right now is an AI growth story. A company that cannot present that narrative will struggle to get a foot in the IPO window. The third door, acquisition, is narrow too. There are few buyers willing to pay full price for a company with no compelling AI assets. In the end, a fire-sale acquisition or a shutdown remains as the realistic exit.
 
-![The Nasdaq MarketSite in Times Square, New York — where the IPO window now demands an AI growth story](./image/img-02-nasdaq-marketsite.jpg)
+![The Nasdaq MarketSite in Times Square, New York — where the IPO window now demands an AI growth story](../ko/image/img-02-nasdaq-marketsite.jpg)
 *▲ The Nasdaq MarketSite. What the public market wants to see right now is an AI growth story. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nasdaq_MarketSite_(51494550508).jpg)*
 
 The employment figures reveal that pressure. Cumulative tech-sector layoffs in the U.S. reached 123,653 in 2026, up 65% from the same period a year earlier. In the single month of May, 38,242 people lost their jobs, the highest in two years. The leading reason cited for layoffs was AI, for the third month running. Meta described cuts of about 8,000 as a decision tied directly to its AI infrastructure investment.
@@ -104,7 +104,7 @@ The employment figures reveal that pressure. Cumulative tech-sector layoffs in t
 
 This is not a story about the United States alone. A shift of the same grain is appearing in Korea's early-stage startup ecosystem. The number of funding deals for early-stage startups under three years old fell from 749 to 327, more than cut in half. It has become that much harder for a freshly launched company to raise its first round.
 
-![A view of Pangyo Techno Valley in Seongnam, Korea — the hub where Korean startups and IT firms cluster](./image/img-03-pangyo-techno-valley.jpg)
+![A view of Pangyo Techno Valley in Seongnam, Korea — the hub where Korean startups and IT firms cluster](../ko/image/img-03-pangyo-techno-valley.jpg)
 *▲ Pangyo Techno Valley. The same grain of concentration seen in the U.S. is spreading through Korea's funding climate. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Pangyo_Techno_Valley.jpg)*
 
 The interesting part is the amount. Heading into 2026, the deal count fell 14% year over year, yet the total investment amount rose 96%. The money has not disappeared; it has concentrated in a small number of AI and large companies. The capital concentration seen in the U.S. is replaying in the same shape in Korea.

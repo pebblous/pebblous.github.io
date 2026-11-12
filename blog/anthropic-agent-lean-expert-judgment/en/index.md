@@ -42,7 +42,7 @@ Sources: [Anthropic research page](https://www.anthropic.com/research/agents-jud
 
 The task was a fictional farming co-op. The participant took the lead analyst's seat at Greenfields Co-op, had to estimate how much a voluntary subsidy-advisory program had raised productivity, and had to tell the board whether to expand it or shut it down. The board set a productivity gain of roughly 3 to 4% as its bar. The data was synthetic, built by the researchers, and the briefing left several important points deliberately open.
 
-![A wide wheat field being harvested by a combine](./image/img-01-wheat-harvest-field.jpg)
+![A wide wheat field being harvested by a combine](../ko/image/img-01-wheat-harvest-field.jpg)
 *▲ Greenfields Co-op is fictional, but "yield per hectare" is a real metric choice real farms have to make | Source: [Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:Wheat_harvest_on_field.jpg)*
 
 Four of those open points mattered. What productivity is measured by, how the program's effect is separated out, whose effect is being reported, and how farms are added together. All four were built so that the data and the briefing hold up either answer, and the estimate swings from a clear loss to a clear gain depending on which way each one goes. Add the final recommendation and an analyst has five places to pass through. At the recommendation, a one-year extension stood open as a middle answer alongside expanding and shutting down.

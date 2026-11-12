@@ -95,7 +95,7 @@ It was the kind of trail you follow by peeling layers. Lift one and a healthy li
 
 The fix was the same as walls 5 and 7: device-aware. Two lines, changed to branch `cuda → mps → cpu`. Norm came out as it should, and density was computed again on top of it. One line had broken the picture; one line set it back up. Below is the density map that came back to life, evidence the engine survived to the end after starting from zero.
 
-![Density heatmap of bean-leaf embeddings — contours spread outward from a bright high-density center, with individual samples shown as points and a ring of outliers near the edges](./image/norm-density-heatmap.png)
+![Density heatmap of bean-leaf embeddings — contours spread outward from a bright high-density center, with individual samples shown as points and a ring of outliers near the edges](../ko/image/norm-density-heatmap.png)
 *▲ Density heatmap (SmoothDensityHistogram). Contours spread out from a bright high-density center, points mark individual samples, and the ring near the edge is the outliers. After the single `.cuda()` line was made device-aware, norm computed correctly and this picture returned. | Source: Pebblous Data Clinic local reproduction, 2026-06-07*
 
 > [!callout]
@@ -125,7 +125,7 @@ rbf×cosine — diagnosis-selected ★
 
 norm-rbf×cosine — normalized variant
 
-![norm-rbf-by-cosine metric density map — a core stretched sideways by normalization](./image/metric-norm-rbf-x-cosine.png)
+![norm-rbf-by-cosine metric density map — a core stretched sideways by normalization](../ko/image/metric-norm-rbf-x-cosine.png)
 *▲ Same bean-leaf data, five distance metrics. Each metric is a different ruler for "closeness." euclidean reads it wide and round; rbf×cosine reads the center as a sharp cross. The metric the diagnosis chose to fit the bean-leaf distribution was rbf×cosine. | Source: Pebblous Data Clinic local reproduction, 2026-06-07*
 
 ### 5.2. Turning hardcoding into routable backends
@@ -146,7 +146,7 @@ Two of the three layers are already vendor-neutral. Perception's model can be ch
 
 This three-layer routing is itself the blueprint for porting. If the model, the LLM, and before long the analysis engine can all be swapped by env, then the same engine runs the same way on an NVIDIA cluster, on Apple Silicon, and on an on-prem server in a regulated industry. Below is what that blueprint actually produced: a bean-leaf montage that shows, in a single glance, the dense and the sparse samples in the embedding space.
 
-![A montage of bean-leaf samples — high-density samples on top, low-density samples below, with Korean labels, showing dense and sparse regions of the embedding space at a glance](./image/beans-density-montage.png)
+![A montage of bean-leaf samples — high-density samples on top, low-density samples below, with Korean labels, showing dense and sparse regions of the embedding space at a glance](../ko/image/beans-density-montage.png)
 *▲ Montage of high- and low-density bean-leaf samples (the Korean labels read "high-density samples" / "low-density samples"). Dense and sparse samples in the embedding space placed side by side. This is one way to see data quality with your eyes. | Source: Pebblous Data Clinic local reproduction, 2026-06-07*
 
 > [!callout]
@@ -200,7 +200,7 @@ The most stubborn was the third layer, the ranking's popularity weight. CLIP has
 
 The result was unmistakable. Drop the popularity weight to zero so that only the domain scores, and fashion-clip jumped straight to first, with another fashion-specific lens (marqo-fashionSigLIP) following at third. Peel back both domain understanding (①) and popularity bias (③), and for the first time the recommendation picked something other than CLIP: `patrickjohncyh/fashion-clip`. It is the first record of the same engine choosing a different lens for different data. Below is the density map of the fashion data seen through that fashion-clip lens.
 
-![Fashion data density map — apparel embeddings seen through the fashion-clip lens, with a large red apparel core at the center and two small separated rings (Bags and Shoes)](./image/fashion-density-map.png)
+![Fashion data density map — apparel embeddings seen through the fashion-clip lens, with a large red apparel core at the center and two small separated rings (Bags and Shoes)](../ko/image/fashion-density-map.png)
 *▲ The fashion data density map seen through the fashion-clip lens. The red core at the center is the large cluster of apparel (Topwear, Bottomwear), and the two small rings broken off from it are separated categories like Bags and Shoes. It is a different shape again from the bean leaves' single core and the skin lesions' distribution: a different lens, different data, a different shape. | Source: Pebblous Data Clinic local reproduction, 2026-06-08*
 
 > [!callout]
@@ -210,7 +210,7 @@ The result was unmistakable. Drop the popularity weight to zero so that only the
 
 That fashion-clip was no fluke got confirmed once more on a fourth dataset. Feed in chest x-ray images and the domain resolved to `radiology`. The key concepts came out as chest, xray, copd, pacemaker, patient, and child, and the final recommendation again shifted away from CLIP, this time to `codewithdark/vit-chest-xray`. Once the domain understanding was restored, the engine differentiated lenses on two domains: fashion → fashion-clip, and chest x-rays → vit-chest-xray (`codewithdark/vit-chest-xray`). Two specialized domains, two non-CLIP lenses. Radiology is a domain even more sharply specialized than fashion, so this second case is the firmer proof that domain-driven lens selection works. With the three layers of bias all removed, the recommendation follows the domain the data points to and picks the real lens.
 
-![Chest x-ray data density map — embeddings seen through the vit-chest-xray lens, with a dense core tightly gathered at the center](./image/chest-xray-density-map.png)
+![Chest x-ray data density map — embeddings seen through the vit-chest-xray lens, with a dense core tightly gathered at the center](../ko/image/chest-xray-density-map.png)
 *▲ Chest x-ray data seen through the vit-chest-xray lens — a dense core at the center. A different distribution again from the bean leaves and the fashion data: a different domain means a different lens and a different shape to the data. | Source: Pebblous Data Clinic local reproduction, 2026-06-08*
 
 ## What the diagnosis said about the beans
@@ -219,12 +219,12 @@ It is easy to lose sight of one thing when all your attention goes into reviving
 
 Start with the density map. A high-density core holds firm at the center, and contours spread smoothly outward from it. A few small rings drift near the edge; those are the handful of outliers. One core, a few outliers: a sign that the data clusters well into one mass. The histogram, which lays the density distribution out as bars, tells the same story. Most samples pile into a peak in the 0.55–0.65 density band, and the tails thin out toward both extremes. In other words, samples that sit far out on their own are rare.
 
-![Density histogram — most samples peak in the 0.55-0.65 density band, with thinning tails toward both extremes](./image/density-histogram.png)
+![Density histogram — most samples peak in the 0.55-0.65 density band, with thinning tails toward both extremes](../ko/image/density-histogram.png)
 *▲ Density distribution histogram of the bean-leaf samples. The peak gathers in the 0.55–0.65 band and the tails thin toward both extremes, meaning samples that sit far out on their own are rare. | Source: Pebblous Data Clinic local reproduction, 2026-06-07*
 
 Go one step further and the balance between classes shows up too. The dataset splits into three classes: healthy leaves (healthy), bean rust (bean_rust), and angular leaf spot (angular_leaf_spot). Measure each class by its average distance from the origin of the embedding space, and the three classes land at nearly the same height, side by side. None of them sits off on its own.
 
-![Per-class density distribution box plot — healthy, bean_rust, and angular_leaf_spot cluster similarly around the mean line](./image/class-density-boxplot.png)
+![Per-class density distribution box plot — healthy, bean_rust, and angular_leaf_spot cluster similarly around the mean line](../ko/image/class-density-boxplot.png)
 *▲ Density distribution for the three bean-leaf classes (a: healthy · b: bean_rust · c: angular_leaf_spot). All three medians (orange line) sit near the mean density (dashed line, about 0.58); no class sits off on its own, and the distribution is balanced. | Source: Pebblous Data Clinic local reproduction, 2026-06-07*
 
 Three classes distributed alike in the embedding space carries a practical meaning. There is no large bias in learning difficulty between classes, no single disease that sits unusually easy or unusually hard to recognize. Nothing in this distribution argues for rushing to correct one class with a diet that trims data or a bulkup that adds it. The conclusion the diagnosis reached about the data is that, as it stands, it is relatively healthy. What a diagnosis ultimately asks about is, in the end, [data quality](/project/DataClinic/data-quality/en/).

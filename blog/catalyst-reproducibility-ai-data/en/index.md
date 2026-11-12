@@ -28,7 +28,7 @@ Four institutions took part: SLAC, Penn State, Stanford, and UC Santa Barbara. E
 
 They did not overlap. The amount of carbon monoxide, the target product, and the amount of methane, the byproduct, differed from lab to lab. Same catalyst, same protocol, and yet the data did not agree. Corresponding author Adam Hoffman, a researcher at SLAC, called it "an eye-opener" in the [SLAC announcement](https://www6.slac.stanford.edu/news/2026-08-03-ai-drive-science-discoveries-highly-reproducible-data-key). Even the research team had not expected the divergence.
 
-![Concept illustration of carbon dioxide reacting with a rhodium catalyst to form carbon monoxide and methane, with diverging lab reaction-rate curves feeding into an AI neural network](./image/img-01-round-robin-catalyst.jpg)
+![Concept illustration of carbon dioxide reacting with a rhodium catalyst to form carbon monoxide and methane, with diverging lab reaction-rate curves feeding into an AI neural network](../ko/image/img-01-round-robin-catalyst.jpg)
 *▲ The four labs' rhodium-catalyst reaction-rate curves (σ, μ) diverge, and that data feeds into AI model training | Source: [Greg Stewart/SLAC National Accelerator Laboratory](https://www6.slac.stanford.edu/news/2026-08-03-ai-drive-science-discoveries-highly-reproducible-data-key)*
 
 ## The Culprit Was Stirring, Not the Algorithm
@@ -37,7 +37,7 @@ The team traced back why the results split. The cause was neither the AI model n
 
 Even when a protocol says "stir the reactants," how hard to stir splits at the fingertips of each bench. Change the stirring intensity and you change how much the reactants and catalyst meet, and with it the ratio of products. Written down it is the same procedure, but the value the hand actually carries out was a different number in each lab. That is the gap between the words of a standard protocol and its actual execution.
 
-![A laboratory magnetic stirrer mixing a solution in a beaker — the stir-speed dial that controls stirring intensity is visible](./image/img-02-magnetic-stirrer.jpg)
+![A laboratory magnetic stirrer mixing a solution in a beaker — the stir-speed dial that controls stirring intensity is visible](../ko/image/img-02-magnetic-stirrer.jpg)
 *▲ A protocol may just say "stir," but the actual dial setting differs from lab to lab | Source: [Ruhrfisch, Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Magnetic_Stirrer.JPG)*
 
 The four labs' data converged only after they standardized the reactor design, the operating procedures, and the experimental conditions far more tightly. Put differently, what made the data trustworthy was not a better algorithm but stricter experimental control. The fix for the quality problem lay not after the data entered the computer, but on the bench where the data was made.

@@ -73,7 +73,7 @@ Sparsity is not the only problem. The intervals between visits are uneven, too�
 
 The paper's idea is simple but powerful. Instead of learning a patient's whole journey as one long story, it makes **"the single step from this visit to the next"** the unit of learning. This is transition-based modeling. A patient's digital twin is built not as one grand biography but as a large collection of small transitions, each carrying one state to the next.
 
-![Architecture of the transition-based hybrid digital twin — an MLP branch that learns short-term transitions between adjacent visits and a BiLSTM-Attention branch for long-range dependencies and uncertainty](./image/img-01-hybrid-framework.jpg)
+![Architecture of the transition-based hybrid digital twin — an MLP branch that learns short-term transitions between adjacent visits and a BiLSTM-Attention branch for long-range dependencies and uncertainty](../ko/image/img-01-hybrid-framework.jpg)
 *▲ The hybrid digital twin: an MLP branch learns short-term "transitions" between adjacent visits, while a BiLSTM-Attention branch handles long-range dependencies, uncertainty, and what-if forecasting. | Source: [Huang et al., arXiv:2606.09671, Figure 1](https://arxiv.org/abs/2606.09671)*
 
 ### 3.1. Why "transition" uses data better than "sequence"
@@ -111,7 +111,7 @@ The paper compared a transition-based model (an MLP) and a sequence-based model 
 
 Diagnostic accuracy was about 10 percentage points higher (0.906 vs. 0.806); on Macro-F1, which is sensitive to class imbalance, it led by nearly 11 points (0.908 vs. 0.798); and cognitive-score prediction error fell by roughly 20%. This is not the luck of one or two metrics but a consistent gap across classification and regression alike—the result of the same data with a different unit of learning. The paper goes further, combining static features (unchanging information such as age and genotype) with dynamic features (changes measured at each visit), and reports that when an mRMR feature-selection step narrowed the inputs to just 15 key variables, validation accuracy peaked at 0.943. Throwing in every available feature actually hurt performance—a signal that choosing data well matters more than adding more of it.
 
-![Distribution of the transition-based model's MMSE cognitive-score prediction errors — clustered near zero with RMSE 2.15 and MAE 1.53](./image/img-02-mmse-error-distribution.png)
+![Distribution of the transition-based model's MMSE cognitive-score prediction errors — clustered near zero with RMSE 2.15 and MAE 1.53](../ko/image/img-02-mmse-error-distribution.png)
 *▲ Distribution of cognitive-score (MMSE) prediction errors, clustered tightly around zero (RMSE 2.15, MAE 1.53). Even on sparse longitudinal data, predictions show no large one-sided bias. | Source: [Huang et al., arXiv:2606.09671, Figure 2](https://arxiv.org/abs/2606.09671)*
 
 Using transitions as the unit of learning brings one more capability: **what-if scenarios**. On the digital twin, you can simulate "if this variable changed like so, how would the progression path differ?" Instead of seeing the individual's future as one fixed line, you can draw it as several branches that diverge by condition.
@@ -122,12 +122,12 @@ In medicine, how confident a model is matters as much as how accurate it is. An 
 
 This paper attaches intervals to its predictions using **Monte Carlo Dropout**. Dropout is normally switched off after training; leave it on at inference time and run the model many times, and each pass returns a slightly different answer. The spread of those answers becomes the uncertainty interval—a measure of how much a given prediction wavers. The model delivers not a single point but a range and a confidence level.
 
-![One patient's (RID 22) forecast cognitive score — a baseline prediction wrapped in a 95% confidence band, with what-if scenario curves where variables are altered](./image/img-03-patient-whatif.png)
+![One patient's (RID 22) forecast cognitive score — a baseline prediction wrapped in a 95% confidence band, with what-if scenario curves where variables are altered](../ko/image/img-03-patient-whatif.png)
 *▲ One patient's digital twin. The baseline forecast comes wrapped in a 95% confidence band, and what-if paths branch off when specific variables are changed. The future is shown not as a single point but as a range and a set of forks. | Source: [Huang et al., arXiv:2606.09671, Figure 5](https://arxiv.org/abs/2606.09671)*
 
 What matters is that this uncertainty be _well-calibrated_. When the AI says it is "90% confident," it has to be right nine times out of ten for that confidence to be useful. The paper checked this consistency with the Expected Calibration Error (ECE), and the overall ECE was a very low 0.0185—meaning the confidence the model expressed and its actual hit rate barely diverged. This is an AI that moves closer to admitting "I don't know" when it doesn't, rather than being confidently wrong.
 
-![Reliability calibration plot for the diagnosis classifier — the model's stated confidence (x-axis) tracks closely to its actual accuracy (y-axis) along the ideal y=x line](./image/img-04-reliability-calibration.png)
+![Reliability calibration plot for the diagnosis classifier — the model's stated confidence (x-axis) tracks closely to its actual accuracy (y-axis) along the ideal y=x line](../ko/image/img-04-reliability-calibration.png)
 *▲ Reliability (calibration) plot. The closer the points hug the ideal dashed line (y=x), the better the model's stated confidence (x-axis) matches its actual hit rate (y-axis). The points track the diagonal, visually backing the low ECE of 0.0185. | Source: [Huang et al., arXiv:2606.09671, Figure 3](https://arxiv.org/abs/2606.09671)*
 
 ### 4.1. The minimum condition for trust: leak-free validation

@@ -67,7 +67,7 @@ What fills Tier 1 reveals the proposer's priorities. Compensation mechanisms suc
 > [!callout]
 > "It is easy to dismiss plain data collection and analysis as inadequate against the scale of the problem. But if we cannot measure precisely what is happening on the ground, we are unlikely to get good policy." Amodei pointed to his company's own Economic Index, which it has run for 18 months, while adding that the government can access kinds of data a company cannot. He named public statistics as the body that should do the measuring.
 
-![Dario Amodei, CEO of Anthropic — author of 'Policy on the AI Exponential', which placed measurement as the first step of AI labor policy](./image/img-01-dario-amodei.jpg)
+![Dario Amodei, CEO of Anthropic — author of 'Policy on the AI Exponential', which placed measurement as the first step of AI labor policy](../ko/image/img-01-dario-amodei.jpg)
 *▲ Dario Amodei, CEO of Anthropic — author of "Policy on the AI Exponential," which positioned measurement as Tier 1 of AI labor policy | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Dario_Amodei_in_2023.jpg)*
 
 Compensation and taxation are the business of Tiers 2 and 3. Putting measurement ahead of them is not a mere procedural note. It rests on a premise: to decide what to compensate and where to tax, you first have to agree, in numbers, on what actually happened.
@@ -84,7 +84,7 @@ Displacement trackers only count the jobs that vanish. The new roles AI creates,
 
 By one tracker's tally, job losses directly attributed to AI in 2024 came to about 12,700. In the same period, Amodei warned that within five years up to half of entry-level white-collar jobs could disappear and unemployment could be pushed up to 10–20%. The forecast speaks of half; the measurement captures only a few. Compounding this, the impact has not yet fully surfaced, so after-the-fact measurement is impossible. The alternative researchers use is a forward-looking indicator such as observed exposure — but that estimates "risk," not realized displacement directly.
 
-![US unemployment measures U1 through U6 — different definitions of unemployment produce very different numbers, illustrating why agreeing on a measurement standard is prerequisite to any trigger-based policy](./image/img-02-unemployment-measures.webp)
+![US unemployment measures U1 through U6 — different definitions of unemployment produce very different numbers, illustrating why agreeing on a measurement standard is prerequisite to any trigger-based policy](../ko/image/img-02-unemployment-measures.webp)
 *▲ US unemployment measures U1–U6: the same labor market reads very differently depending on the definition used. Choosing which number a policy triggers on is itself a measurement decision. | Source: [Wikimedia Commons (U.S. BLS, public domain)](https://commons.wikimedia.org/wiki/File:U1-U6_unemployment_rate.webp)*
 
 > [!callout]
@@ -94,7 +94,7 @@ By one tracker's tally, job losses directly attributed to AI in 2024 came to abo
 
 The difficulty of measurement does not stay an abstract statistical problem. Whether you compensate or tax, anyone the statistics miss falls outside the scope. If you cannot count who was pushed out by AI, you cannot even begin to define where the money raised by a token tax should go. However elegant the mechanism that raises the funds, distribution fails without the data to identify the people that money is supposed to reach.
 
-![US Civilian Labor Force vs Employment Level 2000–2021 (FRED/BLS) — the persistent gap between the two series represents the baseline measurement challenge any labor policy must resolve](./image/img-03-us-labor-data.png)
+![US Civilian Labor Force vs Employment Level 2000–2021 (FRED/BLS) — the persistent gap between the two series represents the baseline measurement challenge any labor policy must resolve](../ko/image/img-03-us-labor-data.png)
 *▲ Civilian Labor Force vs. Employment Level, 2000–2021 — the gap between the two BLS series is the space policy is designed to address. Accurate data is what makes it addressable. | Source: [Wikimedia Commons (FRED/BLS, public domain)](https://commons.wikimedia.org/wiki/File:US_Labor_Force_and_Employment_Numbers_-_v1.png)*
 
 So the question comes back, in the end, to the quality and provenance of data. A record has to remain of which roles disappeared, by what path, and at what time. Labels that distinguish whether a layoff was caused by AI or by the business cycle; a two-sided ledger that views vanished and newly created roles together; an update cadence that reflects fast change without lag. On statistics that lack these, any labor policy stands on sand.

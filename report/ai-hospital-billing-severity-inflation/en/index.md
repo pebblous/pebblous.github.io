@@ -182,7 +182,7 @@ Here is something this research turned up along the way. The firmer evidence for
 
 The brief assembles cases observed before and after adoption. At one health system that installed a tool which listens to the clinical encounter and drafts the note, a physician workload measure rose 11% and documented risk-adjusted diagnoses per encounter rose 14%. At an oncology practice, documented diagnoses per encounter went from 3.0 to 4.1. At another system, the share of claims billed at higher visit levels rose.
 
-![A clinician wearing a stethoscope enters notes at a clinic computer using a mouse and keyboard](./image/img-01-doctor-computer-workstation.jpg)
+![A clinician wearing a stethoscope enters notes at a clinic computer using a mouse and keyboard](../ko/image/img-01-doctor-computer-workstation.jpg)
 *▲ Entering notes at the point of care — the step these tools automate | Source: [Shixart1985 via Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Doctor_working_at_a_desk_using_a_computer_mouse_and_keyboard_in_a_medical_office_setting.jpg)*
 
 > [!callout]
@@ -204,7 +204,7 @@ From 2009 the United States spent federal money putting electronic health record
 
 That study goes first here for more than balance. The claim that a new tool raises billing is intuitive without being automatically true, which means it has to be checked case by case. That is the lesson the null result left, and checking is exactly what is now being asked of this white paper.
 
-![Black-and-white photo of two staff members in a hospital medical records department using a dictation machine and paper files](./image/img-02-medical-records-department.jpg)
+![Black-and-white photo of two staff members in a hospital medical records department using a dictation machine and paper files](../ko/image/img-02-medical-records-department.jpg)
 *▲ Before electronic health records, paper and dictation filled the medical records department | Source: [Mennonite Church USA Archives via Wikimedia Commons (No known copyright restrictions)](https://commons.wikimedia.org/wiki/File:Medical_Records_Dept_La_Junta_CO_(24595142239).jpg)*
 
 ### 4.2. A federal audit wrote the same sentence five years ago
@@ -259,7 +259,7 @@ Where insurers use automation is specific and public. Cigna announced a policy e
 
 A case that went further sits in court. A class action over UnitedHealth's coverage review tool was filed in November 2023, and although some claims were dismissed in February 2025, the breach of contract and good faith allegations survived. On 9 March 2026 a federal magistrate ordered broad document production relating to AI review. The company's position is that the tool at issue is a care support tool rather than a coverage determination tool. The 90% error rate that recurs in coverage of this suit is a plaintiff allegation, derived from converting the share overturned on appeal into an error rate, which is not the same as a statistical false-positive rate.
 
-![A gavel resting on a courtroom desk, symbolizing the class action over an AI coverage-review tool](./image/img-03-courtroom-gavel.jpg)
+![A gavel resting on a courtroom desk, symbolizing the class action over an AI coverage-review tool](../ko/image/img-03-courtroom-gavel.jpg)
 *▲ An insurer's AI review tool is also being contested in court | Source: [Joe Gratz via Wikimedia Commons (CC0)](https://commons.wikimedia.org/wiki/File:Courtroom_One_Gavel_-_Flickr_-_Joe_Gratz.jpg)*
 
 The hospital side's automation is worth sketching too. The tools now entering hospitals fall into five functional groups: those that listen to the clinical encounter and draft the note, those that sweep lab values and existing records for candidate secondary diagnoses, those that automatically query physicians for documentation, those that suggest or assign codes outright, and those that pre-audit claims before submission. What the white paper is aiming at is the second group, and what the adoption studies in the previous section examined is the first. Performance figures for individual products are mostly vendor-published and are not used here, and market size estimates vary by as much as eightfold between research firms, so they are not cited either.

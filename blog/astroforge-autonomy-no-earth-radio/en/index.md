@@ -42,7 +42,7 @@ The AstroForge plan TechCrunch reported on September 22 fits in one sentence. Th
 
 The rocket carrying this vehicle up is worth a look too. AstroForge's first autonomous spacecraft rides the first rocket Stoke Space ever launches, in 2027. NASA is backing that mission, and it is set to gather scientific data about the sun. So a spacecraft that takes no commands from Earth will ride an untested rocket with someone else's science payload aboard.
 
-![AstroForge's DeepSpace-2 spacecraft with solar panels deployed inside a hangar](./image/img-01-deepspace2.jpg)
+![AstroForge's DeepSpace-2 spacecraft with solar panels deployed inside a hangar](../ko/image/img-01-deepspace2.jpg)
 *▲ DeepSpace-2, the spacecraft Solo flies first in shadow mode | Source: [TechCrunch](https://techcrunch.com/2026/09/22/astroforge-is-putting-ai-in-command-of-its-next-spacecraft/) (Photo: AstroForge)*
 
 Solo fills the place where the radio would have been: a control stack the company built itself, in three layers, as laid out by Armand Awad, head of flight software. At the bottom sit traditional control algorithms. Above them are models trained on test data for specific subsystems such as power generation or navigation. On top is an overall intelligence layer, and that last layer trained on about 2,500 sensors in the spacecraft. Its job is to spot anomalies and resolve them on its own.
@@ -63,7 +63,7 @@ Set the two sides next to each other and it becomes clear why the arithmetic tip
 
 Why the ground network runs that expensive is something the story explains separately. There are only a limited number of antennas on Earth big enough to transmit to spacecraft hundreds of thousands of miles away, and the windows of time in which to do it are small. What the moment of talking to Odin required was pointing a dish 32 meters across to within 0.15 degrees of centerline. With several missions wanting such dishes at once, simply being pushed back in the queue cut into the sky AstroForge could use.
 
-![A large dish antenna at NASA's Deep Space Network silhouetted against a sunset sky](./image/img-02-dsn-dish.jpg)
+![A large dish antenna at NASA's Deep Space Network silhouetted against a sunset sky](../ko/image/img-02-dsn-dish.jpg)
 *▲ A large dish at NASA's Deep Space Network Goldstone complex — building five of these runs about $200 million | Source: [NASA/JPL, Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Goldstone_DSN_antenna.jpg)*
 
 > [!callout]
@@ -75,7 +75,7 @@ This structure is familiar outside the space industry too. Work done under human
 
 The reason the company turned in this direction lies in last year. In February 2025 AstroForge launched Odin, its first deep space spacecraft. The objective was to identify whether its own models had correctly located a metallic asteroid rich in platinum group metals. Separation and power-up went to plan. What came after did not.
 
-![AstroForge's Odin spacecraft wrapped in gold thermal insulation](./image/img-03-odin.jpg)
+![AstroForge's Odin spacecraft wrapped in gold thermal insulation](../ko/image/img-03-odin.jpg)
 *▲ Odin, AstroForge's first deep space probe — what failed was on the ground, not aboard | Source: [Payload Space](https://payloadspace.com/astroforge-unveils-new-spacecraft-for-deep-space-mission/) (Photo: AstroForge)*
 
 Building Odin took less than ten months and about $3.5 million. The company set that against a comparable NASA mission that cost roughly $95 million for the spacecraft alone. It also assigned Odin a 30% chance of success before launch and flew it anyway. The same hands are the ones now handing judgment to a model.

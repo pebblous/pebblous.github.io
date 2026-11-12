@@ -68,7 +68,7 @@ The weight sits in the last sentence. OpenAI did not stop at picking the tool. I
 
 Temporal does not build models. It sells an execution engine that pushes a long job to the finish after the job gets cut off partway. The company calls that Durable Execution. Developers write ordinary code, the engine keeps a record of every step of the execution, and when a server dies or a network drops, the engine uses that record to carry on from where the work stopped. A job that waits days for a human approval survives on the same machinery, since nothing has to stay alive in memory during the wait.
 
-![Temporal's Web UI Event History view — events during a workflow run recorded in numbered order](./image/img-01-event-history.png)
+![Temporal's Web UI Event History view — events during a workflow run recorded in numbered order](../ko/image/img-01-event-history.png)
 *▲ Temporal's Web UI Event History view — what happened during a run is recorded in numbered, ordered steps | Source: [Temporal Blog](https://temporal.io/blog/the-dark-magic-of-workflow-exploration)*
 
 This company did not appear on the back of the agent boom. The two founders, Maxim Fateev and Samar Abbas, met at Amazon while building services that coordinate long-running work. Fateev led Simple Workflow Service (SWF), and Abbas joined the team that brought SWF to the public in 2012. Abbas went on to co-create the open-source Durable Task Framework at Microsoft, and Microsoft later built Azure Durable Functions on top of it. The word durable attached to what this company sells today comes from those years.

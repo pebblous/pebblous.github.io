@@ -42,7 +42,7 @@ Sources: [TechCrunch (2026-09-30)](https://techcrunch.com/2026/09/30/reddit-is-k
 
 Reddit posted on September 30 in two places: r/modnews, where community operators gather, and r/redditdev, where developers do. Between them the notices close two things. One is RSS, a format that takes a few extra characters on a URL and hands a machine the list of new posts in a given community, with no login required. The other is the public API, the channel through which apps and bots asked Reddit for content and received it.
 
-![The standard RSS feed icon — the exact format that stops working across Reddit on November 13, 2026](./image/img-01-rss-feed-icon.svg)
+![The standard RSS feed icon — the exact format that stops working across Reddit on November 13, 2026](../ko/image/img-01-rss-feed-icon.svg)
 *▲ The RSS feed icon. This is the exact format that stops working across Reddit on November 13, 2026. Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Feed-icon.svg)*
 
 None of it shuts at once. Over roughly six months from the day of the notice, a different door locks at each stage. The dates below follow the order given in the coverage.
@@ -90,7 +90,7 @@ Unjust enrichment and unfair competition claims fell at that stage, and the ques
 
 Several early reports read as though researchers were losing access altogether. That sentence is half right. Reddit built an academic route before these notices went up, and it survives the change. Reddit for Researchers is the name of the programme. The company states plainly that developer tools may not be used for research, and points to this programme as the only official path for studying Reddit data.
 
-![Reddit's official logo — the company that runs the approval process for Reddit for Researchers](./image/img-02-reddit-logo.svg)
+![Reddit's official logo — the company that runs the approval process for Reddit for Researchers](../ko/image/img-02-reddit-logo.svg)
 *▲ Reddit's official logo. Reddit itself decides who gets approved for the academic research route, Reddit for Researchers. Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Reddit_logo.svg)*
 
 Surviving is not the same as being easy to enter. Listing what Reddit asks for shows how high the bar sits.
@@ -114,7 +114,7 @@ Moderators are in a somewhat better position. Reddit told community operators wh
 
 What happens when an open counter closes and only the approved one remains has already been measured once. Meta switched off CrowdTangle, bought in 2016, on August 14, 2024. The tool showed how far a given post travelled on Facebook and Instagram, and its main users were researchers and journalists tracking misinformation and election interference.
 
-![Meta's official logo — the company that shut down CrowdTangle in 2024](./image/img-03-meta-logo.svg)
+![Meta's official logo — the company that shut down CrowdTangle in 2024](../ko/image/img-03-meta-logo.svg)
 *▲ Meta's official logo. Meta switched off CrowdTangle, acquired in 2016, on August 14, 2024. Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Meta_Platforms_Inc._logo.svg)*
 
 The Coalition for Independent Technology Research ran a survey once the shutdown was announced. Thirty-four organisations, among them news outlets, universities and civil society groups, returned 36 responses, and 32 of those said the shutdown would disrupt their work. In percentage terms, 88%. Some respondents had already revised or abandoned studies under way. Timing drew its own criticism, since the cutoff landed three months before the US presidential election.
@@ -133,7 +133,7 @@ For anyone who works with data, access is not the only thing this change touches
 
 Regulation is moving the other way. The first fine the European Commission issued under the Digital Services Act, €120 million against X on December 5, 2025, rested on three grounds, one of which was blocking researchers from public data behind unnecessary barriers. Behind that ground sits a provision obliging platforms to open public data to researchers. One side closes the public counter while the other writes opening it into law as a duty.
 
-![Plaque on the Berlaymont building, headquarters of the European Commission in Brussels, Belgium](./image/img-04-berlaymont-ec.jpg)
+![Plaque on the Berlaymont building, headquarters of the European Commission in Brussels, Belgium](../ko/image/img-04-berlaymont-ec.jpg)
 *▲ The Berlaymont, headquarters of the European Commission. This is the body that fined X €120 million under the Digital Services Act in December 2025. Source: [Wikimedia Commons (Ank Kumar, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:European_Commission_headquarters,_The_Berlaymont_Building,_Brussels,_Belgium_(_Ank_Kumar,_Infosys_Limited_).jpg)*
 
 Pebblous repeats one line whenever AI-Ready Data comes up. Where provenance has not been recorded, verification is not verification. Whether a model gives good answers can be found out by using it, and what those answers rest on cannot be retraced unless the record was kept on the material side. What the Reddit case shows is that the authority to keep that record is moving inside the contract. Rules asking where training data came from keep multiplying, while the material for answering them keeps disappearing from outside the contracting parties.

@@ -54,7 +54,7 @@ The FRED team introduced the FRED MCP Connector that day, built to simplify conn
 
 The FRED staff calls the arrangement BYOAI, for Bring Your Own AI. Building a Fed-branded chatbot was presumably an option; FRED did not take it. Instead a user points whatever agent they already work with at FRED, and FRED answers for the quality of what gets read.
 
-![Official portrait of Federal Reserve Governor Christopher J. Waller](./image/img-01-waller-portrait.jpg)
+![Official portrait of Federal Reserve Governor Christopher J. Waller](../ko/image/img-01-waller-portrait.jpg)
 *▲ Governor Christopher J. Waller, who gave this speech at FRED Con 2026 | Source: [Federal Reserve / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Christopher_J._Waller,_Federal_Reserve_Governor_2.jpg)*
 
 Why is this a big deal, Waller asked himself, and then answered.

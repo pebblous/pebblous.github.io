@@ -42,7 +42,7 @@ Sources: [China Daily](https://www.chinadaily.com.cn/a/202610/22/WS6ad9b00ee4b06
 
 On October 22, 2026, Reuters and Bloomberg reported almost the same thing. DeepSeek, based in Hangzhou, is days away from closing a raise of about 100 billion yuan, roughly $15 billion in dollars. The valuation set before the new money came in was about 500 billion yuan. The round has not closed, so the terms can still change. Two days earlier, on October 20, the United States ordered federal civilian agencies to strip DeepSeek technology out of their systems.
 
-![Official DeepSeek logo](./image/img-01-deepseek-logo.svg)
+![Official DeepSeek logo](../ko/image/img-01-deepseek-logo.svg)
 *▲ DeepSeek, the company at the center of this round | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:DeepSeek_logo.svg)*
 
 The target was not this size from the start. It began at 50 billion yuan, passed through 80 billion, and climbed to 100 billion. Dealroom converted the early target to $6.88 billion and wrote that the company had raised its target at least twice. This is the case where demand runs over and the side receiving the money makes the number bigger.

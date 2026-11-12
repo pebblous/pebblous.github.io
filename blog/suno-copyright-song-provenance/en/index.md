@@ -41,7 +41,7 @@ The original complaint, led by the Recording Industry Association of America (RI
 
 Audio fingerprinting converts a track's pitch distribution, harmony, and rhythmic patterns into numbers to determine whether two recordings are the same song. The matching work continued into early 2026, and as a result the plaintiffs moved in May 2026 to add 61,026 works to the complaint. The plaintiffs themselves stated that even this number is only a portion of the actual matches. Around the same time, Sony filed a separate motion to add works against Suno's rival service Udio.
 
-![Audio spectrogram example illustrating the frequency-and-time patterns used in audio-fingerprint matching](./image/img-01-audio-spectrogram.png)
+![Audio spectrogram example illustrating the frequency-and-time patterns used in audio-fingerprint matching](../ko/image/img-01-audio-spectrogram.png)
 *▲ Audio-fingerprint matching quantifies a track's pitch, harmony, and rhythm as a spectrogram for comparison | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Audio_spectrogram_sonic_visualiser.png)*
 
 Nor did this matching proceed smoothly. Suno agreed to the first-stage fingerprint comparison, then withdrew consent over the deeper analysis method, and work resumed only after a magistrate judge intervened and a renegotiation was reached. Reconstructing provenance where none was recorded turned out to be a costly process that had to pass through legal step after legal step. As we'll see later, this scene is the heart of what the case teaches data practitioners.
@@ -55,7 +55,7 @@ The reason the song count is fought over so fiercely lies in the damages structu
 
 To understand why song matching became the key to winning or losing the Suno case, you have to first look at the June 2025 Bartz v. Anthropic decision from the Northern District of California. In that case, brought by authors against Anthropic's training on books, Judge Alsup drew a line on the fourth of those factors in particular, market effect.
 
-![Phillip Burton Federal Building and United States Courthouse in San Francisco, home of the Northern District of California](./image/img-02-federal-courthouse.jpg)
+![Phillip Burton Federal Building and United States Courthouse in San Francisco, home of the Northern District of California](../ko/image/img-02-federal-courthouse.jpg)
 *▲ The Phillip Burton Federal Building in San Francisco, seat of the Northern District of California where Bartz v. Anthropic was decided | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Phillip_Burton_Federal_Building_%26_United_States_Courthouse.jpg)*
 
 The ruling split along how the data was acquired. Training on lawfully purchased books, the court found, made the fourth factor favor fair use. The judge compared the authors' grievance to a complaint that "teaching writing so well produces a flood of competing works," and dismissed the claim that training itself causes competitive harm. He also rejected the authors' argument that a market for training licenses had been invaded, reasoning that copyright law does not grant authors the right to monopolize that market. Conversely, copies obtained through piracy made the fourth factor unfavorable. The reasoning was that even if the book is later bought legitimately, the infringement that already occurred cannot be undone.
@@ -75,7 +75,7 @@ The problem is that this line is not yet firm. Around the same time, in Kadrey v
 
 Not every label chose to fight in court. Warner Music signed a licensing deal with Suno in November 2025 and stepped away from the litigation. In October 2025, Universal agreed with Udio to a royalty of roughly $0.002 to $0.005 per generation and committed to launching a licensed AI music platform together. The direction of the major labels is tilting from blocking toward building settlement infrastructure.
 
-![Universal Music Group UK headquarters building at Pancras Square, King's Cross, London](./image/img-03-umg-hq.jpg)
+![Universal Music Group UK headquarters building at Pancras Square, King's Cross, London](../ko/image/img-03-umg-hq.jpg)
 *▲ Universal Music Group's UK headquarters at Pancras Square, King's Cross, London | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Universal_Music_Group_UK_HQ,_King%27s_Cross_Central_development,_Pancras_Square,_London,_England_01.jpg)*
 
 There is a reason this shift matters from a data perspective. To split a royalty to the rightsholder of a specific work on every generation, you have to be able to track — song by song — which tracks were involved in training and generation. Without lineage, not only is it hard to contest infringement in court; even if you avoid litigation and move to settlement, the settlement itself cannot stand. Whether the path is blocking or settlement, both rest on a foundation of per-song provenance records.
@@ -88,7 +88,7 @@ The Pebblous blog has covered a similar structure before: the [case](/blog/atlan
 
 What the U.S. is pushing through litigation, Europe pushes through regulation. The EU AI Act requires documentation of the source and scope of training data for high-risk AI, and obliges providers of general-purpose AI models to publish a summary of training data. Litigation or regulation, the destination is the same sentence: keep what you learned from in a form you can prove.
 
-![Berlaymont building in Brussels, headquarters of the European Commission which oversees the EU AI Act](./image/img-04-berlaymont-eu.jpg)
+![Berlaymont building in Brussels, headquarters of the European Commission which oversees the EU AI Act](../ko/image/img-04-berlaymont-eu.jpg)
 *▲ The Berlaymont building in Brussels, headquarters of the European Commission, which administers the EU AI Act | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Berlaymont_building_european_commission.jpg)*
 
 ## Are You Recording Provenance You Could Prove Today?

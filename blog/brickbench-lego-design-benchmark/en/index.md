@@ -42,7 +42,7 @@ Source: Kulits et al. (2026), [BrickBench: Evaluating Agentic Brick Design](http
 
 The order an agent receives is one line long. Read the prompt, pick parts from the real LDraw parts library, and return a LEGO model that matches the description and can physically be built. LEGO makes the task sound light, but every part placed has to satisfy a local constraint, which is how it interlocks with its neighbors, and a global one, which is the shape of the whole thing.
 
-![A LEGO model designed by GPT-6 Astra in the BrickBench Model setting — a pelican riding a bicycle, buildable from real LDraw parts](./image/img-01-pelican-bike.avif)
+![A LEGO model designed by GPT-6 Astra in the BrickBench Model setting — a pelican riding a bicycle, buildable from real LDraw parts](../ko/image/img-01-pelican-bike.avif)
 *▲ A model GPT-6 Astra designed for the prompt "a pelican riding a bicycle." It can be built from real LEGO parts | Source: [brickben.ch](https://brickben.ch/)*
 
 Tests for this kind of work already existed. They put a single object of under 100 parts in front of a model and asked how closely it resembled the description. Two things were missing from that, the authors write. One is scale: a retail set runs from hundreds to thousands of parts, and the available inventory is fixed. The other is design. Making something that works and making something worth making are different problems, and there is no pass-or-fail test for whether a design is any good. Two models can satisfy exactly the same description and be nowhere near each other in quality.
@@ -79,7 +79,7 @@ Two places in the table hold the eye. One is the top two rows. GPT-6 Astra's 129
 
 The paper also records where the remaining failures came from. Across the nine agents in the reference set, 137 designs failed to earn a valid verdict, and 44 of those never produced any output at all. The rest fell over under gravity (41), had parts overlapping (31), or missed the parts count the setting required (21). The setting that broke most often is Set, the one asking for 400 to 4,000 parts; the valid rate there drops to 0.68 for Muse Spark 1.3 and 0.79 for Qwen 3.8 Flash. The distribution of part counts shows most agents crowding just above the 400-part floor, which is to say that an instruction to build big returns the smallest scene the setting permits. Astra is the exception, using far more parts than the other agents in both settings.
 
-![A scene GPT-6 Astra designed in the Set setting (400 to 4,000 parts) — three figures at a stone table with two silver goblets](./image/img-02-goblets-hillside.avif)
+![A scene GPT-6 Astra designed in the Set setting (400 to 4,000 parts) — three figures at a stone table with two silver goblets](../ko/image/img-02-goblets-hillside.avif)
 *▲ A design GPT-6 Astra built in the Set setting — the result of "a stone table on a rocky hillside, two silver goblets between them" | Source: [brickben.ch](https://brickben.ch/)*
 
 The other place is the gap between the Valid column and the VQA column. GPT-5.6 Luna made all 300 designs buildable and still sits ninth on VQA at 0.792, while Claude Opus 5.5 did not get all of them standing at 0.99 Valid and comes third on VQA at 0.923. Buildability is a constraint the checker answers immediately, so the leaders bunch together. How much of what was asked for actually got built, on the other hand, runs from 0.590 to 0.954, and design quality runs from 753 to 1299 on Design ELO. The models separate on the axis the checker does not report back.

@@ -42,7 +42,7 @@ Source: UniProt statistics and [phys.org (2026)](https://phys.org/news/2026-07-a
 
 The protein database UniProt holds more than 200 million amino-acid sequences. As sequencing costs keep falling, new sequences keep arriving fast. The problem is that only a tiny fraction of them have a known function, that is, a description of what the sequence actually does. The letters of the sequence overflow, but their meaning is mostly left blank.
 
-![AI-generated illustration representing a protein of unknown function](./image/img-01-unknown-protein-illustration.jpg)
+![AI-generated illustration representing a protein of unknown function](../ko/image/img-01-unknown-protein-illustration.jpg)
 *▲ An illustration representing a protein of unknown function (generated with ChatGPT) | Source: [Technion](https://www.technion.ac.il/en/blog/article/the-language-of-proteins/)*
 
 This gap is sharply visible inside UniProt itself. **Swiss-Prot**, where humans read the literature and curate annotations by hand, holds only about 570,000 entries. **TrEMBL**, where a computer fills in annotations automatically, exceeds 250 million. The difference in scale between hand-polished high-quality annotation and machine-applied bulk annotation is the fundamental structure of this field.
@@ -53,7 +53,7 @@ The traditional way to figure out function was to find a similar protein. If a s
 
 BetaDescribe aims at this blank. Input a protein sequence and it lays out properties in plain-language sentences: the protein's function, its catalytic activity, the metabolic pathways it takes part in, where it settles inside the cell. It is close to a translator that renders the letter string of a sequence into a description a person can read. The underlying language model is a LLAMA2-family model pretrained on large-scale text.
 
-![Concept diagram of a protein-to-text system that takes an amino-acid sequence and outputs a natural-language function description](./image/img-02-protein-to-text-system.jpg)
+![Concept diagram of a protein-to-text system that takes an amino-acid sequence and outputs a natural-language function description](../ko/image/img-02-protein-to-text-system.jpg)
 *▲ Concept diagram of a protein-to-text system: sequence in, sentence out (example image generated with ChatGPT) | Source: [Technion](https://www.technion.ac.il/en/blog/article/the-language-of-proteins/)*
 
 Its biggest distinction is that it is designed to work even when no similar sequence exists. It can attempt a description for the unknown proteins that homology-based methods cannot touch, so it is introduced as a complement to existing automatic annotation. The team also suggests it can be used for in-silico mutation experiments that probe, from sequence alone, which residues or regions matter to function.

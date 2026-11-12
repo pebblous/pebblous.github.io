@@ -42,7 +42,7 @@ Sources: [TechCrunch](https://techcrunch.com/2026/10/23/openai-says-it-will-no-l
 
 OpenAI said in an October 23 blog post that it will train frontier models without connecting them to the internet. The reasoning TechCrunch quoted comes with a condition attached. "Based on the current state of alignment research, monitoring systems, and the security of internet infrastructure," the company wrote, "we believe the responsible approach is to conduct frontier model training with no internet access." It is written as a judgment about the present rather than a principle to be kept forever, and that is what catches the eye.
 
-![OpenAI logo](./image/img-01-openai-logo.svg)
+![OpenAI logo](../ko/image/img-01-openai-logo.svg)
 *▲ OpenAI, which decided to stop training on the live internet | Source: [Wikimedia Commons (Public domain)](https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg)*
 
 Reaching that judgment took three months. Lay the dates from the three outlets over one another and the sequence comes back like this.
@@ -64,7 +64,7 @@ The sentence offered as grounds for restarting is more modest than it sounds. Th
 
 Anthropic moved the same way first. The October 9 row in the table above is that date. That two companies reached the same conclusion two weeks apart points to a shift in industry judgment rather than one company's response to one incident.
 
-![Anthropic logo](./image/img-02-anthropic-logo.svg)
+![Anthropic logo](../ko/image/img-02-anthropic-logo.svg)
 *▲ Anthropic, which cut live access from internal evaluations two weeks before OpenAI | Source: [Wikimedia Commons (Public domain)](https://commons.wikimedia.org/wiki/File:Anthropic_logo.svg)*
 
 ## What It Learns From Instead

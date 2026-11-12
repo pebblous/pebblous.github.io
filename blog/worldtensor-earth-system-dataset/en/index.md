@@ -20,7 +20,7 @@ _Politecnico di Milano_
 
 > Even for someone who never touches climate science, this case leaves behind a question familiar to anyone who works with data: the real difficulty of AI-Ready Data is not the cleaning that fills in missing values, but giving heterogeneous sources a common language. And who defines that common language — with which grid — decides how a model gets to see the world.
 
-![A gallery of 15 representative WorldTensor variables for 2015 — temperature, methane emissions, GDP, and installed power capacity all aligned on the same 0.25° grid, spanning physical and human variables](./image/img-01-representative-maps.jpg)
+![A gallery of 15 representative WorldTensor variables for 2015 — temperature, methane emissions, GDP, and installed power capacity all aligned on the same 0.25° grid, spanning physical and human variables](../ko/image/img-01-representative-maps.jpg)
 *▲ 15 representative WorldTensor variables for 2015 — from physical fields like temperature and precipitation to human variables like GDP and installed power capacity, all placed on the same 0.25° grid | Source: [Rodriguez-Pardo & Tavoni, arXiv:2607.03298](https://arxiv.org/abs/2607.03298) (CC BY 4.0)*
 
 <!-- stat-card -->
@@ -41,7 +41,7 @@ Earth-system foundation models have multiplied quickly in the last few years. Cl
 
 This gap did not arise from a lack of interest. It is a structural problem, born from the fact that the data come in fundamentally different shapes. Climate reanalysis arrives on grids that blanket the whole planet at hourly or daily resolution. Population, GDP, disaster, and infrastructure statistics, by contrast, are scattered not as grids but as points (power-plant coordinates), vectors (administrative boundaries), and sparse snapshots taken once every few years. Physical data and human data record the same planet, yet they are written in different languages.
 
-![A NASA satellite composite of Earth at night, showing city lights concentrated where population is dense](./image/img-02-earth-at-night.jpg)
+![A NASA satellite composite of Earth at night, showing city lights concentrated where population is dense](../ko/image/img-02-earth-at-night.jpg)
 *▲ Night lights are one of the 22 human-system variables WorldTensor aligns. Human presence is visible as light even from orbit, yet models trained on physical data alone never carried this signal | Source: [NASA Earth Observatory](https://commons.wikimedia.org/wiki/File:The_earth_at_night.jpg)*
 
 The WorldTensor team's motivation starts here. Human systems both drive environmental change and respond to it, yet there was no resource to place the two on the same coordinate system and learn them together. For a single model to see the loop — emissions pushing climate, climate in turn pushing migration and conflict — emissions, climate, and conflict must first live inside the same cell.

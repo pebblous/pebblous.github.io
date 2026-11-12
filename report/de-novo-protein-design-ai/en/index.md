@@ -43,7 +43,7 @@ De novo design runs in the opposite direction. You first specify a desired funct
 > [!callout]
 > Prediction is an exam with an answer key; generation is an exam where you have to build the answer key yourself, through experiments. Because the problem comes with no answer key, the performance of de novo design depends as much on how quickly and accurately you measure designs and feed the results back into training as it does on the model's cleverness.
 
-![Protein ribbon diagram — the three-dimensional structure composed of helices, sheets, and loops. AlphaFold predicts this structure from sequence; de novo design instead generates a new structure from scratch for a desired function](./image/img-01-protein-ribbon.jpg)
+![Protein ribbon diagram — the three-dimensional structure composed of helices, sheets, and loops. AlphaFold predicts this structure from sequence; de novo design instead generates a new structure from scratch for a desired function](../ko/image/img-01-protein-ribbon.jpg)
 *▲ Protein ribbon diagram — helices, sheets, and loops folded in three dimensions. Prediction recovers this structure; de novo design builds a new one from scratch | Source: [RosettaCommons/RFdiffusion](https://github.com/RosettaCommons/RFdiffusion)*
 
 ### 1.1. A Lineage of Methods — How Prediction Models Became Generative Tools
@@ -60,7 +60,7 @@ Today's de novo design did not arrive all at once. Tools that once read structur
 
 Lineage compiled from: Jumper et al. (2021), Dauparas et al. (2022), Watson et al. (2023), Zambaldi et al. (2024), Pacesa et al. (2025).
 
-![RFdiffusion diffusion model principle — starting from Gaussian noise (X_T), the reverse generative process progressively recovers a protein 3D structure (X_0). This algorithm lifted de novo design hit rates to two-digit percentages in 2023](./image/img-02-rfdiffusion-diffusion.png)
+![RFdiffusion diffusion model principle — starting from Gaussian noise (X_T), the reverse generative process progressively recovers a protein 3D structure (X_0). This algorithm lifted de novo design hit rates to two-digit percentages in 2023](../ko/image/img-02-rfdiffusion-diffusion.png)
 *▲ RFdiffusion diffusion process — the forward (noising) and reverse (generative) passes form a pair; the reverse pass is the engine of de novo backbone generation | Source: [RosettaCommons/RFdiffusion (Watson et al., 2023)](https://github.com/RosettaCommons/RFdiffusion)*
 
 ## Hit Rate: From Luck to a Plan
@@ -74,7 +74,7 @@ Traditional Rosetta-based design typically had an experimental hit rate under 1%
 
 The rising hit rate also shows up as a sharp drop in screening burden. Where the old approach meant generating hundreds of thousands to millions of candidates and filtering them down, it is now increasingly common to obtain working molecules from fewer than 100 designs per target taken into the lab. Building less while a higher fraction works — that is the essence of becoming an engineering discipline.
 
-![De novo designed protein binders from RFdiffusion — designed binders (blue helices) docking onto four target proteins (tan): HA (influenza hemagglutinin), IL-7Rα, PD-L1, and TrkA. Molecules that did not exist in nature, experimentally validated in vitro](./image/img-03-rfdiffusion-binder.png)
+![De novo designed protein binders from RFdiffusion — designed binders (blue helices) docking onto four target proteins (tan): HA (influenza hemagglutinin), IL-7Rα, PD-L1, and TrkA. Molecules that did not exist in nature, experimentally validated in vitro](../ko/image/img-03-rfdiffusion-binder.png)
 *▲ De novo binders designed by RFdiffusion (blue helices) bound to HA, IL-7Rα, PD-L1, and TrkA targets (tan). These molecules never existed in nature yet worked experimentally in vitro | Source: [RosettaCommons/RFdiffusion (Watson et al., 2023)](https://github.com/RosettaCommons/RFdiffusion)*
 
 ### 2.1. The Trap in Headline Numbers — Target Dependence and Measurement Level
@@ -126,7 +126,7 @@ So is that precious data sufficient? No. Experimentally validated PDB structures
 <!-- stat-card -->
 **~200M+** — Predicted structures (AlphaFold DB) — Mostly predictions with no experimental validation
 
-![BindCraft pipeline overview — starting from a target protein, binder backbone and sequence are co-designed via AF2 trajectory, non-interface regions are optimized with solMPNN, then validated and filtered with AlphaFold2 monomer. Achieves tens-of-percent hit rates by reusing existing weights rather than training a new model](./image/img-04-bindcraft-pipeline.png)
+![BindCraft pipeline overview — starting from a target protein, binder backbone and sequence are co-designed via AF2 trajectory, non-interface regions are optimized with solMPNN, then validated and filtered with AlphaFold2 monomer. Achieves tens-of-percent hit rates by reusing existing weights rather than training a new model](../ko/image/img-04-bindcraft-pipeline.png)
 *▲ BindCraft pipeline — no new model trained; AlphaFold2 weights are reused and pipeline design alone achieves average hit rates in the tens of percent | Source: [BindCraft (Pacesa et al., 2025)](https://github.com/martinpacesa/BindCraft)*
 
 Quantity is not the only problem; the grain of quality is even more decisive. The PDB is biased toward globular proteins that crystallize well, so membrane proteins and disordered proteins are underrepresented while certain families are overrepresented. More fatal is the absence of negative data. The PDB has almost no "failed to bind" cases, so the model cannot learn what does not work. Without a record of failure, the model easily stumbles on new, out-of-distribution targets.

@@ -40,7 +40,7 @@ Source: [Prajapati, S. et al. (2026), arXiv:2609.20114v1](https://arxiv.org/abs/
 
 More and more wheeled robots run on public sidewalks. Last-mile delivery, inspection and powered mobility are the standard examples. Learning navigation in those settings takes varied demonstrations recorded on the ground where the robot will work, and gathering those demonstrations is expensive in itself, because a robot platform has to be transported, maintained and supervised. The paper notes that this requirement limits how many locations and conditions an academic group can cover, and adds that data collected by commercial fleets may stay proprietary.
 
-![Autonomous sidewalk delivery robot on a US city sidewalk](./image/img-01-sidewalk-delivery-robot.jpg)
+![Autonomous sidewalk delivery robot on a US city sidewalk](../ko/image/img-01-sidewalk-delivery-robot.jpg)
 *▲ A sidewalk delivery robot. Collecting navigation data for wheeled robots like this means physically transporting the robot itself to every site | Photo: Phillip Pessar, [Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Robot_Delivery_Downtown_Miami_FL_20_November_2022.jpg)*
 
 So the attempts to collect without the robot kept coming. One route straps a rig to a person and walks. MuSoHu and EgoWalk were gathered that way. Another is CityWalker, which traces camera motion through online walking and driving video to produce training signal without manual labeling. Both lift most of the burden of operating a robot. But CityWalker handles the scale ambiguity of its trajectories by normalizing them rather than recovering their original metric scale. Wherever the job needs meters, that difference stays.
@@ -53,7 +53,7 @@ Manipulation ran into the same problem first. UMI collected demonstrations witho
 
 The answer they built is plain. A commercial four-wheeled rollator walker, a standard phone mount, a smartphone. Assembly runs about 30 minutes, with no 3D-printed parts and no custom-fabricated hardware. Roughly $250 with the smartphone left out. The operator pushes the rig with all four wheels on the ground. Ramps and curb cuts get picked over stairs and uncut curbs, and a passage narrower than the frame is out of reach from the start.
 
-![A four-wheeled rollator walker](./image/img-02-four-wheel-rollator.jpg)
+![A four-wheeled rollator walker](../ko/image/img-02-four-wheel-rollator.jpg)
 *▲ A commercial four-wheeled rollator of the kind the paper uses. Clamp a smartphone to it, and that is the entire data-collection rig | Photo: DirkvdM, [Wikimedia Commons (CC BY 3.0)](https://commons.wikimedia.org/wiki/File:Rollator.jpg)*
 
 This constraint has force because it is an object rather than an instruction. Instructions can go unfollowed, and checking whether they were followed is hard. Earlier work already said as much. EgoWalk, gathered with a rig worn on the body, acknowledged that human demonstrations may include robot-infeasible maneuvers despite explicit collection guidelines, and MuSoHu named gait-induced motion and viewpoint mismatch as its limits. Four wheels at the foot of a staircase leave nothing to argue about. The diagram below marks where two routes across the same ground part company, one walked on foot and one walked behind a rollator.

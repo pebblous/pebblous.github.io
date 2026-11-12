@@ -62,13 +62,13 @@ What this dataset is and the conditions under which it was collected come down t
 
 > [!callout]
 
-![AI Hub official annotation sample — Person-Normal (640×480, 300cm distance, 2.8°C ambient)](./image/aihub-sample-human-meta.png)
+![AI Hub official annotation sample — Person-Normal (640×480, 300cm distance, 2.8°C ambient)](../ko/image/aihub-sample-human-meta.png)
 *▲ Person-Normal — sample with annotation metadata overlay (640×480 · D3 · 2.8°C)*
 
-![AI Hub official annotation sample — Car (640×480, 300cm distance, 2.8°C ambient)](./image/aihub-sample-car-meta.png)
+![AI Hub official annotation sample — Car (640×480, 300cm distance, 2.8°C ambient)](../ko/image/aihub-sample-car-meta.png)
 *▲ Car — same half-hour session, identical environment, different object class*
 
-![AI Hub thermal dataset annotation JSON schema — licenses, info, categories, images, annotations](./image/aihub-annotation-schema.png)
+![AI Hub thermal dataset annotation JSON schema — licenses, info, categories, images, annotations](../ko/image/aihub-annotation-schema.png)
 *▲ Official AI Hub annotation JSON schema — even the metadata fields this diagnosis does not touch, laid out side by side. | Source: [AI Hub](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=235)*
 
 ## L1 — Hygiene Passes, but Two Signals Surface in Channels and Class Balance

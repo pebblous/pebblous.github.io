@@ -46,7 +46,7 @@ Each of them holds a different position. SK Telecom is using the phone line and 
 
 What the government supplies is compute and budget. A July 23 announcement committed 512 Nvidia B200 GPUs to the project, allocated by evaluation rank: 256 to the top-ranked bidder and 128 each to the second and third. Kakao came first. Next year's budget request carries 250 billion won.
 
-![Nvidia HGX B200 NVL8 server board with eight GPUs installed](./image/img-01-b200-gpu.jpg)
+![Nvidia HGX B200 NVL8 server board with eight GPUs installed](../ko/image/img-01-b200-gpu.jpg)
 *▲ The Nvidia B200 GPU the government is funding for the Moduui AI project. Pictured: an HGX B200 NVL8 board holding eight GPUs | Source: [Wikimedia Commons (Pokiiri, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Nvidia_DGX-B200-HGX.jpg)*
 
 The user targets the three companies have named put a scale on this. At the kickoff meeting SK Telecom cited 5 million people by the end of this year and 10 million next year, KT said it would grow from 5 million this year to 20 million next year, and Kakao said it would hit 5 million by year-end before widening to 30 million. If those targets hold, tens of millions of people will be handing their bookings and payments to this service next year.
@@ -75,7 +75,7 @@ The ministry accepts that it cannot fill that seat alone. An official said that 
 
 The same official described how far the work has come: "right now we are at the stage of hearing which items companies would like clarified." That is not a room where a draft sits on the table and the edits are being collected. It is a room where the list of things to decide is still being written down.
 
-![Government Complex Seoul, which houses the Personal Information Protection Commission](./image/img-02-government-complex-seoul.jpg)
+![Government Complex Seoul, which houses the Personal Information Protection Commission](../ko/image/img-02-government-complex-seoul.jpg)
 *▲ Government Complex Seoul, home to the Personal Information Protection Commission and other ministries | Source: [Wikimedia Commons (Seoul Institute, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Government_Complex_Seoul_Main_Building.jpg)*
 
 > [!callout]

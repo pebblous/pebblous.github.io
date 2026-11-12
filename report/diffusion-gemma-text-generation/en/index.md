@@ -62,7 +62,7 @@ DIFFUSION
 
 Refines the whole canvas iteratively from a masked state. Bidirectional attention (sees both directions). Can re-estimate at each step. Many tokens per forward pass.
 
-![LLaDA diffusion language model — training (forward) and inference (reverse) token masking and restoration process diagram](./image/img-01-llada-masking-process.png)
+![LLaDA diffusion language model — training (forward) and inference (reverse) token masking and restoration process diagram](../ko/image/img-01-llada-masking-process.png)
 *▲ LLaDA training (a) and inference (b, c) — (a) independent token masking, (b) response masking at inference, (c) iterative refinement step | Source: [LLaDA (arXiv:2502.09992)](https://arxiv.org/abs/2502.09992)*
 
 Let us clear up one misconception. Saying diffusion is "parallel for free" is not quite right. It sees 256 tokens at once, but completing that block requires many refinement steps — that is, 12–48 forward passes. The speed gain only materializes when this number of passes is far smaller than the number of tokens. Exactly when that condition holds is what Section 3 works out.
@@ -127,7 +127,7 @@ MRCR v2 (long context, 128k)-12.1
 
 AIME 2026 (multi-step math)-19.2
 
-![Diffusion language model solving a math problem — token confidence visualized by color depth during the sampling process](./image/img-02-llada-sampling-math.png)
+![Diffusion language model solving a math problem — token confidence visualized by color depth during the sampling process](../ko/image/img-02-llada-sampling-math.png)
 *▲ LLaDA sampling on a math problem — darker tokens are higher confidence. Confidence rises across the whole canvas simultaneously, not left to right | Source: [LLaDA (arXiv:2502.09992)](https://arxiv.org/abs/2502.09992)*
 
 The interesting reversal is on "non-sequential" tasks. On work that requires seeing context on both sides at once — infilling a blank in the middle of code, in-line editing the middle of an already-written document — diffusion is actually the more natural fit. AR, seeing only to the left, is structurally disadvantaged at "knowing the back and filling in the middle." That is precisely why Google, while pinning DiffusionGemma down as "for research and experimentation, not production," listed code infilling and inline editing as recommended use cases.
@@ -156,7 +156,7 @@ The character of that efficiency compresses into three numbers: matching scores 
 
 The point at which internet text fails to keep pace with compute supply is projected for around 2028. From then on, the value of "squeeze more from the data you have" rises above "gather more data." That is the macro backdrop for the attention on data-efficient diffusion. This is not free, of course. To reach the same validation loss in a single epoch, diffusion can demand up to 16× more compute. It is a trade-off that favors a world where data is scarce and compute is plentiful.
 
-![LLaDA 8B vs LLaMA3 8B vs LLaMA2 7B benchmark radar chart across math, code, and general tasks](./image/img-03-llada-benchmark-radar.png)
+![LLaDA 8B vs LLaMA3 8B vs LLaMA2 7B benchmark radar chart across math, code, and general tasks](../ko/image/img-03-llada-benchmark-radar.png)
 *▲ LLaDA 8B (pink) matches LLaMA3 8B (blue) across benchmark dimensions — 2.3T tokens versus 15T, with a similar radar footprint | Source: [LLaDA (arXiv:2502.09992)](https://arxiv.org/abs/2502.09992)*
 
 ### 4.2 Bidirectional Structure Represents Data Differently
@@ -204,7 +204,7 @@ The best signal for gauging maturity is what happens when you scale up. LLaDA 2.
 
 ### 5.2 A Day-Zero Ecosystem, and Inference That Moved to Your Desk
 
-![DiffusionGemma finetuned to solve Sudoku — comparison of base model versus finetuned model completing the puzzle](./image/img-04-diffusiongemma-sudoku-finetune.gif)
+![DiffusionGemma finetuned to solve Sudoku — comparison of base model versus finetuned model completing the puzzle](../ko/image/img-04-diffusiongemma-sudoku-finetune.gif)
 *▲ DiffusionGemma Sudoku finetuning — the diffusion fill-in-the-blank structure applies naturally to constraint-satisfaction problems | Source: [Google Blog, 2026](https://blog.google/innovation-and-ai/technology/developers-tools/diffusion-gemma-faster-text-generation/)*
 
 From launch day, DiffusionGemma had support from vLLM (the first native diffusion-LM support), HuggingFace Transformers, Unsloth, MLX, SGLang, and NVIDIA NeMo/NIM. A tooling ecosystem ready at the same time means the cost of experimentation is low. And running a 26B-class model locally in 18GB of VRAM lands directly on on-device, low-concurrency inference — edge and Physical AI scenarios. A model that delivers fast responses from the GPU on your desk, with no cloud round trip, carries a different value where the network is unstable or latency is critical.

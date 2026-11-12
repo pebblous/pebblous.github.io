@@ -20,7 +20,7 @@ _Pew measured AI authorship by domain across 490,000 crawled pages, and the numb
 
 > For anyone training on crawl data, that stratification becomes a pipeline problem. A filter that sweeps a whole corpus behind one web-average figure runs without knowing where the contamination piled up. The per-domain source data Pew published alongside its chart puts numbers on why the filtering criterion has to move from the total to the source.
 
-![Pew Research Center logo — the organization behind this per-domain AI authorship study](./image/img-01-pew-research-logo.svg)
+![Pew Research Center logo — the organization behind this per-domain AI authorship study](../ko/image/img-01-pew-research-logo.svg)
 *▲ Pew Research Center, the organization behind this study | Source: [Pew Research Center](https://www.pewresearch.org/data-labs/2026/08/20/how-much-of-the-internet-is-written-with-ai/)*
 
 ### Key Numbers
@@ -45,7 +45,7 @@ Sources: [Pew Research Center](https://www.pewresearch.org/data-labs/2026/08/20/
 
 Pew drew a random sample of 10,000 English-language webpages from each of the 49 crawls Common Crawl produced between January 2021 and July 2026. The 490,000 pages went through a detection model, and the results were split by top-level domain and plotted as six-month averages. That time series is the most valuable part of the study. Plenty of outlets have already quoted the share at a single point in time, but the order in which those shares came apart exists only in the series.
 
-![Common Crawl logo — the open web archive this study's page sample was drawn from](./image/img-02-common-crawl-logo.svg)
+![Common Crawl logo — the open web archive this study's page sample was drawn from](../ko/image/img-02-common-crawl-logo.svg)
 *▲ Common Crawl, the nonprofit that crawls and republishes the web every month | Source: [Common Crawl](https://commoncrawl.org/)*
 
 In the July 2022 crawl, the last one before ChatGPT went public, the readings were .com 1.07%, .org 0.63%, .edu 0.64% and .gov 0.25%. Four lines pressed against the floor, nearly on top of one another. From the first half of 2023, .com pulls away first, .org follows at roughly half the pace, and .edu and .gov drift around 1% for four straight years.
