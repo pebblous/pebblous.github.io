@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""check-ko-prose.py — M1·M2·T13·R2 시험 (2026-10-25). 실행: python3 tools/check-ko-prose.test.py
+"""check-ko-prose.py — M1·M2·M3·T13·R2 시험 (2026-10-25 · M3 2026-11-12). 실행: python3 tools/check-ko-prose.test.py
 
 합성 HTML 조각으로 항목마다 양성(잡혀야)·반례(안 잡혀야)·인용 제외를 본다.
 CI 가 이 파일을 돌리지 않으므로 검사기를 고치면 직접 실행한다.
@@ -27,13 +27,14 @@ def page(es="", body="", faqs="", nav="", svg=""):
 <script>PebblousPage.init({{ faqs: [ {faqs} ] }});</script></body></html>"""
 
 
-def run(html_text):
+def run(html_text, path=""):
     with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as f:
         f.write(html_text); p = f.name
     raw = open(p, encoding="utf-8").read()
     main, _ = ck.extract_main_for_register(p)
     text, detect = ck.extract_body(p)
     out = {"M1": ck.check_meta_reads(main), "M2": ck.check_lead(raw), "R2": ck.check_aux_register(raw),
+           "M3": ck.check_closing(main, path or p),
            "T13": [r for r in ck.run_checks(text, detect) if r["code"] == "T13"][0]}
     os.unlink(p); return out
 
@@ -63,6 +64,20 @@ dense = "<p>" + "이것은 사고가 아니라 설계다. 그것은 우연이 �
 sparse = "<p>" + "이 회사는 데이터를 만들어 판다. 매출은 해마다 늘었다. 고객은 연구소와 기업이다. " * 30 + "</p>"
 check("반복되면 임계를 넘는다", run(page(body=dense))["T13"]["flagged"])
 check("없으면 안 넘는다", not run(page(body=sparse))["T13"]["flagged"])
+
+print("M3 맺음 인사·독자 부탁")
+r = run(page(body="<p>분석은 여기서 끝난다. 여기까지 읽어 주셔서 감사하다. 원문은 arXiv에 있다.</p>"))
+check("'여기까지 읽어 주셔서 감사하다' 를 잡는다", r["M3"]["count"] == 1)
+r = run(page(body="<p>사례가 있으시다면 나눠 주시면 좋겠다. 경험을 들려주시면 더 좋겠다.</p>"))
+check("'나눠 주시면 좋겠다'·'들려주시면 더 좋겠다' 를 잡는다", r["M3"]["count"] == 2)
+r = run(page(body="<p>여기까지 읽어 주셔서\n                감사하다.</p><p>경험을 나눠 주시면\n좋겠다.</p>"))
+check("원본에서 줄이 바뀐 문장도 잡는다", r["M3"]["count"] == 2)
+r = run(page(body="<p>1절부터 6절까지는 사실이고 7절은 해석이니 나눠서 읽어 주시기 바란다. 원문 PDF는 열지 못했다.</p>"))
+check("읽기 안내('읽어 주시기 바란다')·한계 고지는 안 잡는다", r["M3"]["count"] == 0)
+r = run(page(body='<p>그는 \u201c여기까지 읽어 주셔서 감사하다\u201d고 적었다.</p>'))
+check("따옴표 안은 안 잡는다", r["M3"]["count"] == 0)
+r = run(page(body="<p>읽어 주셔서 감사합니다. 저는 pb 입니다.</p>"), path="story/nanoclaw-intro-story-pb/ko/index.html")
+check("pb 1인칭 스토리는 건너뛴다", r["M3"]["count"] == 0 and r["M3"].get("skipped") == "pb-story")
 
 print("R2 FAQ·목차·도식 종결체")
 faq_bad = '{ question: "이 회사는 무엇을 파나요?", answer: "데이터를 팝니다. 모델은 팔지 않습니다." }'
