@@ -46,7 +46,7 @@ What sets this survey apart from other healthcare AI surveys is that it runs on 
 
 That last sentence is where this article starts. Lift out the two numbers on their own and the picture becomes billing going over to the machine by itself. The report's own figures do not hold that picture up. Payer member engagement is at 62%, and open slide 22 and provider front office work runs at the same level, 49%. The title of that slide is the report's own summary: semi- and fully autonomous agents are taking over more and more **administrative work**. The dividing line runs **between administrative and clinical work**.
 
-![A hospital reception desk with a 'Reception' sign, patients walking past in the corridor](./image/img-01-hospital-reception-desk.jpg)
+![A hospital reception desk with a 'Reception' sign, patients walking past in the corridor](../ko/image/img-01-hospital-reception-desk.jpg)
 *▲ A hospital front office desk — this activity also runs on autonomous agents at the same level as billing, 49% | Source: [Rodhullandemu via Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Reception_Desk,_Arrowe_Park_Hospital.jpg)*
 
 ### 1.1. Put autonomy and returns on one chart and one clinical point drops out on its own

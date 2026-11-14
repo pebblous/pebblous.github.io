@@ -42,7 +42,7 @@ Today's payment infrastructure is built on a simple assumption. A human clicks "
 
 An agent has no browser. It can't fill in a payment form, can't solve a CAPTCHA, can't click an "I agree" button. It has to compare dozens of stores in seconds, negotiate terms, and execute a purchase without human involvement. It also has to pay other agents for data or compute — thousands of transactions an hour, a few cents each.
 
-![Boston Dynamics Spot robot — the reality of an AI agent that operates autonomously, without a human](./image/img-01-spot-boston-dynamics.jpg)
+![Boston Dynamics Spot robot — the reality of an AI agent that operates autonomously, without a human](../ko/image/img-01-spot-boston-dynamics.jpg)
 *▲ Boston Dynamics Spot — like an autonomous robot carrying out a mission without a human, an AI agent has to execute payments without human intervention | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Spot_by_Boston_Dynamics.jpg) (CC BY-SA 4.0)*
 
 But there's a problem beyond simply moving money. When a machine spends on a person's behalf, how does a merchant verify trust? Three core questions arise.
@@ -68,7 +68,7 @@ AP2's foundation is the Mandate — a cryptographically signed, tamper-proof dig
 
 ### 2.3 The Role of Verifiable Credentials (VC)
 
-![Digital signature diagram — the cryptographic signing principle behind AP2 mandates](./image/img-02-digital-signature-diagram.svg)
+![Digital signature diagram — the cryptographic signing principle behind AP2 mandates](../ko/image/img-02-digital-signature-diagram.svg)
 *▲ How digital signatures work — an AP2 mandate verifies an agent's authority through this kind of cryptographic signing | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Digital_Signature_diagram.svg) (CC BY-SA 3.0)*
 
 ### 2.4 A2A and MCP Integration
@@ -85,7 +85,7 @@ AP2's foundation is the Mandate — a cryptographically signed, tamper-proof dig
 - • Microtransaction efficiency
 - • Developer-friendly, one-line implementation
 
-![Coinbase logo — co-creator of x402, collaborating on the A2A x402 extension with AP2](./image/img-03-coinbase-logo.svg)
+![Coinbase logo — co-creator of x402, collaborating on the A2A x402 extension with AP2](../ko/image/img-03-coinbase-logo.svg)
 *▲ Coinbase — co-developer of x402, releasing the A2A x402 extension with Google to support stablecoin payments in the AP2 ecosystem | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Coinbase.svg)*
 
 ## The Truth of the "Protocol War" — It's a Stack, Not a War
@@ -98,7 +98,7 @@ AP2's foundation is the Mandate — a cryptographically signed, tamper-proof dig
 
 ### 5.1 KakaoPay's Strategic Position
 
-![Linux Foundation logo — steward of the x402 standard, with KakaoPay as a founding member](./image/img-04-linux-foundation-logo.svg)
+![Linux Foundation logo — steward of the x402 standard, with KakaoPay as a founding member](../ko/image/img-04-linux-foundation-logo.svg)
 *▲ Linux Foundation — the open-source steward of the x402 protocol. KakaoPay joined as a founding member, the first Korean company to put its name on an agent payment standard | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Linux_Foundation_logo_2013.svg)*
 
 ### 5.2 The B2B Agent Commerce Opportunity

@@ -48,7 +48,7 @@ This gap has already become a live topic in robotics research. In the first half
 
 Within that push, deformable objects are an especially thorny target. Rigid bodies like cups or blocks keep their shape while you pick them up, but cloth folds, rope stretches, and a plush toy compresses. Because the shape changes every instant, the degrees of freedom needed to represent its state explode, and the physics differs by material, making it hard to tie everything together under one rule. A person can fold a towel with their eyes closed, on fingertip feel alone, but erase that feel and the same motion becomes precarious. This is why data missing touch is uniquely shallow for robots that handle deformable objects.
 
-![A sample of everyday deformable objects used for Deform360 data collection — towels, rope, gloves, plush toys, sponges](./image/img-01-deform360-objects.png)
+![A sample of everyday deformable objects used for Deform360 data collection — towels, rope, gloves, plush toys, sponges](../ko/image/img-01-deform360-objects.png)
 *▲ Towels, rope, gloves, plush toys, sponges — a sample of the everyday deformable objects Deform360 captured | Source: [Deform360 project page](https://deform360.lhy.xyz/)*
 
 > [!callout]

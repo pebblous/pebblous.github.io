@@ -40,7 +40,7 @@ Sources: [Snorkel AI's announcement](https://snorkel.ai/blog/data-2-0-and-the-re
 
 Snorkel AI began as a research project at the Stanford AI Lab, led by co-founder and chief executive Alex Ratner, and became a company in 2019. For most of the years since, the product was software. Rather than have people put a label on every record by hand, customers used rules and models to apply those labels automatically. Building the data stayed the customer's job, and what Snorkel sold was the tool that made the job faster.
 
-![Portrait photo of Alex Ratner, co-founder and CEO of Snorkel AI](./image/img-01-alex-ratner.jpg)
+![Portrait photo of Alex Ratner, co-founder and CEO of Snorkel AI](../ko/image/img-01-alex-ratner.jpg)
 *▲ Alex Ratner, who led the research at a Stanford AI lab and founded Snorkel AI in 2019 | Source: [Snorkel AI's announcement](https://snorkel.ai/blog/data-2-0-and-the-research-era-of-ai-data/)*
 
 In that arrangement the price is capped by what the customer can do. Hand someone a good tool and nothing moves if nobody on their side can decide which label belongs on a given record. Software is priced by seats and usage, while the hard part, the judgment, stays with the buyer. The boundary is what the company changed over the past year. Snorkel now sells the result: finished datasets that experts have worked over, reinforcement learning environments for training models, and evaluation tasks for checking what a model can do. The company's press release dates the start of this business to September 2025.
@@ -74,7 +74,7 @@ For evidence, the post points at its own quality control on coding data. When bu
 
 The loop turns once more from there. Human review at scale is fed back as weak supervision to train those agents, and the post reports a current 2x+ accuracy improvement over a non-specialized frontier LLM baseline for the agents that come out of it. The company calls this feedback structure the RSI engine for data, RSI standing for recursive self improvement, and says that loop is what has powered its growth to date. Hence the sentence: "Only humans and AI agents, collaborating together in compounding ways, can meet the accelerating needs of the frontier and keep humans in the driver's seat of AI progress for decades to come."
 
-![Diagram of the recursive self-improvement (RSI) loop between AI agents and human experts — AI agents accelerate humans, and human expertise refines AI](./image/img-02-rsi-loop.png)
+![Diagram of the recursive self-improvement (RSI) loop between AI agents and human experts — AI agents accelerate humans, and human expertise refines AI](../ko/image/img-02-rsi-loop.png)
 *▲ The recursive self-improvement loop as Snorkel AI describes it — AI agents accelerate human experts, and human feedback in turn refines the AI agents | Source: [Snorkel AI's announcement](https://snorkel.ai/blog/data-2-0-and-the-research-era-of-ai-data/)*
 
 These are numbers the company measured on its own process by its own standard. It defined the baseline it measured against, and no third party has published a check of the same thing under the same conditions. So they are given here as company-reported figures.

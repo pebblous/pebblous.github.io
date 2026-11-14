@@ -55,7 +55,7 @@ Whether a change to one of those commitments is material turns on six dimensions
 
 XAI-2-035, Appendix F. One modal verb moves from would to may, the obligation-strength dimension moves with it, and the outcome is coded as a weakening. xAI's four pairs published no revision account, so no disclosure code attaches to this change.
 
-![xAI logo — the party behind XAI-2-035, where a single modal verb shifted from would to may and weakened the obligation, with no revision account at all so no disclosure code applies](./image/img-01-xai.svg)
+![xAI logo — the party behind XAI-2-035, where a single modal verb shifted from would to may and weakened the obligation, with no revision account at all so no disclosure code applies](../ko/image/img-01-xai.svg)
 *▲ The party behind Appendix F's XAI-2-035. All four of its version pairs sit outside the silent revision rate's denominator, since none published an account | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:XAI_Logo.svg)*
 
 Which way a change moved is recorded separately, in six outcome codes: kept, strengthened, weakened, removed, relocated, added. When a single commitment moves both ways at once, the codebook sends it to weakened by rule and flags it as mixed. Google DeepMind's pre-deployment review of the safety case is one of those. The set of deployments that must pass through the review widened from general availability to external deployments generally, while the body that performs the review went from a named corporate governance body to an unnamed governance function. The first move tightens and the second loosens, and the rule sends the case to the loosening side. The weakened share reported later therefore contains cases of this shape.

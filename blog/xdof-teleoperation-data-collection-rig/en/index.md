@@ -60,7 +60,7 @@ Wu studied how robots learn from large datasets as a PhD student. What blocked t
 
 The design described in the 2023 paper is simple. You build a leader device that shares the kinematic structure of the robot arm you want to control, using 3D-printed parts and inexpensive off-the-shelf servo motors. The bill of materials for one device comes to under $300. The comparison table in the paper puts a 3D mouse at $150, a Meta Quest 2 setup at $300, robot-on-robot teleoperation at $30,000, and a haptic device at $40,000. The researchers ran a user study showing that GELLO collects demonstrations more reliably and more efficiently than VR controllers or a 3D mouse, and released designs for the Franka, UR5, and xArm.
 
-![A person teleoperating bimanual UR5 arms with GELLO leader devices to demonstrate pouring (A), alongside two single-arm teleoperation examples (B, C)](./image/img-01-gello-teleoperation-demo.jpg)
+![A person teleoperating bimanual UR5 arms with GELLO leader devices to demonstrate pouring (A), alongside two single-arm teleoperation examples (B, C)](../ko/image/img-01-gello-teleoperation-demo.jpg)
 *▲ A GELLO leader device (foreground, tan 3D-printed arm) teleoperating the follower robot arm behind it | Source: [GELLO project page](https://wuphilipp.github.io/gello_site/) (Wu et al., 2023)*
 
 > [!callout]

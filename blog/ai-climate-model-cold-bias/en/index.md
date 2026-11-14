@@ -36,7 +36,7 @@ _The cold bias that FourCastNet, Pangu, and ACE2 all inherited from their traini
 
 Over the past few years, AI weather models have reshaped the landscape of forecasting. Google DeepMind's GraphCast, Huawei's Pangu-Weather, and the NVIDIA-lineage FourCastNet match or beat traditional numerical weather prediction on multi-day forecasts, and they produce a global forecast in seconds without a supercomputer. Headlines like "AI beats the weather service" have become familiar enough that AI's skill at short-range forecasting is beyond doubt.
 
-![Full-disk Earth image captured by a GOES weather satellite — the global atmospheric observation data AI weather models train on](./image/img-01-earth-satellite.jpg)
+![Full-disk Earth image captured by a GOES weather satellite — the global atmospheric observation data AI weather models train on](../ko/image/img-01-earth-satellite.jpg)
 *▲ A full-disk view of Earth captured by a GOES weather satellite — the kind of global observation data AI weather models train on | Source: [NOAA / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:GOES-East_Full-Disk_Image_(15683968568).jpg)*
 
 Widen the horizon from days to decades, though, and the same models show a different face. In 2026, Landsberg and Barnes of Colorado State University and Boston University designed what amounts to a "future" experiment: they asked these models to predict a period well beyond their own training data. The weather models FourCastNet V2 and Pangu-Weather were tasked with winter surface temperature for 2020–2025, and the climate emulator ACE2 with 1996–2010. For all three, the target period is more recent than most of the model's training data, so each is effectively looking out onto an era it never learned.

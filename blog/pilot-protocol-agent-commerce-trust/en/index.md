@@ -46,7 +46,7 @@ Concretely, it is an overlay network that sits beneath application-layer protoco
 
 Traction numbers add weight to that position. According to the company, roughly 250,000 agents are already connected to the network, and two billion requests move across it each day. At one point it was growing 10% a day, adding 16,000 new agents in 24 hours. The investor sees online agents possibly reaching a trillion within five years, and Bain estimates that agent-driven commerce in the US will be worth $300 billion to $500 billion by 2030. The story is that the buildout after coding tools and models is the plumbing that lets agents trust and pay one another.
 
-![Pilot Protocol founding team — the San Francisco startup building 'the internet for agents' on a $4.5M seed](./image/img-01-pilot-protocol-founders.jpg)
+![Pilot Protocol founding team — the San Francisco startup building 'the internet for agents' on a $4.5M seed](../ko/image/img-01-pilot-protocol-founders.jpg)
 *▲ The Pilot Protocol founding team. It came out of stealth in July 2026 with a $4.5M seed round led by Version One Ventures. | Source: [TechStartups](https://techstartups.com/2026/07/27/pilot-protocol-emerges-from-stealth-with-4-5m-to-build-the-internet-for-ai-agents/)*
 
 ## Discover, Trust, Transact: The Question Three Verbs Hide

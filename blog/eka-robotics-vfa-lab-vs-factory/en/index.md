@@ -50,7 +50,7 @@ A wider range appears where that post introduces what the system can do. It writ
 
 The same post also sets down what industrial automation is actually graded on. "Industrial automation has a brutally simple scoreboard: units per hour, error rates, uptime and cost per unit." Then it adds: "Sustaining that performance through full production shifts is the next test." Coming in a piece where an investor introduces its own portfolio company, that sentence carries real weight. The 1,500 is a current best mark, and what a factory asks for is that mark repeated at the same level for eight hours straight.
 
-![Eka Robotics robot arm picking up a light bulb in a demo video, with an on-screen 1X SPEED label](./image/img-01-lightbulb-pick.jpg)
+![Eka Robotics robot arm picking up a light bulb in a demo video, with an on-screen 1X SPEED label](../ko/image/img-01-lightbulb-pick.jpg)
 *▲ Eka's robot arm picking up a light bulb at real-world (1X) speed | Source: [TechCrunch](https://techcrunch.com/2026/10/20/eka-is-worth-1-45-billion-thanks-to-a-physical-ai-model-that-has-experts-raving/)*
 
 ## Gripping Happens in the Fingertips, Not the Eyes
@@ -63,7 +63,7 @@ What co-founder Haarnoja said shows where that choice starts from. "Most of the 
 
 Reading force requires a hand built to read it in the first place. The other number Eka released is a gripper hardware cost of less than $1,000. Building a force-sensitive hand expensively was always possible. That it has come down to this price range matters to a factory as much as the performance does.
 
-![Eka's robot hand gripping a lit candle in a dark setting, illustrating manipulation guided by touch rather than sight](./image/img-02-candle-touch.jpg)
+![Eka's robot hand gripping a lit candle in a dark setting, illustrating manipulation guided by touch rather than sight](../ko/image/img-02-candle-touch.jpg)
 *▲ Eka's hand gripping a lit candle in a setting where vision alone offers little to go on | Source: [Eka Robotics announcement](https://ekarobotics.com/blog/eka-robotics-raises-150m-to-build-superhuman-intelligence-for-the-physical-world)*
 
 ## If Nobody Copies Human Demonstrations, Who Makes the Data
@@ -83,7 +83,7 @@ The same post does not hide the weak link in the approach either. Simulation is 
 
 Researchers who have seen the robot in person responded warmly. Kris Hauser of the University of Illinois said it "was able to adapt to a large number of different objects without retraining," and added that in the way it kept retrying after a failed first attempt there was a "humanness, creepy humanness." Another robotics researcher at a frontier lab, who asked not to be named, told TechCrunch that watching the robot move felt like the moment five to ten years ago when legged robots first began to walk steadily.
 
-![Eka Robotics' VFA model demonstrated live at 1,500 picks per hour while researchers look on](./image/img-03-demo-1500-picks.jpg)
+![Eka Robotics' VFA model demonstrated live at 1,500 picks per hour while researchers look on](../ko/image/img-03-demo-1500-picks.jpg)
 *▲ A live lab demo of the VFA model with researchers looking on | Source: [Eka Robotics announcement](https://ekarobotics.com/blog/eka-robotics-raises-150m-to-build-superhuman-intelligence-for-the-physical-world)*
 
 What the same Hauser named as the biggest task ahead was not speed. "What's going to be a big challenge is when they work with integrators on real assembly lines, and it needs to run without breaking for an entire year," he said. A factory scorecard has no column for a personal best. It has a column for time not spent stopped.

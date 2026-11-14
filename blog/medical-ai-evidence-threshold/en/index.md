@@ -42,7 +42,7 @@ The survey is a plain instrument. Wolters Kluwer handed the fieldwork to Ipsos, 
 
 That continuity exposed a large shift. Doctors saying they use AI for work at least once a week stood at 38% last year, and this year the figure is close to three in four. The coverage gives no exact percentage, only that wording. Nurses went from 46% to 70%. At the other end, 9% of doctors and 18% of nurses had never used AI tools at work. In a single year AI moved from something a minority sampled to something most clinicians touch weekly.
 
-![A nurse checking a patient record on a mobile computer workstation at the bedside](./image/img-01-point-of-care-workstation.jpg)
+![A nurse checking a patient record on a mobile computer workstation at the bedside](../ko/image/img-01-point-of-care-workstation.jpg)
 *▲ A digital workstation at the point of care — an illustrative photo of documentation tools entering daily clinical work (not a scene from this survey) | Source: [Wikimedia Commons (Kgbo, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Princess_Alexandra_Hospital_nurse_with_mobile_computer_work_station.jpg)*
 
 One thing belongs next to any two-year comparison here. Last year's respondents included pharmacists, allied health professionals, administrators and medical librarians alongside doctors and nurses, and that year's release states neither a sample size nor a fielding window. This year narrowed the pool to 355 doctors and nurses and named four days in March. The year-over-year figures are breakouts of the doctors and nurses within each year's sample, so the comparison does not break, but the size of last year's breakout was never published.
@@ -72,7 +72,7 @@ The survey asked about that spot too. About half of clinicians, 53%, say they wa
 
 On one side are tools whose yardstick was fixed before they were built. Finding something in an image has a verifiable answer, which is why sensitivity and specificity carry it into journals and through review. On the other side are tools that draft the clinical note, answer patient messages and suggest a course of treatment. Nobody has an answer key for that work, because clinicians do not even agree on what a good clinical note looks like.
 
-![A radiologist reviewing MRI scans on screen with a colleague — the imaging AI channel validated against a fixed yardstick](./image/img-02-radiologist-mri-review.jpg)
+![A radiologist reviewing MRI scans on screen with a colleague — the imaging AI channel validated against a fixed yardstick](../ko/image/img-02-radiologist-mri-review.jpg)
 *▲ Image reading has a verifiable answer, which is why it has passed through journals and review (illustrative photo) | Source: [The Medical Futurist / Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Radiologist_interpreting_MRI.jpg)*
 
 The survey shows the second group is no longer a handful of pilots. Among doctors, 44% say they use an AI scribe to draft clinical notes. Four in ten are already standing on the layer with no answer key.

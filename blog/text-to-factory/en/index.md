@@ -53,7 +53,7 @@ NVIDIA's **[USD Layout NIM](https://nvidianews.nvidia.com/news/nvidia-announces-
 
 What it does, concretely: a user types a layout instruction — "Place the conveyor belt 5 meters from the east wall, with a welding robot cell immediately adjacent" — and the NIM translates that into OpenUSD scene composition commands. The result appears instantly in a live Omniverse scene, viewable in 3D.
 
-![USD Search NIM interface: text prompt generates warehouse objects (forklift, pallets, boxes) in an Omniverse scene](./image/img-03-usd-nim-warehouse.jpg)
+![USD Search NIM interface: text prompt generates warehouse objects (forklift, pallets, boxes) in an Omniverse scene](../ko/image/img-03-usd-nim-warehouse.jpg)
 *▲ USD Search NIM in action: typing "Objects in a warehouse such as conveyor belts, pallets, and boxes" generates a 3D scene in Omniverse. This is the text-to-scene pipeline described in this section. | Source: [NVIDIA Technical Blog](https://developer.nvidia.com/blog/integrate-generative-ai-into-openusd-workflows-using-new-nvidia-omniverse-developer-tools/)*
 
 ### 2.1 OpenUSD — The Factory's Common Language
@@ -103,20 +103,20 @@ BMW's Debrecen plant in Hungary holds a singular distinction: it is the first fa
 
 That project became the foundation for **[BMW FactoryExplorer](https://blogs.nvidia.com/blog/bmw-group-nvidia-omniverse/)** — a company-wide Omniverse platform now used by 15,000 BMW employees across 30+ production facilities. Production engineers simulate new equipment before procurement. Logistics teams test routing changes in real time. Safety officers run emergency scenarios without ever stopping the line.
 
-![BMW real factory (left, orange KUKA robots) overlaid with NVIDIA Omniverse digital twin (right, white wireframe)](./image/img-04-bmw-digital-twin.jpg)
+![BMW real factory (left, orange KUKA robots) overlaid with NVIDIA Omniverse digital twin (right, white wireframe)](../ko/image/img-04-bmw-digital-twin.jpg)
 *▲ BMW × NVIDIA Omniverse at GTC 2023: left side shows the real factory floor (orange KUKA robots), right side shows its Omniverse digital twin (white wireframe). BMW's iFACTORY strategy — simulate first, build second. | Source: [NVIDIA Blog](https://blogs.nvidia.com/blog/bmw-group-nvidia-omniverse/)*
 
 <!-- stat-card -->
 **BMW FactoryExplorer at Scale** — 15,000 — daily users — 30+ — production sites connected — weeks → hours — layout change review time
 
-![Industrial robot arm in BMW Leipzig factory body manufacturing (Karosseriebau) — modern automotive production automation](./image/img-01-bmw-robot.jpg)
+![Industrial robot arm in BMW Leipzig factory body manufacturing (Karosseriebau) — modern automotive production automation](../ko/image/img-01-bmw-robot.jpg)
 *▲ Industrial robot arm in BMW Leipzig's body manufacturing (Karosseriebau) process. These are precisely the robots whose placement, paths, and coordination BMW simulates in Omniverse — before they're ever physically installed. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:BMW_Leipzig_MEDIA_050719_Download_Karosseriebau_max.jpg)*
 
 ### 4.2 Mercedes-Benz — MO360 as a Global Nerve System
 
 Mercedes-Benz's [MO360 (Mercedes-Benz Operations 360)](https://blogs.nvidia.com/blog/mercedes-benz-ev-nvidia-omniverse-generative-ai/) platform connects over 30 production facilities into a single digital ecosystem. Live factory data flows into digital twins in real time. When a bottleneck appears anywhere in the global production network, AI recommends which line at which plant should adjust — and Omniverse provides the 3D visualization and simulation layer that makes those recommendations explainable to the people who act on them.
 
-![Mercedes-Benz vehicle with blue digital twin overlay inside a factory — MO360 digital ecosystem visualization](./image/img-05-mercedes-mo360.jpg)
+![Mercedes-Benz vehicle with blue digital twin overlay inside a factory — MO360 digital ecosystem visualization](../ko/image/img-05-mercedes-mo360.jpg)
 *▲ Mercedes-Benz × NVIDIA Omniverse: a production vehicle with its digital twin overlay, visualizing the MO360 ecosystem. Real-time factory data feeds into the digital twin, enabling AI-driven recommendations across 30+ global plants. | Source: [NVIDIA Blog](https://blogs.nvidia.com/blog/mercedes-benz-ev-nvidia-omniverse-generative-ai/)*
 
 ### 4.3 Wandelbots NOVA — Language Meets Robot Programming
@@ -135,7 +135,7 @@ Text-to-factory automation didn't become possible because of one breakthrough. T
 <!-- stat-card -->
 **🖥️2. GPU Computing Made Real-Time Physics Economical** — Since the Hopper architecture (H100), running a fully physics-accurate simulation of a factory with thousands of simultaneous robots went from a multi-day job to a multi-hour one. The compute cost crossed the threshold where iterative simulation became economically rational for planning decisions.
 
-![NVIDIA H100 Tensor Core GPU chip — the hardware enabling real-time physics simulation for factory digital twins](./image/img-02-nvidia-h100.png)
+![NVIDIA H100 Tensor Core GPU chip — the hardware enabling real-time physics simulation for factory digital twins](../ko/image/img-02-nvidia-h100.png)
 *▲ NVIDIA H100 Tensor Core GPU. The Hopper architecture crossed the compute threshold that made real-time physics simulation of factory-scale robot fleets economically viable — shifting digital twins from R&D experiments to daily production tools. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:NVIDIA_H100_(极客湾Geekerwan)_014.png)*
 
 <!-- stat-card -->

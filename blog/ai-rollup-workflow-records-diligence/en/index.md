@@ -42,7 +42,7 @@ Sources: [TechCrunch (2026-08-12)](https://techcrunch.com/2026/08/12/openai-back
 
 Thrive Holdings is a holding company spun out of Joshua Kushner's Thrive Capital. Instead of building AI to sell, it buys the companies that AI will be planted inside. Current, the accounting arm, gathers more than 50 firms and more than 2,000 professionals. Shield, the IT services arm, holds around 20 companies. Current started life in 2023 as Crete Professionals Alliance.
 
-![Accounting and IT services professionals gathered under Thrive Holdings](./image/img-01-thrive-holdings-team.jpg)
+![Accounting and IT services professionals gathered under Thrive Holdings](../ko/image/img-01-thrive-holdings-team.jpg)
 *▲ Accounting and IT services professionals now under Current and Shield. Each of the 70-plus acquisitions brings a team like this one over intact | Image Credits: Thrive Holdings, via [TechCrunch (2026-08-12)](https://techcrunch.com/2026/08/12/openai-backed-thrive-holdings-raises-2b-to-bring-ai-to-the-enterprise/)*
 
 Part of the new capital goes toward a third vertical: regulatory and compliance services attached to physical assets such as buildings and infrastructure. The reason accounting and IT came first lines up with conditions the industry has flagged for years. Volume is high, rules are fixed, and the output leaves a paper trail. These businesses also sell human hours, so any drop in processing time moves the margin directly.

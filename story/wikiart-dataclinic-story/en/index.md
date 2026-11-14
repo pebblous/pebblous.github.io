@@ -68,7 +68,7 @@ DataClinic: "RGB channels are consistent and good"
 
 Reality: The three channels show dramatically different distributions. Blue peaks strongly at 30–40 with a left skew (~39M), Red shows a bimodal distribution (30–40 peak + a spike near 250 at ~34M), and Green falls in between.
 
-![WikiArt pixel histogram comparing RGB channel distributions. The Blue channel dominates in dark values while the Red channel shows a sharp spike at bright values (255).](image/chart-115-L-3.png)
+![WikiArt pixel histogram comparing RGB channel distributions. The Blue channel dominates in dark values while the Red channel shows a sharp spike at bright values (255).](../ko/image/chart-115-L-3.png)
 *L1 pixel histogram (chartId 3). Blue peaks at pixel value 30–40 (~39M highest frequency) and declines rightward. Red shows a first peak at 30–40 (~22M), then rises gradually to a sharp spike at 254–255 (~34M). Green peaks at 40–50 (~27M). The three channels are visibly anything but "consistent."*
 
 This distribution is a physical signature unique to paintings—unseen in photographic datasets. Blue concentrating in dark values reflects warm-toned grounds (canvas underpainting), varnish yellowing over centuries, and the widespread use of warm-earth pigments (ochre, sienna) in traditional painting. The Red channel spike at 255 results from pure red pigments (vermilion, cadmium red) clipping at channel maximum during digital scanning. The API's "consistent" likely referred to format consistency (all images are 3-channel RGB), but at the pixel-value level the three channels diverge dramatically.
@@ -106,19 +106,19 @@ DataClinic: "3 high-density clusters found"
 
 Reality: The contour chart shows 2 density centers within 1 continuous mass. The claim of 3 separate clusters is inconsistent with the visual evidence.
 
-![L2 contour chart showing a single bean-shaped continuous mass with two density centers, left and right](image/chart-115-L-9.png)
+![L2 contour chart showing a single bean-shaped continuous mass with two density centers, left and right](../ko/image/chart-115-L-9.png)
 *L2 contour (chartId 9). A single bean/kidney-shaped continuous mass is visible. Two density centers exist inside (left and right), but they form a connected structure rather than separate clusters. DataClinic's reported "3 clusters" does not match the visual evidence.*
 
 ### Density Distribution: A World Where Minimalism Is the "Most Typical Art"
 
 L2's density histogram shows a bell-shaped distribution centered at 0.08–0.09. The shape is broadly healthy, but a right tail extending to 0.40 indicates positive skew. What lies in that right tail is revealing.
 
-![L2 density histogram showing a bell-shaped distribution centered at 0.08-0.09 with a right tail extending to 0.40](image/chart-115-L-13.png)
+![L2 density histogram showing a bell-shaped distribution centered at 0.08-0.09 with a right tail extending to 0.40](../ko/image/chart-115-L-13.png)
 *L2 density histogram (chartId 13). Bell-shaped distribution centered at 0.08–0.09. Most images concentrate in this range, but the right tail extends to 0.40. This extreme high-density region is occupied by visually simple works (Minimalism, Color Field Painting).*
 
 The Box Chart provides the answer. Comparing per-class density, most movements cluster in the 0.07–0.10 range, while Minimalism and Color Field Painting show extreme high density above 0.30. To a general-purpose AI, a monochrome rectangle on a black background or a pastel geometric composition registers as the "most typical image."
 
-![L2 Box Chart comparing density across 27 classes. Most cluster at 0.07-0.10, while Minimalism and Color_Field_Painting appear as extreme outliers above 0.30](image/chart-115-L-15.png)
+![L2 Box Chart comparing density across 27 classes. Most cluster at 0.07-0.10, while Minimalism and Color_Field_Painting appear as extreme outliers above 0.30](../ko/image/chart-115-L-15.png)
 *L2 Box Chart (chartId 15). Horizontal axis: class; vertical axis: density. Most movements fall in a similar range, but Minimalism and Color_Field_Painting separate as extreme outliers (0.30+). Visual simplicity compresses into a narrow region of feature space.*
 
 ### High-Density Outliers: Different Classes, Identical Appearance
@@ -149,21 +149,21 @@ DataClinic: "Cluster separation remains unclear"
 
 Reality: The L3 Box Chart shows Pop Art dramatically separated from all other movements (median ~1.50 vs. 1.70–1.90 for the rest). Classical styles (Baroque, Rococo, High Renaissance, Mannerism) concentrate at the highest density band (1.80–1.90), while modern styles (Pop Art, Minimalism, Contemporary Realism) sit lower. Spatial cluster separation is limited, but density-based class differentiation is meaningful.
 
-![L3 contour chart showing an irregular outline with 2-3 density centers more distinctly defined than L2](image/chart-115-L-20.png)
+![L3 contour chart showing an irregular outline with 2-3 density centers more distinctly defined than L2](../ko/image/chart-115-L-20.png)
 *L3 contour (chartId 20). Unlike L2's smooth bean shape, the outline is more irregular, but 2–3 density centers are more distinctly separated. The BLIP lens, optimized to 56 dimensions, captures semantic differences between artworks more effectively.*
 
 ### Density Distribution: A More Symmetric Bell Curve Than L2
 
 The L3 density histogram shows a bell-shaped distribution centered at 1.55–1.75, more symmetric than L2 (centered at 0.08–0.09). The "Distribution: Good" rating is based on this bell shape, and the distribution form itself is genuinely healthy. But examining what constitutes the core of this bell tells a different story.
 
-![L3 density histogram showing a bell-shaped distribution centered at 1.55-1.75, more symmetric than L2](image/chart-115-L-23.png)
+![L3 density histogram showing a bell-shaped distribution centered at 1.55-1.75, more symmetric than L2](../ko/image/chart-115-L-23.png)
 *L3 density histogram (chartId 23). Bell-shaped distribution centered at 1.55–1.75. More symmetric than L2, with a shorter right tail. The distribution shape itself is healthy.*
 
 ### Box Chart: Pop Art's Dramatic Separation and Chronological Stratification
 
 The most striking finding of this analysis comes from the L3 Box Chart. Comparing per-class density across 27 art movements, Pop Art separates dramatically from every other style. Its median of approximately 1.50 shows a density gap of about 0.25 from the rest (1.70–1.90). Above it unfolds a clear chronological stratification.
 
-![L3 Box Chart showing Pop Art at the lowest density with dramatic separation, while classical styles like Baroque, Rococo, and High Renaissance concentrate at the highest density band](image/chart-115-L-24.png)
+![L3 Box Chart showing Pop Art at the lowest density with dramatic separation, while classical styles like Baroque, Rococo, and High Renaissance concentrate at the highest density band](../ko/image/chart-115-L-24.png)
 *L3 Box Chart (chartId 24). The key chart of this analysis. Pop Art at the lowest density (~1.50) with dramatic separation. Classical styles (Baroque 1.84, Rococo 1.85, High Renaissance 1.85, Mannerism 1.85) concentrate at the highest density band. Modern/avant-garde styles (Minimalism 1.66, Contemporary Realism 1.67) sit in the mid-to-lower range. This is art history's timeline as seen through the BLIP lens.*
 
 Classical styles (Baroque 1.84, Rococo 1.85, High Renaissance 1.85, Mannerism 1.85) cluster at the highest density band. These movements share strict visual rules established over centuries—linear perspective, chiaroscuro, anatomical accuracy. To the BLIP lens, these rules register as "predictable" visual-semantic patterns. Modern and avant-garde styles (Pop Art, Minimalism, Contemporary Realism), by contrast, are movements that deliberately break established rules. BLIP's density stratification captures the fundamental art-historical axis of "tradition versus innovation" through data.

@@ -40,7 +40,7 @@ Source: [CNBC analysis of House disbursement records](https://www.cnbc.com/2026/
 
 CNBC's window runs from April 1, 2025 to March 31, 2026. Pulling out only the AI spending with a vendor named on the line brought the total to $113,740. ChatGPT accounted for $100,580 of it across 798 transactions, and Anthropic's Claude for $13,160 across 37. In dollars the ratio is close to eight to one; in number of charges it passes twenty to one. ChatGPT looks like many offices each paying for their own subscription, Claude like a handful of offices paying in bulk.
 
-![West front of the United States Capitol, where the House offices behind these AI spending figures sit](./image/img-01-capitol.jpg)
+![West front of the United States Capitol, where the House offices behind these AI spending figures sit](../ko/image/img-01-capitol.jpg)
 *▲ Of 435 House members, 71 offices left their name in the AI spending record | Source: [Wikimedia Commons (Architect of the Capitol, Public Domain)](https://commons.wikimedia.org/wiki/File:United_States_Capitol_west_front_edit2.jpg)*
 
 The split ran along party lines as well. Forty-four Democratic offices spent $54,165 and twenty-seven Republican offices spent $15,782, a gap of more than three times. Which side speaks more loudly about regulating AI and which side pays for more of it do not always point the same way.
@@ -61,7 +61,7 @@ The spending record only says which office paid how much. What the money bought 
 - •Drafting replies to constituent mail from the district
 - •Drafting social media posts that go out under the member's name
 
-![Interior of the United States House of Representatives chamber, where floor votes and hearings take place](./image/img-02-house-chamber.jpg)
+![Interior of the United States House of Representatives chamber, where floor votes and hearings take place](../ko/image/img-02-house-chamber.jpg)
 *▲ Where bill summaries and hearing prep are headed — the House chamber | Source: [Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:United_States_House_of_Representatives_chamber.jpg)*
 
 Scheduling a meeting or tightening an email leaves nothing behind that matters, whichever tool does it. These five are different. A bill summary feeds a member's vote. A constituent reply arrives as the government's official answer to a citizen. Hearing prep becomes the question put to a witness. The finished product goes out under a person's name, and nothing in the document marks which passage came from the model's summary.

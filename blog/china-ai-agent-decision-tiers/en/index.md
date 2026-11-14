@@ -40,7 +40,7 @@ AI regulation has mostly aimed at the model. What data was it trained on, is its
 
 Article 6 requires that the reasonable boundaries of an agent's authority be set down in a document before it is actually deployed. That boundary is divided into three compartments: decisions only a human may make, actions the agent may execute only after user approval, and matters the agent may handle autonomously within a delegated scope. The text states that users retain the right to be informed of, and the final say over, an agent's autonomous decisions, and that an agent's execution must not exceed the scope the user approved.
 
-![National Emblem of the People's Republic of China — the government that jointly issued the AI agent decision-tier rule](./image/img-01-china-emblem.svg)
+![National Emblem of the People's Republic of China — the government that jointly issued the AI agent decision-tier rule](../ko/image/img-01-china-emblem.svg)
 *▲ National Emblem of the People's Republic of China | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:National_Emblem_of_the_People%27s_Republic_of_China.svg)*
 
 > [!callout]
@@ -92,7 +92,7 @@ China's regulatory ecosystem is itself moving to fill this gap with technology. 
 
 A different continent answered the same pressure a different way. The AI Safety Measures Act (SB315), signed by the governor of Illinois on July 6, 2026, made Illinois the third U.S. state—after California and New York—to have a frontier AI safety law. What sets it apart is a clause the California and New York laws lack: it mandates an independent audit by a disinterested third party. Large frontier developers must undergo an annual independent audit, and while the developer pays the audit fee, that payment cannot be tied to the audit's findings, a safeguard for the audit's independence.
 
-![Illinois State Capitol — where the AI Safety Measures Act (SB315) was signed in July 2026](./image/img-04-illinois-capitol.jpg)
+![Illinois State Capitol — where the AI Safety Measures Act (SB315) was signed in July 2026](../ko/image/img-04-illinois-capitol.jpg)
 *▲ Illinois State Capitol (Springfield) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Illinois_State_Capitol_pano.jpg) (Daniel Schwen, CC BY-SA 4.0)*
 
 Both the subject and the method differ from China's. China makes the agent's autonomous behavior itself be sorted into tiers in advance; Illinois has a third party verify the safety-management system of frontier model developers. Yet the two approaches point to the same place.

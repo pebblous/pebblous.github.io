@@ -38,5 +38,5 @@ Amazon said it will stop accepting new customers (requesters) for Mechanical Tur
 
 Mechanical Turk arrived in 2005. Its slogan was "Artificial Artificial Intelligence." Jeff Bezos coined the phrase himself, and it compressed the nature of the service into a single line. The model outsourced small, hard-to-automate tasks to people for tiny payments, and it called each unit of work a HIT (Human Intelligence Task). On the surface it looked like an automation service, but behind it real people were doing the answering — a twist baked into the name that was, itself, the business model.
 
-![18th-century engraving revealing the human chess player hidden inside the automaton known as The Turk](./image/img-01-turk-automaton-reveal.jpg)
+![18th-century engraving revealing the human chess player hidden inside the automaton known as The Turk](../ko/image/img-01-turk-automaton-reveal.jpg)
 *▲ The original "Turk" that Amazon borrowed its name from — a chess-playing automaton that dazzled Europe in the 1770s, with a person hidden inside the cabinet | Source: [Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:Turk-with-person.jpg)*

@@ -44,7 +44,7 @@ The obvious objection is to point an automated outlier detector at the pile, and
 
 Milan Pešta and Yuan-Sen Ting handed that desk to multimodal agents. Their sample is 373,646 periodic variables drawn from ASAS-SN Sky Patrol V2.0, cross-matched against the VSX catalog of variable stars and filtered on epoch count and magnitude range. The model doing the review is Gemini 3 Flash, and what each agent receives is a phase-folded light-curve image plus a short metadata block: period, amplitude, and the VSX class name. No object name, no sky coordinates. The class name itself was overridable, so an agent that disagreed with VSX after looking at the plot could write its own classification instead.
 
-![Two ASAS-SN robotic telescope domes at Cerro Tololo Inter-American Observatory](./image/img-01-asassn-telescopes.jpg)
+![Two ASAS-SN robotic telescope domes at Cerro Tololo Inter-American Observatory](../ko/image/img-01-asassn-telescopes.jpg)
 *▲ ASAS-SN robotic telescope domes at Cerro Tololo Inter-American Observatory in Chile. The 373,646 variable stars in this paper came out of a sky-survey network like this one. | Source: [CTIO/NOIRLab/NSF/AURA](https://noirlab.edu/public/images/DSC-4322-CC)*
 
 After 51 iterations, 5,100 stars carried labels, about 1 percent of the sample. The run took roughly 3 hours and about $40 in API calls. It returned 24 anomalies and 153 potentially interesting objects worth follow-up, and 18 of the 24 anomalies had never been flagged as unusual before.

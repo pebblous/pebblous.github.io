@@ -158,7 +158,7 @@ Three conditions have to travel with every figure in this section. First, **the 
 
 The fourth choice is the population, and an experiment showing what that choice does happens to be sitting in public. Nine days before Slok's note, on **15 October 2026**, a post by Jeremy Pearce went up on Liberty Street Economics, the Federal Reserve Bank of New York's blog. The metric carries the same name: **revenue per worker**. The source data are of the same kind: listed-company filings. The conclusion was the opposite.
 
-![Federal Reserve Bank of New York building — 33 Liberty Street, Manhattan financial district](./image/img-01-nyfed.jpg)
+![Federal Reserve Bank of New York building — 33 Liberty Street, Manhattan financial district](../ko/image/img-01-nyfed.jpg)
 *▲ The Federal Reserve Bank of New York at 33 Liberty Street, which runs the Liberty Street Economics blog where Pearce published. | Source: [Beyond My Ken, Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:2013_Federal_Reserve_Bank_of_New_York_from_west.jpg)*
 
 | Metric | 2010–2019 | 2019–2025 |
@@ -223,7 +223,7 @@ That is why this report does not compare figures from before November 2025 direc
 
 The "it is too early" objection has history behind it. Electric motors took about **40 years** to show up in the productivity statistics, and computer capital took **more than 25 years** after the integrated circuit. The productivity J-curve set out by Erik Brynjolfsson, Daniel Rock and Chad Syverson explains that a general purpose technology initially pushes measured productivity down, because the cost of building complementary intangible assets is paid first and the output arrives later. By that precedent, saying 2026 is early is not wrong.
 
-![Westinghouse M7 Standard Tesla AC motor, circa 1900 — motors of this generation took about 40 years to show up in factory productivity statistics](./image/img-02-tesla-motor.jpg)
+![Westinghouse M7 Standard Tesla AC motor, circa 1900 — motors of this generation took about 40 years to show up in factory productivity statistics](../ko/image/img-02-tesla-motor.jpg)
 *▲ A Westinghouse M7 Standard Tesla AC motor from around 1900. Motors of this generation took roughly 40 years to show up in productivity statistics. | Source: [Daderot, Wikimedia Commons (CC0)](https://commons.wikimedia.org/wiki/File:M7_Standard_Tesla_AC_Motor,_Westinghouse_Electric_Co.,_c._1900_-_Museum_of_Science_and_Industry_(Chicago)_-_DSC06563.JPG)*
 
 The hypothesis has to carry its falsification condition with it, though, and the authors of the J-curve supply one: if the investment does not produce economically meaningful **intangible assets**, the technology is not a general purpose technology. What holds the hypothesis up is evidence of complementary intangible investment, not the passage of time. If investment keeps flowing while new work processes, retraining and organizational redesign leave no measurable trace over a long stretch, then it is the hypothesis that falls, not the clock that needs more time.

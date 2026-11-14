@@ -46,7 +46,7 @@ Why a full shutdown rather than a partial one? The crux is the phrase "foreign n
 
 Not all of Claude went dark, however. The rest of the lineup, including Opus 4.8, kept working, and in-flight API sessions either threw errors or were automatically rerouted to Opus 4.8. What disappeared was only the newest thing — the latest model, released three days earlier. In its official statement, Anthropic clearly opposed the move, saying in effect that it did not agree this was grounds to claw back a commercial model already deployed to millions of people. Whether the company agreed or not, the model came down the night the order arrived.
 
-![Anthropic wordmark — the AI company at the center of the first AI export-control shutdown in June 2026](./image/img-01-anthropic-wordmark.svg)
+![Anthropic wordmark — the AI company at the center of the first AI export-control shutdown in June 2026](../ko/image/img-01-anthropic-wordmark.svg)
 *▲ Anthropic — the company that was ordered to pull its own newest model three days after launch | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Anthropic_logo.svg)*
 
 > [!callout]
@@ -60,7 +60,7 @@ So Anthropic warned about the danger of this standard. A sufficiently narrow jai
 
 That gap grows sharper in political context. In early 2026, Anthropic refused the "all lawful purposes" clause in a federal agency contract, on the grounds that it could not leave the door open to uses like autonomous weapons or mass domestic surveillance. The Defense Department then designated Anthropic a "supply chain risk," and Anthropic fought the designation with a federal lawsuit. This export-control action sits on the same continuum of conflict. A company heading toward an IPO at a valuation of $965 billion found its newest product staring down the barrel of regulation.
 
-![The US Capitol building, west side — home of the federal government whose Department of Commerce issued the export-control directive against Anthropic](./image/img-02-us-capitol.jpg)
+![The US Capitol building, west side — home of the federal government whose Department of Commerce issued the export-control directive against Anthropic](../ko/image/img-02-us-capitol.jpg)
 *▲ The U.S. Capitol — the seat of the federal government that sent the export-control directive to Anthropic on June 12, 2026 | Source: [Wikimedia Commons (Martin Falbisoner, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:US_Capitol_west_side.JPG)*
 
 Industry reactions split as well. Dean Ball, a former Trump-administration official, called the move "cartoonish." One security researcher put it more pointedly: if you describe your product as a munition in every press release, eventually the government takes you at your word. It was a scene in which a narrative built on emphasizing safety came back, in the hands of regulators, as the grounds for a clawback.
@@ -71,7 +71,7 @@ What an abstract regulatory dispute actually looks like is shown by the list of 
 
 These cases share two things. One, not a single company received advance notice. Two, the cutoff happened for reasons no company could do anything about. It was not something you could prevent by using less, paying more, or complying better with the terms. Model access was decided by variables unrelated to the company's own behavior, and the company was simply notified of the outcome.
 
-![Stripe logo — the company that had to halt its Ruby codebase migration after the Fable 5 export-control shutdown](./image/img-03-stripe-logo.svg)
+![Stripe logo — the company that had to halt its Ruby codebase migration after the Fable 5 export-control shutdown](../ko/image/img-03-stripe-logo.svg)
 *▲ Stripe — one of the enterprises that stopped cold overnight, through no fault of their own | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Stripe_Logo,_revised_2016.svg)*
 
 > [!callout]

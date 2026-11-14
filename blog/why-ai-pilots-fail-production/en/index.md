@@ -51,7 +51,7 @@ It's worth noting this isn't one institution's pessimistic tally. A 2025 RAND st
 
 If the bottleneck is outside the model, where exactly is it? One sentence from MIT's 2025 report "The GenAI Divide" compresses the answer: 80% of the work needed to move a pilot into production is data engineering, governance, workflow integration, and measurement infrastructure. Choosing the model and tuning the prompt fall into the remaining 20%. The part we talked about most turned out to carry the least weight.
 
-![MLOps Venn diagram — ML Ops sits at the intersection of Machine Learning, DevOps, and Data Engineering. The model (ML) is only one of three circles.](./image/img-04-mlops-venn.png)
+![MLOps Venn diagram — ML Ops sits at the intersection of Machine Learning, DevOps, and Data Engineering. The model (ML) is only one of three circles.](../ko/image/img-04-mlops-venn.png)
 *▲ Production AI (ML Ops) sits at the intersection of Machine Learning, DevOps, and Data Engineering — the model is just one part | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:MLOps_venn_diagram.png)*
 
 Gartner's diagnosis is blunter still. In 85% of failed AI projects, the root cause was data quality. In the same analysis, only 12% of organizations were confident they held data of sufficient quality for AI. That means roughly nine in ten bought the model first, while the data sat unprepared.
@@ -69,7 +69,7 @@ Even within the data problem, there's a place where things trip first: when the 
 
 Composio calls this the "brittle connectors" problem. In a pilot, the demo runs on one neatly organized CSV. In production, though, the same agent faces undocumented internal APIs, legacy ERPs buried under custom fields, and rate limits that hit without warning. Regardless of the model's reasoning ability, the wiring that reaches the data is simply severed. Without reliable connections to CRMs, ERPs, databases, and external APIs, even the smartest agent stops empty-handed.
 
-![Enterprise integration concept diagram — an enterprise model sits above System A and System B, connected through integrating services via physical flow and information links](./image/img-02-enterprise-integration.png)
+![Enterprise integration concept diagram — an enterprise model sits above System A and System B, connected through integrating services via physical flow and information links](../ko/image/img-02-enterprise-integration.png)
 *▲ Enterprise integration structure. The one clean CSV in the pilot demo hides this entire network of connections | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Concept_of_Enterprise_Integration.png)*
 
 Field surveys back this up. In Fivetran's 2025 study, 41% of companies said their AI models' performance was hampered by a lack of access to real-time data, and 29% said data silos were blocking AI success. Nearly half (42%) reported having delayed or failed a substantial number of AI projects because of data-readiness problems.
@@ -92,7 +92,7 @@ Why did organizations pick impressive demo-friendly tasks first? Because demo da
 
 The trap Composio calls "dumb RAG" runs along the same grain. Dump internal documents into a vector DB indiscriminately, with no preprocessing, and the context flows into the model already poisoned. The result is the "high-confidence hallucination" — wrong, but stated with total assurance. The model isn't lying; poisoned data has simply borrowed its mouth.
 
-![Retrieval-Augmented Generation (RAG) architecture — documents are chunked and indexed into a vector DB; at query time, relevant chunks are retrieved and injected as context into the LLM](./image/img-03-rag-diagram.svg)
+![Retrieval-Augmented Generation (RAG) architecture — documents are chunked and indexed into a vector DB; at query time, relevant chunks are retrieved and injected as context into the LLM](../ko/image/img-03-rag-diagram.svg)
 *▲ Full RAG pipeline. Feed documents in without preprocessing and the context is already poisoned — producing high-confidence hallucinations | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:RAG_diagram.svg)*
 
 > [!callout]
@@ -104,7 +104,7 @@ So what did the few that landed in production and returned 171% ROI do different
 
 The difference shows up in budget allocation, too. Organizations that delivered results put 50–70% of their AI budget into data preparation. That means money went first to data pipelines, evaluation infrastructure, monitoring, and operations staff — not model licenses or fine-tuning. More was spent keeping data alive in production than on flashy model demos.
 
-![Supervised machine learning pipeline in a nutshell — training data flows through an ML algorithm to produce a model, which then takes new input and generates predictions](./image/img-01-supervised-ml.svg)
+![Supervised machine learning pipeline in a nutshell — training data flows through an ML algorithm to produce a model, which then takes new input and generates predictions](../ko/image/img-01-supervised-ml.svg)
 *▲ The ML pipeline starts with training data. Winning organizations finished this first box before touching the model | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Supervised_machine_learning_in_a_nutshell.svg)*
 
 Success tends to look modest. One case that automated back-office document review saved $2–10M a year — not from a headline-grabbing giant agent, but from a narrow task where the data was well prepared. Another striking point in MIT's analysis: success rates were 33% for systems built in-house, versus 67% (double) for those built with specialized vendors. The know-how to make data production-ready is scarcer than the model itself, so those who brought that know-how in from outside succeeded more often.

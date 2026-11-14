@@ -38,7 +38,7 @@ We distilled the size and direction of the shift into four numbers. Each shows o
 
 Building an AI model requires data shaped by human hands. For a long time, labeling — drawing boxes on images and attaching answers to sentences — sat at the center of that work. The market is still large. Leading labs like OpenAI, Anthropic, and Meta spend on the order of a billion dollars a year on human-curated data, and the labeling market itself is growing at more than fifty percent a year.
 
-![Ground-truth vs. predicted bounding box comparison on a stop-sign image illustrating object-detection labeling](./image/img-01-bounding-box-iou.jpg)
+![Ground-truth vs. predicted bounding box comparison on a stop-sign image illustrating object-detection labeling](../ko/image/img-01-bounding-box-iou.jpg)
 *▲ The classic shape of labeling — attach one answer and you're done. Here, a human-drawn ground-truth box (green) is compared against a model's predicted box (red) in object detection | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Intersection_over_Union_-_object_detection_bounding_boxes.jpg)*
 
 Yet the center of gravity of value has begun to shift. The cheaply scraped internet text is largely exhausted, and standard labeling has become ordinary work as tooling improved and the crowd of participants grew. What a model really lacks to reach its next stage is not more answer keys but the experience of walking through workflows that used to live only inside an expert's head. As the price of a single label fell, the price of designing that experience rose.
@@ -51,7 +51,7 @@ An RL environment is an interactive sandbox that mimics real software. When an a
 
 The reason for the shift is that the nature of the data has changed. a16z's Jennifer Li noted that the large AI labs are each building RL environments in-house, and analyses from several investors frame environments and evaluation as the new dataset. A historical analogy is often cited. Before the 1990s, semiconductor design was fragile because it lacked simulation and verification tools; design automation tools known as EDA pulled correctness upstream and transformed the industry. The claim is that the same shift is now happening in AI models.
 
-![A 12-inch semiconductor wafer with dies laid out in a grid, evoking pre-EDA chip design](./image/img-02-semiconductor-wafer.jpg)
+![A 12-inch semiconductor wafer with dies laid out in a grid, evoking pre-EDA chip design](../ko/image/img-02-semiconductor-wafer.jpg)
 *▲ Just as chip design was fragile before verification tools existed, a result graded against no rubric has no way of being called right or wrong — a 12-inch semiconductor wafer | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Semiconductor_Wafer_of_Microelectronics.jpg)*
 
 Scale also backs the direction. Anthropic is reported to be discussing more than a billion dollars in spending on RL environments alone over the next year. That figure, however, comes from a secondary citation rather than the original reporting, so it is safer to read it as a signal of direction than as a precise number.
@@ -76,7 +76,7 @@ Here is where the structure gets interesting. The value of an environment comes 
 
 What happens when supply concentrates in a few hands has already shown itself once. In June 2025, when Meta bought a 49 percent stake in Scale AI for 14.3 billion dollars and the founder moved to Meta, the rival labs that had been Scale's major customers pulled out one after another. Google cut its spending, and OpenAI wound down the partnership. The problem was not the contract but the structure: the moment a neutral supplier is vertically tied to a specific Big Tech firm, the very neutrality that made that supplier valuable collapses. Scale ultimately pivoted toward the place free of this problem, putting weight on the US government and defense market, where alignment with one camp is an asset rather than a flaw.
 
-![Official portrait of Alexandr Wang, Scale AI's founder, who moved to Meta as Chief AI Officer](./image/img-03-alexandr-wang-meta.jpg)
+![Official portrait of Alexandr Wang, Scale AI's founder, who moved to Meta as Chief AI Officer](../ko/image/img-03-alexandr-wang-meta.jpg)
 *▲ Scale AI founder Alexandr Wang moved to Meta as Chief AI Officer following Meta's stake acquisition | Source: [Meta Platforms, Inc. / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Alexandr_Wang,_Chief_A.I._Officer,_Meta.jpg)*
 
 This lesson lands heavier now, of all times, because an RL environment carries far deeper exposure than a label. A label is a single artifact, but an environment inscribes a structure that reproduces a company's real internal workflows, behavior patterns of a model not yet public, and the lab's training strategy embedded in task design and grading rubrics. To look into an environment is close to looking into what a lab is trying to do well, and how.
@@ -90,7 +90,7 @@ As exposure deepened, the labs changed how they procure. The standard operating 
 
 There is evidence for it. Anthropic hired a head of data operations to own the data strategy across RLHF, safety, and agentic workflows and to coordinate outside vendors. OpenAI likewise has an in-house human-data team and its own labeling tooling. The biggest buyers came to see dependence on a few vendors as a structural risk and pulled the center of gravity inward on their own.
 
-![Exterior of the Pioneer Building in San Francisco, OpenAI's former headquarters](./image/img-04-openai-pioneer-building.jpg)
+![Exterior of the Pioneer Building in San Francisco, OpenAI's former headquarters](../ko/image/img-04-openai-pioneer-building.jpg)
 *▲ The Pioneer Building in San Francisco, once OpenAI's headquarters — the kind of building where keeping the brain inside and the hands outside actually gets coordinated | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Pioneer_Building,_San_Francisco_(2019)_-1.jpg)*
 
 The ones who gain from this flow are the neutral vendors that lead with not belonging to any one lab. Snorkel AI, which pivoted toward expert-evaluation data; Toloka, which moved from crowdsourcing to expert and agentic data; and AfterQuery, which reached a hundred million dollars in annualized revenue within about a year of founding — all put neutrality forward as a core selling point. Several analyses expect this market to be sharply reshaped again between 2026 and 2030, with the winners being not simple tool vendors but thought-partner organizations that build trust alongside the frontier labs.

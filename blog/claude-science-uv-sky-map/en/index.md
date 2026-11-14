@@ -38,7 +38,7 @@ Source: [Anthropic, "The Missing Map of the Sky" (2026-10-08)](https://www.anthr
 <!-- stat-card -->
 **38,000** — GALEX observations behind the map — When a human pointed at the glow marks, every one of them was corrected again
 
-![The finished all-sky ultraviolet map built by Anthropic's Claude Science. A bright violet band marks the galactic plane, with faint diffuse glow and scattered stars above and below it](./image/img-01-uv-sky-map-full.webp)
+![The finished all-sky ultraviolet map built by Anthropic's Claude Science. A bright violet band marks the galactic plane, with faint diffuse glow and scattered stars above and below it](../ko/image/img-01-uv-sky-map-full.webp)
 *▲ The finished all-sky ultraviolet map. The brightest band is the plane of our own galaxy | Source: [Anthropic, "The Missing Map of the Sky"](https://www.anthropic.com/research/the-missing-map-of-the-sky)*
 
 ## A Third of Our Sky Has No Ultraviolet Record
@@ -47,7 +47,7 @@ Ultraviolet is light that cannot be observed from the ground. The ozone layer ab
 
 The widest sweep ever made in this band was NASA's GALEX. Between 2003 and 2013 it imaged roughly two-thirds of the sky across some 38,000 observations. There was a reason the rest was left out. Very bright stars can damage the detector, so they were skipped on purpose, and the plane of our own galaxy sits among the places avoided that way. The sky where the most stars are born was also the most awkward to observe.
 
-![Four panels showing the ultraviolet map going from raw GALEX coverage to the finished map, with black patches marking where no ultraviolet data existed](./image/img-02-inpainting-progress.webp)
+![Four panels showing the ultraviolet map going from raw GALEX coverage to the finished map, with black patches marking where no ultraviolet data existed](../ko/image/img-02-inpainting-progress.webp)
 *▲ From raw GALEX coverage (①) to the finished map (④). The black patches are where no ultraviolet observation existed | Source: [Anthropic](https://www.anthropic.com/research/the-missing-map-of-the-sky)*
 
 Attempts to fill the gaps were made. NASA's Swift, the far-ultraviolet spectrograph FIMS/SPEAR aboard Korea's STSAT-1, and Europe's TD-1 each added observations of their own. Even so, a third of the sky was left with no ultraviolet record whatsoever. Gathering the scattered observations into one coordinate frame was still undone, and the reason it had been put off was not a missing technique. The calibration work is tedious and finicky and takes weeks or more. No astronomer had that much research time to give away.
@@ -62,7 +62,7 @@ The whole collaboration spread over several days. Work that nobody had touched b
 
 The method used to fill the remaining third is called inpainting. The idea is the same as restoring an erased part of a photograph from its surroundings, except that the surrounding context here is not the neighboring pixel but another wavelength. Maps of the same patch of sky in visible, infrared and radio light already exist. Claude learned from the two-thirds where ultraviolet had been imaged how ultraviolet brightness relates to brightness in those bands, then applied that relation to the third with no ultraviolet data to estimate how each point would look.
 
-![The same patch of sky imaged in visible light, infrared and radio. Stars stand out in visible light, dust in infrared, and hydrogen gas in radio, all tracing the galactic plane](./image/img-03-three-wavelengths.jpg)
+![The same patch of sky imaged in visible light, infrared and radio. Stars stand out in visible light, dust in infrared, and hydrogen gas in radio, all tracing the galactic plane](../ko/image/img-03-three-wavelengths.jpg)
 *▲ The same sky in visible, infrared and radio light. The ultraviolet map estimated its blanks from the relation learned across these three | Source: [Anthropic](https://www.anthropic.com/research/the-missing-map-of-the-sky) (ESA Gaia DR3, NASA WISE, HI4PI)*
 
 The underdrawing used for the blanks is written down by name. One is the dust map built by the European Space Agency's Planck, the other a hydrogen-alpha map that picks out one particular emission from hydrogen. Across the ultraviolet sky the broad glow comes mostly from dust and gas lit by starlight, so maps that already carry the distribution of those two became the base layer for the blanks.
@@ -96,7 +96,7 @@ Turn that around and the condition of unlabeled data comes into view as well. Th
 
 With the map all but finished, Ménard saw something odd in the dark regions. Faint circles scattered about, each a shade brighter or darker than its surroundings. They were not objects in the sky but the footprint of the field of view GALEX left behind with every exposure. The cause was residual glow rising off the Earth's atmosphere, which mixed into each observation differently and had not been fully subtracted.
 
-![Three close-ups of a dark region of the map. The leftmost panel shows clear circular footprints from individual observations, the middle still shows faint traces after a first correction, and the rightmost is the finished map with no traces left](./image/img-04-glow-artifact.webp)
+![Three close-ups of a dark region of the map. The leftmost panel shows clear circular footprints from individual observations, the middle still shows faint traces after a first correction, and the rightmost is the finished map with no traces left](../ko/image/img-04-glow-artifact.webp)
 *▲ Left to right: individual-observation glow marks, faint traces remaining after a first correction, and the finished map. The flaw Ménard caught disappears across this sequence | Source: [Anthropic](https://www.anthropic.com/research/the-missing-map-of-the-sky)*
 
 Ménard told Claude that he could see disks marked by individual observations and asked whether it could fix them, and Claude recalibrated that glow across all 38,000 observations. The part worth dwelling on is not the speed of the fix. Anthropic writes that the map had passed two rounds of review by other agents without the problem being caught.

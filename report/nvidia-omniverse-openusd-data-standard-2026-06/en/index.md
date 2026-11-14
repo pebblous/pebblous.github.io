@@ -36,7 +36,7 @@ _Once the standard is laid, who guarantees the quality of synthetic data?_
 
 The 3D industry's long-standing pain was "export/import hell." Every time a designer moved a model built in Maya into Blender, or CAD data into a simulator, they had to convert formats — and in the conversion, material, scale, and hierarchy information drifted out of alignment. Data describing the same factory existed in a different shape in every tool. OpenUSD (Universal Scene Description) is the technology that merges these fragments into a single scene without export/import, and Omniverse is the collaboration and simulation infrastructure that lets multiple tools edit that same scene together in real time.
 
-![A 3D scene described in OpenUSD — declarative syntax such as def Sphere and references expressing objects, hierarchy, and references](./image/img-01-openusd-scene.png)
+![A 3D scene described in OpenUSD — declarative syntax such as def Sphere and references expressing objects, hierarchy, and references](../ko/image/img-01-openusd-scene.png)
 *▲ OpenUSD describes a 3D scene with declarative syntax (`def Sphere`, `references`) — the skeleton of a standard that places data once shaped differently in each tool onto a single definitive syntax. | Source: [Isaac Lab (arXiv:2511.04831)](https://arxiv.org/abs/2511.04831)*
 
 The significance of the Core Specification 1.0 announced on December 17, 2025 is often misread. This is not the addition of new features. It pins down, for the first time, the core algorithms of OpenUSD — the syntax and data types, the composition algorithm, stage construction, value resolution, and the USDA/USDC/USDZ formats — as a "normative reference." It takes behavior that had functioned as a de facto standard and fixes it as a definitive syntax that anyone can implement and verify. The mission statement of the standards alliance AOUSD compresses that character.
@@ -105,14 +105,14 @@ If an agent executes these skills autonomously, a governance question follows: "
 
 An agent building a 3D scene does not simply mean faster automation. The academic literature shows that a quality-verification loop has to live inside it. SAGE (arXiv:2602.10116) addresses scalable agentic 3D scene generation, improving scene quality through an iterative loop that critiques the generated scene. In other words, good agentic scene generation is not "build and done" but a cycle of "build, evaluate, fix." This insight leads straight into the heart of Section 4 — that generating data and verifying whether that data is sufficient are separate tasks.
 
-![Isaac Lab simulation — a humanoid robot picking a box in a virtual warehouse, with exteroceptive observation inputs such as RGB, depth, and segmentation](./image/img-02-isaac-sim-robot.png)
+![Isaac Lab simulation — a humanoid robot picking a box in a virtual warehouse, with exteroceptive observation inputs such as RGB, depth, and segmentation](../ko/image/img-02-isaac-sim-robot.png)
 *▲ What the simulation layer actually looks like — a humanoid picks a box in a virtual warehouse while the same scene is observed simultaneously as RGB, depth, and segmentation. This is how synthetic data is generated. | Source: [Isaac Lab (arXiv:2511.04831)](https://arxiv.org/abs/2511.04831)*
 
 ## The Synthetic-Data Trap — Not "Volume" but "Sufficiency"
 
 Omniverse's most powerful promise is synthetic data. If robot demonstration data that would take 9 months in the real world can be made virtually in just 11 hours, the data-scarcity problem in robot learning looks solved. NVIDIA's humanoid foundation model GR00T N1 did in fact generate 780,000 synthetic trajectories in 11 hours. But the scorecard behind that dazzling number tells a different story.
 
-![Data pyramid for robot foundation model training — moving down, web and human-video data grow in quantity; moving up, synthetic and real-world data grow in embodiment-specificity](./image/img-03-data-pyramid.png)
+![Data pyramid for robot foundation model training — moving down, web and human-video data grow in quantity; moving up, synthetic and real-world data grow in embodiment-specificity](../ko/image/img-03-data-pyramid.png)
 *▲ GR00T N1's training-data pyramid — rising from web and human video (high quantity) to synthetic and real-world data (high specificity). Synthetic data fills the middle of quantity and specificity, but that does not by itself mean sufficiency. | Source: [GR00T N1 (arXiv:2503.14734)](https://arxiv.org/abs/2503.14734)*
 
 On the RoboCasa benchmark, success rate rises as data grows, but the curve quickly hits a ceiling: 17.4% at 30 demos, 32.1% at 100 demos, 49.6% at 300 demos. Even a 10× increase in data does not break the half-way wall. A precise pick-and-place task stayed at 2.2% even with 100 demos. The bars below show that "data ceiling."
@@ -146,7 +146,7 @@ FactoryBench, announced in May 2026, repeats the same message in the industrial 
 
 How deeply OpenUSD is embedded in simulation infrastructure shows in the training frameworks. Isaac Lab (arXiv:2511.04831) uses USD prototypes as the unit for building training environments. That means USD is the most basic building block of the virtual world a robot learns in. But standardizing the syntax that describes a scene does not automatically guarantee that scene's physical accuracy, diversity, or coverage. Even for a scene written in the same syntax, whether it represents the real world is an entirely different question.
 
-![Simulation pipeline running from OpenUSD through PhysX (GPU tensors) to Isaac Lab — USD as the most basic unit of the training environment](./image/img-04-usd-physx-stack.png)
+![Simulation pipeline running from OpenUSD through PhysX (GPU tensors) to Isaac Lab — USD as the most basic unit of the training environment](../ko/image/img-04-usd-physx-stack.png)
 *▲ OpenUSD → PhysX (GPU tensors) → Isaac Lab. USD is the most basic brick of the training environment. Yet standardizing the format does not guarantee that scene's physical accuracy or coverage. | Source: [Isaac Lab (arXiv:2511.04831)](https://arxiv.org/abs/2511.04831)*
 
 This gap has been quantified in the literature. Fidelity-Aware (arXiv:2509.24797) shows that a "fidelity gap" induces out-of-distribution failure, and the Reality Gap survey (arXiv:2510.20808) documents how the scope of domain randomization expands sharply with task complexity. In other words, the harder the task, the more explosively the space of variation a simulation must cover widens. Judging whether that wide space has been filled sufficiently is precisely the domain of quality.

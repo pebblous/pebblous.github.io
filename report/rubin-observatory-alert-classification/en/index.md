@@ -20,7 +20,7 @@ _The Rubin Observatory_
 
 > And the trustworthiness of every verdict that classifier delivers comes, in the end, from the quality of the labels it learned from. When data structurally exceeds a human's capacity to review it, "AI-Ready" stops meaning merely "data you can train on." It comes to mean "data you can trust, prioritize, and select from." Rubin is a reference case that demonstrates this proposition at the extreme scale of astronomy.
 
-![The Vera C. Rubin Observatory dome atop Cerro Pachón in Chile](./image/img-01-observatory-dome.jpg)
+![The Vera C. Rubin Observatory dome atop Cerro Pachón in Chile](../ko/image/img-01-observatory-dome.jpg)
 *▲ The Vera C. Rubin Observatory atop Cerro Pachón in the Chilean Andes. Its 8.4-meter primary mirror and 3,200-megapixel camera sweep the sky from inside this dome every night. | Source: [RubinObs/NSF/AURA, Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:A_View_from_Rubin_(rubin-P1034013Dome-CC).jpg)*
 
 **Editor's note.** Wherever data outgrows a human's capacity to review it, and the question becomes what to trust and select, Pebblous tends to pay attention. This piece does not simply list how impressive Rubin is. It separates, step by step, the automated gates a single change in light passes through: becoming an alert, clearing a filter, getting classified, and finally being triaged into a candidate for human review. Because this is a young facility, the numbers shift depending on when you ask. Where even official sources disagree, as they do on the nightly alert volume, we cite both and label the nature of each figure (announced target, technical spec, early-operations measurement).
@@ -45,7 +45,7 @@ Four numbers frame this piece. The first two capture the gap between "how much p
 
 For a long time, "progress in astronomy" meant a bigger mirror. From Galileo's palm-sized lens to Palomar's 5-meter glass, the competition ran in one direction: gather more of the faintest light. Rubin's 8.4-meter primary mirror sits squarely in that lineage. But what Rubin changed is not the size of the mirror; it is the rhythm of observation. The largest digital camera ever built, at 3,200 megapixels, photographs a fresh patch of sky every 40 seconds. A single field of view spans 9.6 square degrees, more than 40 times the area of the full moon. Repeat that all night, and roughly 1,000 images and about 10 TB of data pile up.
 
-![The Rubin Observatory's 3,200-megapixel LSST Camera photographed in a cleanroom during assembly](./image/img-02-lsst-camera.jpg)
+![The Rubin Observatory's 3,200-megapixel LSST Camera photographed in a cleanroom during assembly](../ko/image/img-02-lsst-camera.jpg)
 *▲ The largest digital camera ever built, the 3,200-megapixel LSST Camera, photographed in a cleanroom during assembly. It captures a patch of sky 40 times the area of the full moon every 40 seconds. | Source: [NOIRLab/NSF/AURA, Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:LSST_Camera_(IMG_0827-CC).jpg)*
 
 The hard part comes next. Taking the image is one thing; picking out "what changed" inside it is another. Whenever Rubin detects an object whose brightness or position has shifted relative to earlier observations, it generates an alert: a small data packet holding the object's coordinates, its change in brightness, and its past history. As for how many of these come out in a single night, even the official sources disagree. Rubin's press release states "up to seven million per night," while the same observatory's technical reference page lists "about ten million." And on the night the first alerts actually went out (February 24, 2026), roughly 800,000 were generated.
@@ -134,7 +134,7 @@ Push one step further and the problem becomes less about how high the score is t
 
 Everything so far converges on a single condition: data structurally exceeds a human's capacity to review it. Alerts pour out at a billion a year, while spectroscopic confirmation runs to 10,000–100,000, under 1% for supernovae. Under that condition, triage, choosing what to look at first, is not a choice but a structural necessity. The plan of "a human will review every alert" was never possible to begin with.
 
-![A portion of the Virgo Cluster captured by Rubin Observatory — the first-look image packed with hundreds of galaxies](./image/img-03-virgo-cluster-firstlook.jpg)
+![A portion of the Virgo Cluster captured by Rubin Observatory — the first-look image packed with hundreds of galaxies](../ko/image/img-03-virgo-cluster-firstlook.jpg)
 *▲ A portion of the Virgo Cluster from Rubin Observatory's first-look release. The full composite, built from roughly 1,100 exposures, contains about 10 million galaxies — this is the scale of data pouring out every night that no human could ever review one by one. | Source: [NSF–DOE Vera C. Rubin Observatory, Wikimedia Commons (CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Virgo_Cluster_Rubin.png)*
 
 ### 5.1. "Choosing what to look at" becomes the science

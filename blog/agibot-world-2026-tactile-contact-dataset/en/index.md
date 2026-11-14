@@ -38,7 +38,7 @@ Source: [The Robot Report](https://www.therobotreport.com/agibot-world-2026-data
 <!-- stat-card -->
 **<2M** — Open manipulation episodes — Against 3.9M robots in operation
 
-![AgiBot G2 dual-arm humanoid robot full body — equipped with Zhixing 90D gripper and OmniHand for dexterous manipulation](./image/img-01-agibot-g2-robot.png)
+![AgiBot G2 dual-arm humanoid robot full body — equipped with Zhixing 90D gripper and OmniHand for dexterous manipulation](../ko/image/img-01-agibot-g2-robot.png)
 *▲ AgiBot G2 dual-arm humanoid robot — the data-collection platform for AgiBot World 2026, fitted with Zhixing 90D grippers and OmniHand for dexterous manipulation | Source: [AgiBot](https://www.agibot.com/article/231/detail/72.html)*
 
 ## What Success-Only Data Can't Teach

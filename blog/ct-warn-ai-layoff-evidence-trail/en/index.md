@@ -42,7 +42,7 @@ Source: Connecticut Public Act 26-15 (Substitute Senate Bill No. 5), compiled fr
 
 The act Connecticut passed this year is titled An Act Concerning Online Safety, and it is a large one: 39 sections across 74 pages. It reaches online safety, health care, employment and the labeling of generative AI content all at once. Section 26, the piece that takes effect on October 1, reads in full as follows.
 
-![Connecticut State Capitol building with its gold dome in Hartford](./image/img-01-ct-state-capitol.jpg)
+![Connecticut State Capitol building with its gold dome in Hartford](../ko/image/img-01-ct-state-capitol.jpg)
 *▲ The Connecticut State Capitol in Hartford, where Public Act 26-15 was passed | Source: [Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Connecticut_State_Capitol,_Hartford.jpg)*
 
 "Each employer that serves written notice on the Labor Department pursuant to 29 USC 2102(a), as amended from time to time, shall disclose to the department, in a form and manner prescribed by the Labor Commissioner, whether the layoffs that are the subject of such written notice are related to the employer's use of artificial intelligence or another technological change."
@@ -113,7 +113,7 @@ How hard it is to put the relation into a single line already shows in documents
 
 Amy Coleman, Chief People Officer, Microsoft, company blog, July 6, 2026
 
-![Entrance to a Microsoft Redmond campus building with the company logo sign](./image/img-02-microsoft-redmond-campus.jpg)
+![Entrance to a Microsoft Redmond campus building with the company logo sign](../ko/image/img-02-microsoft-redmond-campus.jpg)
 *▲ Microsoft's Redmond campus, where the company announced roughly 4,800 job cuts on July 6, 2026 | Source: [Wikimedia Commons (CC BY 3.0)](https://commons.wikimedia.org/wiki/File:Building_92_of_Microsoft_Redmond_Campus_-_panoramio.jpg)*
 
 The two sentences do not contradict each other. A model taking over one position and a company deciding afresh where to put its money and its people are separate events. In the same note the company said it had redeployed more than 4,000 employees into new roles over the past year, including another 500 that month, and that more than 30 percent of eligible employees chose to take part in its recent voluntary retirement program. Microsoft is not a Connecticut case and this was not a filing made under this law. It is simply a recent instance of what it looks like when a company explains in its own words how a layoff and AI relate. Once that explanation has to fit on one line, people inside one company disagree about whether the answer is yes or no.

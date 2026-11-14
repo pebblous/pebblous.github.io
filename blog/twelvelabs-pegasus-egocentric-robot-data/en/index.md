@@ -42,7 +42,7 @@ Source: [VentureBeat (2026-10-06)](https://venturebeat.com/technology/twelvelabs
 
 To teach a robot to use its hands, you have to show it the hands of people at work. That is why robot companies are collecting first-person video, shot from a camera worn on the head or the chest so that it captures exactly what the wearer sees. The industry calls it egocentric video, and most of it is ordinary: washing dishes, fixing a bicycle, cooking a meal.
 
-![TwelveLabs Pegasus 1.6 launch visual with timestamped robot and factory footage](./image/img-01-pegasus-launch.png)
+![TwelveLabs Pegasus 1.6 launch visual with timestamped robot and factory footage](../ko/image/img-01-pegasus-launch.png)
 *▲ TwelveLabs' Pegasus 1.6 launch visual, showing robot and factory footage being broken into time-stamped segments on the way to becoming robot training data | Source: [AI Times (image: TwelveLabs)](https://www.aitimes.com/news/articleView.html?idxno=216022)*
 
 The trouble is that raw footage is not training material. For a model to learn from it, someone has to write down which stretch of video is which action, and how a hand took hold of what. Until now a person wrote that down.
@@ -58,7 +58,7 @@ Teams are pushing on this bottleneck from different sides. Some build clean data
 
 TwelveLabs is a video understanding company founded in the United States in 2021. It runs two model families: Marengo, which finds scenes and sounds inside video, and Pegasus, which turns those results into text. Version 1.6 narrows the Pegasus line to first-person footage, and the company describes the model as turning raw video into time-stamped metadata.
 
-![Diagram of six reasons egocentric footage breaks general-purpose video models](./image/img-02-egocentric-breaks-models.jpg)
+![Diagram of six reasons egocentric footage breaks general-purpose video models](../ko/image/img-02-egocentric-breaks-models.jpg)
 *▲ TwelveLabs' breakdown of why egocentric footage breaks general-purpose video models: unfamiliar viewpoint, off-center action, lens distortion, camera motion, absent narration, and rapid hand motion | Source: [The Robot Report (image: TwelveLabs)](https://www.therobotreport.com/pegasus-1-6-brings-video-understanding-physical-ai-says-twelvelabs/)*
 
 Robots are not the only target the company names. The press release gathers drones, autonomous vehicles and industrial equipment under the heading of physical AI, and says the model helps those machines recognize and work in real environments. In this announcement, though, only one of them arrives with numbers and uses attached, and that is robot training data.
@@ -85,7 +85,7 @@ On speed, the company has put out one number. Chief executive Jae Lee says about
 
 Our mission has always been to help machines understand how the world works through video. Physical AI is the next expression of that mission.
 
-![Pegasus 1.6 screen capture labeling hand actions in a first-person cooking video](./image/img-03-atomic-actions-demo.jpg)
+![Pegasus 1.6 screen capture labeling hand actions in a first-person cooking video](../ko/image/img-03-atomic-actions-demo.jpg)
 *▲ A Pegasus 1.6 screen capture breaking a first-person cooking video into 50 atomic actions, labeling moments like "grab bottle" and "open cap" by hand. This is what the throughput claim is actually describing | Source: [The Robot Report (image: TwelveLabs)](https://www.therobotreport.com/pegasus-1-6-brings-video-understanding-physical-ai-says-twelvelabs/)*
 
 The price is public too. Video going in costs $1.75 an hour, and the text the model produces costs $7.50 per million tokens. Enterprise customers negotiate separately. Set those figures beside a process that attached 155 hours of labeling to one hour of video and they sit orders of magnitude apart.

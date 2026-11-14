@@ -44,7 +44,7 @@ A Meta spokesperson confirmed the Sundial acquisition on October 23. Axios broke
 
 Both founders came out of Meta. Zhuo joined Facebook as an intern and rose to vice president of product design; Narayanan was an analytics director at Facebook and head of analytics at Instagram before running analytics at Sequoia Capital. Sundial is reported to have been founded outside Meta in 2021, and the announcement post dates that moment to "nearly six years ago." The same post says the company started before the AI wave arrived and then rebuilt itself to be AI-native. The company they grew outside now goes in with them.
 
-![Julie Zhuo speaking on stage at a conference — former Facebook VP of Product Design and co-founder of Sundial](./image/img-01-julie-zhuo.jpg)
+![Julie Zhuo speaking on stage at a conference — former Facebook VP of Product Design and co-founder of Sundial](../ko/image/img-01-julie-zhuo.jpg)
 *▲ Sundial co-founder Julie Zhuo. She was Facebook's vice president of product design before co-founding the company with Narayanan in 2021, and now returns to Meta through this acquisition | Source: [Wikimedia Commons (Collision Conf, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Julie_Zhuo_Collision_Conf_2018_04.jpg)*
 
 The shape of the deal gets a little clearer when the two numbers sit side by side. At its second-quarter earnings report at the end of July, Meta said it expects capital expenditure of $130 billion to $145 billion this year. Data centers and chips take the largest share, and the company wrote that the money supports its AI efforts and its core business. The shorter phrasing, "$130 billion on AI," comes from press and market commentary rather than from the company. Either way the scale is clear. What that company bought this time was neither a model nor data to feed one. It was a tool for putting questions to data that has already piled up. Answering which model, which cluster, which ad actually paid for itself now looks as urgent as building the model.
@@ -77,7 +77,7 @@ The judgments in the right column do not disappear once they are automated. They
 
 Where the Sundial team lands says a little more about what Meta intends to do with the tool. Alex Schultz became Meta's first chief data officer on July 1, 2026, moving over from running marketing, with a brief to rework how the company learns and decides using AI. A new org called Data Analytics Tooling & Agents sits underneath, known internally by its initials, DATA. Narayanan leads the analytics tooling and agents side of it.
 
-![Aerial view of Meta's headquarters — home to the newly formed DATA org the Sundial team is joining](./image/img-02-meta-hq.jpg)
+![Aerial view of Meta's headquarters — home to the newly formed DATA org the Sundial team is joining](../ko/image/img-02-meta-hq.jpg)
 *▲ Meta's headquarters in Menlo Park, California. The new DATA org under Schultz and the Sundial team merge here | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Meta_HQ_2023.png)*
 
 The org's remit is written in four parts: descriptive analysis of what is happening now, finding the questions the company has not yet asked, running experiments such as A/B tests, and watching the quality of AI and data products to raise an alert when something goes off. On LinkedIn, Schultz wrote that "AI has created effectively unlimited demand for insights, and we want to define the future of AI analytics."

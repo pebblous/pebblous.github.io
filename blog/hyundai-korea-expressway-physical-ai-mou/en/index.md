@@ -48,7 +48,7 @@ Jung said at the ceremony that robotics and mobility technologies "can only be p
 
 After the signing, a robot demonstration ran at the Yangjae site. An irrigation robot watering plants, a security robot on patrol and a logistics robot carrying goods each went through their work in front of the attendees. All three are indoor and on-campus machines that already run today. The point of the demonstration was not to unveil anything new but to let people gauge what machines of roughly this capability might do once they are out on an expressway.
 
-![Jung Ho-keun, EVP of Hyundai Motor Group's Future Strategy Division, and Cho Sung-min, head of Korea Expressway Corporation's Road Traffic Research Institute, pose holding the signed memorandum of understanding](./image/img-01-mou-signing.jpg)
+![Jung Ho-keun, EVP of Hyundai Motor Group's Future Strategy Division, and Cho Sung-min, head of Korea Expressway Corporation's Road Traffic Research Institute, pose holding the signed memorandum of understanding](../ko/image/img-01-mou-signing.jpg)
 *▲ The signing ceremony at the Yangjae headquarters on September 30. Source: [Hyundai Motor Group Newsroom](https://www.hyundaimotorgroup.com/ko/news/hyundai-motor-group-korea-expressway-next-gen-charging-infrastructure-physical-ai)*
 
 ## Two Tasks Are Specific, the Third Is Not
@@ -69,7 +69,7 @@ Follow-up reporting filled in a little more about how the second task is meant t
 
 Who supplies what is listed separately in the statements. Korea Expressway Corporation provides bridges, tunnels and rest areas, facilities already in daily use, as validation sites. Hyundai Motor Group brings the technology and experience it has built developing and operating service robots and charging robots. Korea Expressway Corporation supplies the place, Hyundai Motor Group the machines. That is where the substance of the agreement lies.
 
-![Traffic passing under a bridge on a Korean expressway — the type of site physical AI inspection robots are meant to enter](./image/img-02-expressway-bridge.jpg)
+![Traffic passing under a bridge on a Korean expressway — the type of site physical AI inspection robots are meant to enter](../ko/image/img-02-expressway-bridge.jpg)
 *▲ The underside of an expressway bridge managed by Korea Expressway Corporation — the hazard type the second task targets. Source: [Wikimedia Commons (CC0, LandAndTree)](https://commons.wikimedia.org/wiki/File:Pyeongtaek-Siheung_Expressway_Mado_JCTR-A_Bridge_20240729.jpg)*
 
 ZER01NE opened in 2018 as Hyundai Motor Group's open innovation platform. A first fund of 10 billion won in 2018 and a second of 80.5 billion won in 2021 went into 105 companies and produced more than 200 collaborations with group affiliates, and in May 2025 a third fund of 125 billion won closed, including 40 billion won from Hyundai Motor, 40 billion from Kia and 10 billion from Hyundai Motor Securities. Its investment areas are AI, robotics, hydrogen and cybersecurity. This agreement becomes the passage that opens a nationwide outdoor testing ground to the companies inside that portfolio.
@@ -84,7 +84,7 @@ Outdoors is expensive because the conditions refuse to hold still. On a factory 
 
 The 4,483 kilometers Korea Expressway Corporation manages hold all of that variation at once. Its worth as a space is that road condition, climate and traffic volume, three separate variables, can be validated together at scale. Coastal stretches and mountain stretches sit inside a single route, and the same point wears a different face each season. If the records one robot would earn in a year become reachable at the scale of a whole route, the rate at which data arrives changes outright.
 
-![A tunnel entrance on a Korean expressway cutting through a mountain, with trucks and cars driving through — outdoor conditions that shift constantly, unlike a factory floor](./image/img-03-expressway-tunnel.jpg)
+![A tunnel entrance on a Korean expressway cutting through a mountain, with trucks and cars driving through — outdoor conditions that shift constantly, unlike a factory floor](../ko/image/img-03-expressway-tunnel.jpg)
 *▲ An expressway tunnel where day, night and weather keep changing — conditions a laboratory cannot reproduce. Source: [Wikimedia Commons (CC0, LandAndTree)](https://commons.wikimedia.org/wiki/File:Expressway_No.100_Suri_Tunnel_20240722.jpg)*
 
 > [!callout]

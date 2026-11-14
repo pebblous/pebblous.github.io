@@ -44,7 +44,7 @@ When we say AI helps science, it usually sounds like a story about speed: comput
 
 The prototype dates to 2021. DeepMind, working with mathematicians at Oxford and Sydney, showed a deep-learning model eighteen geometric features of 243,000 knots. The model pointed to a connection between the knots' geometric and algebraic properties that humans hadn't focused on. The mathematicians followed that signal and proved a new theorem. The model didn't hand over an answer. It told them where to look. Davies and colleagues published the result in _Nature_, describing it as "AI guiding the intuition of mathematicians." It was the first scene of a machine intervening in discovery's opening question.
 
-![Trefoil knot — a fundamental object in knot theory. In Davies et al. 2021, AI analyzed the geometric features of 243,000 such knots and proposed the conjecture that led to a new theorem](./image/img-01-trefoil-knot.png)
+![Trefoil knot — a fundamental object in knot theory. In Davies et al. 2021, AI analyzed the geometric features of 243,000 such knots and proposed the conjecture that led to a new theorem](../ko/image/img-01-trefoil-knot.png)
 *▲ The trefoil knot — one of the most fundamental objects in knot theory. The DeepMind–Oxford team fed geometric data from 243,000 such knots to a model, which then proposed, as a conjecture, a geometric-algebraic connection mathematicians hadn't noticed. | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Blue_Trefoil_Knot.png)*
 
 ### 1.1. A Ruler: The Three Stages of Discovery
@@ -78,7 +78,7 @@ Here the conditions matter. The 2024 result depended on experts hand-translating
 | IMO 2024 | 28/42 · silver-level (cutoff 29) | Experts hand-translate to Lean, 2–3 days of compute |
 | IMO 2025 | 35/42 · officially certified gold | Direct natural-language solving, standard exam time, coordinator-graded |
 
-![AlphaGeometry 2 proof diagram — Hard (direct proof difficult), Reformulation (language model proposes auxiliary point X'), Solved by a double (DDAR proves X equals X')](./image/img-02-alphageom-proof.png)
+![AlphaGeometry 2 proof diagram — Hard (direct proof difficult), Reformulation (language model proposes auxiliary point X'), Solved by a double (DDAR proves X equals X')](../ko/image/img-02-alphageom-proof.png)
 *▲ The AlphaGeometry 2 core idea: when proving that point X lies on the intersection of lines a and b is hard (left), the language model proposes an auxiliary point X' (middle), and DDAR closes the proof by showing X = X' (right). LM proposes the construction; the symbolic engine finishes it. | Source: [Trinh et al., arXiv:2502.03544 (2025)](https://arxiv.org/abs/2502.03544)*
 
 ### 2.2. New, Verifiable Knowledge — FunSearch
@@ -100,7 +100,7 @@ Working alongside these tools, Tao likened LLMs to "a confident undergraduate wh
 
 In materials science, AI's role is more direct. It re-orders which substance to try making and which experiment to run first. What differs from mathematics is that verification happens not on paper but in the lab. So the gap between the number of candidates and the number verified opens up far wider — and far more expensively.
 
-![Fluorite-type crystal structure of ceria and cubic zirconia — a representative ordered crystalline lattice of the kind GNoME predicts, with perfect 3-D atomic periodicity](./image/img-03-crystal-structure.png)
+![Fluorite-type crystal structure of ceria and cubic zirconia — a representative ordered crystalline lattice of the kind GNoME predicts, with perfect 3-D atomic periodicity](../ko/image/img-03-crystal-structure.png)
 *▲ Fluorite-type crystal structure — a representative perfectly ordered lattice of the kind GNoME predicts. DFT calculations assume exactly this kind of absolute-zero crystalline order, which is why models trained on them systematically misidentify disordered phases. | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Fluorite-like_crystal_structure_of_ceria_and_cubic_zirconia.png)*
 
 ### 3.1. Pouring Out Candidates — GNoME and the Number 2.2 Million
@@ -158,7 +158,7 @@ The previous four sections converge on a single point. The range of questions AI
 
 Every case of AI scientific discovery runs on top of a data pipeline. AlphaProof trained on 80 million formal math problems, MLIPs on more than 100 million DFT calculations, GNoME on crystal-structure data. When research and R&D organizations bring AI into a discovery workflow, the biggest bottleneck isn't the model — it's assembling data that is verifiable and provenance-traced. Three things, concretely: diagnosing what the training data fails to see (coverage and bias), designing the filter that catches false positives as candidates move to verification, and securing the data-processing quality of verification gates such as formal proof or experiment. That the heart of the A-Lab critique was the analysis quality of the verification stage tells you the weight of these three.
 
-![OMat24 dataset overview — 110+ million DFT calculations covering most of the periodic table, the data infrastructure powering AI materials discovery including generation pipeline and elemental coverage](./image/img-04-omat24-pipeline.png)
+![OMat24 dataset overview — 110+ million DFT calculations covering most of the periodic table, the data infrastructure powering AI materials discovery including generation pipeline and elemental coverage](../ko/image/img-04-omat24-pipeline.png)
 *▲ OMat24 dataset overview — more than 110 million DFT calculations, covering most of the periodic table, the data infrastructure for AI materials discovery. The range of questions AI can ask is set by the boundary of this data. | Source: [Barroso-Luque et al., arXiv:2410.12771 (2024)](https://arxiv.org/abs/2410.12771)*
 
 ### 5.2. Where Pebblous Stands

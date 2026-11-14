@@ -40,7 +40,7 @@ Althoff described the organization as going "beyond what has so far been called 
 
 Yet another word showed up in the announcement as often as performance: the promise to protect customer data. Microsoft stated flatly that it would never use customer data or IP to train its models, and it paired that with a multi-model approach supporting OpenAI, Anthropic, its own models, and open source alike. An initial customer roster that includes the London Stock Exchange Group (LSEG), Unilever, and Novo Nordisk shows that organizations with heavy regulation and data sensitivity are at the front of the line.
 
-![Industries Microsoft's Frontier Company targets for AI transformation — manufacturing robotic arm, healthcare MRI, city skyline, retail display](./image/img-01-microsoft-frontier-blog.jpeg)
+![Industries Microsoft's Frontier Company targets for AI transformation — manufacturing robotic arm, healthcare MRI, city skyline, retail display](../ko/image/img-01-microsoft-frontier-blog.jpeg)
 *▲ Industry transformation illustration released with the Frontier Company announcement — manufacturing, healthcare, finance, and retail | Source: [Microsoft Official Blog](https://blogs.microsoft.com/blog/2026/07/02/microsoft-frontier-company-ai-engineering-that-amplifies-and-protects-your-intelligence/)*
 
 > [!callout]

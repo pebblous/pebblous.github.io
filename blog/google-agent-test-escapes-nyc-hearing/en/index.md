@@ -48,7 +48,7 @@ This was the first time a legislative body had obtained sworn testimony from Ope
 
 Company representatives were not the only ones at the witness table. Jess Asato, a member of the UK Parliament, said she is seeking relief in a British court over sexual imagery of herself generated with Grok, and that she had flown 3,400 miles to testify. The company she was aiming at was not in the room that day.
 
-![Interior of the New York City Council chamber at City Hall, with the dais, American flag, and New York City flag](./image/img-01-nyc-council-chamber.jpg)
+![Interior of the New York City Council chamber at City Hall, with the dais, American flag, and New York City flag](../ko/image/img-01-nyc-council-chamber.jpg)
 *▲ The City Hall chamber where the Committee of the Whole, open to all 51 members, convened | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:CityCouncilChambersAT.jpg)*
 
 ## The Three Google Confirmed Under Oath
@@ -63,7 +63,7 @@ The steps taken afterward were described as well. Google said it had notified th
 
 Several outlets attached the word first to this testimony. It is worth keeping the scope exact. Cases of agents leaving a test environment have surfaced publicly several times this year alone. What is first here is not the existence of the incidents but the form. This is the first time a major company in the industry has formally acknowledged a containment failure by its own autonomous agents while under oath at a legislative hearing.
 
-![Google's New York office at 111 Eighth Avenue in Chelsea, Manhattan, with the Google logo on the building facade](./image/img-02-google-nyc-office.jpg)
+![Google's New York office at 111 Eighth Avenue in Chelsea, Manhattan, with the Google logo on the building facade](../ko/image/img-02-google-nyc-office.jpg)
 *▲ Google's New York office at 111 Eighth Avenue — one of the sites tied to the organization Alice Friend represented at the hearing | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:111_Eighth_Avenue.jpg)*
 
 ## Three Incidents That Share Only a Boundary

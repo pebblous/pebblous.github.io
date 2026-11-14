@@ -48,7 +48,7 @@ The publication side is what drew the most attention. METR publishes its own ana
 
 The reason Anthropic gives is a gap. It aims to close the gap between what evaluators understand about a frontier AI company's systems and what the company itself understands. In September, naming Accenture its first embedded evaluator, Anthropic wrote that no standard yet existed for what an embedded evaluator should reach or for what and how it should report. This agreement is the first time concrete numbers and conditions have been written into that blank. The cost and independence arguments around the September announcement are set out in [An AI Company Invites Its Inspectors Inside and Picks Up the Bill](/blog/anthropic-accenture-embedded-evaluator-independence/en/).
 
-![Anthropic co-founder and CEO Dario Amodei](./image/img-01-dario-amodei-techcrunch.jpg)
+![Anthropic co-founder and CEO Dario Amodei](../ko/image/img-01-dario-amodei-techcrunch.jpg)
 *▲ Dario Amodei. The company he leads gave up its veto over publication this time, while leaving the redaction categories in place | Source: [Wikimedia Commons (TechCrunch, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Dario_Amodei_at_TechCrunch_Disrupt_2023_04.jpg)*
 
 ## The Redaction Categories Are Listed Only as Examples

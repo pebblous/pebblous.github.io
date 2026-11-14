@@ -42,7 +42,7 @@ Source: [Hugging Face dataset card](https://huggingface.co/datasets/nvidia/Nemot
 
 Nemotron 3.5 Super VL is the open model NVIDIA announced on October 15. It holds 120 billion parameters in total, and 12 billion of them actually run when it handles a single question, because the model keeps many experts and wakes only the ones it needs. It reads text and images together, and a text-only sibling, Nemotron 3.5 Lightning, arrived the same day. The weight files had already been sitting on Hugging Face three days earlier, on October 12.
 
-![NVIDIA's announcement image for Nemotron 3.5 Super VL, the open model released on October 15](./image/img-01-nemotron-launch.jpeg)
+![NVIDIA's announcement image for Nemotron 3.5 Super VL, the open model released on October 15](../ko/image/img-01-nemotron-launch.jpeg)
 *▲ Nemotron 3.5 Super VL announcement image | Source: [NVIDIA official blog](https://blogs.nvidia.com/blog/nemotron-3-5-super-vl/)*
 
 The phrase NVIDIA used at the announcement was that it was opening the weights, the data and the recipe together. That means not only the model files but the data used to tune the model after training, and the procedure as well. NeMo Gym, its reinforcement learning environment, opened with them. The goal was stated plainly: let a company retrain the model on its own data in its own data center and own the result. The adopters named were Skydance, EY, Ramp, CrowdStrike, Perplexity and Salesforce.

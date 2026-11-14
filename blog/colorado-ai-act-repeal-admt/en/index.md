@@ -46,7 +46,7 @@ The law's scheduled effective date was today, June 30, 2026. It was originally s
 
 What drove this abrupt reversal? As the effective date approached, the old law drew growing criticism that its definitions were vague and its compliance burden heavy. In April 2026, Elon Musk's xAI mounted a legal challenge, and the state attorney general agreed to stay enforcement. Rather than tweak the law, lawmakers chose to tear it down and start over, by repealing it and rewriting it.
 
-![Colorado State Capitol building in Denver — the golden-domed statehouse where America's first AI law was enacted and then repealed](./image/img-01-colorado-capitol.jpg)
+![Colorado State Capitol building in Denver — the golden-domed statehouse where America's first AI law was enacted and then repealed](../ko/image/img-01-colorado-capitol.jpg)
 *▲ Colorado State Capitol, Denver — where America's first comprehensive AI law was passed in 2024 and repealed in 2026 | Source: [Ken Lund / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Colorado_State_Capitol,_Denver,_Colorado.jpg) (CC BY-SA 2.0)*
 
 > [!callout]
@@ -98,7 +98,7 @@ The United States still has no comprehensive federal AI law. As states fill that
 
 The same pattern shows up in other states. In Texas, the Responsible AI Governance Act (TRAIGA) lost its high-risk impact-assessment provisions in the final version during the legislative process. Utah narrowed its regulatory scope through follow-on amendments. California regulates, through the CCPA's ADMT rules, "technology that processes personal data to replace or substantially replace human decision-making," and Colorado and Texas borrow that structure. Rather than heavy ex-ante regulation, they are converging on a focus on data processing and transparency.
 
-![United States Capitol building in Washington D.C. — the federal legislature that has yet to pass a comprehensive AI law, leaving 45 states to fill the gap](./image/img-02-us-capitol.jpg)
+![United States Capitol building in Washington D.C. — the federal legislature that has yet to pass a comprehensive AI law, leaving 45 states to fill the gap](../ko/image/img-02-us-capitol.jpg)
 *▲ U.S. Capitol, Washington D.C. — with no comprehensive federal AI law, 45 states are filling the gap with their own statutes | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:United_States_Capitol_-_west_front.jpg) (Public Domain)*
 
 In June 2026, an executive order emerged at the federal level seeking to preempt state AI laws, but so far it has had no real preemptive effect and is dogged by constitutional disputes. For the time being, US AI regulation is likely to remain a state-by-state patchwork. What that patchwork commonly points to is clear: regulation operates not on the abstraction called the model, but in the data layer, where personal data flows into a decision.

@@ -46,7 +46,7 @@ On April 20, 2026, NVIDIA published Nemotron-Personas-Korea on Hugging Face, whe
 
 The construction process has two stages. First, a PGM directly samples demographic distributions from official Korean statistics (KOSIS 2020–2026, Supreme Court name registries, National Health Insurance Service, Korea Rural Economic Institute), producing **1 million records** of structured attribute combinations. Then Gemma-4-31B transforms these attribute sets into 7 types of Korean-language narrative personas. The critical innovation is probabilistic sampling that mirrors actual population distributions, not uniform random generation.
 
-![Nemotron-Personas-Korea PGM + LLM hybrid pipeline architecture](./image/nemotron_personas_korea_approach.png)
+![Nemotron-Personas-Korea PGM + LLM hybrid pipeline architecture](../ko/image/nemotron_personas_korea_approach.png)
 *Two-stage PGM + LLM pipeline: Official statistics → Probabilistic Graphical Model → Gemma-4-31B → 7 narrative personas (Source: NVIDIA HuggingFace)*
 
 The resulting dataset comprises **26 structured fields** (12 demographic + 7 persona + 6 attribute + 1 UUID), covering **17 metropolitan provinces**, **252+ municipalities**, **2,000+ occupations**, and approximately **209,000 unique names** (118 family names + 21,400+ given names). The age range spans 19 to 99, and the CC BY 4.0 license enables unrestricted commercial use.
@@ -144,13 +144,13 @@ The Personality Trap (arXiv:2602.03334) empirically demonstrated that LLMs syste
 
 Nemotron-Personas-Korea structurally circumvents this bias. The PGM directly samples from KOSIS distributions: a mean age of **45.2 years**, the **50s as the largest age cohort**, **17 metropolitan/provincial regions**, and **7 education levels**. The distribution charts below show how Korea's actual population structure is reflected in the dataset.
 
-![Nemotron-Personas-Korea age group distribution](./image/nemotron_personas_korea_age_group_distribution.png)
+![Nemotron-Personas-Korea age group distribution](../ko/image/nemotron_personas_korea_age_group_distribution.png)
 *Age group distribution: 50s cohort is largest, mean age 45.2 — mirroring Korea's actual population pyramid (Source: NVIDIA HuggingFace)*
 
-![Nemotron-Personas-Korea education level distribution](./image/nemotron_personas_korea_education_distribution.png)
+![Nemotron-Personas-Korea education level distribution](../ko/image/nemotron_personas_korea_education_distribution.png)
 *7-level education distribution (Source: NVIDIA HuggingFace)*
 
-![Nemotron-Personas-Korea regional education map](./image/nemotron_personas_korea_education_map.png)
+![Nemotron-Personas-Korea regional education map](../ko/image/nemotron_personas_korea_education_map.png)
 *Education levels by 17 provinces/metros (Source: NVIDIA HuggingFace)*
 
 DeepPersona's (arXiv:2511.07338) taxonomy-based sampling showing a **43% improvement** over national statistics baselines further confirms the quantitative impact of demographic alignment.
@@ -174,10 +174,10 @@ Silicon Sampling research (arXiv:2507.02919) warns of structural inconsistency a
 
 Synthetic surveys excel where traditional methods struggle: expensive pilot studies, rare population simulations, and pre-testing policy scenarios. The occupation and household type distributions below illustrate what kinds of simulations become possible.
 
-![Nemotron-Personas-Korea occupation distribution](./image/nemotron_personas_korea_occupation.png)
+![Nemotron-Personas-Korea occupation distribution](../ko/image/nemotron_personas_korea_occupation.png)
 *2,000+ occupation categories (Source: NVIDIA HuggingFace)*
 
-![Nemotron-Personas-Korea household type distribution](./image/nemotron_personas_korea_household_type_distribution.png)
+![Nemotron-Personas-Korea household type distribution](../ko/image/nemotron_personas_korea_household_type_distribution.png)
 *39 household types (Source: NVIDIA HuggingFace)*
 
 Examining what Nemotron-Personas-Korea enables reveals both its potential and its current boundaries.
@@ -222,7 +222,7 @@ Wyllie et al. (arXiv:2403.07857) demonstrated that model-induced distributional 
 
 The text length distributions across the 7 narrative fields offer a window into the quality and consistency of generated narratives. Several limitations are also directly acknowledged in the dataset card.
 
-![Nemotron-Personas-Korea field text length statistics](./image/nemotron_personas_korea_field_stats.png)
+![Nemotron-Personas-Korea field text length statistics](../ko/image/nemotron_personas_korea_field_stats.png)
 *Text length distribution statistics across 7 narrative fields (Source: NVIDIA HuggingFace)*
 
 - •**Under-19 exclusion:** Cannot be used for AI agent development involving children or adolescents

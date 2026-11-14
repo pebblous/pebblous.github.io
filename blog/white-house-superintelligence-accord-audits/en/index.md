@@ -44,7 +44,7 @@ The president signed an executive order the same day. Federal agencies are to wr
 
 Neither document points at the other. The order handles terminology in federal writing and a legal definition still to be drafted, while the accord handles an oversight procedure the industry says it will keep on its own. The page the executives signed contains no declaration about renaming anything. Same day, same room, separate legal tracks. One sentence in the accord does leave a door open between them: "Over time, it may make sense to codify these steps into laws or regulations." A promise now, an obligation perhaps later, and a line that shows how the accord understands its own standing.
 
-![Official portrait of President Trump, who called the accord morally binding](./image/img-01-trump-signing.jpg)
+![Official portrait of President Trump, who called the accord morally binding](../ko/image/img-01-trump-signing.jpg)
 *▲ President Trump, who called the accord "morally binding." Official presidential portrait. Source: [The White House](https://www.whitehouse.gov/)*
 
 ## The Accord Promises Four Layers of Oversight

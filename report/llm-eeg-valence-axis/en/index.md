@@ -74,7 +74,7 @@ The first thing to doubt is whether an axis built this way works at all. Can a s
 
 Nor was it a lucky outcome from one setup. Swapping the extraction backbone for a sentence-embedding model (SBERT) or a RoBERTa fine-tuned on natural language inference left the discriminative power intact — the RoBERTa version was actually sharper, at AUC 0.912. Run the same procedure on the visual representations of CLIP, which handles images rather than text, and the valence direction survived at r = 0.869. Change the extraction model, change the medium from words to pictures, and the same direction kept resurfacing.
 
-![A single one-dimensional valence axis (V-axis), extracted from nine LLM emotion stories, is recovered across language models, human EEG, and EEG-classifier representations](./image/img-01-v-axis-overview.png)
+![A single one-dimensional valence axis (V-axis), extracted from nine LLM emotion stories, is recovered across language models, human EEG, and EEG-classifier representations](../ko/image/img-01-v-axis-overview.png)
 *▲ One valence axis is recovered across language models, human EEG, and EEG classifiers alike (paper Figure 1). | Source: [arXiv:2606.00129](https://arxiv.org/html/2606.00129v1)*
 
 ### 2.1. Fourteen Models, Nearly the Same Axis
@@ -89,7 +89,7 @@ The EEG side is the FACED dataset: 123 healthy university students recorded on 3
 
 The result is the headline. A V-axis built from CLIP-text predicted per-stimulus valence at r = +0.87 (p < 10⁻⁹); with the primary model, a Qwen3-4B axis, it reached r = +0.80 (p < 10⁻⁵). An emotional map a language model drew from text alone matched the polarity of brain signals recorded while people watched video that closely.
 
-![Scatter plot of 28 FACED emotion video stimuli showing the LLM V-axis projection (x-axis) aligning with the human EEG valence projection (y-axis) at r=+0.87](./image/img-02-eeg-stimulus-alignment.png)
+![Scatter plot of 28 FACED emotion video stimuli showing the LLM V-axis projection (x-axis) aligning with the human EEG valence projection (y-axis) at r=+0.87](../ko/image/img-02-eeg-stimulus-alignment.png)
 *▲ The emotional coordinate an LLM drew from text (x-axis) aligns with the human EEG valence projection (y-axis) per stimulus at r=+0.87 (paper Figure 3). | Source: [arXiv:2606.00129](https://arxiv.org/html/2606.00129v1)*
 
 ### 3.1. Thirty-Six Classifiers That Found the Same Direction, Unprompted
@@ -98,7 +98,7 @@ But the real weight comes from elsewhere. If you deliberately inject an axis, a 
 
 Put plainly: the better an EEG classifier was at reading emotion, the more sharply it drew the same valence direction as the LLM, without anyone telling it to. The same axis recurred spontaneously in the LLM, in human EEG, and in separate classifiers decoding that EEG. This convergence-without-coercion is the paper's strongest card.
 
-![Scatter plot of 36 EEG emotion classifiers never trained on the V-axis, showing internal V-axis encoding strength rising with classification accuracy at r=+0.885](./image/img-03-eeg-classifiers-converge.png)
+![Scatter plot of 36 EEG emotion classifiers never trained on the V-axis, showing internal V-axis encoding strength rising with classification accuracy at r=+0.885](../ko/image/img-03-eeg-classifiers-converge.png)
 *▲ Across 36 EEG classifiers never shown the V-axis, the more accurate ones encoded the same valence direction more strongly (paper Figure 2). | Source: [arXiv:2606.00129](https://arxiv.org/html/2606.00129v1)*
 
 They also checked whether the axis fit only one dataset. Taking the very V-axis derived from FACED and carrying it over to SEED-V, an entirely different EEG dataset, they had it rank the valence of five emotions there — and the ranking agreed at r = +0.96. The same ordering reproduced on data with different subjects and different stimuli, which signals that the axis was not sculpted to fit a single cohort but holds more broadly.
@@ -107,7 +107,7 @@ They also checked whether the axis fit only one dataset. Taking the very V-axis 
 
 You can also ask which scalp regions the axis fits best. The signal was strongest at the occipital lobe (back of the head), weakening through the parietal and central regions and weakest at the frontal lobe. As a single channel, gamma-band activity at PO3, near the occipito-parietal junction, was strongest at r = +0.48.
 
-![Scalp topographic maps across five frequency bands (delta, theta, alpha, beta, gamma) showing V-axis encoding peaking in the posterior occipital visual cortex](./image/img-04-scalp-topomaps.png)
+![Scalp topographic maps across five frequency bands (delta, theta, alpha, beta, gamma) showing V-axis encoding peaking in the posterior occipital visual cortex](../ko/image/img-04-scalp-topomaps.png)
 *▲ Across all five frequency bands, V-axis encoding peaks in the posterior occipital visual cortex (paper Figure 4). | Source: [arXiv:2606.00129](https://arxiv.org/html/2606.00129v1)*
 
 | Brain region | Mean |r| | Note |
@@ -128,7 +128,7 @@ So far this matches intuition. If the shared axis is that crisp, then teaching t
 
 The result was the opposite. Of the 25 strategies, the number that significantly improved performance was zero, and 16 significantly hurt it (p < 0.05). The worst, an anger-weighted target, cut balanced accuracy by 0.054. The random directions added as a control barely moved the needle (ΔBACC ≤ ±0.003), which means it was not the act of adding a loss that did the damage, but teaching that particular valence direction harder.
 
-![Forest plot of 25 alignment strategies that added the V-axis as a supervision signal — none significantly improved performance and 16 significantly lowered accuracy](./image/img-05-supervision-forest.png)
+![Forest plot of 25 alignment strategies that added the V-axis as a supervision signal — none significantly improved performance and 16 significantly lowered accuracy](../ko/image/img-05-supervision-forest.png)
 *▲ Of 25 strategies that taught the V-axis harder, zero significantly improved performance and 16 lowered accuracy (paper Figure 13). | Source: [arXiv:2606.00129](https://arxiv.org/html/2606.00129v1)*
 
 > [!callout]

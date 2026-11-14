@@ -48,7 +48,7 @@ Gartner defines AI-Ready Data as data that "represents all the patterns, errors,
 
 AI uses data in four broad ways: large-scale pretraining, fine-tuning for a specific task, RAG — retrieving external documents at inference time and attaching them — and agents that call tools and carry out work on their own. Each places different demands on the data. Training wants vast volume and representativeness; RAG wants a searchable structure and trustworthy sources; agents demand access permissions and traceability of their actions.
 
-![Three stages of large language model training — pretraining, supervised fine-tuning (SFT), and reinforcement learning from human feedback (RLHF), with the data feeding each stage](./image/img-01-llm-training-stages.png)
+![Three stages of large language model training — pretraining, supervised fine-tuning (SFT), and reinforcement learning from human feedback (RLHF), with the data feeding each stage](../ko/image/img-01-llm-training-stages.png)
 *▲ The three stages of LLM training (pretraining → fine-tuning → RLHF) and the data each one needs — the conditions on data change with the use case | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Three-stage_large_language_model_training_workflow.svg)*
 
 ### 1.2. How It Differs From Traditional "Clean Data"
@@ -62,7 +62,7 @@ Where traditional data quality focused on accuracy and consistency of format, AI
 
 Data quality is not a single score but a set of axes. Data quality surveys from IBM and academia typically list around eight dimensions; the seven that matter most in an AI context, mapped to model performance, are below. Reading each one alongside "how the model fails when this breaks" turns an abstract quality discussion into a concrete diagnostic list.
 
-![Diagram of the many dimensions of information quality — completeness, timeliness, uniqueness, credibility, and more](./image/img-02-quality-dimensions.png)
+![Diagram of the many dimensions of information quality — completeness, timeliness, uniqueness, credibility, and more](../ko/image/img-02-quality-dimensions.png)
 *▲ The dimensions that make up information quality — completeness, timeliness, and uniqueness remain core axes in any data-quality discussion too | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Wiki-quality-dimensions.png)*
 
 ### 2.1. The Four Foundational Dimensions
@@ -99,7 +99,7 @@ When a model returns a strange answer and lineage is broken, the hunt for the ca
 
 Lineage is moving from optional to obligatory. The EU AI Act enforces most of its obligations, including those for general-purpose AI (GPAI), from August 2, 2026, requiring that the origin and processing of training data be documented. Answering the question "Can you explain what this model learned?" presupposes lineage records. Against this backdrop, the data lineage market is projected to grow from about US$1.78 billion in 2025 to about US$2.19 billion in 2026, a 23.1% annual rate.
 
-![The hemicycle of the European Parliament in Strasbourg, where the EU AI Act was passed](./image/img-03-eu-parliament.jpg)
+![The hemicycle of the European Parliament in Strasbourg, where the EU AI Act was passed](../ko/image/img-03-eu-parliament.jpg)
 *▲ The European Parliament chamber that passed the EU AI Act — documenting the origin and processing of training data has become a legal obligation | Source: [Wikimedia Commons (Diliff)](https://commons.wikimedia.org/wiki/File:European_Parliament_Strasbourg_Hemicycle_-_Diliff.jpg)*
 
 > [!callout]
@@ -134,7 +134,7 @@ The center of gravity in using AI is shifting from training to application. Rath
 
 When a question comes in, RAG retrieves relevant documents and feeds them to the model. Because the quality of retrieval becomes the quality of the answer, shaping data into a "searchable form" becomes critical. The key parts are chunking that splits documents into appropriate semantic units, embeddings tuned to the domain, hybrid search that uses vector and keyword search together, and a layer that re-ranks and filters the results. In practice, the point where retrieval fails is almost always the search step, not the model. The report that hallucination dropped from about 50% to 13.9% when retrieval augmentation was wired in properly shows just how much making data searchable can do.
 
-![Retrieval-augmented generation (RAG) architecture — embedding the user query, searching a vector database, attaching context chunks, and generating the LLM response from the augmented prompt](./image/img-04-rag-architecture.png)
+![Retrieval-augmented generation (RAG) architecture — embedding the user query, searching a vector database, attaching context chunks, and generating the LLM response from the augmented prompt](../ko/image/img-04-rag-architecture.png)
 *▲ How RAG works — documents are embedded into a vector DB, the chunks closest to the query are pulled and attached to the prompt to generate the answer. Retrieval quality becomes answer quality | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:RAG_diagram.svg)*
 
 ### 5.2. What Agents Demand of Data

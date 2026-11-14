@@ -40,14 +40,14 @@ Index Ventures led the round, with Kleiner Perkins, Sequoia Capital, and Dimensi
 
 Investors did not re-price the company threefold in half a year on technical progress alone. The more decisive signal is the customer list. The fact that large pharmaceutical companies — Pfizer, Eli Lilly, Novartis — adopted the model under real contracts read as evidence that Chai had crossed the gap between lab demo and commercial deployment. So what, exactly, did they buy?
 
-![Pfizer corporate facility building with logo signage](./image/img-01-pfizer-facility.jpg)
+![Pfizer corporate facility building with logo signage](../ko/image/img-01-pfizer-facility.jpg)
 *▲ A Pfizer facility (Middleton, Wisconsin, US) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Pfizer_Inc_Middleton_Research_Pharmaceutical_laboratory_-_panoramio.jpg)*
 
 ## What Chai-3 Actually Sells
 
 Chai Discovery's core product is a model called Chai-3. It predicts how biomolecules bind to each other — proteins and ligands, antibodies and antigens. In drug discovery, that prediction amounts to screening, inside a computer, which molecules will latch onto a target before anything touches a lab bench. What the company emphasized most in this announcement was its antibody design capability.
 
-![3D molecular rendering of an antibody binding to an antigen](./image/img-02-antibody-structure.jpg)
+![3D molecular rendering of an antibody binding to an antigen](../ko/image/img-02-antibody-structure.jpg)
 *▲ An antibody (blue/green) binding to an antigen (ball-and-stick) — the kind of interaction Chai-3 predicts | Source: [Wikimedia Commons (Thomas Splettstoesser)](https://commons.wikimedia.org/wiki/File:Mouse_cholera_antibody_2.png)*
 
 Chai says the model doubled its success rate over the previous generation and delivers a hit rate of roughly 35–40% on candidate molecules. In other words, out of many candidates it flags the ones that genuinely bind to the target at a high proportion. This is precisely the point where time and cost drop sharply in the design stage.

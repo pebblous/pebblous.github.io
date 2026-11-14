@@ -44,7 +44,7 @@ On May 5, 2026, five publishers — Elsevier, Cengage, Hachette, Macmillan, and 
 
 What the complaint takes aim at is how the data was obtained. It alleges that to train Llama, Meta torrented more than 267 terabytes of copyrighted works from shadow libraries such as LibGen and Anna's Archive — many times the size of the Library of Congress's print collection. On top of that, it claims Meta masked its IP addresses during torrenting to evade detection, and removed copyright management information (CMI) and copyright notices from the books to cover their origin. The filing also describes circumstances suggesting that, in the spring of 2023, Meta abandoned formal licensing negotiations and chose the pirate route instead.
 
-![Meta Platforms headquarters in Menlo Park, California — defendant in the Elsevier v. Meta AI copyright lawsuit](./image/img-01-meta-hq.jpg)
+![Meta Platforms headquarters in Menlo Park, California — defendant in the Elsevier v. Meta AI copyright lawsuit](../ko/image/img-01-meta-hq.jpg)
 *▲ Meta Platforms headquarters, Menlo Park, California. Elsevier and four other publishers named Meta and Mark Zuckerberg personally as defendants in Elsevier v. Meta. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Meta_Platforms_Headquarters_Menlo_Park_California.jpg)*
 
 So the claims split in two. One is willful copyright infringement; the other is liability for the CMI removal itself. The crux of the dispute is not what the model output, but how the data was gathered and which markings were erased. Meta has said it will "defend aggressively" and the case is ongoing — but the center of gravity of the question has plainly moved.
@@ -56,7 +56,7 @@ So the claims split in two. One is willful copyright infringement; the other is 
 
 Why the Meta suit drills into acquisition becomes clear once you look at a ruling one step ahead. In **Bartz v. Anthropic**, Judge William Alsup drew a line in a June 2025 summary-judgment ruling. Training a model on lawfully acquired books is transformative and therefore fair use. But downloading and hoarding pirated copies is a separate act of infringement. The same company saw one activity split in two — winning on the front half and losing on the back.
 
-![Thurgood Marshall US Courthouse, Southern District of New York — venue for Bartz v. Anthropic and key AI copyright cases](./image/img-02-sdny-courthouse.jpg)
+![Thurgood Marshall US Courthouse, Southern District of New York — venue for Bartz v. Anthropic and key AI copyright cases](../ko/image/img-02-sdny-courthouse.jpg)
 *▲ The Thurgood Marshall US Courthouse, home of the Southern District of New York. Judge Alsup's summary-judgment ruling in Bartz v. Anthropic — the precedent that split training from data acquisition — came down in this building. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Thurgood_Marshall_U.S._Courthouse_(Home_of_the_U.S._Court_of_Appeals_for_the_Second_Circuit_and_S.D.N.Y.)_(7237324632).jpg)*
 
 That led to the September 2025 settlement. Even though the fair-use defense partly held, Anthropic agreed to pay $1.5 billion. The target was roughly 500,000 works pulled from pirate databases such as LibGen and PiLiMi, at around $3,000 per work. The settlement terms included destroying those copies, and the deal was limited to past training conduct, leaving disputes over model outputs wide open.
@@ -81,7 +81,7 @@ The lessons legal analysts have drawn from this settlement point to the same pla
 
 It is not only courts that scrutinize provenance. Regulators and the market have begun demanding the data's pedigree at the same time. On the regulatory side, the EU AI Act enters substantive force in August 2026. General-purpose and high-risk models must publish a summary of their training data's sources and composition, and breaches carry up to €15 million or 3% of global revenue. The provision demands traceability from the moment data is gathered through to deployment.
 
-![European Parliament hemicycle in Strasbourg — legislative home of the EU AI Act requiring training-data provenance disclosure](./image/img-03-eu-parliament.jpg)
+![European Parliament hemicycle in Strasbourg — legislative home of the EU AI Act requiring training-data provenance disclosure](../ko/image/img-03-eu-parliament.jpg)
 *▲ The European Parliament hemicycle, Strasbourg. The EU AI Act enters substantive force in August 2026, requiring general-purpose and high-risk models to publish a summary of their training data's sources — with penalties up to €15M or 3% of global revenue. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:European_Parliament_Strasbourg_Hemicycle_-_Diliff.jpg) (CC BY-SA 3.0, Diliff)*
 
 The market is moving even faster. As autonomous-driving and robotics programs cross into mass production, the evaluation criteria of the procurement teams that buy data have moved beyond unit price and labeling volume to data lineage, security certifications, and operational maturity. Asking for "ISO 42001 certification or a roadmap" in vendor questionnaires is becoming standard. And the figures coming off the floor are painful: 78% of AI data partners cannot verify their training data, and 77% cannot trace its origins. Enterprise deals collapse over a single documentation gap, regardless of technical strength.
@@ -95,7 +95,7 @@ The same question has reached Korean courtrooms. In January 2025, the three terr
 
 Put all three strands of the case in one place and a single direction appears. The Meta suit put data acquisition in the dock; the Anthropic settlement put a price tag on unknown provenance; and regulation and procurement pulled that price tag back to the stage before a deal is even struck. The yardstick for valuing a model asset is shifting from the performance of its weights to the proof of its data lineage.
 
-![Data center server racks — the physical infrastructure where AI training data is stored, underlining the need for traceable data provenance](./image/img-04-servers.jpg)
+![Data center server racks — the physical infrastructure where AI training data is stored, underlining the need for traceable data provenance](../ko/image/img-04-servers.jpg)
 *▲ Server racks in a data center used to store AI training data. Tracking which data was taken, from where, under what rights, and how it was processed has become an infrastructure problem — not just a compliance checkbox. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Wikimedia_Foundation_Servers-8055_13.jpg) (CC BY-SA 3.0, Victorgrigas)*
 
 Brought down to practice, what to prepare is clear: keep a traceable record of which data you took, from where, under what rights, when, and how you processed it. Try to reconstruct that record after the fact and costs jump four- to fivefold while launches slip by months. Only organizations that build provenance into the pipeline from the start get a runway where, no matter which of a lawsuit, a regulator, or a buyer's diligence lands first, they can answer with the same papers.

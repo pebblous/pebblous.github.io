@@ -40,7 +40,7 @@ Sources: Alon et al., [arXiv 2605.20695](https://arxiv.org/abs/2605.20695) · Sa
 
 The problem itself is one a schoolchild could grasp. Place n points on a plane. How many pairs of points can be exactly distance 1 apart, at most? Paul Erdős posed this question in 1946, and it became known as the unit distance problem. It ranks among the simplest questions in geometry.
 
-![A unit distance graph with 16 points and 40 edges — blue dots connected by segments of exactly length 1](./image/img-01-unit-distance-graph.svg)
+![A unit distance graph with 16 points and 40 edges — blue dots connected by segments of exactly length 1](../ko/image/img-01-unit-distance-graph.svg)
 *▲ A unit distance graph (16 points, 40 pairs) — each segment between blue dots has length exactly 1. Maximizing these pairs over all n-point configurations is the Erdős unit distance problem. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Unit_distance_16_40.svg) (CC0)*
 
 Erdős's conjecture was that the answer stays almost linear — that it does not climb far above a level proportional to the number of points. In formal terms, at most about n1+o(1) pairs. After Spencer, Szemerédi, and Trotter proved an upper bound of O(n4/3) in 1984, that bound went unimproved for 42 years. The lower bound on the other side stayed around n1+c/loglog n, which seemed to keep propping up the side that said the conjecture was right.
@@ -56,7 +56,7 @@ The disproof came from one of OpenAI's internal general-purpose reasoning models
 
 What was striking was the path more than the conclusion. The tool the model reached for was **algebraic number theory**. Put plainly, instead of scattering points directly on the plane, it first designed the points in the far richer "world of numbers" and then mapped them back onto the plane. Concretely, the work draws on concepts like fields with complex multiplication (CM fields), Golod–Shafarevich infinite class field towers, and split prime ideals. It treats a set of points in the plane as elements of algebraic numbers of size 1, embeds them in the complex plane ℂ, and then projects to ℝ2. Almost no one had thought to borrow this heavy machinery for the unit distance problem.
 
-![The Petersen graph embedded as a unit distance graph — all 10 vertices connected by edges of exactly length 1](./image/img-04-petersen-unit-distance.svg)
+![The Petersen graph embedded as a unit distance graph — all 10 vertices connected by edges of exactly length 1](../ko/image/img-04-petersen-unit-distance.svg)
 *▲ The Petersen graph embedded as a unit distance graph — all edges have length exactly 1 when placed in the plane. The AI's algebraic construction similarly designs points in the number-theoretic world, then maps them to ℝ². | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Petersen_graph,_unit_distance.svg) (Public Domain)*
 
 The result was that a set of points with n1+ε pairs exists for arbitrarily large n. This is a qualitative jump in which the exponent leaps to 1 + a constant — a head-on refutation of the conjecture that the answer was nearly linear. In a separate paper, Will Sawin nailed this lower bound to an explicit figure of n1.014, and later pushed it to n1.0318. The limit reachable by the same method is estimated at about 1.2143.
@@ -70,7 +70,7 @@ What the mathematicians noted was the AI's persistence. Thomas Bloom, who had be
 
 On the same day as the result, a companion paper by nine outside mathematicians appeared. Its title is "Remarks on the Disproof of the Unit Distance Conjecture," and its authors are Noga Alon, Thomas F. Bloom, W. T. Gowers, Daniel Litt, Will Sawin, Arul Shankar, Jacob Tsimerman, Victor Wang, and Melanie Matchett Wood — a roster of a Fields Medalist and first-rank researchers from across the field.
 
-![Paul Erdős (1992) — the Hungarian mathematician who posed the unit distance conjecture in 1946](./image/img-02-paul-erdos.jpg)
+![Paul Erdős (1992) — the Hungarian mathematician who posed the unit distance conjecture in 1946](../ko/image/img-02-paul-erdos.jpg)
 *▲ Paul Erdős (1992) — the Hungarian mathematician who posed the unit distance problem in 1946. What the nine mathematicians verified and rewrote was the answer to a question he had asked 80 years earlier. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Erdos_budapest_fall_1992_(cropped).jpg) (CC BY-SA 2.0)*
 
 What they did was not stamp the work with approval. It was to rewrite the proof the AI had produced into a form humans could understand. They simplified and generalized the core idea and tidied it up, and where the AI's argument skipped over a lemma, they filled in a complete and rigorous proof of their own. Daniel Litt says correctness itself could be confirmed within a few hours. Will Sawin simplified a construction that had originally required several split primes down to a single split prime, and spent a weekend searching for an optimization.
@@ -98,7 +98,7 @@ The model's raw output, the full reasoning process at the moment of generation, 
 
 This difference is not trivial. It becomes clear if you recall the 1976 four color theorem, the first case in which a computer made a decisive contribution to a mathematical proof. The controversy then was large too, but the key point is that verifiability was preserved. The program and the list of cases to be checked were made public, and other researchers could independently rewrite the code and arrive at the same conclusion. The procedure, in other words, was reproducible. This time the result can be verified, but the process and the original that made it cannot be retraced from the outside.
 
-![Four colour theorem map example — a planar map coloured with four colours so no two adjacent regions share a colour](./image/img-03-four-colour-map.svg)
+![Four colour theorem map example — a planar map coloured with four colours so no two adjacent regions share a colour](../ko/image/img-03-four-colour-map.svg)
 *▲ Four colour theorem (1976, computer-assisted proof) — the program and the list of cases were made public, so anyone could independently reproduce the result. This is the critical difference from the AI disproof. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Four_Colour_Map_Example.svg) (Public Domain)*
 
 > [!callout]

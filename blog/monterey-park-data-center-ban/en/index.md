@@ -42,7 +42,7 @@ Measure NDC is an ordinance that permanently prohibits building new data centers
 
 This vote did not appear out of nowhere. In March 2026, the city council unanimously decided two things: to extend the existing data center moratorium, and to put a permanent ban before voters. After that decision, the developer behind the disputed project withdrew its plan, and the June vote settled the remaining process.
 
-![Streetscape of Atlantic Boulevard in Monterey Park, where commercial and residential areas sit side by side](./image/img-01-monterey-park-street.jpg)
+![Streetscape of Atlantic Boulevard in Monterey Park, where commercial and residential areas sit side by side](../ko/image/img-01-monterey-park-street.jpg)
 *▲ Monterey Park, population 65,000. 86% of residents voted to permanently ban data centers | Source: [Wikimedia Commons (King of Hearts, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Monterey_Park_January_2013_002.jpg)*
 
 ### 1.1. What "First in the U.S." Actually Means
@@ -61,7 +61,7 @@ A comparison shows why that combination is rare.
 
 At the center of the dispute was a concrete plan. HMC StratCap, an Australian asset manager, proposed a data center of about 250,000 square feet and up to 50MW on the site of a former shopping mall on Saturn Street in Monterey Park. Residents and the developer put forward completely different numbers for the facility, and only by placing those numbers side by side does the character of the vote come into view.
 
-![Interior of a data center showing server racks, cabling, and raised cooling floor tiles](./image/img-02-datacenter-server-racks.jpg)
+![Interior of a data center showing server racks, cabling, and raised cooling floor tiles](../ko/image/img-02-datacenter-server-racks.jpg)
 *▲ Server racks like these would have filled the proposed 250,000-sq-ft facility (illustrative) | Source: [Wikimedia Commons (Carl Lender, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg)*
 
 ### 2.1. The Numbers Residents Saw
@@ -87,7 +87,7 @@ StratCap's rebuttal was equally specific. The gist was that the facility would n
 
 The output of AI computation is everywhere. A chatbot's answer, a recommendation algorithm, a self-driving decision all feel as though they emerge from the abstract space we call the cloud. But the electricity and water that computation consumes, and the noise and heat it produces, always accumulate at some physical coordinate. What Monterey Park revealed is that the coordinate is always someone's neighborhood.
 
-![High-voltage transmission towers and lines crossing a field, carrying power toward a data center's grid connection](./image/img-03-power-lines-neighborhood.jpg)
+![High-voltage transmission towers and lines crossing a field, carrying power toward a data center's grid connection](../ko/image/img-03-power-lines-neighborhood.jpg)
 *▲ AI computation may live in the cloud, but its power travels through specific transmission lines and substations to reach one neighborhood | Source: [Wikimedia Commons (USEPA, Public Domain)](https://commons.wikimedia.org/wiki/Category:Power_lines)*
 
 This is not an accident but a structure. The logic hyperscalers use to pick data center sites converges on places close to the power grid, where land is relatively cheap and a water source for cooling is available. Power is a local resource, so load concentrates on particular substations and transmission lines, and authority over land use and zoning rests with local governments, not the federal government. So the benefits of AI expansion spread thinly across users worldwide, while the costs are billed thickly to the one city where the facility lands.

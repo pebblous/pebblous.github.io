@@ -35,7 +35,7 @@ Source: [Icahn School of Medicine at Mount Sinai (2026)](https://www.mountsinai.
 <!-- stat-card -->
 **1 change** — chemical tweak that switched the binding site — hidden pocket → ordinary ATP site
 
-![PKMYT1 protein ribbon diagram showing the ATP-binding site (left, labeled) and the newly discovered allosteric pocket (green/red arrow) at a distinct location — the hidden site that all AI tools missed](./image/img-01-pkmyt1-hidden-pocket.jpg)
+![PKMYT1 protein ribbon diagram showing the ATP-binding site (left, labeled) and the newly discovered allosteric pocket (green/red arrow) at a distinct location — the hidden site that all AI tools missed](../ko/image/img-01-pkmyt1-hidden-pocket.jpg)
 *▲ PKMYT1 protein with its newly found allosteric binding site (green-highlighted region) — the hidden pocket that sits apart from the conventional ATP site and that no AI tool predicted. Inset circle: chemical structure of the drug molecule that binds in this pocket. | Source: [EurekAlert! / AAAS (2026)](https://www.eurekalert.org/news-releases/1130589)*
 
 ## An ATP Site Too Alike
@@ -49,7 +49,7 @@ So researchers have long wished for an allosteric site — a spot other than the
 > [!callout]
 > The crux is that this allosteric pocket is not a fixed structure. It reveals itself only briefly, atop the protein's dynamic, ever-shifting form — a pocket that stays closed most of the time. The chance to design a precise drug was there, but that chance opened only in the moments the protein was in motion.
 
-![cKIT kinase ATP-binding site — ribbon diagram (left) and schematic of the binding pocket topology (right) showing conserved sub-regions: Hinge, Gate-Keeper, DFG, and others shared across more than 500 human kinases](./image/img-02-kinase-atp-binding.png)
+![cKIT kinase ATP-binding site — ribbon diagram (left) and schematic of the binding pocket topology (right) showing conserved sub-regions: Hinge, Gate-Keeper, DFG, and others shared across more than 500 human kinases](../ko/image/img-02-kinase-atp-binding.png)
 *▲ ATP-binding pocket of cKIT kinase (PDB: 1PKG). The conserved sub-regions on the right — Hinge, Gate-Keeper, DFG, and others — are shared across more than 500 human kinases, which is the root cause of the selectivity problem for conventional kinase inhibitors. | Source: [Wikimedia Commons, CC BY-SA 4.0](https://commons.wikimedia.org/wiki/File:Kinase_active_001.png)*
 
 ## What AI Got Right and What It Missed
@@ -65,14 +65,14 @@ Why did this happen? AlphaFold-family models learn from protein structures that 
 
 Just how sensitive this protein is became clearer during the discovery itself. The team observed that a single tiny chemical change was enough to move the drug molecule away from the hidden pocket and onto the ordinary ATP-binding site. The very location of binding flipped wholesale with a slight difference. For something happening on so narrow a margin, a prediction model good at reproducing static, average structures is hard-pressed to catch it in advance.
 
-![AlphaFold2 performance and architecture — (a) accuracy benchmark on CASP14, (b–d) superimposed comparison of AlphaFold predictions (blue) against experimental structures (green), (e) model architecture showing Evoformer blocks and Structure Module](./image/img-03-alphafold-performance.png)
+![AlphaFold2 performance and architecture — (a) accuracy benchmark on CASP14, (b–d) superimposed comparison of AlphaFold predictions (blue) against experimental structures (green), (e) model architecture showing Evoformer blocks and Structure Module](../ko/image/img-03-alphafold-performance.png)
 *▲ AlphaFold2 performance and architecture (Jumper et al., 2021, Nature). Panels b–d compare predicted structures (blue) with experimental ones (green) — on shapes present in the training data, the match is striking. The pocket in the PKMYT1 study was absent from that data. | Source: [Wikimedia Commons, CC BY 4.0](https://commons.wikimedia.org/wiki/File:AlphaFold_2.png)*
 
 ## Experiment Opened the Pocket
 
 What actually opened the pocket was X-ray crystallography — a measurement technique that looks directly, at the atomic level, at where a molecule binds to a protein. Building on AlphaFold2's structure prediction, the team first narrowed the field of candidate compounds through virtual screening, then confirmed the real binding structure with X-ray crystallography and validated it with biochemical and cellular experiments. AI helped with the search, but what proved the new site existed was the experimental data.
 
-![Protein crystals for X-ray crystallography — geometric translucent crystals suspended in solution under microscope; X-ray diffraction through these crystals reveals protein 3D structure at atomic resolution](./image/img-04-protein-crystals-xray.jpg)
+![Protein crystals for X-ray crystallography — geometric translucent crystals suspended in solution under microscope; X-ray diffraction through these crystals reveals protein 3D structure at atomic resolution](../ko/image/img-04-protein-crystals-xray.jpg)
 *▲ Protein crystals used in X-ray crystallography. Shining X-rays through these crystals and analyzing the diffraction pattern determines the protein's three-dimensional structure at atomic resolution — the technique that revealed PKMYT1's hidden pocket. | Source: [CSIRO / Wikimedia Commons, CC BY 3.0](https://commons.wikimedia.org/wiki/File:CSIRO_ScienceImage_296_Protein_Crystals_Use_in_XRay_Crystallography.jpg)*
 
 The meaning of this division of labor matters. AI prediction is strong at sweeping quickly through the space of structures we already know and pointing to the likeliest spots. Experiment, by contrast, pries open the space of structures no one has ever seen. The two are not rivals; they do different kinds of work. This study is a case that drew that boundary line in sharp relief.

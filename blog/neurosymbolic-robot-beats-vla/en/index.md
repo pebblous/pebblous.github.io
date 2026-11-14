@@ -44,7 +44,7 @@ The setup is simple. Inside a simulator (Robosuite), a Franka Panda robot arm wa
 
 On one side sat the VLA, today's mainstream in robot learning. It binds vision, language, and action into a single neural network and handles a command like "solve the Tower of Hanoi" end to end. The experiment used a π₀-class model, and also compared a variant fed step-by-step instructions from an external planner (PG-VLA). On the other side sat a neuro-symbolic model (NSM) that splits rules apart from the neural network.
 
-![Overview of the experimental comparison between VLA models (E2E and PG) and the neuro-symbolic model (NSM), showing training pipelines and power/energy consumption monitoring](./image/img-01-overview.png)
+![Overview of the experimental comparison between VLA models (E2E and PG) and the neuro-symbolic model (NSM), showing training pipelines and power/energy consumption monitoring](../ko/image/img-01-overview.png)
 *▲ Experiment overview: training and inference pipelines for VLA (E2E, PG) and the neuro-symbolic model (NSM), with power and energy consumption monitoring | Source: [Duggan et al. (2026), arXiv:2602.19260](https://arxiv.org/abs/2602.19260)*
 
 The gap opened up on the very task they were trained on. The neuro-symbolic model succeeded 95% of the time, while the end-to-end VLA managed 34% and the planner-equipped VLA scored 0%. Even on individual block moves, the success rate ran 99% to 87% in the neuro-symbolic model's favor.
@@ -62,7 +62,7 @@ That job fell to an ASP (Answer Set Programming) solver. Analyzing the 50 demons
 
 The rest is a division of labor. On top of the inferred rules, a classic planner called MetricFF works out "in what order to move things," and a Diffusion Policy neural network handles "how to actually grasp and move that one piece." Perception is filled in by two cameras and YOLOv8, which locate the blocks in 3D. Generalization is the rules' job; execution is the network's.
 
-![Robosuite simulator views from the agent camera (left) and the wrist-mounted camera (right) showing block positions — inputs used by YOLOv8 for 3D localization](./image/img-02-camera-views.png)
+![Robosuite simulator views from the agent camera (left) and the wrist-mounted camera (right) showing block positions — inputs used by YOLOv8 for 3D localization](../ko/image/img-02-camera-views.png)
 *▲ What the robot sees: agent-view camera (left) and wrist-mounted camera (right). YOLOv8 reads these frames in real time to determine each block's 3D position. | Source: [Duggan et al. (2026), arXiv:2602.19260](https://arxiv.org/abs/2602.19260)*
 
 Why does this save energy? A robot that knows the rules only moves within the allowed set. It never bothers attempting the meaningless act of putting a large block on a small one. A VLA that does not know the rules, by contrast, has to grind through countless trials and errors to arrive at the same conclusion. A remark from the project lead, Professor Matthias Scheutz, gets to the heart of it.
@@ -74,7 +74,7 @@ Why does this save energy? A robot that knows the rules only moves within the al
 
 AI has rolled forward for the past few years on a single belief: feed in more data and grow the model larger, and performance will follow. That is the scaling law, and Physical AI is walking the same road. VLA models like π₀, RT-2, and OpenVLA reach for general-purpose manipulation through more robot data and more parameters.
 
-![Animated 4-disk Tower of Hanoi puzzle — VLA models trained only on the 3-block version scored 0% on this unseen task, while the neuro-symbolic model reached 78%](./image/img-04-hanoi-4disk.gif)
+![Animated 4-disk Tower of Hanoi puzzle — VLA models trained only on the 3-block version scored 0% on this unseen task, while the neuro-symbolic model reached 78%](../ko/image/img-04-hanoi-4disk.gif)
 *▲ The 4-disk Tower of Hanoi — trained only on the 3-block version, VLAs could not solve this unseen combination at all | Source: [Wikimedia Commons (CC BY-SA 2.5)](https://commons.wikimedia.org/wiki/File:Tower_of_Hanoi_4.gif)*
 
 This experiment holds up a counterexample to that belief. A VLA trained on 300 complete Tower-of-Hanoi trajectories scored 0% on a task with just one more block. The model that had seen more collapsed in front of a slightly different situation. The signal is clear: you can grow what a model has memorized, but the ability to step outside what it memorized cannot be bought with data volume alone.

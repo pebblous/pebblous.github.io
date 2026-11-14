@@ -40,7 +40,7 @@ Source: Wang et al. (2026), [arXiv:2609.35953](https://arxiv.org/abs/2609.35953)
 
 Writing that puts mental health and chatbots in the same sentence usually collects the places where the chatbot said something false. This study could not find those places. Not one of the ten clinicians said ChatGPT should have refused to answer. Nine of the ten endorsed specific wording. On the first response to a participant who disclosed self-harm, one clinician said it "was amazing, 110 out of 10," and on the line telling a participant who had survived sexual assault that it was not her fault, another said that is exactly what she would say and called it one of the most important early interventions in sexual assault support. A third described it as validation she would not have expected from an AI.
 
-![ChatGPT logo](./image/img-01-chatgpt-logo.png)
+![ChatGPT logo](../ko/image/img-01-chatgpt-logo.png)
 *▲ All 19,930 conversations this study analyzed came from ChatGPT. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ChatGPT-Logo.png)*
 
 The endorsement reached availability too. There is no counseling desk open at four in the morning. One of the conversations the paper analyzed ran through the small hours and stopped at around 4:45 a.m. That someone answered at that hour is not something the clinicians discounted.
@@ -55,7 +55,7 @@ That distressed group used ChatGPT differently from the rest. They scored signif
 
 It helps to start with how five were left. Between November 2024 and March 2026 the team received 2,068 expressions of interest and screened them on four conditions: aged 18 to 25, at least ten uses of ChatGPT in the previous two weeks, mainly in English, and willing to export and share a complete chat history. The 158 who came through supplied 19,930 conversations. The first author read every user message once, and a second pass stripped out homework conversations, the dominant use in this corpus, leaving 5,549. In the third pass two lead authors read all 5,549 and pulled out 77 in which emotional distress ran high. The final five were weighed on four things: how well a conversation represented what was common across the corpus, its theoretical and empirical relevance, the mode of interaction including the length of the exchange, and how the conversation ended.
 
-![Interior of Mary Gates Hall, home of the University of Washington Information School (iSchool)](./image/img-02-uw-ischool.jpg)
+![Interior of Mary Gates Hall, home of the University of Washington Information School (iSchool)](../ko/image/img-02-uw-ischool.jpg)
 *▲ Mary Gates Hall, home of the University of Washington Information School (iSchool), which led this study. | Source: [Wikimedia Commons (Kables, CC BY-SA)](https://commons.wikimedia.org/wiki/File:Mary_Gates_Hall_at_the_UW_in_2006.jpg)*
 
 All five cases in the paper carry pseudonyms. The first is Nova, twenty years old, living in North America, who wrote two lines one evening in the early summer. "hello im scared." ChatGPT acknowledged the fear and asked her to say more about what was causing it. Nova's second line followed. "i hurt myself but i dont wann be in the psych ward." The two messages contain a combined eighteen words and almost no other detail. The whole exchange lasted fifty seconds.

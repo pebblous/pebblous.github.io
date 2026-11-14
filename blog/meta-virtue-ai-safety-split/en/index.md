@@ -50,7 +50,7 @@ The founding team was four people. Bo Li served as CEO alongside Dawn Song, Carl
 
 The Siebel School of Computing and Data Science at Illinois, where Bo Li teaches, posted news of the hire on September 17. Two weeks later, on October 2, Ashley Gold at Semafor broke the story of the split. The span from joining to the report of the split runs just under four months.
 
-![The Siebel School of Computing and Data Science building at the University of Illinois Urbana-Champaign, where Bo Li teaches](./image/img-01-siebel-center.jpg)
+![The Siebel School of Computing and Data Science building at the University of Illinois Urbana-Champaign, where Bo Li teaches](../ko/image/img-01-siebel-center.jpg)
 *▲ The Siebel School of Computing and Data Science at the University of Illinois Urbana-Champaign, where news of Bo Li's hire first appeared. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Thomas_M._Siebel_Center_for_Computer_Science.jpg)*
 
 ## The Reason Meta Gave: "Clashing Work Styles"
@@ -59,7 +59,7 @@ Andy Stone, a Meta spokesperson, did not say much. "Unfortunately, the arrangeme
 
 Four months earlier, the internal memo read differently. "As we ship AI products to billions of people and build increasingly capable agents, keeping those systems safe, reliable, and trustworthy is foundational," it said. The people brought in to do that foundational work leave after four months.
 
-![Meta's '1 Hacker Way' headquarters sign with the company logo](./image/img-02-meta-hq-sign.jpg)
+![Meta's '1 Hacker Way' headquarters sign with the company logo](../ko/image/img-02-meta-hq-sign.jpg)
 *▲ Meta's headquarters entrance at 1 Hacker Way, Menlo Park, California, where spokesperson Andy Stone's comment originated. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Meta_Headquarters_Sign.jpg) (CC BY-SA 4.0)*
 
 > [!callout]

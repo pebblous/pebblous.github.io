@@ -49,7 +49,7 @@ A month later, 13 current and former employees of OpenAI and Google DeepMind pub
 
 The result was silence. Stacking trade secrets on top of NDAs turned locking safety flaws inside the company into standard practice. In November 2024, Suchir Balaji — a former researcher who had publicly analyzed the legal and ethical problems in ChatGPT's training data and was preparing to testify in the New York Times v. OpenAI lawsuit — died suddenly. The case was widely cited as a stark example of how exposed an insider can be.
 
-![U.S. Capitol Building — home of Congress, where the AI Whistleblower Protection Act is being considered](./image/img-01-us-capitol.jpg)
+![U.S. Capitol Building — home of Congress, where the AI Whistleblower Protection Act is being considered](../ko/image/img-01-us-capitol.jpg)
 *▲ The U.S. Capitol Building, where the AI Whistleblower Protection Act (S.1792) and the GAAIA discussion draft are under deliberation. | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Capitol_Building_of_the_United_States_20240601.jpg)*
 
 ## Washington Steps In for the First Time
@@ -64,7 +64,7 @@ A few design choices stand out. The reporter does not have to prove that a viola
 
 More than 20 organizations back the bill, including the National Whistleblower Center, the Government Accountability Project, and the Center for Democracy & Technology. That said, the current draft leaves out financial rewards such as a whistleblower bounty.
 
-![U.S. Senate Chamber interior — where Senators Grassley and Coons introduced the bipartisan AI Whistleblower Protection Act S.1792](./image/img-02-us-senate-floor.jpg)
+![U.S. Senate Chamber interior — where Senators Grassley and Coons introduced the bipartisan AI Whistleblower Protection Act S.1792](../ko/image/img-02-us-senate-floor.jpg)
 *▲ The U.S. Senate Chamber. Senators Grassley (R) and Coons (D) introduced S.1792, the bipartisan AI Whistleblower Protection Act, in this chamber. | Source: [United States Senate / Public Domain](https://commons.wikimedia.org/wiki/File:United_States_Senate_Floor.jpg)*
 
 ### 2.2. The Great American AI Act (GAAIA) — the Bigger Picture
@@ -100,7 +100,7 @@ The fate of the U.S. federal bills is still open. GAAIA is unlikely to pass befo
 - •**California** — SB 53 was signed in September 2025 and is already in force. It requires large model developers to publish a risk framework, report critical safety incidents within 15 days, and protect whistleblowers, with penalties of up to $1 million per violation.
 - •**South Korea** — The AI Basic Act took effect on January 22, 2026, making Korea the world's second comprehensive AI regulatory framework after the EU. Its focus, however, is on high-impact and generative AI obligations; whistleblower protection is not yet part of it.
 
-![European Parliament hemicycle in Strasbourg — the EU legislature that opened a dedicated AI Act whistleblowing channel in 2025](./image/img-03-eu-parliament.jpg)
+![European Parliament hemicycle in Strasbourg — the EU legislature that opened a dedicated AI Act whistleblowing channel in 2025](../ko/image/img-03-eu-parliament.jpg)
 *▲ European Parliament plenary in Strasbourg. The EU AI Office opened a dedicated anonymous reporting channel for AI Act violations in November 2025; the EU Whistleblower Directive applies explicitly to the AI Act from August 2026. | Source: [Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Hemicycle_of_Louise_Weiss_building_of_the_European_Parliament,_Strasbourg.jpg)*
 
 Once these laws settle in, every organization that makes decisions about AI enters a changed structure of accountability. It means the person who chose the data, the person who deployed the model, and the person who watched the process can no longer be hidden behind a contract. In English, and especially in Korean, writing that treats this subject at the intersection of data governance and labor rights is still rare — and that gap is part of why we're writing it now.

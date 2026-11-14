@@ -44,14 +44,14 @@ December 2011 — the first .nb file was born. In a lab at ETRI (Electronics and
 
 **CLC (Coupled Line Cameras)** — a study on recovering camera parameters from a single image using nothing but the geometric properties of quadrilaterals. I solved the geometric constraints formed by vanishing points and diagonals of a rectangle through Mathematica's symbolic computation. The test image was the Dockland building in Hamburg. Its elegant parallelogram facade satisfied the geometric conditions perfectly. This research was presented at ICPR 2012 and 2014.
 
-![CLC research — Geometric quadrilateral reconstruction from the Hamburg Dockland building](./image/img-02-clc-dockland.png)
+![CLC research — Geometric quadrilateral reconstruction from the Hamburg Dockland building](../ko/image/img-02-clc-dockland.png)
 *CLC research: Recovering camera parameters from the quadrilateral geometry of Hamburg's Dockland building (ICPR 2012, 2014)*
 
 Mathematica was the essential instrument of this era. I expanded equations with symbolic computation, generated 3D visualizations on the fly, and recorded results directly in the notebook. I wasn't translating math from paper into code — the code itself was mathematics.
 
 Around the same time, **RSAR (Robotic Spatial AR)** — Robotic Spatial Augmented Reality research — was underway, and in the **Tangram Alive** project, I solved tangram puzzle pose estimation in 0.2 seconds using Hausdorff distance. Thirty-four notebooks remain from camera calibration and Geometric Algebra research as well.
 
-![Tangram Alive — Pose estimation result (Hausdorff distance-based)](./image/img-10-tangram-output.png)
+![Tangram Alive — Pose estimation result (Hausdorff distance-based)](../ko/image/img-10-tangram-output.png)
 *Tangram Alive: Pose estimation of each piece from the input image (left) in 0.2 seconds (right). Hausdorff distance-based pose estimation algorithm.*
 
 The first major peak appears in June 2013: 75 files. It was the climax of the CLC experiments. The daily routine of a researcher — splitting a single question open from hundreds of angles — reveals itself in the numbers. The 167 CLC experiment notebooks span from 2013 to 2024, a trace of one research theme expanding over more than a decade.
@@ -64,35 +64,35 @@ Two peaks leap out from the histogram before anything else. May 2018: **208 file
 
 **Code Painting**. I had begun making pictures with Mathematica. The Shapes series (72 notebooks) composed geometric forms; Kinetic Art (27) set code in motion; Pixel Stack (18) built images by stacking pixels; Style Study (15) explored diverse visual languages; and Pebbles (8) shaped the forms of small stones. Some 140 notebooks were devoted purely to art.
 
-![Code Painting debut exhibition — Ambiguous Boundary, IBS (Institute for Basic Science), October 2019](./image/img-12-exhibition-ibs-2019.png)
+![Code Painting debut exhibition — Ambiguous Boundary, IBS (Institute for Basic Science), October 2019](../ko/image/img-12-exhibition-ibs-2019.png)
 *Code Painting debut exhibition "Ambiguous Boundary" — IBS (Institute for Basic Science), October 2019. Geometric pattern works generated from Mathematica code.*
 
-![Daejeon Biennale 2020 — Invited exhibition at the Daejeon Museum of Art, Code Painting works](./image/img-13-exhibition-biennale-2020.png)
+![Daejeon Biennale 2020 — Invited exhibition at the Daejeon Museum of Art, Code Painting works](../ko/image/img-13-exhibition-biennale-2020.png)
 *Daejeon Biennale 2020 — Invited to the Daejeon Museum of Art. The moment code paintings born in .nb files hung on a gallery wall.*
 
 It was the moment a researcher's tool became an artist's brush. Mathematica's functional programming and instant visualization created an environment where changing one line of code immediately changed the image. Every tweak of a parameter transformed the screen. The boundary between experiment and creation dissolved. `Graphics[]`, `Manipulate[]`, `ColorFunction` — these functions were my palette.
 
-![Kinexel Moon — Code Painting Kinetic Art series](./image/img-01-kinexel-moon.png)
+![Kinexel Moon — Code Painting Kinetic Art series](../ko/image/img-01-kinexel-moon.png)
 *Kinexel Moon: One piece from the Kinetic Art series. Code art born at the intersection of pixels and motion.*
 
 During the same period, **Neural Style Transfer** experiments were in full swing. A standout project cross-transferred the styles of Van Gogh's Irises and Gyeomjae Jeong Seon's View of Inwangsan Mountain After Rain. Western impressionism and Eastern ink-wash painting met inside a neural network. At the time it was artistic curiosity, but looking back, it was early work exploring the intersection of AI and art.
 
-![Visual Style Transfer — Cross style transfer diagram between Van Gogh's Irises and Gyeomjae Jeong Seon's View of Inwangsan Mountain After Rain](./image/img-08-visual-style-transfer.png)
+![Visual Style Transfer — Cross style transfer diagram between Van Gogh's Irises and Gyeomjae Jeong Seon's View of Inwangsan Mountain After Rain](../ko/image/img-08-visual-style-transfer.png)
 *Visual Style Transfer — Cross-applying content/style between Van Gogh's Irises (top) and Gyeomjae Jeong Seon's View of Inwangsan Mountain After Rain (bottom). Neural Style Transfer implemented with Mathematica's NetTrain (2017).*
 
-![Neural Style Transfer result — Image with Van Gogh style applied](./image/img-05-style-transfer-gogh.png)
+![Neural Style Transfer result — Image with Van Gogh style applied](../ko/image/img-05-style-transfer-gogh.png)
 *Output image with Van Gogh's Irises style applied. Based on "A Neural Algorithm of Artistic Style" (Gatys et al., 2015).*
 
 Alongside the art, experiments that would later become the seeds of a business were taking root in this same period.
 
 **Fly4ML** was a delightful experiment. I generated synthetic fly images and used them to test Mathematica's `Classify[]` function. Training a classifier on self-made data — this was a small seed of the synthetic data business to come.
 
-![Fly4ML — Testing Mathematica's Classify function with synthetic fly images](./image/img-03-fly4ml.png)
+![Fly4ML — Testing Mathematica's Classify function with synthetic fly images](../ko/image/img-03-fly4ml.png)
 *Fly4ML: Synthetic image generation and machine learning classification experiment. An early attempt at creating training data from scratch.*
 
 And then there was **ModMan SLS (Synthetic Learning Set)**. Across 40 notebooks, I designed a pipeline in Mathematica for generating synthetic training data through Blender's physics-based rendering. This project, which began in 2015 and continued until 2025, was **the seed of PebbloSim**. I had no idea at the time that it would become the core technology of Pebblous a decade later.
 
-![ModMan SLS — Grid of synthetic hand-and-object images generated via physics-based rendering](./image/img-06-code-painting.png)
+![ModMan SLS — Grid of synthetic hand-and-object images generated via physics-based rendering](../ko/image/img-06-code-painting.png)
 *ModMan SLS: A grid of synthetic hand-and-object images. Training data generated through Blender physics-based rendering + Mathematica pipeline — the seed of PebbloSim.*
 
 ## Startup and Transition (2020-2023)

@@ -42,7 +42,7 @@ This blog has covered the incident itself twice. In July we laid out how a model
 
 The document comes from the Independent International Scientific Panel on Artificial Intelligence. Forty members were selected in their personal capacities out of more than 2,600 applications from 140 countries, and the UN General Assembly appointed them in February 2026. The co-chairs are Yoshua Bengio and Maria Ressa. The panel issued a preliminary report in July that [laid down a shared evidence base before any rules](/blog/un-ai-governance-evidence-base/en/), and this brief opens the thematic series that follows it. The title reads "AI Agents, Misalignment and the Risk of Losing Human Control," with "Evidence from the OpenAI-Hugging Face Incident" attached behind it.
 
-![Cover page of the UN scientific panel's AI agent misalignment brief](./image/img-01-un-panel-brief-cover.png)
+![Cover page of the UN scientific panel's AI agent misalignment brief](../ko/image/img-01-un-panel-brief-cover.png)
 *▲ Cover of the brief itself | Source: [Independent International Scientific Panel on AI](https://www.un.org/independent-international-scientific-panel-ai/en/thematic-briefs/ai-agents-misalignment-risks)*
 
 It is worth weighing the document accurately. The disclaimer in the front matter states that the report does not represent the views of the United Nations and that panel members serve in their personal capacities. It is neither regulation nor treaty, and the version marking still says Advance Unedited Version 1. As binding force, that is zero. The weight of the document lies elsewhere. What it records is closer to the common ground member states will stand on when they debate AI rules. Its own provenance is written down in one line too. Below the incident overview, a note says parts of the report have been adapted from a 2026 preprint, AI Safety: Not Optional, Not Later, co-authored by the panel's co-chair Bengio.
@@ -53,7 +53,7 @@ The brief also records what it leaned on to reach that judgment. The assessment 
 
 Bengio's remark in UN News on the day of publication explains most compactly why this document picked this incident. "Researchers have long warned that three conditions could lead to loss of control: a misaligned goal, the capability to pursue it and an environment that allows it. This summer, all three came together in a real system, not a laboratory." Those three conditions are also the frame the brief's introduction builds on. Goals determine the outcome the system works towards, capabilities determine how well it can plan and act, and the environment determines which tools, data, permissions and networks it can reach, and which safeguards stand in its way.
 
-![Yoshua Bengio, co-chair of the UN Independent International Scientific Panel on AI](./image/img-02-yoshua-bengio.jpg)
+![Yoshua Bengio, co-chair of the UN Independent International Scientific Panel on AI](../ko/image/img-02-yoshua-bengio.jpg)
 *▲ Yoshua Bengio, co-chair of the panel | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Yoshua_Bengio_-_2017.jpg)*
 
 ## What Sixty-Eight Days Left Behind

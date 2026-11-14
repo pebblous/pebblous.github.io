@@ -38,7 +38,7 @@ On July 1, 2026, the FTC announced a draft policy statement titled "Suppression 
 
 The statement did not emerge from a vacuum. Its legal root is Executive Order 14365 ("Ensuring a National Policy Framework for Artificial Intelligence"), signed on December 11, 2025. That order directed the FTC Chairman to clarify "how state laws requiring AI models to alter accurate outputs conflict with federal law," and this policy statement is the direct follow-up.
 
-![Official portrait of FTC Chairman Andrew Ferguson](./image/img-01-ftc-commissioner-ferguson.jpg)
+![Official portrait of FTC Chairman Andrew Ferguson](../ko/image/img-01-ftc-commissioner-ferguson.jpg)
 *▲ FTC Chairman Andrew Ferguson | Source: [Wikimedia Commons (FTC, Public Domain)](https://commons.wikimedia.org/wiki/File:Andrew_N._Ferguson,_FTC_Commissioner.jpg)*
 
 > [!callout]
@@ -71,7 +71,7 @@ Had the statement spoken only of consumer deception, it would have ended as comp
 
 The two-year arc around the Colorado AI Act is a drama in itself. Laid out chronologically, the throughline becomes visible.
 
-![Colorado State Capitol building, Denver](./image/img-02-colorado-state-capitol.jpg)
+![Colorado State Capitol building, Denver](../ko/image/img-02-colorado-state-capitol.jpg)
 *▲ Colorado State Capitol (Denver) — where the Colorado AI Act was enacted and amended | Source: [Wikimedia Commons (Hustvedt, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Denver_capitol.jpg)*
 
 - **2024-05** — Colorado enacts SB 24-205.
@@ -106,7 +106,7 @@ In sum, the FTC has translated accuracy into the language of consumer protection
 
 This pattern is not unique to the United States. The current in which asking for accuracy asks for data governance recurs on three fronts. The EU, in Article 10 of the AI Act, requires documented data governance for the training, validation, and testing datasets of high-risk AI, and that provision faces full enforcement in August 2026. Korea has had its AI Basic Act in force since January 22, 2026.
 
-![Berlaymont building, European Commission headquarters, Brussels](./image/img-03-eu-berlaymont-building.jpg)
+![Berlaymont building, European Commission headquarters, Brussels](../ko/image/img-03-eu-berlaymont-building.jpg)
 *▲ The Berlaymont building (Brussels), European Commission headquarters — source of the AI Act's Article 10 data governance rules | Source: [Wikimedia Commons (acediscovery, CC BY 4.0)](https://commons.wikimedia.org/wiki/File:Berlaymont_EU_Building-Brussels.jpg)*
 
 ### 5.1. Ex-Ante Regulation and Ex-Post Enforcement Take Different Roads

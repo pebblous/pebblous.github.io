@@ -41,10 +41,10 @@ What sets Kimodo apart from earlier text-to-motion work — Stanford's CALM, Ber
 <!-- stat-card -->
 **Kimodo at a glance (March 2026)**
 
-![NVIDIA Kimodo architecture diagram — two-stage pipeline from text input to whole-body motion generation for the Unitree G1 humanoid](./image/img-nvidia-arch.png)
+![NVIDIA Kimodo architecture diagram — two-stage pipeline from text input to whole-body motion generation for the Unitree G1 humanoid](../ko/image/img-nvidia-arch.png)
 *▲ NVIDIA Kimodo official architecture — Stage 1 (text → whole-body kinematics) and Stage 2 (G1 robot retargeting) pipeline | Source: [NVIDIA Research (2026)](https://research.nvidia.com/labs/sil/projects/kimodo/)*
 
-![Unitree G1 humanoid robot on display — a bipedal robot with the UNITREE logo, shown at a public demonstration](./image/img-01-unitree-g1.jpg)
+![Unitree G1 humanoid robot on display — a bipedal robot with the UNITREE logo, shown at a public demonstration](../ko/image/img-01-unitree-g1.jpg)
 *▲ Unitree G1 humanoid robot — Kimodo's official target platform. Its price accessibility has made it the de-facto research standard for humanoid robotics labs worldwide | Source: [Wikimedia Commons (CC0)](https://commons.wikimedia.org/wiki/File:Unitree_G1.jpg)*
 
 The Unitree G1 choice is deliberate. It's the most accessible humanoid research platform available — affordable enough that university labs and well-funded startups can run fleets of them. By targeting G1, NVIDIA is signaling that Kimodo is meant to be used, not just cited.
@@ -65,7 +65,7 @@ Stage 2 is where the human motion gets translated into something the G1 can actu
 
 The architectural implication: swap out Stage 2, and you have a pathway to supporting other humanoid platforms. NVIDIA hasn't announced this, but the design makes it possible. That modularity is likely intentional.
 
-![NVIDIA Kimodo text-to-motion demo — Unitree G1 humanoid robot executing a whole-body motion sequence from a natural language prompt](./image/img-nvidia-g1-motion.jpg)
+![NVIDIA Kimodo text-to-motion demo — Unitree G1 humanoid robot executing a whole-body motion sequence from a natural language prompt](../ko/image/img-nvidia-g1-motion.jpg)
 *▲ NVIDIA Kimodo text-to-motion demo — the Unitree G1 executing a whole-body motion sequence generated from a single natural language prompt, after Stage 1 (text → kinematics) and Stage 2 (G1 retargeting) | Source: [NVIDIA Research (2026)](https://research.nvidia.com/labs/sil/projects/kimodo/)*
 
 > [!callout]
@@ -85,7 +85,7 @@ Rigplay 1 is NVIDIA's proprietary motion capture dataset — 700 hours of profes
 
 The code is Apache-2.0. Rigplay 1 is not available. Researchers who want to reproduce Kimodo's results, fine-tune for specific domains, or benchmark against it are starting from zero on the data side.
 
-![Kimodo paper Figure 1 — text-controllable whole-body motion generation examples across SOMA characters and the Unitree G1 robot](./image/img-paper-fig1-motion.png)
+![Kimodo paper Figure 1 — text-controllable whole-body motion generation examples across SOMA characters and the Unitree G1 robot](../ko/image/img-paper-fig1-motion.png)
 *▲ Kimodo paper Fig. 1 — whole-body motion generation examples driven by single text prompts. Trained on Rigplay 1 (700h) + BONES-SEED (288h) | Source: [Zhu et al. (2026), arXiv:2603.15546](https://arxiv.org/abs/2603.15546)*
 
 ### BONES-SEED: The Open Half
@@ -124,7 +124,7 @@ Kimodo doesn't stand alone. It's a load-bearing piece inside a carefully assembl
 <!-- stat-card -->
 **The NVIDIA robotics pipeline** — SOMARaw motion capture processing and retargeting. Turns messy mocap output into clean robot-ready training data. — Kimodo ←Text-to-motion generation. Takes SOMA-processed data as training input, outputs kinematic sequences for downstream controllers. — ProtoMotionsPhysics-based reinforcement learning. Turns Kimodo's kinematic sequences into physically realizable control policies. — GEAR-SONICEnd-to-end deployment pipeline integrating control policies with sensor data for real robot execution.
 
-![NVIDIA Kimodo UI showing the text prompt input interface for motion generation](./image/img-nvidia-ui-prompts.jpg)
+![NVIDIA Kimodo UI showing the text prompt input interface for motion generation](../ko/image/img-nvidia-ui-prompts.jpg)
 *▲ NVIDIA Kimodo official UI — natural language text prompts drive the motion generation pipeline. This is the entry point for the SOMA → Kimodo → ProtoMotions stack | Source: [NVIDIA Research (2026)](https://research.nvidia.com/labs/sil/projects/kimodo/)*
 
 The pipeline architecture is important because it shows what Kimodo actually is and isn't. It's a motion choreographer, not a robot controller. The output of Kimodo — a kinematic sequence — requires ProtoMotions to become an executable policy. "Text to robot motion" is accurate but needs a footnote: there are two more steps between Kimodo's output and a robot actually moving.
@@ -151,7 +151,7 @@ The maximum output is 10 seconds of motion. Most real tasks take longer. "Walk t
 
 2–5 seconds of generation time works fine for pre-planned motion sequences. It doesn't work for reactive control — the robot can't Kimodo its way out of an unexpected obstacle mid-task. This positions Kimodo as a motion library tool rather than an online controller. Useful, but a different use case than it might initially suggest.
 
-![NVIDIA Kimodo dance demo — Unitree G1 humanoid performing a dance motion sequence generated from a text prompt](./image/img-nvidia-robot-dance.jpg)
+![NVIDIA Kimodo dance demo — Unitree G1 humanoid performing a dance motion sequence generated from a text prompt](../ko/image/img-nvidia-robot-dance.jpg)
 *▲ NVIDIA Kimodo dance demo — G1 whole-body motion from a single text prompt. Even within the current 10-second limit, Kimodo generates expressive, coordinated sequences | Source: [NVIDIA Research (2026)](https://research.nvidia.com/labs/sil/projects/kimodo/)*
 
 ### 17GB VRAM and the reproducibility gap

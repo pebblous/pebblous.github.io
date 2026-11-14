@@ -97,7 +97,7 @@ The comparison runs between a policy with TouchScale inserted at the mid-trainin
 
 With 20 trials one tick is 5 percentage points, so the per-task figures swing. Even so, all four moved in the same direction, and the largest gain landing on the task that sorts soft objects from hard ones is worth reading. Softness is difficult to judge by sight and has to be pressed to be known. The largest gain arrived exactly where tactile records should contribute most.
 
-![An xArm6 robot arm fitted with a tactile-gloved hand performing the four contact-heavy tasks: soft/hard sorting, bottle-cap removal, test-tube transfer, and whiteboard wiping](./image/img-01-robot-experiments.webp)
+![An xArm6 robot arm fitted with a tactile-gloved hand performing the four contact-heavy tasks: soft/hard sorting, bottle-cap removal, test-tube transfer, and whiteboard wiping](../ko/image/img-01-robot-experiments.webp)
 *▲ The xArm6 testbed with a gloved hand (left) and the four tasks from the table above in action (right). Source: [TouchScale project page](https://touch-scale.github.io/).*
 
 The limits the paper sets down for itself belong in the same reading. The robot evaluation stayed with one platform and four manipulation tasks, and TouchScale carries no action labels. Heavier than either is the passage reporting only a weak association between the error in predicting the next moment of touch and the error in predicting the next action. Whether a model that predicts touch well becomes a robot that moves well, the authors left open.

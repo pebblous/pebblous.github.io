@@ -42,7 +42,7 @@ Sources: [Law & Technology, Official Gazette analysis](https://lawandtechnology.
 
 The Italian government adopted Legislative Decree 179/2026 on October 7. It appeared in Official Gazette No. 234 on October 8 and entered into force fifteen days later, on October 23. Because its job is to fit the European Union's AI Act (Regulation 2024/1689) into the national legal order, most of its articles deal with supervisory bodies, penalties and regulatory sandboxes. The Agency for Digital Italy handles the notification of conformity assessment bodies, and the National Cybersecurity Agency becomes the market surveillance authority and single point of contact.
 
-![Palazzo Chigi, Rome, where Italy's Council of Ministers meets — the site where Legislative Decree 179/2026 was adopted](./image/img-01-palazzo-chigi.jpg)
+![Palazzo Chigi, Rome, where Italy's Council of Ministers meets — the site where Legislative Decree 179/2026 was adopted](../ko/image/img-01-palazzo-chigi.jpg)
 *▲ Palazzo Chigi, Rome — where the Council of Ministers adopted Legislative Decree 179/2026 | Source: [Wikimedia Commons (CC BY 4.0, DellaGherardesca)](https://commons.wikimedia.org/wiki/File:Palazzo_Chigi_-_esterno.jpg)*
 
 Two of its articles deal with employment. Article 41 is titled "Protection of workers in decision-making processes assisted by artificial intelligence systems," and Article 42 is titled "Artificial intelligence, health and safety in the workplace." Those two are what this article reads.

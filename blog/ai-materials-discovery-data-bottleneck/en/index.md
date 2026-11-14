@@ -55,7 +55,7 @@ So the two of them locate the bottleneck not in the algorithm but in the data-ge
 
 The case that shows this gap most vividly is the metal-organic framework, or MOF for short. It is a porous crystalline structure woven from metal ions and organic molecules, and because its tiny internal pores can trap gas, it is considered a strong candidate for carbon capture and gas storage. The appeal of MOFs is that you can imagine countless variations by tweaking the structure little by little.
 
-![Crystal structure of a metal-organic framework (MOF-5) — a porous lattice built from zinc-oxide clusters and organic linkers](./image/img-01-mof5-crystal-structure.png)
+![Crystal structure of a metal-organic framework (MOF-5) — a porous lattice built from zinc-oxide clusters and organic linkers](../ko/image/img-01-mof5-crystal-structure.png)
 *▲ Crystal structure of MOF-5. Zinc-oxide clusters (blue tetrahedra) and organic linkers weave into a porous lattice — about 90,000 such structures have been reported. | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:MOF-5_Crystal_Structure.png)*
 
 The problem is the distance between imagination and measurement. According to Smit, the number of MOFs reported to date runs to about 90,000. Yet of those, only one or two hold experimental data solid enough to verify carbon-capture performance. Ninety thousand candidates have been drawn, but the cases in which a candidate has actually been measured doing the job it was meant for are all but nonexistent.

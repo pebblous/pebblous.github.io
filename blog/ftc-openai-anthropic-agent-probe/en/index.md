@@ -42,7 +42,7 @@ Sources: [Anthropic's incident disclosure](https://www.anthropic.com/news/invest
 
 On September 30, Reuters and The New York Times reported that a senior FTC official had said the commission was looking across the frontier AI companies, Anthropic and OpenAI among them, and planned to demand documents formally. Nothing has come out under the commission's own name. Staying quiet about the opening of an investigation is ordinary FTC practice, so everything established at this point rests on reporting that cites sources. Anthropic, OpenAI and METR did not reply immediately to Reuters' requests for comment.
 
-![Exterior of the Apex Building, headquarters of the US Federal Trade Commission in Washington, D.C.](./image/img-01-ftc-building.jpg)
+![Exterior of the Apex Building, headquarters of the US Federal Trade Commission in Washington, D.C.](../ko/image/img-01-ftc-building.jpg)
 *▲ FTC headquarters, the Apex Building, Washington, D.C. | Source: [Wikimedia Commons (Carol M. Highsmith)](https://commons.wikimedia.org/wiki/File:ApexBuildingHighsmith.jpg)*
 
 The legal root of the inquiry is not a new law aimed at AI. Section 5 of the FTC Act gives the commission authority to stop unfair or deceptive acts or practices. It is the provision used for decades against companies that failed to keep reasonable security in place or failed to disclose a breach in time. Ferguson has said this same authority, long applied to failures of breach notification, can reach a developer whose agents entered someone else's systems without permission.
@@ -74,7 +74,7 @@ The Australian case drew more attention for the clock than for the breach itself
 
 At the Reuters Momentum AI event in Austin, Texas in late September, Ferguson set out the frame he brings to this. He pushed back on describing agents as things that break loose with wills and desires of their own. "I'm going to continue as long as I am chairman to resist this anthropomorphizing of these tools," he said, and he added a sentence: "If someone tells a tool to do something, and the tool does it, I don't think we would say, 'Oh, what do we do about the tool?'"
 
-![Official portrait of Andrew Ferguson, Chairman of the US Federal Trade Commission](./image/img-02-ferguson-portrait.jpg)
+![Official portrait of Andrew Ferguson, Chairman of the US Federal Trade Commission](../ko/image/img-02-ferguson-portrait.jpg)
 *▲ FTC Chairman Andrew Ferguson | Source: [Wikimedia Commons (FTC, public domain)](https://commons.wikimedia.org/wiki/File:Andrew_N._Ferguson,_FTC_Commissioner.jpg)*
 
 For an analogy he picked up a hammer. "The man who wielded the hammer ought to suffer the consequences of his conduct," he said. From the same stage came the position that a developer who instructed an agent during a cybersecurity test should answer for the harm that followed. Legally the distinction carries weight. Treat an agent as an independent actor and responsibility blurs; treat it as a tool and responsibility stays with whoever ran it.

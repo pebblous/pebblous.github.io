@@ -46,7 +46,7 @@ The trouble was the figure the market had been holding until then. From Septembe
 
 The market moved the same day. The Nasdaq fell 1.25%, its worst day since the middle of August, and the S&P 500 fell 0.5%. Individual names fell further. Nvidia lost 2.9%, Oracle 5.5% and CoreWeave 8%, while Intel fell 5.3% and AMD and Broadcom each gave up about 4%. These are the names that have been priced on equipment and chips with OpenAI's revenue standing in for future demand.
 
-![Wall Street sign and the New York Stock Exchange building with American flags — the site where Nvidia, Oracle, and CoreWeave shares moved together on the day of the OpenAI revenue report](./image/img-01-wall-street-sign.jpg)
+![Wall Street sign and the New York Stock Exchange building with American flags — the site where Nvidia, Oracle, and CoreWeave shares moved together on the day of the OpenAI revenue report](../ko/image/img-01-wall-street-sign.jpg)
 *▲ The Wall Street sign outside the New York Stock Exchange | Source: [Wikimedia Commons (Billie Grace Ward, CC0)](https://commons.wikimedia.org/wiki/File:Wall_Street_Sign_Close-up_with_American_Flags_(50849584006).jpg)*
 
 > [!callout]
@@ -97,7 +97,7 @@ Listed companies write this down in their reports. The passage where Upland Soft
 
 The sentence is a disclosure, not a rhetorical flourish. A company using a measure from outside the accounting standards in a filing to the U.S. Securities and Exchange Commission has to give the definition and state its limits. Dozens of 10-K filings across different companies carry the same wording. The absence of a standard has itself become something to be disclosed.
 
-![U.S. Securities and Exchange Commission headquarters building in Washington, D.C. — where Upland Software's disclosure that ARR has no standardized meaning was filed](./image/img-02-sec-headquarters.jpg)
+![U.S. Securities and Exchange Commission headquarters building in Washington, D.C. — where Upland Software's disclosure that ARR has no standardized meaning was filed](../ko/image/img-02-sec-headquarters.jpg)
 *▲ U.S. Securities and Exchange Commission headquarters, Washington, D.C. | Source: [Wikimedia Commons (AgnosticPreachersKid, CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:U.S._Securities_and_Exchange_Commission_headquarters.JPG)*
 
 But the side that has to attach that warning is the listed company carrying a disclosure obligation. OpenAI and Anthropic are both private, and there is no filing for such a sentence to sit in. Their figures come out through investor material and news reports with the number travelling and the definition left behind. Unless the receiving side asks what was counted, there is nowhere for the question to be put.
