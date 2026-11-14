@@ -15,7 +15,7 @@ LG유플러스는 11월 11일 서울 용산 사옥에서 카테나-X, 코피니�
 
 시점을 정한 쪽은 규제다. 유럽연합 배터리 규정은 2027년 2월 18일부터 전기차 배터리에 디지털 여권을 붙이도록 한다. 세계에서 처음으로 의무가 되는 디지털 제품여권이다.
 
-칸을 채우는 일이 왜 어려운지는 먼저 걸어 본 회사가 적어 뒀다. LG전자는 지금 유통되는 탄소발자국 수치 상당수가 생산 현장에서 나온 값이 아니라 업계 평균에 기댄 값이라고 공식 블로그에 썼다. 평균을 옮겨 적은 칸은 공정을 고쳐도 좀처럼 움직이지 않는다. 포드와 협력사 두 곳이 실제 측정값을 세 단계에 걸쳐 이어 붙인 시범 사업에서는, 그렇게 산정한 탄소발자국이 평균에 기댄 값보다 46% 낮게 나왔다.
+칸을 채우는 일이 왜 어려운지는 먼저 걸어 본 회사가 적어 뒀다. LG전자는 지금 유통되는 탄소발자국 수치 상당수가 생산 현장에서 나온 값이 아니라 업계 평균에 기댄 값이라고 공식 블로그에 썼다. 평균을 옮겨 적은 칸은 공정을 고쳐도 좀처럼 움직이지 않는다. 포드와 협력사 두 곳의 시범 사업에서는 2차 협력사 마이크론이 탄소발자국 산정에 쓰이는 1차 데이터를 플렉스에 건넸고, 플렉스가 이를 자체 계산에 반영해 포드에 전달했다.
 
 어려운 쪽은 좋은 숫자를 적어 내는 일이 아니다. 공장이 달라지면 같이 달라지는 숫자를 갖추는 일이다. 페블러스는 DataClinic으로 AI 학습 데이터의 품질을 등급이 아니라 수치로 진단한다.
 
@@ -33,7 +33,7 @@ LG Uplus said on November 13 that two days earlier, at its Yongsan headquarters 
 
 The clock belongs to regulation. From February 18, 2027, the EU battery regulation requires a digital passport on electric vehicle batteries, the first digital product passport anywhere to carry the force of law.
 
-Why those cells are hard to fill has already been set out by a company that got there earlier. LG Electronics said on its corporate blog that much of the carbon footprint data now in circulation is not measured on the production floor but borrowed from industry averages. A cell holding an average barely shifts when the process behind it improves. In a pilot where Ford and two of its suppliers carried measured values across three tiers, the footprint came out 46 percent below the average-based figure.
+Why those cells are hard to fill has already been set out by a company that got there earlier. LG Electronics said on its corporate blog that much of the carbon footprint data now in circulation is not measured on the production floor but borrowed from industry averages. A cell holding an average barely shifts when the process behind it improves. In a pilot between Ford and two of its suppliers, tier-two supplier Micron handed Flex primary data for carbon footprint calculations, and Flex built it into its own calculation before passing it to Ford.
 
 So the demanding part is not a good number. It is a number that still shifts when the factory behind it shifts. Pebblous inspects AI training data with DataClinic and attaches a figure to each item.
 
