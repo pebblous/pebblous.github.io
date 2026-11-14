@@ -66,7 +66,7 @@ SKILLSkill Module (Markdown-defined)
 
 Workflow · Best practices · Supporting resources — dynamically loaded when needed
 
-![DeerFlow 2.0 official website — Do Anything with DeerFlow. Open-source SuperAgent handling tasks from minutes to hours using sandbox, memory, skills, and sub-agents](./image/img-01-architecture.png)
+![DeerFlow 2.0 official website — Do Anything with DeerFlow. Open-source SuperAgent handling tasks from minutes to hours using sandbox, memory, skills, and sub-agents](../ko/image/img-01-architecture.png)
 *▲ DeerFlow 2.0 official site (deerflow.tech). "Do Anything with DeerFlow" — 31,000+ GitHub stars | Source: [bytedance/deer-flow](https://github.com/bytedance/deer-flow)*
 
 🤖
@@ -126,7 +126,7 @@ Skills can be packaged into `.skill` archives and shared. As the community ecosy
 
 For AI to handle hours-long tasks autonomously, the context window must never overflow. DeerFlow solves this problem in three ways.
 
-![DeerFlow auto-generated survival rate visualization from Titanic dataset analysis — 38.4% overall survival rate with gender comparison](./image/img-02-context.png)
+![DeerFlow auto-generated survival rate visualization from Titanic dataset analysis — 38.4% overall survival rate with gender comparison](../ko/image/img-02-context.png)
 *▲ DeerFlow demo: Given the Titanic dataset, the agent executed Python code and completed the visualization automatically | Source: [bytedance/deer-flow demo](https://github.com/bytedance/deer-flow)*
 
 📝
@@ -156,7 +156,7 @@ Each sub-agent has its own independent context. It cannot see the context of par
 
 The emergence of DeerFlow 2.0 directly intersects with Pebblous DataGreenhouse's vision of an **autonomous data operating system**. Four perspectives:
 
-![DeerFlow Titanic demo scenario — agent autonomously performs real data analysis tasks](./image/img-03-datagreenhouse.png)
+![DeerFlow Titanic demo scenario — agent autonomously performs real data analysis tasks](../ko/image/img-03-datagreenhouse.png)
 *▲ DeerFlow official demo scenario: "Titanic data analysis" — agent receives raw data and autonomously handles the entire pipeline | Source: [bytedance/deer-flow demo](https://github.com/bytedance/deer-flow)*
 
 #### 1. Data Pipeline Automation Becomes Real

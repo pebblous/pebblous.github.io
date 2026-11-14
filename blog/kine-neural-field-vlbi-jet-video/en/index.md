@@ -40,7 +40,7 @@ Source: [Foschi et al. (2026), Nature, DOI 10.1038/s41586-026-10988-5](https://w
 
 VLBI links radio telescopes across the planet so that they work as one telescope the size of Earth. Signal from the places where no telescope stands is never collected, so turning what was collected into an image is, from the outset, a problem without a single determined answer. The long-standing standard was CLEAN. One observation yields one still image, and an observation from another epoch becomes a separate image. String those images together in order and the video jitters, because the noise structure differs from frame to frame.
 
-![VLBA radio telescope dish at Kitt Peak National Observatory in Arizona](./image/img-01-vlba-dish.jpg)
+![VLBA radio telescope dish at Kitt Peak National Observatory in Arizona](../ko/image/img-01-vlba-dish.jpg)
 *▲ One of the ten VLBA dishes, at Kitt Peak. The 116 observations behind this paper came from combinations of antennas like this one. | Source: [Kitt Peak National Observatory/NOIRLab/NSF/AURA (P. Marenfeld), CC BY 4.0](https://noirlab.edu/public/images/3S8A8130)*
 
 kine builds a function instead of an image. Feed it right ascension, declination and time, and a single neural network returns the brightness and polarization at that place and moment, standing in for the entire video. The architecture is modest: four layers for total intensity, six for full polarization, 256 nodes per layer. During training the spatial coordinates are sampled evenly on a 200 by 200 grid and the time coordinate follows the actual observation dates. Fitting all 116 datasets to this one function took about 1.3 hours on four A100 GPUs.

@@ -60,14 +60,14 @@ The August 15, August 22, September 3 and September 6 entries are Buckmaster's a
 
 Only a day separates the last two rows of that table. The withdrawal followed criticism from researchers at Caltech, and the declaration came the day after.
 
-![Entrance sign for the California Institute of Technology (Caltech) — OpenAI withdrew sponsorship of a math event at this university on September 10](./image/img-01-caltech-sponsorship.jpg)
+![Entrance sign for the California Institute of Technology (Caltech) — OpenAI withdrew sponsorship of a math event at this university on September 10](../ko/image/img-01-caltech-sponsorship.jpg)
 *▲ Caltech, whose mathematics event lost OpenAI's sponsorship | Source: [Wikimedia Commons (Ken Lund, CC BY-SA 2.0)](https://commons.wikimedia.org/wiki/File:California_Institute_of_Technology,_Pasadena,_California_(14516438274).jpg)*
 
 ## OpenAI did publish the proof
 
 Some September 8 stories reported that the proof had not been published, and that line is still being quoted. The press briefing ran ahead of the announcement post. The Wayback Machine capture of the post at 17:15 UTC on September 8 already carries links to the manuscripts and to the Lean formalization side by side. "Finite Time Blowup for Navier–Stokes" runs 166 pages and "Finite Time Blowup for the Euler Equation" runs 57; the author field on both carries no human name, only OPENAI. The formalization sits at `github.com/openai/NavierStokesAndEuler`. It uses Lean 4.34.0-rc2 with Mathlib, and the repository instructions tell you to fetch the cache and run `lake build`. A separate document covers rechecking the formalization with an external checker.
 
-![GitHub repository card for openai/NavierStokesAndEuler, the Lean formalization OpenAI published alongside its proof](./image/img-02-navierstokes-euler-repo.png)
+![GitHub repository card for openai/NavierStokesAndEuler, the Lean formalization OpenAI published alongside its proof](../ko/image/img-02-navierstokes-euler-repo.png)
 *▲ OpenAI's Lean formalization repository, openai/NavierStokesAndEuler | Source: [GitHub](https://github.com/openai/NavierStokesAndEuler)*
 
 Theorem 1.1 of the Navier-Stokes manuscript establishes the following. For any positive viscosity, pick one smooth external force with compact support in space and time, start the fluid from rest, and the kinetic energy stays bounded while the velocity goes to infinity in finite time. The manuscript states that this establishes clause (C) of Fefferman's official problem statement, and that compact support carries clause (D) on the three-dimensional torus along with it.
@@ -103,7 +103,7 @@ Nobody in this episode thought a certificate alone was enough, least of all the 
 
 The declaration posted to [mathandai.org](https://mathandai.org/) on September 11 is titled "A Severe Misalignment of AI in Mathematics." All twenty-five signatories are Fields Medalists, running from Pierre Deligne, who won in 1978, to Yu Deng, who won in 2026, and including Artur Avila, Peter Scholze, Maryna Viazovska, June Huh, Terence Tao, Cédric Villani, Ngô Bảo Châu and Martin Hairer. The declaration names neither OpenAI nor Anthropic. It proposes no rule and no enforcement mechanism.
 
-![Front face of the Fields Medal, showing a profile of Archimedes and a Latin inscription](./image/img-03-fields-medal.jpg)
+![Front face of the Fields Medal, showing a profile of Archimedes and a Latin inscription](../ko/image/img-03-fields-medal.jpg)
 *▲ The Fields Medal — the honor all 25 signatories share | Source: [Wikimedia Commons (Stefan Zachow/IMU, Public Domain)](https://commons.wikimedia.org/wiki/File:FieldsMedalFront.jpg)*
 
 It opens by granting the premise: over the past few months, language models have grown strong enough at mathematics to genuinely solve major open problems. Its objection is then to the use being made of that capability rather than to the capability itself. The target of the first paragraph is not a particular company either. The push by AI companies to solve mathematical problems as a benchmark, it says, is detrimental to the science of mathematics and to the mathematical community, and the goals of the two groups are severely misaligned.
@@ -146,7 +146,7 @@ OpenAI said that neither its researchers nor its agents saw any of the pair's wo
 
 “While unlikely, we cannot rule out that de-identified data derived from their usage of our products helped improve our models.”
 
-![Exterior of the Pioneer Building in San Francisco, which houses OpenAI's offices](./image/img-04-openai-pioneer-building.jpg)
+![Exterior of the Pioneer Building in San Francisco, which houses OpenAI's offices](../ko/image/img-04-openai-pioneer-building.jpg)
 *▲ The Pioneer Building in San Francisco, where OpenAI is based | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Pioneer_Building,_San_Francisco_(2019)_-1.jpg)*
 
 That sentence is the part of this episode with the longest shelf life. Whether a proof is true, a machine answers in hours. Where that proof came from, nobody outside the company can check. A Lean certificate carries no record of origin. Formal verification is an instrument for guaranteeing that a result is true, not for recording where it came from.

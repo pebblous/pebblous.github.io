@@ -42,14 +42,14 @@ The terms of the grant are explicit. Build a Mixture-of-Experts model of more th
 
 Why now? Behind it sits a concentration of capital. On the Forbes AI 50, two companies — OpenAI and Anthropic — captured roughly 80% of all money raised. In the first quarter of 2026, those two plus xAI and Waymo, just four firms, absorbed 65% of global venture investment. The words of Henna Virkkunen, the Commission's executive vice-president for tech sovereignty, lay the context bare: "Europe cannot remain a passive consumer of technology developed elsewhere."
 
-![European Commission headquarters — the Berlaymont building in Brussels, Belgium](./image/img-01-berlaymont-eu-commission.jpg)
+![European Commission headquarters — the Berlaymont building in Brussels, Belgium](../ko/image/img-01-berlaymont-eu-commission.jpg)
 *▲ The Berlaymont, Brussels — EU Commission headquarters where the EUROPA consortium selection was announced | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Berlaymont_building_european_commission.jpg) (CC BY-SA 2.5)*
 
 ## Why 24 Languages Is a Condition
 
 The "all 24 languages" requirement is not a marketing line. In the EU, language is a matter of citizenship. If a model is fluent in English and German but poor in Maltese and Latvian, citizens of those language communities become, in effect, second-class AI users. The risk the Commission's own documents flag is exactly that: the fewer the resources a language has, the worse the performance, and the flimsier the safety evaluation.
 
-![Aerial view of Valletta, Malta — the EU member state with the smallest official language by web data share](./image/img-02-valletta-malta.jpg)
+![Aerial view of Valletta, Malta — the EU member state with the smallest official language by web data share](../ko/image/img-02-valletta-malta.jpg)
 *▲ Valletta, Malta from the air. Maltese accounts for 0.03% of Common Crawl — the entire internet's text data | Source: [Jonathan Mercieca / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Valletta,_Malta_(Aerial_View).jpg) (CC BY-SA 4.0)*
 
 So language equality is both a technical and a political condition. The EU would struggle to wave a model through its regulatory gate if that model prioritized English and bolted on the rest. With the AI Act in force, "fair multilingual performance" is closer to a requirement than a choice. Nailing 24 languages down as a condition from the outset reads as a judgment that the requirement cannot be met by retrofitting languages later.

@@ -38,7 +38,7 @@ Start by fixing one number. Coverage of this plan, at home and abroad, sometimes
 
 Take the plan apart and a rule emerges: hardware gets a name, a number, and a target. About KRW 800 trillion goes to southwestern-region chip fabs, roughly KRW 550 trillion to AI data centers, each announced with its investors (private players like Samsung and SK) and its facility targets (number of fabs, gigawatts of capacity). The government also pledged to commercialize industry-specific humanoids by 2028 and lift the domestic market share from 1% to 20% ([Seoul Economic Daily, 2026-06-29](https://www.sedaily.com)). Every one of these targets points at something you can buy or build.
 
-![Researcher in a cleanroom suit inspecting equipment inside a semiconductor cleanroom — the hardware axis that gets clear names and budget lines](./image/img-01-cleanroom.jpg)
+![Researcher in a cleanroom suit inspecting equipment inside a semiconductor cleanroom — the hardware axis that gets clear names and budget lines](../ko/image/img-01-cleanroom.jpg)
 *▲ A semiconductor fab cleanroom — a representative site for the KRW 800 trillion hardware axis (illustrative image) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Clean_room.jpg)*
 
 Data is not absent from the budget. The government's "Physical AI Core Competitiveness Strategy" (2026-07-01) named data as one of four pillars and earmarked around KRW 1.4 trillion under the labels "robot training center" and "data factory." Deputy Prime Minister Bae Kyung-hoon spoke of "turning even a robot's fingertip sensations into data," citing a goal of 10,000 hours of collected data ([Korea Economic Daily, 2026-07-13](https://www.hankyung.com)). The problem is what comes after. The bars below place all three items on the same axis.
@@ -68,7 +68,7 @@ Source: Open X-Embodiment Collaboration (arXiv:2310.08864). Shares are approxima
 
 So why not simply buy the missing data? Here is where robot data differs decisively from a chip fab. Real-world robot data is a labor-intensive asset that exists only once physical contact actually happens. Human operators build it up one episode at a time by teleoperating or demonstrating with the robot. Operator wages run $25–48 an hour, and a single production-grade dataset costs $50,000 to $200,000 to assemble. By one estimate, collecting data in the real world runs up to 82 times the cost of simulation. DROID, a large-scale in-the-wild manipulation dataset, is likewise the product of many institutions teleoperating robots over months ([DROID, arXiv:2403.12945](https://arxiv.org/abs/2403.12945)). It is time and hands, not money, that make this data.
 
-![A person hand-guiding a robot arm through kinesthetic teaching — labor-intensive collection of robot experience data](./image/img-02-franka-teaching.jpg)
+![A person hand-guiding a robot arm through kinesthetic teaching — labor-intensive collection of robot experience data](../ko/image/img-02-franka-teaching.jpg)
 *▲ A person hand-guiding a robot arm to demonstrate a motion — the Franka-class arm that accounts for 40% of Open X-Embodiment data | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Franka_Emika1.jpg)*
 
 Pour in capital and a fab gets built; pay the price and a robot gets delivered. But the experience that robot leaves behind as it collides with the world has to be accumulated over time or refined and reused against a standard. That is the structural reason data keeps surfacing in budgets only as a "qualitative item." It is hard to buy, it cannot be built — it can only be accumulated and managed.
@@ -90,7 +90,7 @@ Pebblous has already treated this problem in a separate earlier report. Why robo
 
 This plan already has one visible bottleneck: power and water. A single completed Yongin chip cluster needs 15–16 gigawatts of electricity, yet the supply secured so far is only about 1.9 gigawatts. Roughly 6 of the remaining gigawatts have no confirmed sourcing plan, and closing that gap means laying 1,153 kilometers of new transmission lines at a cost of some KRW 37 trillion ([Tom's Hardware, 2026](https://www.tomshardware.com/tech-industry/power-and-water-lag-the-fabs-in-south-koreas-880-billion-chip-and-ai-plan)). The worry that the fabs may get built before the electricity to run them arrives is already out in the open.
 
-![High-voltage transmission towers and power lines — the grid infrastructure needed to run chip fabs and data centers](./image/img-03-power-tower.jpg)
+![High-voltage transmission towers and power lines — the grid infrastructure needed to run chip fabs and data centers](../ko/image/img-03-power-tower.jpg)
 *▲ High-voltage transmission towers — of the 15–16GW the Yongin cluster needs, roughly 6GW still has no confirmed sourcing plan (illustrative image) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Electric_transmission_power_tower.jpg)*
 
 So here is the question. If even power and water, a bottleneck that is at least visible and carries a price tag, provoke debate about lead times, what is happening with data infrastructure, which is far less visible? The answer is simple: it never even reached the table. The bottleneck is twofold. One is the visible kind, like power and water; the other is the invisible kind, like the data pipeline. And the invisible one is the more dangerous.
@@ -107,7 +107,7 @@ This collapse is entirely invisible to static metrics. The files are intact and 
 
 The government's goal is to lift Korea's domestic humanoid market share from 1% to 20% by 2028–2030. Separately, Goldman Sachs projected that Korea could account for about 30% of global humanoid production by around 2035 ([Goldman Sachs Research, 2026-06-25](https://www.goldmansachs.com)). The two figures measure different things: one is the government's domestic market-share target, the other an outside firm's global production-share forecast. They must not be conflated. But both rest on the same premise: that Korea will be good at making humanoids.
 
-![A full-body silver humanoid robot on display — the kind of commercial humanoid the 20% market-share target points toward](./image/img-04-optimus.jpg)
+![A full-body silver humanoid robot on display — the kind of commercial humanoid the 20% market-share target points toward](../ko/image/img-04-optimus.jpg)
 *▲ A humanoid robot on display — the hardware may look close to finished, but the standards for the experience data it must accumulate are a separate question (illustrative image) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Optimus_Tesla.jpg)*
 
 For that premise to hold, there has to be a system that verifies and reuses, in a standard structure, the experience data robots accumulate through their bodies. And competitors are already translating that system into the language of budgets and institutions. What they share is that they do not treat data strategy as separable from products and infrastructure.

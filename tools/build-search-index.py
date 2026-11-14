@@ -102,21 +102,28 @@ def main():
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(site / rel, dst)
 
+        # 빈 폴더에 새로 짓고 검증한 뒤 통째로 바꾼다. 기존 폴더에 덮어쓰면 내용 해시
+        # 이름의 옛 조각이 지워지지 않고 쌓인다(2026-10-28 실측: 약 150판·1.65GB).
+        out = Path(args.output_path).resolve()
+        fresh = stage.parent / (stage.name + "-out")
         result = subprocess.run(
             ["npx", "-y", "pagefind", "--site", str(stage),
-             "--output-path", str(Path(args.output_path).resolve())],
+             "--output-path", str(fresh)],
             capture_output=True, text=True,
         )
         tail = "\n".join((result.stdout + result.stderr).splitlines()[-6:])
         print(tail)
         if result.returncode != 0:
+            shutil.rmtree(fresh, ignore_errors=True)
             print("❌ pagefind 빌드 실패")
             return 1
-
-    out = Path(args.output_path)
-    if not (out / "pagefind.js").exists():
-        print("❌ 출력 검증 실패: pagefind.js 없음")
-        return 1
+        if not (fresh / "pagefind.js").exists():
+            shutil.rmtree(fresh, ignore_errors=True)
+            print("❌ 출력 검증 실패: pagefind.js 없음")
+            return 1
+        if out.exists():
+            shutil.rmtree(out)
+        shutil.move(str(fresh), str(out))
     size_mb = sum(f.stat().st_size for f in out.rglob("*") if f.is_file()) / 1e6
     print(f"✅ 인덱스 생성 완료: {out} ({size_mb:.1f}MB, "
           f"대상 {len(included)} / 배제 {len(excluded)})")

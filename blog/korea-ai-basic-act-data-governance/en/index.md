@@ -36,7 +36,7 @@ _As the EU delays high-risk rules to 2027, Korea now requires impact assessments
 
 Korea's Framework Act on the Development of Artificial Intelligence and the Establishment of a Foundation of Trust passed the National Assembly in December 2024, and the main body of the law entered into force on January 22, 2026. But the moment "full enforcement" actually points to comes a little later. The amendment and enforcement decree that spell out operators' obligations cleared the Cabinet on July 14, 2026, and took effect on July 21 — the point at which the rules for high-impact AI began to operate as real duties.
 
-![National Assembly Building of South Korea — where the AI Framework Act was passed](./image/img-01-national-assembly.jpg)
+![National Assembly Building of South Korea — where the AI Framework Act was passed](../ko/image/img-01-national-assembly.jpg)
 *▲ National Assembly Building of South Korea — where the AI Framework Act passed in December 2024 | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:National_Assembly_Building_of_South_Korea10.JPG)*
 
 Around the same time, the EU moved in the opposite direction. The "Digital Omnibus" amendment, approved by the European Parliament on June 16, delayed the obligations for use-based high-risk AI (Annex III) — hiring, credit scoring, education, access to essential services — from August 2, 2026 to December 2, 2027, a 16-month slip. Only some transparency duties, such as deepfake labeling, stayed close to the original schedule. With the two timelines pulling apart in opposite directions, Korea became the jurisdiction that put safety obligations first on AI that judges people directly.

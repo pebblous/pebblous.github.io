@@ -40,7 +40,7 @@ On July 15, China's interim measures for the administration of anthropomorphic A
 
 A piece on the memory that Doubao and Qwen are erasing, viewed through the lens of data ownership, already lives on the Pebblous blog. [The data ownership of agent memory](/blog/china-ai-agent-memory-ownership/en/) examined the portability gap: the memory can be deleted, but there is no way to move it. This piece looks at a different clause of the same regulation. Before the ending where a conversation is erased, there is a prior question of whether that conversation should have been trained on without consent at all.
 
-![Alibaba Group headquarters in Hangzhou, the company behind Qwen, which shut down its agent feature the day China's rule took effect](./image/img-01-alibaba-hq.jpg)
+![Alibaba Group headquarters in Hangzhou, the company behind Qwen, which shut down its agent feature the day China's rule took effect](../ko/image/img-01-alibaba-hq.jpg)
 *▲ Alibaba Group headquarters in Hangzhou. Alibaba, which runs Qwen, fully shut down its user-created agent feature and permanently erased chat records on July 15, the day the rule took effect. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Alibaba_group_Headquarters.jpg) (CC BY-SA 3.0)*
 
 The era when the conversations you shared your feelings in quietly became training data closes today, with one rule. The regulation did not directly order deletion. Platforms simply calculated that shutting down was cheaper than compliance. But peel back one layer of the regulatory text and the real center of gravity rests not on service shutdowns but on training consent. Reading exactly what that clause prohibits has to come first.
@@ -80,7 +80,7 @@ What the regulation demands runs in exactly the opposite direction. A one-tap ex
 
 This tension is not being felt for the first time. Article 17 of the GDPR, the right to erasure, and the ten-year audit-log retention duty for high-risk systems under the EU AI Act, which fully applies in August 2026, have already been flagged as colliding head-on. One says erase, the other says keep. The structure in which a demand to retain and a demand to delete point in opposite directions over the same data did not first appear with companion AI. It recurs every time a regulation touches the time axis of data.
 
-![The European Parliament building in Brussels, where GDPR's right to erasure and the EU AI Act's log-retention duty collide](./image/img-02-ep-brussels.jpg)
+![The European Parliament building in Brussels, where GDPR's right to erasure and the EU AI Act's log-retention duty collide](../ko/image/img-02-ep-brussels.jpg)
 *▲ The European Parliament building in Brussels. The same legislature passed both GDPR's right to erasure and the EU AI Act's ten-year log-retention duty, a precedent for a demand to delete colliding with a demand to keep. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:European_Parliament_building_Brussels_3.jpg) (CC BY-SA 4.0)*
 
 > [!callout]

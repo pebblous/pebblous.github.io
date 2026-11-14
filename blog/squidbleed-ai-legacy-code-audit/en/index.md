@@ -50,7 +50,7 @@ The way it was found mirrors how AI is used today. A researcher at Calif.io told
 
 The part worth noting is how it reasoned. The AI did not stop at "this looks off"; it cited a specific clause of the C standard to argue why it was a bug. That is precisely the contrast with why people missed it for 29 years. When a person reads code, they scan the common paths first, and rare edge cases slip into the blind spot of tests and reviews. In this investigation, by contrast, the AI checked every branch of the state machine against the specification, one at a time. The spot where a person would think "surely nothing goes wrong here" is the spot the machine did not skip.
 
-![Squid Proxy official mascot — the network proxy software whose FTP state machine the AI systematically audited](./image/img-01-squid-proxy.png)
+![Squid Proxy official mascot — the network proxy software whose FTP state machine the AI systematically audited](../ko/image/img-01-squid-proxy.png)
 *▲ Squid Proxy — the subject of the AI's FTP state machine audit | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Squid-cache.png)*
 
 An even more telling signal is that there was not just one discoverer. In early March a researcher at Aisle Research first reported the flaw, and over April and May two other teams who did not know one another independently arrived at the same bug. Three independent discoveries within two months are hard to write off as coincidence. It reads instead as a sign that, as AI-driven code-audit tools spread, long-dormant flaws are waking up around the same time.
@@ -62,7 +62,7 @@ An even more telling signal is that there was not just one discoverer. In early 
 
 Many organizations use old code with a clear conscience, on the intuition that anything running for decades must have been vetted enough by now. Squidbleed touches exactly the weak link in that intuition. "In long use" only means "the frequently executed paths are stable"; it is no guarantee that a rarely executed edge case is safe. Verification only ever reaches as far as the paths actually walked.
 
-![Heartbleed (CVE-2014-0160) memory over-read diagram — another case of a critical flaw hiding in trusted, battle-tested legacy code for two years](./image/img-02-heartbleed-explained.svg)
+![Heartbleed (CVE-2014-0160) memory over-read diagram — another case of a critical flaw hiding in trusted, battle-tested legacy code for two years](../ko/image/img-02-heartbleed-explained.svg)
 *▲ Heartbleed (CVE-2014-0160) — an OpenSSL memory disclosure bug that hid in trusted code for 2 years. The same pattern as Squidbleed: long use ≠ safe edge cases | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:Heartbleed_bug_explained.svg)*
 
 A principle Pebblous has worked with for a long time in data quality applies directly here. Data that was collected and processed once still drifts out of step with reality and degrades in quality when it is left alone for years. Code is the same. Left untouched, frozen on top of the assumptions and conventions of the moment it was written, it becomes old data in need of an audit. Code, after all, is text meant to be read and written by people, and neglected text carries the same risk as neglected data.

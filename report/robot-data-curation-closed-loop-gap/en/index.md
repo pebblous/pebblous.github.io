@@ -36,7 +36,7 @@ _The research landscape of robot-learning data curation, and the closed loop no 
 
 This piece begins with a failure we actually lived through. In the Pebblous PebbloSim GR00T experiment, we decided to add more data for training a robot policy. To an existing set of 299 demonstrations, we added 93 newly generated prescription episodes, produced specifically to target the situations the policy was weak at—about 24% of the total. This prescription data was built in physics simulation, so its physical consistency was guaranteed. By all conventional wisdom, adding data that targets a known weakness should have helped.
 
-![Three humanoid robots (Fourier, Mentee Robotics, Galbot) training on an Isaac Sim grid floor — physics-simulation-based robot policy training environment](./image/img-01-groot-sim-humanoids.jpg)
+![Three humanoid robots (Fourier, Mentee Robotics, Galbot) training on an Isaac Sim grid floor — physics-simulation-based robot policy training environment](../ko/image/img-01-groot-sim-humanoids.jpg)
 *▲ Humanoid robots training inside a physics simulation environment — Pebblous's own PebbloSim GR00T experiment ran in this same kind of simulation-based policy training setup | Source: [NVIDIA Blog](https://blogs.nvidia.com/blog/robot-learning-humanoid-development/)*
 
 The result was the opposite. When we mixed the prescription data in with no weighting at all, the closed-loop success rate (how often the robot reaches its goal) fell from 73% to 43%. The median minimum distance to the target widened from 1.8 cm to 11.2 cm. The robot had visibly grown clumsier than before. We had added more physically flawless, perfectly consistent data, and yet, because the way we mixed it was wrong, the policy got worse.
@@ -112,7 +112,7 @@ Beyond research papers, how far have industrial tools come? No discussion of the
 
 The datasets that support this scale are published alongside it. The Open Physical AI Dataset reaches 15 TB and some 320,000 trajectories in its robotics portion alone, and the GR00T X-Embodiment Sim dataset (roughly 346,000 trajectories at 1.91 TB) carries a commercially usable CC-BY 4.0 license. It spans a range of embodiments, from bimanual manipulation to humanoid upper-body manipulation to loco-manipulation. In the capacity to acquire data in bulk and clean it in bulk, NVIDIA is plainly ahead.
 
-![NVIDIA Open Physical AI Dataset triptych — a hospital wayfinding robot, autonomous-driving perception bounding boxes, and a warehouse manipulation scene](./image/img-02-physical-ai-dataset.jpg)
+![NVIDIA Open Physical AI Dataset triptych — a hospital wayfinding robot, autonomous-driving perception bounding boxes, and a warehouse manipulation scene](../ko/image/img-02-physical-ai-dataset.jpg)
 *▲ The three domains covered by the Open Physical AI Dataset — robotics (hospital navigation), autonomous driving (perception), and manufacturing (warehouse manipulation) | Source: [NVIDIA Blog](https://blogs.nvidia.com/blog/open-physical-ai-dataset/)*
 
 > [!callout]

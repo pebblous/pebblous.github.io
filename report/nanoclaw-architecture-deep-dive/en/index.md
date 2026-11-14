@@ -45,7 +45,7 @@ The tech stack consists of Node.js 20+, TypeScript (90.2% of the codebase), SQLi
 
 Tracing a single message through NanoClaw reveals the system's design intent. A message follows this path from ingestion to response.
 
-![NanoClaw message flow sequence diagram — Platform → Chat SDK Bridge → Router → Session Manager → inbound.db → Container → outbound.db → Delivery Poller](./image/arch-message-flow.png)
+![NanoClaw message flow sequence diagram — Platform → Chat SDK Bridge → Router → Session Manager → inbound.db → Container → outbound.db → Delivery Poller](../ko/image/arch-message-flow.png)
 *▲ NanoClaw message flow — click to enlarge | Source: [NanoClaw official docs](https://github.com/qwibitai/nanoclaw/blob/main/docs/architecture-diagram.html)*
 
 > [!callout]

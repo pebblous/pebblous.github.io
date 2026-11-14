@@ -77,9 +77,13 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
 <meta name="robots" content="index, follow">
 
-<title>[제목] | 페블러스</title>
+<title>[핵심 검색어로 시작하는 검색 결과 제목] | 페블러스</title>
 <meta name="description" content="[120-155자 설명]">
 <meta name="keywords" content="[키워드1, 키워드2, ...]">
+
+<!-- 핵심 검색어 — 사람들이 이 이야기를 찾으려고 치는 이름 (정본 docs/ko-style-standard.md §4-2, 2026-09-28) -->
+<meta name="pb-search-keyword" content="[핵심 검색어]">
+<meta name="pb-search-keyword-forms" content="[인정 표기1|인정 표기2|인정 표기3]">
 <link rel="canonical" href="https://blog.pebblous.ai/[path]">
 
 <!-- hreflang -->
@@ -109,6 +113,15 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 ```
+
+**핵심 검색어 메타 두 줄** (2026-09-28 형님 판정 — 주인공 이름(핵심 검색어)은 제목에 쓴다):
+- `pb-search-keyword` — **필수, 하나.** 사람들이 이 이야기를 찾으려고 치는 이름. 제품·모델 이름은 원래 철자(Jev · Gemma 4 · VLA · DINOv3), 널리 알려진 회사·인물·기관·나라·법은 독자의 언어(한국어 글: 버니 샌더스 · 앤트로픽 · 구글 / 영어 글: 원래 철자), 이름 붙은 주인공이 없으면 가장 많이 검색되는 주제 명사. 예: `<meta name="pb-search-keyword" content="Jev">`
+- `pb-search-keyword-forms` — **선택.** 제목에 들어가면 인정되는 표기를 `|` 로 가른다. 예: `<meta name="pb-search-keyword-forms" content="Jev|제브|TypeSafe Jev">`. 인정 표기가 핵심 검색어 하나뿐이면 이 줄은 뺀다
+- 인정 표기는 **같은 이름의 다른 표기만**이다(원래 철자·한국어 표기·정식 이름·줄인 이름 — Jev · 제브 · TypeSafe Jev). 설명("고르기만 하는 AI")이나 보통명사(AI·모델·회사·법안·연구소)는 인정 표기가 아니다. 이름 있는 제품·회사·인물·기관·법이 있으면 핵심 검색어는 그 이름이고, 주제 명사는 이름이 없을 때만 쓴다 — 'AI' 한 낱말은 핵심 검색어가 아니다. 검사기는 이름이 아닌 기록을 결함으로 본다
+- 발행 엔진이 기획 단계에서 핵심 검색어를 고정했으면 그 값을 적는다. 제목 관문은 이 기록이 고정값과 겹치지 않으면 결함으로 보고, 교정·재작성이 이 두 줄을 바꾸면 원래 값으로 되돌린다 — 검색어가 빠진 칸은 제목을 고쳐 넣는다
+- 이 이름이 `mainTitle` 에 들어가고, `<title>`(= `pageTitle`, 글자까지 같은 값)에도 들어간다 — 되도록 이 이름으로 시작한다(제목 앞 1/3 안, 끝은 ` | 페블러스`·EN ` | Pebblous`). 검사기(`tools/title-census.py`)와 발행 엔진 `title-gate` 가 이 메타를 읽어 두 칸을 검사한다
+- EN 파일은 영어 표기로 따로 적는다(예: `content="Bernie Sanders"`)
+- 규칙 본문: `docs/ko-style-standard.md` §4-2 · 슬롯 규격: `docs/title-strategy.md` §1·§2
 
 ---
 
@@ -289,9 +302,9 @@ key-insight는 **독자가 30초 안에 이 글의 핵심을 잡을 수 있는 �
 
 ```javascript
 PebblousPage.init({
-    mainTitle: "메인 제목",
+    mainTitle: "메인 제목",               // 핵심 검색어를 담는다
     subtitle: "부제목",
-    pageTitle: "메인 제목 | 페블러스",
+    pageTitle: "[핵심 검색어] [이 글이 주는 것] | 페블러스",  // 핵심 검색어로 시작 — mainTitle 복사 금지
     category: "tech",                    // tech|business|art|story
     publishDate: "2026-03-29",
     publisher: "(주)페블러스 데이터 커뮤니케이션팀",
@@ -307,9 +320,9 @@ PebblousPage.init({
 **영어 아티클:**
 ```javascript
 PebblousPage.init({
-    mainTitle: "Main Title",
+    mainTitle: "Main Title",              // contains the main search keyword
     subtitle: "Subtitle",
-    pageTitle: "Main Title | Pebblous",
+    pageTitle: "[Main Search Keyword] [What the Page Gives] | Pebblous",  // starts with the keyword — never a copy of mainTitle
     category: "tech",
     publishDate: "2026-03-29",
     publisher: "Pebblous Data Communication Team",

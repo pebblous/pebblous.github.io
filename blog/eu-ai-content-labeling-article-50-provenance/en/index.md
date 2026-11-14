@@ -38,7 +38,7 @@ On June 10, 2026, the European Commission published its finalized "Code of Pract
 
 This is where confusion often creeps in. The Code is voluntary, but the Article 50 obligations it implements are legally binding. The EU AI Act (Regulation EU 2024/1689) entered into force in 2024, and its transparency tier, Article 50, begins enforcement 24 months later, on August 2, 2026. Article 50 applies whether or not you sign the Code; the Code simply maps the safest path to meeting that obligation.
 
-![Official EU Artificial Intelligence Act logo — circuit board icon surrounded by EU stars](./image/img-01-eu-ai-act-logo.png)
+![Official EU Artificial Intelligence Act logo — circuit board icon surrounded by EU stars](../ko/image/img-01-eu-ai-act-logo.png)
 *▲ Official logo of EU Artificial Intelligence Act (Regulation EU 2024/1689) — Article 50 enforcement begins August 2, 2026 | Source: [Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:The_EU_Artificial_Intelligence_Act_Main_Logo.png)*
 
 ### 1.1. The Three Kinds of Content That Trigger Labeling
@@ -77,7 +77,7 @@ Korea already has a similar law. The AI Basic Act, which took effect on January 
 | Generated text | When it concerns public interest | Generative-AI output broadly |
 | Penalties | Up to 7% of global revenue | KRW 5M (1st) / 10M (2nd) / 15M (3rd) |
 
-![Official EU 'AI GENERATED' label icon — the standardized badge deployers must attach to AI-generated content under Article 50(4)](./image/img-02-eu-ai-generated-label.png)
+![Official EU 'AI GENERATED' label icon — the standardized badge deployers must attach to AI-generated content under Article 50(4)](../ko/image/img-02-eu-ai-generated-label.png)
 *▲ The official EU "AI GENERATED" label provided by the EU AI Office — freely usable by deployers to comply with Article 50(4) disclosure obligations | Source: [European Commission / EU AI Office](https://digital-strategy.ec.europa.eu/en/policies/eu-icons-labelling-ai-generated-content)*
 
 Korea started earlier, but its penalties are lower and it is still in a grace period. The EU, by contrast, carries heavy penalties and applies directly to foreign companies. An organization running a global service ends up treating the stricter regime — the EU's — as its de facto baseline.
@@ -92,7 +92,7 @@ Say "label" and it's easy to picture a small note in the corner of a screen. But
 
 C2PA (Content Credentials) is a technology that attaches a "nutrition label" to content. It binds the creation timestamp, the AI model and version used, and any subsequent human edits into a cryptographic signature embedded in the file. It is an open standard adopted by more than 6,000 members — Adobe, Microsoft, Google, Intel, BBC, AP, and others — and has been formally standardized as ISO/IEC 21694. It is the strongest candidate for meeting the "machine-readable marking" requirement Article 50(2) describes.
 
-![Content Credentials in action — photos tagged with the CR icon showing AI generation status, edit timestamp, and model information embedded as cryptographic metadata](./image/img-03-content-credentials-flow.png)
+![Content Credentials in action — photos tagged with the CR icon showing AI generation status, edit timestamp, and model information embedded as cryptographic metadata](../ko/image/img-03-content-credentials-flow.png)
 *▲ How Content Credentials work — clicking the CR icon on a tagged image opens creation date, AI model used, and edit history | Source: [Content Credentials (C2PA)](https://contentcredentials.org/)*
 
 ### 3.2. Why C2PA Alone Isn't Enough
@@ -105,7 +105,7 @@ The problem is that C2PA is surprisingly fragile. Take a single screenshot or co
 | L2 | Invisible watermarking (e.g. SynthID) | Embedded in content; survives format conversion | Hard to prove the original chain on its own |
 | L3 | Fingerprinting / registry | Records the generation event centrally | Optional, with infrastructure overhead |
 
-![Google SynthID invisible watermarking comparison — watermarked image (left) and non-watermarked (right) look identical to the human eye](./image/img-04-synthid-watermark.gif)
+![Google SynthID invisible watermarking comparison — watermarked image (left) and non-watermarked (right) look identical to the human eye](../ko/image/img-04-synthid-watermark.gif)
 *▲ Google SynthID invisible watermark — indistinguishable to the human eye, yet detectable by the AI. When C2PA metadata is stripped, the L2 watermark survives | Source: [Google DeepMind](https://deepmind.google/blog/identifying-ai-generated-images-with-synthid/)*
 
 The three layers cover one another's gaps. Content that has lost its C2PA still carries the watermark, and the original-tracing a watermark alone can't deliver is filled in by the registry. Put differently, the equation "we adopted C2PA, so compliance is done" doesn't hold. With roughly 45 days left to August 2, the practical question is how many organizations have time to integrate all three layers and verify that the markings survive compression, re-encoding, and social-media uploads.
@@ -119,7 +119,7 @@ In the past, tracking data provenance was a voluntary governance practice — ni
 > [!callout]
 > The moment provenance metadata becomes both a compliance deliverable and legal evidence, a data pedigree stops being a cost and becomes an asset. If an organization cannot prove "where our data came from," that is no longer homework to defer but an immediate financial and legal risk.
 
-![C2PA Manifest structure diagram — three layers: Claim Signature (cryptographic signature), Claim, and Assertions (metadata declarations) form the tamper-evident provenance record](./image/img-05-c2pa-manifest.svg)
+![C2PA Manifest structure diagram — three layers: Claim Signature (cryptographic signature), Claim, and Assertions (metadata declarations) form the tamper-evident provenance record](../ko/image/img-05-c2pa-manifest.svg)
 *▲ C2PA Manifest anatomy: Claim Signature (cryptographic proof) · Claim · Assertions (metadata declarations) — the technical backbone of an immutable provenance record | Source: [C2PA Technical Specification (CC BY 4.0)](https://spec.c2pa.org/)*
 
 This trend is not confined to the EU. The eight provenance standards the Data & Trust Alliance released in 2026 define a data's source, legal rights, and lineage as standard fields. Accenture's research likewise notes that AI-driven metadata automation improves audit trails and reduces the risk that comes from incomplete and inconsistent metadata. Regulation and industry standards are converging on the same direction: record provenance so a machine can read it.

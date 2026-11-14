@@ -38,7 +38,7 @@ Benchmarks that measure how well we pick a model are everywhere. Reasoning, codi
 
 DataPrep-Bench, released by Peking University together with the Shanghai institute for advanced algorithms and others, confronts this gap head-on. The paper's premise is simple. Even though training-data quality fundamentally decides an LLM's ability, there was no unified benchmark for how well LLMs and agents actually prepare training data. Why not? The paper points to four reasons.
 
-![Weiming Lake and Boya Tower at Peking University — the campus behind the DataPrep-Bench research team](./image/img-01-peking-university.jpg)
+![Weiming Lake and Boya Tower at Peking University — the campus behind the DataPrep-Bench research team](../ko/image/img-01-peking-university.jpg)
 *▲ Peking University campus (Weiming Lake and Boya Tower), home to the team behind DataPrep-Bench | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:%E5%8D%9A%E9%9B%85%E5%A1%94.jpg)*
 
 - •**Fragmented methodology**: research on "constructing" data and research on "evaluating" data quality grew up in separate literatures, leaving no shared evaluation infrastructure.

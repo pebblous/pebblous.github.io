@@ -44,7 +44,7 @@ The rules were almost cruelly realistic. The agent had to assign staff and pick 
 
 A year later, the results were unsentimental. Only 3 of the 12 models held their $200K starting capital without burning through it. And what the researchers named "the strongest predictor of success" was neither model size nor benchmark score — it was scratchpad use. The agents that wrote things down survived, and the ones that didn't kept repeating the same mistakes, having forgotten even the promises they'd made the day before, until they collapsed.
 
-![YC-Bench 12 AI model funding trajectories over one year — only 3 survived above starting capital of $200K](./image/img-02-yc-bench-results.png)
+![YC-Bench 12 AI model funding trajectories over one year — only 3 survived above starting capital of $200K](../ko/image/img-02-yc-bench-results.png)
 *▲ Monthly funding trajectories for all 12 YC-Bench models. Most flatlined near the starting capital or went bankrupt; only the top two — which used their scratchpads most actively — reached $1.2M+. | Source: [He et al., YC-Bench (arXiv:2604.01212)](https://arxiv.org/abs/2604.01212)*
 
 One row of the leaderboard makes the point sharper. The top model earned an average final balance of $1.27M, and the model right behind it came in close at $1.21M. Yet the runner-up's reasoning cost was just one-eleventh of the leader's. In other words, the side that poured in more expensive, heavier reasoning isn't the one that won. The weight that decided the outcome rested not on compute, but on the habit of writing down decisions and reading them back.
@@ -58,7 +58,7 @@ The most frequently cited anecdote from the experiment is one model's self-diagn
 
 Nearly half of the bankruptcies came from somewhere simpler. 47% of all collapses stemmed from failing to spot malicious clients — accepting adversarial contracts that inflated the workload and drained costs. What's interesting is that the higher-ranked models fell into this trap far less often, and the reason wasn't deeper reasoning. They wrote the trick they'd been burned by into the scratchpad as an avoidance rule, and as a result accepted malicious jobs at only a quarter of the rate of the rest.
 
-![Bar chart: how often each AI model accepts adversarial client tasks — top models stay well below the 32% market ratio](./image/img-03-adversarial-client.png)
+![Bar chart: how often each AI model accepts adversarial client tasks — top models stay well below the 32% market ratio](../ko/image/img-03-adversarial-client.png)
 *▲ Adversarial task acceptance rate by model. The dashed line marks the market average (~32%). Top models (Opus 4.6, GLM-5) stayed well below 10%, having written avoidance rules into their scratchpads. | Source: [He et al., YC-Bench (arXiv:2604.01212)](https://arxiv.org/abs/2604.01212)*
 
 The failures of the collapsing side weren't about a lack of information either. 7 of the 11 models stumbled badly on staffing, taking on too much at once and missing deadlines. The models already knew their staff's capabilities and the requirements of each task perfectly well. They knew, and still failed to estimate, and never recorded that failure to feed it into the next decision.
@@ -72,7 +72,7 @@ The most painful contrast lay elsewhere. A simple, hand-written rule-based agent
 
 That models are getting smarter is plainly true. METR reports an exponential trend in which the length of tasks AI can complete at a given reliability — its task horizon — doubles on a regular cadence. Look only at the capability curve and there's plenty of reason for optimism. But the same report carries a caveat that rarely gets quoted: this measurement applies only to low-context, new-hire-level tasks, and lengths beyond 16 hours can't even be measured reliably with today's evaluation tools.
 
-![METR chart: AI task time horizons increasing exponentially across many domains from 2020 to 2026](./image/img-04-metr-time-horizons.png)
+![METR chart: AI task time horizons increasing exponentially across many domains from 2020 to 2026](../ko/image/img-04-metr-time-horizons.png)
 *▲ AI task time horizons have grown exponentially across domains. Caveat: measurements apply only to low-context tasks, and lengths beyond 16 hours can't be reliably measured with current tools. | Source: [METR, Time Horizons](https://metr.org/time-horizons/) (CC-BY)*
 
 There's a gap between the capability horizon and the execution horizon. Just because the ability to solve short, clean tasks grows exponentially, there's no guarantee that the execution needed to carry a year-long job to completion keeps pace. That gap is exactly what YC-Bench exposed.
@@ -90,7 +90,7 @@ An LLM is fundamentally stateless. Every call starts from a blank page, and once
 
 That's why the act of "writing it down" is decisive. In one Anthropic experiment, an agent recorded maps and battle strategies in its notes without being told to, then reread its own notes after a context reset to carry a multi-hour task forward. The simple loop of writing things down and reading them back is what produced endurance for long work.
 
-![YC-Bench environment structure — LLM agent interacting with a virtual startup via action-observation loop, with scratchpad for persistent external memory](./image/img-01-yc-bench-environment.png)
+![YC-Bench environment structure — LLM agent interacting with a virtual startup via action-observation loop, with scratchpad for persistent external memory](../ko/image/img-01-yc-bench-environment.png)
 *▲ The YC-Bench agent interaction structure. The LLM agent (left) writes to a scratchpad each turn and rereads it, interacting with the virtual startup environment (staff, market, clients) through an action-observation loop. | Source: [He et al., YC-Bench (arXiv:2604.01212)](https://arxiv.org/abs/2604.01212)*
 
 Writing alone isn't enough, though. Many memory systems are write-once and never delete, so duplicates, tangled cross-references, and already-discarded variants contaminate the search results. As notes pile up, the one line you actually need gets harder to find, and stale, wrong memories creep into new decisions as noise. So the core question goes beyond "did it write things down." What it wrote, in what structure, how reliably, and how long it preserved before writing and rereading — that is the real problem.

@@ -44,7 +44,7 @@ Muse Glimmer is a 30-billion-parameter dense multimodal model released by Meta S
 
 The condition that lets it sit inside a device is size. At full precision it exceeds 55GB and will not fit on consumer hardware, but the 4-bit quantized builds come down to between 18GB and 20GB. Meta shipped two of them. The build for 32GB of VRAM loses 0.2% of average performance; the 17GB build targeted at 24GB loses 1.0%. Generation speed is pushed 1.5x to 3.1x higher by a drafter called DFlash that predicts 16 tokens at a time. On an RTX 5090, 74.9 tokens per second became 233.4, and on an Apple M5 Max, 26.6 became 50.2.
 
-![DFlash speculative decoding performance chart — decode speed rising from 74.9 to 233.4 tokens per second on RTX 5090, and 1.5x-1.8x gains on Apple M5 Max and M4 Max, from Meta's official benchmark](./image/img-01-dflash-speed-benchmark.jpg)
+![DFlash speculative decoding performance chart — decode speed rising from 74.9 to 233.4 tokens per second on RTX 5090, and 1.5x-1.8x gains on Apple M5 Max and M4 Max, from Meta's official benchmark](../ko/image/img-01-dflash-speed-benchmark.jpg)
 *▲ The DFlash drafter lifts generation speed 3.1x on an RTX 5090 and 1.5x-1.8x on Apple M5/M4 Max | Source: [Meta AI Research](https://research.meta.ai/blog/introducing-muse-glimmer-open-agentic-model)*
 
 The distribution channels opened alongside it. Hugging Face carries the BF16 original, GGUF quantized builds, ExecuTorch builds for mobile and embedded targets, and the DFlash drafter that raises throughput. Integration with llama.cpp and MLX is announced as coming soon, and the model supports more than 100 languages. In other words, anyone can put it on their own hardware and run it without going through one company's app.

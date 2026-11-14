@@ -42,7 +42,7 @@ Four numbers compress the skeleton of this policy: the size of the population th
 
 On July 13, 2026, Korea's Ministry of Science and ICT issued a call for proposals for a program called "AI for Everyone." The goal is to let all of the country's roughly 52 million citizens use AI without usage limits or cost. No G20 nation has previously offered AI to its entire population as a public service. The call runs until August 11, with providers selected in August, agreements and a beta service in September, and a full launch in December.
 
-![Government Complex Sejong — home to the Ministry of Science and ICT, which issued the 'AI for Everyone' call for proposals](./image/img-01-sejong-government-complex.jpg)
+![Government Complex Sejong — home to the Ministry of Science and ICT, which issued the 'AI for Everyone' call for proposals](../ko/image/img-01-sejong-government-complex.jpg)
 *▲ Government Complex Sejong, home to the Ministry of Science and ICT, which issued the "AI for Everyone" call | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Government_Complex_Sejong_(N).jpg)*
 
 The service is designed in two stages. Stage one is a general-purpose chatbot that anyone can use for free. Stage two is a public AI agent that finds and guides people to public services and even files applications on their behalf. The government also outlined a plan to gradually upgrade this agent into a "one AI agent per citizen" that helps with asset management, learning coaching, and housing planning.
@@ -55,7 +55,7 @@ The condition attached to "free" is explicit. Providers must run their own domes
 
 The government paired the condition with infrastructure. It will hand 512 NVIDIA B200 GPUs it holds to the selected providers so they can stand the service up quickly, and it has pledged to fund the operating costs of the nationwide service from 2027 through December 31, 2030. Domestic foundation-model builders such as LG AI Research (EXAONE), Upstage (Solar), SK Telecom (A.X), and Motif Technologies are named as candidate model suppliers, and two or three private companies with experience running large public-facing services will be chosen as providers. Kakao is seen as a leading candidate.
 
-![NVIDIA's Blackwell GPU architecture unveiling — the B200 the government is supplying belongs to the same Blackwell generation of data-center GPUs](./image/img-02-nvidia-blackwell-gpu.jpg)
+![NVIDIA's Blackwell GPU architecture unveiling — the B200 the government is supplying belongs to the same Blackwell generation of data-center GPUs](../ko/image/img-02-nvidia-blackwell-gpu.jpg)
 *▲ NVIDIA unveiling its Blackwell GPU architecture. The B200 the government is handing to providers belongs to the same Blackwell generation of data-center GPUs | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Jensen_Huang_-_RTX_Blackwell_-_Nvidia_Keynote_-_CES_2025_Las_Vegas_(3).jpg)*
 
 Read this condition as mere industrial policy and you miss half of it. Writing the domestic-model share into law means the state decides which country's models process the questions and conversations 52 million people ask every day. Handing AI to a whole population also creates a data-collection surface the size of that population. The decision to fill that surface with domestic models is written in the language of industrial policy, but in practice it reads more like an operating rule for data sovereignty.
@@ -83,7 +83,7 @@ The same question was raised at home. The Korean edition of Le Monde diplomatiqu
 
 These worries are not Korea's alone. In countries that adopted proactive welfare AI earlier, the same risks recurred. In Denmark, an Amnesty International investigation (2024) found that a fraud-detection algorithm flagged people in non-traditional living arrangements or from non-EEA countries as priority targets for investigation, leading to mass surveillance. In the Netherlands' childcare-benefits scandal, an algorithm misclassified non-Dutch nationals as high-risk for fraud, and in the UK, reports found that a digital welfare system deepened inequality rather than easing it. UN human-rights bodies have warned that in such "digital welfare states," social security can degrade into an instrument of control.
 
-![Envelopes from the Dutch tax authority's childcare-benefits (Toeslagen) department — the source of the scandal where an algorithm misclassified non-Dutch nationals as high-risk for fraud](./image/img-03-netherlands-toeslagen.jpg)
+![Envelopes from the Dutch tax authority's childcare-benefits (Toeslagen) department — the source of the scandal where an algorithm misclassified non-Dutch nationals as high-risk for fraud](../ko/image/img-03-netherlands-toeslagen.jpg)
 *▲ Envelopes from the Dutch tax authority's childcare-benefits (Toeslagen) department, the office at the center of the algorithmic misclassification scandal | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Belastingdienst_Toeslagen_enveloppen.jpg)*
 
 > [!callout]

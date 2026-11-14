@@ -168,4 +168,4 @@ Original source: Daejeon Biennale 2020
 
 ### PDF Download
 
-[⬇KoreanKorean v0.8.pdf](../Code%20Painting%20-%20Daejeon%20Biennale%202020%20Korean%20v0.8.pdf)[⬇EnglishEnglish v0.8.pdf](../Code%20Painting%20-%20Daejeon%20Biennale%202020%20English%20v0.8.pdf)
+[⬇KoreanKorean v0.8.pdf](/media/DAL/code-painting-essay/Code%20Painting%20-%20Daejeon%20Biennale%202020%20Korean%20v0.8.pdf)[⬇EnglishEnglish v0.8.pdf](/media/DAL/code-painting-essay/Code%20Painting%20-%20Daejeon%20Biennale%202020%20English%20v0.8.pdf)

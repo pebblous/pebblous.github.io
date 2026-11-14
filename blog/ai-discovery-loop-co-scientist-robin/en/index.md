@@ -36,7 +36,7 @@ _Google DeepMind_
 
 When two papers in the same issue of the same journal reach the same conclusion without citing each other, that looks less like coincidence and more like a signal. Co-Scientist is a general-purpose multi-agent system that Google DeepMind built on Gemini, and Robin is a pipeline that FutureHouse, a drug-discovery startup, tuned for biological research. Different teams, different design philosophies, different target domains.
 
-![A stylized illustration symbolizing AI-driven scientific discovery](./image/img-01-discovery-loop-hero.jpg)
+![A stylized illustration symbolizing AI-driven scientific discovery](../ko/image/img-01-discovery-loop-hero.jpg)
 *▲ Co-Scientist and Robin, published side by side in the same week of Nature | Source: [Google DeepMind Blog](https://deepmind.google/blog/co-scientist-a-multi-agent-ai-partner-to-accelerate-research/)*
 
 And yet what the two systems automated overlaps to a striking degree: read the literature, form a hypothesis, design an experiment to test that hypothesis, interpret the result, and move on to the next hypothesis. Researchers call this cycle "closed-loop discovery." That two teams walked their own roads and arrived in front of the same loop at the same moment shows this direction is not one company's marketing but a current the whole field is being carried by.
@@ -47,7 +47,7 @@ We covered the Robin case on its own earlier, in [A Multi-Agent System Picked a 
 
 The two systems turn the same loop in different ways. Co-Scientist has several agents debate over hypotheses, then pits those hypotheses against each other in a tournament using the Elo rating from chess to rank and evolve them. A separate reflection agent plays the role of peer reviewer and filters out the weak ones. In effect, it moves the human process of weighing many ideas and narrowing them through mutual rebuttal into a self-play among agents.
 
-![Diagram of Co-Scientist's generate, debate, and evolve hypothesis cycle](./image/img-02-hypothesis-loop-diagram.webp)
+![Diagram of Co-Scientist's generate, debate, and evolve hypothesis cycle](../ko/image/img-02-hypothesis-loop-diagram.webp)
 *▲ Co-Scientist's self-play cycle of generating, debating, and evolving hypotheses | Source: [Google DeepMind Blog](https://deepmind.google/blog/co-scientist-a-multi-agent-ai-partner-to-accelerate-research/)*
 
 Robin orchestrates specialized agents with divided roles. Crow, Falcon, and Owl read the literature, Phoenix designs synthesis experiments, and Finch analyzes the data, each doing its own job while Robin weaves them into a single pipeline that runs from hypothesis generation to data interpretation. The approaches differ, but the boundary of automation is the same. What both systems took on is the "intellectual loop" of hypothesis generation, experiment design, result interpretation, and re-hypothesizing, while the physical experiment of shaking test tubes and observing cells still belongs to people and instruments.
@@ -61,7 +61,7 @@ Look at what the automation actually delivered, and the line between "idea gener
 
 What runs through all three cases is that none became a result the moment the AI produced it. The hypotheses Co-Scientist put forward are, even now, being cross-validated in labs by more than 100 research institutions that share the work under the U.S. Department of Energy's Genesis Mission.
 
-![Stanford Professor Gary Peltz, who validated Vorinostat's effect in liver-organoid experiments](./image/img-03-gary-peltz-stanford.webp)
+![Stanford Professor Gary Peltz, who validated Vorinostat's effect in liver-organoid experiments](../ko/image/img-03-gary-peltz-stanford.webp)
 *▲ Stanford Professor Gary Peltz, who validated Vorinostat in liver-organoid experiments | Source: [Google DeepMind Blog](https://deepmind.google/blog/co-scientist-a-multi-agent-ai-partner-to-accelerate-research/)*
 
 Robin was given a single prompt — "dry age-related macular degeneration" — and proposed 30 candidates. It validated 5 of them through experiments and found that two, ripasudil and KL001, were promising. Ripasudil is a drug already used in ophthalmology with an established safety profile, while KL001 is an experimental compound with no history of human use.

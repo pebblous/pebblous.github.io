@@ -93,21 +93,36 @@ jobs:
           git push origin "$BRANCH"
 
           cleanup() { git push origin --delete "$BRANCH" >/dev/null 2>&1 || true; }
-          if ! gh pr create --base main --head "$BRANCH" \
+          if ! PR_URL=$(gh pr create --base main --head "$BRANCH" \
             --title "chore(pebbloscope): Blog Constellation 주간 갱신 [skip ci]" \
-            --body "refresh-pebbloscope.yml 자동 갱신 — Scholar public 배포 레포에서 슬림 빌드 fetch (+noindex). 풀 모델 (b), 이슈 #1 합의."; then
+            --body "refresh-pebbloscope.yml 자동 갱신 — Scholar public 배포 레포에서 슬림 빌드 fetch (+noindex). 풀 모델 (b), 이슈 #1 합의."); then
             cleanup
             echo "::error::갱신 PR 생성 실패 — INDEX_PUSH_TOKEN 확인(#289)."
             exit 1
           fi
 
-          merged=false
-          for i in 1 2 3; do
-            if gh pr merge "$BRANCH" --merge --delete-branch; then merged=true; break; fi
-            sleep 5
+          # 머지(승인0·코드오너無 → 즉시 가능). 성패는 API 응답이 아니라 PR 의 실제 상태(MERGED)로 판정한다.
+          # 2026-09-30 재발(#289): 502 뒤 "Merge already in progress" 를 실패로 보고 PR 을 닫아, 서버가
+          # 진행 중이던 머지를 버렸다. 일시 장애는 재시도하고, 머지 진행 중이면 PR 을 닫지 않는다.
+          echo "$PR_URL"
+          PR_NUM="${PR_URL##*/}"
+          pr_state() { gh pr view "$PR_NUM" --json state --jq .state 2>/dev/null || echo UNKNOWN; }
+          merged=false; out=""
+          for i in 1 2 3 4 5 6; do
+            if out=$(gh pr merge "$PR_NUM" --merge --delete-branch 2>&1); then echo "$out"; merged=true; break; fi
+            echo "머지 시도 $i/6 실패: $out"
+            sleep 15
+            if [ "$(pr_state)" = "MERGED" ]; then echo "PR 상태 MERGED 확인 — 응답은 실패였지만 머지는 됐다."; merged=true; break; fi
           done
-          if [ "$merged" != "true" ]; then
-            gh pr close "$BRANCH" --delete-branch >/dev/null 2>&1 || cleanup
-            echo "::error::갱신 PR 머지 실패 — INDEX_PUSH_TOKEN 권한/ruleset 확인(#289)."
+          if [ "$merged" = "true" ]; then
+            cleanup  # 상태로 성공 판정한 경우 브랜치가 남을 수 있어 멱등 삭제
+          else
+            state=$(pr_state)
+            if [ "$state" = "OPEN" ] && [[ "$out" != *"in progress"* ]]; then
+              gh pr close "$PR_NUM" --delete-branch >/dev/null 2>&1 || cleanup
+            else
+              echo "PR #$PR_NUM 을 닫지 않고 남긴다(상태 $state, 머지 진행 중일 수 있음) — 사람이 잇는다."
+            fi
+            echo "::error::갱신 PR #$PR_NUM 머지 실패(최종 상태 $state). GitHub API 일시 장애면 workflow_dispatch 로 재실행, 반복되면 INDEX_PUSH_TOKEN 권한/ruleset 확인(#289)."
             exit 1
           fi

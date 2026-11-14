@@ -64,7 +64,7 @@ The DataClinic API rates class balance as "Good," but this reflects only numeric
 
 DataClinic rated statistical measurement as "Poor." But it does not explain why. The pixel histogram below provides the answer.
 
-![ImageNet L1 pixel histogram — R/G/B channel pixel value (0-255) distribution. Blue channel at pixel=255 shows an extreme spike of approximately 1,600M (1.6 billion). At pixel=0, Blue spikes to approximately 830M, Green 680M, Red 350M. Mid-range (50-200) is relatively flat but Blue exceeds Red across the full range.](image/L1_pixel_histogram.png)
+![ImageNet L1 pixel histogram — R/G/B channel pixel value (0-255) distribution. Blue channel at pixel=255 shows an extreme spike of approximately 1,600M (1.6 billion). At pixel=0, Blue spikes to approximately 830M, Green 680M, Red 350M. Mid-range (50-200) is relatively flat but Blue exceeds Red across the full range.](../ko/image/L1_pixel_histogram.png)
 *ImageNet pixel histogram. X-axis: pixel value (0-255), Y-axis: frequency (M = millions). The Blue channel at pixel=255 shows a spike of approximately 1.6 billion occurrences. This is the visual evidence behind the "Statistical: Poor" verdict.*
 
 The first thing that jumps out is the extreme spikes at both ends. Blue channel at pixel=255 records approximately 1.6 billion occurrences — four to five times the mid-range (50-200) frequency. At pixel=0, Blue spikes to about 830 million, Green to 680 million, and Red to 350 million.
@@ -98,7 +98,7 @@ Projecting the mean feature vector of each of the 1,000 classes into 2D PCA reve
 
 The L2 density histogram shows a strongly right-skewed unimodal distribution. The peak is at approximately 0.085 density with about 43,000 counts. Most images concentrate in the 0.05-0.15 density range, with a long right tail extending to 0.40. DataClinic rated this as "Distribution: Good," but given the right skew and extreme outliers, that seems generous.
 
-![ImageNet L2 density histogram — right-skewed unimodal distribution. X-axis: density 0.00-0.40, Y-axis: count 0-43,000. Peak at approximately 0.085 with 43,000 counts. Most images concentrated between 0.05-0.15. Right tail extends to 0.40, with peacock high-density samples (0.32-0.34) at the extreme end.](image/L2_density_histogram.png)
+![ImageNet L2 density histogram — right-skewed unimodal distribution. X-axis: density 0.00-0.40, Y-axis: count 0-43,000. Peak at approximately 0.085 with 43,000 counts. Most images concentrated between 0.05-0.15. Right tail extends to 0.40, with peacock high-density samples (0.32-0.34) at the extreme end.](../ko/image/L2_density_histogram.png)
 *L2 density distribution. Peak at approximately 0.085 with 43,000 counts. Peacock high-density samples (0.32-0.34) sit at the extreme end of the tail — a density level entirely different from the bulk of images.*
 
 The most striking discovery in this distribution is the identity of the high-density outliers. Of the top 12 samples by density, 10 are peacocks. Their density ranges from 0.322 to 0.344 — roughly four times the peak (0.085). The remaining two are titi (a South American monkey) and patas (a hussar monkey) — both primate classes with highly uniform visual appearance.
@@ -164,7 +164,7 @@ Running PCA on the 122-dimensional embeddings reveals sharper inter-class bounda
 
 The L3 density histogram shares the same right-skewed unimodal shape as L2, but the scale is entirely different. The peak sits at approximately 0.575 density with about 27,000 counts. Compared to L2's peak (density 0.085, 43,000 counts), overall density has risen while the peak count has fallen — images have dispersed across a wider density range.
 
-![ImageNet L3 density histogram — right-skewed unimodal distribution. X-axis: density 0.0-2.0+, Y-axis: count 0-27,000. Peak at approximately 0.575 with 27,000 counts. Right tail extends beyond 2.0, with tarantula high-density samples (2.01-2.08) sitting extremely far from the distribution body.](image/L3_density_histogram.png)
+![ImageNet L3 density histogram — right-skewed unimodal distribution. X-axis: density 0.0-2.0+, Y-axis: count 0-27,000. Peak at approximately 0.575 with 27,000 counts. Right tail extends beyond 2.0, with tarantula high-density samples (2.01-2.08) sitting extremely far from the distribution body.](../ko/image/L3_density_histogram.png)
 *L3 density distribution. Peak at approximately 0.575 with 27,000 counts. Tarantula high-density samples (2.01-2.08) sit at 3.5x the peak density — extreme outliers isolated far from the distribution body.*
 
 Of the top 12 high-density L3 samples, 10 are tarantulas and the remaining 2 are golf balls. Tarantulas have displaced peacocks from L2's throne. This switch is one of the most fascinating findings in this story.

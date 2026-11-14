@@ -56,7 +56,7 @@ What exactly does "predicts" mean here?
                     **voxels**, essentially 3D pixels. When you see an image or hear a sound,
                     fMRI tracks which brain regions "light up" and by how much.
 
-![fMRI (functional Magnetic Resonance Imaging) scanner — measuring brain activity at voxel resolution while a subject receives stimuli](./image/img-01-fmri-scanner.jpg)
+![fMRI (functional Magnetic Resonance Imaging) scanner — measuring brain activity at voxel resolution while a subject receives stimuli](../ko/image/img-01-fmri-scanner.jpg)
 *▲ A researcher guides a subject into an fMRI scanner — TRIBE v2's training data was collected exactly this way: real subjects watching videos inside scanners while their brain activity was recorded | Source: [Wikimedia Commons (Imperial Centre for Psychedelic Research)](https://commons.wikimedia.org/wiki/File:190603_Functional_magnetic_resonance_imaging_at_the_Imperial_Centre_for_Psychedelic_Research.jpg)*
 
 TRIBE v2 reverses this process.
@@ -96,7 +96,7 @@ The jump from TRIBE v1 to v2 isn't a minor update.
 >                         Scanning one subject for one hour can cost thousands of dollars, with months of analysis to follow.
 >                         Meta aggregated data scattered across labs worldwide into a single foundation model.
 
-![TRIBE v2 research approach overview — fMRI recording, multimodal stimuli (video, audio, text), brain response prediction pipeline](./image/img-02-tribe-approach.png)
+![TRIBE v2 research approach overview — fMRI recording, multimodal stimuli (video, audio, text), brain response prediction pipeline](../ko/image/img-02-tribe-approach.png)
 *▲ TRIBE v2 approach (Paper Figure 1) — Left: subjects watch naturalistic movies while fMRI records brain activity. Right: TRIBE v2 takes video, audio, and text features as input and predicts per-subject brain activation maps | Source: [Meta FAIR (2026)](https://ai.meta.com/research/publications/a-foundation-model-of-vision-audition-and-language-for-in-silico-neuroscience/)*
 
 The **scaling law** deserves special attention.
@@ -177,7 +177,7 @@ Particularly impressive is **zero-shot prediction**:
 > [!callout]
 > **One-line summary:** TRIBE v2 is a bridge model connecting Meta's latest video AI (V-JEPA 2), speech AI (Wav2Vec-BERT), and language AI (LLaMA 3.2) to neuroscience — learning how well each AI's "sensory features" mirror the corresponding "sensory processing regions" of the human brain.
 
-![TRIBE v2 prediction score comparison — TRIBE significantly outperforms linear models and other brain scans on both speech and movie stimuli](./image/img-03-tribe-accuracy.png)
+![TRIBE v2 prediction score comparison — TRIBE significantly outperforms linear models and other brain scans on both speech and movie stimuli](../ko/image/img-03-tribe-accuracy.png)
 *▲ TRIBE v2 prediction accuracy (Paper Figure 2) — On both Speech and Movies stimuli, TRIBE achieves 2–3× the prediction score of simple linear models and meaningfully outperforms other brain scan baselines | Source: [Meta FAIR (2026)](https://ai.meta.com/research/publications/a-foundation-model-of-vision-audition-and-language-for-in-silico-neuroscience/)*
 
 ## In-Silico Neuroscience — Running Brain Experiments in a Computer
@@ -192,7 +192,7 @@ Consider the bottlenecks of traditional brain research.
                     months of analysis, and another year of peer review.
                     With TRIBE v2, you can **simulate brain responses to thousands of images in seconds.**
 
-![High-resolution fMRI brain scan — TRIBE v2 predicts activation across 70,000+ voxels, mapping the entire cortical surface at this level of detail](./image/img-04-fmri-brain.gif)
+![High-resolution fMRI brain scan — TRIBE v2 predicts activation across 70,000+ voxels, mapping the entire cortical surface at this level of detail](../ko/image/img-04-fmri-brain.gif)
 *▲ High-resolution fMRI brain scan — TRIBE v2 predicts brain activation across 70,000+ voxels at this resolution. The contrast with prior models (~1,000 voxels) becomes immediately apparent | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:High_Resolution_FMRI_of_the_Human_Brain.gif)*
 
 #### 🔬 Accelerating Neuroscience

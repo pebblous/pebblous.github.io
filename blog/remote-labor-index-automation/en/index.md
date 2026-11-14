@@ -62,7 +62,7 @@ The 240 projects in RLI are not problems invented in a lab. They are jobs that r
 
 These jobs were not simply scraped together. The researchers sourced candidates three ways. They posted openings across 43 eligible fields and recruited 358 skilled freelancers with an average of 2,341 hours of experience; they filled thin fields by separately hiring freelancers; and they took published work only after clearing author permission and confirming its cost and time. Of the 550 candidates gathered this way, more than half (310) were filtered out, leaving just 240. A 56% rejection rate shows how rigorously this dataset was refined.
 
-![Example deliverable from a real freelance advertisement video production project included in the RLI benchmark](./image/img-01-freelance-video-project.png)
+![Example deliverable from a real freelance advertisement video production project included in the RLI benchmark](../ko/image/img-01-freelance-video-project.png)
 *▲ One of the real freelance projects in the RLI dataset — an advertisement video deliverable shipped by a human expert | Source: [CAIS (2026)](https://safe.ai/blog/significant-increase-in-digital-labor-automation)*
 
 > [!callout]
@@ -99,7 +99,7 @@ The researchers collected the written reasons attached to roughly 400 failure sc
 
 All four types lean toward "could not finish the output" rather than "could not solve the problem." Delivering an 8-minute video as 8 seconds, or building a 3D structure that changes shape as it rotates, is less a limit of intelligence than a limit of completeness and coherence. The contrast between what AI does relatively well and what it does poorly backs the same diagnosis. Making something new from scratch — generating images and audio, writing reports — it handles reasonably well, but it falls apart on work that edits existing assets across multiple stages and keeps the pieces aligned end to end.
 
-![Comparison of ring CAD design outputs from GPT-5.5, Opus 4.8, and Fable 5 against the human expert deliverable — the AI renders show blunt prongs and misshapen forms](./image/img-02-ring-cad-quality-gap.png)
+![Comparison of ring CAD design outputs from GPT-5.5, Opus 4.8, and Fable 5 against the human expert deliverable — the AI renders show blunt prongs and misshapen forms](../ko/image/img-02-ring-cad-quality-gap.png)
 *▲ Outputs from three AI models and a human expert on the same ring CAD brief — photorealistic renders on top, underlying 3D models below | Source: [CAIS (2026)](https://safe.ai/blog/significant-increase-in-digital-labor-automation)*
 
 > [!callout]

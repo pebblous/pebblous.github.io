@@ -42,14 +42,14 @@ Share of new 2025 web pages containing AI content
 
 Photocopy a copy, then photocopy that copy. After a few rounds the letters smear and the colors fade. Model collapse from recursive training works much like this. When data made by one model trains the next, and the output of that model trains the one after, the richness the original held gets shaved away generation by generation.
 
-![A recursive training loop where model 0 trained on real data produces Data 1, which trains model 1 that produces Data 2, and so on — the data grows more alike across generations](./image/img-01-recursive-training-loop.png)
+![A recursive training loop where model 0 trained on real data produces Data 1, which trains model 1 that produces Data 2, and so on — the data grows more alike across generations](../ko/image/img-01-recursive-training-loop.png)
 *▲ The recursive loop in which a model eats its own output as the next generation's training data. It converges toward Data⁰ ≈ Data¹ ≈ … ≈ Dataⁿ. | Source: [Shumailov et al., The Curse of Recursion (arXiv:2305.17493)](https://arxiv.org/abs/2305.17493)*
 
 A 2024 study by Shumailov and colleagues, published in **Nature**, was the first to measure this collapse precisely. Repeated retraining on purely synthetic data produces measurable degradation within 5 to 10 generations. But the number comes with a clear caveat: it describes the worst case, running on synthetic data alone. Mixing in even a fraction of real human data softens the collapse. That very mitigation becomes the first academic justification for the economic value of human data.
 
 What breaks first? The tails of the distribution. Common cases flood the data, while rare, exceptional ones are few. Recursive training forgets these scarce tails first. The model increasingly produces only "average" output and loses diversity and rare knowledge. The statistically ordinary answer stays plausible, while the genuinely valuable exception vanishes.
 
-![Finite sampling and approximate fitting repeat: probable events get over-estimated and improbable ones under-estimated, so the tails of the distribution shrink over generations — the mechanism of model collapse](./image/img-02-distribution-tails-collapse.png)
+![Finite sampling and approximate fitting repeat: probable events get over-estimated and improbable ones under-estimated, so the tails of the distribution shrink over generations — the mechanism of model collapse](../ko/image/img-02-distribution-tails-collapse.png)
 *▲ Probable events are over-estimated and improbable ones under-estimated, so the tails shrink over time. | Source: [Shumailov et al., The Curse of Recursion (arXiv:2305.17493)](https://arxiv.org/abs/2305.17493)*
 
 > [!callout]

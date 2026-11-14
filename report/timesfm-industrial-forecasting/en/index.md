@@ -26,7 +26,7 @@ Time-series forecasting has long been the domain of per-domain statistical model
 
 ### Patch-Based Decoder Architecture
 
-![Transformer encoder-decoder architecture diagram showing multi-headed attention, feed-forward networks, and normalization layers](image/img-01-transformer-architecture.png)
+![Transformer encoder-decoder architecture diagram showing multi-headed attention, feed-forward networks, and normalization layers](../ko/image/img-01-transformer-architecture.png)
 *Transformer full architecture (Encoder-Decoder). TimesFM adopts a decoder-only variant, taking time-series patches as input and autoregressively generating the next time steps. | Source: Wikimedia Commons (CC BY-SA 4.0)*
 
 The key architectural choice in TimesFM is patch processing. Rather than tokenizing each individual time step, the model groups fixed-length time windows into single patches. This offers two advantages. First, attention complexity is reduced when handling long sequences. Second, each patch captures a local pattern (vibration cycles, temperature trends) as a unified unit — ideal for industrial sensor data characteristics.
@@ -101,7 +101,7 @@ The industrial value of time-series forecasting is measured across three core ar
 
 ### Manufacturing: Predictive Maintenance and Process Anomaly Detection
 
-![CNC milling machine in operation — close-up of cutting tool with coolant in precision machining](image/img-02-cnc-milling.jpg)
+![CNC milling machine in operation — close-up of cutting tool with coolant in precision machining](../ko/image/img-02-cnc-milling.jpg)
 *CNC milling machine in operation. Vibration, temperature, and power consumption sensor streams collected in real time form the time-series input for predictive maintenance anomaly detection. | Source: Wikimedia Commons (CC BY-SA 3.0)*
 
 CNC machines, motors, and compressors on the factory floor always leave anomaly signatures in time-series data before failure — changes in vibration frequency, temperature outliers, and shifts in power consumption patterns. The challenge is that distinguishing these signals from normal variation is difficult using rule-based approaches. TimesFM can leverage its long context window (up to 16,000 time steps) to learn a normal-pattern baseline and classify deviations as anomalies when they reach statistically significant levels.
@@ -132,7 +132,7 @@ Sources: McKinsey & Company, U.S. Department of Energy, OxMaint. Figures vary by
 
 ### Energy: Demand Forecasting and Renewable Integration
 
-![Wind turbines and solar panels at sunset — mixed renewable energy generation](image/img-03-renewable-energy.jpg)
+![Wind turbines and solar panels at sunset — mixed renewable energy generation](../ko/image/img-03-renewable-energy.jpg)
 *Mixed wind and solar power generation. As renewable energy output fluctuates with weather conditions, accurate demand and generation forecasting directly reduces energy waste and peak cost spikes. | Source: Wikimedia Commons (CC BY-SA 3.0)*
 
 Energy demand forecasting is the domain where time-series AI generates the most direct economic impact. Key use cases include solar and wind generation forecasting, grid demand forecasting, and building energy optimization. A study published in Frontiers in Environmental Chemistry (February 2026) reported a 15–20% reduction in RMSE for energy demand forecasting using TimesFM. This improvement directly reduces energy waste from supply-demand mismatches and cost spikes at peak times.
@@ -243,7 +243,7 @@ The Databricks Many Models Framework (MMF) points to a direction that reframes s
 
 ### The BERT Moment for Time-Series AI
 
-![Deep learning hierarchical feature extraction diagram — layers progressing from raw inputs to increasingly abstract representations](image/img-04-deep-learning.jpg)
+![Deep learning hierarchical feature extraction diagram — layers progressing from raw inputs to increasingly abstract representations](../ko/image/img-04-deep-learning.jpg)
 *Hierarchical representation learning in deep neural networks. Just as BERT triggered a pre-training revolution in NLP in 2018, time-series foundation models are approaching the same inflection point. | Source: Wikimedia Commons (CC BY-SA 3.0)*
 
 NeurIPS 2025 hosted the BERT²S (Bidirectional Encoder Representations from Time Series) workshop, which debated whether time-series AI has reached the "democratization of pre-trained foundation models" moment that BERT created for NLP in 2018. As of now, time-series AI is very close to that threshold.

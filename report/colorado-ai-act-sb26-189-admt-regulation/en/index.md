@@ -42,7 +42,7 @@ Sources: [Colorado General Assembly](https://leg.colorado.gov/bills/sb26-189), G
 
 It is uncommon for a state legislature to rewrite its own law from scratch within five years. Colorado did exactly that. The same body that passed America's first comprehensive AI regulation in 2021 (SB 21-169) tried to elevate it to EU AI Act levels with SB 24-205 in 2024, then dialed it back into a more precise and lightweight form with SB 26-189 in 2026. These three acts read like a clinical record of what the United States has been learning about how to regulate AI.
 
-![Colorado State Capitol building in Denver — where SB 26-189 and its predecessor AI laws were passed](./image/colorado-state-capitol.jpg)
+![Colorado State Capitol building in Denver — where SB 26-189 and its predecessor AI laws were passed](../ko/image/colorado-state-capitol.jpg)
 *Colorado State Capitol, Denver. Three rounds of AI legislation — SB 21-169 (2021), SB 24-205 (2024), and SB 26-189 (2026) — passed through this building over five years. Source: Ken Lund, CC BY-SA 2.0*
 
 ### 1.1. The 2021 Starting Point — SB 21-169
@@ -81,7 +81,7 @@ Notably, SB 26-189 is not just Colorado's story. In 2025 alone, 38 U.S. states a
 
 The most important word in SB 26-189 is ADMT, short for Automated Decision-Making Technology. But the word matters less than where its boundary sits. NYC LL144 drifted for 1.5 years in part because its definition of "AEDT" (Automated Employment Decision Tool) was unclear; Colorado consciously tried to avoid that trap. Understanding what ADMT does and does not cover is the starting point for any compliance strategy.
 
-![Machine learning workflow — core stages of ADMT from data import through model evaluation](./image/machine-learning-workflow.png)
+![Machine learning workflow — core stages of ADMT from data import through model evaluation](../ko/image/machine-learning-workflow.png)
 *Machine learning workflow: data import → processing → visualization → modeling → evaluation. ADMT regulation applies when this pipeline's outputs materially influence a "consequential decision" about an individual. Source: Brylie Christopher Oxley, CC0*
 
 ### 2.1. Five Components of ADMT
@@ -157,7 +157,7 @@ Lam and colleagues (2024) push the point further. Drawing on financial-audit mod
 
 With pre-deployment regulation pared back, SB 26-189 fills the gap with post-hoc consumer rights. An individual who receives an adverse decision gains three rights: the right to an explanation, the right to correction, and the right to meaningful human review. The model echoes GDPR Article 22, but this is the first time a U.S. state has codified such a triad for ADMT specifically. Academic literature, however, is skeptical about whether these rights can actually work as written.
 
-![EU GDPR — the regulation whose Article 22 framework for automated decision-making informed SB 26-189's consumer rights](./image/eu-ai-regulation.jpg)
+![EU GDPR — the regulation whose Article 22 framework for automated decision-making informed SB 26-189's consumer rights](../ko/image/eu-ai-regulation.jpg)
 *The EU's General Data Protection Regulation (GDPR). SB 26-189's trio of rights — explanation, correction, and human review — borrows from GDPR Article 22 on automated individual decision-making, marking the first time a U.S. state has enacted this framework for ADMT. Source: TheDigitalArtist, CC0*
 
 ### 4.1. Right to Explanation
@@ -195,7 +195,7 @@ About seven months remain until January 1, 2027. What an ADMT deployer needs to 
 
 ### 5.1. Penalties and Enforcement Structure
 
-![Colorado Springs Municipal Court — part of Colorado's judicial system that enforces SB 26-189 through the Attorney General](./image/colorado-courthouse.jpg)
+![Colorado Springs Municipal Court — part of Colorado's judicial system that enforces SB 26-189 through the Attorney General](../ko/image/colorado-courthouse.jpg)
 *Colorado Springs Municipal Court. Under SB 26-189, enforcement authority rests exclusively with the Colorado Attorney General — there is no private right of action for affected consumers. Source: David Shankbone, CC BY-SA 3.0*
 
 Violations of SB 26-189 carry penalties of up to **$20,000 per violation**, rising to **$50,000** when the victim is a senior citizen. Enforcement is exclusive to the Colorado Attorney General; there is no private right of action, so consumers cannot sue deployers directly but must instead route complaints through the AG's office. Through January 1, 2030, deployers receive a **60-day cure period** after AG notice and can avoid penalties by remedying the violation within that window (the cure period does not apply to willful or repeated violations).

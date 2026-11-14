@@ -34,7 +34,8 @@ const SYNC_TARGETS = [
   { src: 'CLAUDE.md', kind: 'file' },
   // docs/seo/ 는 사본에 내보내지 않는다 — disavow 등 스팸 도메인 목록이 public 사본에
   // 노출되면 안 됨. rsync --exclude='seo/' 와 같은 의미(경로 어디든 seo 디렉터리).
-  { src: 'docs', kind: 'dir', exclude: ['seo'] },
+  // docs/internal/ 도 사본에 내보내지 않는다 — 결정 원장·운영·설계 문서(진본 전용, 2026-10-24).
+  { src: 'docs', kind: 'dir', exclude: ['seo', 'internal'] },
   { src: '.gitattributes', kind: 'file' },
 ];
 
@@ -205,7 +206,7 @@ function renderMarkdown({ rows, counts }) {
     L.push('');
     L.push('위 ⛔ 파일은 사본에서 직접 수정돼 진본과 갈라졌다. **사본 PR에서 충돌만 풀면');
     L.push('다음 sync 때 재발한다** — 살릴 변경이면 진본으로 reverse-sync 해야 끝난다.');
-    L.push('절차: `docs/blog-service/sync.md` → "사본에 auto-sync PR이 열린 채 쌓여 있다"');
+    L.push('절차: `docs/internal/blog-service/sync.md` → "사본에 auto-sync PR이 열린 채 쌓여 있다"');
   }
   return L.join('\n') + '\n';
 }

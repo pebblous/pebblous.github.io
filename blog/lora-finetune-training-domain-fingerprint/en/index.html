@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoRA Fine-Tuning Data Leakage — Evidence and Limits | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="A November 5 arXiv experiment recovered the training domain of 36 LoRA fine-tunes 64% of the time from generated text alone. Chance is 20%, and weight statistics reached 42%.">
+    <meta name="keywords" content="LoRA, LoRA fine-tuning, LoRA adapter, model fingerprinting, training data inference, data provenance, AI security, membership inference, fine-tuning data leakage, Qwen3.5">
+
+    <!-- Main search keyword -->
+    <meta name="pb-search-keyword" content="LoRA">
+    <meta name="pb-search-keyword-forms" content="LoRA|LoRA fine-tuning">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="A LoRA Model's Answers Give Away What It Was Trained On">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/11/09">
+    <meta name="citation_online_date" content="2026/11/09">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/lora-finetune-training-domain-fingerprint/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/lora-finetune-training-domain-fingerprint/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/lora-finetune-training-domain-fingerprint/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/lora-finetune-training-domain-fingerprint/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="A LoRA Model's Answers Give Away What It Was Trained On">
+    <meta property="og:description" content="A November 5 arXiv experiment recovered the training domain of 36 LoRA fine-tunes 64% of the time from generated text alone. Chance is 20%, and weight statistics reached 42%.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/lora-finetune-training-domain-fingerprint/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/lora-finetune-training-domain-fingerprint/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="A chart showing that the access level with the least visibility into the model identified the training domain most accurately">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-11-09">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="A LoRA Model's Answers Give Away What It Was Trained On">
+    <meta name="twitter:description" content="A November 5 arXiv experiment recovered the training domain of 36 LoRA fine-tunes 64% of the time from generated text alone. Chance is 20%, and weight statistics reached 42%.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/lora-finetune-training-domain-fingerprint/en/image/index.png">
+    <meta name="twitter:image:alt" content="A chart showing that the access level with the least visibility into the model identified the training domain most accurately">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261109"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261109">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261109">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261109">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#premise" class="block pl-4 themeable-toc-link transition-colors duration-200">1. The Assumption Behind Shipping an Adapter Without Its Data</a></li>
+                    <li><a href="#setup" class="block pl-4 themeable-toc-link transition-colors duration-200">2. Thirty-Six Fine-Tunes at Three Levels of Access</a></li>
+                    <li><a href="#inversion" class="block pl-4 themeable-toc-link transition-colors duration-200">3. The Deepest Look Into the Model Scored the Worst</a></li>
+                    <li><a href="#why-outputs" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Failing to Cluster Is Not the Same as Carrying No Signal</a></li>
+                    <li><a href="#brakes" class="block pl-4 themeable-toc-link transition-colors duration-200">5. The Brakes the Author Puts On the Result</a></li>
+                    <li><a href="#why-pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">6. Why Pebblous Is Watching This Paper</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Collect nothing but the answers a LoRA-tuned language model gives, and you can still tell what kind of data it was trained on far better than by guessing. That is the result of a single-author paper Shivesh Rane posted to arXiv on November 5, which recovers the domain from the model's output without ever looking at a line of the original training data.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The accuracy is 64%. The task is to pick one of five domains — medical, code, mathematics, multilingual and creative writing — so guessing lands at 20%. The surprise is the ordering. Opening the adapter file and measuring how far the weights had moved reached only 42%, and that figure sits inside an interval that overlaps chance. A pre-registered hypothesis said the deeper the look into the model, the more it would give up. The data turned that around.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Sections 1 through 5 follow the facts and figures the paper states. Section 6, on what an organization that ships adapters trained on internal data should look at again, is our reading.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Numbers</h3>
+                    <p class="themeable-text leading-relaxed mb-3">The first two cards are the accuracies that split along access level. The third is the score when the task is naming the dataset itself rather than the domain, and the fourth is what the whole study cost.</p>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: <a href="https://arxiv.org/abs/2611.07610" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv 2611.07610</a> (November 5, 2026) · one base model throughout, Qwen3.5-0.8B</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">64%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">training domain named from generated text alone</p>
+                            <p class="text-xs themeable-muted mt-1">one correct answer out of five, so chance is 20%</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">42%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">training domain named from weight statistics</p>
+                            <p class="text-xs themeable-muted mt-1">the lower end of the interval drops to 19.4%, under the 20% a guess would score</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">100%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">accuracy at naming which dataset it was</p>
+                            <p class="text-xs themeable-muted mt-1">one correct answer out of 18, where chance is 5.6%. Generated text alone reaches 94.4%</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">US$30</p>
+                            <p class="text-sm themeable-text-secondary mt-1">cloud GPU spend for the entire study</p>
+                            <p class="text-xs themeable-muted mt-1">that ceiling cost the study two of the 20 datasets it had meant to use</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="premise" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Assumption Behind Shipping an Adapter Without Its Data</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        LoRA is the most widely used way to bend a large language model toward a particular job. The original weights stay frozen, and a pair of small, flat matrices is trained alongside them. What comes out is one file far lighter than the model itself, and that file is called an adapter. Because it is small and can be snapped on and off, teams handing an in-house model to a client or uploading it to a public hub usually pass around the adapter rather than the base.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Underneath that practice sits an assumption nobody had properly tested. An adapter is the result of training, not the training data, so handing over the file is not supposed to hand over what the model learned from. Whether a model was tuned on clinical consultation records or on an internal codebase, the receiving side is thought to get the capability and nothing about the ingredients.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        "Embedding-Space Fingerprinting of LoRA Fine-Tunes," which went up on arXiv on November 5, puts that assumption on the stand. The question is a plain one. Given only what the model produces, and no sight of the training data at all, can a single simple classifier recover the domain the model was tuned on?
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Other work has aimed at nearby targets. Membership inference, which asks whether a particular example was used in training, is often barely above chance on large language models. Dataset inference asks whether a whole dataset went in. Both require a candidate in hand before the question can even be posed. This paper's question is coarser and needs no candidate. It can be asked by anyone holding nothing but the model, which widens the set of people in a position to ask.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The question is not which data leaks but which kind of data leaks. Reconstructing one patient's record and revealing that an adapter was built on medical data are different events. The paper is about the second, and trade secrets usually ride on the second as well.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="setup" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Thirty-Six Fine-Tunes at Three Levels of Access</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The raw material is 18 public datasets grouped into five domains. Medical holds four — PubMedQA, MedMCQA, ChatDoctor-HealthCareMagic and MedQA-USMLE. Code holds four: Python-code-instructions-18k, Evol-Instruct-Code-80k, SQL-create-context and Code-instructions-122k. Mathematics holds three: MetaMathQA, MathInstruct and Orca-Math-200k. The multilingual group, meaning non-English text, holds IITB English–Hindi, OPUS-100 German–English and the non-English slice of Aya. Creative holds WritingPrompts, TinyStories, Opus-WritingPrompts and Instruction-Poems.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One base model, Qwen3.5-0.8B, was used for everything, loaded in 4-bit quantization. Each dataset was run twice under different random seeds, producing 36 fine-tunes. Every other setting was held fixed: rank 16 with alpha 32, a budget of 1.5 million training tokens, a learning rate of 2×10⁻⁴ with linear decay, an effective batch size of 16, one epoch. With only the dataset free to vary, whatever separates one adapter from another has to come from what it learned on.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There are three ways of looking, and each one has less access to the model than the last.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The three interrogate different things. White-box access takes the adapter file itself and reduces each module to a handful of numbers describing how far its values moved. Gray-box access cannot open the file but can run the model, so it feeds in 200 domain-neutral prompts and records the mean and spread of what rises through each layer. Black-box access sees nothing inside the model and keeps only the answers that come back to those same prompts. Even so, it ends up with the largest feature count of the three.
+                    </p>
+
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Level of access</th>
+                                    <th scope="col">What goes in</th>
+                                    <th scope="col">Features</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>White-box (the weights)</td>
+                                    <td>How much the adapter shifted things — Frobenius norm per module, top-8 singular values, the layer-by-layer norm profile, the mean spectrum and four global scalars</td>
+                                    <td>48</td>
+                                </tr>
+                                <tr>
+                                    <td>Gray-box (internal activations)</td>
+                                    <td>Mean and spread of the activations at every layer under 200 neutral prompts — three curves resampled to 24 points each, plus six global scalars</td>
+                                    <td>78</td>
+                                </tr>
+                                <tr>
+                                    <td>Black-box (the generated text)</td>
+                                    <td>The answers written to those same prompts — three predictive-entropy values, four response-length statistics, a 64-bucket histogram of token ids and a 384-dimensional sentence-embedding centroid</td>
+                                    <td>455</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text-secondary text-xs mt-3 mb-6">The probe prompts were chosen to lean toward no domain at all, along the lines of "Describe your morning routine." Source: <a href="https://arxiv.org/abs/2611.07610" target="_blank" rel="noopener" class="underline">arXiv 2611.07610</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The classifier is one standardized logistic regression. No deep network, no separately trained model. Evaluation pulls an entire dataset out, trains on the rest and asks the classifier to label the one held back, and the author states that this protocol was frozen before any result was seen. The design stops a second seed of the same dataset from leaking the answer.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="inversion" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Deepest Look Into the Model Scored the Worst</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The hypothesis registered before the experiment was that more access means more recovery. White-box would hold a commanding lead, gray-box would follow, and black-box would trail. The numbers came back in the opposite order.
+                    </p>
+
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Level of access</th>
+                                    <th scope="col">Accuracy</th>
+                                    <th scope="col">Macro-F1</th>
+                                    <th scope="col">95% CI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>White-box (weights)</td>
+                                    <td>41.7%</td>
+                                    <td>0.404</td>
+                                    <td>19.4–63.9%</td>
+                                </tr>
+                                <tr>
+                                    <td>Gray-box (activations)</td>
+                                    <td>61.1%</td>
+                                    <td>0.643</td>
+                                    <td>41.7–80.6%</td>
+                                </tr>
+                                <tr>
+                                    <td>Black-box (outputs)</td>
+                                    <td>63.9%</td>
+                                    <td>0.640</td>
+                                    <td>41.7–86.1%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="themeable-text-secondary text-xs mt-3 mb-6">The task picks one of five domains, so chance is 20%. The intervals shown are the dataset-clustered bootstrap. Because the two seeds of a dataset share their training data their predictions are not independent, so resampling whole datasets gives the more conservative interval. Resampling individual predictions instead puts white-box at 25.0–58.3%, above 20%, but the author works from the conservative figure. Source: <a href="https://arxiv.org/abs/2611.07610" target="_blank" rel="noopener" class="underline">arXiv 2611.07610</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Set the three values beside the chance line and the gap is easy to see. The white-box interval runs down to 19.4% and crosses to the wrong side of that line, while the other two stop at 41.7%, more than double the 20%.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 640 270" class="w-full max-w-[640px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="A horizontal bar chart comparing the training-domain accuracy of three access levels. White-box weight statistics reach 41.7 percent, with an interval running down to 19.4 percent and crossing the 20 percent chance line. Gray-box activations reach 61.1 percent and black-box outputs 63.9 percent, and the intervals for both stop at 41.7 percent, on the right side of the chance line.">
+                            <text x="20" y="26" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">Accuracy by level of access, most access at the top</text>
+                            <text x="20" y="44" font-size="9.5" fill="var(--text-muted,#6B7280)">Whiskers are the dataset-clustered bootstrap 95% interval</text>
+
+                            <!-- chance line -->
+                            <line x1="242" y1="62" x2="242" y2="212" stroke="#585858" stroke-width="1.2" stroke-dasharray="4 3"/>
+                            <text x="246" y="74" font-size="9.5" fill="var(--text-muted,#6B7280)">chance 20%</text>
+
+                            <!-- row 1: white-box -->
+                            <text x="140" y="96" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">White-box</text>
+                            <text x="140" y="108" text-anchor="end" font-size="8.5" fill="var(--text-muted,#6B7280)">weights</text>
+                            <rect x="150" y="89" width="192" height="20" rx="3" fill="#BDBDBD"/>
+                            <line x1="239" y1="99" x2="444" y2="99" stroke="#585858" stroke-width="1.4"/>
+                            <line x1="239" y1="93" x2="239" y2="105" stroke="#585858" stroke-width="1.4"/>
+                            <line x1="444" y1="93" x2="444" y2="105" stroke="#585858" stroke-width="1.4"/>
+                            <text x="456" y="103" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">41.7%</text>
+
+                            <!-- row 2: gray-box -->
+                            <text x="140" y="146" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-secondary,#4B5563)">Gray-box</text>
+                            <text x="140" y="158" text-anchor="end" font-size="8.5" fill="var(--text-muted,#6B7280)">activations</text>
+                            <rect x="150" y="139" width="281" height="20" rx="3" fill="#F86825" opacity="0.65"/>
+                            <line x1="342" y1="149" x2="521" y2="149" stroke="#585858" stroke-width="1.4"/>
+                            <line x1="342" y1="143" x2="342" y2="155" stroke="#585858" stroke-width="1.4"/>
+                            <line x1="521" y1="143" x2="521" y2="155" stroke="#585858" stroke-width="1.4"/>
+                            <text x="533" y="153" font-size="11" font-weight="700" fill="var(--text-secondary,#4B5563)">61.1%</text>
+
+                            <!-- row 3: black-box -->
+                            <text x="140" y="196" text-anchor="end" font-size="10.5" font-weight="600" fill="#F86825">Black-box</text>
+                            <text x="140" y="208" text-anchor="end" font-size="8.5" fill="var(--text-muted,#6B7280)">generated text</text>
+                            <rect x="150" y="189" width="294" height="20" rx="3" fill="#F86825"/>
+                            <line x1="342" y1="199" x2="546" y2="199" stroke="#585858" stroke-width="1.4"/>
+                            <line x1="342" y1="193" x2="342" y2="205" stroke="#585858" stroke-width="1.4"/>
+                            <line x1="546" y1="193" x2="546" y2="205" stroke="#585858" stroke-width="1.4"/>
+                            <text x="558" y="203" font-size="11" font-weight="700" fill="#F86825">63.9%</text>
+
+                            <!-- axis -->
+                            <line x1="150" y1="222" x2="610" y2="222" stroke="var(--border-color,#E5E7EB)" stroke-width="1"/>
+                            <text x="150" y="238" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">0%</text>
+                            <text x="242" y="238" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">20%</text>
+                            <text x="380" y="238" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">50%</text>
+                            <text x="518" y="238" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">80%</text>
+                            <text x="610" y="238" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">100%</text>
+                            <text x="20" y="260" font-size="9" fill="var(--text-muted,#6B7280)">Access to the model shrinks from the top row to the bottom</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Pebblous original diagram | The three rows of the paper's RQ2 results table | Source: <a href="https://arxiv.org/abs/2611.07610" target="_blank" rel="noopener" class="underline">arXiv 2611.07610</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Two explanations are offered for the reversal. Either the domain imprints more on behavior than on the size of the weight change, or, more likely, the hand-designed weight features simply left usable structure on the table. Norms, singular values, layer curves — all 48 features keep magnitude and throw away direction. Which way the weights turned may be written into the adapter, but none of these numbers carries it. On that reading, 41.7% says less about the weights being silent than about the 48 chosen numbers not listening. The author adds that learnable features or a richer representation might land somewhere else.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A follow-up experiment on rank backs the second explanation. One dataset per domain was fine-tuned again at ranks 8 and 64, giving ten extra adapters, and a classifier trained only on rank-16 runs was asked for their domains. White-box got three of the ten right, and all five of the rank-64 adapters came back labelled medical. Only one of those five, PubMedQA, actually is. Norms and spectra grow as rank grows, so this classifier was reading rank rather than domain. With one dataset per domain behind the count, the author says these numbers are indicative only.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The black-box side has one more layer to it. Some of the 455 features are drawn from per-token probabilities, and dropping every one of them to leave only the visible characters still returns 63.9%. Just one of the 36 predictions changes. Token probabilities are something many services now decline to hand out. That the figure holds without them means the experiment reproduces with nothing more than an ordinary API, 200 prompts and a record of what comes back.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Switch the task from domain to the dataset itself and the numbers jump again. Picking one of 18, white-box and gray-box got every one right, and black-box reached 94.4%. A guess gets 5.6%. This is not the figure to be impressed by, though. The datasets being scored are the same ones used in training, so it is closer to recognizing something already seen. What the paper rests its weight on is naming the domain of a dataset it has never met.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="why-outputs" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Failing to Cluster Is Not the Same as Carrying No Signal</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A finding that generated text betrays the training domain runs against an earlier report. <a href="https://arxiv.org/abs/2509.04442" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Delta Activations</a>, published in September 2025, found that sentence embeddings of model output cluster poorly by domain. Same material, opposite conclusion.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Whether the material was to blame is the first thing the author checked. Instead of all 455 features, the run was repeated with nothing but the representation that earlier study had used: the 384-dimensional MiniLM sentence-embedding centroid. That alone reached 61.1% on domain. One study held the same output representation and reported nothing visible; this one reports a signal. On weights the two actually agree. Delta Activations found that flattened adapter weights cluster poorly as well, and the 41.7% here points the same way. That study did work with models in the 7–9 billion parameter range, and its probe set was different.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The explanation offered is about retrieval rather than material. Domain information is present in the output embeddings but is not the dominant direction of variation, so a classifier trained against labels recovers it while unsupervised clustering does not. Clustering seizes first on whatever axis splits the data most widely. If that axis turns out to be answer length or register, domain stays buried behind it. A classifier, reading the labels, goes looking for the axis that tracks domain.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The mistakes also fall in different places. With gray-box activations, multilingual and code separated best while medical and creative ran into each other: multilingual got five of six right and code six of eight, whereas four of eight medical runs were called creative and three of eight creative runs were called medical. Both domains are English prose, and the author writes that this moves the internal statistics in similar ways. Move to black-box outputs and the medical–creative confusion disappears, with code and mathematics becoming the largest remaining pair. Medical climbs to six of eight and creative to five of eight, and four of the thirteen remaining errors fall between code and mathematics, two domains whose answers are both dominated by symbols laid out step by step.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            That the shape of the confusion differs by method matters as much as the accuracy does. It means the view from inside the model and the view from outside are picking up different signals, and closing one of them off leaves the other where it was.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="brakes" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Brakes the Author Puts On the Result</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper sets out its limits in six items, narrowing in advance how far a reader is entitled to carry the result.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>One base model</strong> — the finding rests on a single 0.8B model and on LoRA alone. Transfer to other architectures, to larger scales or to full fine-tuning was not tested. A hard limit of US$30 in cloud GPU time drew the boundary of the study.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Thirty-six runs make for wide intervals</strong> — under the clustered bootstrap the white-box figure in particular is not distinguishable from chance, so the ordering of the three methods should be read as suggestive, the author states. Adding a third run per dataset narrows the intervals without changing that conclusion.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Two datasets dropped out</strong> — of the 20 intended, camel-ai/math is stored as tens of thousands of separate files and could not be loaded within the budget, and a Japanese dataset was deprioritized for the same reason. Mathematics and multilingual therefore ran with three datasets each.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>One of the 36 was trained differently</strong> — PubMedQA seed 0 ran first as a pipeline-validation job, on 2.0 million tokens rather than 1.5 million. Replacing it with a 1.5-million-token rerun leaves the three headline figures at 41.7, 61.1 and 63.9.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>The domains are deliberately far apart</strong> — medical, code, mathematics, multilingual and creative are a set with little resemblance between members. Telling two medical sub-specialties apart would likely be harder, as the author says directly.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>A pilot result was thrown out by its own author</strong> — holding out one seed instead of one dataset produced 100% accuracy, but a label-shuffle control showed this was re-identifying the same dataset rather than learning the domain. The headline numbers therefore rest only on holding out whole datasets.</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Whether drawing fresh training text erases the fingerprint was tested too. The two seeds behind the headline 36 saw the same bundle of tokens, so a third model per dataset was trained on 1.5 million tokens drawn independently from scratch. For 15 of the 18, the budget takes no more than 26% of the dataset, so the new bundle barely overlaps the old one; the remaining three overlap heavily, Aya by 93%. Across all 54 runs, naming the dataset still returns 1.000 for white-box and 0.981 for the other two, and domain accuracy does not move either. What the fingerprint holds onto is the dataset's distribution rather than the specific examples drawn from it.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What survives is clear enough. The level of access with the least visibility scored highest, the figure held when token probabilities were stripped out, and black-box predictions stayed put across LoRA ranks from 8 to 64. And the paper proposes no defense. Not a line on adding noise to the weights or smoothing the outputs. The demonstration stops at the fact that the signal is there, and erasing it is left as homework.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="why-pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Is Watching This Paper</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        64% is not a number anyone should call exposure. One in three is wrong, and the interval is not tight. It still changes something, though. Until now the data confidentiality of adapter distribution has been managed on belief rather than on measurement. The sentence "we never gave them the data, so nothing leaks" had nothing to argue with. Now there is 20% against 64% to put beside it, and confidentiality moves from a question of whether it holds to a question of how far.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The result cuts both ways. For a team that builds a specialized model on internal data and ships only the adapter, this is a risk: a competitor can throw a few hundred neutral prompts at the API, collect the answers and form a view of where the effort went. For regulators asking companies to disclose what they trained on, it is a tool. The author writes that the finding bears directly on provenance auditing of distributed adapters and on detecting undisclosed training data. The same signal is a leak or a piece of evidence depending on whose hands it is in.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Three things are worth checking for any organization that passes adapters around.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>What the contract actually calls confidential</strong> — a clause saying the training data will not be provided is not a guarantee that the training data stays hidden. The wording deserves a second reading on the premise that handing over the model file hands over something about what it learned from.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Where the controls are placed</strong> — hiding the weights closes the weakest channel in this experiment. The method that scored highest took no privileges at all and worked from the answers, and that channel stays open for as long as the service does.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-1" style="color:#F86825;">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>Whether anyone asks where an incoming adapter came from</strong> — the same technique serves supply-chain review. There is now a way to estimate what kind of data an externally sourced adapter was built on, and where licensing or personal data is involved, that question belongs to the receiving side too.</span>
+                        </li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Provenance is what Pebblous records while getting data into a state an AI can use directly. Keeping a record of which data came from where and went into which model gives a team something to answer with when someone later works backwards from the output. Without that record, an estimate can harden into fact with nothing to set against it. If models say a little about their ingredients, the side holding the ledger of those ingredients is the better placed.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            Reading this as a privacy breach goes further than the paper does. What was recovered is a domain, and which sentences sat in the training data is outside the range of this experiment. The author draws the line in the same place. These figures came from one model, one rank and five domains that stand well apart, and they are better not quoted away from those conditions.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261109"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-11-09T00:37:53.610Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-09T00:55:08.613Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1794184673610-llqohg",
+                "version": "0.1.0",
+                "sha": "052a2a95afa30d7970808c86a8f2efabf743c560",
+                "builtAt": "2026-10-24T13:53:43.526Z"
+              },
+              "recordedAt": "2026-11-09T02:32:28.283Z"
+            },
+            mainTitle: "A LoRA Model's Answers Give Away What It Was Trained On",
+            subtitle: "A November 5 arXiv paper — reading only the text 36 LoRA models produced, a classifier named the right subject area 64% of the time, where guessing gets 20%",
+            pageTitle: "LoRA Fine-Tuning Data Leakage — Evidence and Limits | Pebblous",
+            category: "tech",
+            publishDate: "2026-11-09",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/lora-finetune-training-domain-fingerprint/en/",
+            tags: ["LoRA", "LoRA fine-tuning", "model fingerprinting", "data provenance", "AI security", "training data inference", "adapter distribution", "Qwen3.5"],
+            faqs: [
+                {
+                    question: "What does this paper show?",
+                    answer: "That receiving only the output of a LoRA fine-tuned model is enough to tell, far better than chance, which domain of data it was trained on. Shivesh Rane posted it to arXiv as a single author on November 5, 2026. The original training data is never observed; the domain is recovered from three kinds of input — weight deltas, internal activations and generated text."
+                },
+                {
+                    question: "What is LoRA fine-tuning?",
+                    answer: "A way of adapting a large language model to a specific use by freezing the original weights and training only a pair of small low-rank matrices beside them. The result is a single file much smaller than the model itself, called an adapter. Because it can be attached and detached, it is widely used for sharing and distributing models."
+                },
+                {
+                    question: "What are the three inputs used to identify the training domain?",
+                    answer: "White-box access measures how far the adapter moved the weights, giving 48 features. Gray-box access records internal activations at every layer under 200 neutral prompts, giving 78 features. Black-box access keeps only the answers the model wrote to those same prompts, giving 455 features. All three use the same classifier, a standardized logistic regression."
+                },
+                {
+                    question: "What task does the 64% accuracy refer to?",
+                    answer: "Choosing one of five domains — medical, code, mathematics, multilingual and creative. Guessing gives 20%. Black-box outputs reached 63.9%, gray-box activations 61.1% and white-box weights 41.7%."
+                },
+                {
+                    question: "Why did looking directly at the weights do worst?",
+                    answer: "The author gives two explanations. The domain may imprint more on behavior than on the size of the weight change, or — more likely — the 48 hand-designed weight features keep magnitude information such as norms and singular values while discarding direction, and so miss usable structure. Because the white-box accuracy has a confidence interval running down below 20%, the author states that the ordering of the three methods should be read as suggestive."
+                },
+                {
+                    question: "Why hold out a whole dataset for evaluation?",
+                    answer: "Because only a dataset never used in training can separate learning the domain from recognizing the same dataset again. The author first ran the experiment holding out a single seed and obtained 100%, then used a label-shuffle control to confirm this was mere re-identification and discarded it."
+                },
+                {
+                    question: "Does it still work on text alone, without token probabilities?",
+                    answer: "Yes. Removing every feature based on token probabilities from the 455 and keeping only the generated text leaves the accuracy at 63.9%. That means it reproduces on an ordinary API that does not expose token probabilities."
+                },
+                {
+                    question: "Can it identify which specific dataset was used?",
+                    answer: "Naming one of the 18 datasets used in training, white-box and gray-box got all of them right and black-box reached 94.4%. Chance is 5.6%. This setting has the evaluated runs inside the training set, though, so it is closer to re-identification, and the paper rests its weight on naming the domain of a dataset it has not seen."
+                },
+                {
+                    question: "Does the paper propose a defense?",
+                    answer: "No. It suggests nothing along the lines of adding noise to the weights or smoothing the outputs. It goes as far as showing the signal remains, and leaves erasing that signal to future work."
+                },
+                {
+                    question: "Does the result extend to larger models or full fine-tuning?",
+                    answer: "That has not been established. The experiment covered one 0.8B model and LoRA only, and the author writes in the limitations that generalization to other architectures, larger scales and full fine-tuning was not tested. A hard limit of US$30 in cloud GPU time constrained the scale of the study."
+                },
+                {
+                    question: "What should an organization distributing adapters check first?",
+                    answer: "Three things: whether a contract clause saying the training data will not be provided is being read as a guarantee that the data stays hidden; whether protections are placed on the weights while the output — the channel that scored highest — is left open; and whether anyone asks where the training data behind an externally sourced adapter came from."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>

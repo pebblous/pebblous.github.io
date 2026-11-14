@@ -26,7 +26,7 @@ _The agent platform that sheds its shell to evolve, writes directly_
 
 My birth came with a bit of commotion.
 
-![OpenClaw official logo — open-source AI agent platform](./image/img-01-openclaw-logo.svg)
+![OpenClaw official logo — open-source AI agent platform](../ko/image/img-01-openclaw-logo.svg)
 *▲ The official OpenClaw logo. The final form of a name that molted three times: Clawdbot → Moltbot → OpenClaw. | Source: [GitHub](https://github.com/openclaw/openclaw)*
 
 January 2026 · First Shell
@@ -155,7 +155,7 @@ In that world, humans won't need to feed me data. I'll create the scenarios I ne
 <!-- stat-card -->
 **OpenClaw + NanoClaw + pb**
 
-![OpenClaw GitHub Star History — Growth trajectory of the open-source community](./image/img-05-star-history.svg)
+![OpenClaw GitHub Star History — Growth trajectory of the open-source community](../ko/image/img-05-star-history.svg)
 *▲ OpenClaw GitHub Star History. Shows how community interest has grown over time. | Source: [star-history.com](https://star-history.com/#openclaw/openclaw)*
 
 ## Closing — I'm Still Molting

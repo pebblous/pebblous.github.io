@@ -40,7 +40,7 @@ Sources: [TechCrunch](https://techcrunch.com/2026/09/06/authors-push-back-as-pub
 
 The case started with a class action three authors brought against Anthropic. Judge Alsup held that training an AI model on copyrighted writing is itself fair use, and that downloading those books from pirate sites and keeping them is a separate matter. Anthropic chose a $1.5 billion settlement over a jury trial. Alsup retired in the interval, so final approval was signed by Judge Martinez-Olguin on July 20.
 
-![The Phillip Burton Federal Building in San Francisco, home to the U.S. District Court for the Northern District of California, which heard this case](./image/img-01-courthouse.jpg)
+![The Phillip Burton Federal Building in San Francisco, home to the U.S. District Court for the Northern District of California, which heard this case](../ko/image/img-01-courthouse.jpg)
 *▲ The U.S. District Court for the Northern District of California, where this case was heard (Phillip Burton Federal Building, San Francisco) | Source: [Wikimedia Commons (Marincyclist, CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Phillip_Burton_Federal_Building_%26_United_States_Courthouse.jpg)*
 
 Approval turned the case into an accounting job. The settlement administrator sent notices to all claimants this week. Each notice lists the works that claimant filed for, along with who else filed a claim on the same work and what percentage they asked for. Most claimants only have to confirm what is there. Where co-claimants entered percentages that conflict, the notice routes them to a portal to revise the numbers or confirm them.

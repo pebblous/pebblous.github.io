@@ -38,7 +38,7 @@ Reduced to numbers, the heart of this report compresses into four figures. They 
 
 Transcribe the WWDC 2026 keynote and you get a feature list. The new macOS is called macOS Golden Gate; Liquid Glass has been tuned for readability and gains a slider to dial its glass intensity up and down. App launches are up to 30% faster, new-photo loading 70% faster, AirDrop 80% faster, and external-drive transfer on iPad is five times quicker. The Spotlight, Photos, and Mail search engines were rebuilt to index freshly created content on the spot. TechCrunch has already tallied that list; we read it back with a different question. **What is all this refinement _for_?**
 
-![Aerial view of Apple Park, the stage where WWDC 2026 was announced](./image/img-01-apple-park.jpg)
+![Aerial view of Apple Park, the stage where WWDC 2026 was announced](../ko/image/img-01-apple-park.jpg)
 *▲ The stage for WWDC 2026 — Apple Park in Cupertino. On the surface it is a feature list; underneath lies a redesign of the data infrastructure. | Source: [Wikimedia Commons — Daniel L. Lu (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Aerial_view_of_Apple_Park_dllu.jpg)*
 
 The answer is the data pipeline. To run AI on-device, the data the model will reference has to be read, indexed, and moved quickly inside the device. To the user, 70% faster photo loading, 5× external-drive transfer, and a rebuilt search engine with instant indexing simply read as "it got faster." From a systems point of view they are **a tune-up of the pipeline that feeds the model its data on time**. Behind the flashy percentages, what Apple really worked on is the speed at which data flows inside the device.
@@ -56,7 +56,7 @@ Overlay the competitive picture and the urgency sharpens. ChatGPT passed 800 mil
 
 So Apple changed course. According to Bloomberg's Mark Gurman (unconfirmed by Apple), Apple licensed a custom Gemini model of roughly 1.2 trillion parameters for around $1 billion a year, putting it to work on high-difficulty reasoning on the cloud side. Every figure here is a report-based estimate, and the multi-year total could be larger. What matters is not the amount but the structure. **Apple borrowed the model's capability from the outside, but it did not lend out control of its data.** Contractually, Google cannot train its own models on Apple user data, and inference happens inside an environment Apple controls.
 
-![Google Gemini logo — the model Apple reportedly licensed for high-difficulty cloud reasoning](./image/img-02-gemini-logo.png)
+![Google Gemini logo — the model Apple reportedly licensed for high-difficulty cloud reasoning](../ko/image/img-02-gemini-logo.png)
 *▲ Google Gemini, reportedly borrowed for high-difficulty reasoning on the cloud side. Apple borrowed the capability from the outside — but did not lend out control of its data. | Source: [Wikimedia Commons — Google LLC (Public Domain)](https://commons.wikimedia.org/wiki/File:Google_Gemini_logo_2025.svg)*
 
 It's a signal that the terrain of model sourcing is shifting. Train it yourself, or borrow one and align it with your own data — that is now a strategic choice for consumer products. The table below lays out the split.
@@ -103,7 +103,7 @@ These five are implemented through Confidential Computing — combining NVIDIA C
 
 If you think privacy is the only reason to keep data on the device, you've seen only half of it. The other half is economics. Cloud inference is billed linearly per query, and that burden scales right alongside your user count. On-device inference, by contrast, drops the marginal cost of an additional query to essentially zero once the up-front investment in the chip is made. For a company with 2.5 billion devices, pushing inference onto the device is both a privacy promise and a vast choice about cost structure.
 
-![Apple Silicon processor — the up-front investment that drives the marginal cost of on-device inference toward zero](./image/img-03-apple-silicon.jpg)
+![Apple Silicon processor — the up-front investment that drives the marginal cost of on-device inference toward zero](../ko/image/img-03-apple-silicon.jpg)
 *▲ Apple Silicon. Once the up-front investment in the chip is made, the marginal cost of an additional query drops toward zero — which is why caging data on the device is rational in inference economics, too. | Source: [Wikimedia Commons — Henriok (CC0)](https://commons.wikimedia.org/wiki/File:Apple_silicon_processor.jpg)*
 
 The energy axis tells the same story. One analysis finds that a single general AI query uses roughly 10× the power of a Google search, and that a reasoning-specialized model can consume 7–40 Wh per query — up to 100× the baseline (arXiv:2505.09598). More important is the share: 80–90% of AI's total energy comes not from training but from inference. In a transition where inference is moving from one-third to two-thirds of AI computing (Deloitte estimate), distributing that inference across Apple Silicon running at 30–70 W under load is **a move that presses on three axes at once — cost, power, and trust.** The decision to cage data on the device turns out to be rational in inference economics too.
@@ -114,7 +114,7 @@ The new Siri looks like a "real assistant" not because of natural conversation, 
 
 This is exactly what Apple worked on. Spotlight, Photos, and Mail share a single search engine and index newly created data on the spot. Above Siri sits a System Orchestrator that binds context across messages, photos, calendar, and mail and coordinates app actions. Add On-screen awareness, which reads the screen, and Visual Intelligence through the camera, and the personal data inside the device, the screen, and web knowledge are all connected into one.
 
-![iPhone 15 Pro and Pro Max — the baseline devices that run the new Siri and next-generation Apple Intelligence](./image/img-04-iphone-15-pro.jpg)
+![iPhone 15 Pro and Pro Max — the baseline devices that run the new Siri and next-generation Apple Intelligence](../ko/image/img-04-iphone-15-pro.jpg)
 *▲ The new Siri and next-generation Apple Intelligence run only on iPhone 15 Pro (A17 Pro) and above. The semantic index of personal context is built on-device, on the latest silicon. | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Apple_iPhone_15_Pro.jpg)*
 
 To a data practitioner, this is a familiar problem. Binding scattered personal data into a single searchable representation is **RAG at consumer scale — building a semantic index.** The work of creating embeddings, indexing them, and pulling out the chunks that match a query happens on-device across hundreds of millions of phones. Only requests that leave the device pass through no-retention PCC. "Siri got smarter" ultimately amounts to "personal data was refined and structured into a form the model can use."

@@ -234,7 +234,7 @@
 
 ## 색상 팔레트
 
-자세한 내용은 [color.md](./color.md) 참조
+자세한 내용은 [color.md](internal/color.md) 참조
 
 **Core Colors**:
 - Orange: `#F86825` (브랜드, 액션)

@@ -40,7 +40,7 @@ Source: [NSF official announcement](https://www.nsf.gov/news/new-nsf-initiative-
 
 The formal title of NSF 26-512 is "Unlocking Dataset Value for AI-Enabled Scientific Discovery." The total is up to $100 million, with typical awards running $2–5 million and planning grants up to $200,000. So far this looks like any other research program. What makes the solicitation unusual is not the size of the money but a design that nails down where the money cannot go.
 
-![Official logo of the U.S. National Science Foundation (NSF)](./image/img-01-nsf-logo.png)
+![Official logo of the U.S. National Science Foundation (NSF)](../ko/image/img-01-nsf-logo.png)
 *▲ The U.S. National Science Foundation, which issued solicitation NSF 26-512 | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:NSF_logo.png)*
 
 The solicitation states plainly that it will not support new data collection. It applies only to datasets that already exist. In NSF's own words, "many datasets hold the potential to be used in new investigations beyond the scope of their original collection, but are inaccessible, not interoperable, or not ready for use by automated AI systems." The budget goes to closing exactly that gap: developing methods for feature extraction and metadata generation, integrating multiple datasets, and building robust data pipelines that AI tools can analyze automatically.
@@ -62,14 +62,14 @@ All three fall under Category I, the largest award tier in the IDSS program. Tha
 
 All three target the same bottleneck. Decades of accumulated scientific data sit scattered across thousands of incompatible institutional repositories, in inconsistent formats, tagged inconsistently — effectively invisible to AI models. The bottleneck comes not from a lack of data but from data that exists in an unusable state. If the new solicitation declared this problem as a budget line, the three IDSS awards are working examples of the same problem already being funded and solved.
 
-![Data center server racks symbolizing scattered institutional data repositories](./image/img-02-data-infrastructure.jpg)
+![Data center server racks symbolizing scattered institutional data repositories](../ko/image/img-02-data-infrastructure.jpg)
 *▲ The problem FabAID, NDP, and iDLab target — connecting scientific data scattered across thousands of institutional repositories | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg)*
 
 ## Why Now — The Genesis Mission as Backdrop
 
 NSF's two announcements did not happen to fall on the same day by accident. That day was the first Genesis Mission summit, hosted by the White House, where Michael Kratsios, director of the Office of Science and Technology Policy (OSTP), unveiled more than $5 billion in AI-for-science investment spanning 15 federal agencies. NSF's $100 million solicitation and its $83 million in IDSS awards are positioned as the operational tier of this national strategy.
 
-![Official portrait of Michael Kratsios, Director of the White House Office of Science and Technology Policy (OSTP)](./image/img-03-kratsios-ostp.jpg)
+![Official portrait of Michael Kratsios, Director of the White House Office of Science and Technology Policy (OSTP)](../ko/image/img-03-kratsios-ostp.jpg)
 *▲ Michael Kratsios, OSTP Director, who unveiled the $5 billion investment at the Genesis Mission summit (official portrait, taken during his earlier DoD tenure) | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/Category:Michael_Kratsios)*
 
 The Genesis Mission launched by executive order in November 2025. Its goals are to train AI models on scientific datasets, build AI agents that test new hypotheses, and stand up integrated platforms that automate research workflows. For that plan to hold, one premise has to be met: the scientific data the AI would learn from has to actually be in a learnable state. NSF 26-512 is the budget that fills that premise.

@@ -66,14 +66,14 @@ Put in numbers: loading the 4-bit weights alone takes about eighteen 80-gigabyte
 
 What matters here is that the bottleneck has moved. With only 50 billion active parameters, the compute itself is not that heavy. What holds you back is not computation but the capacity and bandwidth of the memory needed to hold all 2.8 trillion weights. The common assumption that an open-weight model runs on a laptop or workstation collapses at this scale. The mass is the barrier, and its height is set not by us but by the hardware.
 
-![A data-center AI accelerator card with 80GB-class memory](./image/img-01-nvidia-h100-accelerator.jpg)
+![A data-center AI accelerator card with 80GB-class memory](../ko/image/img-01-nvidia-h100-accelerator.jpg)
 *▲ An 80GB-class data-center accelerator card, the unit Kimi K3's 1.4 terabytes of 4-bit weights must be spread across | Source: [Geekerwan, Wikimedia Commons (CC BY 3.0)](https://commons.wikimedia.org/wiki/File:NVIDIA_H100_(%E6%9E%81%E5%AE%A2%E6%B9%BEGeekerwan)_001.png)*
 
 ## Anyone can download it, not everyone can run it
 
 Saying the weights are public is not the same as saying I can run them. The places that own a cluster able to keep 1.4 terabytes resident are cloud providers, large inference vendors, and well-capitalized enterprises and research institutes. The picture of the ordinary open-source developer running a quantized small model on a laptop does not reproduce at this scale. The weights are decentralized, but the ability to actually operate them concentrates back in the hands of infrastructure providers.
 
-![Interior of a data center server rack row capable of hosting a terabyte-scale cluster](./image/img-02-datacenter-server-hall.jpg)
+![Interior of a data center server rack row capable of hosting a terabyte-scale cluster](../ko/image/img-02-datacenter-server-hall.jpg)
 *▲ Sustaining a cluster at this scale narrows down to cloud providers and large inference vendors | Source: [Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg)*
 
 How heavy this mass is was first shown by Moonshot itself, the maker of the model. Ahead of the release it had to pause its subscription service for a time, and a tight supply of its own GPUs was pointed to as the reason. If even the creator is chased by compute, the option to download it and run it yourself narrows further for the vast majority of organizations below.

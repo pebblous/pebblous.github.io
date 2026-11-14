@@ -91,7 +91,7 @@ defaultTheme: "light",               ← PebblousPage.init() 설정
 - publisher: `"(주)페블러스 데이터 커뮤니케이션팀"`
 - category: `"business"` 또는 `"tech"` (주제에 따라)
 - **Hero 헤더**: 언어 전환 링크 바로 아래 `<div id="share-buttons-placeholder" class="flex justify-start mt-4"></div>` 필수
-- Executive Summary는 `<section id="executive-summary">` 별도 섹션
+- Executive Summary는 `<section id="executive-summary">` 별도 섹션 — 첫 문장은 제목처럼 무슨 소식인지부터, 메타 '읽는다' 금지, 중국 고유명사 간체 병기, FAQ 도 해라체 (정본 `docs/ko-style-standard.md` §4-1·§4-3·§4-4)
 - 수치 데이터는 `<strong>` 또는 카드 형태로 강조
 - 참고문헌 섹션: `<section id="references">`에 번호 목록
 

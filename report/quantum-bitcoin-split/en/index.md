@@ -37,7 +37,7 @@ The second is **mining**. To add a new block, miners must find a nonce such that
 <!-- stat-card -->
 **The Two Threats at a Glance**
 
-![Annual decline in physical qubit estimates for RSA-2048 (2019–2025) — algorithmic and error-correction progress is accelerating the quantum threat faster than most forecasts anticipated (arXiv:2603.28846 Figure 3)](./image/img-paper1-fig3.png)
+![Annual decline in physical qubit estimates for RSA-2048 (2019–2025) — algorithmic and error-correction progress is accelerating the quantum threat faster than most forecasts anticipated (arXiv:2603.28846 Figure 3)](../ko/image/img-paper1-fig3.png)
 *▲ Figure 3 (arXiv:2603.28846) — Physical qubit estimates for breaking RSA-2048, plotted year by year. Each data point represents a new research result; the trend is consistently downward. The same algorithmic improvements apply to ECDSA | Source: Babbush et al., Google Quantum AI + Ethereum Foundation (2026)*
 
 > [!callout]
@@ -64,7 +64,7 @@ The core breakthrough is holistic optimization of modular exponentiation and qua
 
 For fast-clock architectures, the attack window narrows to the time between transaction broadcast and block inclusion — the mempool dwell time. The moment a user broadcasts a Bitcoin transaction, the public key is exposed. In principle, a sufficiently capable quantum computer could compute the private key and redirect the funds before the transaction confirms. This is the "on-spend attack" scenario.
 
-![On-spend attack success probability vs. transaction broadcast-to-finality window — Bitcoin (10 min blocks), Litecoin (2.5 min), Dogecoin (1 min), Ethereum (12 sec). Shorter block times shrink the attack window (arXiv:2603.28846 Figure 6)](./image/img-paper1-fig6.png)
+![On-spend attack success probability vs. transaction broadcast-to-finality window — Bitcoin (10 min blocks), Litecoin (2.5 min), Dogecoin (1 min), Ethereum (12 sec). Shorter block times shrink the attack window (arXiv:2603.28846 Figure 6)](../ko/image/img-paper1-fig6.png)
 *▲ Figure 6 (arXiv:2603.28846) — Probability of a successful on-spend attack as a function of time between broadcast and transaction finality. Bitcoin's 10-minute block interval gives an attacker a meaningful window; Ethereum's 12-second slots reduce exposure dramatically | Source: Babbush et al., Google Quantum AI + Ethereum Foundation (2026)*
 
 ### 2.3 Additional risk for Ethereum
@@ -104,7 +104,7 @@ The Kardashev scale, proposed by Soviet astronomer Nikolai Kardashev in 1964, cl
 
 Human civilization currently doesn't qualify as Type I. Global electricity generation is approximately 2–3 × 10¹³ W. The BTQ calculation for real Bitcoin mining difficulty (b≈79) requires 10²⁵ W — more than a billion times what our entire civilization produces.
 
-![Fleet physical qubit requirements heatmap by mining difficulty and runtime — superconducting, neutral-atom, and ion-trap architectures compared. Vertical dashed line marks real Bitcoin difficulty (b≈79). Grey = infeasible (arXiv:2603.25519 Figure 2)](./image/img-paper2-fig1.png)
+![Fleet physical qubit requirements heatmap by mining difficulty and runtime — superconducting, neutral-atom, and ion-trap architectures compared. Vertical dashed line marks real Bitcoin difficulty (b≈79). Grey = infeasible (arXiv:2603.25519 Figure 2)](../ko/image/img-paper2-fig1.png)
 *▲ Figure 2 (arXiv:2603.25519) — Fleet physical qubit count (color scale 10¹² to 10⁷⁷) required across difficulty levels and runtime caps, for three quantum hardware architectures. The dashed vertical line marks real Bitcoin difficulty (b≈79); the required qubit counts in that column exceed 10²³. Grey cells are physically infeasible | Source: Dallaire-Demers et al., BTQ Technologies (2026)*
 
 Required power: ~10²⁵ W  
@@ -119,7 +119,7 @@ Required power: ~10²⁵ W
 
 The square-root speedup collapses under three layers of overhead in real mining conditions. First, **oracle overhead**: implementing SHA-256 as a reversible quantum circuit explodes the gate count. Second, **distillation overhead**: magic state factories for T-gate preparation consume the majority of physical qubits. Third, **fleet overhead**: to beat 10-minute block times under Nakamoto consensus, multiple quantum computers must operate in parallel — and that number scales catastrophically with difficulty.
 
-![Bitcoin network power consumption vs. difficulty for three ASIC generations (S9 80 J/TH, S19 29.5 J/TH, S21 17.5 J/TH) — classical mining already operates at gigawatt scale (arXiv:2603.25519 Figure 5)](./image/img-paper2-fig4.png)
+![Bitcoin network power consumption vs. difficulty for three ASIC generations (S9 80 J/TH, S19 29.5 J/TH, S21 17.5 J/TH) — classical mining already operates at gigawatt scale (arXiv:2603.25519 Figure 5)](../ko/image/img-paper2-fig4.png)
 *▲ Figure 5 (arXiv:2603.25519) — Classical Bitcoin network power consumption (GW) as a function of difficulty, across three ASIC efficiency generations. Classical mining already runs at gigawatt scale — and quantum mining would require more than 10¹² times that energy at real network difficulty | Source: Dallaire-Demers et al., BTQ Technologies (2026)*
 
 > [!callout]
@@ -137,7 +137,7 @@ BIP 360 (Bitcoin Improvement Proposal 360) proposes a post-quantum address forma
 
 BIP 360 targets soft-fork adoption — backward-compatible with existing nodes. But the real migration challenge isn't technical: it's coordinating the movement of every wallet, every exchange, every custodian, and every smart contract that currently depends on ECDSA. That is a multi-year undertaking even under a best-case consensus scenario.
 
-![BTC balance distribution of the top 100,000 quantum-vulnerable Bitcoin addresses — color-coded by script type (P2PK, P2PKH, P2SH, P2WPKH, P2TR). At-rest attack targets (arXiv:2603.28846 Figure 7)](./image/img-paper1-fig7.png)
+![BTC balance distribution of the top 100,000 quantum-vulnerable Bitcoin addresses — color-coded by script type (P2PK, P2PKH, P2SH, P2WPKH, P2TR). At-rest attack targets (arXiv:2603.28846 Figure 7)](../ko/image/img-paper1-fig7.png)
 *▲ Figure 7 (arXiv:2603.28846) — BTC holdings at the top 100,000 quantum-vulnerable addresses, by script type. P2PK addresses (including Satoshi-era coins) expose public keys on-chain and are theoretically vulnerable to at-rest attack today | Source: Babbush et al., Google Quantum AI + Ethereum Foundation (2026)*
 
 ### 4.2 Timeline — How urgent is it?

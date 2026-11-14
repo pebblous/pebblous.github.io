@@ -38,7 +38,7 @@ Just a day ago, we published a piece on this blog arguing that [AI weather model
 
 The two questions rhyme, but they sit on different layers. If the earlier piece was about the data's **content** being stale, this one is about how the very act of **slicing data along the time axis** decides what can be learned at all. Different causal layers producing the same failure. The overlapping symptoms — the failure to reproduce low-frequency variability like the quasi-biennial oscillation or the Southern Annular Mode — were already covered in detail in that earlier piece, so we hand them off by link rather than restate them here. Instead, we go looking in the temporal structure of the training procedure for why that failure is a structural limit that accuracy tuning cannot narrow.
 
-![Full-disk view of Earth captured by the GOES-16 satellite — the kind of observational data that feeds AI weather models](./image/img-01-goes16-earth.jpg)
+![Full-disk view of Earth captured by the GOES-16 satellite — the kind of observational data that feeds AI weather models](../ko/image/img-01-goes16-earth.jpg)
 *▲ A full-disk image of Earth from GOES-16 (2022-07-26). AI weather models are trained by stitching together observations like this at few-hour intervals. | Source: [NOAA / Wikimedia Commons (Public Domain)](https://commons.wikimedia.org/wiki/File:True_Color_Earth_viewed_from_GOES_16.jpg)*
 
 > [!callout]

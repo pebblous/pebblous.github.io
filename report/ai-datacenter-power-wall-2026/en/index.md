@@ -52,7 +52,7 @@ What matters is the **substance** of the opposition. The reasons residents cited
 
 Untangling causeThe 75 projects did not stop because the power supply was physically cut off. **Resident opposition rooted in fear of higher bills and grid strain (demand-side social resistance)** blocked the permits, and beneath that resistance lay the power problem. Power was the cause — but it worked through the channel of "the bills and the burden scare us," not "the supply ran out."
 
-![Data center building exterior with cooling equipment — a typical hyperscale AI data center facade](./image/img-01-datacenter-exterior.jpg)
+![Data center building exterior with cooling equipment — a typical hyperscale AI data center facade](../ko/image/img-01-datacenter-exterior.jpg)
 *▲ Data center building exterior (illustrative, CERN data centre) | Source: [Wikimedia Commons (CC BY-SA 4.0, Unnerving duck)](https://commons.wikimedia.org/wiki/File:CERN_data_centre.jpg)*
 
 ### 1.2. Axis B — A separate physical grid constraint tightening on its own
@@ -108,7 +108,7 @@ There are useful anchor points for calibrating the comparison. One Google search
 
 Demand is not the only thing that grew. The grid meant to absorb it has aged. The average age of US transmission infrastructure is about 40 years, and roughly 70% of transmission lines and large transformers are more than 25 years old. That said, this "40 years / 70%" traces back to a DOE survey from over a decade ago (2015), re-cited ever since, so it should be read as dated rather than freshly re-measured. The Brattle Group estimates that about 140,000 miles of transmission line must be replaced over the next 30 years, and that simply maintaining current levels will cost more than $700 billion. An aged web, now crowded by demand that has woken up for the first time in 20 years — that is the arithmetic the grid faces.
 
-![High-voltage transmission towers and lines — a symbol of the aging, 40-year-old US power grid](./image/img-02-transmission-lines.jpg)
+![High-voltage transmission towers and lines — a symbol of the aging, 40-year-old US power grid](../ko/image/img-02-transmission-lines.jpg)
 *▲ High-voltage transmission towers and lines | Source: [Wikimedia Commons (CC BY 2.0, Stefan Andrej Shambora)](https://commons.wikimedia.org/wiki/File:High_voltage_transmission_towers_and_lines.jpg)*
 
 ## Useful Output per Watt: A New Currency, and an Anatomy of Waste
@@ -119,7 +119,7 @@ When power becomes the currency, the yardstick for performance changes too. Unti
 
 Performance-per-watt is not a rhetorical flourish; it is becoming a standard metric. Around 2022, MLCommons added a power-measurement track (MLPerf Power) to MLPerf, reporting performance-per-watt and total energy alongside standard workloads. Green500, the supercomputer ranking, has long used FLOPs/Watt as an official ranking metric. On the inference side, metrics like tokens-per-joule and tokens-per-watt are emerging. NVIDIA states that its latest-generation rack (GB300 NVL72) pushed performance-per-watt up to 25× higher than the previous Hopper generation. These are signals that the unit of account is shifting from "scale" to "efficiency per watt."
 
-![Server racks inside a data center — the real compute infrastructure that extracts useful output per watt](./image/img-03-server-racks.jpg)
+![Server racks inside a data center — the real compute infrastructure that extracts useful output per watt](../ko/image/img-03-server-racks.jpg)
 *▲ Server racks inside a data center (illustrative) | Source: [Wikimedia Commons (CC BY 2.0, Carl Lender)](https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg)*
 
 ### 4.2. An anatomy of waste — low-quality, redundant data is wasted power
@@ -147,7 +147,7 @@ Once power became the rate-limiting step, hyperscalers began moving from "buying
 
 The most emblematic event is the Microsoft–Constellation deal. Microsoft agreed to take **835 MW for 20 years** from a reactor adjacent to Three Mile Island — the site made famous by the 1979 partial meltdown — now restarted as the Crane Clean Energy Center. The restart investment is $1.6 billion, the supply is enough for roughly 800,000 homes, and the original 2028 restart target was pulled forward to 2027. Google went a step further. Beyond a power purchase agreement, it **fully acquired the renewables developer Intersect Power for $4.75 billion** (closed March 2026), pivoting its strategy toward owning generation assets themselves. Google's capital expenditure is projected to jump from about $90 billion in 2025 to as much as $185 billion in 2026.
 
-![Aerial photo of Three Mile Island Nuclear Generating Station — the reactor restarted as the Crane Clean Energy Center under the Microsoft-Constellation 20-year power purchase agreement](./image/img-04-three-mile-island.jpg)
+![Aerial photo of Three Mile Island Nuclear Generating Station — the reactor restarted as the Crane Clean Energy Center under the Microsoft-Constellation 20-year power purchase agreement](../ko/image/img-04-three-mile-island.jpg)
 *▲ Aerial photo of Three Mile Island Nuclear Generating Station (now the Crane Clean Energy Center) | Source: [Wikimedia Commons (Public Domain, U.S. DOE)](https://commons.wikimedia.org/wiki/File:Three_Mile_Island_(color).jpg)*
 
 The tilt toward nuclear is an industry-wide trend. Amazon (AWS) teamed with Talen to invest more than $20 billion near the Susquehanna nuclear plant; Meta issued an RFP for 1–4 GW of nuclear procurement; and Google signed a small modular reactor (SMR) deal with Kairos for up to 500 MW. Add up the nuclear contracts Big Tech signed over the past year and it exceeds 10 GW. The Stargate project from OpenAI, Oracle, and SoftBank is likewise premised on large-scale power procurement.

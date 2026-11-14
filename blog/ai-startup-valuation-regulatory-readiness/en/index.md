@@ -52,7 +52,7 @@ In the same piece, Ivanna Honina, Head of Legal at the online-learning company P
 
 The clock behind this shift comes from regulation. The EU AI Act's transparency obligations and its enforcement powers over general-purpose AI (GPAI) take effect in August 2026, with high-risk system obligations following after. The statute itself has been covered in detail elsewhere, so here we compress it to a single line: as the enforcement date nears, investors are pulling those standards forward into diligence well before the rules fully apply. (Background: [the EU AI Act August 2026 deadline report](https://blog.pebblous.ai/report/eu-ai-act-august-2026-deadline-reality/en/))
 
-![EU AI Act advocacy campaign — protesters at the European Parliament in Strasbourg calling for strong AI Act legislation](./image/img-02-eu-ai-act.jpg)
+![EU AI Act advocacy campaign — protesters at the European Parliament in Strasbourg calling for strong AI Act legislation](../ko/image/img-02-eu-ai-act.jpg)
 *▲ An EU AI Act advocacy campaign outside the European Parliament in Strasbourg, 2023 — the law's transparency obligations are now being pulled forward into diligence checklists | Source: [EKO / Wikimedia Commons (CC BY 2.0)](https://commons.wikimedia.org/wiki/File:EKO_-_AI_ACT_-_Strasbourg_Parliament_-_52886760084.jpg)*
 
 Cost splits asymmetrically along readiness. In the bands vctr.media lays out, an internal governance review runs €10K–50K and building a baseline governance package runs €15K–40K. By contrast, a company that enters diligence unready and has to obtain a third-party conformity assessment jumps to €50K–200K. Companies that prepared in advance clear the bar at the low end; only the companies caught flat-footed pay the high end.

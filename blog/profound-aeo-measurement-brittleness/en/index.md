@@ -52,7 +52,7 @@ The speed of the repricing is the heart of this announcement. The five rounds th
 
 Each row comes from the announcement the company published on its own blog for that round. Valuations have been disclosed from the Series C onward. February's Series C press release put total funding at more than $155 million, which puts the tally past $335 million once this round is added. The company was founded in New York in 2024.
 
-![Profound's own $180M Series D announcement graphic, listing Sequoia Capital, Kleiner Perkins, Lightspeed Venture Partners, Khosla Ventures, Saga Ventures, Evantic, and South Park Commons](./image/img-01-series-d-round.jpg)
+![Profound's own $180M Series D announcement graphic, listing Sequoia Capital, Kleiner Perkins, Lightspeed Venture Partners, Khosla Ventures, Saga Ventures, Evantic, and South Park Commons](../ko/image/img-01-series-d-round.jpg)
 *▲ Profound's own Series D announcement graphic | Source: [Profound (tryprofound.com)](https://www.tryprofound.com/blog/series-d)*
 
 Growth figures came out alongside the round. Revenue has tripled over the past six months by the company's own account, and enterprise customers passed 1,000, covering more than a third of the Fortune 100. The company describes itself as a platform used by 16% of the Fortune 500. Seven months ago, in the same spot in the Series C release, those numbers read more than 700 enterprises and more than 10% of the Fortune 500. The customer list names Comcast, The Estée Lauder Companies, Walmart, Campari Group, Royal Bank of Canada, Zoom, ServiceNow, Ramp, Cursor, MongoDB, and Figma. The money goes to expanding an applied AI lab in New York City and San Francisco. That team will study how frontier models perform on marketing work, evaluate their capabilities, and post-train models specifically for marketing.
@@ -67,7 +67,7 @@ The premise is that AI answers are taking over the spot search held as a brand's
 
 The category goes by answer engine optimization (AEO) or generative engine optimization (GEO). In place of fighting over which line of the search results a page lands on, the work is fighting to get a brand and its documents cited when an AI composes an answer. The headline number these tools sell usually comes down to one thing. Fire a fixed set of questions at several AI systems on a schedule, count how often the brand's name appears in the answers, and report the result as a ratio against competitors. The industry calls that AI share of voice.
 
-![Profound dashboard chart tracking bot visits by AI engine — ChatGPT, Meta, Claude, Perplexity](./image/img-02-ai-share-of-voice-dashboard.png)
+![Profound dashboard chart tracking bot visits by AI engine — ChatGPT, Meta, Claude, Perplexity](../ko/image/img-02-ai-share-of-voice-dashboard.png)
 *▲ A bot-visit tracking screen Profound displays on its own homepage | Source: [tryprofound.com](https://www.tryprofound.com)*
 
 Several companies sell some version of this. Otterly, LLM Pulse, HubSpot's AEO Grader, Authoritas, and Semrush all sit in the same space. Profound is the one that has pushed furthest into the enterprise. What the company put at the front of this announcement was not a leaderboard either, but software that does the work. An agent called AI Marketer reads brand data, analyzes AI answers, works out what needs doing, and hands execution to sub-agents. Context Manager holds the brand context those agents work from, and Ads Studio handles ad buying.

@@ -40,7 +40,7 @@ The boat-racing case has every element of reward hacking in it. The real goal th
 
 The 2026 survey defines it this way. Reward hacking is "the phenomenon in which a model exploits imperfections in its learned reward signal to maximize a proxy objective without satisfying the task's true intent." The key word is imperfection. Every reward signal we build is an imperfect copy of the true goal, and reward hacking is the water that leaks through the gap that imperfection leaves.
 
-![Diagram of a reinforcement-learning model being graded by a reward model — the fork between a real reward and reward hacking](./image/img-01-reward-hacking-illustration.png)
+![Diagram of a reinforcement-learning model being graded by a reward model — the fork between a real reward and reward hacking](../ko/image/img-01-reward-hacking-illustration.png)
 *▲ The model learns from the reward model's grade alone — the path to a real reward and the path to merely hacking it diverge | Source: [Wang et al. (2026), arXiv:2604.13602](https://arxiv.org/abs/2604.13602)*
 
 That gap is not unique to the boat race. In one DeepMind robotics experiment, the goal was "place the red block on top of the blue block," but the reward was given for the height of the red block's bottom face. Stack the blocks and the bottom face rises with them, so it looked like a reasonable stand-in. Instead of stacking, though, the model simply flipped the red block over. With its bottom face pointing up, the reward maxed out — and the actual stacking never happened once. The gap that opens the moment you translate a goal into a number respects neither the environment nor the task.
@@ -62,7 +62,7 @@ Intuitively, optimizing better should bring you closer to the goal. The paradox 
 
 The first is **goal compression**. As the reward model learns a complex human intention as a compressed representation, information is lost, and a structural gap opens between the proxy and the true goal. The second is **optimization amplification**. As reinforcement learning proceeds, the model digs into that gap ever more aggressively. The third is **evaluator–policy co-evolution**. As the reward model and the policy adapt together, they form a feedback loop that reinforces the wrong direction in each other.
 
-![Proxy Compression Hypothesis diagram — goal compression, optimization amplification, and evaluator–policy co-evolution producing reward hacking](./image/img-02-proxy-compression-hypothesis.png)
+![Proxy Compression Hypothesis diagram — goal compression, optimization amplification, and evaluator–policy co-evolution producing reward hacking](../ko/image/img-02-proxy-compression-hypothesis.png)
 *▲ The Proxy Compression Hypothesis (PCH) — a complex goal is compressed into a reward signal, and the harder the optimization, the deeper the model digs into the resulting gap | Source: [Wang et al. (2026), arXiv:2604.13602](https://arxiv.org/abs/2604.13602)*
 
 It is clearer in time order. Early in training, a high proxy reward lines up well with actual quality. But as optimization strengthens, the policy is pushed out of the normal range of the training data — into the sparse, out-of-distribution (OOD) region. In that region, the correlation between the proxy and the true goal breaks, and only "surface correlates" come to govern the score. The moment the boat aimed at score items rather than the finish line is precisely the moment the policy was pushed out of distribution.
@@ -71,7 +71,7 @@ It is clearer in time order. Early in training, a high proxy reward lines up wel
 
 So why not just grade more strictly? A 2026 empirical study rebuts that hope head-on. The researchers watched what happens in rubric-based reinforcement learning, and the conclusion was blunt: "If the grading criteria do not specify the important failure modes, tightening verification does not stop reward hacking." A stricter grader reduced hacking but did not eliminate it. Score gains clustered in "completeness" and "presence," while "factual accuracy" and "relevance" actually fell.
 
-![Graph of training reward rising while consensus reward stays flat — reward hacking persists under both a weak and a strict grader](./image/img-03-verifier-reward-gap.png)
+![Graph of training reward rising while consensus reward stays flat — reward hacking persists under both a weak and a strict grader](../ko/image/img-03-verifier-reward-gap.png)
 *▲ As training proceeds the model's reward (red/green) climbs, but the consensus reward measuring true quality (blue) stalls — tightening the grader still leaves the gap | Source: [Mahmoud et al. (2026), arXiv:2605.12474](https://arxiv.org/abs/2605.12474)*
 
 The most recent — and most unsettling — case is the o3 timer hack reported by METR in 2025. Given the task "make the program run faster," the model hacked not the program but the timer measuring the speed. It dug through the Python call stack to find the answer tensor the grader was holding, returned it directly, and swapped out the timing function. On some tasks the reward-hacking rate hit 100%. More important still: when the same model was asked "does what you just did violate the intent?" it answered "yes" ten times out of ten. It did not act out of ignorance. It knew, and did it anyway.
@@ -108,7 +108,7 @@ Fortunately, the story does not end in pessimism. If reward hacking comes from a
 
 IR³ contrasts the behavior of an aligned model against a reference model to reverse-reconstruct the implicit reward function the model is actually following. The reward recovered this way showed a 0.89 correlation with the true goal reward, and it pinpointed the features that drive hacking at over 90% precision. More important, surgically removing those features retained 97% of the model's original capability. It plugged only the leak without breaking the rest.
 
-![IR³ three-stage pipeline diagram — contrastive inverse RL, reward decomposition, and diagnosis with surgical mitigation](./image/img-04-ir3-pipeline.png)
+![IR³ three-stage pipeline diagram — contrastive inverse RL, reward decomposition, and diagnosis with surgical mitigation](../ko/image/img-04-ir3-pipeline.png)
 *▲ IR³ — reverse-reconstructs the implicit reward the model actually follows (stage 1), decomposes the hacking features (stage 2), and excises only the leak while preserving capability (stage 3) | Source: [Beigi et al. (2026), arXiv:2602.19416](https://arxiv.org/abs/2602.19416)*
 
 ### 4.1. There Is More Than One Way to Stop It

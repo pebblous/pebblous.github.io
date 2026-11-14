@@ -79,14 +79,23 @@ node tools/generate-og-image.js --from-html "project/World Model/world-model-com
 ## 제목 추출 우선순위
 
 ```
-1. <meta name="og-image-title"> (수동 줄바꿈 제어, &#10; → \n)
-2. <meta property="og:title"> (자동)
-3. <title> (자동)
-4. articles.json title (fallback)
-5. <h1> (최후 수단)
+1. <meta name="og-image-title"> (수동 줄바꿈 제어, &#10; → \n · 두 번 바뀐 &amp;#10; 도 줄바꿈)
+   └ 핵심 검색어 메타(pb-search-keyword)가 있고 여기에 이름이 없으면 → 2. 본문 제목(이름이 있을 때)
+2. PebblousPage.init 의 mainTitle (본문 제목 — 기본값)
+3. <meta property="og:title">
+4. <title>
+5. articles.json title (fallback)
+6. <h1> (최후 수단)
 ```
 
-긴 제목(>50자)은 `og-image-title`으로 짧게 오버라이드 권장.
+긴 제목(>50자)은 `og-image-title`으로 짧게 오버라이드 권장. **줄여도 핵심 검색어(주인공 이름)는 남긴다** —
+정본 [`docs/title-strategy.md` §1.1](../../../docs/title-strategy.md). 검사기 `ogImageTitle` 칸이 이름 빠진 커버를 결함으로 잡는다.
+
+### 부제 자르기 (fitSubtitle, 2026-09-30)
+
+부제는 og:description 에서 2줄 예산(약 53 단위) 안의 마지막 문장 끝에서 자른다. 문장 끝은 `.`·`!`·`?` 뒤가 공백·끝·닫는
+따옴표일 때만이다 — 소수점(0.25%)·버전(v2.0)·파일 이름(robots.txt)·줄임말(vs.·e.g.·Dr.)의 점은 문장 끝이 아니다.
+문장 끝이 예산 밖이면 절 경계(쉼표 등, 숫자 속 쉼표 1,642 는 제외) 또는 어절 경계에서 "…" 를 붙인다.
 
 ### 제목 줄바꿈 규칙 (2026-04-06)
 
@@ -96,7 +105,7 @@ OG 이미지 제목은 **최대 2줄**. 3줄 이상은 가독성이 떨어지므
 자동 줄바꿈 알고리즘 (30자 초과 시):
 1. 엠 대시(—) 기준 분할 우선 → "A — " / "B" (의미 단위)
 2. 엠 대시 없으면 균등 분배 (balancedSplit) → 두 줄 길이 차이 최소화
-3. og-image-title 메타태그의 &#10; → 수동 \n (최우선)
+3. og-image-title 메타태그의 &#10; → 수동 \n (최우선) — 글자 크기는 줄바꿈으로 나뉜 조각마다 따로 채워 센다(2026-09-30)
 ```
 
 **안티패턴**: 단어 greedy 채우기 → "긴줄 + 짧은줄 + 찌꺼기" 3줄 발생

@@ -75,7 +75,7 @@ VLMs are powerful, but they run into three fundamental walls.
 
 > Most VLMs process images or video frames independently. With multi-camera input, token counts explode making real-time inference difficult, and the basic architecture makes temporal causal reasoning — "where was this object 5 seconds ago, and where will it be in 5 seconds?" — structurally hard to perform.
 
-![VLA model visual representation comparison: image-based SSL (DINO), language-image contrast (SigLIP), video prediction learning (V-JEPA 2)](./image/img-01-vlm-vla-gap.png)
+![VLA model visual representation comparison: image-based SSL (DINO), language-image contrast (SigLIP), video prediction learning (V-JEPA 2)](../ko/image/img-01-vlm-vla-gap.png)
 *VLA visual representation comparison. Image-based self-supervised (DINO) and language-image contrastive (SigLIP) methods lack Policy Priors, while V-JEPA 2's video prediction learning scores highest across all three dimensions: environment understanding, task understanding, and policy priors. (Source: JEPA-VLA, arXiv:2602.11832, CC BY)*
 
 "MLLMs cannot truly reason without language. Their reasoning, perception, and decision-making processes are tightly coupled to textual representations. Unlike humans, who can form visual or sensorimotor imaginations..."
@@ -110,7 +110,7 @@ A world model is **an AI's predictive representation that can internally simulat
 
 Yann LeCun has consistently argued this direction for years. In late 2025, he reiterated: "In 3–5 years, nobody will be using LLMs the way we use them today — world models will be the mainstream AI architecture." He then founded AMI Labs, raising €500M at a €3B valuation, betting directly on this direction.
 
-![V-JEPA 2-AC model predictive control: a loop from current observations through encoder and predictor, comparing against goal images to select actions](./image/img-02-world-model-loop.png)
+![V-JEPA 2-AC model predictive control: a loop from current observations through encoder and predictor, comparing against goal images to select actions](../ko/image/img-02-world-model-loop.png)
 *V-JEPA 2's Model Predictive Control (MPC). From current observations (Encoder), the Predictor imagines future states in latent space along an action sequence, selecting actions that minimize L1 distance to the goal image. (Source: V-JEPA 2, arXiv:2506.09985, CC BY)*
 
 ### Two Core Functions
@@ -151,7 +151,7 @@ An imagination-based training framework for reinforcement learning agents. Agent
 
 RL-specializedImagination-based learningLatent spaceOpen source
 
-![World model development roadmap 2018-2025: timeline of major models including Dreamer, V-JEPA 2, Cosmos, Genie 3](./image/img-03-architecture-comparison.png)
+![World model development roadmap 2018-2025: timeline of major models including Dreamer, V-JEPA 2, Cosmos, Genie 3](../ko/image/img-03-architecture-comparison.png)
 *World model development roadmap (2018–2025). From model-based RL (Dreamer) through self-supervised learning (JEPA) to video generation (Sora, Cosmos) and interactive environments (Genie 3) — a genealogy of major models across 6 categories. (Source: World Models Survey, arXiv:2411.14499, CC BY)*
 
 | Model | Approach | Primary Use | Pixel Generation | Open Source |

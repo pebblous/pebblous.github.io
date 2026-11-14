@@ -42,7 +42,7 @@ Sources: a16z, [The Machine Age Fund](https://a16z.com/the-machine-age-fund/) (2
 
 The first sentence of [the post a16z published on August 28](https://a16z.com/the-machine-age-fund/) is that it raised $1.1 billion. The firm wrote that the money goes into all of the computer infrastructure on which AI runs. Chips, memory, networking, and storage make up one bundle. The finished systems that actually run AI make up another, and that second bundle puts data centers, robotics, and home AI appliances side by side. Five partners signed the post: Ben Horowitz, Martin Casado, Raghu Raghuram, David Ulevitch, and David George.
 
-![a16z Machine Age Fund announcement title card over a data center rack, listing the five founding partners](./image/img-01-machine-age-fund-announcement.png)
+![a16z Machine Age Fund announcement title card over a data center rack, listing the five founding partners](../ko/image/img-01-machine-age-fund-announcement.png)
 *▲ Title image from a16z's August 28 Machine Age Fund announcement | Source: [a16z, The Machine Age Fund](https://a16z.com/the-machine-age-fund/)*
 
 a16z has stood on the other side of this line for a long time. Fifteen years have passed since Marc Andreessen wrote that software is eating the world, and in that stretch the firm's reputation came from a software playbook that is cheap on capital and fast on iteration. It is not that hardware went untouched. a16z led Skydio's Series A in 2016, invested in SpaceX, wrote its first check into Anduril in 2019, and was among the first venture investors in Waymo's 2020 raise. In Martin Casado's words, though, ["it was never a main focus."](https://dealroom.co/news/147561-a16z-raises-1-1b-for-machine-age-fund-to-build-ai-hardware/)

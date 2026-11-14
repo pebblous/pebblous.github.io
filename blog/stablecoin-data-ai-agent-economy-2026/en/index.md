@@ -57,7 +57,7 @@ However, there was a moment in March 2023 when USDC fell to $0.87. Circle held $
 > [!callout]
 > **What "programmable money" actually means**: The innovation isn't just that dollars moved onto a blockchain. It's that conditional payments are now possible via code. $0.01 auto-payment per API call, escrow released on GPS delivery confirmation, autonomous AI agent payments, e-CNY subsidies with expiry conditions — all of this becomes feasible through smart contracts.
 
-![Circle USDC logo — the leading fiat-backed stablecoin, reserves held in BlackRock money market funds with monthly Deloitte attestations](./image/img-01-usdc-circle-logo.svg)
+![Circle USDC logo — the leading fiat-backed stablecoin, reserves held in BlackRock money market funds with monthly Deloitte attestations](../ko/image/img-01-usdc-circle-logo.svg)
 *▲ Circle's USDC — the premier fiat-backed stablecoin, audited monthly by Deloitte | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Circle_USDC_Logo.svg)*
 
 ## The Truth Behind the $33 Trillion Number
@@ -79,7 +79,7 @@ Yet the explosive growth in stablecoins isn't purely speculative demand. There a
 
 The #1 stablecoin by market cap, USDT ($187B, 60.68% share), dominates in emerging markets with looser regulation. Meanwhile, USDC ($75.7B, +73% YoY) is growing fast in institutional and enterprise payments thanks to its compliance-friendly structure. The EU's MiCA regulation effectively delisted USDT from European exchanges, causing Circle's EURC to jump from 17% to 42% of the euro stablecoin market.
 
-![Tether USDT logo — #1 stablecoin by market cap at $187B with 60.68% global market share](./image/img-02-tether-usdt-logo.svg)
+![Tether USDT logo — #1 stablecoin by market cap at $187B with 60.68% global market share](../ko/image/img-02-tether-usdt-logo.svg)
 *▲ Tether USDT — $187B market cap, 60.68% global stablecoin share. MiCA forced its exit from EU exchanges. | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Tether_Logo.svg)*
 
 ## AI Agents Opened Their Wallets
@@ -103,7 +103,7 @@ Real-world examples make the scale concrete.
 
 In February 2026, the most dramatic example of AI agent payments appeared. OpenMind's robot dog "Bits" autonomously approached a charging station, paid for electricity via a USDC nano-payment, and completed the charge. Coinbase AgentKit powered the autonomous payment infrastructure. No human was present. An agent purchased infrastructure, by itself.
 
-![Boston Dynamics Spot quadruped robot — like OpenMind's Bits, autonomous robots now pay for electricity and infrastructure using USDC nano-payments](./image/img-03-spot-robot-dog.jpg)
+![Boston Dynamics Spot quadruped robot — like OpenMind's Bits, autonomous robots now pay for electricity and infrastructure using USDC nano-payments](../ko/image/img-03-spot-robot-dog.jpg)
 *▲ Boston Dynamics Spot — like OpenMind's "Bits," quadruped robots now autonomously pay electricity bills with USDC nano-payments | Source: [Wikimedia Commons (CC BY-SA 4.0)](https://commons.wikimedia.org/wiki/File:Spot_by_Boston_Dynamics.jpg)*
 
 ### 3.3 What 9 Months of Data Shows
@@ -169,7 +169,7 @@ The table below summarizes the major countries' stablecoin regulatory status as 
 | China | CBDC Only | Private crypto banned. e-CNY (CBDC) only. $2.37T cumulative volume. Interest-bearing since Jan 2026 — world's first. |
 | UAE | Most Complete Ecosystem | CBUAE PTSR live July 2024. AED stablecoin + USD stablecoin + CBDC + mBridge all coexist — the only market with all four. |
 
-![United States Capitol Building — where the GENIUS Act passed 68-30 in July 2025, granting stablecoins legal status for the first time](./image/img-04-us-capitol-genius-act.jpg)
+![United States Capitol Building — where the GENIUS Act passed 68-30 in July 2025, granting stablecoins legal status for the first time](../ko/image/img-04-us-capitol-genius-act.jpg)
 *▲ US Capitol — the GENIUS Act passed here 68–30 in July 2025, giving stablecoins their first formal legal status | Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:United_States_Capitol_-_west_front.jpg)*
 
 ### 5.1 Korea's Battle — What BOK vs FSC Is Really About
@@ -191,7 +191,7 @@ Let's frame stablecoins' role in the data economy and AI agent economy from a Pe
 
 Autonomous vehicles, industrial robots, smart factories — Physical AI training data is generated in real time and consumed in real time. When data quality checks, GPU rentals, and labeling services at each stage of these pipelines are automated, payments occur at every step. The legacy model of humans negotiating contracts and processing invoices cannot keep pace. Stablecoin micro-payments are the only structure that can sustain this pipeline.
 
-![FANUC 6-axis industrial welding robot — Physical AI data pipelines require stablecoin micro-payments at every automated stage: quality checks, GPU rentals, labeling](./image/img-05-industrial-robot-physical-ai.jpg)
+![FANUC 6-axis industrial welding robot — Physical AI data pipelines require stablecoin micro-payments at every automated stage: quality checks, GPU rentals, labeling](../ko/image/img-05-industrial-robot-physical-ai.jpg)
 *▲ Industrial robot pipeline — autonomous vehicles and smart factories require stablecoin micro-payments at every automated stage of training data processing | Source: [Wikimedia Commons (CC BY-SA 3.0)](https://commons.wikimedia.org/wiki/File:FANUC_6-axis_welding_robots.jpg)*
 
 ### 6.2 DataClinic's Pay-Per-Query Future

@@ -41,7 +41,7 @@ The copyright liability of training data has gained shape fast in the courts ove
 
 The problem is that today's AI does not operate the way those precedents assume. Ask a chatbot something, and the model does not merely pull out learned knowledge — it searches external documents and the web in that moment to build the answer. This is retrieval-augmented generation, or grounding. The law firm Sidley Austin points out that this real-time retrieval layer carries legal risk entirely different from that of training data. Yet there is no case law that squarely addresses this risk. While precedent and damages pile up around training data, the retrieval layer handling millions of queries a day has not even been given a name tag yet.
 
-![The Lady Justice statue atop London's Old Bailey courthouse — symbolizing the courts where training-data copyright case law is accumulating](./image/img-01-justice-statue.jpg)
+![The Lady Justice statue atop London's Old Bailey courthouse — symbolizing the courts where training-data copyright case law is accumulating](../ko/image/img-01-justice-statue.jpg)
 *▲ The Lady Justice statue atop the Old Bailey (Central Criminal Court) in London — training-data copyright case law accumulates in courts like this, but grounding data has yet to become their subject | Source: [Wikimedia Commons (Erasoft24, CC BY 2.5)](https://commons.wikimedia.org/wiki/File:Statue_of_Justice,_Central_Criminal_Court,_London,_UK_-_20030311.jpg)*
 
 > [!callout]
@@ -51,7 +51,7 @@ The problem is that today's AI does not operate the way those precedents assume.
 
 Sidley Austin likens the two kinds of data to a student facing an exam. Training data is the textbook the student studied. It is not carried into the exam room, but what was studied is already in the mind, shaping how the student thinks. Grounding data is the factual reference material the student opens on the spot in the exam room. It is reached for and consulted with each problem, and without it, that problem cannot be solved.
 
-![A student's hand writing on an exam sheet — training happens once before the exam, while grounding is consulted fresh with every question](./image/img-02-exam-classroom.jpg)
+![A student's hand writing on an exam sheet — training happens once before the exam, while grounding is consulted fresh with every question](../ko/image/img-02-exam-classroom.jpg)
 *▲ A student writing an exam — training data is study finished before the exam; grounding data is reference material reopened with every question | Source: [Wikimedia Commons (Alison Wood, CC BY 3.0)](https://commons.wikimedia.org/wiki/File:Hand-writing-exam-classroom.jpg)*
 
 This analogy separates when the copyright risk occurs. Training data melts statistically into the model weights once training ends. After that there is no need to access the source again, and the copyright risk hardens after arising once, at development time. Grounding data moves in exactly the opposite way. Each time a single query comes in, the source document is pulled back in real time and inserted into the prompt. The act of using the copyrighted work is repeated not "once at development" but "with every response."
@@ -79,7 +79,7 @@ When a court finally weighs fair use, the factor it treats most heavily is "does
 
 Grounding data carries one more risk of a different character than copyright: operational dependency. Sidley Austin states flatly that grounding data "must remain continuously accessible, and losing access can directly impair the model's output." A trained model keeps producing answers from what it has already learned even without access to the source data. A grounding system is different. The moment the source it would retrieve disappears, it loses the very material for building an answer.
 
-![Datacenter server racks — the infrastructure a grounding system queries in real time, whose loss of access halts output immediately](./image/img-03-datacenter-server-racks.jpg)
+![Datacenter server racks — the infrastructure a grounding system queries in real time, whose loss of access halts output immediately](../ko/image/img-03-datacenter-server-racks.jpg)
 *▲ Datacenter server racks — grounding systems reach infrastructure like this to access the source with every query, and when that access is cut, the deployed service's output stops with it | Source: [Wikimedia Commons (Carl Lender, CC BY 2.0)](https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg)*
 
 Access is cut in many ways. If a license agreement is terminated, if the target site blocks crawling via robots.txt, or if litigation bars the use of a specific source, a service that was fine yesterday cannot build an answer today. With training data, copyright risk and service availability were separate problems; with grounding data, the two overlap in the same layer. It is a structure where a copyright dispute spreads straight into a service outage.

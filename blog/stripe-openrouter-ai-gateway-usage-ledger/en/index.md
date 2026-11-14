@@ -46,7 +46,7 @@ OpenRouter started in early 2023, calling itself the first LLM marketplace. It o
 
 The figures the company published in May are the background you need to make sense of the price. The Series B was $113 million, led by CapitalG, Alphabet's growth fund. Nvidia's venture arm NVentures joined, along with the venture arms of ServiceNow, MongoDB, Snowflake, and Databricks. In the same post OpenRouter wrote that weekly throughput had grown from 5 trillion to 25 trillion tokens in six months, and that it was on pace to process more than a quadrillion tokens this year. As of August, the tallies on the company homepage read: more than 200 trillion tokens a month, more than 10 million users, over 80 providers, and more than 500 models.
 
-![OpenRouter's official Series B announcement graphic showing the $113 million raise, investor logos for CapitalG, Andreessen Horowitz, Menlo Ventures, Nvidia, ServiceNow, MongoDB, Snowflake, and Databricks, and a token throughput growth chart](./image/img-01-openrouter-series-b.png)
+![OpenRouter's official Series B announcement graphic showing the $113 million raise, investor logos for CapitalG, Andreessen Horowitz, Menlo Ventures, Nvidia, ServiceNow, MongoDB, Snowflake, and Databricks, and a token throughput growth chart](../ko/image/img-01-openrouter-series-b.png)
 *▲ OpenRouter's Series B announcement graphic | Source: [OpenRouter Blog](https://openrouter.ai/blog/announcements/series-b/)*
 
 Read the investor list again and the character of the company shows through. These are not model builders; they are companies that use models. OpenRouter described its own position the same way in the Series B post: it sits between agents and model providers, handling routing, reliability, cost optimization, and compliance.
@@ -59,7 +59,7 @@ OpenRouter's FAQ describes the fee structure plainly. It passes through the unde
 
 The fact that the two were already connected is recorded in OpenRouter's own documentation. In Stripe Projects, the CLI-based developer marketplace Stripe operates, OpenRouter is a launch partner. A single command creates an OpenRouter account, issues an API key, and drops it into the project's environment variables; hosting, database, and AI costs are managed from one Stripe account, the documentation explains. Keys are held in Stripe's encrypted vault, and a skill file is written into the project folder so a coding agent can wire up the service on the developer's behalf.
 
-![Stripe Projects CLI screen showing the stripe projects add openrouter/api command provisioning the OpenRouter service and generating environment variables](./image/img-02-stripe-projects-cli.jpg)
+![Stripe Projects CLI screen showing the stripe projects add openrouter/api command provisioning the OpenRouter service and generating environment variables](../ko/image/img-02-stripe-projects-cli.jpg)
 *▲ Stripe Projects CLI, where OpenRouter is a launch partner | Source: [OpenRouter, Stripe Projects](https://openrouter.ai/docs/guides/overview/stripe-projects)*
 
 Stripe's own product list points the same way. On the current Stripe site, the Revenue section lists Metronome, a usage-based billing product, alongside Billing, Invoicing, and Revenue Recognition. The developer guides put how to offer usage-based billing next to how to provision and manage services with an agent. Metering and payment already live inside one company, and if the report holds, the routing decision that sits upstream of both moves under the same roof.

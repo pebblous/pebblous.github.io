@@ -46,7 +46,7 @@ This is Voyager. The paper by Wang et al., presented at NeurIPS 2023, has been c
 
 Traditional reinforcement learning agents solve specific tasks through tens of millions of trial-and-error episodes. Once a task is solved, they start from scratch on the next one. Voyager, by contrast, saves every learned skill as JavaScript code, then retrieves and reuses that code when facing new situations. Much like a programmer building up a personal code library, the agent converts its own experience into executable code and accumulates it over time.
 
-![Minecraft Beta 1.8.1 — open world of rivers, beaches, and forests where the Voyager agent first opens its eyes](./image/img-01-voyager-minecraft-beta-gameplay.png)
+![Minecraft Beta 1.8.1 — open world of rivers, beaches, and forests where the Voyager agent first opens its eyes](../ko/image/img-01-voyager-minecraft-beta-gameplay.png)
 *▲ Minecraft Beta 1.8.1 — an open world of rivers, beaches, and forests. Voyager was dropped into this landscape with no predefined goals | Source: Xbox México, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Minecraft_Beta_1.8.1_Gameplay_Screenshot.png) (CC BY 3.0)*
 
 > [!callout]
@@ -70,7 +70,7 @@ After generated code is executed in the environment, the results (error messages
 
 When these three components connect, Voyager forms a closed feedback loop. Each stage takes the output of the previous stage as input and drives the next, and as the loop repeats, the skill library grows and the agent's capabilities expand. The fact that this entire loop operates through prompt design alone, with no GPT-4 fine-tuning, is the core practicality of Voyager's architecture.
 
-![Mining in Minecraft — the first action Voyager learns: breaking blocks with a tool to gather resources](./image/img-02-voyager-mining-action.jpg)
+![Mining in Minecraft — the first action Voyager learns: breaking blocks with a tool to gather resources](../ko/image/img-02-voyager-mining-action.jpg)
 *▲ "Break wood → craft a pickaxe → break stone → craft a better pickaxe." The basic mining loop Voyager learns first through its four-stage cycle | Source: Zach Copley, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Mining_in_Minecraft.jpg) (CC BY-SA 2.0)*
 
 The four-stage loop produced by the combination of these three components works as follows:
@@ -105,7 +105,7 @@ The zero-shot transfer results are especially decisive. In a new Minecraft world
 
 The research team also performed an ablation study, removing each of Voyager's three core components one at a time. Removing Automatic Curriculum caused item discovery to plummet; removing the Skill Library made zero-shot transfer impossible; and removing Self-Verification led to buggy code accumulating in the library. All three components are essential, and removing any one of them causes the entire system's performance to collapse.
 
-![Mining diamonds in Minecraft — Voyager's symbolic milestone, swinging a pickaxe at the deepest ore veins](./image/img-03-voyager-diamond-mining.png)
+![Mining diamonds in Minecraft — Voyager's symbolic milestone, swinging a pickaxe at the deepest ore veins](../ko/image/img-03-voyager-diamond-mining.png)
 *▲ Diamond mining. The peak of the technology tree Voyager reached 15.3× faster than any baseline. With a pickaxe in hand at the deepest veins, the agent built up every required skill — without any guidance from a teacher | Source: Xbox México, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Screenshot_of_a_player_mining_for_diamonds_in_Minecraft.png) (CC BY 3.0)*
 
 ## Origin of a Lineage — From Code-as-Policies to Hermes
@@ -130,7 +130,7 @@ What particularly stands out in this lineage is Jim Fan's team trajectory. As a 
 
 Each follow-up study expands into new domains while carrying forward Voyager's core principles of "curriculum - skill accumulation - self-verification." AI Scientist accumulates scientific experiments as skills ([related report](../../ai-science-new-era/en/)), Hermes shares skills across multiple agents ([related report](../../hermes-agent-data-quality-risk/en/)), and GR00T learns physical movements as skills. The pattern remains the same; only the scale and complexity grow exponentially.
 
-![Minecraft End — the game's final dimension and a branching point for the autonomous-agent lineage](./image/img-04-voyager-minecraft-end.png)
+![Minecraft End — the game's final dimension and a branching point for the autonomous-agent lineage](../ko/image/img-04-voyager-minecraft-end.png)
 *▲ The Minecraft End. The endpoint of the game itself — but where the autonomous-agent lineage begins: into science (AI Scientist), robotics (Eureka, GR00T), and multi-agent systems (Hermes) | Source: Xbox México, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Screenshot_from_the_Minecraft_End.png) (CC BY 3.0)*
 
 ## From Minecraft to Reality — Physical AI and the Sim-to-Real Gap
@@ -148,7 +148,7 @@ However, the sim-to-real gap remains a core challenge. Minecraft has simplified 
 
 An interesting pattern is that follow-up research extends Voyager's text-only limitations into multimodal territory while preserving the core architectural pattern. Optimus-2 (CVPR 2025) integrated visual information, and V-JEPA 2 achieved zero-shot control with 62 hours of unlabeled robot data. Regardless of how domains and modalities change, the "curriculum - skill accumulation - self-verification" pattern applies universally.
 
-![The Minecraft Nether — an extreme virtual environment of red lava and dark stone, a metaphor for the sim-to-real gap](./image/img-05-voyager-minecraft-nether.png)
+![The Minecraft Nether — an extreme virtual environment of red lava and dark stone, a metaphor for the sim-to-real gap](../ko/image/img-05-voyager-minecraft-nether.png)
 *▲ The Minecraft Nether — red lava, dark stone, a closed-ceiling subterranean dimension. Voyager learns safely even in extreme virtual settings like this, but the sensor noise and unpredictable variation a real robot must face still belong to a different order of difficulty | Source: Xbox México, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Screenshot_from_the_Minecraft_Nether.png) (CC BY 3.0)*
 
 ## The Achilles' Heel of Self-Learning — Data Quality in Automated Evaluation
@@ -161,7 +161,7 @@ Consider how this problem plays out in Voyager's skill library. The agent execut
 
 This is the prototype of **Error Fossilization**. Once an erroneous piece of code is recorded as "successful," it is never removed from the library, causing compound errors over time. This phenomenon corresponds to the academic prototype of Feedback Loop Contamination, which Pebblous analyzed in detail in the [Hermes agent data quality risk analysis report](../../hermes-agent-data-quality-risk/en/).
 
-![Minecraft Creeper — symbol of explosive risk that can destroy accumulated skills in a single instant](./image/img-06-voyager-creeper.png)
+![Minecraft Creeper — symbol of explosive risk that can destroy accumulated skills in a single instant](../ko/image/img-06-voyager-creeper.png)
 *▲ The Creeper is Minecraft's most iconic explosive threat. An agent that learned only by self-verification carries the same risk in its skill library — one unverified piece of code can detonate years of accumulated learning. The visual metaphor for Error Fossilization | Source: Xbox México, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Minecraft_Creeper_(Crop).png) (CC BY 3.0)*
 
 ### 6.1 The Spectrum of Self-Verification Reliability

@@ -40,7 +40,7 @@ Sources: [Money Today](https://www.mt.co.kr/future/2026/09/15/202609151041426916
 
 YumYumKids, Nuvilab's AI food scanner for children, analyzes images of the tray before and after a meal, estimates how much of each food was served and how much was left, and computes an intake rate from the two. The records accumulate while the center sets out lunch and clears it away. The research team did not collect them anew. They pulled out what had already piled up and paired each child's first weeks in the service with the same child about a year later. By the company's own count, Nuvilab holds more than 100 million food records gathered for model development, and roughly 136,000 of them went into this paper.
 
-![YumYumKids, Nuvilab's stand-mounted AI food scanner for daycare centers](./image/img-01-yumyumkids-scanner.png)
+![YumYumKids, Nuvilab's stand-mounted AI food scanner for daycare centers](../ko/image/img-01-yumyumkids-scanner.png)
 *▲ The YumYumKids scanner, which analyzes tray images before and after a meal to compute an intake rate | Source: [Nuvilab](https://www.nuvilab.com/ko/kids)*
 
 The change showed up most clearly among the children who had not eaten much to begin with. Intake rose more visibly in the groups whose initial intake was low or middling, and children who had eaten less than half of what they were first served averaged 8.8 percentage points higher a year later. The share of records showing almost no vegetables eaten also fell. The researchers put their emphasis somewhere else.

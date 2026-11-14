@@ -61,7 +61,7 @@ evaluate→
 
 ↩
 
-![HyperAgents self-referential loop — DGM-H architecture where the meta-agent simultaneously modifies the task agent and itself](./image/img-01-loop.png)
+![HyperAgents self-referential loop — DGM-H architecture where the meta-agent simultaneously modifies the task agent and itself](../ko/image/img-01-loop.png)
 *▲ HyperAgents (DGM-H) architecture: the meta-agent edits both itself and the task agent in a recursive loop | Source: [arXiv:2603.19461](https://arxiv.org/abs/2603.19461)*
 
 🧬

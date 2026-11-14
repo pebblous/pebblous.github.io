@@ -40,7 +40,7 @@ Source: Lumafield, [Lumafield Introduces Quality Agent](https://www.globenewswir
 
 Quality Agent runs natively inside Voyager, Lumafield's cloud analysis platform. CT imagery is not the only thing it watches. The press release says it monitors every part across every available data stream: "X-ray and CT imagery, machine vision feeds, maintenance logs, and environmental sensors." The sentence describing how it works is short. Rather than checking parts against a predefined list of failure modes, it "learns the characteristics of known-good products and catches any deviation from that state, with no requirement that a defect be anticipated in advance."
 
-![Global operations dashboard in Lumafield's Voyager cloud analysis platform, showing plant-level quality metrics and live alerts](./image/img-01-voyager-dashboard.png)
+![Global operations dashboard in Lumafield's Voyager cloud analysis platform, showing plant-level quality metrics and live alerts](../ko/image/img-01-voyager-dashboard.png)
 *▲ The operations dashboard in Lumafield's Voyager platform, where Quality Agent runs | Source: [Lumafield](https://www.lumafield.com/manufacturing-ai/quality-agent)*
 
 The company points at today's inspection stack as the problem. Manufacturers rely on human visual inspection, surface-level automated optical inspection, and destructive cross-sectioning. But the failures that reach customers and trigger recalls are usually new ones, and the release calls them "unknown unknowns" that no inspection step was designed to detect. Those defects pass through automated production lines undetected until the product fails in the field.
@@ -63,7 +63,7 @@ That batch of cells had already been on the scanner once. For its [battery quali
 
 Last year's report counted defects with a Battery Analysis Module rather than the foundation model. The module locates electrode edges automatically and reads measurements off them, and it found negative anode overhang in 33 of the 1,054 cells scanned. All 33 came from low-cost or counterfeit brands, and within that segment the rate was roughly 1 in 13 cells, close to 8 percent. Across the 300 cells from the three OEM brands, the count was zero. Divide the same 33 by all 1,054 and you land in the 3 percent range, so the denominator moves the number by more than a factor of two. From the same cells, this month's announcement adds not a defect rate but the manufacturer separation and the finding that two brands were one cell. Neither last year's report nor the making-of post about it mentions that.
 
-![CT cross-section comparing anode overhang in a Panasonic cell against a low-cost brand cell, one with consistent overhang and one with dangerous negative overhang](./image/img-02-anode-overhang-ct.jpg)
+![CT cross-section comparing anode overhang in a Panasonic cell against a low-cost brand cell, one with consistent overhang and one with dangerous negative overhang](../ko/image/img-02-anode-overhang-ct.jpg)
 *▲ Consistent anode overhang (left) next to dangerous negative overhang (right), from CT cross-sections | Source: [Lumafield, 2025 Battery Quality Report](https://www.lumafield.com/article/finding-hidden-risks-in-the-battery-supply-chain)*
 
 Telling cells apart by manufacturer is closer to fingerprinting than to defect detection. It cannot stand in as evidence that the model catches some percentage of defects, and the release does not present it as a detection metric. It shows something else. A model that has learned what good looks like in enough detail can tell one maker's version of good from another's, and on that axis it answers a question nobody asked.
@@ -78,7 +78,7 @@ The company wrote that up as its own advantage, but from the data side it reads 
 
 A week later, on September 10, Lumafield unveiled Saturn, a large-format industrial X-ray CT scanner. It handles parts up to 580 mm in diameter and 1,100 mm high, and its 225 kV source penetrates up to 100 mm of light metals and up to 25 mm of heavy metals. Engine blocks and large battery packs, the sort of object that never fit in lab equipment, are the target. There is no basis for tying the two announcements together causally. Neither release says Saturn's scan data feeds Quality Agent's training. One fact remains. The same company put out a model and a scanner within a week.
 
-![Lumafield's large-format industrial X-ray CT scanner Saturn, with an automotive transmission housing loaded on the scan bed](./image/img-03-saturn-scanner.jpg)
+![Lumafield's large-format industrial X-ray CT scanner Saturn, with an automotive transmission housing loaded on the scan bed](../ko/image/img-03-saturn-scanner.jpg)
 *▲ Saturn, the large-format industrial X-ray CT scanner, scanning a transmission housing | Source: [Lumafield](https://www.lumafield.com/products/saturn)*
 
 ## No Performance Numbers, and the Cost Numbers Come from the Vendor
