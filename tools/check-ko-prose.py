@@ -8,7 +8,7 @@
     python3 tools/check-ko-prose.py <파일…> --light-verbs   # 경동사 정리 (요청 시)
     python3 tools/check-ko-prose.py <파일…> --json          # 기계 판독용
 
-설계 근거: docs/ko-prose-checker-v5.md · 종결체(R1·R2): docs/ko-style-standard.md §4-1 · M1·M2·T13: 같은 표준(2026-10-25)
+설계 근거: docs/ko-prose-checker-v5.md · 종결체(R1·R2): docs/ko-style-standard.md §4-1 · M1·M2·T13: 같은 표준(2026-10-25) · M3: 같은 표준 §4-5(2026-11-12)
 """
 
 import argparse
@@ -271,6 +271,24 @@ def check_lead(raw):
             "flagged": hit, "has_summary": first is not None, "examples": [first[:120]] if hit else []}
 
 
+# M3 — 글 끝 맺음 인사·독자 부탁 (2026-11-12 형님 확정, 정본 docs/ko-style-standard.md §4-5).
+# 실측: 사본 KO 335편이 "여기까지 읽어 주셔서 감사하다 … 나눠 주시면 좋겠다" 로 끝났다(11-12 일괄 정리).
+# pb 1인칭 스토리(story/*-pb/)는 예외 — 존댓말 한 줄 인사를 둘 수 있다. 약속 문장·끝 서명은 코드로 못 잡는다.
+# 원본 HTML 이 문장 중간에서 줄을 바꿔도(브라우저에선 같은 문장) 잡도록 공백을 한 칸으로 접은 뒤 잰다
+_RX_CLOSING = re.compile(r"[^.?!]*(?:읽어 ?주(?:셔서|신 데)|(?:나눠|알려|들려|공유해|남겨|보내) ?주시면 (?:더 )?(?:좋겠다|고맙겠다|감사하겠다))[^.?!]*[.?!]")
+_RX_PB_STORY = re.compile(r"(?:^|/)story/[^/]*-pb(?:/|$)")
+
+
+def check_closing(main_text, path=""):
+    if _RX_PB_STORY.search(path.replace("\\", "/")):
+        return {"code": "M3", "name": "맺음 인사·독자 부탁", "severity": "S2", "count": 0, "in_quote": 0,
+                "flagged": False, "skipped": "pb-story", "examples": []}
+    flat = re.sub(r"\s+", " ", main_text)
+    hits = [m.group(0).strip()[-120:] for m in _RX_CLOSING.finditer(flat)]
+    return {"code": "M3", "name": "맺음 인사·독자 부탁", "severity": "S2", "count": len(hits),
+            "in_quote": 0, "flagged": len(hits) > 0, "examples": hits[:3]}
+
+
 # R2 — FAQ·목차·도식 글자의 종결체. R1 은 <main> 본문만 재서 FAQ(PebblousPage.init faqs — 화면에 보인다)·
 # <nav> 목차·<svg><text> 를 놓쳤다(10-24 8월 글 3편에서 FAQ 합쇼체 29·38문장 발견).
 _RX_R2_HAPSYO = re.compile(r"(?<!아)니다[.!?]|니까\?")
@@ -441,7 +459,7 @@ def main():
         register = check_register(main_text)
         register["had_main"] = had_main
         raw = open(path, encoding="utf-8").read()
-        extra = [check_meta_reads(main_text), check_lead(raw), check_aux_register(raw)]
+        extra = [check_meta_reads(main_text), check_lead(raw), check_closing(main_text, path), check_aux_register(raw)]
         if args.json:
             out.append({"path": path, "chars": len(text), "checks": rows + [register] + extra,
                         "endings": endings, "register": register, "light_verbs": lv})
