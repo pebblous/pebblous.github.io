@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Termination Lag란? — 코딩 에이전트가 정답 이후에 쓰는 비용 분석 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="코딩 에이전트는 성공한 실행의 38~82%에서 소스 코드를 처음 고친 그 패치로 이미 정답을 낸다. 그런데 정답 이후에 쓰이는 단계가 실행 전체의 35~60%를 차지하고, 1~8%에서는 계속 돌다가 맞는 수정을 스스로 되돌린 채 끝난다. 다섯 모델과 세 개 SWE-bench 데이터셋에서 측정한 결과다.">
+    <meta name="keywords" content="Termination Lag, 종료 지연, 코딩 에이전트, AI 에이전트 비용, SWE-bench, TTFCP, 에이전트 정지 규칙, OpenHands, mini-SWE-agent, Qwen3-Coder, 토큰 비용, LLMOps, AI-Ready Data">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="Termination Lag">
+    <meta name="pb-search-keyword-forms" content="Termination Lag|종료 지연">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/termination-lag-coding-agents-stop-late/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/termination-lag-coding-agents-stop-late/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/termination-lag-coding-agents-stop-late/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/termination-lag-coding-agents-stop-late/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Termination Lag, 코딩 AI는 답을 찾고도 멈추지 않는다">
+    <meta property="og:description" content="코딩 AI가 성공한 작업의 38~82%는 소스 코드를 처음 고칠 때 이미 정답이다. 그 뒤에 쓰인 단계가 실행 전체의 35~60%를 차지하고, 1~8%는 맞는 수정을 스스로 되돌린 채 끝난다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/termination-lag-coding-agents-stop-late/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/termination-lag-coding-agents-stop-late/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="첫 정답이 나온 단계와 실행이 끝난 단계를 가로 막대로 견주어, 정답 이후 구간을 오렌지로 칠한 도식">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-11-15">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Termination Lag, 코딩 AI는 답을 찾고도 멈추지 않는다">
+    <meta name="twitter:description" content="코딩 AI가 성공한 작업의 38~82%는 소스 코드를 처음 고칠 때 이미 정답이다. 그 뒤에 쓰인 단계가 실행 전체의 35~60%를 차지하고, 1~8%는 맞는 수정을 스스로 되돌린 채 끝난다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/termination-lag-coding-agents-stop-late/ko/image/index.png">
+    <meta name="twitter:image:alt" content="첫 정답이 나온 단계와 실행이 끝난 단계를 가로 막대로 견주어, 정답 이후 구간을 오렌지로 칠한 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261115"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261115">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261115">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261115">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="Termination Lag, 코딩 AI는 답을 찾고도 멈추지 않는다">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/11/15">
+    <meta name="citation_online_date" content="2026/11/15">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#measurement" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 에이전트가 만든 패치를 하나씩 따로 채점했다</a></li>
+                    <li><a href="#after-correct" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 정답 이후에 쓰이는 단계는 모델마다 갈린다</a></li>
+                    <li><a href="#what-they-do" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 남은 단계는 대부분 확인과 탐색에 쓰인다</a></li>
+                    <li><a href="#undo" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 계속 돌다가 맞는 수정을 스스로 되돌린다</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 페블러스가 이 결과에 주목하는 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            코딩 에이전트가 정답을 만든 시점과 일을 멈춘 시점이 꽤 멀리 떨어져 있다는 측정이 나왔다. 논문 제목이 Termination Lag이고, 2026년 11월 11일 arXiv에 올라왔다. 재는 방법은 단순하다. 에이전트가 실행 도중 만들어 낸 저장소 패치를 모두 가로채 기록해 두었다가, 실행이 끝난 뒤 벤치마크 공식 채점 절차로 하나씩 따로 채점한다. 그러면 에이전트가 스스로 끝났다고 판단한 시점과 무관하게, 정답이 몇 번째 단계에서 처음 나왔는지를 사후에 알 수 있다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            채점 결과는 정답이 앞쪽에 몰려 있다는 쪽을 가리킨다. 성공한 실행 가운데 38~82%는 에이전트가 소스 코드를 처음 고친 그 패치가 이미 정답이었다. 그런데 실행은 거기서 끝나지 않는다. 핵심 설정 네 조합에서 정답 이후에 쓰인 단계가 실행 전체의 35~60%를 차지했고, 그 시간의 대부분은 자기가 고친 것을 확인하고 저장소를 다시 뒤지는 데 들어갔다. 1~8%에서는 계속 돌다가 맞는 수정을 스스로 깨뜨린 채 실행이 끝났다. 다만 논문이 센 것은 단계 수이지 토큰이나 금액이 아니다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            1절부터 4절까지 옮긴 수치와 용어는 arXiv에 공개된 논문 본문과 부록에서 가져온 사실이다. 에이전트를 업무에 들인 조직의 비용 구조에 이 결과를 겹쳐 놓은 5절은 페블러스의 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        앞의 두 숫자는 정답이 얼마나 일찍 나오고 그 뒤가 얼마나 긴지를 가리킨다. 뒤의 두 숫자는 그 길이가 모델에 따라 어디까지 벌어지는지, 그리고 오래 도는 동안 무엇을 잃을 수 있는지에 관한 것이다.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2611.14960" target="_blank" rel="noopener" class="underline">arXiv:2611.14960</a> 본문 표 1·표 2·표 3.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">38~82%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">첫 코드 수정이 이미 정답이던 비율</p>
+                            <p class="text-xs themeable-muted mt-1">정답에 도달한 실행만 추려 센 값이다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">35~60%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">정답 이후가 실행에서 차지하는 비중</p>
+                            <p class="text-xs themeable-muted mt-1">핵심 설정 네 조합의 중앙값 범위다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">16 vs 57단계</p>
+                            <p class="text-sm themeable-text-secondary mt-1">정답 이후에 더 돈 단계 수</p>
+                            <p class="text-xs themeable-muted mt-1">같은 과제 묶음에서 Qwen3-Coder와 Laguna-XS.2의 중앙값이다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1~8%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">맞는 수정을 되돌린 채 끝난 실행</p>
+                            <p class="text-xs themeable-muted mt-1">첫 정답에서 멈추기만 했다면 성공으로 남았을 몫이다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="measurement" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">에이전트가 만든 패치를 하나씩 따로 채점했다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        에이전트는 자기가 낸 수정이 맞는지 실행 중에 알 수 없다. 벤치마크의 채점 테스트는 가려져 있고, 고친 코드가 요구를 채웠는지는 스스로 판단해야 한다. 그래서 정답이 언제 나왔는지를 측정하려면 실행 바깥에 따로 채점 장치를 세워야 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        연구진이 세운 장치는 로깅 프록시다. 에이전트와 모델 엔드포인트 사이에 앉아, 에이전트가 다음 모델 요청을 보내기 전에 그 시점의 저장소 패치를 기록해 둔다. 패치는 임시 git 인덱스로 현재 상태와 기준 상태의 차이를 떠서 만들기 때문에 에이전트의 작업 저장소는 그대로 남는다. 실행이 다 끝난 뒤에는 기록해 둔 패치들을 격리 컨테이너에서 벤치마크 공식 절차로 채점한다. 이 채점 결과가 에이전트에게 돌아가지는 않는다. 실행 중의 판단에 영향을 주지 않은 채로, 정답이 몇 번째 단계에서 처음 나왔는지만 나중에 알아내는 설계다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        이렇게 얻은 두 단계 번호에서 세 지표가 나온다.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li><strong>첫 정답 단계(TTFCP)</strong>는 공식 채점을 통과한 패치가 처음 나온 단계 F다.</li>
+                        <li><strong>종료 지연(Termination Lag)</strong>은 최종 단계 S에서 F를 뺀 값이다. 정답이 나온 뒤에 더 돈 단계 수다.</li>
+                        <li><strong>정규화 종료 지연(NTL)</strong>은 (S−F)/S다. 실행 전체에서 정답 이후가 차지하는 비중이다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        측정 대상은 다섯 모델이다. Qwen3-Coder-30B-A3B, Laguna-XS.2, Claude Haiku 5.5, GPT-6 Luna, Seed-OSS-36B가 모두 OpenHands 위에서 돌았고, Qwen3-Coder는 mini-SWE-agent로 한 번 더 돌려 프레임워크를 바꿔도 같은 그림이 나오는지 확인했다. 과제는 SWE-bench Verified 500개, SWE-bench Multilingual 300개, 그리고 SWE-bench Pro다. 과제마다 한 번씩 실행했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        채점을 끝내고 보니 정답은 앞쪽에 몰려 있었다. 정답에 도달한 실행만 추리면, 에이전트가 소스 코드를 처음 고친 그 패치가 이미 정답이던 경우가 Qwen3-Coder는 Verified에서 82%, Multilingual에서 66%다. Laguna-XS.2는 각각 70%와 48%, GPT-6 Luna는 Verified에서 80%, Seed-OSS는 Pro에서 38%다. 정답까지 시도한 패치 수도 평균 1.3회에서 3.6회 사이에 머문다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="after-correct" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">정답 이후에 쓰이는 단계는 모델마다 갈린다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문제는 그 다음이다. 정답이 나온 뒤에도 실행은 한참 더 이어지고, 얼마나 더 이어지는지는 모델에 따라 크게 달라진다. 핵심 설정 네 조합의 중앙값을 한 자리에 모으면 그 폭이 드러난다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-3">
+                        <table class="w-full border themeable-border rounded-lg">
+                            <thead class="themeable-table-header-row">
+                                <tr>
+                                    <th class="text-left themeable-heading border-b themeable-border">지표(중앙값)</th>
+                                    <th class="text-left themeable-heading border-b themeable-border">Qwen3-Coder<br>Verified</th>
+                                    <th class="text-left themeable-heading border-b themeable-border">Qwen3-Coder<br>Multilingual</th>
+                                    <th class="text-left themeable-heading border-b themeable-border">Laguna-XS.2<br>Verified</th>
+                                    <th class="text-left themeable-heading border-b themeable-border">Laguna-XS.2<br>Multilingual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">성공률</td>
+                                    <td class="themeable-text border-b themeable-border">43.8%</td>
+                                    <td class="themeable-text border-b themeable-border">22.3%</td>
+                                    <td class="themeable-text border-b themeable-border">56.0%</td>
+                                    <td class="themeable-text border-b themeable-border">48.0%</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">첫 정답 단계</td>
+                                    <td class="themeable-text border-b themeable-border">30</td>
+                                    <td class="themeable-text border-b themeable-border">34</td>
+                                    <td class="themeable-text border-b themeable-border">38</td>
+                                    <td class="themeable-text border-b themeable-border">50</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">최종 단계</td>
+                                    <td class="themeable-text border-b themeable-border">48</td>
+                                    <td class="themeable-text border-b themeable-border">54</td>
+                                    <td class="themeable-text border-b themeable-border">95</td>
+                                    <td class="themeable-text border-b themeable-border">108</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">정답 이후 단계</td>
+                                    <td class="themeable-text border-b themeable-border">16</td>
+                                    <td class="themeable-text border-b themeable-border">18</td>
+                                    <td class="themeable-text border-b themeable-border">57</td>
+                                    <td class="themeable-text border-b themeable-border">56</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">정답 이후 비중</td>
+                                    <td class="themeable-text border-b themeable-border">35%</td>
+                                    <td class="themeable-text border-b themeable-border">37%</td>
+                                    <td class="themeable-text border-b themeable-border">60%</td>
+                                    <td class="themeable-text border-b themeable-border">54%</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">입력 컨텍스트 증가</td>
+                                    <td class="themeable-text border-b themeable-border">+30%</td>
+                                    <td class="themeable-text border-b themeable-border">+28%</td>
+                                    <td class="themeable-text border-b themeable-border">+78%</td>
+                                    <td class="themeable-text border-b themeable-border">+55%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-8">▲ 논문 표 1. 성공한 실행만 대상으로 한 중앙값이고, 입력 컨텍스트 증가는 첫 정답 단계에서 최종 단계까지의 상대 증가분이다. | 출처: <a href="https://arxiv.org/abs/2611.14960" target="_blank" rel="noopener" class="underline">arXiv:2611.14960</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Qwen3-Coder는 Verified에서 30단계째에 정답을 내고 48단계에서 멈춘다. 정답 이후에 더 돈 단계가 16개이고, 실행 전체의 35%다. Laguna-XS.2는 같은 과제 묶음에서 38단계째에 정답을 내지만 95단계까지 간다. 정답 이후가 57단계, 실행의 60%다. 같은 벤치마크를 같은 프레임워크로 푸는데 한쪽은 답을 낸 뒤 3분의 1을 더 쓰고 다른 쪽은 절반을 훌쩍 넘겨 쓴다.
+                    </p>
+
+                    <div class="my-8 rounded-xl p-5 border themeable-border" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 640 330" class="w-full" role="img" aria-label="네 개의 가로 막대 도식. 각 막대는 한 실행의 길이를 단계 수에 비례해 그린 것이다. 회색 구간은 첫 정답이 나오기까지의 단계이고 오렌지 구간은 정답 이후의 단계다. Qwen3-Coder는 Verified에서 30단계 뒤 16단계, Multilingual에서 34단계 뒤 18단계를 더 돈다. Laguna-XS.2는 Verified에서 38단계 뒤 57단계, Multilingual에서 50단계 뒤 56단계를 더 돈다.">
+                            <text x="20" y="26" font-size="13" font-weight="700" fill="var(--text-muted)">한 실행에서 정답이 나온 자리와 실행이 끝난 자리</text>
+
+                            <text x="20" y="60" font-size="11" fill="var(--text-secondary)">Qwen3-Coder · Verified — 첫 정답 30단계, 최종 48단계, 정답 이후 35%</text>
+                            <rect x="20" y="68" width="166.7" height="22" rx="4" fill="var(--text-muted)"></rect>
+                            <rect x="186.7" y="68" width="100" height="22" rx="4" fill="#F86825"></rect>
+
+                            <text x="20" y="122" font-size="11" fill="var(--text-secondary)">Qwen3-Coder · Multilingual — 첫 정답 34단계, 최종 54단계, 정답 이후 37%</text>
+                            <rect x="20" y="130" width="188.9" height="22" rx="4" fill="var(--text-muted)"></rect>
+                            <rect x="208.9" y="130" width="111.1" height="22" rx="4" fill="#F86825"></rect>
+
+                            <text x="20" y="184" font-size="11" fill="var(--text-secondary)">Laguna-XS.2 · Verified — 첫 정답 38단계, 최종 95단계, 정답 이후 60%</text>
+                            <rect x="20" y="192" width="211.1" height="22" rx="4" fill="var(--text-muted)"></rect>
+                            <rect x="231.1" y="192" width="316.7" height="22" rx="4" fill="#F86825"></rect>
+
+                            <text x="20" y="246" font-size="11" fill="var(--text-secondary)">Laguna-XS.2 · Multilingual — 첫 정답 50단계, 최종 108단계, 정답 이후 54%</text>
+                            <rect x="20" y="254" width="277.8" height="22" rx="4" fill="var(--text-muted)"></rect>
+                            <rect x="297.8" y="254" width="322.2" height="22" rx="4" fill="#F86825"></rect>
+
+                            <rect x="20" y="296" width="12" height="12" fill="var(--text-muted)"></rect>
+                            <text x="38" y="306" font-size="11" fill="var(--text-muted)">첫 정답까지</text>
+                            <rect x="118" y="296" width="12" height="12" fill="#F86825"></rect>
+                            <text x="136" y="306" font-size="11" fill="var(--text-muted)">정답 이후</text>
+                            <text x="220" y="306" font-size="11" fill="var(--text-muted)">막대 길이는 단계 수에 비례한다.</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted text-center mb-8">▲ 페블러스 원본 도식. 논문 표 1의 중앙값을 같은 축에 올려 놓은 것이다. | 출처: <a href="https://arxiv.org/abs/2611.14960" target="_blank" rel="noopener" class="underline">arXiv:2611.14960</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그 시간에 입력 컨텍스트도 함께 불어난다. 첫 정답에서 최종 단계까지 모델이 받는 입력 토큰은 Qwen3-Coder에서 28~30%, Laguna-XS.2에서 55~78% 늘었다. 단계가 길어지는 만큼 단계 하나의 부담도 같이 커진다는 뜻이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        짧게 끝나는 모델이라고 사정이 다르지는 않다. 부록의 Claude Haiku 5.5는 Verified에서 9단계째에 정답을 내고 그 뒤로 10단계를 더 돈다. 절대 단계 수는 작지만 비중으로는 54%다. 프레임워크를 바꾼 경우도 비슷하다. Qwen3-Coder를 mini-SWE-agent로 돌리면 첫 정답이 22단계째에 나오고 그 뒤 12단계가 더 붙어서, 비중은 37%로 OpenHands일 때의 35%와 거의 같다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            모델 가격표에는 이 차이가 적혀 있지 않다. 같은 과제를 같은 도구로 푸는데도 어떤 모델은 답을 낸 뒤 열여섯 단계 만에 손을 떼고, 어떤 모델은 쉰일곱 단계를 더 돈다. 토큰 단가가 같아도 과제 하나를 끝내는 데 드는 돈은 여기서 갈린다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="what-they-do" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">남은 단계는 대부분 확인과 탐색에 쓰인다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정답이 나온 뒤의 그 단계들에서 에이전트는 무엇을 하고 있을까. 논문은 기록된 도구 호출과 그 인자를 규칙으로 분류해 다섯 갈래로 나눴다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 큰 몫은 확인이다. 이미 있는 테스트를 돌리고, 테스트 스크립트를 새로 써서 실행하고, 프로젝트를 빌드하는 단계가 설정에 따라 48%에서 63%를 차지한다. 그 다음이 탐색으로 15~29%다. 파일을 열어 보고, 저장소를 검색하고, git으로 자기가 바꾼 내용을 다시 확인하는 일이다. 소스 코드를 또 고치는 단계는 2~6%에 그친다. Seed-OSS만 19%로 혼자 튄다. 나머지는 마무리 작업과 생각이다.
+                    </p>
+
+                    <div class="my-8 rounded-xl p-5 border themeable-border" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 640 410" class="w-full" role="img" aria-label="여섯 개의 가로 누적 막대 도식. 정답 이후 단계를 확인, 탐색, 다시 편집, 마무리, 생각 및 기타로 나눈 비중이다. 확인은 Qwen3-Coder Verified 63%, Qwen3-Coder Multilingual 62%, Laguna-XS.2 Verified 59%, Laguna-XS.2 Multilingual 48%, GPT-6 Luna Verified 55%, Seed-OSS Pro 50%다. 탐색은 차례로 21%, 15%, 29%, 29%, 22%, 22%다. 다시 편집은 2%, 5%, 4%, 6%, 5%, 19%다.">
+                            <text x="20" y="26" font-size="13" font-weight="700" fill="var(--text-muted)">정답 이후 단계를 무엇에 썼나</text>
+
+                            <rect x="20" y="36" width="12" height="12" fill="#F86825"></rect>
+                            <text x="38" y="46" font-size="11" fill="var(--text-muted)">확인</text>
+                            <rect x="80" y="36" width="12" height="12" fill="#808080"></rect>
+                            <text x="98" y="46" font-size="11" fill="var(--text-muted)">탐색</text>
+                            <rect x="140" y="36" width="12" height="12" fill="#585858"></rect>
+                            <text x="158" y="46" font-size="11" fill="var(--text-muted)">다시 편집</text>
+                            <rect x="225" y="36" width="12" height="12" fill="#BDBDBD"></rect>
+                            <text x="243" y="46" font-size="11" fill="var(--text-muted)">마무리</text>
+                            <rect x="300" y="36" width="12" height="12" fill="#E0E0E0"></rect>
+                            <text x="318" y="46" font-size="11" fill="var(--text-muted)">생각·기타</text>
+
+                            <text x="20" y="62" font-size="11" fill="var(--text-secondary)">Qwen3-Coder · Verified</text>
+                            <rect x="20" y="70" width="352.8" height="22" fill="#F86825"></rect>
+                            <rect x="372.8" y="70" width="117.6" height="22" fill="#808080"></rect>
+                            <rect x="490.4" y="70" width="11.2" height="22" fill="#585858"></rect>
+                            <rect x="501.6" y="70" width="33.6" height="22" fill="#BDBDBD"></rect>
+                            <rect x="535.2" y="70" width="39.2" height="22" fill="#E0E0E0"></rect>
+
+                            <text x="20" y="118" font-size="11" fill="var(--text-secondary)">Qwen3-Coder · Multilingual</text>
+                            <rect x="20" y="126" width="347.2" height="22" fill="#F86825"></rect>
+                            <rect x="367.2" y="126" width="84" height="22" fill="#808080"></rect>
+                            <rect x="451.2" y="126" width="28" height="22" fill="#585858"></rect>
+                            <rect x="479.2" y="126" width="39.2" height="22" fill="#BDBDBD"></rect>
+                            <rect x="518.4" y="126" width="67.2" height="22" fill="#E0E0E0"></rect>
+
+                            <text x="20" y="174" font-size="11" fill="var(--text-secondary)">Laguna-XS.2 · Verified</text>
+                            <rect x="20" y="182" width="330.4" height="22" fill="#F86825"></rect>
+                            <rect x="350.4" y="182" width="162.4" height="22" fill="#808080"></rect>
+                            <rect x="512.8" y="182" width="22.4" height="22" fill="#585858"></rect>
+                            <rect x="535.2" y="182" width="33.6" height="22" fill="#BDBDBD"></rect>
+                            <rect x="568.8" y="182" width="16.8" height="22" fill="#E0E0E0"></rect>
+
+                            <text x="20" y="230" font-size="11" fill="var(--text-secondary)">Laguna-XS.2 · Multilingual</text>
+                            <rect x="20" y="238" width="268.8" height="22" fill="#F86825"></rect>
+                            <rect x="288.8" y="238" width="162.4" height="22" fill="#808080"></rect>
+                            <rect x="451.2" y="238" width="33.6" height="22" fill="#585858"></rect>
+                            <rect x="484.8" y="238" width="50.4" height="22" fill="#BDBDBD"></rect>
+                            <rect x="535.2" y="238" width="44.8" height="22" fill="#E0E0E0"></rect>
+
+                            <text x="20" y="286" font-size="11" fill="var(--text-secondary)">GPT-6 Luna · Verified</text>
+                            <rect x="20" y="294" width="308" height="22" fill="#F86825"></rect>
+                            <rect x="328" y="294" width="123.2" height="22" fill="#808080"></rect>
+                            <rect x="451.2" y="294" width="28" height="22" fill="#585858"></rect>
+                            <rect x="479.2" y="294" width="67.2" height="22" fill="#BDBDBD"></rect>
+                            <rect x="546.4" y="294" width="33.6" height="22" fill="#E0E0E0"></rect>
+
+                            <text x="20" y="342" font-size="11" fill="var(--text-secondary)">Seed-OSS · Pro</text>
+                            <rect x="20" y="350" width="280" height="22" fill="#F86825"></rect>
+                            <rect x="300" y="350" width="123.2" height="22" fill="#808080"></rect>
+                            <rect x="423.2" y="350" width="106.4" height="22" fill="#585858"></rect>
+                            <rect x="529.6" y="350" width="39.2" height="22" fill="#BDBDBD"></rect>
+                            <rect x="568.8" y="350" width="16.8" height="22" fill="#E0E0E0"></rect>
+
+                            <text x="20" y="396" font-size="11" fill="var(--text-muted)">막대 전체가 정답 이후 단계 100%다. 반올림 때문에 합이 100을 조금 넘는 줄이 있다.</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted text-center mb-8">▲ 페블러스 원본 도식. 논문 표 3 상단의 다섯 갈래 비중을 설정별로 쌓아 놓은 것이다. | 출처: <a href="https://arxiv.org/abs/2611.14960" target="_blank" rel="noopener" class="underline">arXiv:2611.14960</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        확인과 탐색을 합치면 어느 설정에서도 7할을 넘는다. 정답 이후에 쓰인 단계의 대부분은 코드를 다시 고치는 데가 아니라 이미 한 일을 되짚는 데 들어간다는 뜻이다. 다만 이 분류는 기록된 도구 이름과 인자에 규칙을 걸어 자동으로 매긴 것이라고 논문이 밝혀 두었다. 사람이 단계를 하나씩 읽어 나눈 값은 아니다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="undo" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">계속 돌다가 맞는 수정을 스스로 되돌린다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        되짚는 동안 수정이 멀쩡히 남아 있으면 비용만 더 드는 일로 끝난다. 늘 그렇지는 않다. 논문은 정답 패치에 도달한 실행이 어떻게 마무리되는지도 함께 셌고, 설정에 따라 1~8%는 끝내 오답 패치로 끝났다. 첫 정답에서 멈추기만 했다면 성공으로 남았을 실행이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        끝까지 정답이 유지된 비율, 한 번 깨졌다가 다시 정답으로 돌아온 비율, 깨진 채 실패로 끝난 비율은 설정마다 상당히 다르다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-3">
+                        <table class="w-full border themeable-border rounded-lg">
+                            <thead class="themeable-table-header-row">
+                                <tr>
+                                    <th class="text-left themeable-heading border-b themeable-border">설정</th>
+                                    <th class="text-left themeable-heading border-b themeable-border">끝까지 정답 유지</th>
+                                    <th class="text-left themeable-heading border-b themeable-border">깨졌다가 다시 정답</th>
+                                    <th class="text-left themeable-heading border-b themeable-border">깨진 채 실패</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">Qwen3-Coder · Verified</td>
+                                    <td class="themeable-text border-b themeable-border">96%</td>
+                                    <td class="themeable-text border-b themeable-border">3%</td>
+                                    <td class="themeable-text border-b themeable-border">1%</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">Qwen3-Coder · Multilingual</td>
+                                    <td class="themeable-text border-b themeable-border">82%</td>
+                                    <td class="themeable-text border-b themeable-border">10%</td>
+                                    <td class="themeable-text border-b themeable-border">8%</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">Laguna-XS.2 · Verified</td>
+                                    <td class="themeable-text border-b themeable-border">84%</td>
+                                    <td class="themeable-text border-b themeable-border">11%</td>
+                                    <td class="themeable-text border-b themeable-border">5%</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">Laguna-XS.2 · Multilingual</td>
+                                    <td class="themeable-text border-b themeable-border">61%</td>
+                                    <td class="themeable-text border-b themeable-border">31%</td>
+                                    <td class="themeable-text border-b themeable-border">8%</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">GPT-6 Luna · Verified</td>
+                                    <td class="themeable-text border-b themeable-border">88%</td>
+                                    <td class="themeable-text border-b themeable-border">8%</td>
+                                    <td class="themeable-text border-b themeable-border">4%</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">Seed-OSS · Pro</td>
+                                    <td class="themeable-text border-b themeable-border">79%</td>
+                                    <td class="themeable-text border-b themeable-border">17%</td>
+                                    <td class="themeable-text border-b themeable-border">4%</td>
+                                </tr>
+                            </tbody>
+                            </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-8">▲ 논문 표 3 하단. 정답 패치에 한 번이라도 도달한 실행만 대상으로 한 비율이다. | 출처: <a href="https://arxiv.org/abs/2611.14960" target="_blank" rel="noopener" class="underline">arXiv:2611.14960</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Qwen3-Coder가 Verified에서 푼 과제는 96%가 끝까지 정답을 유지했고 깨진 채 끝난 경우는 1%다. 반대쪽 끝은 Laguna-XS.2의 Multilingual이다. 끝까지 유지된 비율이 61%로 내려가고, 31%는 한 번 깨졌다가 다시 정답으로 돌아왔으며, 8%는 돌아오지 못했다. 깨짐이 잦은 쪽과 정답 이후가 긴 쪽이 늘 겹치지는 않는다. Qwen3-Coder의 Multilingual은 정답 이후 비중이 37%인데 깨진 채 끝난 비율이 8%로, 비중 60%인 Laguna-XS.2의 Verified(5%)보다 높다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        왜 깨지는지는 논문이 답하지 않는다. 어떤 종류의 후속 편집이 맞는 수정을 되돌리는지, 과한 리팩터링인지 불필요한 테스트 추가인지는 분석 대상에 들어 있지 않다. 빈도만 보고됐다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들이 내놓은 것도 해법이 아니라 조건이다. 쓸 만한 정지 규칙이라면 실행 중에 모인 증거만으로 제출 시점을 정할 수 있어야 한다. 사후에 공식 채점을 돌려 정답 여부를 알아내는 이 측정 방식은 실행 중에는 쓸 수 없다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        저자들이 스스로 적어 둔 한계도 함께 읽을 대목이다.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li>벤치마크 세 개, 모델 다섯 개, 프레임워크 두 개이고 과제마다 한 번씩만 돌렸다. 다른 환경에서 같은 그림이 나온다는 보장은 없다.</li>
+                        <li>비용은 단계 수로만 근사했다. 토큰 소비량이나 금액을 직접 측정하지는 않았다.</li>
+                        <li>단계 분류는 기록된 도구와 그 인자에 건 규칙으로 매겼다.</li>
+                        <li>Seed-OSS는 SWE-bench Pro에서 푼 과제가 적어 그 통계가 작은 표본 위에 서 있다.</li>
+                    </ul>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 이 결과에 주목하는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AI 도입 비용을 따질 때 대화는 대개 모델 가격표에서 끝난다. 백만 토큰에 얼마인지, 어느 모델이 싼지를 견주고 그 표를 근거로 결정한다. 이 논문이 더한 축은 가격표 바깥에 있다. 같은 모델, 같은 과제, 같은 도구에서도 실행의 3분의 1에서 절반 넘게가 답이 이미 나온 뒤에 쓰인다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        멈출 줄 안다는 것은 결국 자기가 지금까지 한 일을 읽어 낸다는 뜻이다. 에이전트 앞에 놓인 증거는 자기가 부른 도구의 출력, 자기가 돌린 테스트의 결과, 자기가 만든 패치의 차이뿐이다. 정답 이후 단계의 절반 안팎이 확인에 쓰인다는 수치는, 그 증거를 다 쥐고도 결론에 이르지 못한 시간이 그만큼이라는 쪽으로 읽힌다. 모델을 바꿔서 푸는 문제라기보다 에이전트가 남기는 기록이 판단에 쓸 만한 모양인지의 문제에 가깝다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        기록을 어떻게 남기고 어떻게 손질하느냐가 이어받는 쪽의 판단을 바꾼다는 이야기는 <a href="/blog/agent-history-cleaning-record-world/ko/" class="underline">AI 에이전트 기록 정리</a>에서 따로 다뤘다. 실행을 둘러싼 하네스 설계가 같은 모델의 벤치마크 점수를 바꾼다는 이야기는 <a href="/report/agent-loops-harness-over-model/ko/" class="underline">약한 모델이 아니라 약한 하네스</a>에 있다. 이번 논문이 측정한 자리는 그 둘 사이다. 기록을 넘기기 전도 아니고 하네스를 짜는 단계도 아닌, 실행 한 번이 끝나 가는 지점이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">
+                        에이전트를 업무에 들인 조직이라면 아래 셋이 점검 목록에 오를 만하다.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li>정답 이후 구간을 따로 센다. 과제를 끝낸 뒤 몇 단계를 더 썼는지는 실행 로그에 이미 들어 있다. 평균 실행 길이만 보면 이 구간은 드러나지 않는다.</li>
+                        <li>확인에 끝을 둔다. 한 번 통과한 테스트를 같은 조건으로 다시 돌리는 패턴이 반복되면, 그 반복은 새 정보를 만들지 않는다.</li>
+                        <li>되돌림을 사고로 취급한다. 중간에 맞았다가 최종 제출에서 틀린 실행은 처음부터 못 푼 실행과 구분해 따로 세어 둔다. 1~8%는 작아 보이지만 멈추기만 했으면 성공이었을 몫이다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        우리 회사가 쓰는 에이전트는 일을 끝낸 줄 아는가. 끝난 줄 모르고 요금을 쓰고 있다면, 그 사실은 모델 가격표가 아니라 실행 기록에 적혀 있다.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Cim, M., Topcu, B., Kandemir, M. T. (2026). "<a href="https://arxiv.org/abs/2611.14960" target="_blank" rel="noopener">Termination Lag: Coding Agents Solve Early but Stop Late</a>." arXiv:2611.14960.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261115"></script>
+    <script>
+        PebblousPage.init({
+            mainTitle: "Termination Lag, 코딩 AI는 답을 찾고도 멈추지 않는다",
+            subtitle: "코딩 AI가 성공한 작업의 38~82%는 첫 수정에서 이미 정답이고, 그 뒤에 쓴 단계가 전체의 35~60%를 차지한다",
+            pageTitle: "Termination Lag란? — 코딩 에이전트가 정답 이후에 쓰는 비용 분석 | 페블러스",
+            category: "tech",
+            publishDate: "2026-11-15",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/termination-lag-coding-agents-stop-late/ko/",
+            tags: ["Termination Lag", "코딩 에이전트", "AI 에이전트 비용", "SWE-bench", "에이전트 정지 규칙", "OpenHands", "LLMOps", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "Termination Lag은 무엇을 가리키나?",
+                    answer: "에이전트가 처음으로 정답 패치를 만든 단계에서 실행이 끝난 단계까지의 거리다. 논문은 최종 단계 S에서 첫 정답 단계 F를 뺀 값으로 정의한다. 같은 값을 실행 전체 길이로 나눈 비율을 정규화 종료 지연(NTL)이라 부르고, 핵심 설정 네 조합에서 중앙값이 35~60%로 나왔다."
+                },
+                {
+                    question: "정답이 언제 나왔는지를 어떻게 알아냈나?",
+                    answer: "에이전트와 모델 엔드포인트 사이에 로깅 프록시를 두어, 다음 모델 요청이 나가기 전에 그 시점의 저장소 패치를 기록했다. 실행이 끝난 뒤 기록해 둔 패치들을 격리 컨테이너에서 벤치마크 공식 절차로 하나씩 채점한다. 이 채점 결과는 에이전트에게 돌아가지 않으므로 실행 중의 판단에 영향을 주지 않는다."
+                },
+                {
+                    question: "38~82%는 무엇의 비율인가?",
+                    answer: "정답에 도달한 실행만 추렸을 때, 에이전트가 소스 코드를 처음 고친 그 패치가 이미 정답이던 비율이다. Qwen3-Coder는 SWE-bench Verified에서 82%, Multilingual에서 66%, Laguna-XS.2는 각각 70%와 48%, GPT-6 Luna는 Verified에서 80%, Seed-OSS는 SWE-bench Pro에서 38%다."
+                },
+                {
+                    question: "정답 이후에 에이전트는 무엇을 하나?",
+                    answer: "가장 큰 몫은 확인으로 48~63%다. 이미 있는 테스트를 돌리고, 테스트 스크립트를 새로 써서 실행하고, 프로젝트를 빌드한다. 다음이 탐색으로 15~29%, 소스 코드를 또 고치는 단계는 2~6%다. Seed-OSS만 19%로 높다. 확인과 탐색을 합치면 어느 설정에서도 7할을 넘는다."
+                },
+                {
+                    question: "모델에 따라 차이가 얼마나 나나?",
+                    answer: "SWE-bench Verified에서 Qwen3-Coder는 30단계째에 정답을 내고 48단계에서 멈춘다. 정답 이후가 16단계, 실행의 35%다. 같은 과제 묶음에서 Laguna-XS.2는 38단계째에 정답을 내고 95단계까지 간다. 정답 이후가 57단계, 실행의 60%다."
+                },
+                {
+                    question: "맞는 수정을 되돌리는 1~8%는 어떤 경우인가?",
+                    answer: "정답 패치에 한 번 도달한 뒤에도 편집을 이어가다가 그 패치를 깨뜨리고, 최종 제출이 오답으로 끝난 실행이다. 첫 정답에서 멈추기만 했다면 성공으로 남았을 몫이다. 왜 깨지는지는 논문이 분석하지 않았고 빈도만 보고됐다."
+                },
+                {
+                    question: "오래 돌수록 더 자주 깨지나?",
+                    answer: "표의 수치는 그렇게 단순하지 않다. Qwen3-Coder의 Multilingual은 정답 이후 비중이 37%인데 깨진 채 끝난 비율이 8%이고, 비중이 60%인 Laguna-XS.2의 Verified는 5%다. 다만 Laguna-XS.2의 Multilingual은 끝까지 정답을 유지한 비율이 61%까지 내려가 여섯 설정 가운데 가장 낮다."
+                },
+                {
+                    question: "이 논문이 정지 규칙을 제안하나?",
+                    answer: "제안하지 않는다. 저자들이 적어 둔 것은 조건이다. 쓸 만한 정지 규칙이라면 실행 중에 모인 증거만으로 제출 시점을 정할 수 있어야 한다. 사후에 공식 채점을 돌려 정답 여부를 알아내는 이 측정 방식은 실행 중에 쓸 수 없다. 진단에 집중한 논문이지 해법을 담은 논문이 아니다."
+                },
+                {
+                    question: "이 결과를 비용 절감 수치로 그대로 읽어도 되나?",
+                    answer: "그대로 읽으면 과장이 된다. 논문이 센 것은 단계 수이고, 토큰 소비량이나 금액은 직접 측정하지 않았다고 저자들이 한계에 적어 두었다. 다만 입력 컨텍스트가 첫 정답에서 최종 단계까지 Qwen3-Coder에서 28~30%, Laguna-XS.2에서 55~78% 늘었다는 수치는 함께 참고할 만하다."
+                }
+            ]
+        });
+    </script>
+
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=20261115" defer></script>
+</body>
+
+</html>
