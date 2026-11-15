@@ -21,6 +21,7 @@ Step 2: 사이드카 등록(articles.d/<id>.json, KO/EN) + 로컬 조립 검증 
 Step 3: sitemap 업데이트
 Step 4: changelog 기록
 Step 5: Tailwind CSS 빌드
+Step 5.5: 색인 조건 검사 + 공용 자산 꼬리 정규화 — `node tools/check-indexability.js --fix <ko/index.html> <en/index.html>` (blog-publish §3.7, 차단이면 HTML 고치고 재실행)
 Step 6: git commit + push
 ```
 

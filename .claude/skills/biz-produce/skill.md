@@ -439,9 +439,9 @@ TradingView 위젯 대신 펀딩 현황 카드:
 
 ### CSS 로드 순서 (고정)
 ```html
-<link rel="stylesheet" href="/css/theme-variables.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/css/theme-variables.css?v=AUTO">
 <link rel="stylesheet" href="/styles/tailwind-build.css">
-<link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/styles/common-styles.css?v=AUTO">
 ```
 `/css/styles.css`는 인덱스 전용 — BizReport 아티클에 절대 포함 금지.
 

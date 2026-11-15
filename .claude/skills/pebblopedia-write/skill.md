@@ -136,9 +136,9 @@ PebblousPage.init({
 
 ```html
 <!-- 3종만 로드 (styles.css 금지) -->
-<link rel="stylesheet" href="/styles/theme-variables.css?v=YYYYMMDD">
-<link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
-<link rel="stylesheet" href="/styles/tailwind-build.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/styles/theme-variables.css?v=AUTO">
+<link rel="stylesheet" href="/styles/common-styles.css?v=AUTO">
+<link rel="stylesheet" href="/styles/tailwind-build.css?v=AUTO">
 ```
 
 ## 출력 메타 파일

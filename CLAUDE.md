@@ -162,6 +162,8 @@ node tools/generate-sitemap.js        # Regenerate sitemap.xml
 python3 tools/generate-llms-txt.py  # Regenerate llms.txt (AI crawler index)
 python3 tools/check-cache-bust.py   # 공용 CSS/JS 변경 시 index.html ?v= 스테일 검사 (사본 CI check-cache-bust.yml이 PR마다 실행)
 node tools/check-post-images.js <ko/index.html> <en/index.html>  # 새 글 본문 그림 검사 — 외부 그림은 원본 주소로 연결(복사 금지)·자체 생성 그림 1MB 이하 (blog-publish §3.6)
+node tools/check-indexability.js --fix <ko/index.html> <en/index.html>  # 새 글 색인 조건(noindex·canonical·hreflang·lang) 검사 + 공용 CSS/JS ?v= 를 내용 해시로 (blog-publish §3.7, 사본 CI check-indexability.yml)
+node tools/generate-archive.js            # 전체 글 목록 쪽 archive/{ko,en}/ 정적 생성 (사본 update-sitemap.yml 이 articles.json 갱신 때 실행) — JS 없이 모든 글에 닿는 링크 경로
 python3 tools/build-search-index.py  # Pagefind 전문 검색 인덱스 빌드 — noindex/보호 페이지 자동 배제 (사본 CI build-search-index.yml이 main push마다 실행, /pagefind/ 커밋)
 python3 tools/build-article-graph.py --site <사본경로> --output <dir>  # 블로그 지식그래프 → PebbloScope Scholar 규격 (graph/corpus/meta.json; --sample N 층화 축소판)
 node tools/audit-sabon-divergence.js --sabon <사본경로>  # 진본↔사본 자산 2/3 갈라짐(reverse-divergence) 감사 — 사본 auto-sync PR이 충돌로 막혔을 때 첫 진단 (CI audit-sabon-divergence.yml 주 1회 + 수동)
@@ -251,7 +253,7 @@ This auto-loads: Header, Footer, BreadcrumbList Schema, FAQ Schema (JSON-LD), Re
 | `css/theme-variables.css` | Shared CSS variables (3 themes) |
 | `styles/tailwind-build.css` | Built Tailwind (link, not CDN script) |
 
-Cache busting: `?v=YYYYMMDD` query string on CSS/JS references.
+Cache busting: never a date. Write `?v=AUTO` on shared CSS/JS; `node tools/check-indexability.js --fix` (blog-publish §3.7) stamps the content hash, so the URL changes only when the file changes. Date stamps split 8 files into 1,253 URLs and ate half of Google's crawl (2026-11-15).
 
 ### Password Protection (`scripts/pbls-auth.js`)
 
@@ -264,7 +266,7 @@ Confidential IR pages use `PebblousAuth` for session-based password protection. 
     <div class="password-overlay" id="password-overlay">...</div>
 
     <!-- At end of body: -->
-    <script src="/scripts/pbls-auth.js?v=YYYYMMDD"></script>
+    <script src="/scripts/pbls-auth.js?v=AUTO"></script>
     <script>
         PebblousAuth.initPageProtection({
             password: 'pageSpecificPassword',
@@ -523,9 +525,9 @@ PebblousPage.init({ mainTitle: "...", subtitle: "...", faqs: [...] });
 <link rel="stylesheet" href="/css/styles.css">
 
 <!-- ✅ 아티클 CSS 3개 (순서 고정) -->
-<link rel="stylesheet" href="/css/theme-variables.css?v=YYYYMMDD">
-<link rel="stylesheet" href="/styles/tailwind-build.css?v=YYYYMMDD">
-<link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/css/theme-variables.css?v=AUTO">
+<link rel="stylesheet" href="/styles/tailwind-build.css?v=AUTO">
+<link rel="stylesheet" href="/styles/common-styles.css?v=AUTO">
 ```
 
 ---

@@ -175,7 +175,7 @@ citation-js@0.7 UMD 빌드가 글로벌 `Cite` 객체를 노출하지 않는 문
 </div>
 
 <!-- </body> 직전에 한 번만 로드 -->
-<script src="/scripts/citation-download.js?v=YYYYMMDD" defer></script>
+<script src="/scripts/citation-download.js?v=AUTO" defer></script>
 ```
 
 ### 시리즈 글 (공유 SSOT) 패턴
@@ -341,7 +341,7 @@ grep -rEn '<li>.*https?://[^"<]*</li>' report/ project/ 2>/dev/null
 
 ```html
 <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
-<script src="/scripts/citation-download.js?v=YYYYMMDD" defer></script>
+<script src="/scripts/citation-download.js?v=AUTO" defer></script>
 ```
 
 버튼은 `PebblousCitation.download()` 호출로 변경:
