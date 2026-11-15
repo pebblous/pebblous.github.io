@@ -153,7 +153,7 @@ PebblousPage.init({
 
 ```html
 <!-- 스크립트 -->
-<script src="/scripts/common-utils.js?v=YYYYMMDD"></script>
+<script src="/scripts/common-utils.js?v=AUTO"></script>
 
 <!-- hero 내 h1 (id 필수) -->
 <h1 id="page-h1-title">...</h1>
@@ -229,9 +229,9 @@ PebblousPage.init({
 ### CSS 로드 순서 (정확히 이 순서 — CLAUDE.md 정본)
 
 ```html
-<link rel="stylesheet" href="/css/theme-variables.css?v=YYYYMMDD">
-<link rel="stylesheet" href="/styles/tailwind-build.css?v=YYYYMMDD">
-<link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/css/theme-variables.css?v=AUTO">
+<link rel="stylesheet" href="/styles/tailwind-build.css?v=AUTO">
+<link rel="stylesheet" href="/styles/common-styles.css?v=AUTO">
 ```
 
 > Tailwind utility → common-styles 커스텀 순서. common-styles가 나중에 로드되어야 Tailwind를 오버라이드 가능.

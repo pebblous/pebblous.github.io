@@ -582,7 +582,7 @@ python3 tools/report-produce-logger.py end --slug [slug] --phase 5-E --agent ko-
 # (3) Download Citation 버튼 (BibTeX / RIS)
 #     - <button onclick="PebblousCitation.download('bibtex', '../references.json')">BibTeX</button>
 #     - <button onclick="PebblousCitation.download('ris', '../references.json')">RIS</button>
-# (4) </body> 직전: <script src="/scripts/citation-download.js?v=YYYYMMDD" defer></script>
+# (4) </body> 직전: <script src="/scripts/citation-download.js?v=AUTO" defer></script>
 # (5) Google Scholar citation_* 메타 태그 (head)
 #     - citation_title, citation_author, citation_publication_date,
 #       citation_online_date, citation_journal_title, citation_language

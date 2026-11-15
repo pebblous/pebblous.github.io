@@ -243,6 +243,30 @@ echo "exit=$?"
 - `no-referrer` · `no-source` — 외부 그림에 `referrerpolicy="no-referrer"`, 캡션에 출처 페이지 링크를 단다.
 - 경고 `ko-en-duplicate` — EN 의 같은 그림 파일을 지우고 `../ko/image/<파일>` 을 참조한다.
 
+### 3.7. 색인 조건 검사 + 공용 자산 꼬리 정규화 (2026-11-15 색인 대책)
+
+발행돼도 구글 검색에 안 나오는 글을 막는다. `--fix` 가 공용 CSS/JS 의 `?v=` 꼬리를 **파일 내용 해시**로 고쳐 쓴다(날짜 꼬리는 같은 파일을 날마다 새 주소로 만들어 구글 크롤의 절반을 먹었다 — 실제 파일 8개가 주소 1,253개). 나머지는 검사만 한다. KO·EN 을 함께 넘긴다.
+
+```bash
+node tools/check-indexability.js --fix \
+  "[category]/[slug]/ko/index.html" \
+  "[category]/[slug]/en/index.html"
+echo "exit=$?"
+```
+
+| exit | 의미 | 처리 |
+|------|------|------|
+| 0 | 차단 없음 (경고 가능) | 통과 → 다음 단계 (꼬리를 고쳤다면 그 변경도 커밋에 들어간다) |
+| 1 | 차단 ≥ 1 | 아래 고치는 법대로 **HTML 수정** 후 재실행 |
+| 2·3 | 사용법·경로 오류 | 콘텐츠 고치지 말 것 — 명령·경로 점검 |
+
+고치는 법 (차단 코드별):
+- `robots-noindex` — `<meta name="robots" content="index, follow">` 로 바꾼다.
+- `canonical-missing` · `canonical-mismatch` — `<link rel="canonical" href="https://blog.pebblous.ai/[category]/[slug]/[ko|en]/">` (자기 주소, 끝 `/` 포함).
+- `hreflang-missing` · `hreflang-mismatch` — 두 언어 글 모두에 `hreflang="ko"`→`…/ko/`, `hreflang="en"`→`…/en/`, `hreflang="x-default"`→`…/ko/` 세 줄.
+- `lang-mismatch` — `<html lang="ko">`(ko 폴더) · `<html lang="en">`(en 폴더).
+- 사본 CI(`check-indexability.yml`)가 PR 에서 같은 검사를 다시 돌린다. 새 글에서 차단이 나오면 자동 머지가 멈춘다.
+
 ### 4. Changelog 기록
 
 ```bash

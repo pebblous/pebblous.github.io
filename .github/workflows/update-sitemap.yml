@@ -62,6 +62,12 @@ jobs:
           echo "llms.txt generation completed"
         continue-on-error: false
 
+      - name: Generate archive pages
+        run: |
+          # 전체 글 목록 쪽(archive/ko·en) — JS 없이 모든 글에 닿는 링크 경로 (2026-11-15 색인 대책).
+          # 도구는 진본 sync 로 들어온다. 없으면 건너뛴다.
+          if [ -f tools/generate-archive.js ]; then node tools/generate-archive.js; else echo "⚠️ tools/generate-archive.js 없음 — 건너뜀"; fi
+
       - name: Check for changes
         id: check_changes
         run: |
@@ -72,8 +78,10 @@ jobs:
           git diff --exit-code --quiet sitemap.xml || SITEMAP_CHANGED=true
           git diff --exit-code --quiet rss.xml || RSS_CHANGED=true
           git diff --exit-code --quiet llms.txt || LLMS_CHANGED=true
+          ARCHIVE_CHANGED=false
+          if [ -n "$(git status --porcelain -- archive/)" ]; then ARCHIVE_CHANGED=true; fi
 
-          if [ "$SITEMAP_CHANGED" = "true" ] || [ "$RSS_CHANGED" = "true" ] || [ "$LLMS_CHANGED" = "true" ]; then
+          if [ "$SITEMAP_CHANGED" = "true" ] || [ "$RSS_CHANGED" = "true" ] || [ "$LLMS_CHANGED" = "true" ] || [ "$ARCHIVE_CHANGED" = "true" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
@@ -82,6 +90,7 @@ jobs:
           echo "sitemap_changed=$SITEMAP_CHANGED" >> $GITHUB_OUTPUT
           echo "rss_changed=$RSS_CHANGED" >> $GITHUB_OUTPUT
           echo "llms_changed=$LLMS_CHANGED" >> $GITHUB_OUTPUT
+          echo "archive_changed=$ARCHIVE_CHANGED" >> $GITHUB_OUTPUT
 
           [ "$SITEMAP_CHANGED" = "true" ] && echo "📝 Sitemap has changes" && git diff --stat sitemap.xml || echo "✅ No changes in sitemap"
           [ "$RSS_CHANGED" = "true" ] && echo "📝 RSS feed has changes" && git diff --stat rss.xml || echo "✅ No changes in RSS feed"
@@ -111,6 +120,9 @@ jobs:
           fi
           if [ "${{ steps.check_changes.outputs.llms_changed }}" = "true" ]; then
             git add llms.txt; COMMIT_FILES="${COMMIT_FILES:+$COMMIT_FILES, }llms.txt"
+          fi
+          if [ "${{ steps.check_changes.outputs.archive_changed }}" = "true" ]; then
+            git add archive/ko/index.html archive/en/index.html; COMMIT_FILES="${COMMIT_FILES:+$COMMIT_FILES, }archive"
           fi
 
           git commit -m "chore(index): auto-update $COMMIT_FILES [skip ci]"

@@ -160,7 +160,7 @@ PebbloPedia 포스트 리뷰 시:
 - [ ] articlePath = 디렉토리 형식 (끝에 `/`, `index.html` 금지)
 - [ ] `css/styles.css` 미포함 (인덱스 전용 CSS — 기사 페이지에 불필요)
 - [ ] CSS 3종만 로드: `theme-variables.css`, `common-styles.css`, `tailwind-build.css`
-- [ ] 캐시 버스팅: CSS/JS에 `?v=YYYYMMDD`
+- [ ] 캐시 버스팅: 날짜를 쓰지 않는다 — `?v=AUTO` 로 두면 발행 단계 `node tools/check-indexability.js --fix` 가 파일 내용 해시로 채운다(2026-11-15 색인 대책)
 - [ ] **작성 완료 후 반드시 `/seo-check` 실행** — 4계층 검증
 
 ### articles.json (등록은 사이드카 `articles.d/<id>.json` — ⛔ articles.json 직접편집 금지, 샤딩: `docs/articles-sharding.md`)
