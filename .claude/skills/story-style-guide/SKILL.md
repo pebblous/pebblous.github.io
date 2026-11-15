@@ -38,9 +38,9 @@ DataClinic 스토리 포스트 생성 시 **반드시** 따라야 할 HTML/CSS �
 
 ```html
 <!-- css/styles.css는 인덱스 전용 — 아티클에 포함 금지 -->
-<link rel="stylesheet" href="/css/theme-variables.css?v=YYYYMMDD">
-<link rel="stylesheet" href="/styles/tailwind-build.css?v=YYYYMMDD">
-<link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
+<link rel="stylesheet" href="/css/theme-variables.css?v=AUTO">
+<link rel="stylesheet" href="/styles/tailwind-build.css?v=AUTO">
+<link rel="stylesheet" href="/styles/common-styles.css?v=AUTO">
 ```
 
 ## 2. `<style>` 블록 규칙

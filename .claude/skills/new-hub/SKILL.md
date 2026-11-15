@@ -82,8 +82,8 @@ Every hub page MUST follow this exact structure:
     <script>(...GTM snippet...)</script>
 
     <!-- Styles (EXACT order) -->
-    <link rel="stylesheet" href="/css/styles.css?v=YYYYMMDD">
-    <link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
+    <link rel="stylesheet" href="/css/styles.css?v=AUTO">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=AUTO">
     <link rel="stylesheet" href="/styles/tailwind-build.css">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
@@ -145,7 +145,7 @@ Every hub page MUST follow this exact structure:
     <script src="/scripts/card-particles.js"></script>
     <script src="/scripts/card-renderer.js"></script>
     <script src="/scripts/hub-cards.js"></script>
-    <script src="/scripts/common-utils.js?v=YYYYMMDD"></script>
+    <script src="/scripts/common-utils.js?v=AUTO"></script>
 
     <script>
         PebblousHubCards.init({
@@ -190,7 +190,7 @@ Every hub page MUST follow this exact structure:
 - **Lock badge SVG**: `<span class="card-lock-badge"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clip-rule="evenodd" /></svg></span>`
 - **Script order**: card-particles.js → card-renderer.js → hub-cards.js → common-utils.js
 - **Style order**: styles.css → common-styles.css → tailwind-build.css → Pretendard font
-- **Cache busting**: Use `?v=YYYYMMDD` on CSS/JS files
+- **Cache busting**: 날짜를 쓰지 않는다 — `?v=AUTO` 로 두면 발행 단계 `node tools/check-indexability.js --fix` 가 파일 내용 해시로 채운다(2026-11-15 색인 대책)
 - **SEO 4-Layer**: meta tags, OG, Twitter Cards, FAQ Schema (via config.faqs)
 - **hreflang**: ko, en, x-default (→ ko version unless EN-primary)
 - **Language switch**: KO page → English link, EN page → 한국어 link

@@ -205,6 +205,7 @@ for entry in (ko_entry, en_entry):
 ### Phase 5: Git Push
 
 ```bash
+node tools/check-indexability.js --fix <글 폴더>/ko/index.html <글 폴더>/en/index.html   # 색인 조건 + ?v=AUTO → 내용 해시 (blog-publish §3.7). 차단(exit 1)이면 고치고 다시
 git add -A
 git commit -m "feat: 저는 [이름]입니다 — pb 스토리 KO+EN 추가"
 git push origin main
