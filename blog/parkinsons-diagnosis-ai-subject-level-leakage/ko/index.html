@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>파킨슨병 진단 AI 정확도 검증 — 환자 단위 분할과 유전자 선택 누출이 만든 거품 분석 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="파킨슨병 진단 AI의 정확도가 병이 아니라 평가 절차를 비출 수 있다는 감사 연구가 arXiv에 올라왔다. 음성·원격 측정·혈액 전사체 세 공개 데이터를 환자 단위로 나누자 음성 정확도는 0.892에서 0.780으로 내려갔고, 유전자를 미리 고르면 0.711이 0.998로 부풀었다.">
+    <meta name="keywords" content="파킨슨병 진단 AI, 의료 AI 데이터 누출, 환자 단위 분할, subject-level leakage, GroupKFold, AUROC 과대평가, nested feature selection, 중첩 특징 선택, 배치 효과, 의료 AI 벤치마크, 데이터 품질, AI-Ready Data">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="파킨슨병 진단 AI">
+    <meta name="pb-search-keyword-forms" content="파킨슨병 진단 AI|파킨슨 진단 AI|파킨슨병 AI 진단">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/parkinsons-diagnosis-ai-subject-level-leakage/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/parkinsons-diagnosis-ai-subject-level-leakage/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/parkinsons-diagnosis-ai-subject-level-leakage/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/parkinsons-diagnosis-ai-subject-level-leakage/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="파킨슨병 진단 AI, 배운 환자가 시험에 나오면 점수가 오른다">
+    <meta property="og:description" content="모델도 데이터도 그대로 두고 학습과 시험을 가르는 선만 바꿨다. 음성 정확도는 0.892에서 0.780으로 내려가고, 유전자를 미리 고른 전사체는 0.711이 0.998로 뛴다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/parkinsons-diagnosis-ai-subject-level-leakage/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/parkinsons-diagnosis-ai-subject-level-leakage/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="한 환자의 녹음이 학습과 시험 양쪽에 흩어진 레코드 단위 분할과, 한 환자의 녹음이 모두 한쪽에만 들어가는 환자 단위 분할을 좌우로 갈라 놓은 도식">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-11-16">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="파킨슨병 진단 AI, 배운 환자가 시험에 나오면 점수가 오른다">
+    <meta name="twitter:description" content="모델도 데이터도 그대로 두고 학습과 시험을 가르는 선만 바꿨다. 음성 정확도는 0.892에서 0.780으로 내려가고, 유전자를 미리 고른 전사체는 0.711이 0.998로 뛴다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/parkinsons-diagnosis-ai-subject-level-leakage/ko/image/index.png">
+    <meta name="twitter:image:alt" content="한 환자의 녹음이 학습과 시험 양쪽에 흩어진 레코드 단위 분할과, 한 환자의 녹음이 모두 한쪽에만 들어가는 환자 단위 분할을 좌우로 갈라 놓은 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=5f0a37e3"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=7f5a0b5e">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=bea798d5">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=f542b79f">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="파킨슨병 진단 AI, 배운 환자가 시험에 나오면 점수가 오른다">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/11/16">
+    <meta name="citation_online_date" content="2026/11/16">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#setup" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 모델은 그대로 두고 나누는 선만 바꿨다</a></li>
+                    <li><a href="#voice" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 한 사람의 녹음을 한쪽에만 두면 성적이 내려간다</a></li>
+                    <li><a href="#genes" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 유전자를 먼저 고르면 정확도가 0.998까지 뛴다</a></li>
+                    <li><a href="#signal" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 거품을 걷어내도 남는 신호가 있다</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 페블러스가 이 감사를 주목하는 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            파킨슨병을 기계학습으로 가려내는 연구의 정확도는 병을 맞히는 능력보다 평가 절차를 더 많이 비추고 있을 수 있다. 그렇게 주장하는 감사 연구가 arXiv에 올라왔다. 오클랜드 공과대학 수리과학과의 남라타 다타와 빅토르 미란다 소베라니스가 2026년 10월 9일 제출한 논문이다. 목소리와 집에서 보내는 원격 측정, 혈액 유전자 발현까지 성격이 다른 공개 데이터 세 벌을 끌어왔다. 모델은 건드리지 않고 학습과 시험을 가르는 방법만 바꿔 다시 돌렸다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            음성 데이터의 정확도는 0.892에서 0.780으로 내려갔다. 한 사람이 녹음을 여섯 일곱 개씩 남긴 자료라 녹음을 통째로 섞어 나누면 같은 환자가 학습과 시험 양쪽에 앉게 되고, 모델이 병의 특징 대신 그 사람의 목소리를 알아보게 된다. 그렇다고 그간의 수치가 전부 허구로 뒤집히지는 않는다. 저자들은 기존에 보고된 음성 결과를 가짜(spurious)가 아니라 부풀려진 것(inflated)으로 불러야 한다고 적었다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            1절부터 4절까지의 수치와 인용은 이 논문의 본문과 표에서 가져왔다. 논문이 스스로 밝힌 한계 세 가지는 4절 끝에 함께 옮겼다. 이 결과를 데이터 준비 단계의 문제로 묶어 읽은 5절은 페블러스의 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        앞의 셋은 같은 자료를 두 가지 평가 절차로 돌려 얻은 짝이고, 마지막 하나는 유전자 발현이 병 말고 무엇을 더 담고 있는지 따로 확인한 값이다.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2611.14533" target="_blank" rel="noopener" class="underline">arXiv:2611.14533</a> 표 5·7·8·10 및 본문.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.892 → 0.780</p>
+                            <p class="text-sm themeable-text-secondary mt-1">음성 진단 정확도(AUROC)가 환자 단위 분할에서 내려간 폭</p>
+                            <p class="text-xs themeable-muted mt-1">누출만 떼어 내 비교하면 0.693까지 내려간다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">−0.037</p>
+                            <p class="text-sm themeable-text-secondary mt-1">환자 단위로 나눈 원격 측정 증상 점수 예측의 결정계수</p>
+                            <p class="text-xs themeable-muted mt-1">레코드 단위에서는 0.105였고, 학습 평균값만 찍는 기준선이 0이다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.998</p>
+                            <p class="text-sm themeable-text-secondary mt-1">유전자를 나누기 전에 고른 혈액 전사체 진단 정확도</p>
+                            <p class="text-xs themeable-muted mt-1">폴드 안에서만 고르면 같은 설정이 0.711이다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.906</p>
+                            <p class="text-sm themeable-text-secondary mt-1">유전자 발현이 환자의 모집 시기를 알아맞힌 정확도</p>
+                            <p class="text-xs themeable-muted mt-1">파킨슨병 환자만 놓고 측정한 값이다. 순열검정 p=0.010</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="setup" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">모델은 그대로 두고 나누는 선만 바꿨다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        파킨슨병 진단 AI는 꽤 오래된 연구 주제다. 모음을 길게 내는 목소리에서 떨림을 읽고, 집에 둔 장치가 보내오는 측정값으로 증상 점수를 따라가고, 혈액의 유전자 발현에서 환자와 대조군을 가른다. 저렴하고 넓게 깔 수 있는 조기 발견 수단이라는 기대가 이 흐름을 밀어 왔다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이번 논문은 새 모델을 제안하지 않는다. 기존 연구가 쓰던 공개 데이터 세 벌을 그대로 가져왔다. 바꾼 것은 학습 자료와 시험 자료를 가르는 방법뿐이고, 같은 모델을 그 두 방법으로 두 번 돌렸다. 저자들이 짚은 공백도 거기에 있다. 두 종류의 정보 누출이 일반론으로는 알려져 있다. 그런데 같은 모델로 구조가 다른 파킨슨병 데이터에서 그 크기를 나란히 측정한 연구는 드물었다. 전사체에서 지도 선택과 무지도 선택을 갈라 본 연구는 없었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        쓰인 데이터 세 벌의 성격은 이렇게 다르다. 한 사람이 기록을 몇 개나 남겼는지가 뒤에 나올 수치를 가른다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b themeable-border">
+                                    <th class="text-left py-3 px-3 themeable-heading font-semibold">데이터</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-semibold">출처</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-semibold">사람</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-semibold">기록</th>
+                                    <th class="text-left py-3 px-3 themeable-heading font-semibold">변수</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3">음성</td>
+                                    <td class="py-3 px-3">UCI Parkinsons</td>
+                                    <td class="py-3 px-3">32명(환자 24, 대조 8)</td>
+                                    <td class="py-3 px-3">녹음 195개</td>
+                                    <td class="py-3 px-3">음향 22개</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3">원격 측정</td>
+                                    <td class="py-3 px-3">UCI Telemonitoring</td>
+                                    <td class="py-3 px-3">42명(전원 환자)</td>
+                                    <td class="py-3 px-3">기록 5,875개</td>
+                                    <td class="py-3 px-3">음향 16개와 나이·성별</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-3">혈액 전사체</td>
+                                    <td class="py-3 px-3">GEO GSE72267</td>
+                                    <td class="py-3 px-3">59명(환자 40, 대조 19)</td>
+                                    <td class="py-3 px-3">측정 59회</td>
+                                    <td class="py-3 px-3">프로브 22,277개</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-6">▲ 감사에 쓰인 공개 데이터 세 벌. | 출처: <a href="https://arxiv.org/abs/2611.14533" target="_blank" rel="noopener" class="underline">arXiv:2611.14533, Table III</a></p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            앞의 두 벌은 한 사람이 기록을 여러 개 남긴다. 음성은 1명당 여섯 일곱 개, 원격 측정은 1명당 140개 안팎이다. 마지막 한 벌은 1명당 한 번만 측정하는 대신 변수가 2만 2천 개를 넘는다. 사람보다 기록이 많은 자료와 사람보다 변수가 많은 자료, 둘은 서로 다른 방식으로 성적을 부풀린다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="voice" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">한 사람의 녹음을 한쪽에만 두면 성적이 내려간다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        음성 데이터에서 기존 방식은 녹음 195개를 통째로 섞어 70 대 30으로 가르고 그것을 스무 번 되풀이하는 것이었다. 이렇게 하면 환자 한 사람이 남긴 녹음 일곱 개 가운데 다섯 개가 학습에, 두 개가 시험에 들어가는 일이 거의 매번 생긴다. 감사가 쓴 다른 방식은 환자를 단위로 삼는다. 한 사람의 녹음은 전부 학습에 들어가거나 전부 시험에 들어가고, 양쪽에 걸치지 않는다.
+                    </p>
+
+                    <div class="my-8 rounded-xl p-5 border themeable-border" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 640 250" class="w-full" role="img" aria-label="왼쪽은 레코드 단위 분할로 환자 A와 환자 B의 녹음이 학습 쪽과 시험 쪽에 모두 흩어져 있는 모습을, 오른쪽은 환자 단위 분할로 환자 A의 녹음은 모두 학습 쪽에, 환자 B의 녹음은 모두 시험 쪽에 들어가 양쪽에 같은 사람이 없는 모습을 나타낸 도식.">
+                            <text x="16" y="22" font-size="13" font-weight="700" fill="var(--text-muted)">레코드 단위로 나눌 때</text>
+
+                            <rect x="16" y="38" width="128" height="86" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"></rect>
+                            <text x="30" y="58" font-size="11" font-weight="700" fill="var(--text-muted)">학습</text>
+                            <text x="30" y="80" font-size="11" fill="var(--text-muted)">환자 A 녹음 5개</text>
+                            <text x="30" y="102" font-size="11" fill="var(--text-muted)">환자 B 녹음 4개</text>
+
+                            <rect x="158" y="38" width="128" height="86" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"></rect>
+                            <text x="172" y="58" font-size="11" font-weight="700" fill="var(--text-muted)">시험</text>
+                            <text x="172" y="80" font-size="11" fill="var(--text-muted)">환자 A 녹음 2개</text>
+                            <text x="172" y="102" font-size="11" fill="var(--text-muted)">환자 B 녹음 3개</text>
+
+                            <text x="16" y="152" font-size="11" fill="var(--text-muted)">같은 사람이 양쪽에 앉는다. 모델은 병의 특징</text>
+                            <text x="16" y="170" font-size="11" fill="var(--text-muted)">대신 그 사람의 목소리를 알아봐도 점수를 받는다.</text>
+                            <text x="16" y="200" font-size="18" font-weight="700" fill="var(--text-muted)">0.892</text>
+                            <text x="16" y="220" font-size="11" fill="var(--text-muted)">음성 진단 정확도(AUROC)</text>
+
+                            <line x1="312" y1="16" x2="312" y2="236" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4 4"></line>
+
+                            <text x="340" y="22" font-size="13" font-weight="700" fill="#F86825">환자 단위로 나눌 때</text>
+
+                            <rect x="340" y="38" width="128" height="86" rx="8" fill="none" stroke="#F86825" stroke-width="1.5"></rect>
+                            <text x="354" y="58" font-size="11" font-weight="700" fill="#F86825">학습</text>
+                            <text x="354" y="80" font-size="11" fill="#F86825">환자 A 녹음 7개</text>
+
+                            <rect x="482" y="38" width="128" height="86" rx="8" fill="none" stroke="#F86825" stroke-width="1.5"></rect>
+                            <text x="496" y="58" font-size="11" font-weight="700" fill="#F86825">시험</text>
+                            <text x="496" y="80" font-size="11" fill="#F86825">환자 B 녹음 7개</text>
+
+                            <text x="340" y="152" font-size="11" fill="var(--text-secondary)">양쪽에 같은 사람이 없다. 처음 보는 사람에게</text>
+                            <text x="340" y="170" font-size="11" fill="var(--text-secondary)">통하는지만 점수가 된다.</text>
+                            <text x="340" y="200" font-size="18" font-weight="700" fill="#F86825">0.780</text>
+                            <text x="340" y="220" font-size="11" fill="var(--text-secondary)">음성 진단 정확도(AUROC)</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted text-center mb-8">▲ 페블러스 원본 도식. 녹음 개수는 설명을 위한 예시이고, 두 정확도는 논문 표 5의 값이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        환자 단위로 가르면 0.780이다. 모델을 랜덤 포레스트로 바꾸면 0.829까지 올라오지만 레코드 단위에서 나온 0.892에는 닿지 못한다. 같은 모델 교체를 원격 측정에서도 해 봤지만 결과가 같아서, 논문은 랜덤 포레스트가 두 데이터 어느 쪽의 간격도 메우지 못했다고 적었다. 더 센 모델로 바꿔서 되찾을 수 있는 성적이 아니었고, 부풀림이 모델의 성질이 아니라 평가 절차의 성질이라는 결론도 여기서 나온다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        누출의 크기만 떼어 내 보려고 저자들은 폴드 수와 모델을 똑같이 맞춘 채 레코드 단위 폴드와 환자 단위 폴드를 짝지어 비교했다. 폴드 바깥 예측을 전부 모아 한 번에 계산한 정확도가 0.892 대 0.693이고, 차이는 0.200(95% 신뢰구간 0.087~0.330)이다. 폴드별로 따로 계산해 평균 내면 0.899 대 0.723으로 차이가 0.175(95% 신뢰구간 −0.021~0.371, 보정 p=0.039)다. 집계 방법을 바꿔도 간격은 같은 방향으로 남는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>원격 측정에서는 설명력이 기준선 아래로 간다</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 사람이 기록 140개를 남기는 원격 측정 데이터에서는 같은 일이 더 크게 벌어진다. 이 과제는 분류와 달리 증상 점수를 숫자로 맞히는 회귀이고, 성적은 결정계수와 평균 절대 오차로 매긴다. 레코드 단위로 나누면 결정계수가 0.105다. 환자 단위로 나누면 −0.037로 내려간다. 음성에서와 같이 폴드 바깥 예측을 모아 계산하면 0.106 대 −0.065이고, 환자 단위로 다시 뽑아 견준 차이는 0.171(95% 신뢰구간 0.138~0.225)이다. 논문은 세 갈래 가운데 이 대목을 가장 심한 부풀림으로 꼽았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        결정계수가 음수라는 것은 특징을 전부 무시하고 학습 데이터의 평균 점수만 찍는 기준선보다도 못하다는 뜻이다. 다만 오차의 크기로 보면 간격이 그만큼 크지는 않다. 환자 단위 모델의 평균 절대 오차는 표에 8.86점, 본문에 9.12점으로 적혀 있고 평균값만 찍는 기준선은 8.91점이다. 어느 쪽을 집어도 기준선에 붙어 있고, 폴드 사이의 겹침을 보정한 쌍 검정에서도 p=0.716으로 둘은 구별되지 않았다. 처음 보는 환자 앞에서 이 모델이 더해 주는 몫은 측정되지 않았다고 읽는 편이 정확하다. 모델을 랜덤 포레스트로 바꾸면 결정계수가 −0.483, 오차가 10.53점으로 오히려 나빠진다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        모델이 무엇을 보고 증상 점수를 냈는지도 저자들이 함께 열어 봤다. 환자 단위로 정직하게 돌린 모델에서 예측에 가장 크게 기여한 변수는 나이였다. 평균 SHAP 값이 0.805로 두 번째인 DFA의 0.453보다 컸고, 나머지 음향 변수는 기여가 작거나 0으로 눌렸다. 나이는 사람마다 다르지만 한 사람 안에서는 거의 변하지 않는 값이다. 레코드 단위 모델이 보여 주던 설명력의 상당 부분은 증상의 음향 표지가 아니라 그 기록이 누구의 것인지를 가리키고 있었다. 모델이 병 대신 사람을 외운다는 설명이 변수 하나에 그대로 드러난 자리이기도 하다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            두 데이터가 겹치는 조건은 한 사람에게 기록이 여러 개 달려 있다는 것뿐이다. 과제는 분류와 회귀로 다르고 변수도 다른데, 같은 모양의 거품이 양쪽에서 나왔다. 한 데이터셋에서 우연히 생긴 일로 보기 어렵다는 뜻이고, 반복 측정이 들어간 자료라면 어디서든 같은 질문을 걸어야 한다는 뜻이기도 하다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="genes" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">유전자를 먼저 고르면 정확도가 0.998까지 뛴다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        혈액 전사체 데이터는 1명당 한 번만 측정하기 때문에 같은 사람이 양쪽에 앉을 일이 없다. 대신 다른 문이 열려 있다. 프로브가 22,277개인데 사람은 59명뿐이라, 모델에 넣기 전에 쓸 만한 유전자를 추려야 한다. 그 추리는 일을 언제 하느냐가 평가 결과를 가른다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전체 59명을 다 놓고 환자와 대조군을 가장 잘 가르는 프로브 50개를 먼저 뽑은 뒤 학습과 시험으로 나누면 정확도가 0.998이 나온다. 같은 방식으로 뽑되 학습 폴드 안에서만 뽑고 한 번도 보지 않은 폴드에서 평가하면 0.711이다. 차이는 0.287(95% 신뢰구간 0.096~0.477, p=0.003)이다. 프로브를 1,000개로 늘려도 0.997 대 0.797로 간격이 남고, 모델을 랜덤 포레스트로 바꿔도 0.963 대 0.747이다.
+                    </p>
+
+                    <div class="my-8 rounded-xl p-5 border themeable-border" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 640 270" class="w-full" role="img" aria-label="왼쪽은 59명 전체 데이터로 먼저 상위 50개 프로브를 고른 뒤 학습과 시험으로 나누는 방법을, 오른쪽은 학습과 시험을 먼저 나누고 학습 폴드 안에서만 프로브를 고르는 방법을 나타낸 도식. 왼쪽은 정확도 0.998이, 오른쪽은 정확도 0.711이 나온다.">
+                            <text x="16" y="22" font-size="13" font-weight="700" fill="var(--text-muted)">전체 코호트에서 먼저 고르기</text>
+
+                            <rect x="16" y="38" width="270" height="104" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"></rect>
+                            <text x="30" y="60" font-size="11" font-weight="700" fill="var(--text-muted)">① 59명 전체로 프로브 선택</text>
+                            <text x="30" y="82" font-size="11" fill="var(--text-muted)">상위 50개를 고른다</text>
+                            <text x="30" y="104" font-size="11" font-weight="700" fill="var(--text-muted)">② 그다음 학습·시험 분할</text>
+
+                            <text x="16" y="168" font-size="11" fill="var(--text-muted)">시험 쪽 정답이 프로브를 고르는</text>
+                            <text x="16" y="186" font-size="11" fill="var(--text-muted)">순간에 이미 참여했다.</text>
+                            <text x="16" y="216" font-size="18" font-weight="700" fill="var(--text-muted)">0.998</text>
+                            <text x="16" y="236" font-size="11" fill="var(--text-muted)">전사체 진단 정확도(AUROC)</text>
+
+                            <line x1="326" y1="16" x2="326" y2="246" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4 4"></line>
+
+                            <text x="350" y="22" font-size="13" font-weight="700" fill="#F86825">폴드 안에서만 고르기</text>
+
+                            <rect x="350" y="38" width="270" height="104" rx="8" fill="none" stroke="#F86825" stroke-width="1.5"></rect>
+                            <text x="364" y="60" font-size="11" font-weight="700" fill="#F86825">① 학습·시험 분할 먼저</text>
+                            <text x="364" y="82" font-size="11" fill="#F86825">학습 폴드와 시험 폴드를 가른다</text>
+                            <text x="364" y="104" font-size="11" font-weight="700" fill="#F86825">② 학습 폴드 안에서만 선택</text>
+
+                            <text x="350" y="168" font-size="11" fill="var(--text-secondary)">시험 폴드는 프로브를 고르는</text>
+                            <text x="350" y="186" font-size="11" fill="var(--text-secondary)">과정에 한 번도 등장하지 않는다.</text>
+                            <text x="350" y="216" font-size="18" font-weight="700" fill="#F86825">0.711</text>
+                            <text x="350" y="236" font-size="11" fill="var(--text-secondary)">전사체 진단 정확도(AUROC)</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted text-center mb-8">▲ 페블러스 원본 도식. 두 정확도는 모두 논문 본문의 값이다.</p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기까지만 보면 "나누기 전에 변수를 고르지 마라"로 읽기 쉽다. 저자들은 고르는 방식을 하나 더 넣어 견줬다. 정답 라벨을 전혀 보지 않고 값이 많이 흔들리는 프로브만 골라내는 분산 필터로 같은 비교를 돌렸다. 전체 코호트에서 고르면 0.502, 폴드 안에서 고르면 0.518로, 차이가 −0.016(95% 신뢰구간 −0.081~0.049, p=0.698)이다. 통계적으로 구별되지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 숫자가 모두 0.5 근처라는 점을 같이 봐야 한다. 동전을 던지는 수준이고, 전체 데이터로 맞춘 모델을 열어 보니 계수가 모조리 0으로 눌려 분류기에 상수항 하나만 남아 있었다. 라벨을 보지 않고 고른 프로브로는 어느 쪽에서 고르든 분류가 되지 않았다는 말이다. 뒤집어 보면 라벨을 보고 고르는 일 자체는 쓸모가 있다. 같은 지도 선택을 학습 폴드 안에 가둬 두자 동전 수준이던 모델이 0.71에서 0.80 사이로 올라갔다. 그래서 저자들은 안전장치를 "분할 전에 고르지 마라"가 아니라 "라벨이 학습 폴드 밖으로 새어 나가지 않게 하라"로 적었다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            문제는 나누기 전에 변수를 골랐다는 사실 자체가 아니다. 고를 때 정답을 봤는가다. 정답을 보고 고른 50개는 시험 문제를 추릴 때 답안지를 미리 펴 본 셈이고, 그래서 0.998이라는 숫자는 진단 능력 대신 그 참여의 크기를 보여 준다. 라벨을 보지 않은 선택은 똑같이 분할 전에 이뤄져도 숫자를 움직이지 않았다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="signal" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">거품을 걷어내도 남는 신호가 있다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        전사체 데이터에는 숨은 구조가 하나 더 있었다. 저자들이 샘플 파일 이름에 붙은 등록 코드를 들여다보니, 환자와 대조군이 함께 든 코드에 36명(환자 18, 대조 18)이 있고 한쪽만 든 코드에 23명(환자 22, 대조 1)이 있었다. 모집 시기에 따라 구성이 갈린 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 구조가 결과에 섞여 들었는지 확인하려고, 파킨슨병 환자만 남겨 놓고 유전자 발현으로 그 사람이 어느 모집 시기에 들어왔는지를 맞히게 했다. 정확도가 0.906(95% 신뢰구간 0.759~1.000)이다. 순열검정 통계량은 0.882였고 귀무분포의 평균이 0.515, 95분위가 0.703이라 p=0.010이 나왔다. 발현값의 일부가 병 대신 측정이 언제 이뤄졌는지를 가리키고 있었다는 신호다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그래서 환자와 대조군이 반반인 36명만 남겨 모집 구조를 빼고 다시 측정했다. 진단 정확도가 프로브 1,000개로 0.838, 폴드 안에서 고른 50개 패널로도 똑같이 0.838이었다. 폴드 안에서 정직하게 고른 조건에서 랜덤 포레스트로 패널 크기를 바꿔 가며 비교해도 50개가 0.811, 분산 필터로 고른 1,000개가 0.844이고 차이는 0.033(95% 신뢰구간 −0.065~0.130, 보정 p=0.486)으로 구별되지 않는다. 여러 폴드에서 거듭 뽑힌 프로브도 있었다. 절반 이상의 폴드에서 뽑힌 것이 19개, 80% 이상에서 뽑힌 것이 5개다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 50개라도 고르는 방법이 성적을 갈랐다. 값이 흔들리는 정도만 보고 고른 50개로는 0.497에 머물러 우연 수준을 넘지 못했고, 폴드 안에서 중요도를 따져 고른 50개는 0.811까지 올라갔다. 패널을 얼마나 줄이느냐보다 무엇을 보고 고르느냐가 앞선다. 다만 저자들은 50개가 1,000개와 같다고 선언하지 않았다. 손실의 한쪽 상한이 0.113이라, 0.05 마진으로 정식 비열등을 주장하려면 더 큰 코호트가 필요하다고 적었다. 안정적으로 뽑힌 19개 가운데 3개는 모집 시기를 가장 잘 맞히는 프로브 50개에도 들어 있다. 생물학으로 읽을 때 특히 조심해야 한다는 단서도 함께 달았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들이 윤리 항목에 따로 적어 둔 위험은 과잉 주장이다. 부풀려진 정확도를 단 분류기가 임상으로 넘어가면 거짓 안심이나 거짓 경보로 이어질 수 있고, 부풀려진 추정치는 문헌에 쌓여 어떤 표지를 더 파고들지까지 바꿔 놓는다. 그래서 이 감사는 엄격한 쪽 수치를 주된 결과로 올렸다. 전사체 패널도 진단 검사가 아니라 검증된 선택 절차로 부른다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 스스로 적은 한계는 세 가지다. 결론마다 근거가 되는 코호트가 데이터 종류별로 하나씩이고, 음성과 혈액의 대조군이 8명과 19명으로 작으며, 모집 시기를 샘플 파일 이름에서 추정했을 뿐 장비가 남긴 기록으로 확인하지는 못했다는 점이다. 마지막 항목은 이 절 앞머리의 배치 구조 분석에 그대로 걸린다. 저자들이 다음 과제로 꼽은 것도 안정적인 패널을 독립된 다른 코호트에서 검증하는 일이다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            이 절의 숫자들이 글의 방향을 한 번 꺾는다. 분할을 정직하게 바꾸면 성적은 내려가지만 0으로 가지는 않는다. 모집 구조를 걷어낸 36명에서도 0.838이 남고, 프로브를 스무 분의 일로 줄여도 그 값이 버틴다. 거품을 걷어내는 일은 신호를 지우는 일이 아니라 신호가 얼마짜리인지를 드러내는 일이다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 이 감사를 주목하는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문은 의료 AI 뉴스로 읽히기 쉽다. 데이터를 다루는 쪽에서 보면 다른 대목이 남는다. 모델을 한 줄도 바꾸지 않았고 원본 데이터도 그대로인데 성적이 0.1에서 0.3씩 움직였다는 사실이다. 그 사이에 있었던 작업은 둘뿐이다. 학습과 시험을 가르는 단위를 정했고, 변수를 고르는 일을 분할의 앞에 둘지 뒤에 둘지를 정했다. 둘 다 모델링이 아니라 데이터 준비 단계에서 내리는 결정이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 권고로 적은 다섯 항목도 전부 그 단계를 겨눈다. 그룹을 인식하는 분할기를 쓰고 반복마다 분할이 실제로 달라지는지 확인할 것, 환자 단위로 다시 뽑아 폴드 바깥 추정치를 모아 보고할 것, 분할 전 선택을 검토할 때 지도 선택 팔을 함께 둘 것, 변수를 줄여도 성능이 같다는 주장에는 동등성 마진을 미리 정해 둘 것, 결과 클래스 안의 배치 구조를 따로 감사할 것이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        첫 항목에는 저자들이 직접 걸려 본 함정이 붙어 있다. 파이썬 사이킷런의 GroupKFold는 행을 섞어도 분할이 다시 짜이지 않는다. 그룹을 크기 순서대로 폴드에 배정하기 때문인데, 음성 데이터의 행 순서를 열 번 바꿔 넣어 보니 환자가 폴드에 배정되는 모양이 매번 똑같았다. 반복 교차검증을 돌렸다고 적은 실험이 실은 같은 분할 하나를 열 번 되풀이한 것일 수 있다. 저자들은 StratifiedGroupKFold에 섞기를 켜서 서로 다른 열 개의 분할을 만든 다음, 그렇게 얻은 추정치만 검정에 올렸다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공급사가 내민 성적표를 받아 드는 쪽은 이 다섯을 세 개의 질문으로 줄여 물으면 된다. 아래 셋은 모델 구조나 파라미터 수를 묻지 않는다. 그런데도 성적표의 숫자가 얼마나 남을지는 이쪽이 먼저 알려 준다.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li>학습과 시험을 무엇을 단위로 갈랐는지 묻는다. 반복 측정이 있는 자료에서 기록 단위로 갈랐다면 그 숫자는 성능이 아니라 상한선이다.</li>
+                        <li>전처리와 변수 선택이 분할의 어느 쪽에서 돌았는지 묻는다. 정답을 보고 고른 변수가 분할 앞에 있으면 평가는 그 선택의 결과를 되읽는다.</li>
+                        <li>데이터가 언제 어디서 모였는지가 결과와 섞여 있지 않은지 묻는다. 모집 시기나 장비나 기관이 라벨과 같이 움직이면 모델은 그쪽을 먼저 배운다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스는 데이터를 AI가 쓸 수 있는 상태로 만든다. 값의 정확성만큼 값에 붙은 맥락도 품질 항목으로 둔다. 어느 사람에게서 나온 기록인지, 어느 시기에 수집했는지, 어느 장비가 만들었는지가 값에 붙어 있어야 평가를 설계할 때 그 선을 피해 갈 수 있다. 이 논문에서 환자 단위 분할이 가능했던 것도 데이터에 환자 식별자가 남아 있었기 때문이고, 모집 구조를 감사할 수 있었던 것도 파일 이름에 등록 코드가 남아 있었기 때문이다. 그 표식이 없는 데이터셋에서는 누출이 일어나도 일어난 줄 모른다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        남는 질문은 하나다. 우리가 받아 본 모델 성적표는 어떤 분할로 측정한 숫자인가. 이 물음에 답이 돌아오지 않는다면, 그 숫자는 아직 성능이 아니라 상한선으로 적어 두는 편이 안전하다.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=c6e7f730"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-11-15T17:05:52.512Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-15T17:22:51.636Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1794762352512-mxwpgc",
+                "version": "0.1.0",
+                "sha": "109ef0205f57bbb10c65adb8269687e482eb5e09",
+                "builtAt": "2026-11-14T04:37:37.454Z"
+              },
+              "recordedAt": "2026-11-15T18:42:58.869Z"
+            },
+            mainTitle: "파킨슨병 진단 AI, 배운 환자가 시험에 나오면 점수가 오른다",
+            subtitle: "한 환자의 녹음을 학습과 시험 중 한쪽에만 모으자 음성 진단 정확도가 0.892에서 0.780으로 내려간다 — arXiv 논문",
+            pageTitle: "파킨슨병 진단 AI 정확도 검증 — 환자 단위 분할과 유전자 선택 누출이 만든 거품 분석 | 페블러스",
+            category: "tech",
+            publishDate: "2026-11-16",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/parkinsons-diagnosis-ai-subject-level-leakage/ko/",
+            tags: ["파킨슨병 진단 AI", "의료 AI", "데이터 누출", "환자 단위 분할", "머신러닝 평가", "AUROC", "데이터 품질", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "파킨슨병 진단 AI의 정확도가 부풀려진다는 게 무슨 뜻인가?",
+                    answer: "모델이 병의 특징이 아니라 평가 설계의 허점을 맞히고 있다는 뜻이다. 이번 감사에서 음성 데이터의 정확도는 녹음을 통째로 섞어 나눌 때 0.892였지만, 한 사람의 녹음을 학습이나 시험 한쪽에만 두자 0.780으로 내려갔다. 모델도 데이터도 같았고 가르는 방법만 달랐다. 다만 저자들은 기존 결과를 가짜가 아니라 부풀려진 것으로 불러야 한다고 적었다."
+                },
+                {
+                    question: "레코드 단위 분할과 환자 단위 분할은 무엇이 다른가?",
+                    answer: "레코드 단위는 기록 하나하나를 무작위로 학습과 시험에 배분한다. 그러면 같은 환자의 다른 녹음이 양쪽에 함께 들어갈 수 있다. 환자 단위는 한 사람의 기록을 전부 같은 쪽에 몰아넣는다. 파이썬 사이킷런에서는 GroupKFold나 StratifiedGroupKFold가 이 일을 한다. 평가가 묻는 물음도 달라진다. 앞쪽은 본 적 있는 사람의 새 기록을 맞히는 능력이고, 뒤쪽은 처음 보는 사람을 맞히는 능력이다."
+                },
+                {
+                    question: "같은 환자가 양쪽에 있으면 왜 성적이 오르나?",
+                    answer: "모델이 병을 배우지 않고 사람을 외워도 점수가 나오기 때문이다. 음성 데이터는 한 사람이 녹음을 여섯 일곱 개 남긴다. 학습에서 그 사람의 목소리 버릇을 익히면 시험에 나온 같은 사람의 녹음을 알아볼 수 있고, 그 사람의 진단명은 이미 학습 쪽에 적혀 있었다. 진단 능력이 아니라 신원 확인 능력이 점수로 환산되는 셈이다."
+                },
+                {
+                    question: "원격 측정 데이터의 결정계수가 음수라는 건 무슨 뜻인가?",
+                    answer: "학습 데이터의 평균 점수만 찍는 기준선보다 설명력이 낮다는 뜻이다. 환자 단위로 나눈 이 모델의 결정계수는 −0.037이고 레코드 단위에서는 0.105였다. 다만 오차로 보면 간격이 그만큼 크지는 않다. 평균 절대 오차는 논문 표에 8.86점, 본문에 9.12점으로 적혀 있고 평균값만 찍는 기준선이 8.91점이라, 보정한 쌍 검정에서 둘은 구별되지 않았다(p=0.716). 처음 보는 환자에게 이 모델이 무엇을 더해 주는지는 이 데이터에서 확인되지 않았다."
+                },
+                {
+                    question: "전사체에서 유전자를 미리 고르면 왜 문제가 되나?",
+                    answer: "고르는 과정에 시험 데이터의 정답이 이미 참여하기 때문이다. 59명 전체를 놓고 환자와 대조군을 가장 잘 가르는 프로브 50개를 뽑은 뒤 나누면 정확도가 0.998이 나오고, 학습 폴드 안에서만 뽑으면 0.711이 나온다. 차이는 0.287이고 p=0.003이다. 프로브를 1,000개로 늘리거나 모델을 랜덤 포레스트로 바꿔도 간격은 남는다."
+                },
+                {
+                    question: "그럼 분할 전에는 어떤 전처리도 하면 안 되나?",
+                    answer: "그렇지는 않다. 논문이 대조군으로 둔 분산 필터는 정답 라벨을 전혀 보지 않고 값이 많이 흔들리는 프로브만 골라낸다. 이 방식은 전체 코호트에서 고르나 폴드 안에서 고르나 0.502 대 0.518로 차이가 −0.016이고 p=0.698이라 구별되지 않았다. 가르는 기준은 분할 전이냐 후냐가 아니라 그 과정에서 정답을 봤느냐다."
+                },
+                {
+                    question: "모집 시기 배치 효과는 어떻게 드러났나?",
+                    answer: "파킨슨병 환자만 남겨 놓고 유전자 발현으로 그 사람이 어느 모집 시기에 들어왔는지를 맞히게 했더니 정확도가 0.906이었다. 순열검정 p는 0.010이다. 등록 코드를 보면 환자와 대조군이 함께 든 코드에 36명, 한쪽만 든 코드에 23명이 있었고 뒤쪽은 환자 22명에 대조군 1명이었다. 다만 이 모집 시기는 기록된 메타데이터가 아니라 파일 이름에서 추정한 값이라고 논문이 밝혔다."
+                },
+                {
+                    question: "그러면 파킨슨병 진단 AI에 진짜 신호는 없는 건가?",
+                    answer: "남아 있다. 환자와 대조군이 반반이 되도록 모집 구조를 걷어낸 36명에서도 진단 정확도가 0.838이었고, 프로브 1,000개를 쓰든 폴드 안에서 고른 50개를 쓰든 같은 값이었다. 폴드 안에서 정직하게 고른 조건에서도 50개 패널과 1,000개 패널의 차이는 0.033으로 구별되지 않았다. 여러 폴드에서 거듭 뽑힌 프로브는 19개였고, 그중 5개는 80% 이상의 폴드에서 뽑혔다."
+                },
+                {
+                    question: "이 논문은 어떤 글인가?",
+                    answer: "오클랜드 공과대학 수리과학과의 남라타 다타와 빅토르 미란다 소베라니스가 2026년 10월 9일 arXiv에 제출한 감사 연구다. 분류는 통계 응용과 기계학습이고 식별 번호는 2611.14533이다. 새 모델을 제안하는 대신 기존 공개 데이터 세 벌에 두 가지 평가 절차를 걸어 그 차이를 측정했다."
+                },
+                {
+                    question: "모델 성적표를 받았을 때 무엇을 물어야 하나?",
+                    answer: "세 가지면 대부분 걸러진다. 학습과 시험을 무엇을 단위로 갈랐는지, 전처리와 변수 선택이 분할의 어느 쪽에서 돌았는지, 데이터를 모은 시기나 장비나 기관이 라벨과 같이 움직이지 않는지다. 반복 측정이 있는 자료를 기록 단위로 갈랐다면 그 숫자는 성능이 아니라 상한선으로 읽는 편이 안전하다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
