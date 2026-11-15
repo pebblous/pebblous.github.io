@@ -1,0 +1,50 @@
+# 새 글 색인 조건 검사 — noindex·canonical·hreflang·html lang + 공용 CSS/JS ?v= 내용 해시.
+#
+# 배경 (2026-11-15, blog-indexing WORKORDER I4): 미색인 360쪽, 크롤 요청의 53% 가 JS·CSS.
+# 글마다 ?v=발행일 을 붙여 실제 파일 8개가 주소 1,253개로 갈라졌다.
+#
+# 도구(tools/check-indexability.js)는 진본(blog-service)에서 관리, sync-to-sabon 으로 미러된다.
+# 이 워크플로 파일은 sync 대상이 아니라 사본 직접 관리. 도구가 아직 없으면 건너뛴다.
+#
+# - 새로 추가된 글(ko|en/index.html): 차단 검사 — 실패하면 엔진 자동 머지가 멈춘다.
+# - 고친 옛 글: 자산 꼬리는 보지 않고(--no-asset) 결과만 보고, 실패로 치지 않는다
+#   (옛 쪽 147건 정리는 별도 — 교정 PR 을 막지 않기 위해).
+
+name: Check Indexability
+
+on:
+  pull_request:
+    paths:
+      - '**/ko/index.html'
+      - '**/en/index.html'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin "${{ github.base_ref }}"
+
+      - name: Check new and changed articles
+        run: |
+          if [ ! -f tools/check-indexability.js ]; then
+            echo "⚠️ tools/check-indexability.js 없음 — 진본 sync 대기 중, 검사 건너뜀"
+            exit 0
+          fi
+          BASE="origin/${{ github.base_ref }}"
+          mapfile -d '' ADDED < <(git diff -z --name-only --diff-filter=A "$BASE"...HEAD -- '*/ko/index.html' '*/en/index.html')
+          mapfile -d '' CHANGED < <(git diff -z --name-only --diff-filter=M "$BASE"...HEAD -- '*/ko/index.html' '*/en/index.html')
+          status=0
+          if [ ${#ADDED[@]} -gt 0 ]; then
+            echo "## 새 글 ${#ADDED[@]}쪽 (차단 검사)"
+            node tools/check-indexability.js "${ADDED[@]}" || status=$?
+          fi
+          if [ ${#CHANGED[@]} -gt 0 ]; then
+            echo "## 고친 글 ${#CHANGED[@]}쪽 (보고만)"
+            node tools/check-indexability.js --no-asset "${CHANGED[@]}" || echo "△ 고친 옛 글의 색인 조건 문제 — 이 PR 을 막지는 않는다"
+          fi
+          exit $status
