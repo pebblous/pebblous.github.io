@@ -90,7 +90,7 @@ gh pr diff {PR-number}
 |---|------|-----------|
 | F1 | **인라인 CSS 최소화** | `<style>` 블록에 `common-styles.css`에 이미 존재하는 클래스(`.stat-card`, `.key-insight`, `.grade-bar` 등)를 재정의하지 않는지 확인. 중복 정의 발견 시 FAIL |
 | F2 | **표준 클래스명 사용** | `themeable-text`, `themeable-heading`, `themeable-muted` 등 표준 클래스 사용. `themeable-primary`, `themeable-secondary` 등 비표준 클래스 사용 시 FAIL |
-| F3 | **CSS 로드 순서** | `theme-variables.css` → `common-styles.css` → `tailwind-build.css` 순서. 캐시 버스팅 `?v=YYYYMMDD` 포함 |
+| F3 | **CSS 로드 순서** | `theme-variables.css` → `common-styles.css` → `tailwind-build.css` 순서. 캐시 버스팅 `?v=AUTO` 포함 |
 | F4 | **비표준 인라인 색상** | `style="color:#..."` 에 페블러스 브랜드 색상(#F86825, #14b8a6, #3B82F6) 외 사용 금지. `.grade-bad` 등 뱃지 배경색은 예외 |
 
 ### G. articles.json (3항목)

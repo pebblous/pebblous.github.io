@@ -66,6 +66,7 @@ echo '{"date":"YYYY-MM-DD","action":"publish","type":"pebblopedia","path":"pebbl
 ### Step 5: git push
 
 ```bash
+node tools/check-indexability.js --fix <글 폴더>/ko/index.html <글 폴더>/en/index.html   # 색인 조건 + ?v=AUTO → 내용 해시 (blog-publish §3.7). 차단(exit 1)이면 고치고 다시
 git add pebblopedia/{topic}/ articles.json history/changelog.jsonl
 git commit -m "feat: PebbloPedia [{mainTitle}] 한국어 편 퍼블리시"
 git push

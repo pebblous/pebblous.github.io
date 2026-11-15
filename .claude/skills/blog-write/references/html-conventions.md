@@ -30,9 +30,9 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
     <!-- SEO 메타 (2번 섹션 참조) -->
 
     <!-- Stylesheets (순서 고정 — css/styles.css는 인덱스 전용, 아티클에 포함 금지) -->
-    <link rel="stylesheet" href="/css/theme-variables.css?v=YYYYMMDD">
-    <link rel="stylesheet" href="/styles/tailwind-build.css?v=YYYYMMDD">
-    <link rel="stylesheet" href="/styles/common-styles.css?v=YYYYMMDD">
+    <link rel="stylesheet" href="/css/theme-variables.css?v=AUTO">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=AUTO">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=AUTO">
 
     <!-- GTM -->
     <script>(function(w,d,s,l,i){...})(window,document,'script','dataLayer','GTM-57L9F58B');</script>
@@ -58,7 +58,7 @@ HTML 체크리스트: `docs/blog-html-checklist.md`
 
     <div id="footer-placeholder"></div>
 
-    <script src="/scripts/common-utils.js?v=YYYYMMDD"></script>
+    <script src="/scripts/common-utils.js?v=AUTO"></script>
     <script>
         PebblousPage.init({ /* 7번 참조 */ });
     </script>

@@ -57,7 +57,7 @@ model: opus
 - 한국어에 italic 금지 → font-weight: 600 사용
 - `<h1>` 내부 텍스트 금지 (PebblousPage.init() 가 채움)
 - CSS 3종만: `common-styles.css`, `theme-variables.css`, `tailwind-build.css`
-- 캐시 버스팅: `?v=YYYYMMDD` (현재 날짜)
+- 캐시 버스팅: 날짜를 쓰지 않는다 — `?v=AUTO` 로 두면 발행 단계 `node tools/check-indexability.js --fix` 가 파일 내용 해시로 채운다(2026-11-15 색인 대책)
 
 ## 에러 핸들링
 

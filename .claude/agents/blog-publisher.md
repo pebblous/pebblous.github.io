@@ -74,6 +74,7 @@ echo '{"timestamp":"[UTC ISO 8601]","post":"[path]","action":"new-post","summary
 ### 5. Git Push
 
 ```bash
+node tools/check-indexability.js --fix <글 폴더>/ko/index.html <글 폴더>/en/index.html   # 색인 조건 + ?v=AUTO → 내용 해시 (blog-publish §3.7). 차단(exit 1)이면 고치고 다시
 git add -A
 git commit -m "feat: [아티클 제목] — KO 아티클 추가"
 git push
