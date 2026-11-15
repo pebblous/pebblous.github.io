@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent History Cleaning: Log Compaction Analysis | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="Editing only an agent's record after it writes a wrong value drops the next model's recovery from 50% to 44%. Salesforce AI Research measured the loss.">
+    <meta name="keywords" content="agent history cleaning, agent handoff, log compaction, context compaction, conversation summary, AgentCE-Bench, AppWorld, agent recovery, data quality, AI-Ready Data, Salesforce AI Research">
+
+    <!-- Main search keyword -->
+    <meta name="pb-search-keyword" content="agent history cleaning">
+    <meta name="pb-search-keyword-forms" content="agent history cleaning|AI 에이전트 기록 정리">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/agent-history-cleaning-record-world/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/agent-history-cleaning-record-world/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/agent-history-cleaning-record-world/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/agent-history-cleaning-record-world/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Agent History Cleaning Helps Only When the Error Is Gone From the System">
+    <meta property="og:description" content="Leave a stalled agent's wrong value in place and add an honest note and recovery climbs from 51% to 66%. Write the same fix in as an action already taken and it lands at 44%, under the 50% baseline.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/agent-history-cleaning-record-world/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/agent-history-cleaning-record-world/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Horizontal bar diagram comparing recovery under four ways of writing the same correct value into an agent's record">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-11-15">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Agent History Cleaning Helps Only When the Error Is Gone From the System">
+    <meta name="twitter:description" content="Leave a stalled agent's wrong value in place and add an honest note and recovery climbs from 51% to 66%. Write the same fix in as an action already taken and it lands at 44%, under the 50% baseline.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/agent-history-cleaning-record-world/en/image/index.png">
+    <meta name="twitter:image:alt" content="Horizontal bar diagram comparing recovery under four ways of writing the same correct value into an agent's record">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=20261115"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=20261115">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=20261115">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=20261115">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="Agent History Cleaning Helps Only When the Error Is Gone From the System">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/11/15">
+    <meta name="citation_online_date" content="2026/11/15">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#record-world" class="block pl-4 themeable-toc-link transition-colors duration-200">1. An Agent Leaves Two Things Behind, a Record and a World</a></li>
+                    <li><a href="#four-arms" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The Same Correct Value, Written Two Ways, Splits the Result</a></li>
+                    <li><a href="#receipt" class="block pl-4 themeable-toc-link transition-colors duration-200">3. The World Decides What a Success Receipt Is Worth</a></li>
+                    <li><a href="#practice" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Log Compaction and Conversation Summaries Touch Only the Record</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Why Pebblous Is Watching This Result</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            When an AI agent stops in the middle of a job and the work passes to another model, tidying up what the first one left behind is supposed to make the handoff easier. Salesforce AI Research put that assumption through an experiment, and the direction of the result flipped depending on how the tidying was done. The paper went up on arXiv on November 10, 2026. The design is plain. Freeze the state right after the agent writes a wrong value into persistent storage, change only the record, leave the actual world untouched, and hand the rest of the job to a different model.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The sharpest part is that both edits put the same value into the record. Leave the wrong value where it is and attach a note saying this action was wrong and here is the right value, and recovery climbs from 51% to 66%. Rewrite that same correct value as an action the agent has already carried out, and recovery falls to 44%. The presence of the answer inside the record predicts neither the size of the effect nor its sign. The gain is also narrow. Most of the 15-point rise came from the single cell the note named.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Sections 1 through 4 carry figures and terms taken from the body and appendix of the paper posted on arXiv. Section 5, which reads the result against data workflows that run log compaction and conversation summaries, is this article's own interpretation.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Figures</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        The first two numbers show how far the way a record is written can push recovery. The last two measure how much the same sentence's worth changes with the world.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: <a href="https://arxiv.org/abs/2611.14654" target="_blank" rel="noopener" class="underline">arXiv:2611.14654</a>, Sections 4 and 5.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">51% → 66%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Recovery when the answer arrives only as a note</p>
+                            <p class="text-xs themeable-muted mt-1">The wrong value stays in both the record and the world</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">44%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Recovery when the same answer is written in as handled</p>
+                            <p class="text-xs themeable-muted mt-1">Below the 50% baseline of a record nobody touched</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">45% → 28%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Whole-task success when a success receipt meets a world with no write</p>
+                            <p class="text-xs themeable-muted mt-1">The same receipt reaches 49% when the write is there</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">27 points</p>
+                            <p class="text-sm themeable-text-secondary mt-1">How far the worth of one receipt swings with the world</p>
+                            <p class="text-xs themeable-muted mt-1">The interval clears zero at the 97.5% level</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="record-world" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">An Agent Leaves Two Things Behind, a Record and a World</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        When an agent stops mid-job, two things are left. One is a line-by-line account of what it meant to do, which tools it called, and what the system answered back. The other is the state those actions actually changed: rows that went into a database, values that were committed, files written to disk. The paper calls the first a record and the second a world, and those are the words used here.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Nothing guarantees that the two point at the same thing. A record is a document that describes a world, and editing a document does not change what the document describes. The paper's principle follows from that. Whether an edit to the record helps or hurts is settled not by what was added to it, but by whether the world still holds the error.
+                    </p>
+
+                    <div class="my-8 rounded-xl p-5 border themeable-border" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 640 250" class="w-full" role="img" aria-label="Two comparison diagrams. Right after the action, both record and world hold the same wrong value. After only the record is edited, the record reads fixed while the world still holds the wrong value, so the two no longer match.">
+                            <text x="20" y="24" font-size="13" font-weight="700" fill="var(--text-muted)">Editing the record does not change the world</text>
+
+                            <text x="20" y="54" font-size="11" fill="var(--text-secondary)">Right after the action — record and world point at the same value</text>
+                            <rect x="20" y="62" width="250" height="46" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"></rect>
+                            <text x="145" y="90" font-size="13" text-anchor="middle" fill="var(--text-secondary)">Record: wrong value</text>
+                            <text x="305" y="90" font-size="18" font-weight="700" text-anchor="middle" fill="var(--text-muted)">=</text>
+                            <rect x="370" y="62" width="250" height="46" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5"></rect>
+                            <text x="495" y="90" font-size="13" text-anchor="middle" fill="var(--text-secondary)">World: wrong value</text>
+
+                            <text x="20" y="146" font-size="11" fill="var(--text-secondary)">After only the record is edited — the world stays as it was</text>
+                            <rect x="20" y="154" width="250" height="46" rx="8" fill="#F86825"></rect>
+                            <text x="145" y="182" font-size="13" text-anchor="middle" fill="#ffffff" font-weight="700">Record: fixed</text>
+                            <text x="305" y="182" font-size="20" font-weight="700" text-anchor="middle" fill="#F86825">≠</text>
+                            <rect x="370" y="154" width="250" height="46" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+                            <text x="495" y="182" font-size="13" text-anchor="middle" fill="var(--text-secondary)">World: still wrong</text>
+
+                            <text x="20" y="226" font-size="11" fill="var(--text-muted)">Editing reaches only the record. The world stays unless someone changes it separately.</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted text-center mb-8">▲ Pebblous original diagram. It shows where record and world pull apart. | Source: <a href="https://arxiv.org/abs/2611.14654" target="_blank" rel="noopener" class="underline">arXiv:2611.14654</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The experiment runs in five steps. Freeze the whole state right after the agent commits a wrong value to persistent storage, swap the record for a different version, restore the world exactly as it was frozen, hand it to a receiver model, and count how much of the remaining work that model sets right. Edits come in three kinds: revealing something the original record did not carry, concealing something it did, or asserting something that was never true.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That the receiving side is not the author of the record is also part of the design. The frozen states are trajectories other models produced in earlier work, so the model picking the job up is mostly reading someone else's record for the first time. That matches the practice of passing a long session between models. The authors are six researchers at Salesforce AI Research, and they released the code, the configuration, and even the sentences used in the edits as ancillary files. Both benchmarks are pinned to a commit and a package version.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="four-arms" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Same Correct Value, Written Two Ways, Splits the Result</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The first experiment ran on AgentCE-Bench, a tool-using environment built in earlier work, where an agent fills the empty cells of a grid one at a time. Hidden values can only be learned by calling a tool, and a value written into a cell lands in persistent state. The paper's example is a weekly plan: find a meal or a venue for one square and fill it in. Of 320 frozen states, 319 were used. Each one is the moment right after the agent wrote a wrong value at the two-thirds mark of the task. The one state where the agent corrected itself was dropped.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Four edits were applied to the same scene. The last two put an identical correct value into the record and differ only in what carries it.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li>Change nothing. The wrong value stays in both the record and the world, and the correct one is never mentioned.</li>
+                        <li>Attach a neutral note with no content. A control matched for position and length.</li>
+                        <li>Leave the wrong value in place and write plainly that this action was wrong and the right value is this one.</li>
+                        <li>Rewrite the record so the agent itself appears to have handled that cell correctly already. What would have been a note beside the work becomes something the agent itself did.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The score is recovery: the share of the first three unfilled cells in the receiver's look-ahead that it fills correctly inside a 24-step budget. Both experiments use gpt-5.5 and claude-sonnet-5 as receivers, and the figures for the four conditions pool those two.
+                    </p>
+
+                    <div class="my-8 rounded-xl p-5 border themeable-border" style="background:var(--card-bg)">
+                        <svg viewBox="0 0 640 350" class="w-full" role="img" aria-label="Four horizontal bars. A record with nothing changed recovers 50.13%, a record with an empty note attached recovers 50.57%, a record that keeps the wrong value and gives the answer as a note recovers 65.78%, and a record rewritten as already handled correctly recovers 43.70%. A vertical dashed line marks the untouched baseline, and only the bar for the answer given as a note runs past it.">
+                            <text x="20" y="26" font-size="13" font-weight="700" fill="var(--text-muted)">Recovery after a record edited four different ways is handed over</text>
+
+                            <text x="20" y="64" font-size="11" fill="var(--text-secondary)">Nothing changed</text>
+                            <rect x="20" y="72" width="301" height="22" rx="4" fill="var(--text-muted)"></rect>
+                            <text x="333" y="88" font-size="13" font-weight="700" fill="var(--text-secondary)">50.13%</text>
+
+                            <text x="20" y="132" font-size="11" fill="var(--text-secondary)">Empty note attached</text>
+                            <rect x="20" y="140" width="303" height="22" rx="4" fill="var(--text-muted)"></rect>
+                            <text x="335" y="156" font-size="13" font-weight="700" fill="var(--text-secondary)">50.57%</text>
+
+                            <text x="20" y="200" font-size="11" fill="#F86825">Wrong value kept, answer given as a note</text>
+                            <rect x="20" y="208" width="395" height="22" rx="4" fill="#F86825"></rect>
+                            <text x="427" y="224" font-size="13" font-weight="700" fill="#F86825">65.78%</text>
+
+                            <text x="20" y="268" font-size="11" fill="var(--text-secondary)">Rewritten as already handled correctly</text>
+                            <rect x="20" y="276" width="262" height="22" rx="4" fill="var(--text-secondary)"></rect>
+                            <text x="294" y="292" font-size="13" font-weight="700" fill="var(--text-secondary)">43.70%</text>
+
+                            <line x1="321" y1="60" x2="321" y2="306" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4 4"></line>
+                            <text x="20" y="330" font-size="11" fill="var(--text-muted)">The dashed line marks the recovery of a record nobody touched. Bar length is proportional to recovery.</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs themeable-muted text-center mb-8">▲ Pebblous original diagram. The four recovery figures the paper reports, placed on one axis. | Source: <a href="https://arxiv.org/abs/2611.14654" target="_blank" rel="noopener" class="underline">arXiv:2611.14654</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The honest note sits 15.20 points above the control, with a 95% confidence interval from 12.46 to 18.00. The record written as completed sits 6.43 points below the untouched one, with an interval from −8.88 to −3.97. The paper had registered the gap between those two effects as its primary estimand, and it came to 21.63 points, interval 18.21 to 25.08. That the empty note was indistinguishable from doing nothing belongs in the same reading. What moved the result was not that a note was present but what the note said.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The honest note and the completed-action record both carry the same correct value inside the agent's own tool call. If a receiving model worked by copying whatever value it sees, the version written as completed ought to do better, since the value it needs to write is already sitting there as a finished sentence. It finished more than 20 points behind instead. That the answer is in the record tells you neither how large the effect will be nor which way it will go.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            The explanation the paper reaches for splits the record into two functions. A record hands over values, and it also signals that work remains. The honest note says the wrong value is still sitting over there, which lifts the remaining work into view. The record written as completed hands over the same value while saying this cell is finished. A model taking over does not reopen finished work. The paper calls this the map account: the record is read as a map of what is left, and a cell marked done is not visited again. The rival picture is the repair account, where the agent notices the wrong value and fixes it, something models do poorly unaided. The authors lean toward the map account without closing the question.
+                        </p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mt-6 mb-6">
+                        The size of the gain comes with a caveat. Of the 15.20 points, 11.57 arrived at the very cell the note named, and the remaining cells added 3.63. In the 47 states where the note named no cell at all, the direction was unresolved. An honest record reads less like a lift in the quality of the whole job and more like a pointer to one named error.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="receipt" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The World Decides What a Success Receipt Is Worth</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The second experiment turns the direction around. The stage is AppWorld, where an agent handles user requests in Python over a populated database that mimics real application APIs, and the grade is whether the whole task finished correctly. This time the record was held fixed and the world was varied both ways.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The freeze point is right after a step that writes to the database. Two things are varied separately there. One is the receipt that lands in the record: either the write step carries a success response, or it carries a fixed one-line error saying the operation did not take effect and no application data was changed. The other is the world: the write either reached the database or it did not. Only two of the four cells hold a receipt that matches the world, and in the other two, record and world say different things.
+                    </p>
+
+                    <div class="overflow-x-auto mb-3">
+                        <table class="w-full border themeable-border rounded-lg">
+                            <thead class="themeable-table-header-row">
+                                <tr>
+                                    <th class="text-left themeable-heading border-b themeable-border">Receipt in the record</th>
+                                    <th class="text-left themeable-heading border-b themeable-border">No trace of the write in the world</th>
+                                    <th class="text-left themeable-heading border-b themeable-border">Write present in the world</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">It succeeded</td>
+                                    <td class="themeable-text border-b themeable-border">28.46%</td>
+                                    <td class="themeable-text border-b themeable-border">48.85%</td>
+                                </tr>
+                                <tr>
+                                    <td class="themeable-text border-b themeable-border">It did not take effect</td>
+                                    <td class="themeable-text border-b themeable-border">45.38%</td>
+                                    <td class="themeable-text border-b themeable-border">38.46%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs themeable-muted mb-8">▲ Whole-task success measured across the four combinations of receipt and world. | Source: <a href="https://arxiv.org/abs/2611.14654" target="_blank" rel="noopener" class="underline">arXiv:2611.14654</a></p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Hold the world fixed in one column and compare the two receipt rows, and the work a success receipt does comes out. With no trace of the write in the world, the success receipt cut success by 16.92 points, with an interval from −24.62 to −9.62. With the write present, the same receipt lifted it by 10.38 points, interval 3.46 to 17.69. The distance between those two effects is 27.31 points, interval 14.23 to 41.54, which clears zero even at the 97.5% level. The two cells where receipt and world agree differ by only 3.47 points. What separates the scores is not the sentence in the receipt but whether that sentence matches the world.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The scale is 65 task families, 638 complete four-condition blocks, and 2,552 continuations. Widening the receivers to eight, six pointed the same way at the 97.5% level and seven did at 95%, and the widest gap reached 43.65 points. One model's direction was unresolved.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Re-issuing that write step is a diagnostic the paper had registered in advance, and it tracked the world rather than the record. Taking only the runs that received a success receipt, 52.69% re-issued the step when the world held no trace of the write, and that fell to 10.38% when the trace was there. The gap is 42.31 points, interval 32.69 to 51.92. Whether the receipt sentence itself moved this rate split by model: it moved in one and was unresolved in another. The numbers fit a receiving model that reads the world and moves with what it finds better than they fit one that trusts the record and skips the check. Even so, with no trace present, close to half did not re-issue the step, and in that share the wrong state hardens into place.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The opposite cell is cut for a different reason. When the write did land and the receipt says it failed, the model does the same work once more. Among the 40 of 65 task families that insert a row into the database, one receiver given a false failure receipt wrote the same row again in 51.25% of its continuations, against 3.75% under a true success receipt. That is where a failure receipt pulls success down to 38.46% in a world that already holds the write.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Whether a receipt is true or false is not written inside the receipt. The same line saying it succeeded helps in one world and takes 27 points off in another. The quality of work done on a record cannot be judged from the record alone.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="practice" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Log Compaction and Conversation Summaries Touch Only the Record</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's related work puts three practices in its sights. The first is compaction: when context runs long, failed attempts are quietly removed to make room. The second is repair, which covers rollback and replay, where record and world are wound back together. The third is handoff, choosing what to show the next model on top of a frozen store.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Of the three, this paper's result bears on the first and the third. Repair winds record and world back together, so it never creates the situation where the two drift apart. Compaction and handoff work on the record alone. Deleting a failed attempt does not delete the row that attempt left in a database, and a step a conversation summary shortens to setup is done may in fact be only half applied. The conditions that produced this paper's 44% and 28% are that same shape rebuilt in a lab. The record is not the only thing that goes out of step when paused work is resumed later. Cases where the model and the index change while the job waits, so that the same words come to mean something else, are covered separately in <a href="/blog/agent-semantic-isolation/en/" class="underline">semantic isolation for long-running AI workflows</a>.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The authors wrote down a fair number of limits themselves. The content of a note and the channel it arrived through were not pulled apart. Models trained to act after long reasoning tend to trust a note more when it looks like an instruction from the user, and that channel effect is mixed in with the content effect. AppWorld's receipts also vary in content and in truth at the same time, so the two effects were measured together. Of the eight receiver models, the ones carrying the main result are a minority, and two preregistered analyses were replaced by reimplementations after a sealed script would not run again. A nine-condition control meant to separate whether the completed-action record works by revealing the answer or by pointing at a cell did not make it to the end either. Of 4,320 planned units, 4,068 were collected, and specificity was unresolved at the 3-point margin set in advance.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The edits and the states were chosen by the researchers too. What happens when someone sets out to falsify a record on purpose is not something this experiment answers. The 6.43-point drop the completed-action record produced is a size that well-meaning summarizing and compaction can also produce. How far a party trying to deceive could push a record is left to be measured separately.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Is Watching This Result</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In data quality work, cleaning is mostly understood as deleting. Fill the missing values, strip the duplicates, drop the failed logs. The premise that the cleaner version is the more usable one rarely comes up for testing. The condition this paper adds touches that premise. As long as the thing a record describes is still sitting out there unchanged, a cleaned record is not help but a document at odds with the facts.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The split between record and world is not a strange idea in data work. Source and derivative, logs and actual system state, catalog metadata and what is really in storage all share the same structure. Quality checks usually look at one side only: whether the logs are consistent, whether the schema matches, what percentage is missing. This paper puts a different question. It asks whether the record still lines up with the thing it claims to describe.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        For anyone designing record cleaning while bringing AI agents into the work, three items belong on the checklist.
+                    </p>
+
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li>Mark instead of deleting. Rather than stripping a failed step out, write down that it failed. The condition that lifted recovery gave the answer and left the wrong value where it was. The one that wrote the same answer in and covered the wrong value over as finished work fell below the baseline.</li>
+                        <li>Keep summaries from declaring completion. The sentences a conversation summary or a context compaction shortens to handled have the same shape as the completed-action record. Write confirmed completion and assumed completion in different words.</li>
+                        <li>Read the world once before handing over. A single step that checks whether a write the record calls a success actually survived in storage produces information no amount of careful record editing can create.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        One question is left. That failure stripped out of the log, that step a summary shortened to a single line, is it still alive somewhere in the system? If it is, the cleaned record is a wrong map handed to the next person or the next model. This paper put numbers on how much further a model following that map goes wrong.
+                    </p>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Pakhomov, E., Koul, A., Liu, H., Pang, B., Joty, S., Nijkamp, E. (2026). "<a href="https://arxiv.org/abs/2611.14654" target="_blank" rel="noopener">Cleaning an Agent's History Hurts When the World Still Holds the Error</a>." arXiv:2611.14654 (Salesforce AI Research).</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=20261115"></script>
+    <script src="/scripts/citation-download.js?v=20261115" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-11-14T23:02:15.164Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-14T23:17:25.500Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1794697335164-uioxv7",
+                "version": "0.1.0",
+                "sha": "109ef0205f57bbb10c65adb8269687e482eb5e09",
+                "builtAt": "2026-11-14T04:37:37.454Z"
+              },
+              "recordedAt": "2026-11-15T00:19:08.438Z"
+            },
+            mainTitle: "Agent History Cleaning Helps Only When the Error Is Gone From the System",
+            subtitle: "Attach a note to a stalled agent's wrong value and recovery climbs from 51% to 66%; write it up as already fixed and it drops to 44%",
+            pageTitle: "Agent History Cleaning: Log Compaction Analysis | Pebblous",
+            category: "tech",
+            publishDate: "2026-11-15",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/agent-history-cleaning-record-world/en/",
+            tags: ["agent history cleaning", "agent handoff", "context compaction", "conversation summary", "AgentCE-Bench", "AppWorld", "data quality", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "What does agent history cleaning refer to?",
+                    answer: "Any work done on the record an agent has built up before it is passed to the next stage. Compaction that removes failed attempts once the context runs long, summarization that squeezes a long exchange into a few lines, and handoff that picks what another model gets to see all belong to it. What this paper measured is what happens when that work and the world disagree."
+                },
+                {
+                    question: "How are a record and a world different?",
+                    answer: "A record documents intent, tool calls, and system responses. A world is the state those actions left behind: a database row, a committed value, a file on disk. The paper uses record and world for the pair. Editing the first leaves the second exactly as it was."
+                },
+                {
+                    question: "What separates an honest note from a completed-action record?",
+                    answer: "The correct value entering the record is identical in both. What carries it is not. One keeps the wrong value visible and places the right value beside it. The other rewrites the record so the agent appears to have handled the cell properly on its own. The first took recovery to 66%, the second to 44%."
+                },
+                {
+                    question: "Why does the result get worse when the answer is already in the record?",
+                    answer: "Because, on the paper's account, a record carries two signals at once. It supplies a value, and it says whether anything remains. A record written as handled supplies the value and declares the cell closed. The next model does not reopen a closed cell, so the wrong value sitting in the world stays."
+                },
+                {
+                    question: "What are the two sides of the 27 points?",
+                    answer: "It is how far the effect of a success receipt on AppWorld's whole-task success spread apart across worlds. With no trace of the write, the success receipt took 16.92 points off; with the trace present, it added 10.38. The distance between those two, 27.31 points, keeps an interval clear of zero at the 97.5% level."
+                },
+                {
+                    question: "How was the 51% recovery counted?",
+                    answer: "By whether the receiver filled the first three unfilled cells in front of it correctly inside a 24-step budget. A record nobody touched came out at 50.13% and the empty-note control at 50.57%. The point is that nothing separated those two. A note existing did not move recovery on its own."
+                },
+                {
+                    question: "Where did the recovery gain land?",
+                    answer: "Not evenly. Of the 15.20 points the honest note added, 11.57 arrived at the one cell the note named, while the other unfilled cells contributed 3.63. Across the 47 states where no cell was named, the sign itself was unresolved. Reading it as one named error getting corrected is closer than reading it as the whole job improving."
+                },
+                {
+                    question: "Does this mean log compaction should not be used?",
+                    answer: "That is not the conclusion. Among the three practices the paper separates, rollback and replay wind record and world back together and never produce the problem. The trouble sits with compaction and handoff, which work on the record alone. Checking whether a deleted attempt's trace in the world is cleared along with it avoids the same trap."
+                },
+                {
+                    question: "What are the limits of this experiment?",
+                    answer: "Several are the authors' own. Note content and note channel were not pulled apart, and AppWorld's receipts varied in content and truth together. Only a minority of the eight receiver models carry the main result, and two preregistered analyses were replaced by reimplementations once a sealed script stopped running. Which edit went on which state was the researchers' choice, so deliberate deception sits outside the study."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
