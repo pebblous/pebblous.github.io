@@ -547,7 +547,7 @@ components:
 
     PipelineType:
       type: string
-      enum: [blog, report, dc-story, pebblopedia, pb-story, biz-report, ko-manuscript]
+      enum: [blog, report, dc-story, pebblopedia, pb-story, biz-report, ko-manuscript, revise]
       description: |
         Pipeline templates. 각 type은 진본 `.claude/skills/`의 같은 이름 스킬에 매핑:
 
@@ -560,6 +560,7 @@ components:
         | `pb-story` | `pb-story-produce` | ⏳ Phase 1 추가 |
         | `biz-report` | `biz-produce` | ⏳ Phase 1 추가 |
         | `ko-manuscript` | (blog-write·seo-check·sns-write·blog-publish 부분 사용) | ✅ 2026-11-16 |
+        | `revise` | (voice-edit·blog-publish 부분 사용) — 발행된 글 수정 PR | ✅ (지정 제목·PR 전 관문 2026-11-16) |
 
         현재 `blog-mcp-stdio.ts` PIPELINES에는 blog/report/dc-story 3종 구현.
         나머지 3종은 자산 3 분리 시 Engine을 일반화해서 6종 모두 지원 예정.
@@ -580,7 +581,7 @@ components:
     StartPipelineRequest:
       type: object
       required: [type]
-      description: "`topic` 은 type=ko-manuscript 를 뺀 모든 type 에서 필수."
+      description: "`topic` 은 type=ko-manuscript·revise 를 뺀 모든 type 에서 필수. revise 는 targetPath·instruction 필수."
       properties:
         type:
           $ref: '#/components/schemas/PipelineType'
@@ -592,6 +593,31 @@ components:
           type: string
           pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
           description: type=ko-manuscript 전용(선택) — 글 주소 `blog/<slug>/`. 이미 공개된 slug 면 409.
+        targetPath:
+          type: string
+          description: type=revise 전용 — 고칠 발행 글. 글 주소(`https://blog.pebblous.ai/blog/<slug>/ko/`) 또는 `blog/<slug>/`(깊은 옛 경로 `project/DAL/code-painting/` 도). 요청한 언어 파일이 origin/main 에 없으면 404. 같은 글 수정이 진행 중이거나 수정 PR 이 열려 있으면 409.
+        instruction:
+          type: string
+          description: type=revise 전용 — 본문 수정 지시(항목별).
+        languages:
+          type: array
+          items: { type: string, enum: [ko, en] }
+          description: type=revise 전용 — 고칠 언어(기본 ko·en). 테일넷 관문은 ["ko"] 로 고정한다.
+        lenses:
+          type: array
+          items: { type: string, enum: [content, tone, structure] }
+          description: type=revise 전용 — 기본 ["content"].
+        titles:
+          type: object
+          additionalProperties: false
+          description: |
+            type=revise 전용(선택, languages 에 ko 필요) — 지정 제목. AI 수정 뒤 코드(revise-pin)가 ko 파일에 글자 그대로 넣고,
+            PR 전에 커밋본과 대조한다. 다르면 PR 없이 run 실패. 한 줄·앞뒤 공백 없음·200자 이하.
+            mainTitle·subtitle 은 화면에 innerHTML 로 그려지므로 `<` `>`·HTML 엔티티(&…;)는 400.
+          properties:
+            mainTitle: { type: string, description: "본문 제목 — config.mainTitle·og:title·twitter:title·articles.d 사이드카 title" }
+            subtitle: { type: string, description: "부제 — config.subtitle" }
+            pageTitle: { type: string, description: "검색 제목 — config.pageTitle·<title>" }
         topic:
           type: string
           minLength: 5
