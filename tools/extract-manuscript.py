@@ -46,6 +46,9 @@ class ManuscriptExtractor(HTMLParser):
         self._bold = 0
         self._italic = 0
         self._code = 0
+        # <pre> 코드 블록 — 줄바꿈·들여쓰기를 그대로 모아 ``` 울타리로 낸다(인라인 백틱으로 뭉개지 않게).
+        self._pre = 0
+        self._pre_buf = []
         self._href = None
         self._link_text_start = None
         # 리스트 컨텍스트 스택: 'ul' | 'ol'(항목 번호와 함께)
@@ -163,6 +166,15 @@ class ManuscriptExtractor(HTMLParser):
             self._flush_block()
             return
 
+        if tag == "pre":
+            self._flush_block()
+            self._pre += 1
+            if self._pre == 1:
+                self._pre_buf = []
+            return
+        if self._pre:
+            return  # <pre> 안의 <code>·<span>(구문 강조) 등은 글자만 모은다
+
         # 인라인 서식
         if tag in ("strong", "b"):
             self._bold += 1
@@ -195,6 +207,20 @@ class ManuscriptExtractor(HTMLParser):
 
         if self.skip_depth:
             self.skip_depth -= 1
+            self.main_depth -= 1
+            return
+
+        if self._pre:
+            if tag == "pre":
+                self._pre -= 1
+                if not self._pre:
+                    code = "".join(self._pre_buf).strip("\n")
+                    self._pre_buf = []
+                    if code.strip():
+                        self.out.append("```")
+                        self.out.extend(code.split("\n"))
+                        self.out.append("```")
+                        self.out.append("")
             self.main_depth -= 1
             return
 
@@ -326,6 +352,9 @@ class ManuscriptExtractor(HTMLParser):
         if not self.in_main or self.skip_depth:
             return
         text = data
+        if self._pre:
+            self._pre_buf.append(text)
+            return
         if not text.strip() and "\n" in text:
             return
         # 표 셀 안이면 셀 버퍼로
