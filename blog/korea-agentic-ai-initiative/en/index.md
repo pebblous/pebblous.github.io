@@ -1,7 +1,7 @@
 ---
 title: How Will Korea
 subtitle: Korea
-date: 2026-11-15
+date: 2026-11-17
 category: tech
 source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
@@ -36,7 +36,7 @@ Sources: [Korea Policy Briefing (2026-07-23)](https://www.korea.kr/news/policyNe
 **Under 10%** — Human intervention the R&D aims at — Finishing real-world work with almost no human hand on it is the project's target
 
 <!-- stat-card -->
-**0** — Safety and trust guidelines published — Release is targeted before the end of 2026, and no publication is confirmed as of November 15
+**0** — Safety and trust guidelines published — Release is targeted before the end of 2026, and no publication is confirmed as of November 17
 
 ## Inside the July 23 Announcement
 
@@ -100,7 +100,7 @@ The most recent signal arrived on November 6, when the ministry and the Korea In
 | September | Verification consortium confirmed, dataset widened to 7,000 cases or more | Under construction |
 | September | Coverage of the commission's guide and the ministry's guideline, both planned within the year | In preparation |
 | November 6 | Agentic AI Zero Trust Guide published (MSIT and KISA) | Published |
-| November 15 | Text of the safety and trust guideline, output of the evaluation base | Not confirmed |
+| November 17 | Text of the safety and trust guideline, output of the evaluation base | Not confirmed |
 
 ▲ Public material and coverage arranged by date. Sources: ETNews and Money Today (2026-04-01), ZDNet Korea (2026-05-11), Korea Policy Briefing (2026-07-23), Aju Business Daily (2026-07-30), Digital Daily (2026-09-03 and 2026-11-06), e-Focus (2026-09).
 

@@ -15,7 +15,7 @@
 
 시험 도구 쪽은 이미 움직이고 있다. 과기정통부와 한국지능정보사회진흥원이 공고한 검증 체계 사업에 정부출연금 18억 원이 붙었고, 9월에 확정된 수행 컨소시엄은 검증 데이터셋을 공고 기준 5,000건 이상에서 7,000건 이상으로 늘렸다. 예약 가능 시간이나 가격처럼 실시간으로 바뀌는 데이터까지 시나리오에 들어간다.
 
-규범 문서 쪽은 속도가 다르다. 11월 6일 과기정통부와 한국인터넷진흥원이 에이전틱 AI 제로트러스트 안내서를 먼저 내놓았고, 가이드라인 본체는 11월 15일까지 공개가 확인되지 않는다. 약속한 시한이 연말이라 기한은 남아 있다. 다만 올해 안에 에이전트를 업무에 넣으려는 기업이 참고할 공식 문서는 지금 그 안내서 한 건이다.
+규범 문서 쪽은 속도가 다르다. 11월 6일 과기정통부와 한국인터넷진흥원이 에이전틱 AI 제로트러스트 안내서를 먼저 내놓았고, 가이드라인 본체는 11월 17일까지 공개가 확인되지 않는다. 약속한 시한이 연말이라 기한은 남아 있다. 다만 올해 안에 에이전트를 업무에 넣으려는 기업이 참고할 공식 문서는 지금 그 안내서 한 건이다.
 
 안내서가 확인 절차를 두라고 지목한 자리는 입력을 받는 곳과 도구를 부르는 곳, 일을 넘기는 곳, 바깥과 통신하는 곳이다. 지점마다 확인한다는 말을 기록 쪽에서 뒤집으면, 그 지점마다 무엇을 근거로 그렇게 했는지가 남아 있어야 한다는 뜻이 된다. 점수를 매기려면 채점할 대상이 먼저 있어야 한다.
 
@@ -35,7 +35,7 @@ The Ministry of Science and ICT announced the Agentic AI Initiative on July 23 a
 
 The testing side is already under way. A verification project with the National Information Society Agency carries 1.8 billion won, and the consortium confirmed in September raised the dataset from the 5,000 cases asked for to more than 7,000. Scenarios take in data that moves in real time, like prices and booking slots.
 
-The drafting side keeps another pace. A zero trust guide for agentic AI arrived on November 6 from the ministry and the Korea Internet and Security Agency, while the guideline itself is unpublished as of November 15. The deadline the government set is the end of the year, so the time has not run out. For a company putting an agent into service before then, it is the one official document on the desk.
+The drafting side keeps another pace. A zero trust guide for agentic AI arrived on November 6 from the ministry and the Korea Internet and Security Agency, while the guideline itself is unpublished as of November 17. The deadline the government set is the end of the year, so the time has not run out. For a company putting an agent into service before then, it is the one official document on the desk.
 
 The guide names four places to check: where input is taken in, where a tool is called, where a task is passed on, where something is sent outside. Turn "check at each place" toward the record and it asks for something to be left behind at each. Nothing can be scored before it exists.
 
