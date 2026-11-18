@@ -18,7 +18,7 @@ _UNESCO and UCL put the report out at COP31 on November 16, 2026 — the survey 
 
 > The three findings in the report, though, were measured on three different sets of models. The survey as a whole covers 33 models; 15 of those took the user push-back test; 5 took the test on accuracy by language. Every time one of these numbers travels, the set it came from has to travel with it for the number to mean anything.
 
-> One more thing rides along. For the 656 climate-policy questions, the right answer is not a measurement taken in 2100 but a forecast produced by another simulator, En-ROADS. So "the AI got it wrong" is, strictly, "the AI answered differently from En-ROADS." This article counts 17 news articles to see how far that boundary held in the coverage, and ends with a short checklist for anyone about to make a decision on one of these numbers.
+> One more thing rides along. For the 656 climate-policy questions, the right answer is not a measurement taken in 2100 but a forecast produced by another simulator, En-ROADS. So "the AI got it wrong" is, strictly, "the AI answered differently from En-ROADS." In the coverage, the language test's sample boundary gave way first: 7 of 17 news articles turned its 5 models into 33, and 6 of those sentences trace to a single United Nations newsroom story.
 
 <!-- stat-card -->
 **33.8% / 33.3%** — Two policies combined (mean), against chance on a three-way choice — Pick one of three options at random on these questions and 33.3% come out right. The measurement sits 0.5 percentage points above that
@@ -42,7 +42,7 @@ A second document came out of the same room on the same day. The COP31 Presidenc
 
 ### 1.1. What Each of the Three Sets Was Asked to Do
 
-The testing runs along three tracks. The widest set, 33 models, was measured on how much climate fact it holds and how well it weighs evidence. The second set of 15 models handled what happens when a user presses a false claim. The narrowest set of 5 models answered the same questions in 13 languages. The table below is the spine of this article: every number that follows belongs to one of its rows.
+The testing runs along three tracks. The widest set, 33 models, was measured on how much climate fact it holds and how well it weighs evidence. The second set of 15 models handled what happens when a user presses a false claim. The narrowest set of 5 models answered the same questions in 13 languages. Every number that follows belongs to one row of the table below.
 
 | Set | Models | What was measured | Numbers that came from it |
 | --- | --- | --- | --- |
@@ -202,7 +202,7 @@ For an organization choosing a model from one cell of a leaderboard, the task is
 
 ### 7.4. The Empty Seat Is on the Recording Side of Evaluation
 
-There is no seat for Pebblous in the race to build models that know the climate better. Writing down the sample and the answer key behind an evaluation, and checking whether what was written down matches the actual use, is work that belongs to whoever handles the data. This article was not written to claim that seat but to show, through UNESCO's report and the coverage of it, that the seat is empty. One sample boundary disappeared in the United Nations' own newsroom and reached five more outlets within a day, and that is the size of the gap.
+There is no seat for Pebblous in the race to build models that know the climate better. Writing down the sample and the answer key behind an evaluation, and checking whether what was written down matches the actual use, is work that belongs to whoever handles the data. That seat is empty today. One sample boundary disappeared in the United Nations' own newsroom and reached five more outlets within a day, and that is the size of the gap.
 
 **What we could not verify.** The report PDF was blocked and could not be opened, and every number here comes from the official UCL press release, copies of it, and the articles that covered it. Seven things therefore remain unconfirmed: the individual names of the 9 datasets and which one produced which score; the values for seven of the 13 languages; the mean for the single-policy task; how the report handled En-ROADS's own uncertainty band; whether any statistical test was run; the affiliations of four of the seven authors; and the list of model names for the 33, the 15 and the 5, together with how the three sets relate. We also give no author credit. The UCL press release and the UN newsroom name different people as the report's principal author, and without the original there is no way to settle which is right. The figures in Sections 1 through 6 are sourced facts; reading the three findings as one problem of sample boundaries, and the whole of Section 7, is the interpretation Pebblous has added.
 
