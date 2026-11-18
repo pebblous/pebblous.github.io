@@ -34,7 +34,7 @@
 
 What Korea accredited is the ability to run the test, not the data that goes into it.
 
-Pebblous has opened an AI Test Center. In September 2026 the Korea Laboratory Accreditation Scheme recognised the company as an accredited testing laboratory for data quality. The accreditation number is KT1362 and it runs to September 2030.
+Pebblous has opened an AI Test & Evaluation Center. In September 2026 the Korea Laboratory Accreditation Scheme recognised the company as an accredited testing laboratory for data quality. The accreditation number is KT1362 and it runs to September 2030.
 
 Two international standards define the scope. ISO/IEC 5259-2 covers data used in analytics and machine learning; ISO/IEC 25024 covers structured data.
 
@@ -66,7 +66,7 @@ https://blog.pebblous.ai/blog/pebblous-ai-test-center-kolas/ko/
 
 ## Twitter/X (EN)
 
-Korea accredited the laboratory, not the dataset. The Pebblous AI Test Center now issues KOLAS-accredited reports on dataset quality.
+Korea accredited the laboratory, not the dataset. The Pebblous AI Test & Evaluation Center now issues KOLAS-accredited reports on dataset quality.
 
 ISO/IEC 5259-2 describes how quality is measured. It stops before saying what passes. That line gets drawn when you apply.
 
@@ -110,7 +110,7 @@ Accreditation and certification. Two words, and only one of them arrived.
 
 What the Korea Laboratory Accreditation Scheme attested in September 2026 is that Pebblous is able to run the test. Not that any particular dataset is good.
 
-So the document the AI Test Center hands over is a test report, not a certificate.
+So the document the AI Test & Evaluation Center hands over is a test report, not a certificate.
 
 It records what was measured, by a method settled beforehand, and the value that came out.
 

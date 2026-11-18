@@ -1,5 +1,5 @@
 ---
-title: Pebblous Opens Its AI Test Center… Issuing KOLAS-Accredited Test Reports for AI Training Data Quality
+title: Pebblous Opens AI Test & Evaluation Center to Issue KOLAS-Accredited Data Quality Test Reports
 subtitle: Accredited testing measures datasets against ISO/IEC 5259-2 and 25024; non-accredited testing measures models against the criteria the applying organization sets
 date: 2026-11-18
 category: tech
@@ -7,24 +7,24 @@ source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
 ---
 
-# Pebblous Opens Its AI Test Center… Issuing KOLAS-Accredited Test Reports for AI Training Data Quality
+# Pebblous Opens AI Test & Evaluation Center to Issue KOLAS-Accredited Data Quality Test Reports
 
 _Accredited testing measures datasets against ISO/IEC 5259-2 and 25024; non-accredited testing measures models against the criteria the applying organization sets_
 
 ## Executive Summary
 
 > [!callout]
-> Pebblous has opened an AI Test Center that tests data quality against international standards and issues a report on the result. It rests on the accreditation the Korea Laboratory Accreditation Scheme (KOLAS) granted in September 2026 as a testing laboratory, and accreditation number KT1362 is valid through September 2030. The center issues two kinds of report. The KOLAS accredited test report records the result of testing a dataset against ISO/IEC 5259-2 and ISO/IEC 25024, while the general test report is a non-accredited document recording tests of AI models and software against the items and methods the applying organization defines. Accredited testing applies only to items within the accreditation scope, so which one is needed is decided by what the receiving party asks for.
+> Pebblous has opened an AI Test & Evaluation Center that tests data quality against international standards and issues a report on the result. It rests on the accreditation the Korea Laboratory Accreditation Scheme (KOLAS) granted in September 2026 as a testing laboratory, and accreditation number KT1362 is valid through September 2030. The center issues two kinds of report. The KOLAS accredited test report records the result of testing a dataset against ISO/IEC 5259-2 and ISO/IEC 25024, while the general test report is a non-accredited document recording tests of AI models and software against the items and methods the applying organization defines. Accredited testing applies only to items within the accreditation scope, so which one is needed is decided by what the receiving party asks for.
 
-Pebblous has opened an AI Test Center and entered the business of testing the quality of AI training data and issuing test reports on the result. In September 2026, the Korea Laboratory Accreditation Scheme (KOLAS) accredited Pebblous as a testing laboratory for data quality under ISO/IEC 5259-2:2024 and ISO/IEC 25024:2015. The accreditation number is KT1362, and it is valid through September 2030.
+Pebblous has opened an AI Test & Evaluation Center and entered the business of testing the quality of AI training data and issuing test reports on the result. In September 2026, the Korea Laboratory Accreditation Scheme (KOLAS) accredited Pebblous as a testing laboratory for data quality under ISO/IEC 5259-2:2024 and ISO/IEC 25024:2015. The accreditation number is KT1362, and it is valid through September 2030.
 
-The center issues two kinds of report. The KOLAS accredited test report records the result of testing data quality against the two international standards above. The general test report records the result of testing AI models and software against the items and methods the applying organization defines; it is a non-accredited report and sits outside the KOLAS accreditation scope. Consultations and applications are handled at the [Pebblous AI Test Center](https://pebblous.ai/ai-test-center).
+The center issues two kinds of report. The KOLAS accredited test report records the result of testing data quality against the two international standards above. The general test report records the result of testing AI models and software against the items and methods the applying organization defines; it is a non-accredited report and sits outside the KOLAS accreditation scope. Consultations and applications are handled at the [Pebblous AI Test & Evaluation Center](https://pebblous.ai/ai-test-center).
 
 ## Where Data Quality Needs Third-Party Evidence
 
 The performance of an AI model depends heavily on its training data. Yet a claim of good quality from the party that built the data rarely convinces a client or a review body. In settings such as acceptance inspection for public data construction projects, final evaluation of government research and development projects, and procurement proposals, evidence issued by a third party carries weight.
 
-At the announcement of the accreditation, Joo-Haeng Lee, CEO of Pebblous, said the accreditation lets the company measure data quality against international standards and show the result in a report the state recognizes. The AI Test Center is the organization that carries out that testing work.
+At the announcement of the accreditation, Joo-Haeng Lee, CEO of Pebblous, said the accreditation lets the company measure data quality against international standards and show the result in a report the state recognizes. The AI Test & Evaluation Center is the organization that carries out that testing work.
 
 ## Accreditation, Testing and Certification Are Different Words
 
@@ -33,7 +33,7 @@ Before choosing a report, three words need to be told apart.
 | Term | Who does it | What it means |
 | --- | --- | --- |
 | Accreditation | KOLAS | Assesses whether a testing laboratory meets the ISO/IEC 17025 requirements and is competent to perform tests within a defined scope, and grants formal recognition |
-| Testing | Pebblous AI Test Center | Measures a subject against agreed standards and procedures and issues the result as a test report |
+| Testing | Pebblous AI Test & Evaluation Center | Measures a subject against agreed standards and procedures and issues the result as a test report |
 | Certification | A separate certification body | Judges whether a product, a service or a system meets a set of criteria and grants a certificate |
 
 KOLAS accreditation is a scheme that formally recognizes the competence of a testing laboratory. It does not mean KOLAS guarantees the quality of a particular product or dataset. The document Pebblous issues is likewise not a certificate but a test report, and it records the result of measuring the subject it was asked to test.
@@ -60,7 +60,7 @@ The [24 quality characteristics and measures](/project/ISO5259/5259-2-cheetsheet
 | Test subject | Structured and unstructured datasets for AI training | AI models and software, data processing systems |
 | Main measures | Data quality such as completeness, accuracy and consistency | Function and performance such as accuracy, processing speed and reproducibility |
 | Test location | Pebblous Sejong test site | The applying organization's site or remote, as agreed |
-| KOLAS accreditation mark | Yes | No |
+| KOLAS accreditation shown on report | Yes | No |
 | Typical use | Delivery for public data construction projects, official external submission | Evidence for quantitative project targets, internal verification |
 
 What decides the choice is what the receiving party asks for. If the receiving party requires a report from an accredited testing laboratory, the KOLAS accredited test report is the one needed. Accredited testing, however, applies only to items within the accreditation scope. Items outside it, such as model performance or response time, are handled as general testing and issued as a separate report. If a project agreement requires an accredited report for every metric, check with the managing agency first whether a general test report may be submitted.
@@ -82,7 +82,7 @@ What decides the choice is what the receiving party asks for. If the receiving p
 
 An application form on its own is enough to open a case. A test item specification, a quantitative target document, a product manual or a test environment diagram will speed the consultation up. Cost and duration vary with the number of test items, the size of the data and the test location, so they are advised after the application has been reviewed.
 
-The AI Test Center is in Daejeon, and KOLAS accredited testing is performed at the Sejong test site. Testing at the applying organization's own site applies only to general test reports.
+The AI Test & Evaluation Center is in Daejeon, and KOLAS accredited testing is performed at the Sejong test site. Testing at the applying organization's own site applies only to general test reports.
 
 ## Testing Runs Separately From the Solution
 
@@ -104,7 +104,7 @@ If the receiving party requires an accredited report, or if data quality has to 
 
 ### Can a general test report be used as an accredited report?
 
-It cannot. The general test report is a non-accredited report outside the KOLAS accreditation scope, and it carries no KOLAS accreditation mark.
+It cannot. The general test report is a non-accredited report outside the KOLAS accreditation scope, and it carries no KOLAS accreditation shown on report.
 
 ### If I receive a Pebblous report, have I been certified for data quality?
 
@@ -120,11 +120,11 @@ They vary with the number of test items, the size of the data and the test locat
 
 ## Request a Consultation
 
-Consultations on test scope and quotations can be requested at the [Pebblous AI Test Center](https://pebblous.ai/ai-test-center). Inquiries are received at contact@pebblous.ai.
+Consultations on test scope and quotations can be requested at the [Pebblous AI Test & Evaluation Center](https://pebblous.ai/ai-test-center). Inquiries are received at contact@pebblous.ai.
 
 ## References
 
-- [Pebblous AI Test Center](https://pebblous.ai/ai-test-center)
+- [Pebblous AI Test & Evaluation Center](https://pebblous.ai/ai-test-center)
 - [Pebblous accredited by KOLAS as a testing laboratory for the international standards on AI training data quality, Newswire (2026-09-23, in Korean)](https://www.newswire.co.kr/newsRead.php?no=1043252)
 - [ISO/IEC 5259-2:2024, Data quality measures](https://www.iso.org/standard/81860.html)
 - [ISO/IEC 25024:2015, Measurement of data quality](https://www.iso.org/standard/35749.html)
