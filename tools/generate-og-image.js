@@ -263,6 +263,47 @@ function fitSubtitle(s) {
     return (sp > 0 ? head.slice(0, sp) : head).trim() + '…';
 }
 
+// 이름 뒤 버전 번호는 한 덩어리다 — "GR00T 2" 의 2만 다음 줄로 넘어가지 않게 줄바꿈 없는 공백으로 잇는다(2026-11-18).
+// 대문자나 숫자가 든 라틴 이름 + 1~2자리 버전만 본다. 연도(CoRL 2026)·큰 수(436,414)는 건드리지 않는다.
+function keepVersionTogether(s) {
+    return (s || '').replace(/(?<![A-Za-z0-9])([A-Za-z][A-Za-z0-9.+_-]*) (v?\d{1,2}(?:\.\d+)*[A-Za-z]?)(?![A-Za-z0-9]|[,.]?\d)/g,
+        (m, name, ver) => /[A-Z0-9]/.test(name) ? `${name}\u00A0${ver}` : m);
+}
+// 제목 글꼴(TT Firs Neue)의 숫자 0 은 영문 O 와 구별되지 않는다 — 영문으로 시작하는 이름 속의 0 만 본문 글꼴로 그린다(GR00T·H200, 2026-11-18).
+function markLetterZeros(html) {
+    return (html || '').replace(/(?<![A-Za-z0-9&#])[A-Za-z][A-Za-z0-9]*0[A-Za-z0-9]*/g,
+        name => name.replace(/0+/g, '<span class="zero">$&</span>'));
+}
+
+// 그린 뒤 실제 크기를 재서 맞춘다 — 글자 수 추정만으로는 부제가 로고에 붙는 글이 406장 나왔다(2026-11-18 라이브 전수).
+// 강제 줄바꿈 제목은 조각마다 한 줄을 지키고, 부제와 로고 사이가 24px 이상 될 때까지 제목을 줄인다.
+// 그래도 모자라면 부제를 한 줄로 줄인다. 이미 맞는 커버는 아무것도 바꾸지 않는다.
+const COVER_FIT_SCRIPT = `<script>
+window.__coverFit = (async () => {
+    const MIN_GAP = 24, MIN_TITLE = 44, MIN_MANUAL = 52, WIDE = 860, FOOT_TOP = 522;
+    const title = document.querySelector('.title'), sub = document.querySelector('.subtitle'), foot = document.querySelector('.footer');
+    await Promise.all(["800 64px 'TT Firs Neue'", '800 64px Pretendard', '400 28px Pretendard'].map(f => document.fonts.load(f, '가A0').catch(() => {})));
+    await document.fonts.ready;
+    const box = e => e.getBoundingClientRect();
+    const gap = () => box(foot).top - box(sub || title).bottom;
+    const fits = () => gap() >= MIN_GAP && box(foot).top <= FOOT_TOP + 0.5;
+    const lines = () => Math.round(box(title).height / parseFloat(getComputedStyle(title).lineHeight));
+    let size = parseFloat(getComputedStyle(title).fontSize);
+    const setSize = v => { size = v; title.style.fontSize = v + 'px'; };
+    const segments = Number(title.dataset.segments) || 1;
+    if (segments > 1 && lines() > segments) {
+        const start = size;
+        title.style.width = WIDE + 'px';
+        while (lines() > segments && size > MIN_MANUAL) setSize(size - 2);
+        if (lines() > segments) { title.style.width = ''; setSize(start); }
+    }
+    while (!fits() && size > MIN_TITLE) setSize(size - 2);
+    let clamped = false;
+    if (!fits() && sub) { sub.style.webkitLineClamp = '1'; clamped = true; }
+    return { titleSize: size, titleLines: lines(), gap: Math.round(gap()), clamped, fits: fits() };
+})();
+</script>`;
+
 function getFontFaces(projectRoot) {
     const fontsDir = path.join(projectRoot, 'tools', 'fonts');
     const weights = [
@@ -306,8 +347,10 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
     // 4줄 넘침을 일으키던 문제를 없앤다.
     let displayTitle = title.replace(/\n/g, '<br>');
 
-    // 부제는 2줄 한도에서 문장/문구 경계로 깔끔히 끝낸다(단어 중간 절단 방지)
-    subtitle = fitSubtitle(subtitle);
+    // 부제는 2줄 한도에서 문장/문구 경계로 깔끔히 끝낸다(단어 중간 절단 방지).
+    // og-image-subtitle 에 줄바꿈을 직접 적은 문구는 쓴 그대로 그린다.
+    subtitle = subtitle.includes('\n') ? subtitle.trim() : fitSubtitle(subtitle);
+    subtitle = keepVersionTogether(subtitle).replace(/\n/g, '<br>');
 
     const titleFontSize = calcTitleFontSize(displayTitle);
     // 영문(TT Firs Neue)은 줄간격이 넓어 보여 타이트하게, 한글은 넉넉히 유지
@@ -315,6 +358,9 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
     const latinCount = (displayTitle.match(/[A-Za-z]/g) || []).length;
     const isEnglish = cjkCount === 0 || latinCount > cjkCount * 2;
     const titleLineHeight = isEnglish ? 1.14 : (titleFontSize <= 44 ? 1.35 : 1.3);
+
+    const titleSegments = (displayTitle.match(/<br\s*\/?>/gi) || []).length + 1;
+    const renderedTitle = markLetterZeros(keepVersionTogether(displayTitle));
 
     const pebbleHTML = generatePebbles(title, theme.light);
     const sectionBar = theme.sectionBar
@@ -400,6 +446,11 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
             color: ${theme.accent};
         }
 
+        .title .zero {
+            color: inherit;
+            font-family: 'Pretendard', sans-serif;
+        }
+
         .subtitle {
             color: ${theme.subtitleColor};
             font-size: 28px;
@@ -456,7 +507,7 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
         </div>
 
         <div class="content">
-            <h1 class="title">${displayTitle}</h1>
+            <h1 class="title" data-segments="${titleSegments}">${renderedTitle}</h1>
             ${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}
         </div>
 
@@ -466,6 +517,7 @@ function generateHTML(title, subtitle, theme, logoPath, fontFaces) {
             </div>
         </div>
     </div>
+    ${COVER_FIT_SCRIPT}
 </body>
 </html>
     `;
@@ -504,7 +556,10 @@ async function generateOGImage(title, subtitle, outputPath, category, projectRoo
 
         // Wait for embedded fonts to render
         await page.evaluate(() => document.fonts.ready);
+        const layout = await page.evaluate(() => window.__coverFit);
         await new Promise(resolve => setTimeout(resolve, 200));
+        console.log(`  Layout: title ${layout.titleSize}px x ${layout.titleLines} lines, logo gap ${layout.gap}px${layout.clamped ? ', subtitle 1 line' : ''}`);
+        if (!layout.fits) console.warn(`  ⚠️ 부제와 로고 간격이 ${layout.gap}px 이다 — 커버 제목(og-image-title)을 줄여야 한다`);
 
         // Ensure output directory exists
         const outputDir = path.dirname(outputPath);
@@ -649,10 +704,14 @@ function extractFromHTML(htmlPath, projectRoot) {
         }
     }
 
-    // Extract subtitle: og:description → meta description → articles.json
+    // Extract subtitle: og-image-subtitle(주황 바 전용 문구) → og:description → meta description → articles.json
     let subtitle = '';
+    const coverSubtitleMatch = htmlContent.match(/<meta\s+name="og-image-subtitle"\s+content="([^"]+)"/i);
     const ogDescMatch = htmlContent.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
-    if (ogDescMatch) {
+    if (coverSubtitleMatch) {
+        subtitle = decodeLineBreaks(coverSubtitleMatch[1]);
+        console.log(`  [og-image-subtitle] Using custom OG image subtitle`);
+    } else if (ogDescMatch) {
         subtitle = ogDescMatch[1];
     } else {
         const metaDescMatch = htmlContent.match(/<meta\s+name="description"\s+content="([^"]+)"/i);
@@ -704,7 +763,7 @@ function extractFromHTML(htmlPath, projectRoot) {
 }
 
 // 다른 도구(리뷰 서버 등)가 함수를 재사용할 수 있게 export
-module.exports = { extractFromHTML, generateOGImage, generateHTML, getTheme, getFontFaces, calcTitleFontSize, fitSubtitle, decodeLineBreaks, readSearchKeywordForms, hasKeywordForm };
+module.exports = { extractFromHTML, generateOGImage, generateHTML, getTheme, getFontFaces, calcTitleFontSize, fitSubtitle, decodeLineBreaks, readSearchKeywordForms, hasKeywordForm, keepVersionTogether, markLetterZeros };
 
 // CLI로 직접 실행될 때만 아래 main 로직 수행 (require 시엔 skip)
 if (require.main === module) {
