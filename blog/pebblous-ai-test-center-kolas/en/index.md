@@ -20,6 +20,11 @@ Pebblous has opened an AI Test & Evaluation Center and entered the business of t
 
 The center issues two kinds of report. The KOLAS accredited test report records the result of testing data quality against the two international standards above. The general test report records the result of testing AI models and software against the items and methods the applying organization defines; it is a non-accredited report and sits outside the KOLAS accreditation scope. Consultations and applications are handled at the [Pebblous AI Test & Evaluation Center](https://pebblous.ai/ai-test-center).
 
+[https://pebblous.ai/ai-test-center](https://pebblous.ai/ai-test-center)
+
+![First screen of the Pebblous AI Test and Evaluation Center page, in Korean, with a headline about confirming data quality and AI performance through test reports and a sample report.](/blog/pebblous-ai-test-center-kolas/image/atc-hero.png)
+*The first screen of the center page, which is in Korean. The report shown is a sample. [Open the center page](https://pebblous.ai/ai-test-center)*
+
 ## Where Data Quality Needs Third-Party Evidence
 
 The performance of an AI model depends heavily on its training data. Yet a claim of good quality from the party that built the data rarely convinces a client or a review body. In settings such as acceptance inspection for public data construction projects, final evaluation of government research and development projects, and procurement proposals, evidence issued by a third party carries weight.
@@ -49,7 +54,7 @@ Accredited testing rests on two international standards.
 | ISO/IEC 5259-2:2024 | Data used for analytics and machine learning | Basic characteristics such as accuracy, completeness and consistency, and characteristics that matter for AI training such as balance, diversity, representativeness and similarity |
 | ISO/IEC 25024:2015 | Structured data | Measures defined by the data quality model |
 
-The [24 quality characteristics and measures](/project/ISO5259/5259-2-cheetsheet-01/en/) defined in 5259-2 are laid out in a summary table on the Pebblous blog. The accreditation scope covers the quality characteristic groups of 5259-2 and the measure groups of 25024. Whether accredited testing applies to a given request is confirmed by reviewing the test method and the formula for each measure.
+The [24 quality characteristics and measures](/project/ISO5259/5259-2-cheetsheet-01/en/) defined in 5259-2 are laid out in a summary table on the Pebblous blog. The accreditation scope covers the quality characteristic groups of 5259-2 and the measure groups of 25024. The accreditation number, validity period and certificate copies can be checked directly in the [KOLAS accredited body search](https://www.knab.go.kr/usr/inf/srh/InfoTestInsttSearchList.do?searchCompany=%ED%8E%98%EB%B8%94%EB%9F%AC%EC%8A%A4). Whether accredited testing applies to a given request is confirmed by reviewing the test method and the formula for each measure.
 
 ## The Two Reports Serve Different Purposes
 
@@ -65,6 +70,11 @@ The [24 quality characteristics and measures](/project/ISO5259/5259-2-cheetsheet
 
 What decides the choice is what the receiving party asks for. If the receiving party requires a report from an accredited testing laboratory, the KOLAS accredited test report is the one needed. Accredited testing, however, applies only to items within the accreditation scope. Items outside it, such as model performance or response time, are handled as general testing and issued as a separate report. If a project agreement requires an accredited report for every metric, check with the managing agency first whether a general test report may be submitted.
 
+[https://pebblous.ai/ai-test-center#fields](https://pebblous.ai/ai-test-center#fields)
+
+![The three test areas on the center page, in Korean: data quality, AI model performance and software function.](/blog/pebblous-ai-test-center-kolas/image/atc-fields.png)
+*Test areas on the center page. Data quality is tested as accredited testing within the KOLAS scope; AI model performance and software function are handled as general testing. [View test areas](https://pebblous.ai/ai-test-center#fields)*
+
 ## Four Cases That Call for a Test Report
 
 - **Data construction projects:** Evidence the quality of the delivered dataset with a KOLAS accredited test report.
@@ -79,6 +89,11 @@ What decides the choice is what the receiving party asks for. If the receiving p
 3. **Test agreement:** Fix the criteria, the methods and the schedule in a test plan and a test agreement.
 4. **Test execution:** Run the test in the agreed environment and review the results.
 5. **Report issuance:** Issue the test report once the review is complete.
+
+[https://pebblous.ai/ai-test-center#process](https://pebblous.ai/ai-test-center#process)
+
+![The five steps from application to issuance on the center page, in Korean: request a consultation, consultation and quotation, test agreement, test execution and report issuance.](/blog/pebblous-ai-test-center-kolas/image/atc-process.png)
+*The process on the center page. Each step shows whether the applicant or the center is responsible. [View the process](https://pebblous.ai/ai-test-center#process)*
 
 An application form on its own is enough to open a case. A test item specification, a quantitative target document, a product manual or a test environment diagram will speed the consultation up. Cost and duration vary with the number of test items, the size of the data and the test location, so they are advised after the application has been reviewed.
 
