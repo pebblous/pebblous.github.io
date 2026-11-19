@@ -13,9 +13,9 @@ Connecting data quality, provenance and usage conditions with the continuing imp
 
 ## Executive Summary
 
-As AI agents search enterprise documents and query data, data quality work reaches further into daily operations. Organizations need agents to understand where information comes from, when it applies and how it may be used. AIRD (AI-Ready Data) is one initiative translating these needs into documented data descriptions, quality measures and purpose-specific readiness requirements.
+As AI agents search enterprise documents and query data, data quality work reaches further into daily operations. Organizations need agents to understand where information comes from, when it applies and how it may be used. AI-ready data is a general term for data prepared for AI use; AIRD (AI-Ready Data), the Korean draft framework and demonstration program reviewed here, translates these needs into documented data descriptions, quality measures and purpose-specific readiness requirements.
 
-The public recall case illustrates data prepared for agent search and aggregation. Its source passed a quality assessment, while the derived RAG pack remains unassessed for its intended purpose because the purpose profile is not registered. Exact matches in the published recall comparison rose from 23/42 to 42/42, within a test whose answer key is linked to the rules used to build the pack.
+The public recall case illustrates data prepared for agent search and aggregation. Its source passed a quality assessment, while the derived RAG pack completed linking and checks but has its purpose-fitness verdict on hold. Exact matches in the published recall comparison rose from 23/42 to 42/42, within a test whose answer key is linked to the rules used to build the pack.
 
 Pebblous sees this development as an opportunity for two cooperating products. Data Greenhouse diagnoses and improves data against multiple requirements. Agent Greenhouse is the next R&D step: improving capabilities that fall short in operational records and tests, then testing and approving new agent versions. Better-prepared data supports agents, and improved agents help cultivate the next data version.
 
@@ -109,9 +109,9 @@ The misreading also runs the other way, in the claim that AIRD has no thresholds
 
 ## 5. Source Quality and Retrieval Readiness Need Separate Checks
 
-The verdict record for the recall case splits into two lines. The source dataset cleared the quality gate on 11 October 2026, and the verdict document states that operator thresholds were applied and the result confirmed at Tier3 (Gold). The pass mark sits at Tier1, which puts it two steps up a five-step scale. The retrieval pack produced from the same data, by contrast, shows a purpose-fitness verdict of "not assessed," with a note that it will be judged in the next release. The purpose profile has not been registered yet.
+The verdict record for the recall case splits into two lines. The source dataset cleared the quality gate on 11 October 2026, and the verdict document states that operator thresholds were applied and the result confirmed at Tier3 (Gold). The pass mark sits at Tier1, which puts it two steps up a five-step scale. The retrieval pack produced from the same data, by contrast, is marked as on hold (판정 보류). Its published description says linking and checks are complete but the purpose-fitness verdict is deferred, and its purpose-fitness (G3) row reads 해당 없음 (N/A) with the note "to be judged in the next release." Despite the N/A label, this means the verdict has not been made yet, not that the criterion does not apply.
 
-Diagram contents: Where the verdicts diverge — source and derived pack · Discoverable · Quality-Ready · Purpose-Ready · Source recall data · Public CSV, 844 rows · Pass · Pass · Tier3 (Gold) · 2026-10-11 · No record · Derived retrieval pack · 843 chunks · Published · Does not inherit · the source tier · Not applicable · judged in the next release · Source: the quality verdict for the source data (2026-10-11) and the published description of the recall retrieval pack
+Diagram contents: Where the verdicts diverge — source and derived pack · Discoverable · Quality-Ready · Purpose-Ready · Source recall data · Public CSV, 844 rows · Pass · Pass · Tier3 (Gold) · 2026-10-11 · No record · Derived retrieval pack · 843 chunks · Published · Does not inherit · the source tier · On hold · judged in the next release · Source: the quality verdict for the source data (2026-10-11) and the published description of the recall retrieval pack
 
 ▲ An original Pebblous diagram, drawn from the states recorded in the published verdict documents
 
@@ -127,11 +127,11 @@ Requirements that make quality, provenance and usage conditions readable by AI a
 
 The role Pebblous gives Data Greenhouse is not to pick one standard but to take in several. Written out in two layers, taking them in looks like this.
 
-### 6.16.1 The Governance Layer Holds Versions, Provenance and Approvals
+### 6.1 The Governance Layer Holds Versions, Provenance and Approvals
 
 Requirements, tolerances, data versions, provenance and usage conditions differ by customer and purpose. The governance layer connects them with approvals and assessment history. An integrated report can present ISO-based measurements and AIRD readiness assessments together while keeping each result traceable to its definition, version, evidence and approval responsibility. Calculations with matching definitions can be reused; each assessment remains tied to the criteria applied.
 
-### 6.26.2 Neuro-Symbolic Diagnosis Separates Detection From Judgment
+### 6.2 Neuro-Symbolic Diagnosis Separates Detection From Judgment
 
 What a neural network does well is gather things that mean something similar and pick out skew in a distribution, gaps in it, and cases that look wrong. Whether such a candidate breaks a working threshold is judged on explicit rules and domain knowledge. Rule checks that can be settled by computation are run by reproducible tools. Not treating the judgment of a large language model or an embedding similarity as a conformance verdict on its own is the premise of this design. A verdict is a place where evidence is demanded, and a score whose evidence cannot be retraced does not become a verdict.
 
@@ -141,7 +141,7 @@ Where this stands today is worth saying plainly. The measurement and improvement
 
 The widening scope is the other thing this case points out. Beyond training material, the documents used in retrieval-augmented generation, the tables staff query at work, the input that goes into tools and the material used to evaluate agents all face the same question. What is this data ready to be used for, and where is the evidence for that judgment written down?
 
-### 6.36.3 New Requirements Also Define the Capabilities Agents Need
+### 6.3 New Requirements Also Define the Capabilities Agents Need
 
 An agent needs to judge whether the information it finds is sufficient for the task. It should check provenance and the relevant date, request additional evidence or abstain when the record is insufficient. Distinguishing source quality from the purpose readiness of a derived RAG pack is one example of this capability.
 
@@ -187,7 +187,7 @@ The comparison uses official standard descriptions, AIRD guidance and the data a
 
 - 10.AIRD demonstration. "[Evidence, test conditions and limitations](https://aird.idx.or.kr/about/evidence)." Source for 23/42 → 42/42, 28/28, the 2026-10-21 measurement date, the structural advantage and absence of a statistical test, and the 2 of 10 broken-out criteria where AIRD came out behind in the linking experiment.
 - 11.AIRD demonstration. "[Quality verdict for the source (G2)](https://aird.idx.or.kr/packages/15040695/gates/G2-1.0.0.json)." Source for the 2026-10-11 pass, operator threshold profile TP-KR-2026-1.0, and the Tier3 (Gold) confirmation.
-- 12.AIRD demonstration. "[The recall retrieval pack and its description](https://aird.idx.or.kr/packs/recall)." Source for the 843 chunks, the substance and exceedance tags, the source row identifiers, the 7 evaluation questions, and the "not assessed" purpose verdict.
+- 12.AIRD demonstration. "[The recall retrieval pack and its description](https://aird.idx.or.kr/packs/recall)." Source for the 843 chunks, the substance and exceedance tags, the source row identifiers, the 7 evaluation questions, the "on hold" status, and the purpose-fitness (G3) row marked 해당 없음 (N/A) with "to be judged in the next release."
 - 13.AIRD demonstration. "[Recall source data](https://aird.idx.or.kr/data/15040695)." Used to confirm the source [CSV of 844 rows](https://aird.idx.or.kr/packages/15040695/data/dataset-15040695.csv) and its field structure.
 - 14.Public Data Portal. "[Korean Agency for Technology and Standards domestic recall report](https://www.data.go.kr/data/15040695/fileData.do)." Dataset number 15040695.
 
@@ -228,7 +228,7 @@ It is not. The quality verdict for the recall source states that it applied oper
 
 ### If the source cleared the quality gate, has the processed data cleared it too?
 
-No. In the recall case the source cleared the quality gate on 11 October 2026 and was confirmed at Tier3 (Gold), but the retrieval pack produced from the same data shows a purpose-fitness verdict of "not assessed" with a note that it will be judged in the next release. Errors introduced while chunks were cut and tags attached were never part of the measurement of the source, so the tier is not inherited.
+No. In the recall case the source cleared the quality gate on 11 October 2026 and was confirmed at Tier3 (Gold), but the retrieval pack produced from the same data has its purpose-fitness verdict on hold. Its G3 row reads 해당 없음 (N/A) with the note "to be judged in the next release," which means the verdict has not been made yet, not that the criterion does not apply. Errors introduced while chunks were cut and tags attached were never part of the measurement of the source, so the tier is not inherited.
 
 ### Exact match reached 100% in the comparison. Does that mean performance improved that much?
 
