@@ -18,7 +18,7 @@ _Two independent tools matched the theorem to Mathlib. Checking the proof and ex
 
 > The [independent MIT record](https://math.mit.edu/~drew/grh/) distinguishes rebuilding the code from the proof checks. Michael Rubinstein’s 164-page Waterloo working guide covers the zeta-function case and relies on the Lean development for a central inequality.
 
-> Sections 1 through 4 set out what public materials and news coverage establish. Section 5, which reads the episode as the distance between a verifiable output and a trustworthy one, is this article's own interpretation.
+> Sections 1 through 4 set out what public materials and news coverage establish, and Section 5 summarizes the answers 3Blue1Brown collected from mathematicians before the announcement. Section 6, which reads the episode as the distance between a verifiable output and a trustworthy one, is this article's own interpretation.
 
 ### Key Numbers
 
