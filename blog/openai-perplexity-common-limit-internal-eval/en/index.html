@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perplexity Explained: OpenAI's AI Safety Limit | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="OpenAI's chief scientist proposed perplexity as a shared safety limit, publishing numbers from 0.99 to 0.76. The data measuring them is OpenAI's own code.">
+    <meta name="keywords" content="perplexity, log-perplexity, Jakub Pachocki, OpenAI, AI safety limits, common limits, evaluation dataset, cross-entropy loss, benchmark comparability, MAI-2 Base, AI-Ready Data">
+
+    <!-- Main search keyword -->
+    <meta name="pb-search-keyword" content="perplexity">
+    <meta name="pb-search-keyword-forms" content="perplexity|log-perplexity|Jakub Pachocki">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/openai-perplexity-common-limit-internal-eval/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/openai-perplexity-common-limit-internal-eval/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/openai-perplexity-common-limit-internal-eval/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/openai-perplexity-common-limit-internal-eval/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="OpenAI's Shared Perplexity Limit, Measured on Its Own Private Code">
+    <meta property="og:description" content="A proposal to draw one line the whole industry would hold to, written as a single number. The evaluation data that produces that number sits inside OpenAI.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/openai-perplexity-common-limit-internal-eval/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/openai-perplexity-common-limit-internal-eval/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Scale showing log-perplexity falling from 0.99 to 0.76">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-11-24">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="OpenAI's Shared Perplexity Limit, Measured on Its Own Private Code">
+    <meta name="twitter:description" content="From 0.99 to 0.76, OpenAI published its internal curve. The same post says those numbers do not compare cleanly across companies.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/openai-perplexity-common-limit-internal-eval/en/image/index.png">
+    <meta name="twitter:image:alt" content="Scale showing log-perplexity falling from 0.99 to 0.76">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=5f0a37e3"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=7f5a0b5e">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=bea798d5">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=f542b79f">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#the-proposal" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Pachocki Reports the Numbers and Proposes Where to Stop</a></li>
+                    <li><a href="#the-ruler" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The Test Set Behind Those Numbers Sits Inside OpenAI</a></li>
+                    <li><a href="#two-readings" class="block pl-4 themeable-toc-link transition-colors duration-200">3. The Industry Read the Same Post Two Opposite Ways</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Why Pebblous Is Watching This</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">References</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            OpenAI has proposed that AI developers draw a shared safety line and write it as a single number called perplexity. In a <a href="https://openai.com/index/perplexity-and-intelligence/" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">post published on November 22</a>, chief scientist Jakub Pachocki argued that the log-perplexity a model reaches in pretraining should become an industry-wide metric, and that until people can tell what an AI is doing and keep watch on it well enough to clear a milestone set in advance, no company should drop below a line the industry draws together. The internal numbers he published alongside it: GPT-3.5 at roughly 0.99, GPT-4 at roughly 0.91, recent models below 0.8.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            The part worth looking at is not the numbers but the footnote attached to them. The evaluation data that produced these values has been, ever since GPT-3.5, a fixed snapshot taken from OpenAI's own codebase. And the admission that developers use different evaluation data and different training mixtures, so the numbers do not compare cleanly between companies, is not a critic's objection. Pachocki wrote it into the same post. It is a line everyone is asked to hold, and right now one company can compute where it sits.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            That structure showed itself the next day. Microsoft placed its own foundation model, MAI-2 Base, on the same scale at 0.819, which it could do only because OpenAI opened its own test set to that one partner. That second number showed, before anything else, which door a shared standard still has to pass through.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Sections 1 through 3 set out what the post says and how the industry answered. Section 4, which holds that an open test set is a precondition for any shared norm, is this article's own reading.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Numbers</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: <a href="https://openai.com/index/perplexity-and-intelligence/" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">OpenAI, "Perplexity and Intelligence"</a> (2026-11-22)</p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The first three cards are log-perplexity figures the post published; the fourth is where the data that produced them sits.
+                    </p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.99 → 0.76</p>
+                            <p class="text-sm themeable-text-secondary mt-1">GPT-3.5 to the math-breakthrough model</p>
+                            <p class="text-xs themeable-muted mt-1">Log-perplexity; lower means the next token is predicted better</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">Below 0.8</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Where recent models now sit</p>
+                            <p class="text-xs themeable-muted mt-1">The point Pachocki marks as a shift in cybersecurity and math</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.68–0.7</p>
+                            <p class="text-sm themeable-text-secondary mt-1">The next window Pachocki named</p>
+                            <p class="text-xs themeable-muted mt-1">The band where he expects another leap in capability</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">One</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Companies holding this test set</p>
+                            <p class="text-xs themeable-muted mt-1">Measuring under the same conditions from outside requires OpenAI to open access</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="the-proposal" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Pachocki Reports the Numbers and Proposes Where to Stop</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Perplexity measures how confused a model is about the character coming next. You show the model a body of data it did not train on, and you average how well it predicts each following token. A smaller value means less confusion, so lower is better. Pachocki reported the logarithm of that value, log-perplexity, which is equivalent to cross-entropy loss. That is why the numbers in the post move in the second decimal place. Undo the logarithm and the span each of those steps covers is far wider.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        What he released is the record OpenAI has kept of this value across model generations. GPT-3.5, the model behind the first ChatGPT, sat at roughly 0.99. At that level models became able to hold a fluent conversation. GPT-4 was roughly 0.91, and around then models began to get real work out of chain-of-thought, the intermediate reasoning steps they write before answering. Recent models have come down below 0.8 and started turning out results in cybersecurity and mathematics unlike anything before. Pachocki wrote that after switching to a model with log-perplexity around 0.76, it began producing results on math problems that had stayed open for a long time.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 300" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="Log-perplexity scale. From the left, GPT-3.5 at 0.99 with fluent conversation, GPT-4 at 0.91 with chain-of-thought reasoning, recent models below 0.8 with leaps in cybersecurity and math, 0.76 with results on long-open math problems, and at the right the 0.68 to 0.7 band Pachocki named as the window for the next leap. Lower values are better.">
+                            <text x="350" y="30" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">Log-perplexity values OpenAI published (lower is better)</text>
+
+                            <!-- Forecast band -->
+                            <rect x="598" y="158" width="33" height="24" rx="3" fill="#F86825" fill-opacity="0.18"/>
+
+                            <!-- Axis -->
+                            <line x1="60" y1="170" x2="665" y2="170" stroke="var(--text-muted,#6B7280)" stroke-width="1" stroke-opacity="0.5"/>
+                            <text x="93" y="196" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">1.00</text>
+                            <text x="262" y="196" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">0.90</text>
+                            <text x="430" y="196" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">0.80</text>
+                            <text x="598" y="196" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">0.70</text>
+
+                            <!-- GPT-3.5 -->
+                            <line x1="110" y1="170" x2="110" y2="120" stroke="var(--text-muted,#6B7280)" stroke-width="1" stroke-opacity="0.5"/>
+                            <circle cx="110" cy="170" r="5.5" fill="var(--text-muted,#6B7280)"/>
+                            <text x="110" y="112" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">GPT-3.5 · 0.99</text>
+                            <text x="110" y="96" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Fluent conversation</text>
+
+                            <!-- GPT-4 -->
+                            <line x1="245" y1="170" x2="245" y2="80" stroke="var(--text-muted,#6B7280)" stroke-width="1" stroke-opacity="0.5"/>
+                            <circle cx="245" cy="170" r="5.5" fill="var(--text-muted,#6B7280)"/>
+                            <text x="245" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">GPT-4 · 0.91</text>
+                            <text x="245" y="56" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Chain-of-thought reasoning</text>
+
+                            <!-- Recent models -->
+                            <line x1="430" y1="170" x2="430" y2="120" stroke="var(--text-muted,#6B7280)" stroke-width="1" stroke-opacity="0.5"/>
+                            <circle cx="430" cy="170" r="5.5" fill="var(--text-muted,#6B7280)"/>
+                            <text x="430" y="112" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">Recent models · below 0.8</text>
+                            <text x="430" y="96" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Leap in cybersecurity and math</text>
+
+                            <!-- 0.76 (below axis) -->
+                            <line x1="497" y1="170" x2="497" y2="214" stroke="#F86825" stroke-width="1.2"/>
+                            <circle cx="497" cy="170" r="6" fill="#F86825"/>
+                            <text x="497" y="230" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">Math breakthrough · 0.76</text>
+                            <text x="497" y="246" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Results on long-open math problems</text>
+
+                            <!-- Forecast window -->
+                            <line x1="614" y1="158" x2="614" y2="80" stroke="#F86825" stroke-width="1" stroke-opacity="0.6"/>
+                            <text x="614" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">Next window · 0.68–0.7</text>
+                            <text x="614" y="56" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">Where another leap is expected</text>
+
+                            <text x="24" y="280" font-size="9.5" fill="var(--text-muted,#6B7280)">Every value here comes off one fixed snapshot of OpenAI's internal codebase. No outside lab can rerun the measurement.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Pebblous redrew the log-perplexity values from OpenAI's post (2026-11-22). Horizontal position is proportional to the value.
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Pachocki then takes a further step. Once models enter the band between 0.68 and 0.7, he wrote, we should expect another round of transformative capability. On top of that forecast he laid the proposal: that developers accept perplexity as a common metric, and that nobody go below a jointly agreed line until our ability to understand and monitor AI behavior reaches a concrete milestone. The example he gave of such a milestone was successor techniques to the methods that let researchers inspect a model's chain of thought.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Pachocki is equally clear about what the metric cannot see. Chain-of-thought reasoning does not reduce the perplexity a model achieves. Reinforcement learning and tool use bolted on after pretraining can lift real capability a long way while this number barely moves. That is why GPT-4.1 and o3 land in effectively the same spot on the post's graph. How far the value can fall is also unknown, because, as the post puts it, we do not know what the inherent entropy of the data is.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="the-ruler" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Test Set Behind Those Numbers Sits Inside OpenAI</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A perplexity value is not decided by the model alone. Change the data the model is tested on and the same model gets a different number. Test it on code and a model strong at code does well; test it on fiction and the result moves. So the first question to ask of this value is not about the model but about what it was tested on.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A footnote gives the answer.
+                    </p>
+
+                    <blockquote class="border-l-4 pl-6 my-8" style="border-color: #F86825;">
+                        <p class="themeable-text leading-relaxed">
+                            "sourced from our internal codebase, and those are the numbers reported here (for a fixed snapshot)"
+                        </p>
+                    </blockquote>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Which means every figure since GPT-3.5 came off one single body of data. The post calls that data a held-out dataset, kept out of training, and it gives GPT-3.5's 0.99 as a value on the current main evaluation dataset. Even the scores of older generations, in other words, were placed on the test set in use today. Freezing it as a fixed snapshot is the right call for comparing across time, because a moving target makes the trend line meaningless. The problem is that the snapshot is one company's private source code. Nobody outside that company can measure another model on the same data.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The same cluster of footnotes also shows that the metric was never designed to be published. In the GPT-2 and GPT-3 generations, performance at predicting code was a poor proxy for general capabilities. This is a tool that was used internally for tracking and became useful at some generation along the way, not a ruler built from the start for the industry to share.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Nor was the limit on comparability first raised by a critic. It is in the body of the post.
+                    </p>
+
+                    <blockquote class="border-l-4 pl-6 my-8" style="border-color: #F86825;">
+                        <p class="themeable-text leading-relaxed">
+                            "Different developers use different evaluation datasets and train on different data mixtures."
+                        </p>
+                    </blockquote>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Put the two sentences side by side and the shape of the proposal appears. It asks everyone to hold one line, while conceding in the same post that each company holds its own ruler and the rulers are marked differently. So when another company announces "we are at 0.82," the first thing to work out is whether that value means what OpenAI's 0.82 means. The day after the post went up, that happened.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="two-readings" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">The Industry Read the Same Post Two Opposite Ways</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Within a day the response had split in two. Sam Altman called it the most important thing OpenAI has published in a while, and Mustafa Suleyman, who runs Microsoft AI, called it super important and gave the credit to Pachocki and OpenAI. The case for the praise is that it is rare for a company to publish its whole internal tracking curve and then argue for slowing itself down.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Suleyman's support came with a number attached. Writing the day after the post, he said, "We fully support OpenAI's transparency initiative," and disclosed that Microsoft's own foundation model MAI-2 Base has a log-perplexity of 0.819, "putting it in the same ballpark as the GPT-5.6 Sol base model." The value comes from a run on OpenAI's evaluation dataset, and he noted that "Our model uses the same tokenizer as OpenAI, so the numbers are directly comparable." In the same message he wrote that "the fact we have access to OpenAI's evaluation dataset is a special case," and added that "we might need to report bits-per-byte (BPB) rather than perplexity since different labs use different tokenizers." The chart he posted also marked the previous generation, MAI-1 Base, at 0.878.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The other side drew a different conclusion from the same facts. The critical outlet traictory wrote that what OpenAI released is a metric nobody outside the reporting lab can compute, and called the post a press release with decimals. A Hacker News comment the outlet cited compresses the problem. A reader took a perplexity of 5.7 reported for some public model and converted it with a base-10 logarithm to get 0.756, a hair away from the 0.76 that marks the math breakthrough on OpenAI's chart. But that 5.7 came off a body of text the reader had chosen, so traictory's verdict read: "The arithmetic is right and the comparison is meaningless, which is what “different evaluation datasets” means in practice."
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        A second criticism is that there is little policy here yet. The passage proposing common limits is a single paragraph near the end of the post, and it holds more than the limit itself. The post asks developers to establish shared norms for how models are evaluated and for pre-deployment red-team safety checks, to align on transparency standards, and it frames the limit less as one line drawn once than as a series of successive thresholds used to pace development. What is missing comes after that. What the first threshold would be, who checks that it is held, who certifies that a milestone has been reached, and what follows for a company that crosses it are all absent. The same outlet summed the post up as fair for forecasting and weak for regulation, and offered two real tests: whether another lab publishes its own curve on a public fixed corpus, and whether the common limit ever acquires an actual number and an outside auditor.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The first test got an answer within a day, and the answer was half of one. A second number did appear, but the conditions that let it sit on the same scale as OpenAI's were two: OpenAI opened its private test paper to a particular counterpart, and that counterpart happened to use the same tokenizer. No public fixed corpus made it possible. Suleyman himself called the route a special case and had to propose, in the same breath, an alternative for labs whose tokenizers do not line up. The second test, an actual number and an outside auditor, is still unanswered.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 260" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="Diagram of how the second number reached OpenAI's scale. From OpenAI's evaluation dataset on the left, a dashed blocked path goes up to all other developers labeled no public corpus route, while a solid orange path goes down to Microsoft, which OpenAI opened access to as a special case, producing MAI-2 Base at 0.819.">
+                            <text x="350" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">How the second number reached OpenAI's scale</text>
+
+                            <!-- OpenAI box -->
+                            <rect x="30" y="92" width="190" height="78" rx="8" fill="none" stroke="var(--text-muted,#6B7280)" stroke-width="1.2"/>
+                            <text x="125" y="122" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text-primary,#111827)">OpenAI</text>
+                            <text x="125" y="140" text-anchor="middle" font-size="10" fill="var(--text-secondary,#4B5563)">evaluation dataset</text>
+                            <text x="125" y="156" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">fixed snapshot · private</text>
+
+                            <!-- Blocked path (top) -->
+                            <rect x="480" y="34" width="190" height="58" rx="8" fill="none" stroke="var(--text-muted,#6B7280)" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
+                            <text x="575" y="58" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text-secondary,#4B5563)">All other developers</text>
+                            <text x="575" y="76" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">No public corpus route</text>
+                            <line x1="220" y1="100" x2="478" y2="62" stroke="var(--text-muted,#6B7280)" stroke-width="1" stroke-dasharray="3 3" opacity="0.6"/>
+                            <text x="349" y="80" text-anchor="middle" font-size="13" fill="var(--text-muted,#6B7280)">✕</text>
+
+                            <!-- Opened path (bottom, orange) -->
+                            <rect x="480" y="150" width="190" height="78" rx="8" fill="#F86825" fill-opacity="0.08" stroke="#F86825" stroke-width="1.4"/>
+                            <text x="575" y="176" text-anchor="middle" font-size="10.5" font-weight="700" fill="#F86825">Microsoft</text>
+                            <text x="575" y="193" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-primary,#111827)">MAI-2 Base · 0.819</text>
+                            <text x="575" y="209" text-anchor="middle" font-size="9" fill="var(--text-secondary,#4B5563)">same tokenizer</text>
+                            <line x1="220" y1="160" x2="476" y2="180" stroke="#F86825" stroke-width="1.5"/>
+                            <circle cx="476" cy="180" r="4" fill="#F86825"/>
+                            <text x="349" y="150" text-anchor="middle" font-size="10" font-weight="700" fill="#F86825">Special-case access</text>
+
+                            <text x="20" y="245" font-size="9.5" fill="var(--text-muted,#6B7280)">No public corpus made this possible. OpenAI opened the door for one counterparty.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Pebblous diagrammed how Microsoft's MAI-2 Base · 0.819 came to sit beside OpenAI's figures. The route was special access, not a public corpus.
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        There is tension in the condition for crossing the line as well. Crossing is premised on successor techniques to chain-of-thought monitoring, yet the monitorability study OpenAI released on November 10 found that such monitoring tends to weaken across a model's lifecycle. The safety valve ends up tied to a tool that is getting worse.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The timing is worth reading too. Pachocki warned that AI may be able to accelerate its own development as early as 2027, and that this pace could outrun progress in how well people can follow and police what models do. A footnote in the post singles out the steepening of the loss curve during 2026. Most of that acceleration, it says, came from long-running research and compute investment and the contribution from automation is still small, though it attaches the observation that recent models have begun making meaningful contributions to AI design. In the United States, congressional discussion of AI safety rules is moving again after the midterms, and some senators are talking about setting up a committee dedicated to AI policy. President Trump has opposed broad limits on AI development, which leaves room for friction with the new Congress. This is a moment in which a ruler the industry produced first could be picked up by a regulatory debate as it stands.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Why Pebblous Is Watching This</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To anyone working on data quality the shape is familiar. Whether a metric can be trusted is usually decided not by what is being measured but by the data used to measure it. The contamination problem that keeps recurring in model benchmarks worked that way. Let test questions leak into training data and the score rises while the ability the score pointed at stays where it was. An evaluation whose held-out set is never published is the same case. Nobody but the organizer can re-score under the same conditions. The data behind these numbers is, by its own name, a held-out set.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This proposal moves that structure into the seat of a safety norm. A wrong benchmark score shakes a marketing line and stops there. A line that says "this far and no further" is different. Where that line sits decides which models get built bigger and when to stop. If only one company can compute the number in that seat, operational control of the norm follows the number.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        None of which is a reason to fault the choice of perplexity. Treating pretraining capability as one continuous value and comparing generations along it is a useful idea, and publishing an internal curve is not common in this industry. But for the word "common" to hold, three things beyond the name of the metric have to be shared.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed">The same test paper. A fixed evaluation corpus anyone can download and run is what puts each company's value on one scale. Today each company measures on its own data and calls the result by the same name. Even the data Microsoft used for the second number belonged to OpenAI.</li>
+                        <li class="themeable-text leading-relaxed">The same measurement procedure. A small difference in tokenization, document length or deduplication rules moves the second decimal place easily. If a limit is going to be argued over in units of 0.01, procedure matters as much as the value. That Suleyman led with the fact that his model shares OpenAI's tokenizer, and raised bits-per-byte as an alternative, is a sign the industry already senses this condition.</li>
+                        <li class="themeable-text leading-relaxed">The right to recompute. An outside auditor has to be able to reproduce the figure with the same data and the same procedure. Without a path to reproduction the number is less a standard than a disclosure. Where that right currently sits is answered by how 0.819 became possible.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        All three are questions about how data is prepared and published, not about models. Read AI-Ready Data narrowly, as data whose values are clean, and this territory stays invisible. A number becomes a shared standard only when it carries what it was measured on, who holds that data, and whether anyone else can reproduce the conditions. Evaluation data is where that demand bites hardest.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        So the question to put to this post is not whether 0.76 is the right number. It is whether our industry is ready to accept, as a norm, a number measured on somebody's data. Pachocki's post did not dodge that question; it wrote it into a footnote and then made the proposal, leaving the answering to everyone else.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            The figures and quotations for OpenAI models all come from OpenAI's own post and have not been externally verified. The Hacker News example and the critical assessment in Section 3 are reported from traictory's analysis; we could not check the original comment or the public model whose figure it converted. The observation that GPT-4.1 and o3 land in the same spot on the graph is also that outlet reading OpenAI's graph rather than a line of OpenAI's text. Microsoft's 0.819 and 0.878, along with the remarks about special access, tokenizers and bits-per-byte, come from Suleyman's post on X dated November 23; we could not open the post itself and cross-checked it against several articles that quoted it. Those values are Microsoft's own reported numbers and have not been independently audited. Among the press cited, the QZ article was blocked to us, so we cross-checked it against search summaries and an insurance trade publication that carried the same wire copy. The reading in Section 4, and the three conditions, are this article's judgment and are not in the post.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">References</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Primary Sources</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Pachocki, Jakub. (2026). "<a href="https://openai.com/index/perplexity-and-intelligence/" target="_blank" rel="noopener">Perplexity and Intelligence</a>." OpenAI.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Suleyman, Mustafa. (2026). "<a href="https://x.com/mustafasuleyman/status/2124663594449318173" target="_blank" rel="noopener">We fully support OpenAI's transparency initiative</a>." X, 2026-11-23.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Press</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">3.</span><span class="ref-body">Quartz. (2026). "<a href="https://qz.com/openai-chief-scientist-pachocki-industry-ai-limits-112326" target="_blank" rel="noopener">OpenAI's chief scientist calls for industry-wide limits on AI models</a>."</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Insurance Journal. (2026). "<a href="https://www.insurancejournal.com/news/national/2026/11/23/893408.htm" target="_blank" rel="noopener">OpenAI Scientist Urges Industry Limits on AI Development</a>."</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Dealroom. (2026). "<a href="https://dealroom.co/news/174824-openai-publishes-its-internal-pretraining-curve-and-proposes-industry-wi/" target="_blank" rel="noopener">OpenAI publishes its internal pretraining curve and proposes industry-wide limits based on perplexity</a>."</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Cellcog. (2026). "<a href="https://cellcog.ai/blog/microsoft-mai-2-perplexity-openai/" target="_blank" rel="noopener">Microsoft Puts MAI-2 on OpenAI's Perplexity Chart</a>."</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">Analysis</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">7.</span><span class="ref-body">Traictory. (2026). "<a href="https://traictory.com/news/2026-11-23-openai-perplexity-safety-metric" target="_blank" rel="noopener">OpenAI published its private perplexity curve and called it a safety standard</a>."</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=c6e7f730"></script>
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=c0f2a41f" defer></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "scheduled",
+                "actor": "scheduler(auto-seq)",
+                "at": "2026-11-23T17:07:08.687Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-23T17:20:26.900Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1795453628687-vhpswk",
+                "version": "0.1.0",
+                "sha": "e10468e2aa31074851df68ee4bbe86e7f77135ac",
+                "builtAt": "2026-11-21T12:02:35.795Z"
+              },
+              "recordedAt": "2026-11-23T18:32:42.344Z"
+            },
+            mainTitle: "OpenAI's Shared Perplexity Limit, Measured on Its Own Private Code",
+            subtitle: "Pachocki published the curve on November 22, from 0.99 for GPT-3.5 to under 0.8 today, all measured on one fixed snapshot of OpenAI's own codebase",
+            pageTitle: "Perplexity Explained: OpenAI's AI Safety Limit | Pebblous",
+            category: "tech",
+            publishDate: "2026-11-24",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/openai-perplexity-common-limit-internal-eval/en/",
+            tags: ["perplexity", "log-perplexity", "OpenAI", "Jakub Pachocki", "AI safety", "evaluation data", "benchmarks", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "What does perplexity measure?",
+                    answer: "It measures how confused a model is about the character coming next. You show the model a body of evaluation data and average how well it predicts each following token. A smaller value means less confusion, so lower is better. Pachocki reported the logarithm of that value, log-perplexity, which is equivalent to cross-entropy loss."
+                },
+                {
+                    question: "What numbers did OpenAI publish?",
+                    answer: "GPT-3.5, the model behind the first ChatGPT, was at roughly 0.99 and GPT-4 at roughly 0.91, and recent models have come down below 0.8. The model that began producing results on math problems that had stayed open for a long time was at roughly 0.76. Pachocki expects another leap once models enter the band between 0.68 and 0.7."
+                },
+                {
+                    question: "What exactly is the common limit proposal?",
+                    answer: "That developers accept perplexity as an industry-wide metric and agree not to go below a jointly set line until our ability to understand and monitor AI behavior reaches a concrete milestone. The example given of such a milestone was successor techniques to the methods that let researchers inspect a model's chain of thought."
+                },
+                {
+                    question: "What data were these numbers measured on?",
+                    answer: "A fixed snapshot taken from OpenAI's internal codebase, as a footnote in the post states. Every figure since GPT-3.5 rests on that one body of data, and because it is private source code no one else can recompute the values."
+                },
+                {
+                    question: "Who first pointed out that the numbers do not compare across companies?",
+                    answer: "Pachocki did. The post says developers use different evaluation datasets and train on different data mixtures. What makes this case distinctive is that the limit on comparability is the author's own footnote rather than a critic's discovery."
+                },
+                {
+                    question: "Has any other company published its own number on this metric?",
+                    answer: "Microsoft did, the day after the post. It gave the log-perplexity of its foundation model MAI-2 Base as 0.819 and the previous generation MAI-1 Base as 0.878. Microsoft produced the figure on OpenAI's evaluation dataset, and Mustafa Suleyman noted that having access to that dataset is itself a special case. He also explained that the numbers were directly comparable because both models use the same tokenizer."
+                },
+                {
+                    question: "Are there capabilities perplexity misses?",
+                    answer: "Yes. Chain-of-thought reasoning does not reduce the perplexity a model achieves. Reinforcement learning and tool use added after pretraining can raise real capability while this number barely moves. That is why GPT-4.1 and o3 land in effectively the same spot on the post's graph."
+                },
+                {
+                    question: "How did industry reaction split?",
+                    answer: "Sam Altman called it the most important thing OpenAI has published in a while, and Mustafa Suleyman called it super important. On the other side came the judgment that this is a metric nobody outside the reporting lab can compute, and that the post amounts to a press release with decimals."
+                },
+                {
+                    question: "What is missing from the proposal?",
+                    answer: "What the first threshold would be, who checks that it is held, who certifies that a milestone has been reached, and what follows for a company that crosses it are all absent. The passage proposing common limits is itself a single paragraph near the end of the post, and that paragraph also asks for shared norms on model evaluation, pre-deployment red-team checks and transparency standards."
+                },
+                {
+                    question: "What is the problem with the condition for crossing the line?",
+                    answer: "Crossing is premised on successor techniques to chain-of-thought monitoring, yet the monitorability study OpenAI released on November 10 found that such monitoring tends to weaken across a model's lifecycle. The safety valve is tied to a tool that is getting worse."
+                },
+                {
+                    question: "What would it take for this metric to become a shared standard?",
+                    answer: "Three things: the same test paper, the same measurement procedure, and the right to recompute. A fixed evaluation corpus anyone can download puts each company's value on one scale, matching tokenization and deduplication rules keeps those hundredths from drifting, and an outside auditor has to be able to reproduce the figure under the same conditions. Suleyman himself raised reporting bits-per-byte instead of perplexity because labs use different tokenizers."
+                },
+                {
+                    question: "Why does this matter from a data quality standpoint?",
+                    answer: "Whether a metric can be trusted is usually decided by the data used to measure it rather than by what is being measured. Benchmark contamination and unpublished held-out sets were the same structure. This proposal moves that structure into the seat of a safety norm, and if only one company can compute the number holding up the norm, operational control of the norm follows the number."
+                }
+            ]
+        });
+    </script>
+</body>
+</html>
