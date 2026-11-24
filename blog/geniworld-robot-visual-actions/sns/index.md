@@ -45,7 +45,7 @@ A generative model earns its place in robotics not when its scenes look right, b
 
 ## Twitter/X (KO)
 
-로봇의 동작을 숫자로 주는 대신 팔 전체를 화면에 그려 넣었다. GeniWorld가 만든 연습 장면을 보태 학습한 정책의 실물 작업 성공률은 40.8%에서 69.0%로 올랐다.
+로봇의 동작을 숫자로 주는 대신 팔 전체를 화면에 그려 넣었다. RoboTwin 2.0 비교에서 새 장면 예측 점수는 숫자 입력 51.49, 팔 전체 렌더링 63.54였다.
 
 생성한 장면의 값어치는 그럴듯함이 아니라 실물 작업 완료율로 갈린다.
 
@@ -57,7 +57,7 @@ https://blog.pebblous.ai/blog/geniworld-robot-visual-actions/ko/
 
 ## Twitter/X (EN)
 
-Draw the whole robot arm on screen instead of passing the action in as numbers. Policies trained with GeniWorld's generated practice scenes went from 40.8% to 69.0% on real dual-arm tasks.
+Draw the whole robot arm on screen instead of passing the action in as numbers. In the RoboTwin 2.0 comparison, the new-scene score rose from 51.49 with numeric input to 63.54 with the full rendered arm.
 
 Generated scenes are judged by what the robot finishes, not by how real they look.
 

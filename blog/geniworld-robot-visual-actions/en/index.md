@@ -1,6 +1,6 @@
 ---
 title: How GeniWorld Builds New Practice Scenes for Robots
-subtitle: The generated scenes raise real-robot task success from 40.8% to 69.0%
+subtitle: Rendered robot arms beat joint numbers at predicting new scenes
 date: 2026-11-24
 category: tech
 source: index.html
@@ -9,7 +9,7 @@ note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 �
 
 # How GeniWorld Builds New Practice Scenes for Robots
 
-_The generated scenes raise real-robot task success from 40.8% to 69.0%_
+_Rendered robot arms beat joint numbers at predicting new scenes_
 
 ## Executive Summary
 
@@ -43,7 +43,7 @@ The input with the whole arm drawn in earned the highest EWMScore in this compar
 
 Once a video model that takes actions is in hand, it can be used to build new practice scenes. The team first changed the first frame with an image editing model. They moved the target object to the edge of the workbench, placed a new object of the same kind, or added other objects nearby. On the edited frame they replayed the existing manipulation commands, and where new motion was needed a person operated the robot while watching the generated frames. It is a way to change the condition in the first frame together with the manipulation performed under that condition. [Paper §IV-D and Figure 10](https://arxiv.org/html/2608.06332v2#S4.SS4)
 
-The real-robot tests used one dual-arm Xtrainer robot and four tasks. Moving a bowl, folding a towel, placing a mug, and opening a drawer, putting an object in and closing it. For each task, 25 real demonstrations collected by teleoperation were the starting point. To that they compared adding 65 synthetic demonstrations built by changing positions, and adding a further 65 synthetic demonstrations that reflect several environmental conditions. In each data configuration the same pretrained π₀ model was fine-tuned with the same settings. Evaluation was done under the usual condition and four conditions where the position, the surrounding objects, the target object and the lighting differ. Each combination of task and condition was tested 20 times on the real robot, recording 400 trials per data configuration. [Paper §IV-B and §IV-D](https://arxiv.org/html/2608.06332v2#S4.SS4) · [Appendix C, Table III and test procedure](https://arxiv.org/html/2608.06332v2#A3)
+The real-robot tests used one dual-arm Xtrainer robot and four tasks. Moving a bowl, folding a towel, placing a mug, and opening a drawer, putting an object in and closing it. For each task, 25 real demonstrations collected by teleoperation were the starting point. To that they compared adding 65 synthetic demonstrations built by changing positions, and adding a further 65 synthetic demonstrations that reflect several environmental conditions. In each data configuration the same pretrained π₀ model was fine-tuned with the same settings. Evaluation was done under the usual condition and four conditions where the position, the surrounding objects, the target object and the lighting differ. Each combination of task and condition was tested 20 times on the real robot, recording 400 trials per data configuration. [Paper §IV-B](https://arxiv.org/html/2608.06332v2#S4.SS2) · [§IV-D](https://arxiv.org/html/2608.06332v2#S4.SS4) · [Appendix C, Table III and test procedure](https://arxiv.org/html/2608.06332v2#A3)
 
 The policy trained on the real demonstrations alone had an overall success rate of 40.8%. Adding the demonstrations with changed positions brought it to 51.0%, and adding both kinds brought it to 69.0%. Return to the drawer task from the opening. Under the condition with other objects placed nearby, the number of successes at putting the marker in and closing the drawer completely rose from 6 out of 20 to 13. Taking the four tasks together, the final success rate under the changed-lighting condition was 52.5%, the lowest of the five conditions. Looking separately at the tasks and conditions with low success rates tells you which demonstrations to obtain next. [Appendix C, Table III](https://arxiv.org/html/2608.06332v2#A3)
 
