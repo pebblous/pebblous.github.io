@@ -59,6 +59,8 @@ window.PebblousHubCards = (function() {
         var pathFilter = options.pathFilter;
         var extraPaths = options.extraPaths || [];
         var excludePaths = options.excludePaths || [];
+        // series: 사이드카 series 값이 같은 글을 담는다 (2026-11-25, 연재 허브). pathFilter 와 함께 쓰면 둘 중 하나만 맞아도 담는다.
+        var series = options.series || null;
         var language = options.language || 'ko';
         var maxCards = options.maxCards || 0;
 
@@ -71,6 +73,7 @@ window.PebblousHubCards = (function() {
                     if (!a.path || !a.published || (a.language || 'ko') !== language) return false;
                     if (a.type === 'hub') return false;
                     if (excludePaths.some(function(ep) { return a.path.includes(ep); })) return false;
+                    if (series && a.series === series) return true;
                     return a.path.includes(pathFilter) || extraPaths.some(function(ep) { return a.path.includes(ep); });
                 })
                 .sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
