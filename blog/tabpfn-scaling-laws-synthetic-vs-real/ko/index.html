@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TabPFN 스케일링 법칙 분석 — 합성 데이터 성적과 실제 데이터 성적이 갈리는 지점 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="표 데이터 모델 TabPFN을 6,120번 학습시켜 규모 법칙을 다시 측정한 논문이 나왔다. 합성 데이터 손실은 예측과 0.001 차이로 맞았지만 실제 데이터 성적은 0.020만큼 좋게 예측됐고, 평가 데이터셋이 적으면 성능이 체계적으로 과대평가됐다.">
+    <meta name="keywords" content="TabPFN, TabPFN 스케일링 법칙, TabPFNv2, nanoTabPFN, 합성데이터 사전학습, 표 데이터 파운데이션 모델, 스케일링 법칙 외삽, 평가 데이터셋 선택 편향, TabArena, 합성데이터 한계">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="TabPFN">
+    <meta name="pb-search-keyword-forms" content="TabPFN|TabPFNv2|nanoTabPFN">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/tabpfn-scaling-laws-synthetic-vs-real/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/tabpfn-scaling-laws-synthetic-vs-real/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/tabpfn-scaling-laws-synthetic-vs-real/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/tabpfn-scaling-laws-synthetic-vs-real/ko/">
+
+    <!-- Google Scholar -->
+    <meta name="citation_title" content="가짜 표로만 배운 AI TabPFN, 키워도 진짜 표에선 기대만 못하다">
+    <meta name="citation_author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="citation_publication_date" content="2026/11/26">
+    <meta name="citation_online_date" content="2026/11/26">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="가짜 표로만 배운 AI TabPFN, 키워도 진짜 표에선 기대만 못하다">
+    <meta property="og:description" content="표 데이터 모델 TabPFN을 6,120번 학습시켜 규모 법칙을 다시 측정한 논문이 나왔다. 합성 데이터 손실은 예측과 0.001 차이로 맞았지만 실제 데이터 성적은 0.020만큼 좋게 예측됐고, 평가 데이터셋이 적으면 성능이 체계적으로 과대평가됐다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/tabpfn-scaling-laws-synthetic-vs-real/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/tabpfn-scaling-laws-synthetic-vs-real/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="합성 데이터로 세운 예측선 위에 합성 성적은 그대로 올라앉고 실제 데이터 성적만 벗어나는 모습을 그린 도식">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-11-26">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="가짜 표로만 배운 AI TabPFN, 키워도 진짜 표에선 기대만 못하다">
+    <meta name="twitter:description" content="표 데이터 모델 TabPFN을 6,120번 학습시켜 규모 법칙을 다시 측정한 논문이 나왔다. 합성 데이터 손실은 예측과 0.001 차이로 맞았지만 실제 데이터 성적은 0.020만큼 좋게 예측됐다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/tabpfn-scaling-laws-synthetic-vs-real/ko/image/index.png">
+    <meta name="twitter:image:alt" content="합성 데이터로 세운 예측선 위에 합성 성적은 그대로 올라앉고 실제 데이터 성적만 벗어나는 모습을 그린 도식">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=5f0a37e3"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=7f5a0b5e">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=bea798d5">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=f542b79f">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#no-real-tables" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 실제 표를 한 장도 보지 않는 모델</a></li>
+                    <li><a href="#how-measured" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 공식을 세운 구간과 시험한 구간을 갈라 놓았다</a></li>
+                    <li><a href="#synthetic-vs-real" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 합성 쪽은 맞고 실제 쪽은 어긋났다</a></li>
+                    <li><a href="#what-moved" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 합성 손실과 실제 성적이 가리키는 곳이 다르다</a></li>
+                    <li><a href="#how-many-datasets" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 평가 데이터셋을 몇 개 써야 믿을 만한가</a></li>
+                    <li><a href="#not-compared" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 실제 표를 섞은 비교는 이 논문에 없다</a></li>
+                    <li><a href="#why-pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">7. 페블러스가 이 일에 주목하는 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            표 한 장을 통째로 받아 그 자리에서 답을 내놓는 모델이 있다. 데이터마다 새로 학습시키는 과정 없이, 표를 입력으로 넣으면 한 번의 계산으로 예측이 나온다. TabPFN 계열이 그런 모델이고, 이 계열은 사전학습에 실제 표를 한 장도 쓰지 않는다. 생성기가 지어낸 가짜 표만 보고 배운다. 그 모델을 더 키우면 성적이 얼마나 오르는지를 처음부터 다시 측정한 논문이 11월 18일 arXiv에 올라왔다. 크기와 학습 조건을 달리한 모델 6,120개를 약 80,500 GPU시간에 걸쳐 학습시킨 결과다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            가짜 표 쪽 성적은 공식대로 나왔다. 10<sup>13</sup>에서 10<sup>16</sup> FLOPs 구간의 데이터로 세운 공식이 10<sup>17</sup> FLOPs에서의 검증 손실을 0.769로 예측했고 실측은 0.770이었다. 그런데 같은 공식으로 실제 데이터 성적을 예측하면 어긋난다. 음의 로그가능도는 0.289로 예측됐는데 실측은 0.309였다. 0.020만큼 틀렸고, 틀린 방향은 한쪽이다. 공식은 모델이 실제보다 좋을 것이라고 봤다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            1절부터 6절까지는 논문에 적힌 것과 1차 자료에서 확인한 것을 따라간다. 합성 데이터를 쓰는 쪽에서 이 결과를 어떻게 받아야 하는지를 다루는 7절은 이 글의 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-3">앞의 둘은 공식이 어디서 맞고 어디서 어긋났는지를 보여 주고, 뒤의 둘은 그 공식을 얼마나 믿을 수 있는지를 가르는 숫자다.</p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2611.24214" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Towards Reliable Scaling Laws for Tabular Foundation Models</a>(arXiv 2611.24214, 2026년 11월 18일 제출).</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.001</p>
+                            <p class="text-sm themeable-text-secondary mt-1">가짜 표 손실의 외삽 오차</p>
+                            <p class="text-xs themeable-muted mt-1">10¹⁷ FLOPs에서 예측 0.769, 실측 0.770</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.020</p>
+                            <p class="text-sm themeable-text-secondary mt-1">실제 데이터 성적을 좋게 본 폭</p>
+                            <p class="text-xs themeable-muted mt-1">NLL 예측 0.289, 실측 0.309</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">8개와 20개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">과대평가가 가라앉는 평가셋 수</p>
+                            <p class="text-xs themeable-muted mt-1">같은 모델인데 NLL은 8개, ROC AUC는 20개부터</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">6,120회</p>
+                            <p class="text-sm themeable-text-secondary mt-1">공식 한 줄에 들어간 학습</p>
+                            <p class="text-xs themeable-muted mt-1">약 80,500 GPU시간, 10¹³~10¹⁷ FLOPs</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="no-real-tables" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">실제 표를 한 장도 보지 않는 모델</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표로 된 데이터를 다루는 방식은 오래 한 가지였다. 가진 데이터에 맞춰 모델을 새로 학습시키고, 데이터가 바뀌면 다시 학습시킨다. TabPFN 계열은 이 순서를 바꾼다. 학습용 행과 예측할 행을 한 덩어리로 묶어 모델에 넣으면, 모델이 그 안에서 규칙을 읽어 내 답을 돌려준다. 새로 학습시키는 단계가 없다. 2025년 네이처에 실린 TabPFNv2가 이 방식을 작은 표에서 쓸 만한 수준까지 올려놨고, 그 뒤로 표 데이터용 기반 모델이라는 이름이 붙었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 계열의 특이한 점은 사전학습 데이터다. 현실에서 모은 표는 아예 쓰이지 않는다. 규칙에 따라 지어낸 표 수백만 장이 그 자리를 통째로 대신한다. 합성 데이터에 기대는 정도로 따지면 지금 나와 있는 모델군 가운데 가장 끝에 있는 쪽이다. 그래서 TabPFN 계열에 규모 법칙을 적용하면 질문이 하나 더 붙는다. 더 키웠을 때 좋아지는 성적이 가짜 표에서 나온 것인지 실제 표에서 나온 것인지를 갈라 봐야 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이번 논문이 측정한 대상은 TabPFNv2 자체가 아니라 그 구조를 단순하게 다시 구현한 공개 코드 nanoTabPFN이다. 사전학습 표는 TabICLv1의 MLP 생성기가 만든 분류 문제이고, 학습과 평가를 한 묶음으로 돌리는 일은 먼저 나와 있던 TFM-Playground라는 도구로 했다. 연구용으로 쓸 만한 크기에서 격자를 촘촘히 채울 수 있게 만든 설정이다. 저자들은 이 구조를 고른 이유도 적어 뒀는데, 연구를 시작하던 시점에 학습 파이프라인까지 열려 있는 표 데이터 기반 모델이 몇 안 됐기 때문이다. 이번에 저자들이 공개한 것은 규모 법칙 측정값과 그림을 다시 그리는 코드다. 가장 작은 모델은 파라미터 1,826개, 가장 큰 모델은 553,482개로 스무 가지 크기를 썼다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        누가 측정했는지도 이 결과를 읽는 데 관계가 있다. 저자 일곱 명의 소속으로 적힌 곳은 프라이부르크 대학, 델프트 공대, ELLIS 튀빙겐 연구소, 그리고 Prior Labs다. Prior Labs는 TabPFN을 제품으로 만드는 회사이고 SAP가 2026년 5월에 인수했다. TabPFN 논문 두 편에 모두 이름이 올라 있는 프랑크 후터도 공저자로 들어가 있다. 규모 법칙이 실제 데이터에서 어긋난다는 보고가 그 모델을 만들어 파는 쪽에서 나왔다는 뜻이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        격자에서 흔든 조건은 여덟 가지다. 학습에 거는 조건과 모델 구조 조건에 더해, 사전학습에 쓰는 표 한 장의 크기까지 탐색 대상에 넣은 점이 눈에 띈다. 표의 행과 열을 몇 개까지 허용할지가 모델 크기나 학습률과 같은 줄에 올라가 있다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">흔든 조건</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">값</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border"><td class="py-3 pr-4">학습률</td><td class="py-3">5×10⁻⁵에서 5×10⁻¹ 사이 12개 값</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 pr-4">가중치 감쇠</td><td class="py-3">0, 0.0001, 0.1</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 pr-4">배치 크기</td><td class="py-3">32, 64, 128</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 pr-4">임베딩 크기</td><td class="py-3">8, 16, 32, 64</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 pr-4">층 수</td><td class="py-3">1, 2, 4, 6, 8, 10</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 pr-4">어텐션 헤드 수</td><td class="py-3">2, 4</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 pr-4">표 한 장의 최대 열 수</td><td class="py-3">2, 4, 8, 16</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-3 pr-4">표 한 장의 최대 행 수</td><td class="py-3">100, 200, 400, 800, 1200</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="text-xs themeable-muted mb-8">
+                        ▲ 최적화 방법은 AdamW로, MLP 은닉 크기는 임베딩 크기의 4배로 고정했다. 출처: arXiv 2611.24214 표 1
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="how-measured" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">공식을 세운 구간과 시험한 구간을 갈라 놓았다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        규모 법칙을 다루는 연구에서 가장 흔한 약점은 공식을 세운 데이터로 그 공식이 잘 맞는다고 말하는 것이다. 이번 논문은 그 자리를 처음부터 나눠 뒀다. 10<sup>13</sup>에서 10<sup>16</sup> FLOPs까지 네 예산에서 모은 6,075회의 학습으로 공식을 세우고, 10<sup>16.25</sup>에서 10<sup>17</sup> FLOPs 사이의 45회는 공식을 세울 때 한 번도 보지 않은 채로 남겨 둬 예측이 맞는지 확인하는 데만 썼다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">계산량 예산</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">10¹³</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">10¹⁴</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">10¹⁵</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">10¹⁶</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">10¹⁷</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 font-semibold">학습 횟수</td>
+                                    <td class="py-3 pr-4">4,050</td>
+                                    <td class="py-3 pr-4">1,651</td>
+                                    <td class="py-3 pr-4">288</td>
+                                    <td class="py-3 pr-4">86</td>
+                                    <td class="py-3">45</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="text-xs themeable-muted mb-8">
+                        ▲ 앞의 네 칸 6,075회로 공식을 세웠고, 10¹⁷ 칸의 45회는 외삽을 확인하는 데만 썼다. 출처: arXiv 2611.24214 표 2
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        남겨 둔 45회가 어떻게 고른 설정인지는 함께 봐야 한다. 이 45회는 앞의 격자에서 그대로 뽑은 것이 아니라 공식이 내놓은 처방 주변에서 고른 설정이고, 표 1에 적힌 값에 매이지도 않았다. 그러니 이 시험이 답하는 질문은 아무 설정이나 10<sup>17</sup> FLOPs로 키웠을 때 공식이 맞느냐가 아니다. 공식이 가리킨 대로 설정을 골라 키웠을 때 공식이 말한 자리에 닿느냐다. 규모 법칙을 실제로 쓰는 방식에 가까운 시험이지만, 시험 대상을 시험 도구가 골랐다는 점은 남는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공식을 세우는 절차는 이렇다. 먼저 각 계산량 예산에서 가장 좋은 성적을 낸 학습만 남겨 경계선을 긋는다. 조건을 잘못 골라 낭비한 학습이 아니라, 그 예산으로 낼 수 있는 최선을 모은 선이다. 그 선에 아래 함수를 맞춘다.
+                    </p>
+
+                    <div class="themeable-card rounded-xl p-5 mb-6 text-center">
+                        <p class="themeable-text text-lg">L(C) = A · C<sup>−α</sup> + L<sub>0</sub></p>
+                        <p class="text-sm themeable-muted mt-2">C는 계산량, L은 손실이다. ROC AUC처럼 위아래가 막힌 지표는 1에서 뺀 값을 L로 놓는다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        1에서 뺀다는 단서는 앞선 연구에 뿌리가 있다. 표 데이터 기반 모델의 규모를 다룬 연구는 전에도 있었다. TabDPT는 모델 크기와 실제 사전학습 데이터 사이의 멱법칙을 세웠고, LimiX는 합성 데이터 쪽 규모를 봤으며, MegaTabICL은 계산량에 맞는 모델 크기와 학습 길이를 따졌다. 저자들이 그 가운데 LimiX를 짚어 지적한 대목이 함수의 모양이다. 제약을 걸지 않고 세운 식은 ROC AUC처럼 1을 넘을 수 없는 지표에서 1보다 큰 값을 예측해 버릴 수 있다. 1에서 뺀 값을 손실로 놓고 바닥 항 L<sub>0</sub>를 양수로 묶어 두면 예측이 계산량과 함께 좋아지되 지표의 천장을 넘지는 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        적합은 로그 공간에서 후버 손실을 최소화하는 방식으로, 초기값 105개를 각각 돌려 가장 좋은 것을 골랐다. 계산량을 모델 크기와 데이터 크기에 어떻게 나눠 줘야 하는지는 로그-로그 공간의 최소제곱으로 따로 구했고, 호프만 연구진이 친칠라 논문에서 쓴 첫 번째 방법을 그대로 따랐다고 밝혔다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        성적은 세 가지로 측정했다. 합성 검증 손실은 학습에 쓰지 않은 합성 표에서 측정하는데, 500~1,000행에 5~50열인 작은 표 2,048장과 1,000~3,000행에 50~150열인 중간 표 1,024장을 따로 떼어 썼다. 두 묶음에서 각각 평균을 낸 뒤 그 둘을 같은 무게로 다시 평균해 한 숫자로 만든다. 장수는 2,048 대 1,024로 두 배 차이인데 점수에서 차지하는 무게는 같다. 실제 데이터 성적은 TabArena 벤치마크에서 500열·10,000행 이하 조건으로 추린 데이터셋 21개에서 음의 로그가능도와 ROC AUC로 측정했다. 500열·10,000행이라는 선은 TabPFNv2가 다루도록 설계된 범위와 같다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            세 지표는 성격이 서로 다르다. 합성 검증 손실은 모델이 배운 그 세계 안에서 얼마나 잘하는지를 보여 준다. 실제 데이터 NLL은 모델이 내놓은 확률이 실제 정답 분포와 얼마나 가까운지를 본다. ROC AUC는 확률 값 자체는 제쳐 두고 순위를 제대로 매겼는지만 본다. 뒤에서 보겠지만 이 셋은 계산량을 어디에 더 써야 하는지에 대해 서로 다른 답을 내놓는다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="synthetic-vs-real" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">합성 쪽은 맞고 실제 쪽은 어긋났다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 지표 모두 규모 법칙 자체는 깔끔하게 맞았다. 적합 결정계수가 0.986에서 0.997 사이다. 숫자만 보면 TabPFNv2 계열도 다른 모델군과 마찬가지로 예측 가능한 곡선을 그린다고 말할 수 있다. 문제는 그 공식을 학습하지 않은 구간으로 끌고 나갔을 때 벌어진다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">지표</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">10¹⁷ 실측</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">10¹⁷ 예측</th>
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">적합 R²</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">외삽 평균오차</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">합성 검증 손실</td>
+                                    <td class="py-3 pr-4">0.770</td>
+                                    <td class="py-3 pr-4">0.769</td>
+                                    <td class="py-3 pr-4">0.997</td>
+                                    <td class="py-3">0.001</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">실제 데이터 NLL</td>
+                                    <td class="py-3 pr-4">0.309</td>
+                                    <td class="py-3 pr-4">0.289</td>
+                                    <td class="py-3 pr-4">0.986</td>
+                                    <td class="py-3">0.011</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4">실제 데이터 ROC AUC</td>
+                                    <td class="py-3 pr-4">0.877</td>
+                                    <td class="py-3 pr-4">0.873</td>
+                                    <td class="py-3 pr-4">0.991</td>
+                                    <td class="py-3">0.004</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="text-xs themeable-muted mb-8">
+                        ▲ 적합은 10¹⁶ FLOPs까지의 경계선으로 하고, 외삽은 10<sup>16.25</sup>부터 10¹⁷까지 네 예산에서 확인했다. 출처: arXiv 2611.24214 표 3
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        합성 검증 손실은 예측 0.769에 실측 0.770이다. 계산량을 열 배 늘린 자리에서 소수점 셋째 자리까지 맞았으니, 이 지표만 보고 판단한다면 공식을 믿고 투자 계획을 세워도 되겠다고 말할 만하다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실제 데이터 NLL은 예측 0.289에 실측 0.309다. 절대값으로는 0.020이고 실측값 대비로는 6%를 조금 넘는다. 작아 보이는 숫자지만 두 가지 때문에 그냥 넘기기 어렵다. 첫째, 틀린 자리가 한 방향으로만 쏠려 있다. 공식이 내놓은 값은 실측보다 늘 후했다. 둘째, 이 차이는 계산량을 키울수록 벌어졌다. 적합 구간 안에서는 보이지 않다가 바깥으로 나가면서 벌어진 간격이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        ROC AUC는 예측 0.873에 실측 0.877로 NLL보다 덜 어긋났다. 다만 이 지표는 뒤에서 다룰 다른 자리에서 가장 크게 흔들린다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 370" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="계산량을 가로축에, 손실을 세로축에 놓은 모식도. 10의 13제곱에서 10의 16제곱 FLOPs 구간의 데이터로 공식을 세웠고, 그 오른쪽은 공식이 예측한 구간이다. 합성 검증 손실의 실측 점은 10의 17제곱 FLOPs에서 예측선 위에 그대로 올라앉아 예측 0.769와 실측 0.770의 차이가 0.001이다. 실제 데이터 음의 로그가능도의 실측 점은 같은 자리에서 예측선보다 0.020 위에 있으며, 공식이 성적을 실제보다 좋게 본 쪽으로 어긋났다.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">공식은 어디까지 맞았나</text>
+                            <text x="340" y="44" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">합성 쪽 실측은 예측선 위에 그대로 올라앉고, 실제 데이터 쪽 실측만 선 위로 벗어난다</text>
+
+                            <rect x="497" y="60" width="143" height="210" fill="#F86825" opacity="0.06"/>
+                            <line x1="497" y1="60" x2="497" y2="270" stroke="#F86825" stroke-width="1" stroke-dasharray="4 3"/>
+                            <text x="491" y="76" text-anchor="end" font-size="9" fill="var(--text-muted,#6B7280)">여기까지의 학습으로 공식을 세웠다</text>
+                            <text x="503" y="76" font-size="9" fill="#F86825">여기는 예측</text>
+
+                            <line x1="70" y1="270" x2="645" y2="270" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <line x1="70" y1="60" x2="70" y2="270" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+
+                            <text x="70" y="288" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">10¹³</text>
+                            <text x="212" y="288" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">10¹⁴</text>
+                            <text x="355" y="288" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">10¹⁵</text>
+                            <text x="497" y="288" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">10¹⁶</text>
+                            <text x="620" y="288" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">10¹⁷</text>
+                            <text x="355" y="308" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">학습에 쓴 계산량 (FLOPs)</text>
+                            <text x="26" y="165" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)" transform="rotate(-90 26 165)">손실 (낮을수록 좋다)</text>
+
+                            <path d="M70 95 C 200 160 340 205 497 228" fill="none" stroke="#F86825" stroke-width="2"/>
+                            <path d="M497 228 C 540 235 585 239 620 241" fill="none" stroke="#F86825" stroke-width="2" stroke-dasharray="5 4"/>
+                            <circle cx="620" cy="241" r="4.5" fill="#F86825"/>
+
+                            <path d="M70 125 C 200 180 340 215 497 236" fill="none" stroke="#808080" stroke-width="2"/>
+                            <path d="M497 236 C 540 242 585 246 620 248" fill="none" stroke="#808080" stroke-width="2" stroke-dasharray="5 4"/>
+                            <circle cx="620" cy="224" r="4.5" fill="none" stroke="#808080" stroke-width="2"/>
+                            <line x1="620" y1="248" x2="620" y2="228" stroke="#CF1D21" stroke-width="1.5"/>
+                            <text x="612" y="214" text-anchor="end" font-size="9" fill="#CF1D21">0.020 벗어남</text>
+
+                            <line x1="20" y1="322" x2="660" y2="322" stroke="var(--border-color,#E5E7EB)" stroke-width="1"/>
+                            <circle cx="28" cy="340" r="4.5" fill="#F86825"/>
+                            <text x="40" y="344" font-size="9.5" fill="var(--text-secondary,#4B5563)">합성 검증 손실 · 10¹⁷에서 예측 0.769, 실측 0.770. 점이 선 위에 그대로 앉는다</text>
+                            <circle cx="28" cy="358" r="4.5" fill="none" stroke="#808080" stroke-width="2"/>
+                            <text x="40" y="362" font-size="9.5" fill="var(--text-secondary,#4B5563)">실제 데이터 NLL · 예측 0.289, 실측 0.309. 점이 선보다 위에, 곧 나쁜 쪽에 있다</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식. 두 지표를 한 축에 겹쳐 놓은 모식도라 곡선의 기울기와 세로 눈금은 실제 값이 아니고, 표시한 네 숫자만 논문 값이다. 출처: <a href="https://arxiv.org/abs/2611.24214" target="_blank" rel="noopener" class="underline">arXiv 2611.24214 표 3</a> 재구성
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="what-moved" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">합성 손실과 실제 성적이 가리키는 곳이 다르다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        규모 법칙의 쓸모는 숫자를 맞히는 데 있지 않다. 다음 예산을 어디에 쓸지 정하는 데 있다. 모델을 더 키울지 데이터를 더 넣을지를 두고, 이번 논문에서 세 지표는 같은 답을 내놓지 않았다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>모델을 키우라는 쪽과 표를 키우라는 쪽</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        합성 검증 손실은 파라미터를 더 늘리라고 요구한다. 실제 데이터 성적은 사전학습에 쓰는 합성 표를 더 크게 만들 때 더 많이 올라간다. 같은 계산량을 놓고 한 지표는 모델을, 다른 지표는 데이터를 지목하는 셈이다. 합성 손실만 보고 예산을 배분하면 모델 크기에 치우치게 되고, 그 선택이 실제 표에서 가장 좋은 선택이라는 보장은 이 실험 안에 없다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그렇다고 저자들이 둘 중 하나를 고르라고 하지는 않았다. 어느 지표로 측정하든 더 키우면 좋아진다는 기본 신호는 같게 나왔으니, 갈라지는 것은 신호가 아니라 처방이다. 그래서 둘을 모두 측정해 합성 쪽 공식이 낙관적인 끝을, 실제 쪽 공식이 보수적인 끝을 잡게 하고 큰 예산의 학습을 그 사이에서 돌리라는 것이 저자들의 제언이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        답이 늘 엇갈리지는 않았다. 사전학습 표의 행과 열을 계산량에 따라 얼마나 빨리 키워야 하는지에 대해서는, 합성 검증 손실과 실제 데이터 NLL이 비슷한 처방을 내놨다. 두 지표가 갈라지는 자리와 겹치는 자리가 따로 있다는 뜻이다. 혼자 다른 말을 한 것은 ROC AUC로, 행과 열을 더 빠르게 키우라고 요구했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        계산량과 함께 아예 움직이지 않은 것도 있다. 저자들은 흔든 조건 여덟 가지와 거기서 파생된 값들에 대해 계산량에 따른 추세선을 하나씩 구했는데, 모양을 나타내는 두 비율에서는 추세가 잡히지 않았다. 임베딩 크기를 층 수로 나눈 값과 한 장의 행 수를 열 수로 나눈 값이다. 예산이 커져도 모델이 깊어질지 넓어질지, 표가 길어질지 넓어질지는 한 방향으로 쏠리지 않았다는 뜻이다. 가중치 감쇠는 추세선을 아예 구하지 않았는데, 경계선에 올라온 설정들의 값에 0이 들어 있기 때문이라고 적었다. 반대로 파라미터 수와 모델이 본 칸 수는 결정계수 0.84 이상으로 잘 맞았고, 거기서 벗어난 조합은 ROC AUC와 파라미터 수 하나뿐이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>표 크기가 규모 변수다</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문이 반복해서 밀고 있는 주장은 사전학습 표의 크기를 고정값으로 두면 안 된다는 것이다. 저자들은 데이터셋 크기가 규모의 사다리에 올라가야 한다고 적었다. 근거로 든 비교가 분명하다. 표를 4열·100행으로 묶어 둔 좁은 설정도, 16열·400행으로 묶어 둔 넓은 설정도, 계산량에 따라 표 크기를 함께 키운 경우를 따라오지 못했다. 넓게 잡아 두는 것만으로는 안 되고, 예산이 커질 때 표도 같이 커져야 한다는 결과다. 여기서 넓은 설정이라 부른 16열·400행은 이 비교 안에서 가장 큰 쪽을 가리킨다. 탐색 공간 전체의 최대치는 따로 있어서, 표 1은 열을 16까지, 행을 1,200까지 허용한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이것은 합성 데이터를 만드는 쪽에서 흔히 하는 선택과 어긋난다. 생성기의 설정은 보통 한 번 정해 두고 그 설정으로 데이터를 계속 찍어 낸다. 양은 늘어도 한 장의 생김새는 그대로다. 이 논문의 결과대로라면 양을 늘리는 것과 한 장을 키우는 것은 다른 일이고, 뒤쪽이 실제 데이터 성적에 더 크게 작용한다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>멱법칙 한 줄로 안 맞은 자리</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        규모 법칙이 모든 조건에서 같은 모양이었던 것도 아니다. 앞의 비교에서 표를 가장 크게 잡은 설정(16열·400행)에서 ROC AUC의 경계선은 한동안 평평하다가 어느 지점에서 급히 오르고 그 뒤로 다시 완만해졌다. 멱법칙 한 줄로도, 로지스틱 한 줄로도 두 구간을 함께 맞출 수 없었다. 저자들은 끊어진 멱법칙을 포함해 여러 형태를 견준 뒤 대표로 셋을 보고했다. 로지스틱 하나, 멱법칙에 로지스틱 결손을 더한 형태, 로지스틱 둘을 더한 형태다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        고른 것은 마지막이지만 이유가 적합 오차 하나는 아니다. 경계선 관측 19개에 대한 제곱근 평균 오차는 로지스틱 둘이 0.0038로 가장 작은 반면, 앞쪽만 보고 뒤를 맞혀 보는 되짚기 오차는 멱법칙에 결손을 더한 형태가 0.004로 더 좋았다. 판가름이 난 자리는 다른 곳이다. 멱법칙에 결손을 더한 형태는 일부러 제한해 둔 이 설정의 곡선을 아무 제한 없이 고른 전체 곡선보다 0.030 위까지 밀어 올린다. 좁혀 놓은 쪽이 안 좁힌 쪽보다 좋아진다는 예측이라 받아들이기 어렵다. 로지스틱 둘은 그 값이 −0.002로 전체 곡선 아래에 머물렀다. 적합이 얼마나 잘 맞느냐가 아니라 바깥에서 말이 되느냐로 고른 셈이다. 이 형태는 해당 비교 실험에만 썼다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            함수 형태를 바꿔야 했다는 사실 자체가 하나의 결과다. 규모 법칙을 세울 때 보통은 멱법칙을 전제로 놓고 계수를 구한다. 그런데 조건을 바꾸자 그 전제가 깨졌다. 같은 모델, 같은 생성기, 지표 하나 차이인데 곡선의 모양이 달라졌다. 공식이 잘 맞았다는 보고를 받으면 어느 조건에서 어떤 형태로 맞았는지도 함께 물어야 한다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="how-many-datasets" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">평가 데이터셋을 몇 개 써야 믿을 만한가</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문에서 실무에 가장 가까운 대목은 규모 법칙 쪽이 아니라 평가 쪽이다. 저자들이 던진 질문은 단순하다. 평가 데이터셋 몇 개로 고른 설정이, 그 평가에 쓰지 않은 데이터셋에서도 그만큼 좋은가.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        확인은 이렇게 했다. 21개 가운데 하나를 떼어 숨기고, 남은 20개에서 n개를 뽑는다. 뽑은 n개에서 평균 성적이 가장 좋은 설정을 각 계산량 예산마다 고르고, 그 설정을 숨겨 둔 하나에서 채점한다. 뽑는 일을 20번 되풀이하고, 숨기는 데이터셋을 21개 전부 돌아가며 바꾼다. 뽑을 때의 성적과 숨겨 둔 데이터셋에서의 성적 사이에 생기는 간격이 선택 편향이고, 이 간격을 규모 법칙 적합 자체의 잔차와 견준다. 잔차보다 작아져야 그 간격이 측정 잡음에 묻혔다고 볼 수 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        답은 지표마다 달랐다. NLL은 데이터셋 8개에서 간격이 잔차 아래로 내려갔다. ROC AUC는 20개가 돼서야 내려갔다. 같은 모델, 같은 실험, 같은 데이터셋 묶음인데 믿을 만해지는 지점이 두 배 반 차이다. 순위만 보는 지표가 확률 값을 보는 지표보다 데이터셋 사이의 편차에 더 휘둘린다는 뜻으로 읽힌다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        20이라는 숫자에는 단서가 하나 붙는다. 20은 이 실험이 시험할 수 있던 가장 큰 값이기도 하다. 21개 가운데 하나를 숨기고 남은 20개에서 뽑는 구조라 n이 갈 수 있는 끝이 20이고, 저자들이 실제로 시험한 n은 1, 2, 3, 5, 8, 12, 16, 20 여덟 자리였다. ROC AUC 결과는 20개면 충분하다는 뜻이 아니라 끝까지 가서야 겨우 닿았다는 뜻으로 읽는 편이 맞다. 몇 개가 더 필요했을지는 이 실험 구조 안에서 알 수 없다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 330" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="가로축은 설정을 고를 때 쓴 평가 데이터셋 수이고 세로축은 고를 때의 성적과 숨겨 둔 데이터셋에서의 성적 사이 간격이다. 가로 점선은 규모 법칙 적합의 잔차 수준이다. 음의 로그가능도 곡선은 데이터셋 8개에서 이 점선 아래로 내려가고, ROC AUC 곡선은 20개가 되어서야 내려간다. 평가 데이터셋을 적게 쓰면 성능이 체계적으로 과대평가된다는 것을 보여 주는 모식도다.">
+                            <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary,#111827)">평가셋이 적으면 성적이 부풀려진다</text>
+                            <text x="340" y="44" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#6B7280)">간격이 적합 잔차 아래로 내려가는 지점이 지표마다 다르다</text>
+
+                            <line x1="70" y1="250" x2="645" y2="250" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+                            <line x1="70" y1="60" x2="70" y2="250" stroke="var(--border-color,#E5E7EB)" stroke-width="1.5"/>
+
+                            <line x1="70" y1="200" x2="645" y2="200" stroke="var(--text-muted,#6B7280)" stroke-width="1" stroke-dasharray="5 4"/>
+                            <text x="645" y="193" text-anchor="end" font-size="9" fill="var(--text-muted,#6B7280)">규모 법칙 적합의 잔차</text>
+
+                            <path d="M70 88 C 130 140 200 175 273 200 C 380 218 500 224 620 227" fill="none" stroke="#F86825" stroke-width="2"/>
+                            <circle cx="273" cy="200" r="4.5" fill="#F86825"/>
+                            <text x="273" y="186" text-anchor="middle" font-size="9.5" font-weight="600" fill="#F86825">NLL · 8개</text>
+
+                            <path d="M70 102 C 130 152 200 178 273 188 C 400 196 520 199 620 200" fill="none" stroke="#808080" stroke-width="2"/>
+                            <circle cx="620" cy="200" r="4.5" fill="none" stroke="#808080" stroke-width="2"/>
+                            <text x="614" y="218" text-anchor="end" font-size="9.5" font-weight="600" fill="#808080">ROC AUC · 20개</text>
+
+                            <text x="70" y="268" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">1</text>
+                            <text x="186" y="268" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">5</text>
+                            <text x="273" y="268" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">8</text>
+                            <text x="389" y="268" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">12</text>
+                            <text x="504" y="268" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">16</text>
+                            <text x="620" y="268" text-anchor="middle" font-size="9" fill="var(--text-muted,#6B7280)">20</text>
+                            <text x="355" y="288" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)">설정을 고를 때 쓴 평가 데이터셋 수</text>
+                            <text x="26" y="155" text-anchor="middle" font-size="9.5" fill="var(--text-secondary,#4B5563)" transform="rotate(-90 26 155)">고를 때와 실제의 간격</text>
+
+                            <text x="70" y="315" font-size="8.5" fill="var(--text-muted,#6B7280)">그림: 페블러스 · 근거: arXiv 2611.24214 4.3절</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식. 두 곡선의 모양은 논문이 보고한 두 지점(8개·20개)을 나타내기 위한 모식도이고, 곡선의 중간값과 세로 눈금은 실제 값이 아니다. 출처: <a href="https://arxiv.org/abs/2611.24214" target="_blank" rel="noopener" class="underline">arXiv 2611.24214</a> 재구성
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 결과가 3절의 숫자와 묶이는 자리가 중요하다. 합성 검증 손실의 적합 결정계수는 0.997이었다. 곡선이 데이터에 거의 완벽하게 붙었다는 뜻이다. 그런데 평가 데이터셋을 적게 쓰면, 그 완벽하게 붙은 곡선이 가리키는 설정이 바깥 데이터에서는 그만큼 좋지 않다. 적합이 잘됐다는 사실과 결론을 믿어도 된다는 사실은 서로 다른 이야기다. 이 논문 제목에 믿을 만한이라는 말이 들어간 것도 그래서다.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="not-compared" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">실제 표를 섞은 비교는 이 논문에 없다</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        합성 데이터를 다루는 글에서 가장 궁금한 비교가 하나 있다. 합성 표를 더 넣는 것과 실제 표를 같은 양 넣는 것 중 어느 쪽이 더 나은가. 이 논문에는 그 비교가 없다. 실제 데이터셋 21개는 처음부터 끝까지 평가에만 쓰였고 사전학습에는 한 장도 들어가지 않았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        가장 가까운 결과가 4.1절의 처방이다. 실제 데이터 성적은 합성 사전학습 표를 키우는 쪽에서 더 많이 올라갔다. 그러나 이것도 합성 데이터 안에서의 비교다. 실제 표를 섞으면 어떻게 되는지는 이 실험이 답하지 않는다. 합성 표를 키우는 것이 실제 표를 넣는 것보다 낫다고 읽으면 논문이 하지 않은 말을 하는 것이 된다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        범위도 좁게 잡혀 있다. 아키텍처는 nanoTabPFN 한 종류, 생성기는 TabICLv1의 MLP 프라이어 한 종류, 과제는 분류뿐이다. 가장 큰 모델도 파라미터 55만 개 남짓이라 실제로 배포되는 TabPFNv2보다 훨씬 작다. 여기서 나온 계수를 더 큰 모델에 그대로 가져다 쓸 수 있는지는 이 논문이 보여 주지 않았다. 저자들도 생성기 자체를 함수 안의 변수로 넣는 일을 앞으로의 과제로 남겨 뒀다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>확인한 것, 저자가 주장한 것, 이 글이 읽은 것</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 갈래는 근거의 무게가 다르다. 앞의 둘은 논문을 짚으면 되고, 마지막 하나는 짚을 곳이 이 글뿐이다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-3 pr-4 font-semibold themeable-heading">갈래</th>
+                                    <th class="text-left py-3 font-semibold themeable-heading">내용</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top font-semibold">1차 자료로 확인</td>
+                                    <td class="py-3">10¹³~10¹⁶ FLOPs에서 6,075회, 10¹⁷ 부근 45회, 약 80,500 GPU시간. 파라미터 1,826~553,482. nanoTabPFN과 TabICLv1 MLP 프라이어. 적합 R²와 외삽 평균오차 세 쌍, 10¹⁷에서의 예측과 실측 여섯 숫자, NLL 0.020 과소추정. 선택 편향이 잔차 아래로 내려가는 지점이 NLL 8개·ROC AUC 20개. 평가는 TabArena에서 500열·10,000행 이하로 추린 21개이고 선택 편향 실험의 n은 20에서 끝난다는 것. 10¹⁷의 45회가 격자가 아니라 처방 주변에서 고른 설정이라는 것. 가장 큰 프라이어에서 ROC AUC를 로지스틱 둘의 합으로 다시 적합한 것과 그 선택의 근거 수치(제곱근 평균 오차 0.0038, 되짚기 오차 0.008과 0.004, 전체 곡선 대비 최대 초과 −0.002와 +0.030). 저자 소속 목록에 Prior Labs가 들어 있다는 것</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top font-semibold">저자의 주장</td>
+                                    <td class="py-3">합성 지표와 실제 지표를 함께 측정해야 한다는 것, 평가셋이 충분히 커야 한다는 것, 사전학습 표의 크기를 계산량과 함께 키워야 한다는 것. 세 가지 모두 이 실험에서 끌어낸 제언이고 다른 아키텍처·다른 생성기에서 독립적으로 재확인된 것은 아니다</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 pr-4 align-top font-semibold">이 글의 해석</td>
+                                    <td class="py-3">합성 데이터를 늘리는 일과 실무 성능이 오르는 일이 같은 축이 아니라는 틀, 그리고 7절에서 실무로 옮긴 질문은 논문에 적힌 문장이 아니라 이 결과를 쓰는 자리에서 다시 구성한 것이다. 논문은 모델을 만드는 쪽을 향해 쓰였고, 7절은 합성 데이터로 성적을 보고받는 쪽을 향한다</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="why-pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 이 일에 주목하는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        합성 데이터를 쓰는 조직은 거의 예외 없이 같은 자리에 선다. 데이터를 더 만들 수는 있는데, 더 만든 것이 실제로 도움이 됐는지는 확인하기 어렵다. 확인하려면 실제 데이터가 필요하고, 실제 데이터가 넉넉했다면 애초에 합성 데이터를 만들 이유가 적었을 것이기 때문이다. 이번 논문은 그 난처한 자리를 숫자로 보여 준 드문 사례다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        눈여겨볼 것은 어긋난 폭이 아니라 어긋난 모양이다. 합성 쪽 곡선은 거의 완벽했다. 0.997이라는 결정계수와 0.001이라는 외삽 오차는 어떤 기준으로도 좋은 적합이다. 그 좋은 적합이 실제 데이터 성적을 0.020 좋게 봤다. 합성 쪽 지표가 깔끔할수록 실제 데이터도 괜찮을 것이라는 직관이 여기서 끊긴다. 합성 손실은 생성기를 얼마나 잘 흉내 냈는지를 측정하는 것이고, 그 생성기가 현실을 얼마나 닮았는지는 다른 데서 측정해야 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        평가 쪽 결과는 더 직접적이다. 데이터셋 여덟 개 미만으로 고른 설정은 그 선택 자체가 성능을 부풀려 보고한다. ROC AUC로 보고하고 있다면 스무 개다. 모델 성능을 몇 개의 검증 데이터로 확인하고 있는지는 대부분의 조직이 한 번쯤 세어 볼 만한 숫자인데, 세어 보면 보통 그보다 적다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        합성 데이터로 학습하거나 평가한 모델의 성적을 받을 때 확인할 것은 셋이다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>그 성적이 어느 쪽 데이터에서 나왔는가</strong>. 생성기가 만든 데이터에서 측정한 손실이라면, 그것은 생성기를 얼마나 잘 따라 했는지에 대한 숫자다. 이번 논문에서 두 쪽의 차이는 결정계수 0.997과 NLL 0.020 과소추정으로 나타났다</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>실제 데이터 몇 개로 확인했는가</strong>. 개수가 적으면 좋은 쪽으로 치우친다. 이 실험에서 그 치우침이 측정 잡음에 묻히는 지점은 NLL 8개, ROC AUC 20개였다</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-orange-500 mt-1">•</span>
+                            <span class="themeable-text leading-relaxed"><strong>데이터를 늘렸는가, 한 건을 키웠는가</strong>. 이 논문에서 실제 데이터 성적을 움직인 쪽은 사전학습 표의 행과 열이었다. 생성기 설정을 고정해 두고 양만 늘리는 방식은 그 축을 건드리지 않는다</span>
+                        </li>
+                    </ul>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            논문을 읽는 내내 걸렸던 것은 4.3절이 본문에서 차지한 분량이다. 선택 편향 실험은 규모 법칙 자체와 직접 관계가 없고, 빼도 논문은 성립한다. 그런데 저자들은 그 실험을 넣고 제목에 믿을 만한이라는 말을 붙였다. 자기들이 세운 공식의 적합도가 0.997인데도 그 숫자만으로는 부족하다고 스스로 적은 셈이다. 다만 이 논문이 쓴 평가셋도 21개이고, 자기 기준인 ROC AUC 20개를 겨우 넘긴다. 공개된 코드와 도구로 다른 생성기를 넣어 같은 실험을 돌려 보는 일은 아직 남아 있다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- 연재 허브 링크 -->
+                <p class="themeable-text leading-relaxed mb-16 series-hub-link">이 글은 <a href="/series/synthetic-data/ko/" class="underline">합성데이터 연재</a>의 한 편이다. 같은 연재의 다른 글은 연재 허브에 모여 있다.</p>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">1차 출처</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Hog, J., Mallik, N., Adriaensen, S. et al. (2026). "<a href="https://arxiv.org/abs/2611.24214" target="_blank" rel="noopener">Towards Reliable Scaling Laws for Tabular Foundation Models</a>." arXiv:2611.24214.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 논문</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">2.</span><span class="ref-body">Hollmann, N., Müller, S., Purucker, L. et al. (2025). "<a href="https://doi.org/10.1038/s41586-024-08328-6" target="_blank" rel="noopener">Accurate Predictions on Small Data with a Tabular Foundation Model</a>." Nature, 637, 319–326.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Qu, J., Holzmüller, D., Varoquaux, G., Le Morvan, M. (2025). "<a href="https://arxiv.org/abs/2502.05564" target="_blank" rel="noopener">TabICL: A Tabular Foundation Model for In-Context Learning on Large Data</a>." ICML 2025. arXiv:2502.05564.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">Zhang, X. et al. (2025). "<a href="https://arxiv.org/abs/2509.03505" target="_blank" rel="noopener">LimiX: Unleashing Structured-Data Modeling Capability for Generalist Intelligence</a>." arXiv:2509.03505.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">Erickson, N., Purucker, L., Tschalzev, A. et al. (2025). "<a href="https://arxiv.org/abs/2506.16791" target="_blank" rel="noopener">TabArena: A Living Benchmark for Machine Learning on Tabular Data</a>." NeurIPS 2025. arXiv:2506.16791.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">Hoffmann, J., Borgeaud, S., Mensch, A. et al. (2022). "<a href="https://arxiv.org/abs/2203.15556" target="_blank" rel="noopener">Training Compute-Optimal Large Language Models</a>." NeurIPS 2022. arXiv:2203.15556.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Ma, J., Thomas, V., Hosseinzadeh, R. et al. (2024). "<a href="https://arxiv.org/abs/2410.18164" target="_blank" rel="noopener">TabDPT: Scaling Tabular Foundation Models on Real Data</a>." NeurIPS 2025. arXiv:2410.18164.</span></li>
+                        <li><span class="ref-num">8.</span><span class="ref-body">Kaushal, A., Yasafova, D., Rish, I. (2026). "MegaTabICL: Efficient Scaling of Tabular Foundation Model Pretraining." <a href="https://nips.cc/virtual/2026/loc/paris/170101" target="_blank" rel="noopener">NeurIPS 2026 Workshop (AXIOM)</a>.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">오픈소스 도구</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">9.</span><span class="ref-body">Pfefferle, A., Hog, J., Purucker, L., Hutter, F. (2025). "<a href="https://arxiv.org/abs/2511.03634" target="_blank" rel="noopener">nanoTabPFN: A Lightweight and Educational Reimplementation of TabPFN</a>." arXiv:2511.03634.</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">Pfefferle, A., Hog, J., Öztürk, S. B. et al. (2026). "<a href="https://github.com/automl/TFM-Playground" target="_blank" rel="noopener">TFM-Playground: A Playground for Tabular Foundation Models</a>." GitHub.</span></li>
+                    </ul>
+                </section>
+
+                <!-- Series / Hub Notice -->
+                <div class="themeable-card rounded-xl p-6 mt-8 mb-8" style="border-left: 4px solid #F86825;">
+                    <p class="text-sm font-bold themeable-heading mb-2">📚 합성데이터 연재</p>
+                    <p class="text-sm themeable-text leading-relaxed">
+                        합성 문서로 개인정보 탐지를 가르친 데이터셋을 같은 눈으로 본 이전 글: <a href="/blog/nemotron-pii-japan-synthetic-documents/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">Nemotron PII Japan, 개인정보 없이 개인정보 탐지를 가르친다</a>. TabPFN이 기업 제품으로 넘어가는 과정은 <a href="/report/sap-prior-labs-tabular-foundation-model/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">모델은 준비됐다, 그런데 당신의 테이블은?</a>에서 다뤘다. 연재의 모든 글은 <a href="/series/synthetic-data/ko/" class="text-orange-500 hover:text-orange-400 font-semibold">합성데이터 연재 허브</a>에 있다.
+                    </p>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=c6e7f730"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "series-trial",
+                "at": "2026-11-25T11:13:35.637Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-25T11:29:28.294Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1795605215637-0uhkss",
+                "version": "0.1.0",
+                "sha": "e10468e2aa31074851df68ee4bbe86e7f77135ac",
+                "builtAt": "2026-11-21T12:02:35.795Z"
+              },
+              "recordedAt": "2026-11-25T12:55:01.608Z"
+            },
+            mainTitle: "가짜 표로만 배운 AI TabPFN, 키워도 진짜 표에선 기대만 못하다",
+            subtitle: "모델을 키우면 얼마나 좋아지는지 학습 6,120회로 다시 측정하니, 가짜 표에서는 예측이 맞고 진짜 표에서는 빗나간다",
+            pageTitle: "TabPFN 스케일링 법칙 분석 — 합성 데이터 성적과 실제 데이터 성적이 갈리는 지점 | 페블러스",
+            category: "tech",
+            publishDate: "2026-11-26",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/tabpfn-scaling-laws-synthetic-vs-real/ko/",
+            tags: ["TabPFN", "TabPFNv2", "nanoTabPFN", "합성 데이터", "스케일링 법칙", "표 데이터 파운데이션 모델", "데이터 품질", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "TabPFN은 무엇인가?",
+                    answer: "표로 된 데이터를 다루는 기반 모델이다. 보통은 가진 데이터에 맞춰 모델을 새로 학습시키지만, TabPFN은 학습용 행과 예측할 행을 한 덩어리로 묶어 넣으면 그 안에서 규칙을 읽어 내 한 번의 계산으로 답을 돌려준다. 2025년 네이처에 실린 TabPFNv2가 이 방식을 작은 표에서 쓸 만한 수준으로 올려놨다. 특이한 점은 사전학습 데이터로, 실제 표를 모아 쓰지 않고 생성기가 지어낸 합성 표만으로 배운다."
+                },
+                {
+                    question: "이 논문은 무엇을 측정했나?",
+                    answer: "TabPFNv2 계열을 더 키웠을 때 성적이 얼마나 오르는지를 나타내는 규모 법칙이다. 크기와 학습 조건을 달리한 모델을 10의 13제곱에서 10의 16제곱 FLOPs 구간에서 6,075회 학습시켜 공식을 세우고, 10의 17제곱 부근에서 45회를 따로 학습시켜 그 공식이 맞는지 확인했다. 합쳐서 약 6,120회이고 약 80,500 GPU시간이 들었다. 측정 대상은 TabPFNv2를 단순하게 다시 구현한 공개 코드 nanoTabPFN이고, 사전학습 표는 TabICLv1의 MLP 생성기가 만들었다."
+                },
+                {
+                    question: "규모 법칙이 잘 맞았다는 것은 어느 쪽 이야기인가?",
+                    answer: "합성 데이터 쪽이다. 학습에 쓰지 않은 합성 표에서 측정한 검증 손실은 적합 결정계수가 0.997이었고, 공식을 10의 17제곱 FLOPs로 끌고 나갔을 때 예측 0.769에 실측 0.770으로 거의 그대로 맞았다. 외삽 평균오차는 0.001이다."
+                },
+                {
+                    question: "실제 데이터에서는 얼마나 어긋났나?",
+                    answer: "음의 로그가능도는 10의 17제곱 FLOPs에서 예측 0.289에 실측 0.309로, 0.020만큼 좋게 예측됐다. 적합 결정계수는 0.986, 외삽 평균오차는 0.011이다. ROC AUC는 예측 0.873에 실측 0.877로 덜 어긋났다. 세 지표 모두 적합 자체는 좋았는데, 학습하지 않은 구간으로 나가면서 실제 데이터 쪽만 한쪽 방향으로 벌어졌다."
+                },
+                {
+                    question: "평가 데이터셋은 몇 개가 필요한가?",
+                    answer: "이 실험에서는 음의 로그가능도로 평가할 때 8개, ROC AUC로 평가할 때 20개였다. 평가 데이터셋 21개 중 하나를 숨기고 남은 20개에서 n개를 뽑아 설정을 고른 뒤 숨겨 둔 하나에서 채점하는 방식으로, 고를 때의 성적과 실제 성적 사이의 간격이 규모 법칙 적합의 잔차 아래로 내려가는 지점을 찾았다. 그보다 적게 쓰면 고른 설정의 성능이 체계적으로 부풀려진다."
+                },
+                {
+                    question: "합성 사전학습 데이터를 늘리면 실제 성능이 오르나?",
+                    answer: "이 논문에서 실제 데이터 성적을 더 많이 움직인 쪽은 사전학습 표의 크기였다. 표를 4열·100행으로 묶어 둔 설정도 16열·400행으로 묶어 둔 설정도, 계산량에 따라 표 크기를 함께 키운 쪽을 따라오지 못했다. 반대로 합성 검증 손실은 파라미터를 더 키우라고 요구한다. 같은 계산량을 놓고 두 지표가 다른 곳을 가리킨 셈이다."
+                },
+                {
+                    question: "실제 표를 학습에 섞으면 더 나아지나?",
+                    answer: "이 논문은 그 비교를 하지 않았다. 실제 데이터셋 21개는 평가에만 쓰였고 사전학습에는 한 장도 들어가지 않았다. 합성 표를 키우는 쪽이 실제 데이터 성적을 더 많이 올렸다는 결과는 어디까지나 합성 데이터 안에서의 비교이고, 실측 데이터를 같은 양 더했을 때 어떻게 되는지는 답하지 않는다."
+                },
+                {
+                    question: "이 연구의 범위 한계는 무엇인가?",
+                    answer: "아키텍처는 nanoTabPFN 한 종류, 생성기는 TabICLv1의 MLP 프라이어 한 종류, 과제는 분류뿐이다. 가장 큰 모델도 파라미터 55만 개 남짓이라 실제로 배포되는 TabPFNv2보다 훨씬 작고, 여기서 구한 계수를 더 큰 모델에 그대로 옮겨 쓸 수 있는지는 확인되지 않았다. 저자들은 생성기 자체를 함수 안의 변수로 넣는 일을 앞으로의 과제로 적었다."
+                },
+                {
+                    question: "실무에서는 무엇을 확인해야 하나?",
+                    answer: "셋이다. 보고받은 성적이 합성 데이터에서 나온 것인지 실제 데이터에서 나온 것인지, 실제 데이터로 확인했다면 몇 개로 확인했는지, 그리고 합성 데이터를 양만 늘렸는지 한 건의 크기까지 키웠는지다. 합성 쪽 손실이 깔끔하게 떨어지는 것과 실제 업무 성능이 오르는 것은 이 논문에서 같은 축이 아니었다."
+                }
+            ]
+        });
+    </script>
+    <script src="/scripts/citation-download.js?v=c0f2a41f" defer></script>
+</body>
+
+</html>
