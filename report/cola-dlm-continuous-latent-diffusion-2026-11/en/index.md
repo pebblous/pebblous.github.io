@@ -1,6 +1,6 @@
 ---
 title: Cola DLM Plans the Whole Answer Before It Writes a Word
-subtitle: A ByteDance Seed team released the model in May; the transformer stays in place, and only the left-to-right order comes off
+subtitle: A ByteDance Seed team released the model in May; instead of writing one word at a time, it settles the meaning of each chunk of text first and then turns it into words
 date: 2026-11-26
 category: tech
 source: index.html
@@ -9,7 +9,7 @@ note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 �
 
 # Cola DLM Plans the Whole Answer Before It Writes a Word
 
-_A ByteDance Seed team released the model in May; the transformer stays in place, and only the left-to-right order comes off_
+_A ByteDance Seed team released the model in May; instead of writing one word at a time, it settles the meaning of each chunk of text first and then turns it into words_
 
 ## Executive Summary
 
@@ -46,7 +46,7 @@ Training comes in two stages as well. The Text VAE is trained on its own first, 
 
 ### 1.2. The Transformer Never Moved
 
-Treating this design as one that dispensed with the transformer inverts the picture. The name of the prior model that circulates inside that space is a diffusion transformer, and the opponent it sets up is the generation order, not the architecture. Autoregressive generation is the method that emits one token at a time from left to right, and the introduction describes it as tightly bound to a fixed left-to-right order. That binding is what comes off.
+Treating this design as one that dispensed with the transformer inverts the picture. The name of the prior model that circulates inside that space is a diffusion transformer, and the opponent it sets up is the generation order, not the architecture. Autoregressive generation is the method that emits one token at a time from left to right, and the introduction describes it as tightly bound to a fixed left-to-right order. Inside each block that binding comes off; the blocks themselves still run front to back.
 
 The caveat came from the authors before it came from anyone else. A week after release, the first author wrote on a personal blog that **"we do not have a theoretical justification that continuity alone could surpass discreteness."** The same post carries another line: **"the motivation behind Cola DLM has never been diffusion — it has always been representation."** The motivation was representation, not diffusion. That is also why this article spends so long on the quality of the space that holds the representation.
 
