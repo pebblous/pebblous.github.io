@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+
+    <title>Cola DLM 분석 — 연속 잠재 확산 언어모델의 구조와 측정 조건 | 페블러스</title>
+    <meta name="description" content="ByteDance Seed 연구진이 2026년 5월 공개한 Cola DLM은 문장을 연속 좌표로 옮긴 뒤 그 위에서 확산을 돌리는 언어모델이다. 트랜스포머는 그대로 쓰고, 여덟 과제 비교는 그림으로 실려 있으며, 인쇄된 절대 점수는 공개 저장소에 있다.">
+    <meta name="keywords" content="Cola DLM, 확산 언어모델, 연속 잠재 공간, Text VAE, DiT, 확산 트랜스포머, LLaDA, ByteDance Seed, 자기회귀, 잠재 차원, 데이터 품질, AI-Ready Data">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="Cola DLM">
+    <meta name="pb-search-keyword-forms" content="Cola DLM|Cola-DLM|CoLA DLM|Continuous Latent Diffusion Language Model">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/report/cola-dlm-continuous-latent-diffusion-2026-11/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/report/cola-dlm-continuous-latent-diffusion-2026-11/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/report/cola-dlm-continuous-latent-diffusion-2026-11/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/report/cola-dlm-continuous-latent-diffusion-2026-11/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="확산 언어모델 Cola DLM, 글자보다 뜻을 먼저 짠다">
+    <meta property="og:description" content="ByteDance Seed 연구진이 5월에 공개한 Cola DLM은 문장을 연속 좌표로 옮겨 그 위에서 확산을 돌린다. 트랜스포머는 그대로 쓰고, 풀리는 것은 왼쪽에서 오른쪽이라는 순서다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/report/cola-dlm-continuous-latent-diffusion-2026-11/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/report/cola-dlm-continuous-latent-diffusion-2026-11/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="확산 언어모델 Cola DLM, 글자보다 뜻을 먼저 짠다">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+    <meta name="twitter:title" content="확산 언어모델 Cola DLM, 글자보다 뜻을 먼저 짠다">
+    <meta name="twitter:description" content="ByteDance Seed 연구진이 5월에 공개한 Cola DLM은 문장을 연속 좌표로 옮겨 그 위에서 확산을 돌린다. 트랜스포머는 그대로 쓰고, 풀리는 것은 왼쪽에서 오른쪽이라는 순서다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/report/cola-dlm-continuous-latent-diffusion-2026-11/ko/image/index.png">
+    <meta name="twitter:image:alt" content="확산 언어모델 Cola DLM, 글자보다 뜻을 먼저 짠다">
+
+    <!-- Google Scholar Citation Meta -->
+    <meta name="citation_title" content="확산 언어모델 Cola DLM, 글자보다 뜻을 먼저 짠다 — 연속 잠재 공간 위의 확산과 그 측정 조건">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/11/26">
+    <meta name="citation_online_date" content="2026/11/26">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Styles (순서 고정: theme-variables -> tailwind-build -> common-styles) -->
+    <link rel="stylesheet" href="/css/theme-variables.css?v=7f5a0b5e">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=bea798d5">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=f542b79f">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <style>
+        /* 도식 박스·캡션·표 숫자 정렬 — 공통 컴포넌트가 없어 이 리포트 로컬로만 정의 */
+        .fig-box {
+            background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+        }
+        .fig-caption {
+            font-size: 0.85rem;
+            color: var(--text-muted, #808080);
+            line-height: 1.8;
+            margin-top: 0.5rem;
+        }
+        .comparison-table td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .comparison-table th.num { text-align: right; }
+        .comparison-table .hit { color: #F86825; font-weight: 700; }
+        .comparison-table .low { color: #808080; }
+        .comparison-table td.tag { white-space: nowrap; }
+    </style>
+</head>
+<body class="antialiased themeable-bg">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#section-1" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 문장을 좌표로 옮겨 놓고 그 위에서 확산을 돌린다</a></li>
+                    <li><a href="#section-2" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 여덟 과제의 점수는 어떤 조건에서 나온 값인가</a></li>
+                    <li><a href="#section-3" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 좌표계의 품질이 생성 품질의 천장이 된다</a></li>
+                    <li><a href="#section-4" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 이미지까지 같은 좌표에 올린다는 말은 어디까지 참인가</a></li>
+                    <li><a href="#section-5" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 같은 확산이라도 바닥이 둘이고, 연속 쪽도 처음이 아니다</a></li>
+                    <li><a href="#pebblous-perspective" class="block pl-4 themeable-toc-link transition-colors duration-200">페블러스 관심의 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">자주 묻는 질문</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6">
+
+                <!-- Hero Section -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            Cola DLM 은 글자를 왼쪽에서 오른쪽으로 하나씩 내지 않는다. 문장을 연속 좌표로 옮기고 되돌리는 쪽인 Text VAE 가 먼저 문장을 그 자리에 올려놓으면, 확산 트랜스포머(DiT)가 그 위에서 응답 전체의 뜻을 짜고, 글자는 맨 마지막에 디코더가 찍는다. 바이트댄스의 AI 연구 조직인 ByteDance Seed 를 비롯한 연구진 열한 명이 올해 5월 7일에 공개했고, NeurIPS 2026 포스터로 채택돼 12월 8일 발표를 앞두고 있다. 확산 언어모델이라는 이름은 올해 이미 여러 번 나왔지만 앞선 것들의 확산은 토큰 위에서 돌았다. Cola DLM 이 옮긴 것은 모델의 종류가 아니라 확산이 도는 바닥이다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            그래서 트랜스포머를 치운 모델이라는 읽기는 성립하지 않는다. 뜻을 짜는 DiT 가 곧 트랜스포머이고, 바뀐 자리는 왼쪽에서 오른쪽이라는 생성 순서다. 1저자도 자기 블로그에 적었다. 연속성만으로 이산을 넘어선다는 이론적 근거는 우리에게 없다고. 문장을 연속 공간에 올리는 시도 자체도 처음이 아니다. 2022년부터 있었고, 같은 설계의 다른 논문이 Cola DLM 공개 하루 뒤에 또 올라왔다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            문장을 올려놓는 바닥을 바꾸면 점수를 매기는 방식도 같이 바뀐다. 세 모델은 임베딩을 뺀 백본 크기를 맞추고 같은 토크나이저·같은 시드·같은 연산 예산으로 겨뤘지만, 채점은 생성한 글자가 그대로 맞아야 점수가 붙는 방식이라 이 표의 MMLU 는 바깥 점수판의 MMLU 와 같은 값으로 읽을 수 없다. 여덟 과제 비교는 표 대신 그림으로 실려 있고, 인쇄된 절대 점수는 논문 바깥의 공개 저장소에 있으며, 저장소는 그 평균이 논문이 보고한 최종 평균보다 높다고 스스로 적는다. 논문은 부록에서 이 설계의 전제도 직접 밝혔다. 데이터 안에 쓸 만한 저차원 의미 구조가 있다는 가정 위에 선다는 것이다.
+                        </p>
+                    </div>
+
+                    <!-- Stat Cards — 본문 확정 후 역추출(5-D.5)에서 재검토 대상 -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">8.7 → 11.8</p>
+                            <p class="text-sm themeable-text-secondary mt-1">좌표 하나를 16개 수에서 128개 수로</p>
+                            <p class="text-xs themeable-muted mt-1">세 과제 부분집합·117 EFLOPs·전부 랜덤 초기화 조건의 평균</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">26.65%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">공개 체크포인트 여덟 과제 평균</p>
+                            <p class="text-xs themeable-muted mt-1">공개 저장소 기준 — 저장소는 논문의 최종 평균이 이보다 낮다고 적는다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">1.8B</p>
+                            <p class="text-sm themeable-text-secondary mt-1">세 모델을 맞춘 자리</p>
+                            <p class="text-xs themeable-muted mt-1">총 파라미터 말고 임베딩을 뺀 백본. 토크나이저·시드·연산 예산도 같다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">~2000 EFLOPs</p>
+                            <p class="text-sm themeable-text-secondary mt-1">스케일링 곡선 끝의 학습 연산량</p>
+                            <p class="text-xs themeable-muted mt-1">공개된 가중치가 이 지점이고, 곡선은 아직 오르는 중이다</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-1" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">문장을 좌표로 옮겨 놓고 그 위에서 확산을 돌린다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Cola DLM 의 생성은 세 칸을 차례로 지난다. 첫 칸에서 Text VAE 가 문장을 연속 좌표로 옮긴다. 둘째 칸에서 확산 트랜스포머가 그 좌표 위에서 응답 전체의 뜻을 짠다. 셋째 칸에서 같은 Text VAE 의 디코더가 그것을 글자로 되돌린다. 논문은 이 가운데 칸의 확산이 하는 일을 토큰 단위 관측을 복원하는 일 대신 잠재 사전분포를 옮기는 일이라고 적는다. 사전분포는 모델이 먼저 그려 두는 분포를 말한다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.1</span>글자는 맨 마지막 칸에서야 나온다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        세 칸을 그림으로 펼치면 무엇이 옮겨 갔는지가 한눈에 보인다. 앞서 하우스가 다룬 <a href="/report/diffusion-gemma-text-generation/ko/" class="text-orange-500 hover:underline">문장을 한 번에 쓰는 확산 모델 DiffusionGemma</a> 와 그 글의 기준선 LLaDA 에서는 확산이 토큰 자리 위에서 직접 돌았다. 가려진 토큰을 되살리는 이산 마스크 확산이다. Cola DLM 에서는 그 자리가 둘로 갈라져, 좌표로 옮기는 칸과 그 위에서 뜻을 짜는 칸이 따로 선다.
+                    </p>
+
+                    <div class="fig-box">
+                        <svg viewBox="0 0 660 268" width="100%" role="img" aria-label="Cola DLM 의 생성 경로를 문장, Text VAE 인코더, 연속 좌표, block-causal DiT, Text VAE 디코더, 글자 순으로 늘어놓고, 아래에 토큰 위에서 바로 도는 이산 마스크 확산을 대조한 도식">
+                            <text x="6" y="18" font-size="12" font-weight="700" fill="var(--text-secondary, #585858)">Cola DLM 의 생성 경로 — 확산이 도는 칸은 가운데다</text>
+
+                            <rect x="5" y="44" width="110" height="68" rx="8" fill="none" stroke="var(--text-muted, #BDBDBD)" stroke-width="1.5"></rect>
+                            <text x="60" y="72" font-size="12" text-anchor="middle" font-weight="700" fill="var(--text-secondary, #585858)">문장</text>
+                            <text x="60" y="92" font-size="10" text-anchor="middle" fill="var(--text-muted, #808080)">토큰 열</text>
+
+                            <rect x="140" y="44" width="110" height="68" rx="8" fill="none" stroke="var(--text-muted, #BDBDBD)" stroke-width="1.5"></rect>
+                            <text x="195" y="72" font-size="12" text-anchor="middle" font-weight="700" fill="var(--text-secondary, #585858)">Text VAE</text>
+                            <text x="195" y="92" font-size="10" text-anchor="middle" fill="var(--text-muted, #808080)">인코더</text>
+
+                            <rect x="275" y="44" width="110" height="68" rx="8" fill="none" stroke="#F86825" stroke-width="2"></rect>
+                            <text x="330" y="72" font-size="12" text-anchor="middle" font-weight="700" fill="#F86825">연속 좌표</text>
+                            <text x="330" y="92" font-size="10" text-anchor="middle" fill="var(--text-muted, #808080)">문장이 놓이는 자리</text>
+
+                            <rect x="410" y="44" width="110" height="68" rx="8" fill="#F86825"></rect>
+                            <text x="465" y="68" font-size="11" text-anchor="middle" font-weight="700" fill="#ffffff">block-causal</text>
+                            <text x="465" y="84" font-size="11" text-anchor="middle" font-weight="700" fill="#ffffff">DiT</text>
+                            <text x="465" y="100" font-size="9.5" text-anchor="middle" fill="#ffffff">확산으로 뜻을 짠다</text>
+
+                            <rect x="545" y="44" width="110" height="68" rx="8" fill="none" stroke="var(--text-muted, #BDBDBD)" stroke-width="1.5"></rect>
+                            <text x="600" y="72" font-size="12" text-anchor="middle" font-weight="700" fill="var(--text-secondary, #585858)">디코더</text>
+                            <text x="600" y="92" font-size="10" text-anchor="middle" fill="var(--text-muted, #808080)">글자를 찍는다</text>
+
+                            <path d="M118 78 L137 78" stroke="var(--text-muted, #808080)" stroke-width="1.5"></path>
+                            <path d="M131 74 L137 78 L131 82 Z" fill="var(--text-muted, #808080)"></path>
+                            <path d="M253 78 L272 78" stroke="var(--text-muted, #808080)" stroke-width="1.5"></path>
+                            <path d="M266 74 L272 78 L266 82 Z" fill="var(--text-muted, #808080)"></path>
+                            <path d="M388 78 L407 78" stroke="#F86825" stroke-width="1.5"></path>
+                            <path d="M401 74 L407 78 L401 82 Z" fill="#F86825"></path>
+                            <path d="M523 78 L542 78" stroke="#F86825" stroke-width="1.5"></path>
+                            <path d="M517 74 L523 78 L517 82 Z" fill="#F86825"></path>
+
+                            <line x1="5" y1="146" x2="655" y2="146" stroke="var(--text-muted, #BDBDBD)" stroke-width="0.5" stroke-dasharray="3,4"></line>
+                            <text x="6" y="176" font-size="12" font-weight="700" fill="var(--text-secondary, #585858)">앞선 확산 언어모델 — 확산이 도는 칸은 맨 왼쪽이다</text>
+
+                            <rect x="5" y="192" width="110" height="60" rx="8" fill="none" stroke="var(--text-secondary, #585858)" stroke-width="2" stroke-dasharray="5,4"></rect>
+                            <text x="60" y="216" font-size="12" text-anchor="middle" font-weight="700" fill="var(--text-secondary, #585858)">토큰 열</text>
+                            <text x="60" y="236" font-size="10" text-anchor="middle" fill="var(--text-muted, #808080)">가린 자리를 되살린다</text>
+
+                            <text x="140" y="212" font-size="11" fill="var(--text-secondary, #585858)">LLaDA · DiffusionGemma 의 이산 마스크 확산은 좌표로 옮기는 두 칸 없이</text>
+                            <text x="140" y="232" font-size="11" fill="var(--text-secondary, #585858)">토큰 자리 위에서 바로 돈다. Cola DLM 은 이 바닥을 연속 좌표로 바꿨다.</text>
+                        </svg>
+                        <p class="fig-caption">페블러스가 논문 서술로 그린 도식이다. 위는 Cola DLM, 아래는 토큰 위에서 도는 앞선 확산 언어모델이다. 오른쪽 끝에서 글자를 찍는 디코더는 첫 칸의 인코더와 같은 Text VAE 의 반대쪽이다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        학습도 두 단계로 나뉜다. 먼저 Text VAE 를 따로 학습해 좌표계를 만들고, 그다음 Text VAE 와 DiT 를 함께 학습한다. 그 안에서 자리를 옮기는 방법으로는 Flow Matching(흐름 맞추기)을 쓴다. 출발 분포에서 도착 분포까지 가는 길을 직접 맞춰 두는 방식이다. DiT 는 앞 블록만 보고 다음 블록을 짜는 block-causal 구조라, 한 블록 안에서는 토큰들이 서로의 순서를 기다리지 않는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">1.2</span>트랜스포머는 자리를 옮기지 않았다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 설계를 트랜스포머를 치운 설계로 읽으면 틀린다. 그 위를 도는 사전분포 모델의 이름 자체가 확산 트랜스포머이고, 논문이 상대로 세운 것은 트랜스포머라는 구조가 아니라 생성 순서다. 서론은 자기회귀 방식을 두고 생성을 고정된 왼쪽에서 오른쪽 순서에 단단히 묶어 둔다고 적는다. 자기회귀는 왼쪽에서 오른쪽으로 한 토큰씩 내는 그 방식을 말한다. 풀리는 것은 그 순서다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        유보를 먼저 적은 쪽도 저자다. 1저자는 공개 일주일 뒤 자기 블로그에 <strong>"we do not have a theoretical justification that continuity alone could surpass discreteness"</strong> 라고 적었다. 연속으로 다룬다는 것만으로 이산을 넘어선다는 이론적 근거는 아직 없다는 말이다. 같은 글에 <strong>"the motivation behind Cola DLM has never been diffusion — it has always been representation"</strong> 이라는 줄도 있다. 동기는 확산이 아니라 표현이었다는 것이다. 이 글이 뒤에서 표현을 담는 자리의 품질을 길게 보는 이유도 거기에 있다.
+                    </p>
+                </section>
+
+                <section id="section-2" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">여덟 과제의 점수는 어떤 조건에서 나온 값인가</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비교를 짜 놓은 솜씨부터 인정하고 들어가는 편이 정확하다. 논문은 자기회귀 모델과 LLaDA 를 기준선으로 직접 학습했고, 셋의 임베딩을 뺀 백본을 1.8B 로 맞췄다. 토크나이저는 셋 다 OLMo 2 의 것(어휘 100,278)이고, 옵티마이저와 학습률 일정, 랜덤 시드, 최대 길이 512, 평가 절차가 모두 같다. 체크포인트도 같은 연산 예산 지점에서 골랐고 EMA 는 쓰지 않았다. 기준선 두 모델은 각자의 공식 구현으로 랜덤 초기화했다. 코드와 가중치는 아파치 2.0 으로 공개돼 있다. 이 정도로 조건을 맞춘 비교는 흔하지 않다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        다만 맞춘 자리가 어디인지는 분명히 해 둘 필요가 있다. 맞춘 것은 총 파라미터가 아니라 임베딩을 뺀 백본이다. 기준선은 임베딩 약 400M 에 백본 1.8B 를 더해 약 2.2B 이고, Cola DLM 은 Text VAE 500M 에 DiT 1.8B 를 더해 약 2.3B 다. 셋이 똑같이 2B 인 것은 아니고, 100M 쯤 어긋난다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        무엇을 재는 시험인지도 같이 봐야 한다. 여덟 과제는 이 연구진이 만든 시험이 아니라 바깥에서 쓰이던 공개 시험이고, LAMBADA·MMLU·SIQA·SQuAD·Story Cloze·OBQA·RACE·HellaSwag 여덟이다. 긴 글의 마지막 낱말을 맞히는 것, 여러 분야의 지식을 묻는 것, 지문을 읽고 답하는 것처럼 재려는 능력이 서로 다른 시험이 한 줄씩 들어 있다. 뒤에 나오는 평균은 그 여덟 값을 같은 무게로 더해 낸 수이므로, 평균이 올랐다는 말은 어떤 능력이 올랐다는 말과 다르다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>채점은 글자 맞추기다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        점수를 읽기 전에 채점 규칙을 먼저 봐야 한다. 논문은 객관식 과제와 생성 과제를 하나의 통일된 few-shot 설정에서 평가했다고 적고, 정확도는 생성형 채점(strict string matching)으로 센다. 모델이 내놓은 글자가 정답 문자열과 그대로 맞아야 점수가 붙는다는 뜻이다. 그래서 이 표의 MMLU 는 리더보드에서 흔히 보는 MMLU 와 같은 자로 잰 값으로 볼 수 없다. 보기 넷 중 하나를 고르는 방식이 아니므로, 찍어도 25% 는 나온다는 기준선이 여기에는 적용되지 않는다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        절대 점수가 낮아 보이는 이유도 저자가 먼저 적었다. 1저자 블로그는 낮은 객관식 점수가 생성형 평가 절차에서 온다고 적고, 이어서 <strong>"we are limited by compute resources"</strong> 라고 덧붙인다. 연산 자원의 제약을 스스로 밝힌 것이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.2</span>여덟 과제 비교는 표가 아니라 그림으로 실려 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여기서 이 글이 가장 오래 멈춘 자리가 나온다. 논문 §4.5 는 Cola DLM 과 두 기준선의 성적을 과제 평균과 과제별 곡선으로 그리는데, 그 비교는 <strong>그림(Figure 10)</strong> 이다. 캡션은 Cola DLM 이 최종적으로 가장 좋은 평균 성능에 도달한다고 적지만, <strong>과제별 수치는 본문에 인쇄돼 있지 않다.</strong> 그러니 여덟 중 몇에서 이기고 몇에서 졌는지를 수치로 말할 방법이 이 글에는 없다. 아래 표의 절대 점수도 논문의 수가 아니라 공개 저장소의 수다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        어디서 앞선다고 말하는지는 저자 요약에 있다. 프로젝트 페이지는 MMLU·RACE·Story Cloze·OBQA 에서 뚜렷한 우위를, SQuAD 에서는 큰 예산에서 자기회귀 모델을 넘어선다고 적고, 약 2000 EFLOPs 지점에서 가장 좋은 과제 평균에 이르며 곡선이 아직 오르는 중이라고 덧붙인다. EFLOPs 는 학습에 들인 연산량의 단위다. 이것은 저자가 자기 결과를 요약한 문장일 뿐 인쇄된 수치로 볼 수 없다. 곡선이 아직 오르는 중이라는 말은 더 큰 예산에서 어떻게 될지는 아직 보이지 않았다는 말이기도 하다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        한 가지는 짚고 넘어가는 편이 좋겠다. 이 글이 판독한 것은 논문 본문과 부록의 일부 구간이다. 우리가 읽은 범위에 셋을 나란히 적은 과제별 표는 없었다. 전문을 처음부터 끝까지 순차로 읽어 확인한 결과가 아니므로, 논문 어디에도 없다고 단정하지는 않는다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.3</span>인쇄된 절대 점수는 공개 저장소에 있고, 두 공개처가 다르다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        과제별 절대 점수를 찾으려면 논문이 아니라 저장소로 가야 한다. GitHub README 와 HuggingFace 모델카드가 같은 공개 체크포인트의 점수표를 싣는데, 두 표를 원문 그대로 받아 글자 단위로 대조해 보면 <strong>여덟 중 여섯은 같고 RACE 와 SIQA 두 과제만 다르다.</strong> 그 차이가 평균 차이를 그대로 만든다. 두 표 모두 자기 안에서는 정확히 닫힌다. README 쪽 여덟 값의 합은 213.17 로 평균 26.65 가 되고, 모델카드 쪽은 213.97 로 26.75 가 된다. 옮겨 적다 생긴 오차로 보기는 어렵고, 서로 다른 두 번의 측정으로 보는 편이 자연스럽다.
+                    </p>
+
+                    <div class="comparison-table">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="text-left py-2 themeable-heading">과제</th>
+                                    <th class="num py-2 themeable-heading">GitHub README</th>
+                                    <th class="num py-2 themeable-heading">HuggingFace 모델카드</th>
+                                </tr>
+                            </thead>
+                            <tbody class="themeable-text">
+                                <tr class="border-b themeable-border"><td class="py-2">LAMBADA</td><td class="num">50.80</td><td class="num">50.80</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-2">MMLU</td><td class="num">19.30</td><td class="num">19.30</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-2">OBQA</td><td class="num">23.00</td><td class="num">23.00</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-2">HellaSwag</td><td class="num">10.70</td><td class="num">10.70</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-2">RACE</td><td class="num hit">19.30</td><td class="num hit">19.60</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-2">SIQA</td><td class="num hit">28.40</td><td class="num hit">28.90</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-2">SQuAD</td><td class="num">30.90</td><td class="num">30.90</td></tr>
+                                <tr class="border-b themeable-border"><td class="py-2">Story Cloze</td><td class="num">30.77</td><td class="num">30.77</td></tr>
+                                <tr class="border-b-2 themeable-border"><td class="py-2 font-bold">여덟 과제 평균</td><td class="num font-bold">26.65</td><td class="num font-bold">26.75</td></tr>
+                                <tr><td class="py-2 tag">표 위에 적힌 조건</td><td class="num low">적혀 있지 않음</td><td class="num low">zero-shot</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="fig-caption">공개 체크포인트의 점수표 두 벌. 색으로 표시한 두 줄만 값이 다르고, 그 차이가 맨 아래 평균 차이를 만든다. 맨 끝 줄은 각 문서가 표 위에 적어 둔 평가 조건이다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        조건 표기도 두 문서가 다르다. 모델카드는 표 바로 위에 공개 추론 구현으로 잰 zero-shot 결과라고 명시하고, README 는 참고용 정확도라고만 적을 뿐 shot 설정을 아예 언급하지 않는다. 논문 본문은 통일된 few-shot 설정이라고 적는다. 그러니 모델카드가 밝힌 zero-shot 이 논문이 쓰는 평가와 같은 조건인지는 이 범위에서 확인되지 않는다. 두 공개처가 같은 조건을 다르게 불렀다고 말할 근거도 아직 없다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그리고 README 자신이 한 줄을 더 적어 둔다. 여기서 잰 과제 평균 26.65% 가 <strong>논문이 보고한 최종 평균보다 조금 높다</strong>는 것이다. 오픈소스 구현의 구조가 조금 다르기 때문이라고 이유도 적는다. 즉 논문의 최종 평균은 26.65 보다 낮은 어떤 값인데, 그 값은 우리가 읽은 범위 어디에도 인쇄돼 있지 않다. 이 점수표의 가중치가 스케일링 곡선의 가장 큰 예산 지점에서 온 것이라는 사실은 README 와 모델카드가 각각 적어 서로를 받친다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 점수가 붙은 가중치가 어떤 물건인지도 모델카드가 적어 둔다. 명령어 튜닝도, 사람 선호 학습도, 안전 정렬도 거치지 않은 사전학습 단계의 모델이고, 학습은 주로 영어로 이루어졌으며, 프롬프트 형식에 민감해 질의응답 꼴을 권한다고 적는다. 제품 챗봇이나 위험이 큰 판단에 쓰지 말라는 줄도 같은 카드에 있다. 그러니 이 표의 절대 점수는 연구용 사전학습 가중치의 성적으로 읽어야 한다. 제품으로 다듬은 모델의 점수와 같은 줄에 놓을 수 없다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.4</span>속도는 이 논문이 내놓은 주장이 아니다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        확산이니 자기회귀보다 빠르겠다는 기대가 따라붙기 쉬운데, <strong>논문은 측정된 지연·처리량·토큰당 시간 수치를 내놓지 않는다.</strong> 한 블록 안에서 더 효율적인 병렬 계산이 가능하다는 일반적 서술과, 자기회귀 추론이 본래 순차적이라는 서술이 있을 뿐이다. 참고로 공개 저장소의 실행 예시 코드는 디노이징 스텝 16, 안내 강도 7.0 을 기본값으로 박아 두었다. 저장소 코드의 기본값일 뿐, 논문이 인쇄한 설정값은 아니다. 속도를 알고 싶다면 이 논문 말고 다른 자료를 봐야 한다.
+                    </p>
+                </section>
+
+                <section id="section-3" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">좌표계의 품질이 생성 품질의 천장이 된다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 논문이 세운 연구 질문 넷 가운데 셋은 모델이 아니라 좌표계 자체를 실험 대상으로 삼는다. 잠재 공간 안에 전역 의미 구조가 존재하는가, 글을 짓는 데 어떤 종류의 공간이 가장 적합한가, 어떤 확산 과정이 가장 효과적인가. 넷째 질문만이 왜 언어 모델링에 연속 공간 위의 확산을 쓰는가를 묻는다. 바닥을 바꾼 설계이니 그 바닥을 실험한 셈인데, 그 실험이 내놓은 답이 이 글에서 가장 멀리 간다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.1</span>좌표 하나를 몇 개의 수로 적느냐가 점수를 바꾼다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        잠재 차원은 좌표 하나를 몇 개의 수로 적는지를 말한다. 논문은 이 값을 16, 64, 128 로 바꿔 가며 세 과제(LAMBADA·MMLU·SIQA)의 평균을 쟀다. 모델도 데이터도 학습 예산도 그대로 두고 공간의 모양만 바꾼 비교다. 결과는 아래와 같다.
+                    </p>
+
+                    <div class="fig-box">
+                        <svg viewBox="0 0 660 262" width="100%" role="img" aria-label="잠재 차원 16, 64, 128 에서 세 과제 평균이 각각 8.7, 11.3, 11.8 로 올라가는 막대 도식. 최종 설정인 잠재 차원 16 을 오렌지로 표시">
+                            <text x="6" y="18" font-size="12" font-weight="700" fill="var(--text-secondary, #585858)">잠재 차원과 세 과제 평균 (117 EFLOPs · 전부 랜덤 초기화 · LAMBADA·MMLU·SIQA)</text>
+
+                            <line x1="70" y1="210" x2="640" y2="210" stroke="var(--text-muted, #808080)" stroke-width="1"></line>
+                            <line x1="70" y1="50" x2="70" y2="210" stroke="var(--text-muted, #BDBDBD)" stroke-width="1"></line>
+                            <text x="62" y="214" font-size="10" text-anchor="end" fill="var(--text-muted, #808080)">0</text>
+                            <text x="62" y="158" font-size="10" text-anchor="end" fill="var(--text-muted, #808080)">5</text>
+                            <line x1="70" y1="154" x2="640" y2="154" stroke="var(--text-muted, #BDBDBD)" stroke-width="0.5" stroke-dasharray="2,3"></line>
+                            <text x="62" y="101" font-size="10" text-anchor="end" fill="var(--text-muted, #808080)">10</text>
+                            <line x1="70" y1="97" x2="640" y2="97" stroke="var(--text-muted, #BDBDBD)" stroke-width="0.5" stroke-dasharray="2,3"></line>
+
+                            <rect x="120" y="111" width="100" height="99" fill="#F86825"></rect>
+                            <text x="170" y="103" font-size="13" text-anchor="middle" font-weight="700" fill="#F86825">8.7</text>
+                            <text x="170" y="230" font-size="11" text-anchor="middle" font-weight="700" fill="var(--text-secondary, #585858)">16</text>
+                            <text x="170" y="248" font-size="10" text-anchor="middle" fill="#F86825">최종 설정</text>
+
+                            <rect x="300" y="81" width="100" height="129" fill="var(--text-muted, #BDBDBD)"></rect>
+                            <text x="350" y="73" font-size="13" text-anchor="middle" font-weight="700" fill="var(--text-secondary, #585858)">11.3</text>
+                            <text x="350" y="230" font-size="11" text-anchor="middle" font-weight="700" fill="var(--text-secondary, #585858)">64</text>
+
+                            <rect x="480" y="75" width="100" height="135" fill="var(--text-muted, #BDBDBD)"></rect>
+                            <text x="530" y="67" font-size="13" text-anchor="middle" font-weight="700" fill="var(--text-secondary, #585858)">11.8</text>
+                            <text x="530" y="230" font-size="11" text-anchor="middle" font-weight="700" fill="var(--text-secondary, #585858)">128</text>
+
+                            <text x="640" y="248" font-size="10" text-anchor="end" fill="var(--text-muted, #808080)">가로축 잠재 차원 · 세로축 세 과제 평균</text>
+                        </svg>
+                        <p class="fig-caption">페블러스가 논문 표의 값으로 그린 도식이다. 그 수의 개수를 16에서 128로 늘리면 세 과제 평균이 8.7에서 11.8로 올라간다. 가장 점수가 낮은 16이 최종 설정이다. 세 과제 부분집합의 값이고 학습 예산도 한 지점에 고정돼 있으므로, 여덟 과제 성적이나 다른 예산으로 옮겨 읽을 수 있는 수가 못 된다.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        위 막대는 평균이라 세 과제의 움직임을 하나로 뭉쳐 둔다. 논문 표의 과제별 값을 보면 LAMBADA 는 잠재 차원 64 에서 20.9 로 가장 높고 128 에서 18.5 로 내려온다. MMLU 와 SIQA 는 둘 다 128 에서 가장 높다. 세 과제가 한 방향으로 함께 움직인 결과로 읽으면 어긋나고, 성격이 다른 세 값을 더해 나눈 수로 읽는 편이 맞다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        점수만 보면 128 쪽이 나은데 최종 설정은 16 이다. 저자는 이 선택을 보수적이라고 부르고, 더 큰 잠재 차원과 그에 맞춰 조정한 잡음 일정은 이 논문에서 시험하지 않았다고 블로그에 적는다. 본문에 더 자세한 이유가 적혀 있는지는 우리가 읽은 범위에서 확인하지 못했으므로, 더 좋은 설정을 두고 쓰지 않았다는 식으로 읽지는 않는다. 분명한 것은 하나다. 같은 모델과 같은 데이터에서 설정 하나를 바꾼 것만으로 평균이 3.1 만큼 움직였다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.2</span>좌표계를 만드는 방식도 점수를 바꾼다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Text VAE 를 어떻게 학습하느냐도 같은 방식으로 실험돼 있다. 논문은 VAE 학습의 잡음 수준 설정을 1.0, 1.5, 2.0 으로 고정한 경우와 학습으로 정하게 둔 경우를 두 개의 학습 예산에서 비교한다. 작은 예산(77.86 EFLOPs)에서 세 과제 평균은 각각 14.70, 18.27, 16.77 이고 학습으로 정한 쪽이 18.90 으로 가장 높다. 큰 예산(116.78 EFLOPs)에서는 18.83, 21.80, 20.63 이고 학습으로 정한 쪽이 22.10 이다. 두 예산 모두 1.5 가 2.0 보다 높다. 한 방향으로 단조롭게 움직이지 않는다는 뜻인데, 그 이유를 설명하는 서술은 논문에 없으므로 해석은 보태지 않는다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 표가 함께 말하는 것은 간단하다. 좌표 하나의 길이도, 그것을 만드는 학습 설정도 모두 최종 점수를 움직인다. 사전분포를 아무리 잘 만들어도 그 사전분포가 올라탄 공간이 성적의 범위를 먼저 정해 둔다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.3</span>가능도가 좋아지는 동안 나오는 글자는 나빠졌다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 설계에서는 흔히 쓰는 점검 지표 하나가 길잡이 노릇을 못 한다. 논문 §5.1 은 추정된 혼란도가 실제 생성 품질과 상당히 어긋난다고 적고, 한 토큰 자리를 예로 든다. 그 자리의 가능도 기준 혼란도는 1.15×10⁶ 에서 641.57 로, 다시 245.36 으로 좋아진다. 그런데 같은 과정에서 실제로 생성된 토큰은 정답인 <strong>on</strong> 에서 틀린 <strong>in</strong> 으로, 다시 쉼표로 나빠진다. 사전분포가 그 자리를 더 그럴듯하게 볼수록 나오는 글자는 정답에서 멀어진 것이다. 초록도 같은 말을 한다. 이 모델에서는 가능도보다 생성 품질과 스케일링 양상이 모델의 능력을 더 잘 비춘다는 것이다. 가능도 계산 방식 자체가 다른 모델이라, 이 혼란도 값을 보통 언어모델의 혼란도와 나란히 놓고 읽을 수는 없다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">3.4</span>논문은 이 설계의 전제를 부록에 직접 적어 두었다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 절의 결론은 우리가 바깥에서 끌어다 붙인 것이 아니다. 논문 부록 12.4 가 이론적 한계라는 제목 아래 세 줄을 적는다. 인코더가 나쁘면 모델이 체계적인 가능도 손해를 치른다는 것, 잠재 병목이 사후 붕괴의 위험을 들여온다는 것, 그리고 이 설계 전체가 <strong>"the data contain a favorable low-dimensional semantic latent structure"</strong> 라는 귀납적 가정에 기댄다는 것이다. 데이터 안에 쓸 만한 저차원 의미 구조가 있다는 가정이다. 그 가정이 성립하지 않는 데이터에서는 그 바닥부터 성립하지 않는다.
+                    </p>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            같은 말을 다른 연구진이 실험 결론으로 적었다. Cola DLM 공개 하루 뒤에 올라온 TextLDM 은 자기들이 푼 핵심 난제가 좋은 연속 텍스트 표현을 얻는 일이었다고 적으면서, <strong>"we find that reconstruction fidelity alone is insufficient"</strong> 라고 덧붙인다. 원문을 잘 복원하는 것만으로는 부족하고, 그 특징을 사전학습된 언어모델에 맞춰 정렬하는 일이 생성 품질에 결정적이었다는 것이다. 공간이 원문을 잘 되돌린다는 사실과 그 위에서 글이 잘 나온다는 사실은 서로 다른 문제다.
+                        </p>
+                    </div>
+                </section>
+
+                <section id="section-4" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">이미지까지 같은 좌표에 올린다는 말은 어디까지 참인가</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문장을 연속 공간에 올리고 나면 이미지와 같은 자리에서 다룰 수 있지 않겠냐는 기대가 곧바로 따라온다. 논문도 그 방향으로 한 절을 쓴다. 다만 그 절이 실제로 무엇을 했고 무엇을 보였는지를 갈라서 읽어야 한다. 이 절이 이 글에서 가장 조심스럽게 읽어야 하는 자리다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>무엇을 했나</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문 §5.5 는 텍스트와 이미지를 하나의 접근으로 묶는 실험을 적는다. 텍스트는 지금까지처럼 블록으로 쪼개고, 이미지 쪽은 큰 블록 하나로 둔다. 이미지 쪽 VAE 는 256·384·640·1024 네 해상도의 사내 데이터로 학습했고, 공간 해상도를 16배 줄이면서 잠재 채널을 64로 둔다. 그 위에서 텍스트와 이미지가 사전분포를 공유한다. 글에서 그림을 만드는 학습은 256 해상도로 8만 스텝을 돌린 뒤 640 해상도로 1만 스텝을 더했고, 그림을 보고 글을 내는 학습은 약 5만 스텝이다.
+                    </p>
+
+                    <div class="fig-box">
+                        <svg viewBox="0 0 660 220" width="100%" role="img" aria-label="텍스트 네 블록과 이미지 한 블록이 화살표로 모여 하나의 공유 사전분포 DiT 로 들어가는 도식">
+                            <text x="6" y="18" font-size="12" font-weight="700" fill="var(--text-secondary, #585858)">§5.5 의 텍스트·이미지 결합 — 쪼개는 방식은 다르고 사전분포는 공유한다</text>
+
+                            <text x="20" y="42" font-size="11" font-weight="700" fill="var(--text-secondary, #585858)">텍스트 — 블록으로 쪼갠다</text>
+                            <rect x="20" y="50" width="62" height="56" rx="6" fill="none" stroke="var(--text-muted, #BDBDBD)" stroke-width="1.5"></rect>
+                            <text x="51" y="82" font-size="11" text-anchor="middle" fill="var(--text-secondary, #585858)">블록1</text>
+                            <rect x="92" y="50" width="62" height="56" rx="6" fill="none" stroke="var(--text-muted, #BDBDBD)" stroke-width="1.5"></rect>
+                            <text x="123" y="82" font-size="11" text-anchor="middle" fill="var(--text-secondary, #585858)">블록2</text>
+                            <rect x="164" y="50" width="62" height="56" rx="6" fill="none" stroke="var(--text-muted, #BDBDBD)" stroke-width="1.5"></rect>
+                            <text x="195" y="82" font-size="11" text-anchor="middle" fill="var(--text-secondary, #585858)">블록3</text>
+                            <rect x="236" y="50" width="62" height="56" rx="6" fill="none" stroke="var(--text-muted, #BDBDBD)" stroke-width="1.5"></rect>
+                            <text x="267" y="82" font-size="11" text-anchor="middle" fill="var(--text-secondary, #585858)">블록4</text>
+
+                            <text x="400" y="42" font-size="11" font-weight="700" fill="var(--text-secondary, #585858)">이미지 — 큰 블록 하나</text>
+                            <rect x="400" y="50" width="240" height="56" rx="6" fill="none" stroke="var(--text-muted, #BDBDBD)" stroke-width="1.5"></rect>
+                            <text x="520" y="76" font-size="11" text-anchor="middle" fill="var(--text-secondary, #585858)">256·384·640·1024 해상도</text>
+                            <text x="520" y="92" font-size="10" text-anchor="middle" fill="var(--text-muted, #808080)">잠재 채널 64 · 공간 16배 축소</text>
+
+                            <path d="M159 106 L159 128 L310 128 L310 150" stroke="var(--text-muted, #808080)" stroke-width="1.5" fill="none"></path>
+                            <path d="M304 145 L310 151 L316 145 Z" fill="var(--text-muted, #808080)"></path>
+                            <path d="M520 106 L520 128 L350 128 L350 150" stroke="var(--text-muted, #808080)" stroke-width="1.5" fill="none"></path>
+                            <path d="M344 145 L350 151 L356 145 Z" fill="var(--text-muted, #808080)"></path>
+
+                            <rect x="170" y="152" width="320" height="56" rx="8" fill="#F86825"></rect>
+                            <text x="330" y="176" font-size="12" text-anchor="middle" font-weight="700" fill="#ffffff">공유 사전분포 DiT</text>
+                            <text x="330" y="194" font-size="10" text-anchor="middle" fill="#ffffff">텍스트와 이미지가 같은 사전분포를 공유한다</text>
+                        </svg>
+                        <p class="fig-caption">페블러스가 논문 서술(§5.5)로 그린 도식이다. 텍스트는 여러 블록으로 쪼개고 이미지는 큰 블록 하나로 두지만, 그 위를 도는 사전분포 모델은 공유한다. 점수로 뒷받침된 결과가 아니라 구조만 그린 도식이다.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>무엇을 보였나</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        보인 것은 그림 한 장 분량의 결과다. Figure 14 가 세 칸으로 나뉘어 텍스트 이어 쓰기와 그림을 조건으로 한 글, 사전학습만으로 낸 글에서 그림으로의 결과, 그리고 확장 개념도를 담는다. 점수는 없다. 절 자신이 이것을 <strong>"qualitative evidence of feasibility"</strong>, 곧 실현 가능성의 정성 증거라고 부른다. 같은 방식으로 학습했을 때 무엇이 얼마나 되는지를 수치로 보인 표는 이 절에 <strong>한 개도 없다.</strong>
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>무엇을 아직 보이지 않았나</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 이름을 댄 연속 모달리티는 <strong>이미지 하나</strong>다. §6 결론은 이 틀이 이미지 같은 연속 모달리티로도 확장될 수 있다고 적는다. 가능성을 적은 문장이지 결과를 적은 문장은 못 된다. <strong>음성은 논문 전체에 한 번도 나오지 않는다.</strong> 영상은 식 하나에 기호로 등장할 뿐 시험되지 않았다. 그러니 텍스트와 이미지와 음성과 영상 사이의 벽이 사라진다는 말은 이 논문에서 나온 말이 아니다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        공개된 코드도 같은 선을 긋는다. GitHub README 는 이 저장소가 <strong>텍스트 전용 Cola DLM 파이프라인</strong>이라고 적고, 텍스트와 이미지를 함께 다루는 학습·추론은 이번 공개에 포함되지 않았다고 명시한다. 공개물은 추론 쪽에 몰려 있다. 파이썬 패키지와 추론 파이프라인, OpenAI 호환 어댑터, 평가 스크립트가 들어 있고 학습 코드는 분명하게 공개되지 않았다. README 의 소식 줄에는 6월 11일에 §5.5 의 기술적 세부와 설계 선택, 향후 연구 계획을 갱신했다고 적혀 있다. 그 자리가 지금도 진행 중인 쪽이라는 뜻으로 읽을 수 있다.
+                    </p>
+                </section>
+
+                <section id="section-5" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">같은 확산이라도 바닥이 둘이고, 연속 쪽도 처음이 아니다</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        확산 언어모델이라는 한 이름 아래 지금 두 갈래가 돈다. 한쪽은 토큰 위에서 가려진 자리를 되살리는 이산 마스크 확산이다. LLaDA 가 그 갈래의 대표이고, 하우스가 6월에 다룬 <a href="/report/diffusion-gemma-text-generation/ko/" class="text-orange-500 hover:underline">DiffusionGemma</a> 도 같은 쪽이다. 다른 한쪽은 문장을 연속 좌표에 올려 그 위에서 확산을 돌리고, Cola DLM 이 여기에 선다. 트랜스포머는 양쪽이 다 쓴다. 갈리는 것은 확산이 도는 바닥이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>연속 쪽에도 네 해 묵은 줄기가 있다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        문장을 연속 공간에 올려 확산을 돌리는 시도는 2022년부터 있었다. Diffusion-LM 은 낱말 벡터 자체를 연속 확산의 대상으로 삼았고, 같은 해 말의 LD4LG 는 이미 학습돼 있는 인코더–디코더가 만든 공간 위에서 확산을 돌렸다. 둘 다 NeurIPS 에 실렸다. Cola DLM 이 바꾼 것은 그 공간을 <strong>무엇이 만들고 그 위에서 무엇을 모델링하느냐</strong>다. 직접 학습한 Text VAE 가 그 바닥을 만들고, 그 위에서 응답 전체의 뜻을 블록 단위로 짠다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 설계가 하루 뒤에 또 올라왔다는 사실도 이 줄기의 굵기를 보여 준다. TextLDM 은 Cola DLM 의 다음 날 공개됐고, 저자 열세 명의 별개 연구진이다. 초록은 트랜스포머 기반 VAE 가 이산 토큰을 연속 잠재로 보내고 표준 DiT 가 그 공간에서 흐름 맞추기를 수행한다고 적으면서, 그 구조가 영상 쪽의 짝과 동일하다고 덧붙인다. 설계의 뼈대가 겹친다. 2026년에 이 방향으로 나온 논문은 둘만이 아니고 여러 편이다. 한 연구실의 돌출이 아니라 여럿이 같은 길에 달려든 해로 보는 편이 사실에 가깝다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>같은 연구진의 후속작은 출력 쪽에 이산을 다시 들였다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        같은 1저자가 10월 22일에 후속작 Cola2 를 공개했다. 제목의 뒷말이 균형 잡힌 이산 생성이고, 초록은 블록 단위 인과 구조의 <strong>마스크 확산 디코더</strong>를 깨끗한 것과 잡음 섞인 것, 일부를 떨어뜨린 것을 조건으로 학습한다고 적는다. 연속이 이산을 치운 이야기가 아니라는 뜻이다. 출력 쪽에는 이산 생성이 다시 들어와 있다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Cola2 의 초록이 보고하는 수치는 두 실험의 것이다. 하나는 다섯 과제에서 약 2,100억 학습 토큰으로 핵심 설계를 확인한 실험이고, 다른 하나는 3,460.3억 소스 토큰으로 학습한 <strong>아직 수렴하지 않은 체크포인트</strong>가 여덟 과제 평균 60.10 에 이르고 HellaSwag 와 Story Cloze 에서 Llama-3-8B 를 넘어섰다는 것이다. 뒤엣것의 사전학습 예산이 43배 이상 작다고 적는다. 두 수는 한 체크포인트에서 나온 수가 아니다. 그리고 Cola2 초록은 Cola DLM 을 이름으로 한 번도 언급하지 않는다. 후속작이 앞선 설계의 결함을 인정했다는 식으로 읽을 근거는 초록에 없다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.3</span>지금 거론되는 이유는 확인되지 않는다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        5월에 나온 논문이 왜 11월에 다시 거론되는지를 두고는 짚을 만한 시점이 몇 있다. 논문 공개는 5월 7일이고, 코드 저장소는 여드레 뒤인 5월 15일에 만들어졌다. 후속작 Cola2 는 10월 22일에 나왔다. NeurIPS 2026 포스터 발표는 12월 8일로 <strong>아직 오지 않았다.</strong> 2026년 11월 기준으로 공개 모델의 지난달 내려받기는 Cola DLM 이 83회, Cola2 가 2,429회다. 뒤엣것은 공개된 모델 파일 기준으로 전체 90억 파라미터 안팎이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        늘어놓을 수 있는 것은 여기까지다. 이 가운데 무엇이 원인인지를 가리킬 근거는 우리에게 없고, 어떤 게시물이 이 논문을 어떻게 읽어 퍼뜨렸는지도 여러 차례 찾았으나 실물을 확보하지 못했다. 그래서 이 글은 그 자리를 비워 둔다. <strong>5월 논문이 11월에 다시 도는 이유는 확인되지 않는다.</strong>
+                    </p>
+                </section>
+
+                <section id="pebblous-perspective" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스 관심의 이유</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스의 데이터클리닉이 하는 일은 데이터를 고차원 임베딩 공간에 펼쳐 놓고 어디가 빽빽하고 어디가 비었는지를 보는 일이다. 그 일은 지금까지 이미지나 센서 기록처럼 처음부터 연속인 데이터에서 수월했다. Cola DLM 이 하는 것은 문장을 바로 그 자리로 옮기는 일이다. 문장이 연속 좌표가 되면 텍스트 데이터도 이미지와 같은 방식으로 공간 위에서 물을 수 있다. 어떤 문장들이 한곳에 몰려 있는지, 어느 영역이 비어 있는지를 같은 말로 물을 수 있다는 뜻이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.1</span>좌표계를 만드는 것은 결국 데이터다</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 연결은 우리가 끌어다 붙인 것이 아니라 논문 두 편이 각각 따로 적었다. 하나는 Cola DLM 의 부록 12.4 다. 인코더가 나쁘면 체계적인 손해를 치르고, 잠재 병목은 붕괴의 위험을 안으며, 설계 전체가 데이터 안에 쓸 만한 저차원 의미 구조가 있다는 가정에 기댄다. 다른 하나는 하루 뒤에 나온 TextLDM 이다. 복원을 잘하는 것만으로는 부족하다는 결론을 실험으로 적었다. 복원 성능과 공간의 배치는 다른 문제라는 말이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그러면 그 공간의 모양은 무엇이 정하는가. 학습 데이터의 분포다. 3절에서 본 것처럼 수의 개수를 바꾸거나 그것을 만드는 학습 설정을 바꾸는 것만으로 성적이 움직였다. 생성 품질의 상한은 사전분포보다 그것이 놓인 공간의 모양이 먼저 긋는다. 하우스가 6월에 쓴 <a href="/report/diffusion-low-dim-distributions-jmlr/ko/" class="text-orange-500 hover:underline">디퓨전 모델은 어떻게 저차원 분포를 효율 학습하는가</a> 가 다룬 전제가 바로 이것이다.
+                    </p>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        그런데 Cola DLM 이 선 공간을 무엇으로 만들었는지는 바깥에서 알 수 없다. 논문은 학습에 외부 공개 사전학습 데이터를 쓴다고만 적고 코퍼스 이름도 토큰 수도 적지 않는다. 모델카드도 주로 영어라고만 밝힌다. 모델의 가중치와 추론 코드는 공개됐는데, 그 모델이 보는 세계의 모양을 정한 쪽은 공개되지 않은 셈이다. 어떤 데이터로 토큰을 쪼개느냐가 모델이 보는 것을 바꾼다는 이야기는 <a href="/report/vq-tokenizer-data-quality-synthesis/ko/" class="text-orange-500 hover:underline">VQ-Tokenizer 보고서</a> 에서 한 번 다뤘고, 공간 전체로 올라가면 그 영향이 한 겹 더 깊어진다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.2</span>월요일에 자기 데이터에 걸어 볼 수 있는 여섯 가지</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 글의 내용을 실무의 물음으로 내리면 여섯 가지가 된다. 앞의 셋은 데이터를 다루는 쪽의 물음이고, 뒤의 셋은 남의 모델 성적표를 받아 읽는 쪽의 물음이다.
+                    </p>
+                    <ul class="themeable-text leading-relaxed space-y-3 mb-6 ml-6">
+                        <li>우리 텍스트 데이터를 임베딩 공간에 올렸을 때 한곳에 몰린 덩어리와 빈 영역이 어디인가.</li>
+                        <li>그 공간을 만든 인코더는 무엇으로 학습된 것인가. 우리 데이터의 분포와 닮았는가.</li>
+                        <li>인코더의 복원 성능만 보고 그 공간이 쓸 만하다고 판정하고 있지 않은가.</li>
+                        <li>이미지와 텍스트를 한 공간에서 다루기 시작했다면 품질도 한 공간에서 재고 있는가. 두 종류를 각각 다른 자로 재고 있지 않은가.</li>
+                        <li>받아 든 점수가 어떤 채점 규칙에서 나온 값인지가 문서에 적혀 있는가.</li>
+                        <li>그 비교가 표로 있는가, 그림으로만 있는가. 우리가 그 수를 다시 셀 수 있는가.</li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">6.3</span>모델이 좋아지면 이 일도 끝나는가</h3>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        잠재 공간의 모양을 보고, 빈 영역을 찾고, 그 공간이 어떤 데이터로 만들어졌는지를 기록해 두는 일은 더 좋은 모델이 나온다고 저절로 끝나는 일이 아니다. 그 바닥이 성적의 범위를 먼저 정한다면, 그것을 만드는 데이터 쪽이 상시로 돌봐야 하는 자리가 된다. 여러 종류의 데이터를 한 공간에서 다루기로 한 순간부터는 품질도 한 공간에서 재야 한다. 이 글이 적을 수 있는 선은 여기까지다.
+                    </p>
+                </section>
+
+                <!-- FAQ (empty section — content rendered by config.faqs) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+                    <p class="themeable-text leading-relaxed mb-6">
+                        본문의 수치가 어느 문서에서 왔는지를 성격별로 나눠 둔다. 1번이 이 글이 딛는 원 논문이고, 잠재 차원 표와 잡음 수준 표, 부록 12.4 의 한계 서술과 §5.5 의 이미지 실험이 모두 여기서 나왔다. 여덟 과제의 절대 점수는 1번 아닌 4번과 5번, 곧 공개 저장소의 두 문서에서 왔다. 8번부터 10번까지가 연속 잠재 확산의 계보이고, 11번부터 14번까지는 이 설계가 쓰는 부품과 기준선의 원문이다.
+                    </p>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">1차 — 원 논문과 저자 문서</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Guo, H., Zhao, Q., Zhao, Y., Nie, S., Zhu, R., Guo, Q., Wang, F., Yang, T., Zhao, H., Wei, G. &amp; Zeng, Y. (2026). "Continuous Latent Diffusion Language Model." <a href="https://arxiv.org/abs/2605.06548" target="_blank" rel="noopener">arXiv:2605.06548</a> (v1 2026년 5월 7일, 99쪽·31그림·9표, CC BY 4.0) — 구조 서술, 연구 질문 넷, 기준선 맞춤 조건, 잠재 차원과 잡음 수준 표, §5.1 의 혼란도 사례, 부록 12.4 의 한계 세 줄, §5.5 의 이미지 실험과 §6 결론이 모두 여기서 나왔다. 저자는 열한 명이다.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Cola DLM 프로젝트 페이지. <a href="https://hongcanguo.github.io/Cola-DLM/" target="_blank" rel="noopener">hongcanguo.github.io/Cola-DLM/</a> — 2.2절의 저자 요약(MMLU·RACE·Story Cloze·OBQA 우위, 약 2000 EFLOPs 에서 최고 과제 평균, 곡선이 아직 오르는 중)의 출처다. 인쇄된 과제별 수치가 아닌, 저자가 자기 결과를 요약한 문장이다.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">Guo, H. (2026년 5월 14일). 1저자 블로그. <a href="https://hongcanguo.github.io/posts/2026-cola-dlm.html" target="_blank" rel="noopener">hongcanguo.github.io/posts/2026-cola-dlm.html</a> — 1.2절의 두 축자(연속성만으로 이산을 넘어선다는 이론적 근거가 없다 · 동기는 확산이 아니라 표현이었다), 2.1절의 연산 자원 제약, 3.1절의 보수적 설정 서술이 여기서 나왔다.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">ByteDance-Seed, Cola-DLM GitHub 저장소 README (아파치 2.0, 저장소 생성 2026년 5월 15일). <a href="https://github.com/ByteDance-Seed/Cola-DLM" target="_blank" rel="noopener">github.com/ByteDance-Seed/Cola-DLM</a> — 2.3절 표 왼쪽 열(여덟 과제와 평균 26.65), 과제 평균이 논문의 최종 평균보다 조금 높다는 자기 서술, 4.3절의 텍스트 전용 공개 범위, 2.4절의 실행 예시 기본값이 원문에서 나왔다.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">ByteDance-Seed, Cola-DLM HuggingFace 모델카드. <a href="https://huggingface.co/ByteDance-Seed/Cola-DLM" target="_blank" rel="noopener">huggingface.co/ByteDance-Seed/Cola-DLM</a> — 2.3절 표 오른쪽 열(RACE 19.60 · SIQA 28.90 · 평균 26.75)과 zero-shot 표기, 공개 가중치가 곡선의 가장 큰 예산 지점이라는 서술, 토크나이저 어휘 100,278, 모델카드가 밝힌 사용 제한이 여기서 나왔다.</span></li>
+                        <li><span class="ref-num">6.</span><span class="ref-body">NeurIPS 2026 세션 페이지. <a href="https://neurips.cc/virtual/2026/poster/154716" target="_blank" rel="noopener">neurips.cc/virtual/2026/poster/154716</a> — 포스터 발표 일시(2026년 12월 8일 10:00~13:00 AEDT, Hall 1-4, #S4308)의 출처다. 본회의 트랙인지 워크숍인지는 이 페이지에 적혀 있지 않다.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Guo, H. 외 (2026). "Cola2: … Balanced Discrete Generation." <a href="https://arxiv.org/abs/2610.31305" target="_blank" rel="noopener">arXiv:2610.31305</a> (v1 2026년 10월 22일) — 5.2절의 마스크 확산 디코더 서술과 두 실험의 수치가 초록에서 나왔다. 이 초록은 Cola DLM 을 이름으로 언급하지 않는다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">연속 잠재 텍스트 확산의 계보</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">8.</span><span class="ref-body">Li, X. L., Thickstun, J., Gulrajani, I., Liang, P. &amp; Hashimoto, T. (2022). "Diffusion-LM Improves Controllable Text Generation." <a href="https://arxiv.org/abs/2205.14217" target="_blank" rel="noopener">arXiv:2205.14217</a> (v1 2022년 5월 27일, NeurIPS 2022) — 5.1절에서 낱말 벡터 자체를 연속 확산의 대상으로 삼은 선행이다.</span></li>
+                        <li><span class="ref-num">9.</span><span class="ref-body">Lovelace, J., Kishore, V., Wan, C., Shekhtman, E. &amp; Weinberger, K. (2022). "Latent Diffusion for Language Generation." <a href="https://arxiv.org/abs/2212.09462" target="_blank" rel="noopener">arXiv:2212.09462</a> (v1 2022년 12월 19일, NeurIPS 2023) — 5.1절에서 이미 학습된 인코더–디코더의 잠재 공간 위에서 확산을 돌린 선행이다.</span></li>
+                        <li><span class="ref-num">10.</span><span class="ref-body">Jiang, J. 외 (2026). "TextLDM: Language Modeling with Continuous Latent Diffusion." <a href="https://arxiv.org/abs/2605.07748" target="_blank" rel="noopener">arXiv:2605.07748</a> (v1 2026년 5월 8일) — 3.4절의 축자(복원 충실도만으로는 부족하다)와 5.1절의 같은 달 독립 설계가 여기서 나왔다. 저자 열세 명의 별개 연구진이다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">기준선과 부품의 원문</h3>
+                    <ul class="reference-list mb-8">
+                        <li><span class="ref-num">11.</span><span class="ref-body">Nie, S., Zhu, F., Li, Y. 외 (2025). "Large Language Diffusion Models" (LLaDA). <a href="https://arxiv.org/abs/2502.09992" target="_blank" rel="noopener">arXiv:2502.09992</a> (v1 2025년 2월 14일, NeurIPS 2025) — 토큰 위에서 도는 이산 마스크 확산 쪽의 원문이자 이 논문의 기준선이다.</span></li>
+                        <li><span class="ref-num">12.</span><span class="ref-body">Lipman, Y., Chen, R. T. Q., Ben-Hamu, H., Nickel, M. &amp; Le, M. (2022). "Flow Matching for Generative Modeling." <a href="https://arxiv.org/abs/2210.02747" target="_blank" rel="noopener">arXiv:2210.02747</a> (ICLR 2023) — 1.1절의 흐름 맞추기 원문이다.</span></li>
+                        <li><span class="ref-num">13.</span><span class="ref-body">Peebles, W. &amp; Xie, S. (2022). "Scalable Diffusion Models with Transformers" (DiT). <a href="https://arxiv.org/abs/2212.09748" target="_blank" rel="noopener">arXiv:2212.09748</a> (ICCV 2023) — 확산 트랜스포머의 원문이다. 1.2절에서 트랜스포머가 그대로 남는다고 적은 근거가 이 구조다.</span></li>
+                        <li><span class="ref-num">14.</span><span class="ref-body">Team OLMo 외 (2024). "2 OLMo 2 Furious." <a href="https://arxiv.org/abs/2501.00656" target="_blank" rel="noopener">arXiv:2501.00656</a> — 2절에서 세 모델이 함께 쓴 토크나이저의 원문이다.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">페블러스 선행 글</h3>
+                    <ul class="reference-list mb-4">
+                        <li><span class="ref-num">15.</span><span class="ref-body"><a href="/report/diffusion-gemma-text-generation/ko/">문장을 한 번에 쓰는 확산 모델 DiffusionGemma</a> — 토큰 위에서 도는 확산 언어모델을 다룬 6월 글이다. 1절과 5절에서 두 갈래를 가르는 자리로 썼다.</span></li>
+                        <li><span class="ref-num">16.</span><span class="ref-body"><a href="/report/diffusion-low-dim-distributions-jmlr/ko/">차원의 저주를 깨다 — 디퓨전 모델은 어떻게 저차원 분포를 효율 학습하는가</a> — 데이터가 저차원 구조에 산다는 전제를 다룬 글이다. 부록 12.4 의 가정과 맞닿는 자리다.</span></li>
+                        <li><span class="ref-num">17.</span><span class="ref-body"><a href="/report/vq-tokenizer-data-quality-synthesis/ko/">VQ-Tokenizer: 데이터 품질과 합성 데이터의 기술적 척추</a> — 데이터를 어떤 단위로 쪼개느냐가 모델이 보는 것을 바꾼다는 자리에서 썼다.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=c6e7f730"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "jh-request",
+                "at": "2026-11-26T01:56:29.376Z"
+              },
+              "gates": [
+                {
+                  "phase": "pre-risk",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-26T02:00:53.027Z"
+                },
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-26T02:50:36.045Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1795658189376-9u00uz",
+                "version": "0.1.0",
+                "sha": "e10468e2aa31074851df68ee4bbe86e7f77135ac",
+                "builtAt": "2026-11-21T12:02:35.795Z"
+              },
+              "recordedAt": "2026-11-26T04:07:43.254Z"
+            },
+            mainTitle: "확산 언어모델 Cola DLM, 글자보다 뜻을 먼저 짠다",
+            subtitle: "ByteDance Seed 연구진이 5월에 공개한 모델로, 트랜스포머는 그대로 쓰고 왼쪽에서 오른쪽이라는 순서만 푼다",
+            pageTitle: "Cola DLM 분석 — 연속 잠재 확산 언어모델의 구조와 측정 조건 | 페블러스",
+            category: "tech",
+            publishDate: "2026-11-26",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "report/cola-dlm-continuous-latent-diffusion-2026-11/ko/",
+            tags: ["Cola DLM", "확산 언어모델", "잠재 공간", "Text VAE", "LLaDA", "데이터 품질", "AI-Ready Data"],
+            faqs: [
+                { question: "Cola DLM 은 무엇인가?", answer: "문장을 Text VAE 로 연속 좌표에 옮기고, 그 좌표 위에서 확산 트랜스포머가 응답 전체의 뜻을 짠 뒤, 맨 마지막에 디코더가 글자를 찍는 언어모델이다. ByteDance Seed 를 비롯한 연구진 열한 명이 2026년 5월 7일에 공개했고 NeurIPS 2026 포스터로 채택됐다. 코드와 가중치는 아파치 2.0 으로 공개돼 있다." },
+                { question: "트랜스포머 시대가 끝난다는 읽기는 어디까지 맞나?", answer: "틀린 읽기다. 좌표 위를 도는 사전분포 모델 자체가 확산 트랜스포머다. 풀리는 것은 트랜스포머가 아니라 왼쪽에서 오른쪽으로 한 토큰씩 낸다는 순서다. 1저자도 연속으로 다룬다는 것만으로 이산을 넘어선다는 이론적 근거는 없다고 블로그에 적었다." },
+                { question: "토큰 위의 확산과 연속 좌표 위의 확산은 무엇이 다른가?", answer: "확산이 도는 바닥이 다르다. LLaDA 나 DiffusionGemma 같은 앞엣것은 가려 둔 토큰을 되살리는 방식으로 토큰 자리 위에서 돈다. Cola DLM 은 문장을 옮겨 놓은 연속 좌표 위에서 돌고, 토큰은 맨 끝 디코딩에서야 나온다. 트랜스포머는 양쪽이 다 쓴다." },
+                { question: "여덟 과제에서 정확히 어디를 이겼나?", answer: "과제별 수치는 논문에 인쇄돼 있지 않다. 셋의 비교는 스케일링 곡선 그림으로 실려 있고 캡션이 최종 평균에서 가장 좋다고 적을 뿐이다. 그래서 몇 개를 이겼다는 말을 수치로 할 수 없다. 저자가 프로젝트 페이지에 요약한 우위 과제 목록은 있지만 그것은 인쇄된 수치가 아니다." },
+                { question: "공개된 모델의 점수가 낮아 보이는데 잘못 만든 모델인가?", answer: "채점 방식이 다르다. 생성한 글자가 정답 문자열과 그대로 맞아야 점수가 붙는 방식이라, 객관식에서 흔히 쓰는 찍어도 25% 라는 기준이 여기에는 적용되지 않는다. 절대 점수가 낮은 이유도 저자가 먼저 밝혔다. 생성형 평가 절차와 연산 자원의 제약이다." },
+                { question: "기준선은 공정하게 맞췄나?", answer: "꽤 공들여 맞췄다. 임베딩을 뺀 백본을 1.8B 로 맞추고 토크나이저·옵티마이저·학습률 일정·시드·최대 길이·연산 예산을 같게 두었다. 다만 총 파라미터까지 같은 것은 아니다. 기준선이 약 2.2B, Cola DLM 이 약 2.3B 다." },
+                { question: "확산이라서 자기회귀보다 빠른가?", answer: "논문은 속도·지연·처리량 수치를 내놓지 않는다. 한 블록 안에서 병렬 계산이 가능하다는 일반적 서술이 있을 뿐이다. 속도는 이 논문이 내놓은 주장이 아니다." },
+                { question: "Text VAE 가 만드는 잠재 공간의 품질은 왜 중요한가?", answer: "논문이 부록에 직접 적었다. 인코더가 나쁘면 체계적인 손해를 치르고, 설계 전체가 데이터 안에 쓸 만한 저차원 의미 구조가 있다는 가정 위에 선다는 것이다. 좌표 하나를 16개 수에서 128개 수로 늘린 것만으로 세 과제 평균이 8.7에서 11.8로 움직였다. 같은 달 다른 논문은 복원만 잘해서는 부족하다는 것까지 덧붙였다." },
+                { question: "텍스트와 이미지를 한 공간에서 다루는 것이 정말 되나?", answer: "논문이 보인 것은 그림 한 장 분량의 정성 결과이고, 그 절 자신이 실현 가능성의 정성 증거라고 부른다. 수치로 보인 결과는 없다. 논문이 이름을 댄 연속 모달리티는 이미지 하나이고 음성은 한 번도 나오지 않는다. 공개 저장소도 텍스트 전용이고 통합 부분은 포함되지 않았다고 적는다." },
+                { question: "Cola DLM 이 문장을 연속 공간에 올린 첫 모델인가?", answer: "아니다. 2022년의 Diffusion-LM 과 LD4LG 가 이미 그 길을 갔고, 같은 설계의 다른 논문이 Cola DLM 공개 하루 뒤에 올라왔다. 2026년에 여럿이 달려든 방향이다." }
+            ]
+        });
+    </script>
+    <script src="/scripts/citation-download.js?v=c0f2a41f" defer></script>
+</body>
+</html>
