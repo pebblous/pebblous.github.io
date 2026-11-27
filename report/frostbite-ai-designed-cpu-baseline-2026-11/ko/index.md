@@ -1,5 +1,5 @@
 ---
-title: AI가 설계한 CPU Frostbite, 상대 칩의 이름이 없다
+title: AI 설계 CPU Frostbite 효율 4.59배… 비교 상대는 비공개
 subtitle: Architect Labs는 같은 전력으로 4.59배 일한다고 밝혔지만, 상대 칩의 이름은 법적 이유로 공개하지 않았다
 date: 2026-11-24
 category: tech
@@ -7,7 +7,7 @@ source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
 ---
 
-# AI가 설계한 CPU Frostbite, 상대 칩의 이름이 없다
+# AI 설계 CPU Frostbite 효율 4.59배… 비교 상대는 비공개
 
 _Architect Labs는 같은 전력으로 4.59배 일한다고 밝혔지만, 상대 칩의 이름은 법적 이유로 공개하지 않았다_
 

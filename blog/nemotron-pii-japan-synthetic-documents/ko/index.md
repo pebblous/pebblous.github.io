@@ -1,5 +1,5 @@
 ---
-title: Nemotron PII Japan, 개인정보 없이 개인정보 탐지를 가르친다
+title: 엔비디아 Nemotron PII Japan, 일본어 가짜 서류 10만 건
 subtitle: 엔비디아의 가짜 일본어 서류로 배운 AI는 개인정보 탐지 성적이 13%에서 74%로 올랐지만, 진짜 서류에서도 그럴지는 모른다
 date: 2026-11-24
 category: tech
@@ -7,7 +7,7 @@ source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
 ---
 
-# Nemotron PII Japan, 개인정보 없이 개인정보 탐지를 가르친다
+# 엔비디아 Nemotron PII Japan, 일본어 가짜 서류 10만 건
 
 _엔비디아의 가짜 일본어 서류로 배운 AI는 개인정보 탐지 성적이 13%에서 74%로 올랐지만, 진짜 서류에서도 그럴지는 모른다_
 
