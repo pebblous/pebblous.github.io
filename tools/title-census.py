@@ -256,15 +256,23 @@ def _is_past_end(t: str) -> bool:
     return (ord(prev) - 0xAC00) % 28 == _JONG_SS
 # 동사 종결(2026-11-27 형님 판정 — "동사 제목은 정말 멀미난다. 못봐주겠어."): 본문 절이 '다'로 끝나면(현재형 ~한다·~이다·~없다·~된다·형용사 ~크다)
 # 위반이다. 과거형은 위 _is_past_end 가 따로 잡는다. 질문(물음표)·명사 종결·말줄임 두 마디는 허용. '바다·캐나다·판다'처럼 '다'로 끝나는 명사는 뺀다.
-_NOUN_DA = frozenset('바다 캐나다 판다 람다 아이다'.split())
-def _is_verb_end(t: str) -> bool:
+# 이름(혼다·쿠다·우간다)도 '다'로 끝난다 — 핵심 검색어 인정 표기로 끝나면 동사가 아니다(Codex 리뷰 #266). 목록은 메타가 없을 때의 안전망.
+_NOUN_DA = frozenset('바다 캐나다 판다 람다 아이다 혼다 쿠다 우간다 르완다 그라나다 사이다 소다'.split())
+def _is_verb_end(t: str, kw_forms=None) -> bool:
     body = re.sub(r'[\s.!…]+$', '', _body_clause(t))
     if not body or body.endswith(('?', '？')):
         return False
     if not re.search(r'[가-힣]다$', body):
         return False
     last = re.split(r'[\s,，·…]+', body)[-1]
-    return last not in _NOUN_DA
+    if last in _NOUN_DA:
+        return False
+    for f in (kw_forms or []):
+        f = f.strip()
+        # 이름이 낱말로 서 있을 때만 뺀다 — '돌아온다'의 끝 '온다'는 이름이 아니다(Codex 리뷰 #267)
+        if f and re.search(r'[가-힣]다$', f) and body.endswith(f) and (len(body) == len(f) or not re.match(r'[가-힣A-Za-z0-9]', body[-len(f) - 1])):
+            return False
+    return True
 # 제목 안 수치: 중학생은 수치로 기사를 못 알아본다 — 수치는 부제로. 아라비아 숫자 덩이("1억 5,100만"은 한 덩이, 단위는 덩이에 딸린다)를
 # 제목 전체(꼬리 포함)에서 센다. 1개 = 권고 감점 1, 2개 이상 = 위반. 연도("2030년")·달("9월")·"3분의 2"의 3·2 도 아라비아라 센다(정본대로).
 # 한글 수사("열에 여덟"·"두 배")는 수치가 아니다. 라틴 글자에 붙은 숫자(GPT-4·H100)는 이름의 일부라 세지 않는다.
@@ -548,7 +556,7 @@ def eval_maintitle(t: str, kw_forms=None):
         labels.append('수수께끼(주어 없는 무엇을 …)'); ded += 1  # v3: 권고 감점
     if _is_past_end(t):
         labels.append('과거형 종결'); ded += 3  # v3 위반 — 사건 보고문
-    elif _is_verb_end(t):
+    elif _is_verb_end(t, kw_forms):
         labels.append('동사 종결'); ded += 3  # 위반 — 2026-11-27 형님 "동사 제목은 정말 멀미난다". 신문 헤드라인은 명사로 맺는다
     nums = _count_numbers(tm)
     if nums >= 2:
