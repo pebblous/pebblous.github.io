@@ -82,7 +82,7 @@
 | `externalRuntime[]` | ○ | `{url, purpose}` — 실행 시 외부 의존. 허용 목록(§2-3) 밖이면 중단 |
 | `downloads[]` | ○ | `{path, label}` — 독자 내려받기 |
 | `stats` | ○ | `{fileCount, totalBytes, treeHash}` — 접수 스킬이 산출하고, 적혀 있으면 대조한다 |
-| `title` | ○ | `{candidates: [{text, form}], subtitle}` — form 은 질문형·신문 명사형·현재형 주장 |
+| `title` | ○ | `{candidates: [{text, form}], subtitle}` — form 은 신문 명사형·두 마디 말줄임·질문형(§4-2, 2026-11-27 — 옛 현재형 주장은 없앴다) |
 | `summary` / `howTo[]` / `findings[]` / `limits[]` | ○ | 기사 초안 재료. `findings[]`·`limits[]` 항목은 `evidenceIds[]` 를 달 수 있다 |
 
 ## 4. 근거 모델 `evidence[]`
