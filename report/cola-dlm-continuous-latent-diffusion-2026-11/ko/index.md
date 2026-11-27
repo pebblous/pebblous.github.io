@@ -1,5 +1,5 @@
 ---
-title: 확산 언어모델 Cola DLM, 글자보다 뜻을 먼저 짠다
+title: 바이트댄스 Cola DLM, 뜻을 먼저 짜는 확산 언어모델
 subtitle: ByteDance Seed 연구진이 5월 공개한 모델로, 한 단어씩 차례로 쓰는 대신 문장 덩어리의 뜻을 먼저 잡고 글자로 옮긴다
 date: 2026-11-26
 category: tech
@@ -7,7 +7,7 @@ source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
 ---
 
-# 확산 언어모델 Cola DLM, 글자보다 뜻을 먼저 짠다
+# 바이트댄스 Cola DLM, 뜻을 먼저 짜는 확산 언어모델
 
 _ByteDance Seed 연구진이 5월 공개한 모델로, 한 단어씩 차례로 쓰는 대신 문장 덩어리의 뜻을 먼저 잡고 글자로 옮긴다_
 

@@ -1,5 +1,5 @@
 ---
-title: 두 돌 맞은 MCP, 서버가 도구와 함께 사용법도 보낸다
+title: MCP 두 돌, 사용 지침 보내는 Skills over MCP 공개
 subtitle: 앤트로픽이 11월 24일 공개 베타로 연 Skills over MCP, 월간 SDK 내려받기는 1년 새 9천만 건에서 7억 건
 date: 2026-11-27
 category: business
@@ -7,7 +7,7 @@ source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
 ---
 
-# 두 돌 맞은 MCP, 서버가 도구와 함께 사용법도 보낸다
+# MCP 두 돌, 사용 지침 보내는 Skills over MCP 공개
 
 _앤트로픽이 11월 24일 공개 베타로 연 Skills over MCP, 월간 SDK 내려받기는 1년 새 9천만 건에서 7억 건_
 
