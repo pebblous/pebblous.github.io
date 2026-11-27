@@ -254,6 +254,17 @@ def _is_past_end(t: str) -> bool:
     if not ('가' <= prev <= '힣') or prev in _PAST_EXCEPT:
         return False
     return (ord(prev) - 0xAC00) % 28 == _JONG_SS
+# 동사 종결(2026-11-27 형님 판정 — "동사 제목은 정말 멀미난다. 못봐주겠어."): 본문 절이 '다'로 끝나면(현재형 ~한다·~이다·~없다·~된다·형용사 ~크다)
+# 위반이다. 과거형은 위 _is_past_end 가 따로 잡는다. 질문(물음표)·명사 종결·말줄임 두 마디는 허용. '바다·캐나다·판다'처럼 '다'로 끝나는 명사는 뺀다.
+_NOUN_DA = frozenset('바다 캐나다 판다 람다 아이다'.split())
+def _is_verb_end(t: str) -> bool:
+    body = re.sub(r'[\s.!…]+$', '', _body_clause(t))
+    if not body or body.endswith(('?', '？')):
+        return False
+    if not re.search(r'[가-힣]다$', body):
+        return False
+    last = re.split(r'[\s,，·…]+', body)[-1]
+    return last not in _NOUN_DA
 # 제목 안 수치: 중학생은 수치로 기사를 못 알아본다 — 수치는 부제로. 아라비아 숫자 덩이("1억 5,100만"은 한 덩이, 단위는 덩이에 딸린다)를
 # 제목 전체(꼬리 포함)에서 센다. 1개 = 권고 감점 1, 2개 이상 = 위반. 연도("2030년")·달("9월")·"3분의 2"의 3·2 도 아라비아라 센다(정본대로).
 # 한글 수사("열에 여덟"·"두 배")는 수치가 아니다. 라틴 글자에 붙은 숫자(GPT-4·H100)는 이름의 일부라 세지 않는다.
@@ -496,11 +507,11 @@ LEN_MIN, LEN_MAX, LEN_HARD = 20, 35, 45
 
 
 def eval_maintitle(t: str, kw_forms=None):
-    """mainTitle — 헤드라인. 정본 v3(2026-09-13): 질문형·신문 명사형·현재형 주장 중 하나, 주어 먼저·20~35자.
+    """mainTitle — 헤드라인. 정본 §4-2(2026-11-27 개정): 신문 헤드라인(명사로 맺기·두 마디 말줄임)이 기본, 질문형은 가끔, 주어 먼저·20~35자.
     코드로 재는 것: 핵심 검색어(kw_forms 가 주어지면 인정 표기 하나는 있어야 한다 — 2026-09-28 형님 판정)/
-    과거형 서술 종결(위반)/제목 안 수치(1개 권고·2개+ 위반)/영문 약어 4자+(권고)/따옴표/인용+반전/대조/
-    줄표·콜론 허용 형태/미끼/키워드 나열/잘린 명사형/수수께끼/관형절 사슬/길이.
-    현재형 종결·질문형·'X: Y'·'— 출처' 꼬리·낱말 강조 작은따옴표는 허용이라 감점하지 않는다.
+    과거형 서술 종결(위반)/동사 종결 ~한다·~이다·~없다(위반, 2026-11-27 형님 판정)/수치 나열(2개+ 위반, 1개는 허용 — 2026-11-27)/
+    영문 약어 4자+(권고)/따옴표/인용+반전/대조/줄표·콜론 허용 형태/미끼/키워드 나열/잘린 명사형/수수께끼/관형절 사슬/길이.
+    명사 종결·말줄임 두 마디·질문형·'X: Y'·'— 출처' 꼬리·낱말 강조 작은따옴표는 허용이라 감점하지 않는다.
     kw_forms=None(잴 수 있는 기록 없음)이면 핵심 검색어는 보지 않는다 — 기록 판정(미기재·이름이 아님)은 글 머리(keyword_labels)에 붙는다."""
     labels, ded = [], 0
     if kw_forms and keyword_pos(t, kw_forms) < 0:
@@ -537,11 +548,11 @@ def eval_maintitle(t: str, kw_forms=None):
         labels.append('수수께끼(주어 없는 무엇을 …)'); ded += 1  # v3: 권고 감점
     if _is_past_end(t):
         labels.append('과거형 종결'); ded += 3  # v3 위반 — 사건 보고문
+    elif _is_verb_end(t):
+        labels.append('동사 종결'); ded += 3  # 위반 — 2026-11-27 형님 "동사 제목은 정말 멀미난다". 신문 헤드라인은 명사로 맺는다
     nums = _count_numbers(tm)
     if nums >= 2:
-        labels.append('수치 나열'); ded += 3  # v3 위반 — 수치는 부제로
-    elif nums == 1:
-        labels.append('수치 1'); ded += 1  # v3 권고
+        labels.append('수치 나열'); ded += 3  # 위반 — 둘 이상이면 수치 표가 된다. 핵심 수치 하나는 신문 헤드라인 문법(2026-11-27 개정, 11-18 판정)
     for a in _unknown_acronyms(tm):
         labels.append(f'영문 약어({a})'); ded += 1  # v3 권고 — 위반은 아니다
     if BALANCED_PAIR.search(t):
