@@ -10,6 +10,12 @@ description: "blog.pebblous.ai HTML 아티클 작성 — PebblousPage.init() 구
 blog.pebblous.ai 아티클 HTML **신규 작성** 스킬.
 상세 HTML 구조 예시는 `references/html-conventions.md` 참조.
 
+## ⛔ 어투: 신문 기사체 (2026-11-27 · 이 스킬의 다른 문체·톤 지침보다 앞선다)
+
+본문을 쓰기 전에 `docs/ko-style-standard.md` 의 **「어투 — 신문 기사체」** 절을 Read 로 읽고 따른다. 요점:
+사실로 시작 · 출처를 문장 안에서 · 소식마다 따로(억지 관통선 금지) · 소제목은 고유명사가 든 헤드라인 · 해석은 한두 문장 · 비유·반복 대조·"~라는 뜻이다"·자기 언급("이 글은") 금지 · 해라체.
+이 단계 뒤에 문체를 고쳐 주는 교정 단계는 없다(2026-11-27 polish·humanizer 제거). 쓴 그대로 발행된다.
+
 `blog-polish`와의 역할 구분:
 - **`blog-write` (이 스킬)**: 새 아티클 HTML을 처음부터 작성 — 구조, SEO, 컴포넌트 전체 포함
 - **`blog-polish`**: 기존 아티클의 제목·리드·섹션 헤딩을 Warm Expert Tone으로 다듬기 — 콘텐츠 보존
