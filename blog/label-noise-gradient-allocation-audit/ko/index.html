@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>라벨 노이즈 진단법 분석 — 정답지 없이 틀린 라벨 비율을 추정하는 기울기 배분 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="학습을 마친 모델 하나의 기울기 배분만으로 라벨 노이즈(틀린 라벨)를 찾고 그 비율을 추정하는 방법이 arXiv에 공개됐습니다. 모델이 오답을 외운 뒤에도 CIFAR-10N에서 AUC 0.94~0.96을 유지했고, 걸러 낸 예시를 빼고 재학습하면 시험 정확도가 최대 47%p 올랐습니다.">
+    <meta name="keywords" content="라벨 노이즈, label noise, 틀린 라벨, 기울기 배분, gradient allocation, 신뢰도 학습, confident learning, CIFAR-10N, 데이터 라벨 정확성, ISO/IEC 5259-2, 데이터 품질, 데이터클리닉">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="라벨 노이즈">
+    <meta name="pb-search-keyword-forms" content="라벨 노이즈|label noise">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="라벨 노이즈 진단, 학습 끝난 AI로 잘못 달린 정답 비율 추정">
+    <meta property="og:description" content="정답지도 검증 세트도 재학습도 없이, 학습이 끝난 모델의 기울기 방향만 읽어 틀린 라벨을 찾는 방법. 걸러 내고 다시 학습하면 시험 정확도가 최대 47%p 올랐다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="라벨 노이즈 진단 — 기울기 배분으로 틀린 라벨 비율을 추정하는 방법">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-11-28">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="라벨 노이즈 진단, 학습 끝난 AI로 잘못 달린 정답 비율 추정">
+    <meta name="twitter:description" content="학습이 끝난 모델 하나로 틀린 라벨을 찾고 비율을 추정한다. 5,000장 진단에 GPU 1장으로 14~27초.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/ko/image/index.png">
+    <meta name="twitter:image:alt" content="라벨 노이즈 진단 — 기울기 배분으로 틀린 라벨 비율을 추정하는 방법">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=5f0a37e3"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=7f5a0b5e">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=bea798d5">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=f542b79f">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <!-- Google Scholar meta -->
+    <meta name="citation_title" content="라벨 노이즈 진단, 학습 끝난 AI로 잘못 달린 정답 비율 추정">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/11/28">
+    <meta name="citation_online_date" content="2026/11/28">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="ko">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#defect" class="block pl-4 themeable-toc-link transition-colors duration-200">1. 오답을 외운 모델과 CIFAR-10N</a></li>
+                    <li><a href="#method" class="block pl-4 themeable-toc-link transition-colors duration-200">2. 기울기 배분 판정 규칙</a></li>
+                    <li><a href="#measure" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 오답 비율 추정 성적</a></li>
+                    <li><a href="#retrain" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 걸러 낸 뒤 재학습 결과</a></li>
+                    <li><a href="#confident-learning" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 신뢰도 학습과의 비교</a></li>
+                    <li><a href="#split-audit" class="block pl-4 themeable-toc-link transition-colors duration-200">6. 데이터 반출 없는 분할 진단</a></li>
+                    <li><a href="#iso5259" class="block pl-4 themeable-toc-link transition-colors duration-200">7. ISO/IEC 5259-2와 데이터클리닉</a></li>
+                    <li><a href="#series" class="block pl-4 themeable-toc-link transition-colors duration-200">데이터 품질 연재</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            학습을 마친 분류 모델 하나만 가지고 학습 데이터의 틀린 라벨을 찾고, 그 비율까지 추정하는 방법이 arXiv에 공개됐다. Yuchen Li 등 저자 다섯 명의 논문 「<a href="https://arxiv.org/abs/2611.22449" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Find, Count and Fix Wrong Labels from a Trained Model, without Clean Labels or Shared Data</a>」(2026년 11월 17일 제출, 21일 개정)는 예시마다 모델의 기울기가 어느 파라미터 쪽으로 쏠리는지를 같은 라벨을 단 예시들의 평균과 비교한다. 저자들은 이 방법에 깨끗한 정답 세트도, 따로 떼어 둔 검증 세트도, 재학습도 필요 없다고 밝혔다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            라벨 노이즈 탐지가 어려워지는 시점은 모델이 틀린 라벨까지 외운 뒤다. 논문에 따르면 모델이 틀린 라벨의 99~100%를 그대로 맞히게 된 상태에서, 손실이나 기울기 크기로 오답을 가리는 지표는 사람이 단 CIFAR-10N 라벨에서 AUC 0.73~0.76까지 떨어졌다. 같은 조건에서 기울기 배분은 0.94~0.96을 유지했다. 걸러 낸 예시를 빼고 다시 학습하자 시험 정확도는 이미지 노이즈 설정 22개 모두에서 올랐다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            기존 방법을 앞섰다고 보기는 어렵다. 신뢰도 학습(confident learning)과 맞붙인 11개 설정에서 오답 판별 AUC 차이는 통계적으로 유의하지 않았고, 오답 비율 추정은 신뢰도 학습이 실제 값에 더 가까웠다. 대신 계산은 최종 모델 하나를 읽는 데서 끝난다. 페블러스는 이 방법을 ISO/IEC 5259-2 정확성 특성의 '데이터 라벨 정확성'(Acc-ML-7)을 정답지 없이 수치로 내는 후보로 본다. 논문은 ISO 표준을 언급하지 않으며, 이 대응은 페블러스의 해석이다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://arxiv.org/abs/2611.22449" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv 2611.22449</a> v2 초록·본문</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.94~0.96</p>
+                            <p class="text-sm themeable-text-secondary mt-1">오답 판별 AUC</p>
+                            <p class="text-xs themeable-muted mt-1">CIFAR-10N 최악 라벨, 오답을 외운 모델 기준. 손실·기울기 크기는 0.73~0.76</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">54~96%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">실제 오답 비율 포착</p>
+                            <p class="text-xs themeable-muted mt-1">CIFAR-10. 예측·특징 마진 기반 추정은 0~6%</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">48.1→94.7%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">재학습 후 시험 정확도</p>
+                            <p class="text-xs themeable-muted mt-1">CIFAR-10 대칭 노이즈 60%, ViT-S. 22개 설정 평균 +11.6%p</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">14~27초</p>
+                            <p class="text-sm themeable-text-secondary mt-1">5,000장 진단 시간</p>
+                            <p class="text-xs themeable-muted mt-1">GPU 1장(RTX 4090). 신뢰도 학습은 추가 학습에 약 23 GPU분</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="defect" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">CIFAR-10N 최악 라벨, 오답을 외운 모델 앞에서 무너지는 손실 지표</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        라벨 노이즈는 학습 데이터에 달린 정답 표시가 틀린 상태를 말한다. 고양이 사진에 '개'라는 라벨이 붙은 경우다. 논문이 주로 쓴 CIFAR-10N은 CIFAR-10 이미지 5만 장에 사람 작업자들이 다시 단 라벨을 모은 공개 데이터셋이고, 그 가운데 '최악(worst)' 판은 작업자 라벨 중 틀린 것을 우선 골라 오류가 가장 많다. 논문 기준으로 다수결 판(aggregate)은 9.0%, 작업자 한 명을 고른 판(random-1)은 17.2%, 최악 판은 40.2%가 틀렸다. 사람이 실제로 저지르는 실수가 담겨 있어, 무작위로 라벨을 섞은 인공 노이즈보다 찾기 어렵다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지금까지 많이 쓴 방법은 모델이 어떤 예시를 유난히 어려워하는지를 본다. 손실이 큰 예시, 기울기가 큰 예시, 자기 자신에 대한 영향(self-influence)이 큰 예시를 틀린 라벨 후보로 올리는 식이다. 문제는 학습이 길어지면 모델이 틀린 라벨까지 맞히게 된다는 점이다. 저자들이 실험한 모델은 틀린 라벨의 99~100%를 학습 데이터 안에서 그대로 맞혔다. 이렇게 되면 틀린 예시의 손실도 작아져 정상 예시와 구별되지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 보고한 CIFAR-10N 최악 라벨 결과는 아래와 같다. AUC는 틀린 라벨과 맞는 라벨을 무작위로 하나씩 뽑았을 때 틀린 쪽에 더 높은 점수를 줄 확률이다. 1이면 완벽하게 가르고, 0.5면 동전 던지기와 같다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="p-3 text-left">점수 종류</th>
+                                    <th class="p-3 text-left">무엇을 보나</th>
+                                    <th class="p-3 text-left">오답을 외운 모델에서의 AUC</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">손실 · 기울기 크기 · 자기 영향</td>
+                                    <td class="p-3">모델이 그 예시를 얼마나 어려워하나</td>
+                                    <td class="p-3">0.73~0.76</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">특징 공간 마진</td>
+                                    <td class="p-3">내부 표현이 다른 클래스에 얼마나 가까운가</td>
+                                    <td class="p-3">0.79~0.84</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3"><strong>기울기 배분(제안 방법)</strong></td>
+                                    <td class="p-3">기울기가 어느 파라미터로 쏠리나</td>
+                                    <td class="p-3"><strong>0.94~0.96</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비율을 세는 쪽의 격차는 더 크다. 모델의 예측이나 특징 마진으로 오답 비율을 추정하면, 오답을 외운 모델에서는 실제 비율의 0~6%만 잡혔다고 논문은 적었다. 실제로 열 장 중 네 장이 틀렸어도 추정치는 '거의 깨끗하다'에 가깝게 나온다. 데이터 품질 진단에서 가장 위험한 오류가 이쪽이다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="method" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">기울기 배분, 크기를 버리고 방향만 클래스 평균과 비교</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        저자들은 백본 마지막 네 블록의 출력 투영층을 지켜본다. ViT-S에서는 어텐션과 MLP의 출력 투영, ConvNeXt-T에서는 MLP의 출력 투영이다. 예시 하나와 그 라벨에 대해 이 층들의 기울기를 구한 다음, 기울기 값의 절댓값을 전체 합으로 나눈다. 그러면 기울기의 크기는 사라지고 '모델이 어느 파라미터를 얼마나 바꾸려 하는가'의 비율만 남는다. 논문은 이것을 배분(allocation)이라고 부른다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">판정은 네 단계로 이뤄진다.</p>
+
+                    <ol class="themeable-text leading-relaxed space-y-2 mb-6 ml-6" style="list-style:decimal;line-height:2.0;">
+                        <li>같은 라벨을 단 예시들의 배분을 평균해 클래스마다 기준 배분을 만든다.</li>
+                        <li>예시의 배분이 자기 라벨의 기준과 얼마나 닮았는지(코사인 유사도)에서, 가장 닮은 다른 클래스와의 유사도를 뺀다. 이 값이 마진이다.</li>
+                        <li>라벨을 가장 가까운 다른 클래스로 바꿔 같은 계산을 한 번 더 한다.</li>
+                        <li>바꾼 라벨의 마진이 원래 라벨의 마진보다 크면 그 예시를 틀린 라벨로 표시한다.</li>
+                    </ol>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 560" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="기울기 배분으로 틀린 라벨을 가려내는 판정 과정을 위에서 아래로 그린 순서도. 예시 x와 라벨 y에서 시작해 기울기의 절댓값을 합으로 나눠 배분 벡터를 만들고, 자기 라벨 평균과의 유사도 s_y와 가장 가까운 다른 클래스 평균과의 유사도 s_y′를 각각 구해 마진 m을 계산한다. 라벨을 y′로 바꿔 같은 계산을 반복해 마진 m′을 구한 뒤, m′이 m보다 크면 틀린 라벨로 표시하고 그렇지 않으면 라벨을 그대로 둔다.">
+                            <text x="350" y="20" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary,#171719)">크기를 지우고 방향만 비교하는 네 단계</text>
+
+                            <rect x="220" y="40" width="260" height="40" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="350" y="65" text-anchor="middle" font-size="12.5" fill="var(--text-secondary,#475569)">예시 x, 라벨 y</text>
+
+                            <line x1="350" y1="80" x2="350" y2="108" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+
+                            <rect x="180" y="108" width="340" height="50" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="350" y="128" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-secondary,#475569)">기울기 → 배분 벡터 a(x)</text>
+                            <text x="350" y="146" text-anchor="middle" font-size="10.5" fill="var(--text-muted,#808080)">절댓값을 합으로 나눠 크기를 지운다</text>
+
+                            <line x1="350" y1="158" x2="160" y2="198" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+                            <line x1="350" y1="158" x2="540" y2="198" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+
+                            <rect x="20" y="198" width="280" height="55" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="160" y="220" text-anchor="middle" font-size="12" fill="var(--text-secondary,#475569)">자기 라벨 y 평균과 비교</text>
+                            <text x="160" y="238" text-anchor="middle" font-size="11.5" fill="var(--text-muted,#808080)">코사인 유사도 s_y</text>
+
+                            <rect x="400" y="198" width="280" height="55" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="540" y="220" text-anchor="middle" font-size="12" fill="var(--text-secondary,#475569)">가장 가까운 다른 클래스 y′</text>
+                            <text x="540" y="238" text-anchor="middle" font-size="11.5" fill="var(--text-muted,#808080)">코사인 유사도 s_y′</text>
+
+                            <line x1="160" y1="253" x2="350" y2="283" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+                            <line x1="540" y1="253" x2="350" y2="283" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+
+                            <rect x="240" y="283" width="220" height="40" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="350" y="308" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-secondary,#475569)">마진 m = s_y − s_y′</text>
+
+                            <line x1="350" y1="323" x2="350" y2="343" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+
+                            <rect x="180" y="343" width="340" height="55" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="350" y="365" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-secondary,#475569)">라벨을 y′로 바꿔 같은 계산 반복</text>
+                            <text x="350" y="383" text-anchor="middle" font-size="11.5" fill="var(--text-muted,#808080)">마진 m′를 구한다</text>
+
+                            <line x1="350" y1="398" x2="350" y2="418" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+
+                            <rect x="270" y="418" width="160" height="40" rx="8" fill="none" stroke="var(--text-secondary,#475569)" stroke-width="2"/>
+                            <text x="350" y="443" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary,#171719)">m′ &gt; m ?</text>
+
+                            <line x1="350" y1="458" x2="160" y2="478" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+                            <text x="245" y="468" text-anchor="middle" font-size="11" fill="var(--text-muted,#808080)">예</text>
+                            <line x1="350" y1="458" x2="540" y2="478" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+                            <text x="455" y="468" text-anchor="middle" font-size="11" fill="var(--text-muted,#808080)">아니오</text>
+
+                            <rect x="20" y="478" width="280" height="55" rx="8" fill="#F86825" fill-opacity="0.85"/>
+                            <text x="160" y="500" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">틀린 라벨로 표시</text>
+                            <text x="160" y="518" text-anchor="middle" font-size="10.5" fill="#ffffff">오답 비율 추정에 포함</text>
+
+                            <rect x="400" y="478" width="280" height="55" rx="8" fill="var(--text-muted,#808080)" fill-opacity="0.15" stroke="var(--text-muted,#808080)" stroke-opacity="0.5"/>
+                            <text x="540" y="500" text-anchor="middle" font-size="13" fill="var(--text-secondary,#475569)">라벨을 그대로 둔다</text>
+                            <text x="540" y="518" text-anchor="middle" font-size="10.5" fill="var(--text-muted,#808080)">정상으로 판정</text>
+
+                            <defs>
+                                <marker id="ga-arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                                    <path d="M0,0 L8,4 L0,8 Z" fill="var(--text-muted,#808080)"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식(판정 규칙 재구성) — 사람이 정할 임계값 없이, 한 예시 안에서 두 마진을 비교해 라벨을 표시한다. | 출처: <a href="https://arxiv.org/abs/2611.22449" target="_blank" rel="noopener" class="underline">arXiv:2611.22449</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 규칙에는 사람이 정할 임계값이 없다. 한 예시 안에서 두 숫자를 비교할 뿐이라, 데이터셋마다 기준선을 다시 맞출 필요가 없다. 표시된 예시의 비율이 곧 오답 비율 추정치가 된다. 표시한 수는 '실제 오답 수 × 재현율 ÷ 정밀도'와 같으므로, 재현율이 정밀도보다 낮으면 추정치는 실제 비율보다 작게 나온다. 논문은 이 성질을 근거로 추정치를 하한으로 읽으라고 설명한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        크기를 버리는 이유에 대해 저자들은 다음과 같이 설명한다. 모델이 틀린 라벨을 외우면 그 예시의 손실과 기울기 크기는 작아지지만, 남은 기울기가 향하는 파라미터의 구성은 같은 라벨의 정상 예시들과 다르게 남는다는 것이다. 이 설명은 저자들의 메커니즘 해석이고, 페블러스가 따로 재현한 것은 아니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        왜 하필 네 블록인지는 실험으로 정했다. 모델이 오답을 외운 뒤 CIFAR-10N 최악 라벨에서 마지막 블록 하나만 보면 ViT-S의 AUC가 0.919였고, 네 블록을 보면 0.965로 올랐다. ConvNeXt-T는 0.877에서 0.954가 됐다. 더 값싼 입력인 분류 헤드만 쓰면 AUC가 0.654로 떨어지고 실제 오답 비율의 4%만 읽었다. 저자들은 학습 막바지에 가장 크게 다시 쓰이는 곳이 최종 특징이라, 그보다 앞선 블록에 신호가 남는다고 해석한다.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="measure" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">CIFAR-10·Food-101N 오답 비율 추정, 사람 라벨에서는 하한</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실험은 이미지 22개 설정과 텍스트 9개 설정에서 돌았다. 이미지 쪽은 사람이 단 라벨(CIFAR-10N, CIFAR-100N, CIFAR-10H), 웹에서 모은 라벨(Food-101N), 일부러 섞은 인공 노이즈(CIFAR-10·CIFAR-100의 대칭·비대칭 노이즈, Food-101의 대칭 40%)를 함께 썼다. 모델은 ImageNet으로 사전학습한 ViT-S/16과 ConvNeXt-T다. 텍스트 쪽은 사람 라벨 오류가 담긴 NoisyAG-News와 인공 노이즈를 넣은 GLUE의 SST-2·QQP·MNLI를 RoBERTa-base, DeBERTa-v3-base, Qwen3-1.7B-Base로 시험했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        CIFAR-10에서 이 방법은 오답을 외운 모델로 실제 오답 비율의 54~96%를 잡았다. 같은 모델에서 예측·특징 마진 기반 추정이 0~6%에 그친 것과 비교된다. 노이즈 종류에 따라 편차는 크다. 사람이 단 CIFAR-10 라벨에서는 실제 비율의 43~73%를 읽었고, 웹 라벨인 Food-101N에서는 실제 19.2%를 ViT-S가 13.1%, ConvNeXt-T가 9.3%로 읽었다. 사람이 만든 오류일수록 추정치가 실제보다 낮게 나온다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        약점이 분명한 오류도 있다. CIFAR-100에서 같은 상위 범주(예: 같은 '나무' 묶음 안의 서로 다른 나무) 안에서 틀린 라벨은 28%만 찾았고, 상위 범주를 넘나드는 오류는 54%를 찾았다. 비슷한 클래스끼리의 혼동은 기울기 배분도 비슷해 잘 갈리지 않는다는 결과다. 텍스트에서는 RoBERTa가 QQP 다섯 번 실행 중 세 번은 틀린 라벨을 아예 외우지 못했다. 이 방법이 전제하는 '오답을 외운 모델'이 만들어지지 않은 경우라, 해당 설정의 추정치는 하한으로만 읽어야 한다고 저자들은 밝혔다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 방법은 고칠 라벨도 제안한다. 마진을 더 크게 만드는 다른 클래스가 곧 교정 후보다. 정답을 알 수 있는 노이즈 설정에서 교정 후보가 실제 정답과 맞은 비율은 39~93%, 중앙값 73%였다. 자동 교정에 그대로 쓰기보다는 사람이 다시 볼 목록의 순서를 정하는 데 맞는 수준이다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="retrain" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">표시한 예시 빼고 재학습, CIFAR-10 정확도 48.1%에서 94.7%로 상승</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        찾아낸 라벨을 빼면 모델이 실제로 나아지는지가 다운스트림 질문이다. 저자들은 표시된 예시를 학습 데이터에서 제거하고 처음부터 다시 학습했다. 시험 정확도는 이미지 노이즈 설정 22개 모두에서 올랐고, 평균 상승폭은 11.6%p였다. 가장 큰 변화는 CIFAR-10에 대칭 노이즈 60%를 넣은 설정에서 나왔다. ViT-S의 시험 정확도가 48.1%에서 94.7%로 올랐다. 같은 60% 설정에서 모델에 따라 상승폭은 28~47%p였다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        대조 실험도 함께 실렸다. 표시된 수만큼 예시를 무작위로 빼고 다시 학습하면 정확도 변화는 −1.7~+1.8%p에 머물렀다. 정확도 상승의 원인이 데이터 양의 감소보다 틀린 라벨의 제거에 있다는 근거다. 라벨이 깨끗한 데이터에 같은 절차를 적용했을 때 정확도 변화는 최대 0.13%p였다. 깨끗한 데이터에서 멀쩡한 예시를 대량으로 잘라 내는 부작용은 관찰되지 않았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        무엇을 기준으로 뺄지도 비교했다. 노이즈가 있는 ViT-S 설정 11개에서 기울기 배분이 표시한 예시를 빼면 재학습 후 평균 시험 정확도가 90.2%였다. 손실이 큰 예시를 같은 수만큼 뺐을 때는 85.8%, 신뢰도 학습이 찾은 예시를 뺐을 때는 90.3%였다. 신뢰도 학습과는 비겼지만, 신뢰도 학습은 1.0~2.8배 많은 예시를 지웠고 추가 학습 네 번이 필요했다. 지운 예시 가운데 실제로 틀린 라벨의 비중은 기울기 배분이 평균 93.7%로 가장 높았고, 신뢰도 학습은 84.6%, 손실 기준은 75.3%였다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        재학습 검증은 이미지에만 있다. 텍스트 데이터를 정리한 뒤 다시 학습하는 실험은 하지 않았고, 저자들은 이를 다음 단계로 남겨 두었다. 텍스트 라벨 정리에 바로 쓰려면 이 공백을 감안해야 한다.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="confident-learning" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">신뢰도 학습(confident learning)과 11개 설정 비교, AUC 차이는 유의하지 않음</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        신뢰도 학습은 모델의 예측 확률과 관측된 라벨을 대조해 틀린 라벨을 고르는 방법으로, 오픈소스 라이브러리 cleanlab을 통해 널리 쓰인다. 예측을 공정하게 얻으려고 데이터를 나눠 모델을 여러 번 학습하는 교차 학습을 거친다. 저자들은 노이즈가 있는 11개 설정에서 두 방법을 나란히 돌렸다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="p-3 text-left">항목</th>
+                                    <th class="p-3 text-left">신뢰도 학습</th>
+                                    <th class="p-3 text-left">기울기 배분</th>
+                                    <th class="p-3 text-left">판정</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">오답 판별 AUC(평균)</td>
+                                    <td class="p-3">0.969</td>
+                                    <td class="p-3">0.958</td>
+                                    <td class="p-3">유의하지 않음(윌콕슨 검정 p=0.21)</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">정밀도</td>
+                                    <td class="p-3">0.85</td>
+                                    <td class="p-3">0.94</td>
+                                    <td class="p-3">11개 설정 모두 기울기 배분 우위(p=9.8×10⁻⁴)</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">오답 비율 추정(실제 대비)</td>
+                                    <td class="p-3">93%</td>
+                                    <td class="p-3">74%</td>
+                                    <td class="p-3">신뢰도 학습이 실제에 더 가까움</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">계산 비용(5,000장, ViT-S)</td>
+                                    <td class="p-3">추가 학습 약 23 GPU분</td>
+                                    <td class="p-3">14초</td>
+                                    <td class="p-3">기울기 배분은 최종 모델만 읽음</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        정리하면 판별력은 비긴 결과이고, 정밀도는 기울기 배분이, 비율 추정은 신뢰도 학습이 앞선다. 기울기 배분은 표시한 예시가 틀렸을 가능성이 더 높은 대신 덜 표시하고, 그래서 비율을 낮게 읽는다. 저자들이 내세운 장점은 비용과 조건이다. 신뢰도 학습은 모델을 다시 학습할 수 있는 데이터 접근권이 있어야 하고, 기울기 배분은 이미 학습이 끝난 모델 하나와 예시별 기울기만 있으면 된다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        실무에서 고를 기준도 여기서 갈린다. 재학습할 여유와 데이터 접근권이 있고 오답 비율 숫자 자체가 중요하다면 신뢰도 학습이 낫다. 학습이 끝난 모델만 받았거나 데이터를 옮길 수 없는 경우에는 기울기 배분이 쓸 수 있는 선택지다.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="split-audit" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">분할 진단, 데이터 대신 예시당 숫자 2K+4개만 전달</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문 제목의 '공유 데이터 없이(without Shared Data)'는 분할 진단(split audit) 설정을 가리킨다. 데이터를 가진 쪽이 자기 컴퓨터에서 모델로 예시마다 숫자를 계산해 진단하는 쪽에 보낸다. 보내는 양은 예시당 2K+4개이고, K는 클래스 수다. 10개 클래스라면 예시당 숫자 24개다. 진단하는 쪽은 이미지나 텍스트 원본 없이 이 숫자만으로 같은 표시와 같은 비율 추정을 재현한다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 240" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Pretendard, sans-serif;" role="img" aria-label="분할 진단 구조를 보여주는 도식. 왼쪽은 데이터 보유자로, 비공개 원본 데이터를 학습된 모델에 통과시켜 예시별 숫자를 계산한다. 가운데 점선 경계를 가로질러 예시당 2K+4개의 숫자만 전송되고 원본은 넘어가지 않는다(K는 클래스 수). 오른쪽 진단자는 그 숫자만으로 틀린 라벨 표시와 오답 비율 추정을 재현한다.">
+                            <text x="350" y="20" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary,#171719)">데이터는 그대로 머물고 숫자만 건너간다</text>
+
+                            <text x="150" y="44" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-secondary,#475569)">데이터 보유자</text>
+                            <text x="550" y="44" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-secondary,#475569)">진단자</text>
+
+                            <line x1="350" y1="36" x2="350" y2="226" stroke="var(--text-muted,#808080)" stroke-width="1.3" stroke-dasharray="4,4"/>
+
+                            <rect x="30" y="58" width="240" height="50" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="150" y="78" text-anchor="middle" font-size="12" fill="var(--text-secondary,#475569)">원본 데이터</text>
+                            <text x="150" y="96" text-anchor="middle" font-size="10.5" fill="var(--text-muted,#808080)">(비공개, 반출 안 함)</text>
+
+                            <line x1="150" y1="108" x2="150" y2="138" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#sa-arrow)"/>
+
+                            <rect x="30" y="138" width="240" height="50" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="150" y="158" text-anchor="middle" font-size="12" fill="var(--text-secondary,#475569)">학습된 모델 통과</text>
+                            <text x="150" y="176" text-anchor="middle" font-size="10.5" fill="var(--text-muted,#808080)">예시별 숫자 계산</text>
+
+                            <rect x="430" y="138" width="240" height="50" rx="8" fill="none" stroke="#F86825" stroke-width="2"/>
+                            <text x="550" y="158" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">숫자만으로 재현</text>
+                            <text x="550" y="176" text-anchor="middle" font-size="10.5" fill="var(--text-secondary,#475569)">표시 + 비율 추정</text>
+
+                            <line x1="270" y1="163" x2="430" y2="163" stroke="#F86825" stroke-width="1.6" marker-end="url(#sa-arrow-o)"/>
+                            <text x="350" y="152" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">예시당 2K+4개 숫자만 전송</text>
+                            <text x="350" y="183" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#808080)">(원본 없음 · K=클래스 수)</text>
+
+                            <defs>
+                                <marker id="sa-arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                                    <path d="M0,0 L8,4 L0,8 Z" fill="var(--text-muted,#808080)"/>
+                                </marker>
+                                <marker id="sa-arrow-o" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                                    <path d="M0,0 L8,4 L0,8 Z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식(분할 진단 구조 재구성) — 경계를 넘는 것은 예시당 숫자 2K+4개뿐, 원본 이미지·텍스트는 넘어가지 않는다. | 출처: <a href="https://arxiv.org/abs/2611.22449" target="_blank" rel="noopener" class="underline">arXiv:2611.22449</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        숫자만 보내도 원본이 새어 나가는지에 대해 저자들은 기울기 역추적(gradient inversion) 공격을 직접 시험했다. 복원한 이미지는 원본에 대해 PSNR 12.4dB로, 그 클래스의 평균 이미지(12.6dB)보다 원본에 가깝지 않았다. 후보 1,000장 가운데 복원 이미지와 가장 가까운 것이 실제 원본인 경우는 0.67%였다. 공격 하나를 막았다는 결과이고, 차등 프라이버시처럼 수학적으로 보장된 보호는 아니다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        속도도 진단 현장에 맞는 수준이다. 5,000장을 진단하는 데 NVIDIA RTX 4090 한 장으로 14~27초가 걸렸다. 모델 학습을 다시 돌리지 않으므로, 진단 비용은 데이터를 가진 쪽이 한 번 모델을 통과시키는 시간과 거의 같다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문의 비용표로 보면 이 시간은 모델을 40에폭 학습하는 데 든 시간(ViT-S 27~33분, ConvNeXt-T 51~68분)의 약 100분의 1이다. 진단 시간은 예시 수에 비례해 늘어, 5만 장 전체를 보면 ViT-S가 146초, ConvNeXt-T가 272초 걸렸다. 전체를 다 볼 필요가 없는 경우도 있다. CIFAR-10N에서는 500장만 진단해도 5만 장 전체와 AUC가 같았다. 클래스가 100개인 CIFAR-100N에서는 500장으로 부족했고, 클래스당 50장꼴인 5,000장이 돼야 전체와의 AUC 차이가 0.01 안으로 들어왔다. 클래스 평균을 세울 만큼 예시가 있어야 한다는 뜻이다.
+                    </p>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="iso5259" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">ISO/IEC 5259-2 데이터 라벨 정확성(Acc-ML-7)과 데이터클리닉 진단</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        AI 학습 데이터 품질 국제표준 ISO/IEC 5259-2는 정확성(Accuracy) 특성 아래 일곱 개 측정 항목을 둔다. 그 가운데 Acc-ML-7 '데이터 라벨 정확성'은 데이터셋의 각 요소에 라벨이 정확하게 할당됐는지를 측정한다(<a href="/project/ISO5259/5259-2-cheetsheet-01/ko/" class="text-orange-500 hover:text-orange-400 underline">ISO 5259-2 데이터 품질 치트시트</a>). 표준은 무엇을 측정할지를 정하고, 정답을 모르는 데이터에서 그 값을 어떻게 얻을지는 정하지 않는다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        페블러스는 이번 논문을 그 빈칸을 채울 후보 가운데 하나로 본다. 다음 세 가지는 페블러스의 해석이며 논문에는 없는 내용이다. 첫째, 오답 비율 추정치는 Acc-ML-7 값의 하한으로 보고할 수 있다. 둘째, 정밀도가 높은 표시 목록은 사람이 다시 볼 라벨의 우선순위로 쓸 수 있다. 셋째, 분할 진단은 고객 데이터를 반출할 수 없는 진단 계약에서 '그래서 우리 데이터는 몇 % 틀렸나'라는 질문에 숫자로 답할 길을 연다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <a href="/story/dataclinic-report-123-imagenet-story-pb/ko/" class="text-orange-500 hover:text-orange-400 underline">데이터클리닉의 ImageNet 진단</a>은 데이터 분포와 이미지 특징을 직접 들여다보며 라벨 노이즈와 중복을 찾았다. 기울기 배분은 데이터 대신 학습된 모델을 들여다보는 방식이라 두 진단은 서로 다른 증거를 낸다. 같은 데이터에서 두 결과가 겹치는 예시는 틀렸을 가능성이 높다고 볼 수 있다는 것도 페블러스의 판단이다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        논문이 밝힌 한계도 분명하다. 검증된 구조는 이미지 백본 두 종과 텍스트 모델 세 종뿐이다. 사람과 웹이 만든 오류에서는 추정치가 실제보다 낮게 나오고, 비슷한 클래스끼리의 혼동은 잘 못 찾는다. 모델이 틀린 라벨을 외웠다는 전제가 무너지면 방법도 성립하지 않는다. 저자들은 공유하는 숫자에 차등 프라이버시 같은 형식적 보장을 붙이는 일과, 연합학습처럼 여러 데이터 소유자의 라벨을 한꺼번에 진단하는 일을 다음 과제로 꼽았다. 진단 보고서에 이 숫자를 쓴다면 '최소 이만큼 틀렸다'는 하한으로 적어야 한다.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            논문 제목, 저자, 제출일(v1 2026년 11월 17일, v2 11월 21일)은 arXiv 초록 페이지에서 확인했다. AUC, 오답 비율 포착률, 재학습 정확도, 무작위 제거 대조, 신뢰도 학습 비교 수치와 p값, 진단 시간과 GPU, 분할 진단의 전송량, 역추적 공격 결과, 한계는 arXiv v2 HTML 본문에서 확인했다. 저자 소속(시드니대학교)과 2절의 감시 층 비교, 4절의 제거 기준 비교, 6절의 학습 대비 비용과 표본 크기 결과도 같은 v2 HTML 본문에서 확인했다. 2절 마지막 문단의 '크기는 줄어도 방향은 남는다'는 설명은 저자 주장이고 페블러스가 재현하지 않았다. 5절의 실무 선택 기준, 6절에서 역추적 시험이 수학적 보장과 다르다고 본 문장, 7절의 ISO/IEC 5259-2 대응과 데이터클리닉 연결은 페블러스의 해석이다. ISO/IEC 5259-2 Acc-ML-7의 정의는 페블러스의 ISO 5259-2 치트시트에서 옮겼다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Series -->
+                <section id="series" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">데이터 품질 연재</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        이 기사는 페블러스 <a href="/series/data-quality/ko/" class="text-orange-500 hover:text-orange-400 underline">데이터 품질 연재</a>의 논문 갈래(DQ-2)다. 같은 연재의 직전 글로는 개인정보보호위원회의 구상안을 다룬 「<a href="/blog/korea-data-benefit-sharing-valuation/ko/" class="text-orange-500 hover:text-orange-400 underline">개인정보위 데이터 이익공유제 첫 논의, 근거 법령은 부재</a>」(DQ-3)와 공개 뇌 영상 데이터셋을 다룬 「<a href="/blog/open-fmind-fmri-pretraining-corpus/ko/" class="text-orange-500 hover:text-orange-400 underline">뇌 영상 데이터 Open-fMIND, 바이오뱅크와 세 과제 대등</a>」(DQ-4)이 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        라벨 노이즈를 다른 각도에서 다룬 글도 있다. 「<a href="/blog/brahma-galaxy-bar-ground-truth-floor/ko/" class="text-orange-500 hover:text-orange-400 underline">은하 막대를 찾는 AI BRAHMa, 정답표만큼만 정확하다</a>」는 사람이 만든 정답표 두 개가 서로 어긋날 때 모델 평가가 어디서 멈추는지를 다뤘다.
+                    </p>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=c6e7f730"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "series-trial",
+                "at": "2026-11-28T04:28:43.608Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-28T04:40:13.951Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1795840123608-whlast",
+                "version": "0.1.0",
+                "sha": "d838cc6bdaf88cf2e73b6acedf2bdcdcc3990ae1",
+                "builtAt": "2026-11-28T04:23:46.806Z"
+              },
+              "recordedAt": "2026-11-28T04:58:31.978Z"
+            },
+            mainTitle: "라벨 노이즈 진단, 학습 끝난 AI로 잘못 달린 정답 비율 추정",
+            subtitle: "정답지 없이 사진에 잘못 달린 라벨을 찾아 빼고 다시 학습시키자, AI 분류 정확도가 가장 크게는 48%에서 95%로 상승",
+            pageTitle: "라벨 노이즈 진단법 분석 — 정답지 없이 틀린 라벨 비율을 추정하는 기울기 배분 | 페블러스",
+            category: "tech",
+            publishDate: "2026-11-28",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/label-noise-gradient-allocation-audit/ko/",
+            tags: ["라벨 노이즈", "label noise", "기울기 배분", "confident learning", "CIFAR-10N", "데이터 라벨 정확성", "ISO/IEC 5259", "데이터 품질", "데이터클리닉", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "라벨 노이즈란 무엇인가?",
+                    answer: "학습 데이터에 달린 정답 표시(라벨)가 틀린 상태다. 고양이 사진에 '개'라는 라벨이 붙은 경우가 예다. 사람이 라벨을 달 때의 실수, 웹에서 자동으로 모은 라벨의 오류 등에서 생기며, 모델은 틀린 라벨도 정답으로 배운다."
+                },
+                {
+                    question: "기울기 배분(gradient allocation)은 무엇을 보는가?",
+                    answer: "예시 하나에 대해 모델이 어느 파라미터를 얼마나 바꾸려 하는지의 비율을 본다. 기울기의 절댓값을 전체 합으로 나눠 크기를 지우고 방향 구성만 남긴 뒤, 같은 라벨을 단 예시들의 평균과 비교한다. 라벨을 가장 가까운 다른 클래스로 바꿨을 때 평균과 더 잘 맞으면 틀린 라벨로 표시한다."
+                },
+                {
+                    question: "왜 모델이 틀린 라벨을 외운 뒤가 문제인가?",
+                    answer: "학습이 길어지면 모델이 틀린 라벨까지 맞히게 되어 그 예시의 손실이 작아진다. 손실이나 기울기 크기로 오답을 찾는 지표는 이때 정상 예시와 구별하지 못한다. 논문에서는 이런 지표의 AUC가 CIFAR-10N 최악 라벨에서 0.73~0.76으로 떨어졌고, 기울기 배분은 0.94~0.96을 유지했다."
+                },
+                {
+                    question: "깨끗한 정답 세트나 검증 세트가 정말 필요 없나?",
+                    answer: "논문의 방법은 학습이 끝난 모델 하나와 학습 데이터의 예시별 기울기만 쓴다. 판정 규칙에 임계값이 없어 기준선을 맞출 검증 세트도 필요 없다. 다만 성능을 평가할 때 저자들은 정답을 아는 데이터셋으로 결과를 확인했다."
+                },
+                {
+                    question: "신뢰도 학습(confident learning)보다 나은가?",
+                    answer: "11개 노이즈 설정에서 오답 판별 AUC는 0.969 대 0.958로 통계적 차이가 없었다(p=0.21). 정밀도는 기울기 배분이 0.94로 신뢰도 학습의 0.85보다 높았고, 오답 비율 추정은 신뢰도 학습이 실제 값의 93%로 기울기 배분의 74%보다 정확했다. 기울기 배분의 장점은 재학습 없이 최종 모델만 읽어 5,000장에 14초면 된다는 비용 쪽이다."
+                },
+                {
+                    question: "추정한 오답 비율을 그대로 믿어도 되나?",
+                    answer: "하한으로 읽어야 한다. 표시한 비율은 실제 비율에 재현율을 곱하고 정밀도로 나눈 값이라, 재현율이 낮으면 실제보다 작게 나온다. 사람이 단 CIFAR-10 라벨에서는 실제의 43~73%, 웹 라벨 Food-101N에서는 실제 19.2%를 13.1%로 읽었다."
+                },
+                {
+                    question: "틀린 라벨을 빼고 다시 학습하면 얼마나 좋아지나?",
+                    answer: "이미지 노이즈 설정 22개 모두에서 시험 정확도가 올랐고 평균 상승폭은 11.6%p였다. CIFAR-10 대칭 노이즈 60% 설정에서 ViT-S는 48.1%에서 94.7%로 올랐다. 같은 수를 무작위로 빼면 변화가 −1.7~+1.8%p에 그쳤고, 깨끗한 데이터에서는 변화가 최대 0.13%p였다."
+                },
+                {
+                    question: "데이터를 넘기지 않고 진단할 수 있다는 것은 무슨 뜻인가?",
+                    answer: "데이터를 가진 쪽이 자기 컴퓨터에서 예시마다 2K+4개(K는 클래스 수)의 숫자를 계산해 보내면, 진단하는 쪽이 원본 없이 같은 표시와 비율 추정을 재현할 수 있다. 저자들의 역추적 공격 시험에서 원본을 찾아낸 비율은 0.67%였지만, 수학적으로 보장된 보호는 아니다."
+                },
+                {
+                    question: "ISO/IEC 5259-2의 어느 항목과 관련 있나?",
+                    answer: "페블러스는 정확성 특성의 Acc-ML-7 '데이터 라벨 정확성'에 대응한다고 본다. 이 항목은 데이터셋 각 요소에 라벨이 정확하게 할당됐는지를 측정한다. 논문은 ISO 표준을 언급하지 않으므로 이 대응은 페블러스의 해석이다."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
