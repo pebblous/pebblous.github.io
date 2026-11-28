@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLM-5.4 루프 트랜스포머·루미맥스 성능 검증 — 30B 대조 실험과 자체 채점 분석 | 페블러스</title>
+    <meta name="author" content="(주)페블러스 데이터 커뮤니케이션팀">
+    <meta name="language" content="Korean">
+    <meta http-equiv="content-language" content="ko">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="즈푸 GLM-5.4의 성능 근거는 750B 본 모델이 아닌 30B 대조 실험이고, 해마클라우드 루미맥스의 FRAMES 92.84%는 문항마다 따로 만든 지식베이스와 자체 채점에서 나왔습니다. 글자 그대로 일치한 정답은 824문항 중 466문항입니다.">
+    <meta name="keywords" content="GLM-5.4, 루프 트랜스포머, Loop Transformer, 즈푸, Z.ai, 루미맥스, LumiMax, 해마클라우드, FRAMES, NoLiMa, AI 에이전트, 지식베이스, 카파시 LLM 위키, 벤치마크 측정 조건, 데이터 품질">
+
+    <!-- 핵심 검색어 -->
+    <meta name="pb-search-keyword" content="GLM-5.4">
+    <meta name="pb-search-keyword-forms" content="GLM-5.4|루미맥스|루프 트랜스포머">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/glm-5-4-loop-transformer-lumimax/ko/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/glm-5-4-loop-transformer-lumimax/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/glm-5-4-loop-transformer-lumimax/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/glm-5-4-loop-transformer-lumimax/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="중국 AI GLM-5.4·루미맥스 성적표, 근거는 자체 측정">
+    <meta property="og:description" content="GLM-5.4의 '2T~3T급' 주장 뒤에는 30B 대조 실험 표 하나가 있고, 루미맥스 FRAMES 92.84%는 문항마다 따로 만든 지식베이스에서 나왔다.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/glm-5-4-loop-transformer-lumimax/ko/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/glm-5-4-loop-transformer-lumimax/ko/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="GLM-5.4 루프 트랜스포머와 루미맥스 지식망의 성능 측정 조건을 정리한 표지">
+    <meta property="og:site_name" content="페블러스 블로그">
+    <meta property="og:locale" content="ko_KR">
+    <meta property="article:published_time" content="2026-11-28">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="중국 AI GLM-5.4·루미맥스 성적표, 근거는 자체 측정">
+    <meta name="twitter:description" content="GLM-5.4는 30B 대조 실험만 공개했고, 루미맥스 FRAMES 정답은 회사 기준 765문항, 글자 일치 기준 466문항이다.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/glm-5-4-loop-transformer-lumimax/ko/image/index.png">
+    <meta name="twitter:image:alt" content="GLM-5.4 루프 트랜스포머와 루미맥스 지식망의 성능 측정 조건을 정리한 표지">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=5f0a37e3"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=7f5a0b5e">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=bea798d5">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=f542b79f">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">목차</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#glm-loop" class="block pl-4 themeable-toc-link transition-colors duration-200">1. GLM-5.4, 28개 층 두 번 통과</a></li>
+                    <li><a href="#glm-evidence" class="block pl-4 themeable-toc-link transition-colors duration-200">2. GLM-5.4 성능 근거는 30B 대조 실험</a></li>
+                    <li><a href="#lumimax" class="block pl-4 themeable-toc-link transition-colors duration-200">3. 루미맥스, 문서를 출처 달린 지식망으로</a></li>
+                    <li><a href="#lumimax-scores" class="block pl-4 themeable-toc-link transition-colors duration-200">4. 루미맥스 FRAMES 92.84%의 채점 기준</a></li>
+                    <li><a href="#pebblous" class="block pl-4 themeable-toc-link transition-colors duration-200">5. 페블러스가 지식망 품질 진단에 주목하는 이유</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                    <li><a href="#references" class="block pl-4 themeable-toc-link transition-colors duration-200">참고문헌</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            중국 즈푸(智谱)가 새 모델 GLM-5.4를 공개했다. GLM-5 기반 모델의 층 28개를 같은 가중치로 두 번 통과시켜, 파라미터를 늘리지 않고 계산 깊이를 늘린 루프 트랜스포머다. 해마클라우드(海马云)는 기업 문서를 출처가 달린 지식망으로 엮어 에이전트가 불러 쓰게 하는 지식베이스 루미맥스를 내놓고, 국제 공개 평가 8개 항목에서 최고점을 냈다고 밝혔다. GLM-5.4는 모델 안의 추론을, 루미맥스는 모델 밖에 두는 기억을 겨냥한다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            두 회사의 성적에는 각각 조건이 붙어 있다. 즈푸가 공개한 성능 표는 750B 본 모델에서 측정한 것이 없고, 같은 구조의 30B 모델에 루프를 넣고 뺀 대조 실험 하나다. 본 모델이 '2T~3T급 모델과 비슷한 지능'이라는 문장에는 수치가 붙어 있지 않다. 루미맥스가 공개한 문항별 결과 파일을 세어 보면 FRAMES 92.84%는 회사가 '공식 기준'이라 부른 채점에서 824문항 중 765문항을 맞힌 값이고, 답이 글자 그대로 일치한 문항은 466문항(56.6%)이다.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            1~4절은 두 회사의 발표문과 공개 파일, 평가를 만든 원 논문에서 확인한 내용이다. 5절은 페블러스의 해석이다. 에이전트는 단계마다 오류가 곱해지므로, 엮어 낸 지식망도 학습 데이터처럼 진단을 거쳐야 한다는 것이 요지다.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">주요 수치</h3>
+                    <p class="themeable-text leading-relaxed mb-4">
+                        앞의 둘은 GLM-5.4의 성능 근거가 어디까지인지, 셋째는 루미맥스 점수가 채점 기준에 따라 얼마나 달라지는지, 넷째는 에이전트에서 단계 오류가 쌓이는 크기다.
+                    </p>
+                    <p class="themeable-text-secondary text-sm mb-3">출처: <a href="https://z.ai/blog/glm-5.4" target="_blank" rel="noopener" class="underline">Z.ai GLM-5.4 블로그</a>, <a href="https://www.lumimax.ai/benchmark/frames" target="_blank" rel="noopener" class="underline">루미맥스 FRAMES 문항별 결과</a>. 넷째 카드는 페블러스 계산.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">19.17 → 30.42</p>
+                            <p class="text-sm themeable-text-secondary mt-1">GLM-5.4 30B 대조 실험의 AIME25 점수</p>
+                            <p class="text-xs themeable-muted mt-1">파라미터 수는 같고 학습 연산은 약 10% 더 썼다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0개</p>
+                            <p class="text-sm themeable-text-secondary mt-1">750B 본 모델의 공개 벤치마크 표</p>
+                            <p class="text-xs themeable-muted mt-1">가중치와 API도 아직 열리지 않아 외부 재현이 불가능하다</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">765 / 466</p>
+                            <p class="text-sm themeable-text-secondary mt-1">루미맥스 FRAMES 824문항 정답 수</p>
+                            <p class="text-xs themeable-muted mt-1">회사 '공식 기준' 채점과 글자 그대로 일치 기준</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">약 36%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">단계 정확도 95%로 20단계를 모두 통과할 확률</p>
+                            <p class="text-xs themeable-muted mt-1">0.95의 20제곱, 단계가 서로 독립이라고 단순화한 값</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="glm-loop" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">즈푸 GLM-5.4, GLM-5의 층 28개를 두 번 통과하는 루프 트랜스포머</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        즈푸의 해외 브랜드 Z.ai는 11월 23일 공식 블로그에서 GLM-5.4를 "루프 트랜스포머 구조로 만든 첫 플래그십 모델"로 소개했다. 일반 트랜스포머에서는 입력이 층마다 한 번씩 지나간다. 루프 트랜스포머는 가중치를 공유하는 층 묶음을 여러 번 되풀이해 통과시키고, 앞선 통과에서 만든 내부 표현을 다음 통과에서 다듬는다. GLM-5.4는 GLM-5 기반 모델의 층 28개를 두 번 통과시킨다. 저장하는 가중치는 그대로라 파라미터 수는 늘지 않고, 토큰 하나가 거치는 계산은 그만큼 깊어진다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Z.ai는 발상 자체가 새롭지 않다는 점도 블로그에 적었다. 2018년 Universal Transformer가 가중치를 공유하는 깊이를 제안했고, 이후 연구들이 작은 규모에서 효과를 보였다. 다만 처음부터 루프 구조로 학습한 모델은 같은 사전학습 연산을 쓴 일반 모델에 뒤처졌다고 Z.ai는 설명한다. 그래서 즈푸는 이미 사전학습을 마친 기반 모델을 이어서 학습시켜 루프 구조로 바꿨다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        구조는 아래처럼 정리된다. Z.ai는 28개 층이 전체 층 가운데 어디에 놓였는지는 그림으로만 보여 주고 층 번호를 밝히지 않았다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 250" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)" role="img" aria-label="일반 트랜스포머와 GLM-5.4 루프 트랜스포머의 층 통과 방식 비교">
+                            <text x="24" y="30" font-size="12.5" font-weight="600" fill="var(--text-secondary)">일반 트랜스포머: 층마다 한 번</text>
+                            <rect x="28" y="44" width="150" height="44" rx="9" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="103" y="71" text-anchor="middle" font-size="11" fill="var(--text-secondary)">앞쪽 층</text>
+                            <text x="190" y="71" text-anchor="middle" font-size="14" fill="var(--text-muted)">›</text>
+                            <rect x="202" y="44" width="240" height="44" rx="9" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="322" y="71" text-anchor="middle" font-size="11" fill="var(--text-secondary)">가운데 층 28개 (1회)</text>
+                            <text x="454" y="71" text-anchor="middle" font-size="14" fill="var(--text-muted)">›</text>
+                            <rect x="466" y="44" width="150" height="44" rx="9" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="541" y="71" text-anchor="middle" font-size="11" fill="var(--text-secondary)">뒤쪽 층</text>
+
+                            <text x="24" y="128" font-size="12.5" font-weight="600" fill="var(--text-secondary)">GLM-5.4: 같은 28개 층을 두 번</text>
+                            <rect x="28" y="142" width="150" height="44" rx="9" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="103" y="169" text-anchor="middle" font-size="11" fill="var(--text-secondary)">앞쪽 층</text>
+                            <text x="190" y="169" text-anchor="middle" font-size="14" fill="var(--text-muted)">›</text>
+                            <rect x="202" y="142" width="240" height="44" rx="9" fill="none" stroke="#F86825" stroke-width="1.8"/>
+                            <text x="322" y="162" text-anchor="middle" font-size="11" font-weight="600" fill="#F86825">가운데 층 28개 × 2회</text>
+                            <text x="322" y="178" text-anchor="middle" font-size="10" fill="#F86825">같은 가중치, 통과마다 게이트</text>
+                            <path d="M 300 142 C 300 118, 344 118, 344 142" fill="none" stroke="#F86825" stroke-width="1.4"/>
+                            <text x="454" y="169" text-anchor="middle" font-size="14" fill="var(--text-muted)">›</text>
+                            <rect x="466" y="142" width="150" height="44" rx="9" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="541" y="169" text-anchor="middle" font-size="11" fill="var(--text-secondary)">뒤쪽 층</text>
+
+                            <text x="28" y="218" font-size="10.5" fill="var(--text-muted)">파라미터 수는 같고, 토큰 하나가 거치는 계산은 28개 층만큼 늘어난다.</text>
+                            <text x="28" y="235" font-size="10.5" fill="var(--text-muted)">두 번째 통과는 첫 통과의 KV 캐시와 어텐션 색인을 다시 쓴다.</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식. Z.ai 블로그의 구조 설명을 한 장으로 정리했고, 앞·뒤쪽 층 수는 공개되지 않아 표시하지 않았다
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        750B 규모에 맞춰 즈푸가 바꾼 것은 세 가지다. 첫째, 통과마다 토큰별 게이트를 따로 두어 새로 계산한 값을 얼마나 덮어쓸지 정하게 했다. 기존 층을 그대로 두 번 돌리면 활성값 크기가 통과를 거듭하며 커져 뒤쪽 층이 처리할 범위를 벗어난다는 것이 Z.ai의 설명이다. 학습을 마친 뒤 첫 통과는 작게 쓰고 두 번째 통과가 크게 쓰는 분업이 생겼고, 어려운 토큰일수록 첫 통과도 더 많이 쓴다고 했다. 둘째, 두 번째 통과는 첫 통과가 고른 KV 캐시를 다시 쓰고 자기 몫은 짧은 슬라이딩 윈도만 둔다. 루프를 한 번 더 도는 비용이 문맥 전체 분량이 아니라 윈도 하나 분량에 그친다. 셋째, 희소 어텐션의 색인도 첫 통과 것을 그대로 쓴다. Z.ai는 매번 다시 계산할 때와 결과가 거의 같았다고 밝혔다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Z.ai 개발자 문서에 적힌 사양은 문맥 길이 100만 토큰, 최대 출력 12만 8천 토큰이다. 1M 문맥에서 GLM-5.3보다 늘어나는 배포 비용은 "충분히 억제된다"고만 적었고 가격이나 배수는 내놓지 않았다. 출력 속도는 한산한 시간대 초당 최대 200토큰, 붐비는 시간대 초당 70~80토큰이라고 밝혔는데, 어떤 요청 조건에서 측정했는지는 적지 않았다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        쓸 수 있는 곳은 아직 즈푸의 자체 서비스뿐이다. GLM Coding Plan 가입자 전원과 ZCode, Z.ai Chat에서 열렸고, 주간 한도 요금제는 GLM-5.3보다 1.5배 많은 한도를 준다. API는 "보안 평가를 마친 뒤" 열고, 가중치는 "필요한 안전 강화를 마친 뒤" 공개한다고 했다. 두 가지 모두 날짜는 없다.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="glm-evidence" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">GLM-5.4 성능 근거는 30B 대조 실험… 750B 본 모델 표는 미공개</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Z.ai 블로그에 실린 성능 수치는 그림 표 하나다. 블로그에 따르면 즈푸는 루프 구조를 1B·4B·30B·750B 기반 모델에서 차례로 검증했고, 그 가운데 750B 기반 모델과 구조가 똑같은 30B 모델로 파라미터 수를 맞춘 대조 실험을 했다. 루프를 넣은 쪽은 총 학습 연산을 약 10% 더 썼다. 표 아래에는 "200K 장문 지도학습(SFT)을 마친 30B 모델을 사고 모드로 평가했다"는 주석이 붙어 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표의 다섯 줄을 옮기면 다음과 같다. '무엇을 보나' 칸은 각 평가의 일반적인 쓰임을 페블러스가 덧붙인 것이다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b themeable-border">
+                                    <th class="text-left py-3 px-4 font-semibold">평가</th>
+                                    <th class="text-left py-3 px-4 font-semibold">무엇을 보나</th>
+                                    <th class="text-right py-3 px-4 font-semibold">루프 없음</th>
+                                    <th class="text-right py-3 px-4 font-semibold">루프</th>
+                                    <th class="text-right py-3 px-4 font-semibold">차이</th>
+                                    <th class="text-right py-3 px-4 font-semibold">평균 출력 길이</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4 whitespace-nowrap" style="color:#F86825; font-weight:600;">AIME25</td>
+                                    <td class="py-3 px-4 themeable-text-secondary">2025년 미국 수학 경시 AIME 문제</td>
+                                    <td class="py-3 px-4 text-right">19.17</td>
+                                    <td class="py-3 px-4 text-right">30.42</td>
+                                    <td class="py-3 px-4 text-right">+11.3</td>
+                                    <td class="py-3 px-4 text-right" style="color:#F86825; font-weight:600;">−635토큰 (−2%)</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4 whitespace-nowrap">GPQA-Diamond</td>
+                                    <td class="py-3 px-4 themeable-text-secondary">대학원 수준 과학 객관식</td>
+                                    <td class="py-3 px-4 text-right">47.58</td>
+                                    <td class="py-3 px-4 text-right">56.26</td>
+                                    <td class="py-3 px-4 text-right">+8.7</td>
+                                    <td class="py-3 px-4 text-right">−2,473토큰 (−11.7%)</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4 whitespace-nowrap">AA-LCR</td>
+                                    <td class="py-3 px-4 themeable-text-secondary">긴 문서를 읽고 푸는 추론</td>
+                                    <td class="py-3 px-4 text-right">40.33</td>
+                                    <td class="py-3 px-4 text-right">47.67</td>
+                                    <td class="py-3 px-4 text-right">+7.3</td>
+                                    <td class="py-3 px-4 text-right">−539토큰 (−9.7%)</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4 whitespace-nowrap">MMLU-Pro</td>
+                                    <td class="py-3 px-4 themeable-text-secondary">여러 분야 지식·추론 객관식</td>
+                                    <td class="py-3 px-4 text-right">71.65</td>
+                                    <td class="py-3 px-4 text-right">75.05</td>
+                                    <td class="py-3 px-4 text-right">+3.4</td>
+                                    <td class="py-3 px-4 text-right">−863토큰 (−14.9%)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 whitespace-nowrap">IFBench</td>
+                                    <td class="py-3 px-4 themeable-text-secondary">지시를 정확히 따르는지</td>
+                                    <td class="py-3 px-4 text-right">50.20</td>
+                                    <td class="py-3 px-4 text-right">53.47</td>
+                                    <td class="py-3 px-4 text-right">+3.3</td>
+                                    <td class="py-3 px-4 text-right">−763토큰 (−13.0%)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">▲ Z.ai 블로그 「Scaling Correctness & Controlled Iso-Parameter Ablations」 절의 그림 표에서 옮겼다. 30B 모델, 200K 장문 SFT 후, 사고 모드.</p>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Z.ai는 이 표에서 두 가지를 읽었다. 하나는 수학·과학 추론·장문 과제처럼 추론 사슬이 긴 과제에서 향상폭이 가장 크다는 것이다. 다른 하나는 "GPQA-Diamond와 MMLU-Pro 같은 대부분의 벤치마크에서 평균 출력 길이가 10~14% 줄었다"는 것이다. Z.ai는 추론의 일부가 겉으로 쓰는 토큰에서 루프의 내부 깊이로 옮겨 갔다고 해석했다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        표를 줄마다 보면 '대부분'에서 빠진 줄이 보인다. 점수가 가장 많이 오른 AIME25는 출력이 2%만 줄었다. 줄어든 토큰 수와 비율로 거꾸로 계산하면 AIME25의 평균 출력은 3만 토큰 안팎, GPQA-Diamond는 2만 1천 토큰 안팎이고, 나머지 세 평가는 5천~6천 토큰대다(비율이 반올림돼 있어 대략치다). 출력 길이가 크게 준 것은 원래 출력이 짧은 평가 쪽이다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">2.1</span>'2T~3T급' 문장에 붙은 표는 없음</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        블로그 첫머리와 개발자 문서는 GLM-5.4가 "2T~3T 파라미터 모델에 견줄 지능 수준"에 이르렀다고 적는다. 비교한 2T~3T 모델이 무엇인지, 어떤 평가에서 견줬는지는 없다. 750B 기반 모델에서도 루프를 검증했다는 문장은 있지만 그 수치는 공개되지 않았다. 가중치와 API가 모두 닫혀 있어 지금은 외부에서 이 주장을 다시 측정할 방법도 없다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        회사가 직접 밝힌 한계도 있다. Z.ai는 GLM-5.4가 "지나치게 긴 '마라톤 사고(marathon thinking)' 루프에 빠지는 경향"이 있다고 적고, 이렇게 길어진 성찰과 자기 수정이 "파라미터 수 이상으로 정확도를 꾸준히 높인다"고 덧붙였다. 앞의 계산대로 AIME25의 평균 출력이 3만 토큰 안팎이라면, 이 경향은 수학 같은 과제에서 응답 시간과 비용으로 나타난다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            여기부터는 해석이다. 30B 대조 실험은 파라미터 수를 맞춘 비교이고, 계산량을 맞춘 비교는 아니다. 루프 쪽은 학습에 약 10%를 더 썼고, 추론할 때도 토큰마다 28개 층을 한 번 더 통과한다. 표의 향상폭에는 구조의 효과와 계산을 더 쓴 효과가 함께 들어 있다. 출력 토큰이 줄어 일부 상쇄된다는 것이 회사 설명이지만, 토큰당 계산과 출력 길이를 합친 총 추론 비용은 공개되지 않았다. 30B에서 본 향상이 750B에서도 같은 비율로 나온다는 근거 역시 아직 공개 자료에 없다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="lumimax" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">해마클라우드 루미맥스, 기업 문서를 출처 달린 지식망으로 컴파일</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        해마클라우드는 2014년 설립된 중국 회사다. 운영사 정식 이름은 안후이 해마클라우드과학기술(安徽海马云科技股份有限公司)이고, 누리집은 중국에서 일찍부터 GPU 클라우드 서비스를 대규모로 제공해 온 회사라고 소개한다. 클라우드 게임·클라우드 PC 서비스와 AI 콘텐츠 창작 플랫폼 RunningHub를 운영한다. 루미맥스는 이 회사 제품 목록에 '천만 자 단위 문서 심층 분석'이라는 설명으로 올라 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        루미맥스 누리집은 제품을 "복잡한 문서를 다루는 대형 모델용 외부 지식베이스 시스템"으로 소개하고, 결론마다 원문 출처를 단다고 적는다. 모델이 질문을 받은 뒤에 문서를 찾아 읽는 대신, 문서를 올리는 시점에 미리 읽어 개체와 관계로 정리해 두고 에이전트가 그 결과를 불러 쓰게 하는 방식이다. 사내 구축형으로 배포할 때는 DeepSeek V4.1 Flash와 검색용 모델을 함께 설치한다고 안내한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        중국 기술 매체들이 회사 소개 자료를 바탕으로 전한 구성은 다음과 같다. 회사는 이를 '심층 근거망(Deep Evidence Network)'이라 부른다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>개체·관계 추출</strong>: 문서에서 기업·인물·사건과 그 관계를 뽑아 원문 근거에 연결하고, '개체-사건-관계-근거' 구조로 정리한다. 같은 회사를 정식 이름·약칭·"그 공급사"로 다르게 부른 경우도 하나로 묶는다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>쪽 위치 보존</strong>: 장·쪽·표의 위치를 원문과 연결한 채로 파싱해, 답에 문서와 쪽을 근거로 단다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>충돌 표시</strong>: 한 보고서가 주당순이익을 −0.16으로, 다른 보고서가 −0.19로 적은 예에서 시스템이 불일치를 표시하고 원인 후보를 내되, 근거가 부족하면 불확실한 채로 남긴다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>증분 갱신과 MCP 연결</strong>: 문서가 추가되면 지식망을 이어서 고치고, 외부 에이전트는 MCP로 접근한다.</li>
+                    </ul>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        여러 중국 매체는 루미맥스를 안드레이 카파시가 2026년 4월 깃허브 gist에 올린 'LLM 위키' 구상을 제품으로 만든 사례로 소개했다. 카파시의 구상은 질문이 들어올 때마다 문서를 검색하는 대신, LLM이 문서를 미리 읽어 서로 연결된 위키로 정리하고 계속 고쳐 나가게 하는 것이다. 한 매체는 루미맥스가 카파시의 코드나 방법을 가져온 것은 아니고 개념이 닿아 있을 뿐이라고 선을 그었다. 페블러스는 4월 보고서 「<a href="/report/karpathy-llm-wiki/ko/" class="underline">LLM이 지식 베이스를 '컴파일'한다</a>」에서 이 구상을 다루며, 그렇게 만든 지식 베이스의 품질을 누가 보느냐를 남은 과제로 꼽았다.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="lumimax-scores" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">루미맥스 FRAMES 92.84%, 글자 일치 기준으로는 824문항 중 466문항</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        루미맥스 누리집의 제목은 '8개 국제 평가 항목 모두 1위'다. 루미맥스 점수는 회사가 직접 측정했고, 비교 대상 점수는 다른 회사의 기술 보고서와 모델 카드, 평가 원 논문의 결과표에서 옮겨 왔다. 누리집 스크립트에는 비교 점수마다 출처 링크와 조건이 달려 있고, 평가마다 문항별 결과 파일이 내려받을 수 있게 올라 있다. 회사는 "시험 조건과 버전을 성적과 함께 공개한다"고 적었다. 아래는 그 파일을 직접 센 결과다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        중국 매체 보도에 따르면 8개 항목은 FRAMES와 NoLiMa-32K 외에 MultiHop-RAG, OpenDocVQA, WildGraphBench, ViDoSeek, RAMDocs, GraphRAG-Bench다. 이 가운데 원 논문의 기준선과 맞대어 조건을 따져 볼 수 있는 FRAMES와 NoLiMa-32K 두 항목의 파일을 열었다. 나머지 여섯 항목도 누리집에 점수와 비교 대상이 올라 있으나 문항 단위로는 확인하지 않았다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.1</span>FRAMES와 NoLiMa가 측정하는 능력</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        FRAMES는 구글 딥마인드 연구진이 만든 824문항짜리 평가다. 문항마다 위키피디아 문서 2~15개의 내용을 엮어야 답이 나오고, 사실성·검색·추론을 한 번에 본다. 원 논문에서 Gemini-Pro-1.5-0514는 검색 없이 0.40, 여러 단계로 검색하게 했을 때 0.66을 기록했다. 문항을 만들 때 쓴 정답 문서를 전부 문맥에 넣어 준 '오라클 프롬프트' 조건에서는 0.729였고, 논문은 이를 검색이 완벽할 때의 상한으로 본다. 답은 서술형이라 LLM 채점기가 정답과 같은 뜻인지 판정한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        NoLiMa는 어도비 리서치 등이 만들어 ICML 2025에 낸 장문 평가다. 긴 무관한 글 속에 단서 한 문장을 숨겨 두고 찾게 하는 '건초 더미 속 바늘' 시험을 바꿔, 질문과 단서 사이에 겹치는 낱말을 최소로 줄였다. 모델은 글자 일치가 아니라 숨은 연관을 추론해서 단서를 찾아야 한다. 논문은 12만 8천 토큰 이상을 지원한다는 LLM 13개를 평가했고, 3만 2천 토큰에서 11개가 짧은 문맥 성능의 절반 밑으로 떨어졌다. GPT-4o도 99.3%에서 69.7%로 내려갔다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.2</span>루미맥스 FRAMES 결과 파일, 824문항에 지식베이스 824개</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        FRAMES 결과 파일의 원본 이름은 「FRAMES 지표 시험 보고서」 엑셀이고, 문항마다 질문·정답·루미맥스 원문 답·채점용 답·엄격 일치 여부·'공식 기준' 판정·응답 시간·세션 ID·지식베이스 ID가 한 줄씩 적혀 있다. 824문항 가운데 '공식 기준'으로 맞았다고 판정된 문항이 765개(92.84%)이고, 채점용 답이 정답과 글자 그대로 일치한 문항은 466개(56.6%)다. 그 사이 299문항은 표현은 다르지만 같은 답으로 인정받았다. 이 '공식 기준' 판정을 어느 채점 모델이 했는지는 FRAMES 파일에 적혀 있지 않다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지식베이스 ID는 824개가 모두 다르다. 문항 하나마다 지식베이스를 따로 만들어 그 안에서 답을 찾은 것으로 보인다. 각 지식베이스에 무엇을 넣었는지는 공개 파일에 없다. 응답 시간은 문항당 중앙값 84초, 평균 111초였고 가장 오래 걸린 문항은 17분이었다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        누리집이 나란히 세운 비교 대상의 조건은 저마다 다르다. 누리집 스크립트가 각 점수에 붙인 조건 설명을 옮기면 다음과 같다.
+                    </p>
+
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm themeable-text">
+                            <thead>
+                                <tr class="border-b themeable-border">
+                                    <th class="text-left py-3 px-4 font-semibold">시스템</th>
+                                    <th class="text-right py-3 px-4 font-semibold">FRAMES</th>
+                                    <th class="text-left py-3 px-4 font-semibold">측정한 곳과 조건</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4 whitespace-nowrap" style="color:#F86825; font-weight:600;">루미맥스</td>
+                                    <td class="py-3 px-4 text-right" style="color:#F86825; font-weight:600;">92.84</td>
+                                    <td class="py-3 px-4 themeable-text-secondary">회사 자체 측정. 문항마다 다른 지식베이스, 회사 '공식 기준' 채점(엄격 일치 56.6)</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4 whitespace-nowrap">Tongyi DeepResearch</td>
+                                    <td class="py-3 px-4 text-right">90.6</td>
+                                    <td class="py-3 px-4 themeable-text-secondary">알리바바 통이 기술 보고서. 세 번 평균, 도구 호출 최대 128회</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4 whitespace-nowrap">Kimi K2 Thinking</td>
+                                    <td class="py-3 px-4 text-right">87.0</td>
+                                    <td class="py-3 px-4 themeable-text-secondary">문샷 모델 카드. 검색·코드·브라우저 도구 사용, o3-mini 채점</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="py-3 px-4 whitespace-nowrap">GPT-5</td>
+                                    <td class="py-3 px-4 text-right">86.0</td>
+                                    <td class="py-3 px-4 themeable-text-secondary">문샷이 도구를 붙여 다시 측정</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 whitespace-nowrap">Gemini-Pro-1.5 (2024)</td>
+                                    <td class="py-3 px-4 text-right">72.9</td>
+                                    <td class="py-3 px-4 themeable-text-secondary">FRAMES 원 논문 오라클 조건. 정답 문서를 전부 문맥에 제공</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-xs themeable-muted mt-2">▲ 위 네 줄은 루미맥스 누리집 스크립트가 각 점수에 붙인 출처·조건을 옮겼다. 마지막 줄은 FRAMES 원 논문 표 3이다.</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">4.3</span>NoLiMa-32K 90.52%의 비교 상대는 문서를 통째로 읽은 모델</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        NoLiMa-32K 파일에는 1,740문항이 있다. 루미맥스는 1,575문항을 맞혀 90.52%를 기록했고, 글자 그대로 일치한 답은 1,528문항(87.8%)이다. 여기서도 지식베이스 ID는 1,740개가 모두 다르고, 응답 시간 중앙값은 157초다. 루미맥스가 쓴 질문 양식에는 "원문과 똑같은 낱말을 쓰라"는 지시가 들어 있다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        비교 대상인 GPT-4.1(79.8%)과 GPT-4o(69.7%), Gemini 2.5 Flash(48.4%)의 점수는 NoLiMa 공식 결과표의 3만 2천 토큰 칸에서 가져왔다. 이 모델들은 3만 2천 토큰짜리 글을 한 번에 문맥에 넣고 답했다. 루미맥스는 같은 글로 지식베이스를 만든 다음 그 안을 검색해 답했다.
+                    </p>
+
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            여기부터는 해석이다. 루미맥스의 NoLiMa 점수는 긴 글을 한 번에 읽는 모델의 주의력을 시험한 결과로 보기 어렵다. 문항마다 2분 넘게 쓰는 검색 시스템이 바늘을 찾아냈는지를 측정한 결과이고, 원 논문이 비교한 모델들과는 측정 대상이 다르다. FRAMES에서는 문항마다 지식베이스가 따로 있었다는 점이 핵심 조건이다. 그 안에 해당 문항의 위키피디아 문서만 들어 있었다면 원 논문의 오라클 조건에 가깝고, 열린 웹을 최대 128번 뒤진 Tongyi DeepResearch와는 다른 시험을 치른 것이다. 내용물이 공개되지 않아 어느 쪽인지 가를 수 없다. 2024년 Gemini의 오라클 점수 72.9는 오래된 모델의 값이라, 그보다 높다는 사실만으로 이상하다고 할 수도 없다. 채점 기준에 따라 92.84와 56.6으로 갈리는 점까지 더하면, 이 점수에서 확인되는 것은 루미맥스가 자기 조건에서 낸 값이라는 사실이다. 같은 조건으로 다시 측정한 제3자 결과는 아직 없다.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="pebblous" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">페블러스가 루미맥스식 지식망의 품질 진단에 주목하는 이유</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        루미맥스 같은 제품이 만드는 지식망은 문서에서 뽑은 개체와 관계, 그 근거를 모아 둔 데이터다. 중국 매체가 전한 회사 예시 속 주당순이익 −0.16과 −0.19의 충돌처럼, 기업 문서는 서로 어긋나는 일이 흔하다. 페블러스는 이렇게 엮어 낸 지식망에서 네 가지 결함이 생긴다고 본다.
+                    </p>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><strong>문서 간 충돌</strong>: 같은 수치나 사실을 문서마다 다르게 적은 경우. 표시만 하고 풀지 않으면 에이전트는 둘 중 하나를 고른다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>근거 없는 연결</strong>: 관계 추출이 만든 연결 가운데 원문이 실제로 뒷받침하지 않는 것. 출처 쪽수가 달려 있어도 그 쪽이 그 관계를 말하는지는 따로 확인해야 한다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>낡은 사실</strong>: 개정된 규정이나 갱신된 실적처럼 올린 뒤에 바뀐 내용. 증분 갱신은 새 문서를 더하는 일이고, 옛 사실을 지우는 일은 별개다.</li>
+                        <li class="themeable-text leading-relaxed"><strong>빈 영역</strong>: 문서가 없어 지식망에 아무것도 없는 주제. 에이전트는 없다는 사실을 모른 채 다른 곳에서 비슷한 답을 끌어온다.</li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.1</span>단계 정확도 95%로 20단계면 성공 확률 36%</h3>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        에이전트는 지식망을 한 번 조회하고 끝내지 않는다. 계획을 세우고, 조회하고, 도구를 부르고, 결과를 보고 다시 조회한다. 단계마다 맞을 확률이 0.95이고 단계가 서로 독립이라고 단순화하면, 20단계를 모두 맞게 지날 확률은 0.95의 20제곱인 약 0.36이다. 단계 정확도를 0.99로 올리면 같은 20단계에서 약 0.82가 된다. 한 단계의 오류율을 5%에서 1%로 줄이는 일이 작업 전체의 성공률을 두 배 넘게 바꾼다(페블러스 계산).
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 발표는 이 곱셈의 서로 다른 항을 건드린다. GLM-5.4의 루프는 한 단계 안의 추론을 깊게 해 단계 정확도를 올리려는 시도다. 루미맥스는 단계마다 조회하는 기억의 품질을 다룬다. 지식망의 사실이 낡았거나 연결이 틀렸다면, 추론을 아무리 깊게 해도 틀린 사실 위에서 추론하게 된다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        두 발표의 측정 조건을 과제·시간·도구·채점 네 칸으로 나눠 다시 놓아 보면, 실력과 측정 방식의 효과가 어디서 섞이는지 보인다. 과제는 둘 다 공개 평가지만, GLM-5.4는 본 모델이 아닌 30B 모델로 풀었고 루미맥스는 문항마다 따로 만든 지식베이스 위에서 풀었다. 시간 쪽에서 GLM-5.4는 출력 토큰 수만 밝혔고 응답 지연과 총 추론 비용은 내놓지 않았다. 루미맥스는 문항당 중앙값 84초(FRAMES)와 157초(NoLiMa-32K)를 썼는데, NoLiMa 비교 대상 모델들은 글을 한 번에 읽고 답했다. 도구는 GLM-5.4 표 주석에 사고 모드만 적혀 있고, 루미맥스는 자체 검색을 쓴 반면 FRAMES 비교 대상인 Tongyi DeepResearch는 열린 웹을 최대 128번 뒤졌다. 채점은 GLM-5.4 표 주석에 방식이 없고, 루미맥스는 앞서 본 대로 기준에 따라 점수가 갈린다. 이 네 칸이 같은 조건으로 맞춰지기 전에는 점수 차이 가운데 얼마가 모델과 제품의 실력이고 얼마가 시험 조건의 효과인지 가를 수 없다.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 680 330" class="w-full max-w-[660px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg, #ffffff)" role="img" aria-label="GLM-5.4와 루미맥스의 측정 조건을 과제·시간·도구·채점 네 칸으로 비교">
+                            <text x="20" y="24" font-size="12.5" font-weight="600" fill="var(--text-secondary)">측정 조건 네 칸: 무엇이 공개됐고 무엇이 안 됐나</text>
+                            <text x="224" y="40" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary)">GLM-5.4 (30B 대조 실험)</text>
+                            <text x="494" y="40" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-secondary)">루미맥스</text>
+
+                            <text x="16" y="82" font-size="11" font-weight="600" fill="var(--text-secondary)">과제</text>
+                            <rect x="94" y="50" width="260" height="56" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="104" y="72" font-size="10" fill="var(--text-secondary)">30B 대조 실험 (750B 본 모델</text>
+                            <text x="104" y="86" font-size="10" fill="#F86825" font-weight="600">수치는 미공개)</text>
+                            <rect x="364" y="50" width="260" height="56" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="374" y="72" font-size="10" fill="var(--text-secondary)">문항마다 지식베이스 824개</text>
+                            <text x="374" y="86" font-size="10" fill="#F86825" font-weight="600">(내용물 미공개)</text>
+
+                            <text x="16" y="152" font-size="11" font-weight="600" fill="var(--text-secondary)">시간</text>
+                            <rect x="94" y="120" width="260" height="56" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="104" y="142" font-size="10" fill="var(--text-secondary)">출력 토큰 수만 공개</text>
+                            <text x="104" y="156" font-size="10" fill="#F86825" font-weight="600">(응답 지연·총 비용 미공개)</text>
+                            <rect x="364" y="120" width="260" height="56" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="374" y="142" font-size="10" fill="var(--text-secondary)">중앙값 84초(FRAMES)</text>
+                            <text x="374" y="156" font-size="10" fill="var(--text-secondary)">157초(NoLiMa-32K)</text>
+
+                            <text x="16" y="222" font-size="11" font-weight="600" fill="var(--text-secondary)">도구</text>
+                            <rect x="94" y="190" width="260" height="56" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="104" y="212" font-size="10" fill="var(--text-secondary)">사고 모드만 명시</text>
+                            <text x="104" y="226" font-size="10" fill="#F86825" font-weight="600">(그 외 조건 미공개)</text>
+                            <rect x="364" y="190" width="260" height="56" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="374" y="212" font-size="10" fill="var(--text-secondary)">자체 검색</text>
+                            <text x="374" y="226" font-size="10" fill="var(--text-secondary)">(비교 대상은 웹 검색 최대 128회)</text>
+
+                            <text x="16" y="292" font-size="11" font-weight="600" fill="var(--text-secondary)">채점</text>
+                            <rect x="94" y="260" width="260" height="56" rx="8" fill="none" stroke="var(--text-muted)" stroke-width="1.2" opacity="0.7"/>
+                            <text x="104" y="292" font-size="10" fill="#F86825" font-weight="600">채점 방식 미공개</text>
+                            <rect x="364" y="260" width="260" height="56" rx="8" fill="none" stroke="#F86825" stroke-width="1.8"/>
+                            <text x="374" y="282" font-size="10" fill="#F86825" font-weight="600">기준 따라 92.84% / 56.6%</text>
+                            <text x="374" y="296" font-size="10" fill="var(--text-secondary)">(공식 기준 / 글자 일치)</text>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ 페블러스 원본 도식. 두 발표의 측정 조건을 과제·시간·도구·채점 네 칸으로 다시 놓았다
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        루미맥스 FRAMES 파일의 92.84%와 56.6%는 실무에서 같은 질문을 남긴다. 무엇을 정답으로 칠지 정하지 않으면 같은 답안지에서 결론이 갈린다. 지식망을 들일 조직은 업체 점수를 보기 전에 자기 업무에서 정답의 기준과 채점 방식부터 정해 두어야 한다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        지식망이 쌓이면 다시 쓰이는 고리가 생긴다. 에이전트가 지식망에서 꺼낸 답이 보고서가 되고, 그 보고서가 다시 지식망에 들어가고, 쌓인 지식은 다음 모델을 학습시키는 데이터가 된다. 페블러스는 이 고리에 품질 관문이 있어야 한다고 본다. 지식망을 진단해 충돌·근거 없는 연결·낡은 사실·빈 영역을 찾고, 빈 영역은 합성 데이터로 채우고, 충돌하거나 중복되거나 낡은 항목은 덜어 내고, 그 결과를 다시 진단하는 순서다. 페블러스는 AI 학습 데이터의 품질을 진단하는 데이터클리닉(DataClinic)을 운영하며, 4월 카파시 위키 보고서에서도 컴파일된 지식 베이스에 데이터 품질 층이 필요하다고 썼다.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        확인 범위도 적어 둔다. GLM-5.4의 수치와 문장은 Z.ai 블로그 원문과 그림 표, 개발자 문서에서 확인했다. 루미맥스의 점수와 비교 조건은 회사 누리집 스크립트와 공개된 문항별 결과 파일을 직접 세어 확인했다. 루미맥스의 제품 구성(심층 근거망, 충돌 표시 등)은 중국 기술 매체 보도에 기댔다. 각 문항 지식베이스에 들어간 내용, '공식 기준' 채점에 쓴 모델, 루미맥스가 시험에 쓴 기반 LLM은 공개 자료에서 찾지 못했다. 두 회사의 성적 모두 제3자 재현 결과는 아직 없다.
+                    </p>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4"><span class="sub-number-badge">5.2</span>관련 읽을거리</h3>
+
+                    <ul class="space-y-3 mb-6 ml-6">
+                        <li class="themeable-text leading-relaxed"><a href="/report/karpathy-llm-wiki/ko/" class="underline">LLM이 지식 베이스를 '컴파일'한다</a>: 루미맥스가 제품으로 옮겼다는 카파시 'LLM 위키' 구상을 4월에 다룬 페블러스 보고서.</li>
+                        <li class="themeable-text leading-relaxed"><a href="/blog/mcp-turns-two-skills-over-mcp/ko/" class="underline">MCP 두 돌, 사용 지침 보내는 Skills over MCP 공개</a>: 루미맥스가 외부 에이전트와 연결할 때 쓰는 MCP의 최근 변화를 다룬 같은 연재 글.</li>
+                        <li class="themeable-text leading-relaxed"><a href="/blog/pipette-prompt-injection-purple-teaming/ko/" class="underline">PIPETTE 실험, 잘 통한 공격만 모은 방어 학습의 역효과</a>: 에이전트 방어 학습 데이터를 어떻게 골랐는지가 결과를 바꾼 실험을 다룬 같은 연재 글.</li>
+                    </ul>
+                </section>
+
+                <!-- 연재 허브 링크 -->
+                <p class="themeable-text leading-relaxed mb-16 series-hub-link"><a href="/series/ai-agent/ko/" class="underline">AI 에이전트 연재</a>의 다른 글은 연재 허브에 모여 있다.</p>
+
+                <!-- FAQ placeholder — content from PebblousPage.init({ faqs: [...] }) -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+                <!-- References -->
+                <section id="references" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">R</span>
+                        <h2 class="text-3xl font-bold themeable-heading">참고문헌</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="PebblousCitation.download('bibtex', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">BibTeX</button>
+                        <button onclick="PebblousCitation.download('ris', '../references.json')" class="text-xs px-3 py-1 rounded border themeable-border themeable-text hover:border-orange-500">RIS</button>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">회사 발표·공개 자료</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">1.</span><span class="ref-body">Z.ai. (2026-11-23). "<a href="https://z.ai/blog/glm-5.4" target="_blank" rel="noopener">GLM-5.4: Toward Generalized Coding with Our First Loop Transformer</a>." Z.ai 블로그. 루프 구조, 30B 대조 실험 표, 출력 속도, marathon thinking, 가중치 공개 계획.</span></li>
+                        <li><span class="ref-num">2.</span><span class="ref-body">Z.ai. (2026-11). "<a href="https://docs.z.ai/guides/llm/glm-5.4" target="_blank" rel="noopener">GLM-5.4 Overview</a>." Z.ai 개발자 문서. 문맥 길이 1M, 최대 출력 128K, API 개방 조건, 요금제 한도.</span></li>
+                        <li><span class="ref-num">3.</span><span class="ref-body">해마클라우드. (2026). "<a href="https://www.lumimax.ai/" target="_blank" rel="noopener">lumimax 기업용 AI 지식베이스</a>." 루미맥스 누리집. 8개 평가 점수, 비교 대상별 출처·조건, 사내 구축형 배포 안내.</span></li>
+                        <li><span class="ref-num">4.</span><span class="ref-body">해마클라우드. (2026). "<a href="https://www.lumimax.ai/benchmark/frames" target="_blank" rel="noopener">FRAMES 문항별 평가</a>." 루미맥스 누리집. FRAMES·NoLiMa-32K 등 문항별 결과 파일과 질문 양식.</span></li>
+                        <li><span class="ref-num">5.</span><span class="ref-body">安徽海马云科技股份有限公司. (2026). "<a href="https://www.haimacloud.com/" target="_blank" rel="noopener">haimacloud</a>." 회사 누리집. 설립 연도, 사업 영역, 제품 목록.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">학술 논문</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">6.</span><span class="ref-body">Krishna, S., Krishna, K., Mohananey, A., Schwarcz, S., Stambler, A., Upadhyay, S., &amp; Faruqui, M. (2025). "<a href="https://arxiv.org/abs/2409.12941" target="_blank" rel="noopener">Fact, Fetch, and Reason: A Unified Evaluation of Retrieval-Augmented Generation</a>." NAACL 2025. FRAMES 824문항, 오라클 프롬프트 0.729.</span></li>
+                        <li><span class="ref-num">7.</span><span class="ref-body">Modarressi, A., Deilamsalehy, H., Dernoncourt, F., Bui, T., Rossi, R. A., Yoon, S., &amp; Schütze, H. (2025). "<a href="https://arxiv.org/abs/2502.05167" target="_blank" rel="noopener">NoLiMa: Long-Context Evaluation Beyond Literal Matching</a>." ICML 2025. LLM 13개 평가, 32K에서 11개가 짧은 문맥 성능의 절반 미만.</span></li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold themeable-heading mb-4">기타</h3>
+                    <ul class="reference-list mb-6">
+                        <li><span class="ref-num">8.</span><span class="ref-body">Karpathy, A. (2026-04). "<a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f" target="_blank" rel="noopener">llm-wiki</a>." GitHub Gist. LLM이 문서를 미리 읽어 위키로 정리하는 지식 베이스 구상.</span></li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=c6e7f730"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "series-trial",
+                "at": "2026-11-28T04:35:01.425Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-28T04:52:17.732Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1795840501426-prceab",
+                "version": "0.1.0",
+                "sha": "d838cc6bdaf88cf2e73b6acedf2bdcdcc3990ae1",
+                "builtAt": "2026-11-28T04:23:46.806Z"
+              },
+              "recordedAt": "2026-11-28T05:08:46.065Z"
+            },
+            mainTitle: "중국 AI GLM-5.4·루미맥스 성적표, 근거는 자체 측정",
+            subtitle: "즈푸는 GLM-5.4 자체가 아닌 작은 모델 실험 결과만 냈고, 루미맥스 정답률 92.84%는 회사가 직접 채점한 점수",
+            pageTitle: "GLM-5.4 루프 트랜스포머·루미맥스 성능 검증 — 30B 대조 실험과 자체 채점 분석 | 페블러스",
+            category: "tech",
+            publishDate: "2026-11-28",
+            publisher: "(주)페블러스 데이터 커뮤니케이션팀",
+            defaultTheme: "light",
+            articlePath: "blog/glm-5-4-loop-transformer-lumimax/ko/",
+            tags: ["GLM-5.4", "루프 트랜스포머", "즈푸", "Z.ai", "루미맥스", "해마클라우드", "FRAMES", "NoLiMa", "AI 에이전트", "지식베이스", "데이터 품질", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "GLM-5.4는 어떤 모델인가?",
+                    answer: "중국 즈푸(智谱)가 해외 브랜드 Z.ai로 2026년 11월 23일 공개한 플래그십 모델이다. GLM-5 기반 모델의 층 28개를 같은 가중치로 두 번 통과시키는 루프 트랜스포머 구조를 처음 썼다. 문맥 길이는 100만 토큰, 최대 출력은 12만 8천 토큰이다."
+                },
+                {
+                    question: "루프 트랜스포머는 무엇이 다른가?",
+                    answer: "일반 트랜스포머는 입력이 층마다 한 번씩 지나가고, 루프 트랜스포머는 가중치를 공유하는 층 묶음을 여러 번 되풀이해 통과시킨다. 저장하는 가중치는 그대로라 파라미터 수는 늘지 않고, 토큰 하나가 거치는 계산이 깊어진다. 즈푸는 처음부터 학습하지 않고 이미 학습된 기반 모델을 이어서 학습시켜 이 구조로 바꿨다."
+                },
+                {
+                    question: "GLM-5.4가 '2T~3T급 모델과 비슷하다'는 근거는 무엇인가?",
+                    answer: "공개된 수치로는 확인할 수 없다. Z.ai가 공개한 성능 표는 750B 본 모델이 아니라 같은 구조의 30B 모델에 루프를 넣고 뺀 대조 실험 하나다. 그 실험에서 AIME25는 19.17에서 30.42로, GPQA-Diamond는 47.58에서 56.26으로 올랐다. 비교한 2T~3T 모델의 이름이나 평가는 밝히지 않았다."
+                },
+                {
+                    question: "30B 대조 실험은 공정한 비교인가?",
+                    answer: "파라미터 수를 맞춘 비교이고 계산량을 맞춘 비교는 아니다. 루프 쪽은 학습 연산을 약 10% 더 썼고, 추론할 때도 토큰마다 28개 층을 한 번 더 통과한다. 그래서 향상폭에는 구조의 효과와 계산을 더 쓴 효과가 함께 들어 있다. 평가는 200K 장문 지도학습을 마친 뒤 사고 모드에서 했다."
+                },
+                {
+                    question: "GLM-5.4의 출력은 정말 10~14% 짧아졌나?",
+                    answer: "평가마다 다르다. Z.ai는 GPQA-Diamond와 MMLU-Pro 같은 대부분의 평가에서 10~14% 줄었다고 적었고, 표에서는 GPQA-Diamond 11.7%, MMLU-Pro 14.9%, IFBench 13.0% 줄었다. 점수가 가장 많이 오른 AIME25는 2%만 줄었다."
+                },
+                {
+                    question: "GLM-5.4를 직접 내려받아 시험해 볼 수 있나?",
+                    answer: "아직은 안 된다. GLM Coding Plan, ZCode, Z.ai Chat에서만 쓸 수 있다. API는 보안 평가를 마친 뒤, 가중치는 필요한 안전 강화를 마친 뒤 공개한다고 했고 날짜는 없다. 그래서 외부에서 성능 주장을 다시 측정할 수 없다."
+                },
+                {
+                    question: "루미맥스는 무엇을 하는 제품인가?",
+                    answer: "해마클라우드(海马云)가 내놓은 기업용 AI 지식베이스다. 기업 문서를 올리는 시점에 미리 읽어 개체·관계와 그 근거(문서·쪽)로 정리해 두고, 에이전트가 MCP 등으로 불러 쓰게 한다. 여러 중국 매체는 카파시의 'LLM 위키' 구상을 제품으로 만든 사례로 소개했다."
+                },
+                {
+                    question: "루미맥스의 FRAMES 92.84%는 어떻게 나온 점수인가?",
+                    answer: "회사가 직접 측정했고 문항별 결과 파일을 공개했다. 824문항 중 회사의 '공식 기준' 채점으로 765문항이 맞았고, 답이 글자 그대로 일치한 문항은 466문항(56.6%)이다. 문항마다 지식베이스를 따로 만들었는데 그 안에 무엇을 넣었는지와 채점 모델은 공개되지 않았다. 제3자 재현 결과는 없다."
+                },
+                {
+                    question: "NoLiMa 점수를 GPT-4o와 바로 비교해도 되나?",
+                    answer: "측정 대상이 다르다. 누리집이 비교한 GPT-4.1·GPT-4o 점수는 3만 2천 토큰 글을 한 번에 읽고 답한 결과다. 루미맥스는 문항마다 그 글로 지식베이스를 만들고 검색해서 답했고, 응답 시간 중앙값이 157초였다. 긴 글을 읽는 모델의 능력과 검색 시스템의 능력을 나란히 놓은 비교다."
+                },
+                {
+                    question: "지식망에도 품질 진단이 필요한 이유는 무엇인가?",
+                    answer: "지식망도 문서에서 뽑아낸 데이터라 문서 간 충돌, 근거 없는 연결, 낡은 사실, 빈 영역이 생긴다. 에이전트는 여러 단계를 거치며 오류가 곱해진다. 단계 정확도 0.95로 20단계를 가면 모두 맞을 확률은 약 0.36이다. 지식망이 다음 학습 데이터로 다시 쓰이는 고리에는 진단·합성·덜어 내기·재진단의 품질 관문이 필요하다."
+                }
+            ]
+        });
+    </script>
+
+    <!-- Citation download (BibTeX/RIS) — vanilla JS, no external deps -->
+    <script src="/scripts/citation-download.js?v=c0f2a41f" defer></script>
+</body>
+
+</html>
