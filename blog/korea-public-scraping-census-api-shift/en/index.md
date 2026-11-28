@@ -1,64 +1,51 @@
 ---
-title: Korea Counts 3,164 Screen Scraping Cases on Public Websites
-subtitle: A PIPC survey found 754 businesses logging in with users
+title: Korea
+subtitle: 754 firms log in to public sites with users
 date: 2026-11-28
-category: business
+category: tech
 source: index.html
 note: HTML-중립 본문 원고(자동 역추출). 출간 후 본문 수정은 이 파일에서.
 ---
 
-# Korea Counts 3,164 Screen Scraping Cases on Public Websites
+# Korea
 
-_A PIPC survey found 754 businesses logging in with users_
+_754 firms log in to public sites with users_
 
 ## Executive Summary
 
 > [!callout]
-> Korea now has a number for how often a business logs into a public website as you and takes what it finds there. The count is 3,164. Korea's Personal Information Protection Commission (PIPC) released the figure on November 26, 2026, at a government policy coordination meeting chaired by the Prime Minister, where it discussed a plan with other ministries for moving personal data to its owner safely. The survey ran from June through August of this year and covered businesses: 754 of them were using this route against 129 websites operated by 35 public agencies. The label the press release puts on the 3,164 is "prior consultation applications (scraping status)." Businesses declared these themselves when they applied, so the figure reads as a floor rather than a full audit.
+> Korean businesses were running 3,164 scraping setups that sign in to government websites with their customers' IDs, passwords and digital certificates. South Korea's Personal Information Protection Commission (PIPC) released the survey on November 26 at the 18th National Policy Coordination Meeting, chaired by the prime minister, together with a plan for the safe transmission of personal data. The scraping came from 754 businesses and reached 129 websites run by 35 public agencies.
 
-> The concentration is more striking than the total. The top 10 websites account for 81.5% of all cases, among them Government24, Hometax, the National Health Insurance Service and the traffic penalty portal eFine. Take Government24 alone and 30 of the 41 record types businesses were scraping, or 73.2%, already had a safe transfer route in place. Nothing was missing on the technical side. The old path simply stayed in use. From 2027 the government plans to have each agency rebuild these connections around APIs and similar transfer methods.
+> Of the 41 types of data these businesses pulled from Gov24, the main government services portal, 30 were already available through a safe transmission channel. The PIPC will not stop scraping right away. Instead, each agency will move to APIs and other formal channels during 2027 and 2028.
 
-> Sections 1 through 3 and section 5 are facts confirmed in the press release, same-day reporting and the statute. Sections 4 and 6, which read this collection method as structurally the same as an AI agent signing into someone else's service with a person's account, are this article's own interpretation. The phrase "AI agent" appears nowhere in the government's announcement.
+> Logging in to someone's account on their behalf and collecting records is also how many AI agents work today. Services built on Korean public data may find their supply channel changing from 2027.
 
-### Key figures
+### Key Figures
 
-Source: PIPC and the Government-wide MyData Taskforce press release of [November 26, 2026](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156790953), full text in the attachment, with same-day reporting by [ZDNet Korea](https://zdnet.co.kr/view/?no=20261126003020) and [Digital Daily](https://www.ddaily.co.kr/page/view/2026112607381864876)
+The four figures below run in order of scale, concentration, habit and industry: how many cases there were, where they clustered, how much was scraped even though a safe channel existed, and which sector used scraping most.
 
-Four numbers carry the survey. The first two give the size and the concentration; the last two show why the concentration is described as habit rather than necessity.
-
-<!-- stat-card -->
-**3,164** — scraping cases surfaced by prior consultation — 754 businesses, against 129 websites run by 35 public agencies
+Sources: [ZDNet Korea](https://zdnet.co.kr/view/?no=20261126003020) · [Digital Daily](https://www.ddaily.co.kr/page/view/2026112607381864876) (2026-11-26), PIPC survey (June–August 2026)
 
 <!-- stat-card -->
-**81.5%** — share held by the top 10 websites — Government24, Hometax, National Health Insurance and eFine are among them
+**3,164** — Scraping setups on public sites — 754 businesses, 129 websites
 
 <!-- stat-card -->
-**73.2%** — replaceable records at Government24 — 30 of the 41 record types scraped already had a safe transfer route
+**81.5%** — Share of the top 10 websites — Gov24, Hometax, NHIS and others
 
 <!-- stat-card -->
-**45%** — finance's share of the 754 businesses — Banks and insurers. The rest spread across tax, health care and platforms
+**73.2%** — Data that already had a safe channel — 30 of 41 data types on Gov24
 
-## 3,164 cases across 129 public websites
+<!-- stat-card -->
+**45%** — Share of financial firms — Banks, insurers; largest sector
 
-Between June and August of this year the PIPC asked businesses what scraping they were running. The answer came back as 754 businesses, 35 agencies, 129 websites and 3,164 cases. One business scrapes several websites and one website is scraped by several businesses, so the case count runs more than four times the number of businesses.
+## PIPC Counts 3,164 Scraping Setups by 754 Businesses
 
-The survey also published what the scraping was for. Loan and guarantee screening, credit assessment, identity and customer verification, tax and accounting work, and filing on clients' behalf for the four major social insurance programs account for most of it. What moved across was largely the paperwork public agencies issue: resident registration certificates in full and abridged form, income and tax payment certificates, vehicle registration records. From birth and family relations through health and medical records to income and tax, in the press release's phrase, information covering an entire life was in transit. Sorted by business type, banks, insurers and the rest of the financial sector make up 45% of the 754. The remainder spread across tax, health care and platform services, and no ranking within that remainder was published.
+The PIPC surveyed scraping of public agency websites from June through August 2026. It found 754 businesses running 3,164 scraping setups across 129 websites belonging to 35 agencies.
 
-The concentration is steeper still. The top 10 websites hold 81.5% of all cases. Government24, Hometax, the National Health Insurance Service and eFine, all on that list, are counters most of the country uses. Scraping is not happening in some quiet corner of the public web. It sits on the busiest paths.
+In scraping, a service provider takes a user's ID, password or digital certificate, signs in to a website as that user, and pulls information with automated tools. The PIPC described the problem this way: the business, not the citizen, decides "what information is sent, when, where, how and why." Users face misuse of their data and leaked credentials. Public agencies carry the load and security risk of constant automated requests. When something goes wrong, it is unclear who is responsible.
 
-> [!callout]
-> The weight of this survey lies less in how large the numbers are than in the fact that numbers now exist. Scraping was known to be widespread, but how many firms were scraping which sites how many times had never been published. The press release says as much where it states the survey's significance: it confirmed a practice that had been running below the surface. Without a measure of the scale, no transition schedule can be set.
+By industry, financial firms such as banks and insurers made up the largest share at 45%, followed by tax, health management and platform businesses. By purpose, the uses included loan and guarantee screening and credit scoring, identity and customer verification, and tax, accounting and social insurance filing on clients' behalf. The data collected included resident registration records, income and tax certificates and vehicle registration files, ranging from birth and family relations to health and taxes.
 
-## The business decides what gets taken
+## Top 10 Websites Draw 81.5%; Most Gov24 Data Had a Safe Channel
 
-The definition the PIPC uses runs like this. A service provider receives the user's ID, password, certificate and the like, logs into the website of a public agency or other sender on the user's behalf, and then, through automated tools, collects the user's information indiscriminately and unilaterally. Two handovers sit inside that sentence. One is the credential. The other is the authority to decide what will be taken with it.
-
-How far the second handover reaches is something the press release states outright in a sentence of its own.
-
-Scraping is a method in which the service provider, not I, decides on my behalf what personal data is transmitted, when, where to, how and why.
-
-What stands out is that the sentence counts five things separately. The annex breaks the five out as the data transmitted, the purpose of use, the destination, the start and duration of use, and the transmission method, and says the business decides all of them arbitrarily "on behalf of" the person. The same table lists the data subject and the sender side by side as parties with little room to intervene. The agency handing over the data stands outside this structure too.
-
-From the receiving agency's side, what arrived is the user. The login is valid, so there are no grounds to refuse it, and nothing distinguishes a person from an automated tool at the door. That is why the agency cannot set the scope of what leaves. Which of the items visible on screen get taken is decided entirely by the business's code.
-
-API transfer reverses the order. The data subject requests a transfer and the agency sends only the items that were agreed in advance. In the diagram below, the upper row is scraping as it works today; the lower row is what the government wants in place from 2027.
+Scraping clustered on a handful of websites. The top 10 websites, including Gov24, the National Tax Service's Hometax, the National Health Insurance Service and the traffic services portal eFine, accounted for 81.5% of all scraping setups.
