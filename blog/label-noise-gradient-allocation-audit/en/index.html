@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label Noise Without Clean Labels: Paper Review | Pebblous</title>
+    <meta name="author" content="Pebblous Data Communication Team">
+    <meta name="language" content="English">
+    <meta http-equiv="content-language" content="en">
+    <meta name="copyright" content="© 2026 Pebblous. All rights reserved.">
+    <meta name="robots" content="index, follow">
+
+    <meta name="description" content="A trained model's gradient allocation flags label noise without clean labels, holding AUC 0.94–0.96 on CIFAR-10N; retraining without the flagged examples adds up to 47 points.">
+    <meta name="keywords" content="label noise, wrong labels, gradient allocation, confident learning, cleanlab, CIFAR-10N, data label accuracy, ISO/IEC 5259-2, data quality, DataClinic">
+
+    <!-- Main search keyword -->
+    <meta name="pb-search-keyword" content="label noise">
+    <meta name="pb-search-keyword-forms" content="label noise|Label Noise">
+
+    <link rel="canonical" href="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/en/">
+    <link rel="alternate" hreflang="ko" href="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/ko/">
+    <link rel="alternate" hreflang="en" href="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/en/">
+    <link rel="alternate" hreflang="x-default" href="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/ko/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Label Noise Audit Counts Wrong Labels a Model Already Memorized">
+    <meta property="og:description" content="No clean labels, no validation set, no retraining: the method reads only the direction of a trained model's gradients to find wrong labels. Removing them and retraining lifted test accuracy by up to 47 points.">
+    <meta property="og:url" content="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/en/">
+    <meta property="og:image" content="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/en/image/index.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Label noise audit — estimating the wrong-label rate from gradient allocation">
+    <meta property="og:site_name" content="Pebblous Blog">
+    <meta property="og:locale" content="en_US">
+    <meta property="article:published_time" content="2026-11-28">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Label Noise Audit Counts Wrong Labels a Model Already Memorized">
+    <meta name="twitter:description" content="One trained model finds wrong labels and estimates their rate. Auditing 5,000 images takes 14–27 seconds on one GPU.">
+    <meta name="twitter:image" content="https://blog.pebblous.ai/blog/label-noise-gradient-allocation-audit/en/image/index.png">
+    <meta name="twitter:image:alt" content="Label noise audit — estimating the wrong-label rate from gradient allocation">
+    <meta name="twitter:site" content="@pebblous_ai">
+    <meta name="twitter:creator" content="@pebblous_ai">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/image/favicon.ico" sizes="any">
+    <link rel="icon" href="/image/Pebblous_BM_Orange_RGB.png" type="image/png">
+    <link rel="apple-touch-icon" href="/image/Pebblous_BM_Orange_RGB.png">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-57L9F58B');</script>
+
+    <!-- Theme init (FOUC prevention) -->
+    <script src="/scripts/index/theme.js?v=5f0a37e3"></script>
+
+    <link rel="stylesheet" href="/css/theme-variables.css?v=7f5a0b5e">
+    <link rel="stylesheet" href="/styles/tailwind-build.css?v=bea798d5">
+    <link rel="stylesheet" href="/styles/common-styles.css?v=f542b79f">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+
+    <!-- Google Scholar meta -->
+    <meta name="citation_title" content="Label Noise Audit Counts Wrong Labels a Model Already Memorized">
+    <meta name="citation_author" content="Pebblous Data Communication Team">
+    <meta name="citation_publication_date" content="2026/11/28">
+    <meta name="citation_online_date" content="2026/11/28">
+    <meta name="citation_journal_title" content="Pebblous Blog">
+    <meta name="citation_language" content="en">
+</head>
+
+<body class="antialiased themeable-bg">
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-57L9F58B" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div id="header-placeholder"></div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-[1400px]">
+        <div class="lg:flex lg:gap-8 lg:justify-center lg:items-start">
+
+            <!-- TOC Sidebar -->
+            <nav class="hidden lg:block lg:w-[240px] lg:shrink-0 sticky top-20 self-start">
+                <h3 class="font-bold themeable-heading mb-4 text-lg">Contents</h3>
+                <ul id="toc-links" class="space-y-3 text-sm border-l-2 themeable-toc-border">
+                    <li><a href="#executive-summary" class="block pl-4 themeable-toc-link transition-colors duration-200">Executive Summary</a></li>
+                    <li><a href="#defect" class="block pl-4 themeable-toc-link transition-colors duration-200">1. Memorizing Models and CIFAR-10N</a></li>
+                    <li><a href="#method" class="block pl-4 themeable-toc-link transition-colors duration-200">2. The Gradient Allocation Rule</a></li>
+                    <li><a href="#measure" class="block pl-4 themeable-toc-link transition-colors duration-200">3. Estimating the Wrong-Label Rate</a></li>
+                    <li><a href="#retrain" class="block pl-4 themeable-toc-link transition-colors duration-200">4. Retraining After Removal</a></li>
+                    <li><a href="#confident-learning" class="block pl-4 themeable-toc-link transition-colors duration-200">5. Versus Confident Learning</a></li>
+                    <li><a href="#split-audit" class="block pl-4 themeable-toc-link transition-colors duration-200">6. Auditing Without Sharing Data</a></li>
+                    <li><a href="#iso5259" class="block pl-4 themeable-toc-link transition-colors duration-200">7. ISO/IEC 5259-2 and DataClinic</a></li>
+                    <li><a href="#series" class="block pl-4 themeable-toc-link transition-colors duration-200">Data Quality Series</a></li>
+                    <li><a href="#faq" class="block pl-4 themeable-toc-link transition-colors duration-200">FAQ</a></li>
+                </ul>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="max-w-[800px] px-4 sm:px-6 w-full">
+
+                <!-- Hero -->
+                <header class="text-left mb-12">
+                    <h1 id="page-h1-title" class="text-4xl md:text-5xl font-bold themeable-heading mb-4 leading-tight"></h1>
+                </header>
+
+                <!-- Executive Summary -->
+                <section id="executive-summary" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Executive Summary</h2>
+                    <div class="key-insight">
+                        <p class="themeable-text leading-relaxed">
+                            A method posted to arXiv finds wrong labels in a training set, and estimates how many there are, using nothing but one trained classifier. The paper by Yuchen Li and four co-authors, "<a href="https://arxiv.org/abs/2611.22449" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">Find, Count and Fix Wrong Labels from a Trained Model, without Clean Labels or Shared Data</a>" (submitted November 17, 2026, revised November 21), checks which parameters each example's gradient leans toward and compares that with the average of examples carrying the same label. The authors say the method needs no clean reference set, no held-out validation set and no retraining.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            Label noise gets hard to detect once a model has memorized the wrong labels. According to the paper, after the model fits 99–100% of its wrong labels, scores that rank examples by loss or gradient size fall to an AUC of 0.73–0.76 on the human-labeled CIFAR-10N set. Gradient allocation held at 0.94–0.96 under the same conditions. Retraining without the flagged examples raised test accuracy in all 22 image noise settings.
+                        </p>
+                        <p class="themeable-text leading-relaxed mt-4">
+                            It does not clearly beat the existing method. Against confident learning in 11 settings, the difference in detection AUC was not statistically significant, and confident learning came closer to the true wrong-label rate. The advantage is that the computation ends with reading a single final model. Pebblous sees the method as a candidate for putting a number on "data label accuracy" (Acc-ML-7), a measure under the accuracy characteristic of ISO/IEC 5259-2, without an answer key. The paper does not mention any ISO standard; this mapping is Pebblous's interpretation.
+                        </p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold themeable-heading mt-8 mb-3">Key Figures</h3>
+                    <p class="themeable-text-secondary text-sm mb-3">Source: <a href="https://arxiv.org/abs/2611.22449" target="_blank" rel="noopener" class="text-orange-500 hover:text-orange-400 underline">arXiv 2611.22449</a> v2, abstract and full text</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">0.94–0.96</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Wrong-label detection AUC</p>
+                            <p class="text-xs themeable-muted mt-1">CIFAR-10N worst labels, model that memorized them. Loss and gradient norm: 0.73–0.76</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">54–96%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Share of true rate captured</p>
+                            <p class="text-xs themeable-muted mt-1">CIFAR-10. Prediction and feature-margin estimates: 0–6%</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">48.1→94.7%</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Test accuracy after retraining</p>
+                            <p class="text-xs themeable-muted mt-1">CIFAR-10, 60% symmetric noise, ViT-S. Mean +11.6 points over 22 settings</p>
+                        </div>
+                        <div class="themeable-card rounded-xl p-4 text-center">
+                            <p class="text-2xl font-bold" style="color: #F86825;">14–27 s</p>
+                            <p class="text-sm themeable-text-secondary mt-1">Time to audit 5,000 images</p>
+                            <p class="text-xs themeable-muted mt-1">One GPU (RTX 4090). Confident learning needs about 23 GPU-minutes of extra training</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 1 -->
+                <section id="defect" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">1</span>
+                        <h2 class="text-3xl font-bold themeable-heading">On CIFAR-10N's Worst Labels, Loss Scores Fail Once the Model Memorizes</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Label noise means the answer attached to a training example is wrong, as when a photo of a cat carries the label "dog." The paper relies mainly on CIFAR-10N, a public dataset that collects labels human annotators re-assigned to the 50,000 CIFAR-10 images. Its "worst" version picks a wrong annotator label whenever one exists, so it has the most errors. By the paper's count, 9.0% of labels are wrong in the majority-vote version (aggregate), 17.2% in the single-annotator version (random-1) and 40.2% in the worst version. Because these are mistakes real people made, they are harder to find than synthetic noise created by shuffling labels at random.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The usual approach looks for examples the model finds unusually hard. Examples with high loss, large gradients or high self-influence are put forward as wrong-label candidates. The trouble is that with long enough training the model fits the wrong labels too. The models in the authors' experiments reproduced 99–100% of the wrong labels on the training data. At that point a wrong example's loss is small as well and no longer stands apart from correct ones.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper's results on CIFAR-10N's worst labels are below. AUC is the probability that, given one randomly drawn wrong label and one correct label, the score ranks the wrong one higher. A value of 1 separates them perfectly; 0.5 is a coin toss.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="p-3 text-left">Score</th>
+                                    <th class="p-3 text-left">What it looks at</th>
+                                    <th class="p-3 text-left">AUC on a model that memorized the labels</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">Loss · gradient norm · self-influence</td>
+                                    <td class="p-3">How hard the model finds the example</td>
+                                    <td class="p-3">0.73–0.76</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">Feature-space margin</td>
+                                    <td class="p-3">How close the internal representation sits to another class</td>
+                                    <td class="p-3">0.79–0.84</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3"><strong>Gradient allocation (proposed)</strong></td>
+                                    <td class="p-3">Which parameters the gradient concentrates on</td>
+                                    <td class="p-3"><strong>0.94–0.96</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The gap is wider when it comes to counting. Estimating the wrong-label rate from the model's predictions or feature margins captured only 0–6% of the true rate on a model that had memorized the labels, the paper reports. Even if four images in ten are mislabeled, the estimate comes out close to "nearly clean." In a data quality audit, that is the most dangerous kind of error.
+                    </p>
+                </section>
+
+                <!-- Section 2 -->
+                <section id="method" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">2</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Gradient Allocation Drops Magnitude and Compares Direction With the Class Average</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The authors monitor the output projection layers of the last four backbone blocks: the attention and MLP output projections in ViT-S, and the MLP output projections in ConvNeXt-T. For one example and its label, they compute the gradient at these layers and divide the absolute values by their total. Magnitude disappears, and what remains is the proportion of change the model wants to make in each parameter. The paper calls this the allocation.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-4">The decision takes four steps.</p>
+
+                    <ol class="themeable-text leading-relaxed space-y-2 mb-6 ml-6" style="list-style:decimal;line-height:2.0;">
+                        <li>Average the allocations of examples sharing a label to build a reference allocation for each class.</li>
+                        <li>Take how closely the example's allocation matches its own label's reference (cosine similarity) and subtract its similarity to the closest other class. This is the margin.</li>
+                        <li>Switch the label to the closest other class and repeat the calculation.</li>
+                        <li>If the switched label's margin is larger than the original label's, flag the example as mislabeled.</li>
+                    </ol>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 560" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Outfit, sans-serif;" role="img" aria-label="A flowchart of the gradient allocation decision, top to bottom. Starting from example x and label y, it divides the absolute gradient by its sum to build an allocation vector, then computes cosine similarity s_y to the own-class average and s_y′ to the nearest other class average, giving margin m. It switches the label to y′ and repeats the same calculation to get margin m′. If m′ is larger than m, the example is flagged as mislabeled; otherwise the label is kept.">
+                            <text x="350" y="20" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary,#171719)">Four steps that drop magnitude, compare direction only</text>
+
+                            <rect x="220" y="40" width="260" height="40" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="350" y="65" text-anchor="middle" font-size="12.5" fill="var(--text-secondary,#475569)">Example x, label y</text>
+
+                            <line x1="350" y1="80" x2="350" y2="108" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+
+                            <rect x="180" y="108" width="340" height="50" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="350" y="128" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-secondary,#475569)">Gradient → allocation vector a(x)</text>
+                            <text x="350" y="146" text-anchor="middle" font-size="10.5" fill="var(--text-muted,#808080)">Divide by the sum of absolute values to drop magnitude</text>
+
+                            <line x1="350" y1="158" x2="160" y2="198" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+                            <line x1="350" y1="158" x2="540" y2="198" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+
+                            <rect x="20" y="198" width="280" height="55" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="160" y="220" text-anchor="middle" font-size="12" fill="var(--text-secondary,#475569)">Compare with own class y average</text>
+                            <text x="160" y="238" text-anchor="middle" font-size="11.5" fill="var(--text-muted,#808080)">Cosine similarity s_y</text>
+
+                            <rect x="400" y="198" width="280" height="55" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="540" y="220" text-anchor="middle" font-size="12" fill="var(--text-secondary,#475569)">Compare with nearest other class y′</text>
+                            <text x="540" y="238" text-anchor="middle" font-size="11.5" fill="var(--text-muted,#808080)">Cosine similarity s_y′</text>
+
+                            <line x1="160" y1="253" x2="350" y2="283" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+                            <line x1="540" y1="253" x2="350" y2="283" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+
+                            <rect x="240" y="283" width="220" height="40" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="350" y="308" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-secondary,#475569)">Margin m = s_y − s_y′</text>
+
+                            <line x1="350" y1="323" x2="350" y2="343" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+
+                            <rect x="180" y="343" width="340" height="55" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="350" y="365" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-secondary,#475569)">Switch label to y′, repeat the calculation</text>
+                            <text x="350" y="383" text-anchor="middle" font-size="11.5" fill="var(--text-muted,#808080)">Get margin m′</text>
+
+                            <line x1="350" y1="398" x2="350" y2="418" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+
+                            <rect x="270" y="418" width="160" height="40" rx="8" fill="none" stroke="var(--text-secondary,#475569)" stroke-width="2"/>
+                            <text x="350" y="443" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary,#171719)">m′ &gt; m ?</text>
+
+                            <line x1="350" y1="458" x2="160" y2="478" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+                            <text x="245" y="468" text-anchor="middle" font-size="11" fill="var(--text-muted,#808080)">Yes</text>
+                            <line x1="350" y1="458" x2="540" y2="478" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#ga-arrow)"/>
+                            <text x="455" y="468" text-anchor="middle" font-size="11" fill="var(--text-muted,#808080)">No</text>
+
+                            <rect x="20" y="478" width="280" height="55" rx="8" fill="#F86825" fill-opacity="0.85"/>
+                            <text x="160" y="500" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">Flag as mislabeled</text>
+                            <text x="160" y="518" text-anchor="middle" font-size="10.5" fill="#ffffff">Counted in the rate estimate</text>
+
+                            <rect x="400" y="478" width="280" height="55" rx="8" fill="var(--text-muted,#808080)" fill-opacity="0.15" stroke="var(--text-muted,#808080)" stroke-opacity="0.5"/>
+                            <text x="540" y="500" text-anchor="middle" font-size="13" fill="var(--text-secondary,#475569)">Keep the label</text>
+                            <text x="540" y="518" text-anchor="middle" font-size="10.5" fill="var(--text-muted,#808080)">Judged correct</text>
+
+                            <defs>
+                                <marker id="ga-arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                                    <path d="M0,0 L8,4 L0,8 Z" fill="var(--text-muted,#808080)"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Pebblous original diagram (the decision rule, reconstructed) — no threshold for a human to set; it compares two margins within one example and flags the label. | Source: <a href="https://arxiv.org/abs/2611.22449" target="_blank" rel="noopener" class="underline">arXiv:2611.22449</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The rule has no threshold for anyone to set. It compares two numbers within one example, so there is no baseline to recalibrate for each dataset. The share of flagged examples is the estimate of the wrong-label rate. The number flagged equals "true wrong labels × recall ÷ precision," so when recall is lower than precision the estimate falls below the true rate. On that basis the paper advises reading the estimate as a lower bound.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The authors explain why magnitude is discarded. When a model memorizes a wrong label, the loss and gradient size for that example shrink, but the mix of parameters the remaining gradient points to stays different from that of correctly labeled examples in the same class. This is the authors' account of the mechanism; Pebblous has not reproduced it.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The choice of four blocks came from experiments. On CIFAR-10N's worst labels after memorization, watching only the last block gave ViT-S an AUC of 0.919, and watching four blocks raised it to 0.965. ConvNeXt-T went from 0.877 to 0.954. Using the cheaper classifier head alone dropped the AUC to 0.654 and read just 4% of the true wrong-label rate. The authors' interpretation is that the final features are what gets rewritten most late in training, so the signal survives in the blocks before them.
+                    </p>
+                </section>
+
+                <!-- Section 3 -->
+                <section id="measure" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">3</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Wrong-Label Rates on CIFAR-10 and Food-101N, a Lower Bound for Human Labels</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The experiments cover 22 image settings and 9 text settings. On the image side they combine human labels (CIFAR-10N, CIFAR-100N, CIFAR-10H), web-collected labels (Food-101N) and injected synthetic noise (symmetric and asymmetric noise on CIFAR-10 and CIFAR-100, and 40% symmetric noise on Food-101). The models are ViT-S/16 and ConvNeXt-T, both pretrained on ImageNet. On the text side, NoisyAG-News, which carries human labeling errors, and GLUE's SST-2, QQP and MNLI with injected noise were tested on RoBERTa-base, DeBERTa-v3-base and Qwen3-1.7B-Base.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        On CIFAR-10 the method captured 54–96% of the true wrong-label rate using a model that had memorized the labels. Estimates based on prediction and feature margins reached only 0–6% on the same models. Results vary widely by noise type. On human CIFAR-10 labels it read 43–73% of the true rate, and on the web-labeled Food-101N, where the true rate is 19.2%, ViT-S read 13.1% and ConvNeXt-T 9.3%. The more human the errors, the further the estimate falls below the real figure.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Some errors are a clear weak spot. On CIFAR-100, it found only 28% of wrong labels that stay inside the same superclass (for example, one kind of tree mislabeled as another in the "trees" group), against 54% of errors that cross superclasses. Similar classes produce similar gradient allocations, so they do not separate well. On text, RoBERTa failed to memorize the wrong labels at all in three of five QQP runs. That breaks the method's premise of a model that has memorized the wrong answers, and the authors say estimates in that setting should be read only as lower bounds.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The method also proposes corrections. The other class that produces the larger margin is the suggested fix. In noise settings where the true label is known, the suggestion matched the true label 39–93% of the time, with a median of 73%. That is better suited to ordering a list for human review than to automatic relabeling.
+                    </p>
+                </section>
+
+                <!-- Section 4 -->
+                <section id="retrain" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">4</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Retraining Without Flagged Examples Lifts CIFAR-10 Accuracy From 48.1% to 94.7%</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The downstream question is whether removing the flagged labels actually makes the model better. The authors removed the flagged examples from the training data and retrained from scratch. Test accuracy rose in all 22 image noise settings, by 11.6 points on average. The largest change came on CIFAR-10 with 60% symmetric noise, where ViT-S went from 48.1% to 94.7% test accuracy. Across models in that same 60% setting, the gain ranged from 28 to 47 points.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper includes a control. Removing the same number of examples at random and retraining changed accuracy by only −1.7 to +1.8 points, evidence that the gain comes from removing wrong labels rather than from having less data. Applied to data with clean labels, the procedure changed accuracy by at most 0.13 points. No side effect of cutting large numbers of good examples from clean data was observed.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The authors also compared what to remove. Across 11 noisy ViT-S settings, removing the examples flagged by gradient allocation gave a mean test accuracy of 90.2% after retraining. Removing the same number of highest-loss examples gave 85.8%, and removing the examples confident learning found gave 90.3%. Gradient allocation tied confident learning, but confident learning deleted 1.0–2.8 times as many examples and needed four extra training runs. Among deleted examples, the share that were truly mislabeled averaged 93.7% for gradient allocation, the highest, against 84.6% for confident learning and 75.3% for the loss criterion.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The retraining evidence covers images only. The authors did not retrain after cleaning text data and leave that as a next step. Anyone applying the method straight to text label cleanup should account for that gap.
+                    </p>
+                </section>
+
+                <!-- Section 5 -->
+                <section id="confident-learning" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">5</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Confident Learning Across 11 Settings: No Significant Difference in AUC</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Confident learning picks out wrong labels by checking a model's predicted probabilities against the observed labels, and it is widely used through the open-source library cleanlab. To get fair predictions it relies on cross-training, splitting the data and training the model several times. The authors ran both methods side by side on 11 noisy settings.
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm themeable-text border-collapse">
+                            <thead>
+                                <tr class="border-b-2 themeable-border">
+                                    <th class="p-3 text-left">Measure</th>
+                                    <th class="p-3 text-left">Confident learning</th>
+                                    <th class="p-3 text-left">Gradient allocation</th>
+                                    <th class="p-3 text-left">Verdict</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">Detection AUC (mean)</td>
+                                    <td class="p-3">0.969</td>
+                                    <td class="p-3">0.958</td>
+                                    <td class="p-3">Not significant (Wilcoxon test, p=0.21)</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">Precision</td>
+                                    <td class="p-3">0.85</td>
+                                    <td class="p-3">0.94</td>
+                                    <td class="p-3">Gradient allocation ahead in all 11 settings (p=9.8×10⁻⁴)</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">Wrong-label rate estimate (vs. true)</td>
+                                    <td class="p-3">93%</td>
+                                    <td class="p-3">74%</td>
+                                    <td class="p-3">Confident learning closer to true</td>
+                                </tr>
+                                <tr class="border-b themeable-border">
+                                    <td class="p-3">Compute (5,000 images, ViT-S)</td>
+                                    <td class="p-3">About 23 GPU-minutes of extra training</td>
+                                    <td class="p-3">14 seconds</td>
+                                    <td class="p-3">Gradient allocation reads only the final model</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        In short, detection is a draw, precision goes to gradient allocation and rate estimation goes to confident learning. Gradient allocation's flags are more likely to be truly wrong, but it flags fewer, so it reads the rate low. The authors' case rests on cost and requirements. Confident learning needs enough access to the data to retrain the model; gradient allocation needs only one already-trained model and per-example gradients.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        That is also where the practical choice divides. With time to retrain, access to the data and a need for the rate itself to be accurate, confident learning is the better tool. When all that is available is a finished model, or the data cannot be moved, gradient allocation is an option that still works.
+                    </p>
+                </section>
+
+                <!-- Section 6 -->
+                <section id="split-audit" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">6</span>
+                        <h2 class="text-3xl font-bold themeable-heading">Split Audit Sends 2K+4 Numbers per Example Instead of the Data</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The "without Shared Data" in the paper's title refers to a split audit setup. The data owner runs the model on its own machine, computes a set of numbers for each example and sends them to the auditor. Each example takes 2K+4 numbers, where K is the number of classes, so a 10-class task sends 24 numbers per example. Without seeing any image or text, the auditor reproduces the same flags and the same rate estimate from those numbers alone.
+                    </p>
+
+                    <figure class="my-8">
+                        <svg viewBox="0 0 700 240" class="w-full max-w-[680px] h-auto mx-auto rounded-xl border themeable-border" style="background:var(--card-bg,#ffffff); font-family: Outfit, sans-serif;" role="img" aria-label="A diagram of the split audit structure. On the left, the data owner runs its private original data through a trained model to compute per-example numbers. Across a dashed boundary in the middle, only 2K+4 numbers per example cross, and the originals never do, where K is the number of classes. On the right, the auditor reproduces the same mislabel flags and rate estimate from those numbers alone.">
+                            <text x="350" y="20" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary,#171719)">Data stays put; only numbers cross</text>
+
+                            <text x="150" y="44" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-secondary,#475569)">Data owner</text>
+                            <text x="550" y="44" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-secondary,#475569)">Auditor</text>
+
+                            <line x1="350" y1="36" x2="350" y2="226" stroke="var(--text-muted,#808080)" stroke-width="1.3" stroke-dasharray="4,4"/>
+
+                            <rect x="30" y="58" width="240" height="50" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="150" y="78" text-anchor="middle" font-size="12" fill="var(--text-secondary,#475569)">Original data</text>
+                            <text x="150" y="96" text-anchor="middle" font-size="10.5" fill="var(--text-muted,#808080)">(private, never leaves)</text>
+
+                            <line x1="150" y1="108" x2="150" y2="138" stroke="var(--text-muted,#808080)" stroke-width="1.3" marker-end="url(#sa-arrow)"/>
+
+                            <rect x="30" y="138" width="240" height="50" rx="8" fill="none" stroke="var(--text-muted,#808080)" stroke-width="1.5"/>
+                            <text x="150" y="158" text-anchor="middle" font-size="12" fill="var(--text-secondary,#475569)">Run through trained model</text>
+                            <text x="150" y="176" text-anchor="middle" font-size="10.5" fill="var(--text-muted,#808080)">Compute per-example numbers</text>
+
+                            <rect x="430" y="138" width="240" height="50" rx="8" fill="none" stroke="#F86825" stroke-width="2"/>
+                            <text x="550" y="158" text-anchor="middle" font-size="12" font-weight="700" fill="#F86825">Reproduce from numbers alone</text>
+                            <text x="550" y="176" text-anchor="middle" font-size="10.5" fill="var(--text-secondary,#475569)">Flags + rate estimate</text>
+
+                            <line x1="270" y1="163" x2="430" y2="163" stroke="#F86825" stroke-width="1.6" marker-end="url(#sa-arrow-o)"/>
+                            <text x="350" y="152" text-anchor="middle" font-size="11" font-weight="700" fill="#F86825">Only 2K+4 numbers per example cross</text>
+                            <text x="350" y="183" text-anchor="middle" font-size="9.5" fill="var(--text-muted,#808080)">(no originals · K = number of classes)</text>
+
+                            <defs>
+                                <marker id="sa-arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                                    <path d="M0,0 L8,4 L0,8 Z" fill="var(--text-muted,#808080)"/>
+                                </marker>
+                                <marker id="sa-arrow-o" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                                    <path d="M0,0 L8,4 L0,8 Z" fill="#F86825"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                        <figcaption class="text-xs themeable-muted text-center mt-2">
+                            ▲ Pebblous original diagram (split audit, reconstructed) — only 2K+4 numbers per example cross the boundary; no original image or text ever does. | Source: <a href="https://arxiv.org/abs/2611.22449" target="_blank" rel="noopener" class="underline">arXiv:2611.22449</a>
+                        </figcaption>
+                    </figure>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        To check whether the numbers leak the originals, the authors ran a gradient inversion attack themselves. The reconstructed images scored a PSNR of 12.4 dB against the originals, no closer than the class's average image (12.6 dB). Among 1,000 candidates, the image nearest to a reconstruction was the actual original in 0.67% of cases. The result shows one attack being resisted; it is not a mathematically guaranteed protection like differential privacy.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Speed suits audit work. Auditing 5,000 images took 14–27 seconds on a single NVIDIA RTX 4090. Because the model is not retrained, the cost of an audit is close to the time the data owner spends passing the data through the model once.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        By the paper's cost table, that is about one-hundredth of the time it took to train the model for 40 epochs (27–33 minutes for ViT-S, 51–68 minutes for ConvNeXt-T). Audit time grows with the number of examples; covering all 50,000 took 146 seconds on ViT-S and 272 seconds on ConvNeXt-T. Sometimes the full set is unnecessary. On CIFAR-10N, auditing just 500 images gave the same AUC as all 50,000. On the 100-class CIFAR-100N, 500 was not enough; it took 5,000, about 50 per class, to bring the AUC within 0.01 of the full-set value. There have to be enough examples to build each class average.
+                    </p>
+                </section>
+
+                <!-- Section 7 -->
+                <section id="iso5259" class="mb-16 fade-in-card">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="number-badge">7</span>
+                        <h2 class="text-3xl font-bold themeable-heading">ISO/IEC 5259-2 Data Label Accuracy (Acc-ML-7) and DataClinic Audits</h2>
+                    </div>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        ISO/IEC 5259-2, the international standard for AI training-data quality, sets seven measures under its accuracy characteristic. One of them, Acc-ML-7 "data label accuracy," measures whether labels are accurately assigned to each element in the dataset (<a href="/project/ISO5259/5259-2-cheetsheet-01/en/" class="text-orange-500 hover:text-orange-400 underline">ISO 5259-2 data quality cheat sheet</a>). The standard defines what to measure; it does not say how to obtain that value for data whose correct answers are unknown.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Pebblous sees this paper as one candidate for filling that gap. The following three points are Pebblous's interpretation and do not appear in the paper. First, the wrong-label rate estimate can be reported as a lower bound on Acc-ML-7. Second, the high-precision flag list can set the order in which people re-check labels. Third, the split audit opens a way to answer "so what share of our data is mislabeled?" with a number in audit contracts where customer data cannot leave the premises.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        <a href="/story/dataclinic-report-123-imagenet-story-pb/en/" class="text-orange-500 hover:text-orange-400 underline">DataClinic's ImageNet audit</a> examined the data distribution and image features directly to find label noise and duplicates. Gradient allocation examines the trained model instead of the data, so the two audits produce different evidence. That examples flagged by both on the same data can be treated as likely mislabeled is also Pebblous's judgment.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        The paper is clear about its limits. Only two image backbones and three text models were tested. On human and web errors the estimate runs below the true rate, and confusion between similar classes is hard to catch. If the premise that the model memorized the wrong labels fails, the method does not hold. The authors list as next steps attaching formal guarantees such as differential privacy to the shared numbers, and auditing the labels of several data owners at once, as in federated learning. An audit report that uses this number should state it as a lower bound: at least this much is wrong.
+                    </p>
+
+                    <!-- Editor's Note -->
+                    <div class="themeable-card rounded-xl p-6 mt-8 border-l-4" style="border-color: #F86825;">
+                        <p class="text-sm font-semibold themeable-heading mb-2">Editor's Note</p>
+                        <p class="themeable-text leading-relaxed text-sm">
+                            The paper's title, authors and submission dates (v1 November 17, 2026; v2 November 21) were checked on the arXiv abstract page. The AUC, rate-capture, retraining-accuracy and random-removal figures, the confident learning comparison and its p-values, the audit time and GPU, the split audit's transfer size, the inversion attack results and the limitations were checked in the arXiv v2 HTML full text. The authors' affiliation (University of Sydney), the monitored-layer comparison in Section 2, the removal-criterion comparison in Section 4, and the training-cost and sample-size results in Section 6 were checked in the same v2 HTML text. The explanation at the end of Section 2 that magnitude shrinks while direction remains is the authors' claim, not reproduced by Pebblous. The practical selection guidance in Section 5, the sentence in Section 6 distinguishing the inversion test from a mathematical guarantee, and the ISO/IEC 5259-2 mapping and DataClinic connection in Section 7 are Pebblous's interpretation. The definition of ISO/IEC 5259-2 Acc-ML-7 is taken from Pebblous's ISO 5259-2 cheat sheet.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Series -->
+                <section id="series" class="mb-16 fade-in-card">
+                    <h2 class="text-3xl font-bold themeable-heading mb-8">Data Quality Series</h2>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        This article is the papers strand (DQ-2) of the Pebblous <a href="/series/data-quality/en/" class="text-orange-500 hover:text-orange-400 underline">Data Quality series</a>. Earlier posts in the series include "<a href="/blog/korea-data-benefit-sharing-valuation/en/" class="text-orange-500 hover:text-orange-400 underline">Under Korea's Data Benefit Sharing, Who Puts a Price on Your Data?</a>" (DQ-3), on a proposal from Korea's Personal Information Protection Commission, and "<a href="/blog/open-fmind-fmri-pretraining-corpus/en/" class="text-orange-500 hover:text-orange-400 underline">Can Open-fMIND Match the UK Biobank Using Only Public Brain Scans?</a>" (DQ-4), on a public brain imaging dataset.
+                    </p>
+
+                    <p class="themeable-text leading-relaxed mb-6">
+                        Another post approaches label noise from a different angle. "<a href="/blog/brahma-galaxy-bar-ground-truth-floor/en/" class="text-orange-500 hover:text-orange-400 underline">BRAHMa Measures Bars in Galaxies, and the Answer Key Wobbles First</a>" looks at where model evaluation stalls when two human-made answer keys disagree.
+                    </p>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq" class="mb-16 fade-in-card"></section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="/scripts/common-utils.js?v=c6e7f730"></script>
+    <script>
+        PebblousPage.init({
+            provenance: {
+              "mode": "unattended",
+              "humanReviewed": false,
+              "trigger": {
+                "source": "api",
+                "actor": "series-trial",
+                "at": "2026-11-28T04:28:43.608Z"
+              },
+              "gates": [
+                {
+                  "phase": "write-ko",
+                  "resolution": "auto_passed",
+                  "by": "engine",
+                  "at": "2026-11-28T04:40:13.951Z"
+                }
+              ],
+              "engine": {
+                "runId": "run-1795840123608-whlast",
+                "version": "0.1.0",
+                "sha": "d838cc6bdaf88cf2e73b6acedf2bdcdcc3990ae1",
+                "builtAt": "2026-11-28T04:23:46.806Z"
+              },
+              "recordedAt": "2026-11-28T04:58:31.978Z"
+            },
+            mainTitle: "Label Noise Audit Counts Wrong Labels a Model Already Memorized",
+            subtitle: "Dropping labels a trained model flags lifts accuracy up to 47 points",
+            pageTitle: "Label Noise Without Clean Labels: Paper Review | Pebblous",
+            category: "tech",
+            publishDate: "2026-11-28",
+            publisher: "Pebblous Data Communication Team",
+            defaultTheme: "light",
+            articlePath: "blog/label-noise-gradient-allocation-audit/en/",
+            tags: ["label noise", "gradient allocation", "confident learning", "cleanlab", "CIFAR-10N", "data label accuracy", "ISO/IEC 5259", "data quality", "DataClinic", "AI-Ready Data"],
+            faqs: [
+                {
+                    question: "What is label noise?",
+                    answer: "Label noise is when the answer (label) attached to a training example is wrong, such as a photo of a cat labeled \"dog.\" It comes from human labeling mistakes or errors in labels collected automatically from the web, and a model learns the wrong labels as if they were correct."
+                },
+                {
+                    question: "What does gradient allocation look at?",
+                    answer: "For each example, it looks at the proportion of change the model wants to make in each parameter. It divides the absolute gradient values by their total to remove magnitude and keep only the direction mix, then compares that with the average for examples sharing the same label. If switching the label to the closest other class fits the average better, the example is flagged as mislabeled."
+                },
+                {
+                    question: "Why is it a problem once the model memorizes the wrong labels?",
+                    answer: "With long training the model fits the wrong labels too, so the loss on those examples becomes small. Scores that find wrong labels by loss or gradient size can then no longer tell them apart from correct examples. In the paper these scores fell to an AUC of 0.73–0.76 on CIFAR-10N's worst labels, while gradient allocation held at 0.94–0.96."
+                },
+                {
+                    question: "Does it really need no clean reference set or validation set?",
+                    answer: "The method uses only one trained model and per-example gradients from the training data. The decision rule has no threshold, so there is no validation set needed to set a baseline. To evaluate performance, however, the authors checked results on datasets where the correct labels are known."
+                },
+                {
+                    question: "Is it better than confident learning?",
+                    answer: "Across 11 noise settings, detection AUC was 0.969 versus 0.958, with no statistical difference (p=0.21). Gradient allocation's precision was higher at 0.94 against confident learning's 0.85, while confident learning estimated the wrong-label rate more accurately, at 93% of the true value against 74%. Gradient allocation's advantage is cost: it reads only the final model without retraining and takes 14 seconds for 5,000 images."
+                },
+                {
+                    question: "Can the estimated wrong-label rate be taken at face value?",
+                    answer: "It should be read as a lower bound. The flagged share equals the true rate multiplied by recall and divided by precision, so it comes out low when recall is low. On human CIFAR-10 labels it read 43–73% of the true rate, and on the web-labeled Food-101N it read a true 19.2% as 13.1%."
+                },
+                {
+                    question: "How much does retraining without the wrong labels help?",
+                    answer: "Test accuracy rose in all 22 image noise settings, by 11.6 points on average. On CIFAR-10 with 60% symmetric noise, ViT-S went from 48.1% to 94.7%. Removing the same number of examples at random changed accuracy by only −1.7 to +1.8 points, and on clean data the change was at most 0.13 points."
+                },
+                {
+                    question: "What does auditing without handing over the data mean?",
+                    answer: "The data owner computes 2K+4 numbers per example (K is the number of classes) on its own machine and sends them, and the auditor can reproduce the same flags and rate estimate without the originals. In the authors' inversion attack test, the original was identified 0.67% of the time, but this is not a mathematically guaranteed protection."
+                },
+                {
+                    question: "Which ISO/IEC 5259-2 measure does it relate to?",
+                    answer: "Pebblous maps it to Acc-ML-7, data label accuracy, under the accuracy characteristic. This measure checks whether labels are accurately assigned to each element of a dataset. The paper does not mention ISO standards, so this mapping is Pebblous's interpretation."
+                }
+            ]
+        });
+    </script>
+</body>
+
+</html>
